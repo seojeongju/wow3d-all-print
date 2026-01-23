@@ -3,8 +3,8 @@
 import { Canvas, useLoader } from '@react-three/fiber'
 import { OrbitControls, Stage, Grid, Center, Stats } from '@react-three/drei'
 import { Suspense, useEffect, useState } from 'react'
-import { STLLoader } from 'three-stdlib'
-import { OBJLoader } from 'three-stdlib'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
 
