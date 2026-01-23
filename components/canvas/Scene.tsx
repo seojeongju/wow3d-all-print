@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Stage, Grid, Center, Html, Bounds } from '@react-three/drei'
+import { OrbitControls, Stage, Grid, Center, Html, Bounds, useBounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
@@ -68,6 +68,7 @@ function Model({
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null)
+    const bounds = useBounds()
 
     useEffect(() => {
         if (!url) return
@@ -118,6 +119,11 @@ function Model({
                     } catch (e) {
                         console.error('❌ Analysis failed:', e)
                     }
+
+                    // 모델 로드 완료 후 카메라 피팅
+                    setTimeout(() => {
+                        bounds.refresh().clip().fit()
+                    }, 100)
                 }
 
                 setIsLoading(false)
@@ -129,7 +135,7 @@ function Model({
         }
 
         loadModel()
-    }, [url, type, setAnalysis])
+    }, [url, type, setAnalysis, bounds])
 
     if (isLoading) {
         return <LoadingSpinner />
