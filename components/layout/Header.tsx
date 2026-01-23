@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Zap, LogOut } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
@@ -14,11 +15,15 @@ export default function Header() {
     return (
         <header className="border-b border-border/40 backdrop-blur-md sticky top-0 z-50 bg-background/95">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                        <span className="font-bold text-primary-foreground text-lg">W</span>
-                    </div>
-                    <span className="font-bold text-xl tracking-tight">Wow3D</span>
+                <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    <Image
+                        src="/images/wow3d-logo.png"
+                        alt="Wow3D Logo"
+                        width={140}
+                        height={36}
+                        className="h-9 w-auto"
+                        priority
+                    />
                 </Link>
 
                 <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
