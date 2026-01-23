@@ -1,63 +1,72 @@
 'use client'
 
-import { Canvas, useLoader } from '@react-three/fiber'
-import { OrbitControls, Stage, Grid, Center, Stats } from '@react-three/drei'
-import { Suspense, useEffect, useState } from 'react'
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls, Stage, Grid, Center, useGLTF } from '@react-three/drei'
+import { Suspense, useEffect, useState, useRef } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
-
+import { STLLoader } from 'three-stdlib'
 import { analyzeGeometry } from '@/lib/geometry'
 
-function Model({ url, type }: { url: string, type: 'stl' | 'obj' }) {
+function Model({ url, type }: { url: string; type: 'stl' | 'obj' }) {
     const { setAnalysis } = useFileStore()
     const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!url) return;
+        if (!url) return
 
-        const loader = type === 'stl' ? new STLLoader() : new OBJLoader();
+        const loadModel = async () => {
+            try {
+                if (type === 'stl') {
+                    const response = await fetch(url)
+                    const arrayBuffer = await response.arrayBuffer()
 
-        loader.load(url, (data) => {
-            let geo: THREE.BufferGeometry | null = null;
-            if (type === 'stl') {
-                geo = data as THREE.BufferGeometry
-            } else {
-                const group = data as THREE.Group;
-                group.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        geo = (child as THREE.Mesh).geometry
-                        return;
+                    const loader = new STLLoader()
+                    const geo = loader.parse(arrayBuffer)
+
+                    if (geo) {
+                        geo.center()
+                        geo.computeVertexNormals()
+                        setGeometry(geo)
+
+                        // Run analysis
+                        try {
+                            const analysis = analyzeGeometry(geo)
+                            setAnalysis(analysis)
+                            console.log('✅ Geometry loaded and analyzed:', analysis)
+                        } catch (e) {
+                            console.error('❌ Analysis failed:', e)
+                            setError('Analysis failed')
+                        }
                     }
-                })
-            }
-
-            if (geo) {
-                // Center geometry
-                geo.center();
-                // Compute normals if missing
-                geo.computeVertexNormals();
-
-                setGeometry(geo);
-
-                // Run analysis
-                try {
-                    const analysis = analyzeGeometry(geo);
-                    setAnalysis(analysis);
-                } catch (e) {
-                    console.error("Analysis failed", e);
                 }
+            } catch (e) {
+                console.error('❌ Model loading failed:', e)
+                setError(e instanceof Error ? e.message : 'Failed to load model')
             }
-        });
+        }
 
-    }, [url, type, setAnalysis]);
+        loadModel()
+    }, [url, type, setAnalysis])
 
-    if (!geometry) return null;
+    if (error) {
+        console.error('Error:', error)
+        return null
+    }
+
+    if (!geometry) {
+        return null
+    }
 
     return (
-        <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} castShadow receiveShadow>
-            <meshStandardMaterial color="#6366f1" roughness={0.2} metalness={0.5} />
+        <mesh geometry={geometry}>
+            <meshStandardMaterial
+                color="#6366f1"
+                roughness={0.3}
+                metalness={0.7}
+                side={THREE.DoubleSide}
+            />
         </mesh>
     )
 }
@@ -67,34 +76,54 @@ function ViewerContent() {
 
     // Determine file type
     const fileExtension = file?.name.split('.').pop()?.toLowerCase()
-    const isSupported = fileExtension === 'stl' || fileExtension === 'obj'
+    const isSupported = fileExtension === 'stl'
+
+    console.log('📁 File info:', {
+        fileName: file?.name,
+        fileUrl,
+        fileExtension,
+        isSupported
+    })
 
     if (fileUrl && isSupported) {
         return (
-            <Center top>
-                <Model url={fileUrl} type={fileExtension as 'stl' | 'obj'} />
+            <Center>
+                <Model url={fileUrl} type={fileExtension as 'stl'} />
             </Center>
         )
     }
 
+    // Default placeholder cube
     return (
-        <group>
-            <mesh rotation={[0, Math.PI / 4, 0]}>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshStandardMaterial color="#6366f1" roughness={0.2} metalness={0.5} />
-            </mesh>
-        </group>
+        <mesh>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="#6366f1" roughness={0.3} metalness={0.7} />
+        </mesh>
     )
 }
 
 export default function Scene() {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return (
+            <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                <div className="text-slate-400">Loading 3D Viewer...</div>
+            </div>
+        )
+    }
+
     return (
         <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/20 pointer-events-none z-10" />
 
-            <Canvas shadows dpr={[1, 2]} camera={{ position: [4, 4, 4], fov: 50 }}>
+            <Canvas shadows dpr={[1, 2]} camera={{ position: [5, 5, 5], fov: 50 }}>
                 <Suspense fallback={null}>
-                    <Stage environment="city" intensity={0.5} adjustCamera>
+                    <Stage environment="city" intensity={0.6} adjustCamera={1.5}>
                         <ViewerContent />
                     </Stage>
                     <Grid
@@ -108,14 +137,17 @@ export default function Scene() {
                         fadeDistance={30}
                     />
                 </Suspense>
-                <OrbitControls makeDefault autoRotate autoRotateSpeed={0.5} />
-                {/* <Stats /> */}
+                <OrbitControls
+                    makeDefault
+                    enableDamping
+                    dampingFactor={0.05}
+                />
             </Canvas>
 
             <div className="absolute bottom-4 left-4 z-20">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs text-slate-400 font-medium">Ready to Render</span>
+                    <span className="text-xs text-slate-400 font-medium">3D Viewer Active</span>
                 </div>
             </div>
         </div>
