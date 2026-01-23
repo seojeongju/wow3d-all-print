@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { MapPin, Phone, Mail } from 'lucide-react'
 
 export default function Footer() {
@@ -10,12 +11,15 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* 회사 소개 */}
                     <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                                <span className="font-bold text-primary-foreground">W</span>
-                            </div>
-                            <span className="font-bold text-lg">Wow3D</span>
-                        </div>
+                        <Link href="/" className="inline-block mb-4 hover:opacity-80 transition-opacity">
+                            <Image
+                                src="/images/wow3d-logo.png"
+                                alt="Wow3D Logo"
+                                width={140}
+                                height={36}
+                                className="h-9 w-auto"
+                            />
+                        </Link>
                         <p className="text-sm text-muted-foreground">
                             3D 프린팅 전문 업체
                             <br />
