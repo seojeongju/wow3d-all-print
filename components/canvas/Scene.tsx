@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Stage, Grid, Center, Html } from '@react-three/drei'
+import { OrbitControls, Stage, Grid, Center, Html, Bounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
@@ -179,9 +179,7 @@ function ViewerContent({ color }: { color: string }) {
 
     if (fileUrl && isSupported) {
         return (
-            <Center>
-                <Model url={fileUrl} type={fileExtension as 'stl' | 'obj'} color={color} />
-            </Center>
+            <Model url={fileUrl} type={fileExtension as 'stl' | 'obj'} color={color} />
         )
     }
 
