@@ -1,3 +1,4 @@
+import Header from "@/components/layout/Header";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,28 +18,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-border/40 backdrop-blur-md sticky top-0 z-50 bg-background/95">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <span className="font-bold text-primary-foreground text-lg">W</span>
-            </div>
-            <span className="font-bold text-xl tracking-tight">Wow3D</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="#services" className="hover:text-primary transition-colors">서비스 소개</a>
-            <a href="#features" className="hover:text-primary transition-colors">주요 기능</a>
-            <a href="#process" className="hover:text-primary transition-colors">제작 공정</a>
-            <a href="#contact" className="hover:text-primary transition-colors">문의하기</a>
-          </nav>
-          <Link href="/quote">
-            <Button size="lg" className="gap-2 shadow-lg shadow-primary/25">
-              <Zap className="w-4 h-4" />
-              실시간 견적 받기
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/20 py-20 md:py-32">

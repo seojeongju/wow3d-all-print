@@ -7,10 +7,11 @@
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/UI
 - **3D Rendering**: Three.js (React Three Fiber)
-- **State Management**: Zustand
+- **State Management**: Zustand (with persist)
 - **Hosting**: Cloudflare Pages
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare R2 (3D 파일 저장용)
+- **Runtime**: Edge Runtime (Cloudflare Workers)
 
 ## 현재 구현 완료 상태 (2026-01-23)
 
@@ -38,29 +39,85 @@
   - `/` - 한국어 랜딩페이지
   - `/quote` - 실시간 견적 시스템
 
+### ✅ Phase 2: 장바구니, 회원, 주문 관리 - 완료 (80%)
+
+#### 백엔드 시스템 (100% 완료)
+- [x] Cloudflare D1 데이터베이스 스키마 설계
+  - users, quotes, cart, orders, order_items, shipments
+- [x] 15개 API 엔드포인트 구현 (Edge Runtime)
+  - 견적 관리: POST, GET, DELETE
+  - 장바구니: POST, GET, PATCH, DELETE
+  - 인증: 회원가입, 로그인, 현재 사용자 조회
+  - 주문: 생성, 목록 조회, 상세 조회
+- [x] 비회원 세션 ID 지원
+- [x] JWT 토큰 인증 시스템
+- [x] API 유틸리티 함수 (해싱, 토큰 생성/검증 등)
+
+#### 상태 관리 (100% 완료)
+- [x] Zustand 스토어 구현
+  - useAuthStore (인증 상태)
+  - useCartStore (장바구니)
+  - useQuoteStore (견적)
+  - useFileStore (파일 업로드)
+- [x] LocalStorage persist 적용
+
+#### UI 페이지 (80% 완료)
+- [x] 견적 저장 기능 (QuotePanel)
+- [x] 장바구니 추가 기능
+- [x] 장바구니 페이지 (`/cart`)
+- [x] 로그인/회원가입 페이지 (`/auth`)
+- [x] 마이페이지 (`/my-account`)
+- [x] 공통 헤더 (장바구니 아이콘, 로그인 상태)
+- [x] Toast 알림 시스템
+- [ ] 주문하기 페이지 (`/checkout`) - 대기
+- [ ] 주문 완료 페이지 - 대기
+
 ## 프로젝트 구조
 ```
 wow3d_all_print/
 ├── app/
-│   ├── layout.tsx          # 루트 레이아웃 (다크모드)
-│   ├── page.tsx            # 메인 랜딩페이지 (한국어)
-│   └── quote/
-│       └── page.tsx        # 견적 시스템 페이지
-├── components/
-│   ├── canvas/
-│   │   └── Scene.tsx       # 3D 뷰어 (Three.js)
+│   ├── layout.tsx          # 루트 레이아웃 (Toaster 포함)
+│   ├── page.tsx            # 메인 랜딩페이지
 │   ├── quote/
-│   │   └── QuotePanel.tsx  # 견적 패널 (FDM/SLA/DLP)
+│   │   └── page.tsx        # 견적 시스템
+│   ├── cart/
+│   │   └── page.tsx        # 장바구니
+│   ├── auth/
+│   │   └── page.tsx        # 로그인/회원가입
+│   ├── my-account/
+│   │   └── page.tsx        # 마이페이지
+│   └── api/                # API Routes (Edge Runtime)
+│       ├── quotes/
+│       ├── cart/
+│       ├── auth/
+│       └── orders/
+├── components/
+│   ├── layout/
+│   │   └── Header.tsx      # 공통 헤더
+│   ├── canvas/
+│   │   └── Scene.tsx       # 3D 뷰어
+│   ├── quote/
+│   │   └── QuotePanel.tsx  # 견적 패널
 │   ├── upload/
-│   │   └── FileUpload.tsx  # 파일 업로드 컴포넌트
+│   │   └── FileUpload.tsx  # 파일 업로드
 │   └── ui/                 # Shadcn UI 컴포넌트
 ├── lib/
-│   ├── geometry.ts         # 지오메트리 분석 로직
-│   └── utils.ts           # 유틸리티 함수
-├── store/
-│   └── useFileStore.ts     # 파일 상태 관리 (Zustand)
-└── docs/
-    └── PRD.md             # 제품 요구사항 문서
+│   ├── geometry.ts         # 지오메트리 분석
+│   ├── api-utils.ts        # API 헬퍼 함수
+│   ├── types.ts            # TypeScript 타입
+│   └── utils.ts            # 유틸리티
+├── store/                  # Zustand 상태 관리
+│   ├── useAuthStore.ts
+│   ├── useCartStore.ts
+│   ├── useQuoteStore.ts
+│   └── useFileStore.ts
+├── hooks/
+│   └── use-toast.ts        # Toast 알림 hook
+├── functions/
+│   └── _middleware.ts      # Cloudflare Pages Functions
+├── schema.sql              # D1 데이터베이스 스키마
+├── wrangler.toml           # Cloudflare 설정
+└── env.d.ts                # Cloudflare 타입 정의
 ```
 
 ## 로컬 개발 환경 실행
@@ -75,91 +132,89 @@ npm run dev
 # 브라우저에서 열기
 # http://localhost:3000 - 랜딩페이지
 # http://localhost:3000/quote - 견적 시스템
+# http://localhost:3000/cart - 장바구니
+# http://localhost:3000/auth - 로그인/회원가입
 ```
 
-## 견적 산출 로직
+## Cloudflare 배포
 
-### FDM (Fused Deposition Modeling)
-```
-총 비용 = 재료비 + 서포트비 + 시간비 + 인건비
+상세한 배포 가이드는 [`docs/CLOUDFLARE_SETUP.md`](./docs/CLOUDFLARE_SETUP.md)를 참고하세요.
 
-재료비 = 부피(cm³) × 조정밀도 × 재료단가
-조정밀도 = max(밀도 × 0.2, 밀도 × Infill%)
-시간비 = 예상시간(h) × 장비단가(/h)
-서포트비 = (활성화시) 표면적 × 0.02
+### 1. Cloudflare 로그인
+```bash
+npx wrangler login
 ```
 
-### SLA/DLP (Stereolithography / Digital Light Processing)
-```
-총 비용 = 레진비 + 소모품비 + 후가공비 + 시간비 + 인건비
-
-레진비 = 부피(mL) × 레진단가
-시간비 = (레이어수 × 레이어당노출시간 / 3600) × 장비단가
-후가공비 = (활성화시) 8.0
+### 2. D1 데이터베이스 생성
+```bash
+npx wrangler d1 create wow3d-production
+# 출력된 database_id를 wrangler.toml에 복사
 ```
 
-## 다음 단계 (Phase 2)
+### 3. 스키마 적용
+```bash
+npx wrangler d1 execute wow3d-production --file=./schema.sql
+```
 
-### 우선순위 높음
-- [ ] 장바구니 시스템
-  - [ ] Cloudflare D1 DB 스키마 설계
-  - [ ] 견적 저장 및 불러오기
-  - [ ] 장바구니 UI 구현
-- [ ] 회원가입/로그인
-  - [ ] Cloudflare D1 Users 테이블
-  - [ ] 세션 관리
-  - [ ] 마이페이지
-- [ ] 주문 관리 대시보드
-  - [ ] 주문 내역 조회
-  - [ ] 배송 상태 추적
+### 4. R2 버킷 생성
+```bash
+npx wrangler r2 bucket create wow3d-files
+```
 
-### 우선순위 중간
-- [ ] 모델 검증 기능
-  - [ ] 터진 면(Non-manifold) 감지
-  - [ ] 뒤집힌 면 검사
-  - [ ] 경고 메시지 표시
-- [ ] 견적서 PDF 출력
-- [ ] 파일 용량 최적화 (R2 업로드)
+### 5. Cloudflare Pages 배포
+1. Cloudflare Dashboard → Pages
+2. GitHub 레포지토리 연동
+3. 빌드 설정:
+   - Framework: Next.js
+   - Build command: `npm run pages:build`
+   - Output: `.vercel/output/static`
+4. Bindings 설정:
+   - D1: `DB` → `wow3d-production`
+   - R2: `BUCKET` → `wow3d-files`
 
-### 우선순위 낮음 (Phase 3)
-- [ ] STEP/IGES 파일 지원
-- [ ] 관리자 페이지
-  - [ ] 주문 관리
-  - [ ] 단가 설정
-  - [ ] 통계 대시보드
-- [ ] 결제 모듈 연동 (PG사)
+## 주요 기능
 
-## 주요 파일 설명
+### 1. 실시간 견적 산출
+- 3D 모델 파일 업로드 (STL, OBJ)
+- 자동 지오메트리 분석 (부피, 표면적, 치수)
+- FDM/SLA/DLP 방식별 견적 비교
+- 실시간 가격 및 소요 시간 계산
 
-### `lib/geometry.ts`
-- `analyzeGeometry()`: STL/OBJ 파일의 부피, 표면적, 바운딩 박스를 계산
-- `signedVolumeOfTriangle()`: 삼각형 기반 부피 계산
-- `triangleArea()`: 삼각형 면적 계산
+### 2. 장바구니 시스템
+- 비회원도 세션 ID로 이용 가능
+- 수량 조절, 항목 삭제
+- 실시간 총액 계산
+- 주문 요약
 
-### `components/quote/QuotePanel.tsx`
-- 출력 방식 선택 (FDM/SLA/DLP)
-- 방식별 옵션 UI 동적 렌더링
-- 실시간 가격 계산 및 표시
+### 3. 회원 시스템
+- 이메일/비밀번호 회원가입
+- JWT 토큰 기반 인증
+- 마이페이지 (견적 내역, 주문 내역)
+- 로그아웃 기능
 
-### `store/useFileStore.ts`
-- 업로드된 파일 관리
-- 분석 결과 저장
-- 파일 초기화 로직
+### 4. 주문 관리
+- 견적 기반 주문 생성
+- 주문 상태 추적
+- 배송 정보 관리
 
-## 테스트 방법
+## 다음 단계 (Phase 2 완성)
 
-1. **파일 업로드 테스트**
-   - `test_cube.stl` 파일이 프로젝트 루트에 있음 (20x20x20mm 큐브)
-   - 예상 부피: ~8 cm³
+- [ ] 주문하기 페이지 구현
+- [ ] 결제 모듈 연동 준비
+- [ ] 이메일 알림 시스템
 
-2. **견적 비교 테스트**
-   - FDM (PLA, 20% Infill, 0.2mm): ~$7.50
-   - SLA (Standard, 0.05mm): ~$11.58
-   - DLP (Standard, 0.05mm): ~$10.69
+## Phase 3 계획 (관리자 기능)
+
+- [ ] 관리자 대시보드
+- [ ] 주문 관리 (상태 변경, 메모)
+- [ ] 단가 설정 UI
+- [ ] 통계 및 분석
+- [ ] 결제 모듈 완전 연동
 
 ## 참고 문서
 - [PRD (제품 요구사항 문서)](./docs/PRD.md)
-- [BN Makers 참고 사이트](https://www.bnmakers.com/)
+- [Cloudflare 배포 가이드](./docs/CLOUDFLARE_SETUP.md)
+- [Phase 2 진행 현황](./docs/PHASE2_PROGRESS.md)
 
 ## 라이선스
 © 2026 Wow3D. All rights reserved.
