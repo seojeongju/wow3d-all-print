@@ -130,7 +130,7 @@ export default function OrderCompletePage() {
                                 다음 단계
                             </CardTitle>
                         </CardHeader>
-                        <C ardContent>
+                        <CardContent>
                             <div className="space-y-3 text-sm">
                                 <div className="flex gap-3">
                                     <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
