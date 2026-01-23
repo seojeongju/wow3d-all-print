@@ -196,7 +196,7 @@ export default function Scene() {
     const canvasRef = useRef<HTMLDivElement>(null)
     const [mounted, setMounted] = useState(false)
     const [modelColor, setModelColor] = useState('#6366f1')
-    const [showMeasurements, setShowMeasurements] = useState(true)
+    const [showMeasurements, setShowMeasurements] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -251,7 +251,7 @@ export default function Scene() {
                     <Suspense fallback={<LoadingSpinner />}>
                         <Stage environment="city" intensity={0.6}>
                             <Bounds fit clip observe margin={1.2}>
-                                <ViewerContent color={modelColor} />
+                                <ViewerContent color={modelColor} showMeasurements={showMeasurements} />
                             </Bounds>
                         </Stage>
                         <Grid
