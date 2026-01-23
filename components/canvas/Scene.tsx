@@ -150,11 +150,11 @@ function Model({
     }
 
     // Bounding Box 사이즈 계산 (Wireframe용)
-    const boxSize = boundingBox ? [
+    const boxSize: [number, number, number] = boundingBox ? [
         boundingBox.max.x - boundingBox.min.x,
         boundingBox.max.y - boundingBox.min.y,
         boundingBox.max.z - boundingBox.min.z
-    ] as [number, number, number] : [1, 1, 1];
+    ] : [1, 1, 1];
 
     return (
         <group>
