@@ -269,10 +269,10 @@ export default function Scene() {
 
             {/* 3D Canvas */}
             <div ref={canvasRef} className="w-full h-full">
-                <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 10], fov: 50 }}>
+                <Canvas shadows dpr={[1, 2]} camera={{ position: [50, 50, 50], fov: 45 }}>
                     <Suspense fallback={<LoadingSpinner />}>
                         <Stage environment="city" intensity={0.6}>
-                            <Bounds fit clip observe margin={1.2}>
+                            <Bounds fit clip observe margin={1.5}>
                                 <ViewerContent color={modelColor} showMeasurements={showMeasurements} />
                             </Bounds>
                         </Stage>
@@ -284,15 +284,15 @@ export default function Scene() {
                             sectionSize={3}
                             sectionColor="#4d4d66"
                             cellColor="#1a1a33"
-                            fadeDistance={30}
+                            fadeDistance={100}
                         />
                     </Suspense>
                     <OrbitControls
                         makeDefault
                         enableDamping
                         dampingFactor={0.05}
-                        minDistance={1}
-                        maxDistance={50}
+                        minDistance={0.1}
+                        maxDistance={1000}
                     />
                 </Canvas>
             </div>
