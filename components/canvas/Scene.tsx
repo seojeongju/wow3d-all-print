@@ -55,11 +55,13 @@ function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
 function Model({
     url,
     type,
-    color
+    color,
+    showMeasurements
 }: {
     url: string;
     type: 'stl' | 'obj';
     color: string;
+    showMeasurements: boolean;
 }) {
     const { setAnalysis } = useFileStore()
     const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
@@ -147,6 +149,13 @@ function Model({
         return null
     }
 
+    // Bounding Box 사이즈 계산 (Wireframe용)
+    const boxSize = boundingBox ? [
+        boundingBox.max.x - boundingBox.min.x,
+        boundingBox.max.y - boundingBox.min.y,
+        boundingBox.max.z - boundingBox.min.z
+    ] as [number, number, number] : [1, 1, 1];
+
     return (
         <group>
             <mesh geometry={geometry}>
@@ -157,13 +166,21 @@ function Model({
                     side={THREE.DoubleSide}
                 />
             </mesh>
-            <MeasurementTool boundingBox={boundingBox} />
+            {showMeasurements && boundingBox && (
+                <>
+                    <mesh>
+                        <boxGeometry args={boxSize} />
+                        <meshBasicMaterial color="#00ff00" wireframe />
+                    </mesh>
+                    <MeasurementTool boundingBox={boundingBox} />
+                </>
+            )}
         </group>
     )
 }
 
 // 뷰어 컨텐츠 컴포넌트
-function ViewerContent({ color }: { color: string }) {
+function ViewerContent({ color, showMeasurements }: { color: string, showMeasurements: boolean }) {
     const { file, fileUrl } = useFileStore()
 
     const fileExtension = file?.name.split('.').pop()?.toLowerCase()
@@ -178,7 +195,12 @@ function ViewerContent({ color }: { color: string }) {
 
     if (fileUrl && isSupported) {
         return (
-            <Model url={fileUrl} type={fileExtension as 'stl' | 'obj'} color={color} />
+            <Model
+                url={fileUrl}
+                type={fileExtension as 'stl' | 'obj'}
+                color={color}
+                showMeasurements={showMeasurements}
+            />
         )
     }
 
