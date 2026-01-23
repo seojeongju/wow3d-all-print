@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,7 +10,7 @@ import { CheckCircle2, Package, Clock, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import type { Order } from '@/lib/types'
 
-export default function OrderCompletePage() {
+function OrderCompleteContent() {
     const searchParams = useSearchParams()
     const orderId = searchParams.get('orderId')
     const orderNumber = searchParams.get('orderNumber')
@@ -206,5 +206,17 @@ export default function OrderCompletePage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function OrderCompletePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        }>
+            <OrderCompleteContent />
+        </Suspense>
     )
 }
