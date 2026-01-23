@@ -5,7 +5,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "wow3d-production"
-database_id = "" # 나중에 `wrangler d1 create wow3d-production` 후 입력
+database_id = "8fc9fb41-4fae-4e6f-af47-6195d825ab8d"
 
 # R2 Storage Configuration (3D 파일 저장용)
 [[r2_buckets]]
