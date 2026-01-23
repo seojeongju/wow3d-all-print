@@ -1,0 +1,20 @@
+name = "wow3d-all-print"
+compatibility_date = "2024-01-01"
+
+# D1 Database Configuration
+[[d1_databases]]
+binding = "DB"
+database_name = "wow3d-production"
+database_id = "" # 나중에 `wrangler d1 create wow3d-production` 후 입력
+
+# R2 Storage Configuration (3D 파일 저장용)
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "wow3d-files"
+
+# Environment Variables
+[vars]
+ENVIRONMENT = "production"
+
+# Pages Configuration
+pages_build_output_dir = ".next"
