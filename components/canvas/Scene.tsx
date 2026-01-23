@@ -10,7 +10,6 @@ import { OBJLoader } from 'three-stdlib'
 import { analyzeGeometry } from '@/lib/geometry'
 import { Button } from '@/components/ui/button'
 import { Download, Ruler, Loader2, Palette } from 'lucide-react'
-import { Slider } from '@/components/ui/slider'
 
 // 로딩 컴포넌트
 function LoadingSpinner() {
