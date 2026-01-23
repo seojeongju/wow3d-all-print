@@ -247,10 +247,12 @@ export default function Scene() {
 
             {/* 3D Canvas */}
             <div ref={canvasRef} className="w-full h-full">
-                <Canvas shadows dpr={[1, 2]} camera={{ position: [5, 5, 5], fov: 50 }}>
+                <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 10], fov: 50 }}>
                     <Suspense fallback={<LoadingSpinner />}>
-                        <Stage environment="city" intensity={0.6} adjustCamera={1.5}>
-                            <ViewerContent color={modelColor} />
+                        <Stage environment="city" intensity={0.6}>
+                            <Bounds fit clip observe margin={1.2}>
+                                <ViewerContent color={modelColor} />
+                            </Bounds>
                         </Stage>
                         <Grid
                             renderOrder={-1}
@@ -267,6 +269,8 @@ export default function Scene() {
                         makeDefault
                         enableDamping
                         dampingFactor={0.05}
+                        minDistance={1}
+                        maxDistance={50}
                     />
                 </Canvas>
             </div>
