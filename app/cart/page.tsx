@@ -222,9 +222,11 @@ export default function CartPage() {
                                                 <p className="text-sm text-muted-foreground text-center">
                                                     주문하려면 로그인이 필요합니다
                                                 </p>
-                                                <Button size="lg" className="w-full">
-                                                    로그인
-                                                </Button>
+                                                <Link href="/auth">
+                                                    <Button size="lg" className="w-full">
+                                                        로그인
+                                                    </Button>
+                                                </Link>
                                             </div>
                                         )}
 
