@@ -118,6 +118,10 @@ export async function POST(request: NextRequest) {
 
         const orderId = orderResult.meta.last_row_id;
 
+        if (!orderId) {
+            return errorResponse('주문 생성 실패', 500);
+        }
+
         // 주문 아이템 생성
         for (const item of body.cartItems) {
             await env.DB

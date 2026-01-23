@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
 
         const userId = result.meta.last_row_id;
 
+        if (!userId) {
+            return errorResponse('사용자 생성 실패', 500);
+        }
+
         // 토큰 생성
         const token = await generateToken(userId, body.email);
 
