@@ -61,7 +61,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { env } = getCloudflareContext();
+        let env: { DB?: Env['DB'] } | undefined;
+        try {
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
+        }
+
         const body = await request.json();
 
         if (!body.quoteId) {

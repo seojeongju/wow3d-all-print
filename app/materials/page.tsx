@@ -12,7 +12,7 @@ const FDM_MATERIALS = [
     {
         id: 'pla',
         name: 'PLA',
-        nameKo: '폴리乳酸',
+        nameKo: '폴리폴리락트산',
         color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30',
         accent: 'text-emerald-500',
         features: ['옥수수·사탕수수 등 식물 기반, 생분해·친환경', '수축·뒤틀림이 적어 인쇄가 쉽고 초보자에게 적합', '경량, 표면이 깨끗함', '내열·내충격은 ABS·PETG보다 낮음'],
@@ -32,7 +32,7 @@ const FDM_MATERIALS = [
     {
         id: 'petg',
         name: 'PETG',
-        nameKo: 'PET에 글리콜 변형 도입',
+        nameKo: '폴리에틸렌 테레프탈레이트(PET)에 글리콜을 첨가하여 내구성과 투명성, 가공성을 높인 열가소성 플라스틱',
         color: 'from-blue-500/20 to-cyan-500/10 border-blue-500/30',
         accent: 'text-blue-500',
         features: ['PLA와 ABS의 장점을 겸비, 강성·내충격·내열', '투명·반투명 제형 가능', '식품·의료 접촉 등급 제품 존재', '습기 관리 필요'],

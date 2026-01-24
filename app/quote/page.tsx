@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { useFileStore } from "@/store/useFileStore";
 
 export default function QuotePage() {
-    const { file, analysis } = useFileStore();
+    const { file, analysis, reset } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
 
     // Auto-advance to step 2 when file is uploaded and analyzed (in useEffect to avoid setState during render)
@@ -164,7 +164,7 @@ export default function QuotePage() {
                                         <div className="mb-6 flex items-center justify-between">
                                             <h2 className="text-xl font-bold">견적 세부 설정</h2>
                                             <button
-                                                onClick={() => setStep(1)}
+                                                onClick={() => { reset(); setStep(1); }}
                                                 className="text-xs text-primary hover:underline"
                                             >
                                                 파일 재업로드

@@ -19,7 +19,7 @@ type PrintMethod = 'fdm' | 'sla' | 'dlp'
 export default function QuotePanel() {
     const { file, analysis } = useFileStore()
     const { addToCart } = useCartStore()
-    const { sessionId, token } = useAuthStore()
+    const { sessionId, token, user, setSessionId } = useAuthStore()
     const { toast } = useToast()
     const [isSaving, setIsSaving] = useState(false)
 
@@ -125,8 +125,12 @@ export default function QuotePanel() {
             }
 
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
-            if (token) headers['Authorization'] = `Bearer ${token}`
-            else headers['X-Session-ID'] = sessionId
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`
+                if (user?.id) headers['X-User-ID'] = String(user.id)
+            } else {
+                headers['X-Session-ID'] = sessionId || ''
+            }
 
             const response = await fetch('/api/quotes', {
                 method: 'POST',
@@ -137,8 +141,10 @@ export default function QuotePanel() {
             if (!response.ok) throw new Error('견적 저장 실패')
 
             const result = await response.json()
+            const data = result.data as { id: number; sessionId?: string }
+            if (data?.sessionId && !token) setSessionId(data.sessionId)
             toast({ title: '✅ 견적 완료', description: '견적이 성공적으로 기록되었습니다' })
-            return result.data
+            return data
         } catch (error) {
             toast({
                 title: '❌ 오류 발생',
@@ -152,14 +158,19 @@ export default function QuotePanel() {
     }
 
     const handleAddToCart = async () => {
-        if (!analysis) return
+        if (!analysis || !file) return
         const savedQuote = await handleSaveQuote()
         if (!savedQuote) return
 
         try {
+            const { token: t, sessionId: sid, user: u } = useAuthStore.getState()
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
-            if (token) headers['Authorization'] = `Bearer ${token}`
-            else headers['X-Session-ID'] = sessionId
+            if (t) {
+                headers['Authorization'] = `Bearer ${t}`
+                if (u?.id) headers['X-User-ID'] = String(u.id)
+            } else {
+                headers['X-Session-ID'] = sid || ''
+            }
 
             const response = await fetch('/api/cart', {
                 method: 'POST',
@@ -169,8 +180,24 @@ export default function QuotePanel() {
 
             if (!response.ok) throw new Error('장바구니 추가 실패')
 
+            const quoteForCart = {
+                id: savedQuote.id,
+                sessionId: savedQuote.sessionId,
+                fileName: file.name,
+                fileSize: file.size,
+                volumeCm3,
+                surfaceAreaCm2,
+                dimensionsX: analysis.boundingBox.x,
+                dimensionsY: analysis.boundingBox.y,
+                dimensionsZ: analysis.boundingBox.z,
+                printMethod,
+                totalPrice,
+                estimatedTimeHours,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }
             toast({ title: '🛒 장바구니 추가', description: '제품이 장바구니에 담겼습니다' })
-            addToCart({ ...savedQuote, quote: savedQuote }, 1)
+            addToCart(quoteForCart as any, 1)
         } catch (error) {
             toast({
                 title: '❌ 추가 실패',
