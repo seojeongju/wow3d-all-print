@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getOptionalRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, verifyPassword, generateToken } from '@/lib/api-utils';
 
@@ -10,17 +10,12 @@ export const runtime = 'edge';
  */
 export async function POST(request: NextRequest) {
     try {
-        // Cloudflare env (D1, R2 등) 로드 — getRequestContext는 Edge가 아니면 throw
-        let env: { DB?: Env['DB'] } | undefined;
-        try {
-            const ctx = getRequestContext() as { env?: { DB?: Env['DB'] } };
-            env = ctx?.env;
-        } catch (_e) {
-            // 로컬 개발/비-Edge: env 없음
-        }
+        // Cloudflare env (D1 등): getOptionalRequestContext는 throw 대신 undefined 반환
+        const ctx = getOptionalRequestContext() as { env?: { DB?: Env['DB'] } } | undefined;
+        const env = ctx?.env;
 
         if (!env?.DB) {
-            return errorResponse('데이터베이스를 사용할 수 없습니다. (배포 환경 및 D1 바인딩 확인)', 503);
+            return errorResponse('데이터베이스를 사용할 수 없습니다. (D1 바인딩 확인)', 503);
         }
 
         let body: { email?: string; password?: string };

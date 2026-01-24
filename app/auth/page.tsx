@@ -35,8 +35,16 @@ export default function AuthPage() {
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.error || '로그인 실패')
+                const text = await response.text()
+                let msg = '로그인에 실패했습니다.'
+                try {
+                    const d = JSON.parse(text)
+                    if (d?.error && typeof d.error === 'string') msg = d.error
+                } catch {
+                    if (text && text.length < 300) msg = text
+                    else if (response.status >= 500) msg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                }
+                throw new Error(msg)
             }
 
             const result = await response.json()
@@ -72,8 +80,16 @@ export default function AuthPage() {
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.error || '회원가입 실패')
+                const text = await response.text()
+                let msg = '회원가입에 실패했습니다.'
+                try {
+                    const d = JSON.parse(text)
+                    if (d?.error && typeof d.error === 'string') msg = d.error
+                } catch {
+                    if (text && text.length < 300) msg = text
+                    else if (response.status >= 500) msg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                }
+                throw new Error(msg)
             }
 
             const result = await response.json()
