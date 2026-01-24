@@ -1,236 +1,293 @@
 'use client'
 
-import Scene from "@/components/canvas/Scene";
-import { Button } from "@/components/ui/button";
-import QuotePanel from "@/components/quote/QuotePanel";
-import Link from "next/link";
-import { ArrowLeft, Boxes, FileBox, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
-import { useFileStore } from "@/store/useFileStore";
+import Scene from "@/components/canvas/Scene"
+import { Button } from "@/components/ui/button"
+import QuotePanel from "@/components/quote/QuotePanel"
+import FileUpload from "@/components/upload/FileUpload"
+import Link from "next/link"
+import { Cube, Home, Loader2, Sparkles, Zap } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect, useCallback } from "react"
+import { useFileStore } from "@/store/useFileStore"
+import Header from "@/components/layout/Header"
+
+const SAMPLES = [
+    { id: 'cube', name: '기본 큐브', desc: '간단한 형상으로 견적 흐름을 빠르게 체험', path: '/test_cube.stl' },
+] as const
 
 export default function ExperiencePage() {
-    const { file, analysis, setFile, reset } = useFileStore();
-    const [step, setStep] = useState(1);
-    const [loadingSample, setLoadingSample] = useState(false);
-    const [loadError, setLoadError] = useState<string | null>(null);
+    const { file, analysis, setFile, reset } = useFileStore()
+    const [step, setStep] = useState(1)
+    const [loadingSample, setLoadingSample] = useState(false)
+    const [loadError, setLoadError] = useState<string | null>(null)
 
-    const loadSample = useCallback(async () => {
-        setLoadError(null);
-        setLoadingSample(true);
+    const loadSample = useCallback(async (path: string) => {
+        setLoadError(null)
+        setLoadingSample(true)
         try {
-            const res = await fetch('/test_cube.stl');
-            if (!res.ok) throw new Error('샘플 파일을 불러올 수 없습니다.');
-            const blob = await res.blob();
-            const f = new File([blob], 'sample_cube.stl', { type: 'model/stl' });
-            setFile(f);
+            const res = await fetch(path)
+            if (!res.ok) throw new Error('샘플을 불러올 수 없습니다.')
+            const blob = await res.blob()
+            const name = path.split('/').pop() || 'sample.stl'
+            const f = new File([blob], name, { type: 'model/stl' })
+            setFile(f)
         } catch (e) {
-            setLoadError(e instanceof Error ? e.message : '샘플을 불러오지 못했습니다.');
+            setLoadError(e instanceof Error ? e.message : '샘플을 불러오지 못했습니다.')
         } finally {
-            setLoadingSample(false);
+            setLoadingSample(false)
         }
-    }, [setFile]);
-
-    // 체험 페이지 진입 시 파일 없으면 샘플 로드 (직접 /experience 접속 시)
-    useEffect(() => {
-        if (file) return;
-        loadSample();
-    }, [file, loadSample]);
+    }, [setFile])
 
     useEffect(() => {
-        if (file && analysis && step === 1) setStep(2);
-    }, [file, analysis, step]);
+        if (file && analysis && step === 1) setStep(2)
+    }, [file, analysis, step])
+
+    const goBackToSelect = useCallback(() => {
+        reset()
+        setStep(1)
+        setLoadError(null)
+    }, [reset])
 
     return (
         <main className="min-h-screen bg-[#050505] text-white flex flex-col selection:bg-primary/30 overflow-hidden">
+            <Header />
+
+            {/* Ambient orbs */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] opacity-20" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/20 rounded-full blur-[120px] opacity-20" />
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-500/15 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/15 rounded-full blur-[100px]" />
             </div>
 
-            <header className="border-b border-white/5 backdrop-blur-xl sticky top-0 z-50 bg-black/40">
-                <div className="container mx-auto px-6 h-18 flex items-center justify-between">
-                    <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-all active:scale-95 group">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all">
-                                <Boxes className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                                Wow3D <span className="text-primary font-light">Pro</span>
-                            </span>
-                        </Link>
+            <section className="flex-1 relative pt-24">
+                <div className="h-[calc(100vh-6rem)] grid lg:grid-cols-[400px_1fr] xl:grid-cols-[440px_1fr]">
 
-                        <div className="hidden md:flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30">
-                                샘플 체험
-                            </span>
-                            <div className="flex gap-1 bg-white/5 p-1 rounded-full border border-white/10">
-                                {[
-                                    { id: 1, label: "체험", active: step >= 1 },
-                                    { id: 2, label: "견적 설정", active: step >= 2 },
-                                ].map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${item.id === step
-                                                ? "bg-white text-black shadow-lg"
-                                                : item.active
-                                                    ? "text-white/60"
-                                                    : "text-white/30"
-                                            }`}
-                                    >
-                                        {item.label}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <Link href="/">
-                        <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/5">
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            나가기
-                        </Button>
-                    </Link>
-                </div>
-            </header>
-
-            <section className="flex-1 relative">
-                <div className="h-full grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr]">
-
-                    <div className="bg-black/60 backdrop-blur-3xl border-r border-white/5 h-[calc(100vh-4.5rem)] flex flex-col overflow-hidden relative z-10">
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                    {/* Left: Control Panel */}
+                    <div className="bg-black/50 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-hidden relative z-10">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             <AnimatePresence mode="wait">
                                 {step === 1 ? (
-                                    loadingSample || (file && !analysis) ? (
+                                    /* Step 1: 모델 선택 */
+                                    loadingSample ? (
                                         <motion.div
-                                            key="loading"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            className="space-y-8 flex flex-col items-center justify-center min-h-[320px]"
+                                            key="loading-sample"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex flex-col items-center justify-center min-h-[320px] space-y-6"
                                         >
-                                            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-                                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                                                <Loader2 className="w-7 h-7 text-amber-400 animate-spin" />
                                             </div>
-                                            <div className="text-center space-y-2">
-                                                <h1 className="text-2xl font-bold tracking-tight">
-                                                    {loadingSample ? '샘플을 불러오는 중' : <>모델 <span className="text-primary">분석 중</span></>}
-                                                </h1>
-                                                <p className="text-white/50 text-sm break-keep">
-                                                    {loadingSample
-                                                        ? '견적 체험용 샘플 모델을 준비하고 있습니다.'
-                                                        : '부피·표면적을 계산하고 있습니다. 잠시만 기다려 주세요.'}
-                                                </p>
+                                            <div className="text-center space-y-1">
+                                                <h2 className="text-lg font-semibold text-white">샘플을 불러오는 중</h2>
+                                                <p className="text-sm text-white/50">잠시만 기다려 주세요.</p>
                                             </div>
-                                            {file && !loadingSample && (
-                                                <div className="w-full p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                                                        <FileBox className="w-5 h-5" />
-                                                    </div>
+                                        </motion.div>
+                                    ) : file && !analysis ? (
+                                        <motion.div
+                                            key="analyzing"
+                                            initial={{ opacity: 0, x: -12 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -12 }}
+                                            className="flex flex-col items-center justify-center min-h-[320px] space-y-6"
+                                        >
+                                            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center">
+                                                <Loader2 className="w-7 h-7 text-primary animate-spin" />
+                                            </div>
+                                            <div className="text-center space-y-1">
+                                                <h2 className="text-lg font-semibold text-white">모델 <span className="text-primary">분석 중</span></h2>
+                                                <p className="text-sm text-white/50">부피·표면적을 계산하고 있습니다.</p>
+                                            </div>
+                                            {file && (
+                                                <div className="w-full max-w-xs p-4 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-3">
+                                                    <Cube className="w-9 h-9 text-white/30 shrink-0" />
                                                     <div className="min-w-0">
-                                                        <div className="text-sm font-medium truncate">{file.name}</div>
-                                                        <div className="text-xs text-white/40">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
+                                                        <div className="text-sm font-medium text-white truncate">{file.name}</div>
+                                                        <div className="text-xs text-white/40">
+                                                            {file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
+                                            <button
+                                                onClick={goBackToSelect}
+                                                className="text-xs font-medium text-white/50 hover:text-white/80 transition-colors"
+                                            >
+                                                다른 모델로
+                                            </button>
                                         </motion.div>
                                     ) : loadError ? (
                                         <motion.div
                                             key="error"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            className="space-y-6 flex flex-col items-center justify-center min-h-[280px] text-center"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex flex-col items-center justify-center min-h-[280px] text-center space-y-6"
                                         >
-                                            <p className="text-white/70">{loadError}</p>
-                                            <div className="flex gap-3">
-                                                <Button onClick={loadSample} variant="outline" size="sm" className="border-white/20">
+                                            <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-400">!</div>
+                                            <div>
+                                                <p className="text-white/80 font-medium">{loadError}</p>
+                                                <p className="mt-1 text-sm text-white/40">다시 시도하거나 본격 견적을 이용해 주세요.</p>
+                                            </div>
+                                            <div className="flex flex-wrap justify-center gap-3">
+                                                <Button onClick={() => loadSample(SAMPLES[0].path)} variant="outline" size="sm" className="border-white/20 text-white/80">
                                                     다시 시도
                                                 </Button>
-                                                <Link href="/quote" onClick={() => reset()}>
-                                                    <Button size="sm">본격 견적하기</Button>
+                                                <Link href="/quote" onClick={goBackToSelect}>
+                                                    <Button size="sm" className="bg-white text-black hover:bg-white/90">본격 견적</Button>
                                                 </Link>
                                             </div>
                                         </motion.div>
                                     ) : (
-                                        <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-[200px]" />
+                                        <motion.div
+                                            key="select"
+                                            initial={{ opacity: 0, x: -12 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -12 }}
+                                            className="space-y-6"
+                                        >
+                                            <div>
+                                                <div className="flex items-center gap-2 text-amber-400/90 mb-1">
+                                                    <Sparkles className="w-4 h-4" />
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest">샘플 체험</span>
+                                                </div>
+                                                <h1 className="text-xl font-bold text-white tracking-tight">체험할 모델 선택</h1>
+                                                <p className="mt-1 text-sm text-white/50">샘플을 고르거나 직접 업로드해 견적 흐름을 체험하세요.</p>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <span className="text-xs font-medium text-white/40">샘플 모델</span>
+                                                <div className="grid gap-2">
+                                                    {SAMPLES.map((s) => (
+                                                        <button
+                                                            key={s.id}
+                                                            onClick={() => loadSample(s.path)}
+                                                            className="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 text-left transition-all group"
+                                                        >
+                                                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 group-hover:bg-amber-500/15">
+                                                                <Cube className="w-6 h-6 text-amber-400/80" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="font-semibold text-white">{s.name}</div>
+                                                                <div className="text-xs text-white/45 mt-0.5">{s.desc}</div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1 h-px bg-white/10" />
+                                                <span className="text-xs text-white/35 font-medium">또는</span>
+                                                <div className="flex-1 h-px bg-white/10" />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <span className="text-xs font-medium text-white/40">내 파일로 체험</span>
+                                                <div className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden [&>div]:border-white/20 [&>div]:bg-white/[0.03]">
+                                                    <FileUpload />
+                                                </div>
+                                            </div>
+                                        </motion.div>
                                     )
                                 ) : (
+                                    /* Step 2: 견적 설정 */
                                     <motion.div
-                                        initial={{ opacity: 0, x: 20 }}
+                                        key="step2"
+                                        initial={{ opacity: 0, x: 12 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
+                                        exit={{ opacity: 0, x: 12 }}
+                                        className="space-y-6 pb-48"
                                     >
-                                        <div className="mb-6 flex items-center justify-between">
-                                            <h2 className="text-xl font-bold">견적 세부 설정</h2>
-                                            <Link href="/quote" onClick={() => reset()}>
-                                                <button className="text-xs text-primary hover:underline">
-                                                    본격 견적하러 가기
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-lg font-bold text-white">견적 세부 설정</h2>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={goBackToSelect}
+                                                    className="text-xs font-medium text-white/50 hover:text-white/80 transition-colors"
+                                                >
+                                                    다른 모델로
                                                 </button>
-                                            </Link>
+                                                <span className="text-white/20">|</span>
+                                                <Link href="/quote" onClick={goBackToSelect} className="text-xs font-medium text-amber-400/90 hover:text-amber-400">
+                                                    본격 견적
+                                                </Link>
+                                            </div>
                                         </div>
                                         <QuotePanel />
+                                        <div className="pt-4 border-t border-white/5">
+                                            <p className="text-[11px] text-white/40 leading-relaxed">
+                                                체험용 참고 견적입니다. 정확한 견적은 <Link href="/quote" className="text-amber-400/90 hover:underline">본격 견적</Link>에서 확인하세요.
+                                            </p>
+                                            <div className="mt-4 flex gap-2">
+                                                <Link href="/" className="flex-1">
+                                                    <Button variant="outline" size="sm" className="w-full h-10 rounded-xl border-white/15 text-white/70 hover:bg-white/5 gap-1.5">
+                                                        <Home className="w-3.5 h-3.5" /> 홈
+                                                    </Button>
+                                                </Link>
+                                                <Link href="/quote" onClick={goBackToSelect} className="flex-1">
+                                                    <Button size="sm" className="w-full h-10 rounded-xl bg-amber-500/90 hover:bg-amber-500 text-black font-semibold gap-1.5">
+                                                        <Zap className="w-3.5 h-3.5" /> 본격 견적
+                                                    </Button>
+                                                </Link>
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
 
-                        <div className="p-6 border-t border-white/5 bg-black/40">
-                            <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-white/30 font-bold">
-                                <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                        <div className="p-4 border-t border-white/5 bg-black/30">
+                            <div className="flex items-center gap-2 text-[10px] font-medium text-amber-400/70 uppercase tracking-widest">
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-400/60 animate-pulse" />
                                 샘플 체험 모드
                             </div>
                         </div>
                     </div>
 
+                    {/* Right: 3D Viewer */}
                     <div className="relative flex flex-col bg-[#080808]">
-                        <div className="flex-1 relative group">
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent pointer-events-none z-10" />
+                        <div className="flex-1 relative">
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent pointer-events-none z-10" />
                             <div className="h-full w-full">
                                 <Scene />
                             </div>
 
-                            <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
-                                <div className="px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold tracking-widest uppercase text-amber-400/90">
+                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+                                <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/25 text-[10px] font-bold uppercase tracking-wider text-amber-400/95">
                                     샘플 체험
                                 </div>
-                                <div className="px-4 py-2 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-bold tracking-widest uppercase text-white/60">
-                                    3D Viewer Engine V2.0
+                                <div className="px-3 py-1.5 rounded-xl bg-black/50 backdrop-blur border border-white/10 text-[10px] font-medium text-white/50 uppercase tracking-wider">
+                                    3D Viewer
                                 </div>
                             </div>
 
                             {!file && !loadingSample && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <div className="w-32 h-32 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center animate-pulse">
-                                        <Boxes className="w-10 h-10 text-white/10" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                                    <div className="w-28 h-28 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-center">
+                                        <Cube className="w-12 h-12 text-white/10" />
                                     </div>
-                                    <p className="mt-6 text-sm text-white/20 font-medium italic">샘플을 불러오는 중…</p>
+                                    <p className="mt-5 text-sm text-white/25 font-medium">모델을 선택하거나 업로드해 주세요</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="h-16 border-t border-white/5 bg-black/40 backdrop-blur-md flex items-center px-8 relative z-20">
-                            <div className="flex items-center gap-8 text-xs font-bold tracking-widest uppercase text-white/40">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    100종+ 소재
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    24시간 내 제작
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    ±0.2mm 정밀도
-                                </div>
+                        <div className="h-14 border-t border-white/5 bg-black/40 flex items-center px-6 gap-6">
+                            <div className="flex items-center gap-2 text-[10px] font-medium text-white/40">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary/80" /> 100종+ 소재
                             </div>
-                            <div className="ml-auto text-[10px] text-white/20">
-                                WOW3D 프로페셔널 엔진
+                            <div className="flex items-center gap-2 text-[10px] font-medium text-white/40">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80" /> 24h 내 제작
                             </div>
+                            <div className="flex items-center gap-2 text-[10px] font-medium text-white/40">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" /> ±0.2mm 정밀
+                            </div>
+                            <div className="ml-auto text-[10px] text-white/25">WOW3D</div>
                         </div>
                     </div>
 
                 </div>
             </section>
         </main>
-    );
+    )
 }

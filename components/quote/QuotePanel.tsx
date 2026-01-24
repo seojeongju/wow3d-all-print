@@ -138,9 +138,11 @@ export default function QuotePanel() {
                 body: JSON.stringify(quoteData),
             })
 
-            if (!response.ok) throw new Error('견적 저장 실패')
-
-            const result = await response.json()
+            const result = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                const msg = (result && typeof result.error === 'string') ? result.error : '견적 저장 실패'
+                throw new Error(msg)
+            }
             const data = result.data as { id: number; sessionId?: string }
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             toast({ title: '✅ 견적 완료', description: '견적이 성공적으로 기록되었습니다' })
@@ -191,6 +193,7 @@ export default function QuotePanel() {
                 dimensionsY: analysis.boundingBox.y,
                 dimensionsZ: analysis.boundingBox.z,
                 printMethod,
+                ...(printMethod === 'fdm' ? { fdmMaterial: fdmMaterial.toUpperCase() } : { resinType: resinType.charAt(0).toUpperCase() + resinType.slice(1) }),
                 totalPrice,
                 estimatedTimeHours,
                 createdAt: new Date().toISOString(),

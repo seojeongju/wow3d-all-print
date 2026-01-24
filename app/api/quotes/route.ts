@@ -29,8 +29,10 @@ export async function GET(request: NextRequest) {
         let bindings: any[];
 
         if (userId) {
+            const parsed = parseInt(userId, 10);
+            if (Number.isNaN(parsed)) return errorResponse('유효하지 않은 X-User-ID', 400);
             query = 'SELECT * FROM quotes WHERE user_id = ? ORDER BY created_at DESC';
-            bindings = [parseInt(userId)];
+            bindings = [parsed];
         } else {
             query = 'SELECT * FROM quotes WHERE session_id = ? ORDER BY created_at DESC';
             bindings = [sessionId];
@@ -50,6 +52,38 @@ export async function GET(request: NextRequest) {
     }
 }
 
+// CHECK 제약용: 부동소수·허용값 보정
+const FDM_LAYER = [0.1, 0.2, 0.3] as const;
+const SLA_LAYER = [0.025, 0.05, 0.1] as const;
+const FDM_MAT = ['PLA', 'ABS', 'PETG', 'TPU'] as const;
+const RESIN = ['Standard', 'Tough', 'Clear', 'Flexible'] as const;
+
+function snapFdmLayer(v: unknown): typeof FDM_LAYER[number] | null {
+    if (v == null || v === '') return null;
+    const n = Math.round(Number(v) * 10) / 10;
+    return FDM_LAYER.includes(n as any) ? (n as typeof FDM_LAYER[number]) : null;
+}
+function snapSlaLayer(v: unknown): typeof SLA_LAYER[number] | null {
+    if (v == null || v === '') return null;
+    const n = Math.round(Number(v) * 1000) / 1000;
+    return SLA_LAYER.includes(n as any) ? (n as typeof SLA_LAYER[number]) : null;
+}
+function snapFdmMaterial(v: unknown): string | null {
+    if (v == null || v === '') return null;
+    const s = String(v).toUpperCase();
+    return FDM_MAT.includes(s as any) ? s : null;
+}
+function snapResinType(v: unknown): string | null {
+    if (v == null || v === '') return null;
+    const s = String(v);
+    return RESIN.includes(s as any) ? s : null;
+}
+function clampFdmInfill(v: unknown): number | null {
+    if (v == null || v === '') return null;
+    const n = Math.round(Number(v));
+    return n >= 10 && n <= 100 ? n : null;
+}
+
 /**
  * POST /api/quotes - 견적 저장
  */
@@ -65,7 +99,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json() as QuoteData;
 
         // 필수 필드 검증
-        if (!body.fileName || !body.volumeCm3 || !body.printMethod || !body.totalPrice) {
+        if (!body.fileName || body.volumeCm3 == null || !body.printMethod || body.totalPrice == null) {
             return errorResponse('필수 필드가 누락되었습니다', 400);
         }
 
@@ -77,6 +111,24 @@ export async function POST(request: NextRequest) {
         if (!sessionId && !userId) {
             sessionId = generateSessionId();
         }
+
+        // userId: NaN이면 null
+        const uid = userId ? (() => { const p = parseInt(userId, 10); return Number.isNaN(p) ? null : p; })() : null;
+
+        // NOT NULL 및 CHECK 대응: 숫자/정수/허용값 보정
+        const fileSize = Math.floor(Number(body.fileSize) || 0);
+        const volumeCm3 = Number(body.volumeCm3) || 0;
+        const surfaceAreaCm2 = Number(body.surfaceAreaCm2) || 0;
+        const dimensionsX = Number(body.dimensionsX) || 0;
+        const dimensionsY = Number(body.dimensionsY) || 0;
+        const dimensionsZ = Number(body.dimensionsZ) || 0;
+        const totalPrice = Number(body.totalPrice) || 0;
+        const estimatedTimeHours = Number(body.estimatedTimeHours) || 0;
+        const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
+        const layerThickness = snapSlaLayer(body.layerThickness);
+        const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
+        const resinType = snapResinType(body.resinType);
+        const fdmInfill = clampFdmInfill(body.fdmInfill);
 
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
@@ -91,34 +143,37 @@ export async function POST(request: NextRequest) {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-            const result = await env.DB.prepare(query)
+            const runResult = await env.DB.prepare(query)
                 .bind(
-                    userId ? parseInt(userId) : null,
-                    sessionId,
+                    uid,
+                    sessionId ?? null,
                     body.fileName,
-                    body.fileSize,
+                    fileSize,
                     body.fileUrl || null,
-                    body.volumeCm3,
-                    body.surfaceAreaCm2,
-                    body.dimensionsX,
-                    body.dimensionsY,
-                    body.dimensionsZ,
+                    volumeCm3,
+                    surfaceAreaCm2,
+                    dimensionsX,
+                    dimensionsY,
+                    dimensionsZ,
                     body.printMethod,
-                    body.fdmMaterial || null,
-                    body.fdmInfill || null,
-                    body.fdmLayerHeight || null,
+                    fdmMaterial,
+                    fdmInfill,
+                    fdmLayerHeight,
                     body.fdmSupport ? 1 : 0,
-                    body.resinType || null,
-                    body.layerThickness || null,
+                    resinType,
+                    layerThickness,
                     body.postProcessing ? 1 : 0,
-                    body.totalPrice,
-                    body.estimatedTimeHours
+                    totalPrice,
+                    estimatedTimeHours
                 )
                 .run();
 
+            const r = runResult as { success?: boolean; error?: string; meta?: { last_row_id?: number } };
+            if (r && r.success === false && r.error) throw new Error(r.error);
+
             return successResponse(
                 {
-                    id: result.meta.last_row_id,
+                    id: (runResult?.meta as { last_row_id?: number })?.last_row_id ?? 0,
                     sessionId: sessionId || undefined
                 },
                 '견적이 저장되었습니다'
@@ -134,7 +189,8 @@ export async function POST(request: NextRequest) {
             '견적이 저장되었습니다 (개발 모드)'
         );
     } catch (error: any) {
-        console.error('POST /api/quotes error:', error);
-        return errorResponse(error.message || '견적 저장 실패', 500);
+        const msg = error?.message || (error?.cause?.message) || '견적 저장 실패';
+        console.error('POST /api/quotes error:', msg, error?.cause ?? error);
+        return errorResponse(msg, 500);
     }
 }
