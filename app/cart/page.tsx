@@ -4,7 +4,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Cube, ShieldCheck } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
@@ -123,7 +123,7 @@ export default function CartPage() {
                                     <div className="flex flex-col sm:flex-row gap-6">
                                         {/* Preview */}
                                         <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0">
-                                            <Cube className="w-10 h-10 text-white/20" />
+                                            <Box className="w-10 h-10 text-white/20" />
                                         </div>
 
                                         {/* Item Info */}

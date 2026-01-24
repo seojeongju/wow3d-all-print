@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import QuotePanel from "@/components/quote/QuotePanel"
 import FileUpload from "@/components/upload/FileUpload"
 import Link from "next/link"
-import { Cube, Home, Loader2, Sparkles, Zap } from "lucide-react"
+import { Box, Home, Loader2, Sparkles, Zap } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useCallback } from "react"
 import { useFileStore } from "@/store/useFileStore"
@@ -100,7 +100,7 @@ export default function ExperiencePage() {
                                             </div>
                                             {file && (
                                                 <div className="w-full max-w-xs p-4 rounded-xl bg-white/[0.04] border border-white/10 flex items-center gap-3">
-                                                    <Cube className="w-9 h-9 text-white/30 shrink-0" />
+                                                    <Box className="w-9 h-9 text-white/30 shrink-0" />
                                                     <div className="min-w-0">
                                                         <div className="text-sm font-medium text-white truncate">{file.name}</div>
                                                         <div className="text-xs text-white/40">
@@ -165,7 +165,7 @@ export default function ExperiencePage() {
                                                             className="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 text-left transition-all group"
                                                         >
                                                             <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 group-hover:bg-amber-500/15">
-                                                                <Cube className="w-6 h-6 text-amber-400/80" />
+                                                                <Box className="w-6 h-6 text-amber-400/80" />
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <div className="font-semibold text-white">{s.name}</div>
@@ -265,7 +265,7 @@ export default function ExperiencePage() {
                             {!file && !loadingSample && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
                                     <div className="w-28 h-28 rounded-2xl border border-white/10 bg-white/[0.02] flex items-center justify-center">
-                                        <Cube className="w-12 h-12 text-white/10" />
+                                        <Box className="w-12 h-12 text-white/10" />
                                     </div>
                                     <p className="mt-5 text-sm text-white/25 font-medium">모델을 선택하거나 업로드해 주세요</p>
                                 </div>
