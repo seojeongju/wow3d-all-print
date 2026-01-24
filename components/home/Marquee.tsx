@@ -10,7 +10,7 @@ const items = [
 
 export default function Marquee() {
     return (
-        <div id="services" className="py-8 bg-foreground/5 border-y border-border overflow-hidden flex select-none">
+        <div className="py-8 bg-foreground/5 border-y border-border overflow-hidden flex select-none">
             <motion.div
                 animate={{ x: [0, -1000] }}
                 transition={{ repeat: Infinity, duration: 40, ease: "linear" }}

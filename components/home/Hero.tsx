@@ -169,7 +169,7 @@ export default function Hero() {
                                 {isLoadingSample ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
-                                    '샘플로 체험'
+                                    '샘플 견적 체험'
                                 )}
                             </Button>
                         </div>
