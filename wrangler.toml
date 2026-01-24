@@ -1,6 +1,7 @@
 name = "wow3d-all-print"
 compatibility_date = "2024-01-01"
-
+# @cloudflare/next-on-pages 필수: Node.js API 호환 (Buffer, process 등)
+compatibility_flags = ["nodejs_compat"]
 
 # D1 Database Configuration
 [[d1_databases]]

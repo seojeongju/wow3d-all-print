@@ -95,6 +95,28 @@ npx wrangler pages deployment tail
 
 ## 트러블슈팅
 
+### Node.JS Compatibility Error (`no nodejs_compat compatibility flag set`)
+
+**증상**: 사이트 접속 시 "Node.JS Compatibility Error" / "no nodejs_compat compatibility flag set" 메시지가 표시됨.
+
+**원인**: `@cloudflare/next-on-pages`로 빌드된 Next.js 앱이 Node.js API(Buffer, `process` 등)를 사용하는데, Cloudflare Workers/Pages에 `nodejs_compat` 플래그가 없을 때 발생합니다.
+
+**해결 방법** (둘 중 하나 또는 둘 다 적용):
+
+1. **wrangler.toml (권장)**  
+   프로젝트 `wrangler.toml`에 이미 다음이 포함되어 있어야 합니다:
+   ```toml
+   compatibility_flags = ["nodejs_compat"]
+   ```
+   포함되어 있다면, 변경 사항을 커밋한 뒤 **다시 배포**해 주세요 (예: `git push` 후 자동 배포).
+
+2. **Cloudflare 대시보드에서 수동 설정**  
+   `wrangler.toml`이 빌드에 반영되지 않는 경우 (예: Git 연동만 사용 중):
+   - [Cloudflare 대시보드](https://dash.cloudflare.com) → **Workers & Pages** → 해당 **Pages 프로젝트** 선택
+   - **Settings** → **Functions** → **Compatibility flags**
+   - **Production**과 **Preview** 환경 모두에 `nodejs_compat` 추가 후 **Save**
+   - **Retry deployment** 또는 새 배포를 한 번 더 실행
+
 ### Next.js와 Cloudflare Pages 호환성
 - Edge Runtime을 사용하는 API Routes는 `export const runtime = 'edge'` 추가
 - Node.js 런타임이 필요한 경우 Cloudflare Workers 사용 권장
