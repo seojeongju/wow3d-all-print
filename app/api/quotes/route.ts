@@ -12,7 +12,16 @@ export const runtime = 'edge';
  */
 export async function GET(request: NextRequest) {
     try {
-        const { env } = getRequestContext() as any;
+        let env: any;
+        try {
+            const ctx = getRequestContext();
+            if (ctx && (ctx as any).env) {
+                env = (ctx as any).env;
+            }
+        } catch (e) { }
+        if (!env) {
+            env = process.env;
+        }
 
         // 세션 ID 또는 사용자 ID로 필터링
         const sessionId = request.headers.get('X-Session-ID');

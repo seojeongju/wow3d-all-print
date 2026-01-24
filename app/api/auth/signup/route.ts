@@ -10,7 +10,16 @@ export const runtime = 'edge';
  */
 export async function POST(request: NextRequest) {
     try {
-        const { env } = getRequestContext() as any;
+        let env: any;
+        try {
+            const ctx = getRequestContext();
+            if (ctx && (ctx as any).env) {
+                env = (ctx as any).env;
+            }
+        } catch (e) { }
+        if (!env) {
+            env = process.env;
+        }
         const body = await request.json();
 
         // 필수 필드 검증
