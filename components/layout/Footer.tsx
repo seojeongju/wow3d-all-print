@@ -1,103 +1,112 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
-import { MapPin, Phone, Mail } from 'lucide-react'
+import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Github, Twitter, Instagram, ChevronDown } from 'lucide-react'
 
 export default function Footer() {
     return (
-        <footer className="border-t border-border/40 bg-muted/20">
-            <div className="container mx-auto px-4 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    {/* 회사 소개 */}
-                    <div>
-                        <Link href="/" className="inline-block mb-4 hover:opacity-80 transition-opacity">
-                            <Image
-                                src="/images/wow3d-logo.png"
-                                alt="Wow3D Logo"
-                                width={140}
-                                height={36}
-                                className="h-9 w-auto"
-                            />
+        <footer className="bg-[#030303] border-t border-white/5 pt-24 pb-12 relative overflow-hidden">
+            {/* Ambient Background Blur */}
+            <div className="absolute bottom-0 left-1/4 w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
+            <div className="container mx-auto px-6 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+
+                    {/* Brand Section */}
+                    <div className="lg:col-span-4 space-y-8">
+                        <Link href="/" className="flex items-center gap-2.5 group transition-all">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all">
+                                <Boxes className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-black text-xl tracking-tighter text-white leading-none">
+                                    WOW3D<span className="text-primary font-light ml-0.5">PRO</span>
+                                </span>
+                                <span className="text-[8px] uppercase font-bold tracking-[0.3em] text-white/30 leading-none mt-1">
+                                    Industrial 3D System
+                                </span>
+                            </div>
                         </Link>
-                        <p className="text-sm text-muted-foreground">
-                            3D 프린팅 전문 업체
-                            <br />
-                            빠르고 정확한 견적과
-                            <br />
-                            최고 품질의 출력 서비스
+
+                        <p className="text-sm text-white/40 leading-relaxed font-medium max-w-sm">
+                            와우3D는 산업용 적층 제조 솔루션의 선두주자입니다.
+                            초정밀 분석 엔진과 전국의 제작 센터를 통해 아이디어를 가장 빠르고 완벽하게 현실로 구현합니다.
                         </p>
+
+                        <div className="flex items-center gap-4">
+                            {[Github, Twitter, Instagram].map((Icon, i) => (
+                                <button key={i} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 transition-all">
+                                    <Icon className="w-4 h-4" />
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* 센터 정보 */}
-                    <div className="md:col-span-2">
-                        <h3 className="font-semibold mb-4">센터 안내</h3>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-start gap-2">
-                                <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <div className="font-medium">홍대센터</div>
-                                    <div className="text-muted-foreground">서울시 마포구 독막로 93 상수빌딩 4층</div>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <div className="font-medium">구미센터</div>
-                                    <div className="text-muted-foreground">경북 구미시 산호대로 253 구미첨단의료기술타워 606호</div>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <div className="font-medium">전주센터</div>
-                                    <div className="text-muted-foreground">전북특별자치도 전주시 덕진구 반룡로 109 테크노빌A동 207호</div>
-                                </div>
+                    {/* Navigation - Center Links */}
+                    <div className="lg:col-span-5 grid grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <h3 className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Location Centers</h3>
+                            <ul className="space-y-4">
+                                {[
+                                    { name: '홍대센터', address: '서울시 마포구 독막로 93 상수빌딩 4층' },
+                                    { name: '구미센터', address: '경북 구미시 산호대로 253' },
+                                    { name: '전주센터', address: '전북 전주시 덕진구 반룡로 109' },
+                                ].map((item) => (
+                                    <li key={item.name} className="group cursor-pointer">
+                                        <div className="text-[11px] font-black text-white/60 group-hover:text-white transition-colors flex items-center gap-1.5">
+                                            {item.name}
+                                            <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 -translate-y-1 group-hover:translate-y-0 transition-all" />
+                                        </div>
+                                        <p className="text-[10px] text-white/20 mt-1 font-medium">{item.address}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="space-y-6">
+                            <h3 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">Support Hub</h3>
+                            <ul className="space-y-4">
+                                <li>
+                                    <div className="text-[11px] font-black text-white/60 uppercase tracking-widest mb-1.5">Contact Line</div>
+                                    <p className="text-[10px] text-white/30 font-bold">02-3144-3137</p>
+                                    <p className="text-[10px] text-white/30 font-bold">054-464-3144</p>
+                                </li>
+                                <li>
+                                    <div className="text-[11px] font-black text-white/60 uppercase tracking-widest mb-1.5">Email Support</div>
+                                    <a href="mailto:wow3d16@naver.com" className="text-[10px] text-primary font-bold hover:underline">wow3d16@naver.com</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Newsletter / CTA */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 ring-1 ring-white/5">
+                            <h3 className="text-xs font-black uppercase tracking-widest mb-4">Newsletter</h3>
+                            <p className="text-[10px] text-white/30 font-medium mb-4 italic">Get private invitations to our additive manufacturing workshops.</p>
+                            <div className="flex gap-2">
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    className="flex-1 h-10 bg-black border border-white/10 rounded-xl px-3 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                                />
+                                <button className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-black hover:bg-white/90 transition-all">
+                                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* 연락처 */}
-                    <div>
-                        <h3 className="font-semibold mb-4">문의하기</h3>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4 text-primary flex-shrink-0" />
-                                <div>
-                                    <div>02-3144-3137</div>
-                                    <div>054-464-3144</div>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <Mail className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                                <div className="break-all">
-                                    <a href="mailto:3dcookidhd@naver.com" className="hover:text-primary transition-colors">
-                                        3dcookidhd@naver.com
-                                    </a>
-                                    <br />
-                                    <a href="mailto:wow3d16@naver.com" className="hover:text-primary transition-colors">
-                                        wow3d16@naver.com
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                {/* 구분선 */}
-                <div className="border-t border-border/40 mt-8 pt-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-                        <div>
-                            © {new Date().getFullYear()} Wow3D. All rights reserved.
-                        </div>
-                        <div className="flex gap-6">
-                            <Link href="/terms" className="hover:text-foreground transition-colors">
-                                이용약관
-                            </Link>
-                            <Link href="/privacy" className="hover:text-foreground transition-colors">
-                                개인정보처리방침
-                            </Link>
-                        </div>
+                {/* Bottom Bar */}
+                <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
+                        © {new Date().getFullYear()} WOW3D PRO INDUSTRIAL SYSTEMS. ALL RIGHTS RESERVED.
+                    </div>
+                    <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-white/40">
+                        <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                        <Link href="/privacy" className="hover:text-white transition-colors">Privacy Cloud</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors">Material Safety</Link>
                     </div>
                 </div>
             </div>

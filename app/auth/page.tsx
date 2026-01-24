@@ -2,23 +2,22 @@
 
 import { useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Mail, Lock, User, Phone } from 'lucide-react'
+import { Loader2, Mail, Lock, User, Phone, Boxes, ArrowRight, ShieldCheck } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 
-export default function AuthModal() {
+export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const { setUser } = useAuthStore()
     const { toast } = useToast()
     const router = useRouter()
 
-    // Form states
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
@@ -44,15 +43,15 @@ export default function AuthModal() {
             setUser(result.data.user, result.data.token)
 
             toast({
-                title: '✅ 로그인 성공',
-                description: `환영합니다, ${result.data.user.name}님!`,
+                title: '✅ Access Granted',
+                description: `Welcome back, ${result.data.user.name}.`,
             })
 
             router.push('/cart')
         } catch (error) {
             toast({
-                title: '❌ 로그인 실패',
-                description: error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다',
+                title: '❌ Access Denied',
+                description: error instanceof Error ? error.message : 'Invalid credentials provided.',
                 variant: 'destructive',
             })
         } finally {
@@ -80,15 +79,15 @@ export default function AuthModal() {
             setUser(result.data.user, result.data.token)
 
             toast({
-                title: '✅ 회원가입 성공',
-                description: `환영합니다, ${result.data.user.name}님!`,
+                title: '✅ Registration Complete',
+                description: `Your account has been successfully created.`,
             })
 
             router.push('/cart')
         } catch (error) {
             toast({
-                title: '❌ 회원가입 실패',
-                description: error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다',
+                title: '❌ Registration Failed',
+                description: error instanceof Error ? error.message : 'Please check your inputs.',
                 variant: 'destructive',
             })
         } finally {
@@ -97,144 +96,160 @@ export default function AuthModal() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>{isLogin ? '로그인' : '회원가입'}</CardTitle>
-                    <CardDescription>
-                        {isLogin
-                            ? 'Wow3D 계정으로 로그인하세요'
-                            : '새로운 계정을 만들어보세요'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-4">
-                        {/* Email */}
-                        <div className="space-y-2">
-                            <Label htmlFor="email">이메일</Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30 flex relative overflow-hidden">
+            {/* Split Screen Logic */}
+            <div className="hidden lg:flex w-1/2 bg-[#080808] border-r border-white/5 relative items-center justify-center p-12">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+                <div className="max-w-md space-y-8 relative z-10 text-center">
+                    <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
+                        <Boxes className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="space-y-4">
+                        <h2 className="text-5xl font-black uppercase tracking-tighter leading-none italic">
+                            Elevate your <br /> <span className="text-primary">Manufacturing</span>
+                        </h2>
+                        <p className="text-white/30 text-xs font-bold uppercase tracking-[0.3em] leading-relaxed">
+                            Join the professional network of advanced additive manufacturing.
+                        </p>
+                    </div>
+
+                    <div className="pt-12 grid grid-cols-2 gap-4">
+                        <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 text-left">
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest block mb-2">Efficiency</span>
+                            <p className="text-[11px] font-bold text-white/60 leading-relaxed">Instant quotes in seconds from your 3D geometry.</p>
+                        </div>
+                        <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 text-left">
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest block mb-2">Quality</span>
+                            <p className="text-[11px] font-bold text-white/60 leading-relaxed">Industrial material specs and refined finishes.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Form Section */}
+            <div className="flex-1 flex items-center justify-center p-6 md:p-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-sm space-y-10"
+                >
+                    <div className="space-y-2">
+                        <h1 className="text-4xl font-black uppercase tracking-tighter italic">
+                            {isLogin ? 'Sign In' : 'Join Pro'}
+                        </h1>
+                        <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em]">
+                            {isLogin ? 'Access your industrial dashboard' : 'Create your pro manufacturing account'}
+                        </p>
+                    </div>
+
+                    <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-6">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="email" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Email Address</Label>
+                            <div className="relative group">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="example@email.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-9"
+                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-12 focus:ring-primary font-bold placeholder:text-white/10"
+                                    placeholder="name@company.com"
                                     required
                                 />
                             </div>
                         </div>
 
-                        {/* Name (Signup only) */}
                         {!isLogin && (
-                            <div className="space-y-2">
-                                <Label htmlFor="name">이름</Label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="name"
-                                        type="text"
-                                        placeholder="홍길동"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="pl-9"
-                                        required
-                                    />
-                                </div>
-                            </div>
+                            <AnimatePresence>
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="space-y-6"
+                                >
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="name" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Full Name</Label>
+                                        <div className="relative group">
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
+                                            <Input
+                                                id="name"
+                                                type="text"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-12 font-bold"
+                                                placeholder="John Doe"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="phone" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Phone (Optional)</Label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
+                                            <Input
+                                                id="phone"
+                                                type="tel"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-12 font-bold"
+                                                placeholder="010-0000-0000"
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
                         )}
 
-                        {/* Phone (Signup only) */}
-                        {!isLogin && (
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">전화번호 (선택)</Label>
-                                <div className="relative">
-                                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="phone"
-                                        type="tel"
-                                        placeholder="010-1234-5678"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="pl-9"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Password */}
-                        <div className="space-y-2">
-                            <Label htmlFor="password">비밀번호</Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <div className="space-y-1.5">
+                            <Label htmlFor="password" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Secret Password</Label>
+                            <div className="relative group">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="최소 8자 이상"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-9"
+                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-12 font-bold"
+                                    placeholder="••••••••"
                                     required
-                                    minLength={8}
-                                    autoComplete="current-password"
                                 />
                             </div>
-                            {!isLogin && (
-                                <p className="text-xs text-muted-foreground">
-                                    비밀번호는 최소 8자 이상이어야 합니다
-                                </p>
-                            )}
                         </div>
 
-                        {/* Submit Button */}
                         <Button
                             type="submit"
-                            className="w-full"
-                            size="lg"
+                            className="w-full h-16 rounded-2xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 font-black uppercase tracking-[0.2em] group active:scale-95 transition-all"
                             disabled={isLoading}
                         >
                             {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    처리중...
-                                </>
+                                <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
-                                isLogin ? '로그인' : '회원가입'
+                                <div className="flex items-center gap-2">
+                                    {isLogin ? 'Authenticate' : 'Create Account'}
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </div>
                             )}
                         </Button>
                     </form>
 
-                    <Separator className="my-6" />
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+                            {isLogin ? "No access yet?" : "Already part of the network?"}
+                            <button
+                                type="button"
+                                onClick={() => setIsLogin(!isLogin)}
+                                className="text-primary hover:underline ml-2"
+                            >
+                                {isLogin ? 'Join Wow3D Pro' : 'Login Now'}
+                            </button>
+                        </div>
 
-                    {/* Toggle */}
-                    <div className="text-center text-sm">
-                        {isLogin ? (
-                            <p className="text-muted-foreground">
-                                계정이 없으신가요?{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLogin(false)}
-                                    className="text-primary hover:underline font-medium"
-                                >
-                                    회원가입
-                                </button>
-                            </p>
-                        ) : (
-                            <p className="text-muted-foreground">
-                                이미 계정이 있으신가요?{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsLogin(true)}
-                                    className="text-primary hover:underline font-medium"
-                                >
-                                    로그인
-                                </button>
-                            </p>
-                        )}
+                        <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] text-white/10 uppercase">
+                            <ShieldCheck className="w-3 h-3 text-emerald-500/30" />
+                            Biometric Encrypted Connection
+                        </div>
                     </div>
-                </CardContent>
-            </Card>
+                </motion.div>
+            </div>
         </div>
     )
 }

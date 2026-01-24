@@ -2,13 +2,13 @@
 
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Package, Clock, Box, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function CartPage() {
     const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore()
@@ -24,8 +24,8 @@ export default function CartPage() {
     const handleRemoveItem = (itemId: number) => {
         removeFromCart(itemId)
         toast({
-            title: '✅ 삭제 완료',
-            description: '항목이 장바구니에서 삭제되었습니다',
+            title: '✅ 항목 삭제됨',
+            description: '장바구니에서 안전하게 제거되었습니다',
         })
     }
 
@@ -35,223 +35,255 @@ export default function CartPage() {
             clearCart()
             setIsClearing(false)
             toast({
-                title: '✅ 장바구니 비우기 완료',
-                description: '모든 항목이 삭제되었습니다',
+                title: '✅ 장바구니 비움',
+                description: '모든 항목이 초기화되었습니다',
             })
         }, 300)
     }
 
     if (items.length === 0) {
         return (
-            <div className="min-h-screen bg-background">
-                <div className="container mx-auto px-4 py-16">
-                    <div className="max-w-3xl mx-auto">
-                        <h1 className="text-3xl font-bold mb-8">장바구니</h1>
-
-                        <Card>
-                            <CardContent className="py-16">
-                                <div className="flex flex-col items-center justify-center text-center space-y-4">
-                                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-                                        <ShoppingCart className="w-10 h-10 text-muted-foreground" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-xl font-semibold mb-2">장바구니가 비어있습니다</h2>
-                                        <p className="text-muted-foreground">
-                                            견적을 받고 원하는 옵션으로 장바구니에 담아보세요
-                                        </p>
-                                    </div>
-                                    <Link href="/quote">
-                                        <Button size="lg" className="gap-2">
-                                            견적 받으러 가기
-                                            <ArrowRight className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </CardContent>
-                        </Card>
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
+                <div className="max-w-md w-full text-center space-y-8">
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="w-24 h-24 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center mx-auto"
+                    >
+                        <ShoppingCart className="w-10 h-10 text-white/20" />
+                    </motion.div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-white">장바구니가 비어있습니다</h2>
+                        <p className="text-white/40 text-sm">
+                            아직 장바구니에 담긴 3D 모델이 없습니다. <br />
+                            지금 바로 견적을 내고 최상의 출력을 경험하세요.
+                        </p>
                     </div>
+                    <Link href="/quote" className="inline-block w-full text-white">
+                        <Button size="lg" className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 gap-2 font-black uppercase tracking-widest transition-all active:scale-95">
+                            견적 시작하기
+                            <ArrowRight className="w-4 h-4" />
+                        </Button>
+                    </Link>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-8">
-                <div className="max-w-6xl mx-auto">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h1 className="text-3xl font-bold">장바구니</h1>
-                            <p className="text-muted-foreground mt-1">
-                                {getTotalItems()}개의 항목
-                            </p>
-                        </div>
-                        <Button
-                            variant="outline"
-                            onClick={handleClearCart}
-                            disabled={isClearing}
-                        >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            전체 비우기
-                        </Button>
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
+            {/* Header Area */}
+            <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
+                <div className="container mx-auto px-6 h-24 flex items-center justify-between">
+                    <div className="flex flex-col">
+                        <h1 className="text-2xl font-black uppercase tracking-tighter">Shopping Bag</h1>
+                        <p className="text-[10px] uppercase font-bold text-white/30 tracking-[0.2em]">
+                            {getTotalItems()} Items in your cart
+                        </p>
                     </div>
+                    <Button
+                        variant="ghost"
+                        onClick={handleClearCart}
+                        disabled={isClearing}
+                        className="text-white/40 hover:text-white hover:bg-white/10 rounded-xl px-4 text-xs font-bold uppercase tracking-widest"
+                    >
+                        <Trash2 className="w-3.5 h-3.5 mr-2" />
+                        Clear All
+                    </Button>
+                </div>
+            </div>
 
-                    <div className="grid lg:grid-cols-3 gap-6">
-                        {/* Cart Items */}
-                        <div className="lg:col-span-2 space-y-4">
+            <div className="container mx-auto px-6 py-12">
+                <div className="grid lg:grid-cols-[1fr_380px] gap-12 max-w-7xl mx-auto">
+
+                    {/* Items List */}
+                    <div className="space-y-6">
+                        <AnimatePresence mode="popLayout">
                             {items.map((item) => (
-                                <Card key={item.id}>
-                                    <CardContent className="p-6">
-                                        <div className="flex gap-4">
-                                            {/* Item Info */}
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg mb-2">
-                                                    {item.quote?.fileName || '3D 모델'}
-                                                </h3>
+                                <motion.div
+                                    key={item.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, x: -50 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 ring-1 ring-white/5 hover:bg-white/[0.05] transition-all group relative overflow-hidden"
+                                >
+                                    <div className="flex flex-col md:flex-row gap-8">
+                                        {/* Preview Placeholder / Icon */}
+                                        <div className="w-full md:w-32 h-32 rounded-2xl bg-black border border-white/10 flex items-center justify-center overflow-hidden">
+                                            <div className="relative">
+                                                <Box className="w-12 h-12 text-white/10" />
+                                                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+                                            </div>
+                                        </div>
 
-                                                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-4">
-                                                    <div>
-                                                        출력 방식: <span className="text-foreground font-medium">
-                                                            {item.quote?.printMethod.toUpperCase()}
-                                                        </span>
+                                        {/* Item Info */}
+                                        <div className="flex-1 flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
+                                                        {item.quote?.fileName || '3D Model Configuration'}
+                                                    </h3>
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        className="p-2 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span>Method</span>
+                                                        <span className="text-white text-xs">{item.quote?.printMethod.toUpperCase()}</span>
                                                     </div>
-                                                    <div>
-                                                        재료: <span className="text-foreground font-medium">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span>Material</span>
+                                                        <span className="text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis">
                                                             {item.quote?.fdmMaterial || item.quote?.resinType || '-'}
                                                         </span>
                                                     </div>
-                                                    <div>
-                                                        부피: <span className="text-foreground font-medium">
-                                                            {item.quote?.volumeCm3.toFixed(2)} cm³
-                                                        </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span>Volume</span>
+                                                        <span className="text-white text-xs">{item.quote?.volumeCm3.toFixed(1)} cm³</span>
                                                     </div>
-                                                    <div>
-                                                        예상 시간: <span className="text-foreground font-medium">
-                                                            ~{item.quote?.estimatedTimeHours.toFixed(1)}h
-                                                        </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span>Lead Time</span>
+                                                        <span className="text-emerald-400 text-xs text-nowrap">~{Math.ceil((item.quote?.estimatedTimeHours || 0) + 24)}h</span>
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                {/* Quantity Controls */}
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                                            disabled={item.quantity <= 1}
-                                                        >
-                                                            <Minus className="w-3 h-3" />
-                                                        </Button>
-                                                        <span className="w-12 text-center font-medium">
-                                                            {item.quantity}
-                                                        </span>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                                        >
-                                                            <Plus className="w-3 h-3" />
-                                                        </Button>
-                                                    </div>
-
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => handleRemoveItem(item.id)}
-                                                        className="text-destructive hover:text-destructive"
+                                            <div className="mt-8 flex items-center justify-between">
+                                                {/* Qty Controls */}
+                                                <div className="flex items-center gap-1 bg-black p-1 rounded-xl border border-white/10">
+                                                    <button
+                                                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                                                        disabled={item.quantity <= 1}
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-all"
                                                     >
-                                                        <Trash2 className="w-4 h-4 mr-2" />
-                                                        삭제
-                                                    </Button>
+                                                        <Minus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <span className="w-8 text-center font-mono text-sm font-bold">
+                                                        {item.quantity}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <span className="text-xs text-white/30 block mb-0.5">Subtotal</span>
+                                                    <span className="text-xl font-black">
+                                                        ₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}
+                                                    </span>
                                                 </div>
                                             </div>
-
-                                            {/* Price */}
-                                            <div className="text-right">
-                                                <div className="text-sm text-muted-foreground mb-1">단가</div>
-                                                <div className="text-lg font-semibold">
-                                                    ${item.quote?.totalPrice.toFixed(2)}
-                                                </div>
-                                                <Separator className="my-2" />
-                                                <div className="text-sm text-muted-foreground mb-1">소계</div>
-                                                <div className="text-xl font-bold text-primary">
-                                                    ${((item.quote?.totalPrice || 0) * item.quantity).toFixed(2)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-
-                        {/* Order Summary */}
-                        <div className="lg:col-span-1">
-                            <Card className="sticky top-4">
-                                <CardHeader>
-                                    <CardTitle>주문 요약</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">상품 금액</span>
-                                            <span>${getTotalPrice().toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">배송비</span>
-                                            <span>$0.00</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between text-lg font-bold">
-                                            <span>총 금액</span>
-                                            <span className="text-primary">${getTotalPrice().toFixed(2)}</span>
                                         </div>
                                     </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
 
-                                    <div className="space-y-2">
-                                        {isAuthenticated ? (
-                                            <Link href="/checkout">
-                                                <Button size="lg" className="w-full gap-2">
-                                                    주문하기
-                                                    <ArrowRight className="w-4 h-4" />
-                                                </Button>
-                                            </Link>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <p className="text-sm text-muted-foreground text-center">
-                                                    주문하려면 로그인이 필요합니다
-                                                </p>
-                                                <Link href="/auth">
-                                                    <Button size="lg" className="w-full">
-                                                        로그인
-                                                    </Button>
-                                                </Link>
+                    {/* Summary Sidebar */}
+                    <div className="relative">
+                        <div className="sticky top-12 p-8 rounded-[40px] bg-white/[0.03] border border-white/10 ring-1 ring-white/5 space-y-8 overflow-hidden">
+                            {/* Decorative Background for Summary */}
+                            <div className="absolute top-[-20%] right-[-20%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[80px]" />
+
+                            <div className="relative">
+                                <h2 className="text-xl font-black uppercase tracking-wide mb-6">Summary</h2>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Total items</span>
+                                        <span className="font-bold">{getTotalItems()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Shipping</span>
+                                        <span className="text-emerald-400 font-bold uppercase text-[10px]">Custom calc</span>
+                                    </div>
+                                    <Separator className="bg-white/5 my-6" />
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-white/40 font-black uppercase tracking-widest text-xs">Total Amount</span>
+                                        <div className="text-right">
+                                            <div className="text-sm text-white/30 font-medium line-through decoration-white/20">
+                                                ₩{(Math.round(getTotalPrice() * 1.1) * 1300).toLocaleString()}
                                             </div>
-                                        )}
+                                            <div className="text-3xl font-black text-primary">
+                                                ₩{(Math.round(getTotalPrice()) * 1300).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                        <Link href="/quote">
-                                            <Button size="lg" variant="outline" className="w-full">
-                                                쇼핑 계속하기
+                                <div className="pt-10 space-y-3 relative z-10">
+                                    {isAuthenticated ? (
+                                        <Link href="/checkout">
+                                            <Button size="lg" className="w-full h-16 rounded-2xl bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group">
+                                                Checkout Now
+                                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                             </Button>
                                         </Link>
-                                    </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] text-white/30 font-bold uppercase text-center tracking-widest px-4">
+                                                Please authenticate to proceed with your order
+                                            </p>
+                                            <Link href="/auth">
+                                                <Button size="lg" className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 font-black uppercase tracking-widest transition-all">
+                                                    Sign In
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    )}
 
-                                    <div className="pt-4 border-t">
-                                        <p className="text-xs text-muted-foreground">
-                                            • 견적 가격은 참고용이며 실제 금액은 다를 수 있습니다<br />
-                                            • 배송비는 주문 확정 시 계산됩니다<br />
-                                            • 전체 제작 시간: 약 {items.reduce((total, item) =>
-                                                total + (item.quote?.estimatedTimeHours || 0) * item.quantity, 0
-                                            ).toFixed(1)}시간
-                                        </p>
+                                    <Link href="/quote">
+                                        <Button variant="ghost" size="lg" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white/60 text-xs font-bold uppercase tracking-widest">
+                                            Continue Browsing
+                                        </Button>
+                                    </Link>
+                                </div>
+
+                                <div className="pt-10 text-[10px] text-white/20 font-bold uppercase tracking-widest leading-relaxed">
+                                    <div className="flex items-center gap-2 mb-2 text-white/40">
+                                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
+                                        Secure Ordering Guaranteed
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    • Estimates are based on current material rates<br />
+                                    • Final shipping cost calculated after review
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
+    )
+}
+
+function ShieldCheck(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+            <path d="m9 12 2 2 4-4" />
+        </svg>
     )
 }

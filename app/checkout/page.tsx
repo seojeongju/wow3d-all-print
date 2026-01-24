@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Loader2, Package, CreditCard } from 'lucide-react'
+import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { motion } from 'framer-motion'
 
 export default function CheckoutPage() {
     const router = useRouter()
@@ -30,19 +30,9 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (!isAuthenticated) {
-            toast({
-                title: '⚠️ 로그인 필요',
-                description: '주문하려면 로그인이 필요합니다',
-                variant: 'destructive',
-            })
             router.push('/auth')
         }
-
         if (items.length === 0) {
-            toast({
-                title: '⚠️ 장바구니가 비어있습니다',
-                description: '주문할 상품을 추가해주세요',
-            })
             router.push('/cart')
         }
     }, [isAuthenticated, items.length])
@@ -57,8 +47,8 @@ export default function CheckoutPage() {
 
         if (!formData.recipientName || !formData.recipientPhone || !formData.shippingAddress) {
             toast({
-                title: '❌ 필수 정보 누락',
-                description: '받는 사람 정보와 배송지를 모두 입력해주세요',
+                title: '❌ 정보 부족',
+                description: '배송을 위한 필수 정보를 모두 입력해 주세요',
                 variant: 'destructive',
             })
             return
@@ -89,22 +79,19 @@ export default function CheckoutPage() {
             }
 
             const result = await response.json()
-
-            // 장바구니 비우기
             clearCart()
 
             toast({
-                title: '✅ 주문 완료!',
-                description: `주문번호: ${result.data.orderNumber}`,
+                title: '✅ 주문 성공',
+                description: `주문이 접수되었습니다 (${result.data.orderNumber})`,
             })
 
-            // 주문 완료 페이지로 이동
             router.push(`/order-complete?orderId=${result.data.orderId}&orderNumber=${result.data.orderNumber}`)
 
         } catch (error) {
             toast({
                 title: '❌ 주문 실패',
-                description: error instanceof Error ? error.message : '주문 처리 중 오류가 발생했습니다',
+                description: error instanceof Error ? error.message : '주문 도중 문제가 발생했습니다',
                 variant: 'destructive',
             })
         } finally {
@@ -112,211 +99,215 @@ export default function CheckoutPage() {
         }
     }
 
-    if (!isAuthenticated || items.length === 0) {
-        return null
-    }
+    if (!isAuthenticated || items.length === 0) return null
 
-    const totalPrice = getTotalPrice()
+    const totalPriceKWR = Math.round(getTotalPrice() * 1300)
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-    const estimatedTime = items.reduce(
-        (sum, item) => sum + (item.quote?.estimatedTimeHours || 0) * item.quantity,
-        0
-    )
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-8">
-                <div className="max-w-5xl mx-auto">
-                    {/* Header */}
-                    <div className="mb-8">
-                        <Link href="/cart">
-                            <Button variant="ghost" size="sm" className="gap-2 mb-4">
-                                <ArrowLeft className="w-4 h-4" />
-                                장바구니로 돌아가기
-                            </Button>
-                        </Link>
-                        <h1 className="text-3xl font-bold">주문하기</h1>
-                        <p className="text-muted-foreground mt-1">
-                            배송 정보를 입력하고 주문을 완료하세요
-                        </p>
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
+            {/* Minimal Header */}
+            <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
+                <div className="container mx-auto px-6 h-20 flex items-center">
+                    <Link href="/cart">
+                        <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/10 rounded-full px-4 text-[10px] font-black uppercase tracking-widest gap-2">
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            Return
+                        </Button>
+                    </Link>
+                    <div className="ml-auto flex items-center gap-4">
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Secure Checkout</span>
                     </div>
+                </div>
+            </div>
 
-                    <div className="grid lg:grid-cols-3 gap-6">
-                        {/* 주문 폼 */}
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* 주문자 정보 */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Package className="w-5 h-5" />
-                                        배송지 정보
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="container mx-auto px-6 py-16">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid lg:grid-cols-[1fr_360px] gap-16">
+
+                        {/* Delivery Form */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="space-y-12"
+                        >
+                            <div className="space-y-2">
+                                <h1 className="text-4xl font-black tracking-tight leading-none uppercase">Order Details</h1>
+                                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Provide your logistic informations below</p>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-10">
+                                <div className="space-y-8">
+                                    <div className="flex items-center gap-3 text-primary">
+                                        <MapPin className="w-5 h-5" />
+                                        <h3 className="text-sm font-black uppercase tracking-widest">Shipping Destination</h3>
+                                    </div>
+
+                                    <div className="grid gap-6">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="recipientName">받는 사람 *</Label>
+                                            <div className="space-y-2.5">
+                                                <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    <User className="w-3 h-3" /> Full Name
+                                                </Label>
                                                 <Input
                                                     id="recipientName"
                                                     name="recipientName"
                                                     value={formData.recipientName}
                                                     onChange={handleInputChange}
-                                                    placeholder="홍길동"
+                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                    placeholder="John Doe"
                                                     required
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="recipientPhone">전화번호 *</Label>
+                                            <div className="space-y-2.5">
+                                                <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    <Phone className="w-3 h-3" /> Phone Number
+                                                </Label>
                                                 <Input
                                                     id="recipientPhone"
                                                     name="recipientPhone"
                                                     type="tel"
                                                     value={formData.recipientPhone}
                                                     onChange={handleInputChange}
-                                                    placeholder="010-1234-5678"
+                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                    placeholder="010-0000-0000"
                                                     required
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shippingAddress">배송 주소 *</Label>
+                                        <div className="space-y-2.5">
+                                            <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                <MapPin className="w-3 h-3" /> Delivery Address
+                                            </Label>
                                             <Input
                                                 id="shippingAddress"
                                                 name="shippingAddress"
                                                 value={formData.shippingAddress}
                                                 onChange={handleInputChange}
-                                                placeholder="서울시 강남구 테헤란로 123"
+                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                placeholder="Street address, Apartment, Suite, etc."
                                                 required
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shippingPostalCode">우편번호 (선택)</Label>
+                                        <div className="space-y-2.5">
+                                            <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                Postal Code
+                                            </Label>
                                             <Input
                                                 id="shippingPostalCode"
                                                 name="shippingPostalCode"
                                                 value={formData.shippingPostalCode}
                                                 onChange={handleInputChange}
-                                                placeholder="06234"
+                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                placeholder="00000"
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="customerNote">요청사항 (선택)</Label>
+                                        <div className="space-y-2.5">
+                                            <Label htmlFor="customerNote" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                <MessageSquare className="w-3 h-3" /> Delivery Note (Optional)
+                                            </Label>
                                             <textarea
                                                 id="customerNote"
                                                 name="customerNote"
                                                 value={formData.customerNote}
                                                 onChange={handleInputChange}
-                                                placeholder="배송 시 요청사항을 입력해주세요"
-                                                className="w-full min-h-24 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                placeholder="Leave instructions for the courier..."
+                                                className="w-full min-h-32 px-5 py-4 rounded-3xl bg-white/[0.03] border border-white/10 text-sm font-bold ring-offset-black focus:outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-white/10"
                                             />
                                         </div>
-                                    </form>
-                                </CardContent>
-                            </Card>
+                                    </div>
+                                </div>
 
-                            {/* 결제 방법 */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
+                                <div className="space-y-6 pt-6">
+                                    <div className="flex items-center gap-3 text-white/40">
                                         <CreditCard className="w-5 h-5" />
-                                        결제 방법
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="p-4 rounded-lg bg-muted/30 text-sm text-muted-foreground">
-                                        ℹ️ 현재는 주문 접수만 가능합니다. 결제는 담당자가 연락드린 후 진행됩니다.
+                                        <h3 className="text-sm font-black uppercase tracking-widest">Payment Method</h3>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                    <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-black border border-white/10 flex items-center justify-center">
+                                            <CreditCard className="w-5 h-5 text-white/20" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <span className="text-xs font-bold text-white/60 block">Consultation Required</span>
+                                            <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">Payment will be processed after technician review</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </motion.div>
 
-                        {/* 주문 요약 */}
-                        <div className="lg:col-span-1">
-                            <Card className="sticky top-4">
-                                <CardHeader>
-                                    <CardTitle>주문 요약</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {/* 주문 아이템 */}
-                                    <div className="space-y-3">
-                                        {items.map((item) => (
-                                            <div key={item.id} className="flex justify-between text-sm">
-                                                <div className="flex-1">
-                                                    <div className="font-medium truncate">
-                                                        {item.quote?.fileName}
-                                                    </div>
-                                                    <div className="text-muted-foreground text-xs">
-                                                        {item.quote?.printMethod.toUpperCase()} × {item.quantity}
-                                                    </div>
-                                                </div>
-                                                <div className="font-semibold ml-2">
-                                                    ${((item.quote?.totalPrice || 0) * item.quantity).toFixed(2)}
-                                                </div>
+                        {/* Order Summary Sticky Panel */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="relative"
+                        >
+                            <div className="sticky top-12 p-8 rounded-[40px] bg-white/[0.03] border border-white/10 ring-1 ring-white/5 space-y-8">
+                                <h2 className="text-xl font-black uppercase tracking-wide">Review Order</h2>
+
+                                <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                                    {items.map((item) => (
+                                        <div key={item.id} className="flex gap-4 group">
+                                            <div className="w-12 h-12 rounded-xl bg-black border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-primary/30 transition-all">
+                                                <Package className="w-5 h-5 text-white/20" />
                                             </div>
-                                        ))}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs font-bold truncate group-hover:text-primary transition-colors">{item.quote?.fileName}</div>
+                                                <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • Qty {item.quantity}</div>
+                                            </div>
+                                            <div className="text-xs font-mono font-bold">
+                                                ₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <Separator className="bg-white/5" />
+
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
+                                        <span>Items ({totalItems})</span>
+                                        <span className="text-white">₩{totalPriceKWR.toLocaleString()}</span>
                                     </div>
-
-                                    <Separator />
-
-                                    {/* 금액 요약 */}
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">상품 금액</span>
-                                            <span>${totalPrice.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">배송비</span>
-                                            <span>$0.00</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between text-lg font-bold">
-                                            <span>총 금액</span>
-                                            <span className="text-primary">${totalPrice.toFixed(2)}</span>
-                                        </div>
+                                    <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
+                                        <span>Shipping</span>
+                                        <span className="text-emerald-400">TBD</span>
                                     </div>
-
-                                    {/* 제작 정보 */}
-                                    <div className="pt-4 border-t space-y-2 text-sm text-muted-foreground">
-                                        <div className="flex justify-between">
-                                            <span>총 제작 시간</span>
-                                            <span className="font-medium">약 {estimatedTime.toFixed(1)}시간</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>주문 항목</span>
-                                            <span className="font-medium">{totalItems}개</span>
-                                        </div>
+                                    <div className="flex justify-between items-baseline pt-4 border-t border-white/5 mt-4">
+                                        <span className="text-xs font-black uppercase tracking-widest">Total</span>
+                                        <span className="text-2xl font-black text-primary">₩{totalPriceKWR.toLocaleString()}</span>
                                     </div>
+                                </div>
 
-                                    {/* 주문 버튼 */}
+                                <div className="pt-6">
                                     <Button
                                         size="lg"
-                                        className="w-full"
+                                        className="w-full h-18 rounded-2xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group"
                                         onClick={handleSubmit}
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                주문 처리중...
-                                            </>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
                                         ) : (
-                                            `$${totalPrice.toFixed(2)} 주문하기`
+                                            <>
+                                                Confirm Order
+                                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                            </>
                                         )}
                                     </Button>
 
-                                    {/* 주의사항 */}
-                                    <div className="pt-4 border-t space-y-1 text-xs text-muted-foreground">
-                                        <p>• 주문 접수 후 담당자가 확인하여 연락드립니다</p>
-                                        <p>• 견적 가격은 참고용이며 실제 금액은 다를 수 있습니다</p>
-                                        <p>• 제작 시간은 예상 시간이며 변동될 수 있습니다</p>
+                                    <div className="mt-6 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
+                                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
+                                        Enterprise Grade Data Encryption
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
                     </div>
                 </div>
             </div>

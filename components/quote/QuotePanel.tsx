@@ -3,12 +3,16 @@
 import { useFileStore } from '@/store/useFileStore'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Box, Layers, Ruler, Printer, Droplets, Zap, Save, ShoppingCart } from 'lucide-react'
-import { useState } from 'react'
+import {
+    Loader2, Box, Layers, Ruler, Printer,
+    Droplets, Zap, Save, ShoppingCart,
+    ChevronRight, Wallet, Clock, ShieldCheck
+} from 'lucide-react'
+import { useState, useMemo } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type PrintMethod = 'fdm' | 'sla' | 'dlp'
 
@@ -35,80 +39,63 @@ export default function QuotePanel() {
 
     // Material Data
     const FDM_MATERIALS = {
-        pla: { name: 'PLA', density: 1.24, pricePerGram: 0.05, color: 'Standard' },
-        abs: { name: 'ABS', density: 1.04, pricePerGram: 0.06, color: 'Engineering' },
-        petg: { name: 'PETG', density: 1.27, pricePerGram: 0.07, color: 'Durable' },
-        tpu: { name: 'TPU', density: 1.21, pricePerGram: 0.12, color: 'Flexible' },
+        pla: { name: 'PLA', density: 1.24, pricePerGram: 0.05, color: 'text-emerald-400', desc: '가장 대중적인 친환경 소재' },
+        abs: { name: 'ABS', density: 1.04, pricePerGram: 0.06, color: 'text-amber-400', desc: '내구성이 뛰어난 엔지니어링 소재' },
+        petg: { name: 'PETG', density: 1.27, pricePerGram: 0.07, color: 'text-blue-400', desc: '강성과 내열성을 겸비한 범용 소재' },
+        tpu: { name: 'TPU', density: 1.21, pricePerGram: 0.12, color: 'text-pink-400', desc: '고무처럼 유연하고 질긴 탄성 소재' },
     }
 
     const RESIN_TYPES = {
-        standard: { name: 'Standard Resin', density: 1.2, pricePerML: 0.08 },
-        tough: { name: 'Tough Resin', density: 1.15, pricePerML: 0.12 },
-        clear: { name: 'Clear Resin', density: 1.18, pricePerML: 0.15 },
-        flexible: { name: 'Flexible Resin', density: 1.1, pricePerML: 0.18 },
+        standard: { name: 'Standard', density: 1.2, pricePerML: 0.08, desc: '매끄러운 표면과 높은 정밀도' },
+        tough: { name: 'Tough', density: 1.15, pricePerML: 0.12, desc: '충격에 강한 고강도 레진' },
+        clear: { name: 'Clear', density: 1.18, pricePerML: 0.15, desc: '투명도가 높은 시인성 위주 레진' },
+        flexible: { name: 'Flexible', density: 1.1, pricePerML: 0.18, desc: '실리콘 채널 및 고무 유사 탄성' },
     }
 
     const volumeCm3 = analysis?.volume || 0
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
     const heightMm = analysis?.boundingBox.z || 0
 
-    // Calculate Price based on Print Method
-    const calculatePrice = () => {
-        if (!analysis) return 0
+    // Calculate Price Memoized
+    const priceInfo = useMemo(() => {
+        if (!analysis) return { total: 0, time: 0 }
 
         if (printMethod === 'fdm') {
-            // FDM Pricing Logic
             const material = FDM_MATERIALS[fdmMaterial as keyof typeof FDM_MATERIALS]
             const effectiveDensity = material.density * (infill / 100)
             const adjustedDensity = Math.max(material.density * 0.2, effectiveDensity)
             const weightGrams = volumeCm3 * adjustedDensity
             const materialCost = weightGrams * material.pricePerGram
-
-            // Time estimation: based on volume and layer height
             const numLayers = heightMm / layerHeight
-            const estTimeHours = Math.max(1, numLayers * 0.02) // ~1.2 min per layer
-
-            // Support material cost (if enabled)
+            const estTimeHours = Math.max(1, numLayers * 0.02)
             const supportCost = supportEnabled ? surfaceAreaCm2 * 0.02 : 0
-
-            const machineRate = 2.5 // $/hour
+            const machineRate = 2.5
             const laborCost = 5.0
-
-            return materialCost + supportCost + (estTimeHours * machineRate) + laborCost
+            return {
+                total: materialCost + supportCost + (estTimeHours * machineRate) + laborCost,
+                time: estTimeHours
+            }
         } else {
-            // SLA/DLP Pricing Logic
             const resin = RESIN_TYPES[resinType as keyof typeof RESIN_TYPES]
-            const volumeML = volumeCm3 // 1 cm³ ≈ 1 mL for resin
+            const volumeML = volumeCm3
             const resinCost = volumeML * resin.pricePerML
-
-            // Time: Z-height based (SLA/DLP prints layer by layer)
             const numLayers = heightMm / slaLayerHeight
-            const layerExposureTime = printMethod === 'dlp' ? 3 : 8 // seconds per layer
+            const layerExposureTime = printMethod === 'dlp' ? 3 : 8
             const estTimeHours = (numLayers * layerExposureTime) / 3600
-
-            // Consumables (FEP film, cleaning)
             const consumablesCost = 3.0
-
-            // Post-processing (washing + curing)
             const postProcessCost = postProcessing ? 8.0 : 0
-
-            const machineRate = printMethod === 'dlp' ? 4.0 : 3.5 // $/hour
+            const machineRate = printMethod === 'dlp' ? 4.0 : 3.5
             const laborCost = 7.0
-
-            return resinCost + consumablesCost + postProcessCost + (estTimeHours * machineRate) + laborCost
+            return {
+                total: resinCost + consumablesCost + postProcessCost + (estTimeHours * machineRate) + laborCost,
+                time: estTimeHours
+            }
         }
-    }
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing])
 
-    const totalPrice = calculatePrice()
+    const totalPrice = priceInfo.total
+    const estimatedTimeHours = priceInfo.time
 
-    // 견적 시간 계산
-    const estimatedTimeHours = analysis
-        ? (printMethod === 'fdm'
-            ? heightMm / layerHeight * 0.02
-            : heightMm / slaLayerHeight * (printMethod === 'dlp' ? 3 : 8) / 3600)
-        : 0
-
-    // 견적 저장 핸들러
     const handleSaveQuote = async () => {
         if (!analysis || !file) return
 
@@ -137,15 +124,9 @@ export default function QuotePanel() {
                 estimatedTimeHours,
             }
 
-            const headers: HeadersInit = {
-                'Content-Type': 'application/json',
-            }
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`
-            } else {
-                headers['X-Session-ID'] = sessionId
-            }
+            const headers: HeadersInit = { 'Content-Type': 'application/json' }
+            if (token) headers['Authorization'] = `Bearer ${token}`
+            else headers['X-Session-ID'] = sessionId
 
             const response = await fetch('/api/quotes', {
                 method: 'POST',
@@ -153,22 +134,15 @@ export default function QuotePanel() {
                 body: JSON.stringify(quoteData),
             })
 
-            if (!response.ok) {
-                throw new Error('견적 저장 실패')
-            }
+            if (!response.ok) throw new Error('견적 저장 실패')
 
             const result = await response.json()
-
-            toast({
-                title: '✅ 견적 저장 완료',
-                description: '견적이 성공적으로 저장되었습니다',
-            })
-
+            toast({ title: '✅ 견적 완료', description: '견적이 성공적으로 기록되었습니다' })
             return result.data
         } catch (error) {
             toast({
-                title: '❌ 저장 실패',
-                description: error instanceof Error ? error.message : '견적 저장 중 오류가 발생했습니다',
+                title: '❌ 오류 발생',
+                description: error instanceof Error ? error.message : '저장 중 오류가 발생했습니다',
                 variant: 'destructive',
             })
             return null
@@ -177,52 +151,30 @@ export default function QuotePanel() {
         }
     }
 
-    // 장바구니 추가 핸들러
     const handleAddToCart = async () => {
         if (!analysis) return
-
-        // 먼저 견적 저장
         const savedQuote = await handleSaveQuote()
         if (!savedQuote) return
 
         try {
-            const headers: HeadersInit = {
-                'Content-Type': 'application/json',
-            }
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`
-            } else {
-                headers['X-Session-ID'] = sessionId
-            }
+            const headers: HeadersInit = { 'Content-Type': 'application/json' }
+            if (token) headers['Authorization'] = `Bearer ${token}`
+            else headers['X-Session-ID'] = sessionId
 
             const response = await fetch('/api/cart', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({
-                    quoteId: savedQuote.id,
-                    quantity: 1,
-                }),
+                body: JSON.stringify({ quoteId: savedQuote.id, quantity: 1 }),
             })
 
-            if (!response.ok) {
-                throw new Error('장바구니 추가 실패')
-            }
+            if (!response.ok) throw new Error('장바구니 추가 실패')
 
-            toast({
-                title: '🛒 장바구니에 추가됨',
-                description: '견적이 장바구니에 추가되었습니다',
-            })
-
-            // 로컬 상태 업데이트
-            addToCart({
-                ...savedQuote,
-                quote: savedQuote,
-            }, 1)
+            toast({ title: '🛒 장바구니 추가', description: '제품이 장바구니에 담겼습니다' })
+            addToCart({ ...savedQuote, quote: savedQuote }, 1)
         } catch (error) {
             toast({
                 title: '❌ 추가 실패',
-                description: error instanceof Error ? error.message : '장바구니 추가 중 오류가 발생했습니다',
+                description: error instanceof Error ? error.message : '오류가 발생했습니다',
                 variant: 'destructive',
             })
         }
@@ -231,258 +183,198 @@ export default function QuotePanel() {
     if (!file) return null
 
     return (
-        <Card className="w-full shadow-lg border-primary/10">
-            <CardHeader>
-                <CardTitle>Instant Quote</CardTitle>
-                <CardDescription>Configure your print settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-
-                {/* Analysis Loading/Results */}
-                {!analysis ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                        <Loader2 className="w-8 h-8 animate-spin mb-2 text-primary" />
-                        <span className="text-sm">Analyzing Geometry...</span>
+        <div className="space-y-8 pb-32">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
+                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-white/30 uppercase">
+                        <Box className="w-3 h-3" /> Volume
                     </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted/40">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Box className="w-3.5 h-3.5" /> Volume
-                            </div>
-                            <span className="font-mono font-medium">{volumeCm3.toFixed(2)} cm³</span>
-                        </div>
-                        <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted/40">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Layers className="w-3.5 h-3.5" /> Surface
-                            </div>
-                            <span className="font-mono font-medium">{surfaceAreaCm2.toFixed(2)} cm²</span>
-                        </div>
-                        <div className="col-span-2 flex flex-col gap-1 p-3 rounded-lg bg-muted/40">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Ruler className="w-3.5 h-3.5" /> Dimensions
-                            </div>
-                            <span className="font-mono font-medium text-xs">
-                                {analysis.boundingBox.x.toFixed(1)} × {analysis.boundingBox.y.toFixed(1)} × {analysis.boundingBox.z.toFixed(1)} mm
+                    <span className="text-lg font-bold font-mono tracking-tight">{volumeCm3.toFixed(1)} <span className="text-[10px] font-normal text-white/30">cm³</span></span>
+                </div>
+                <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
+                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-white/30 uppercase">
+                        <Layers className="w-3 h-3" /> Surface
+                    </div>
+                    <span className="text-lg font-bold font-mono tracking-tight">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] font-normal text-white/30">cm²</span></span>
+                </div>
+            </div>
+
+            {/* Print Method Selection */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                    <Printer className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/50">출력 방식 선택</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {[
+                        { id: 'fdm', icon: Printer, label: 'FDM' },
+                        { id: 'sla', icon: Droplets, label: 'SLA' },
+                        { id: 'dlp', icon: Zap, label: 'DLP' },
+                    ].map((method) => (
+                        <button
+                            key={method.id}
+                            onClick={() => setPrintMethod(method.id as PrintMethod)}
+                            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all relative overflow-hidden group ${printMethod === method.id
+                                    ? 'bg-primary border-primary shadow-lg shadow-primary/20'
+                                    : 'bg-white/[0.03] border-white/5 hover:border-white/20'
+                                }`}
+                        >
+                            <method.icon className={`w-6 h-6 ${printMethod === method.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`} />
+                            <span className={`text-[10px] font-black tracking-tighter ${printMethod === method.id ? 'text-white' : 'text-white/30'}`}>
+                                {method.label}
                             </span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <Separator className="bg-white/5" />
+
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={printMethod}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                >
+                    {/* Dynamic Material Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 px-1">
+                            <Box className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-bold uppercase tracking-widest text-white/50">소재 설정</span>
+                        </div>
+
+                        <div className="grid gap-2">
+                            {Object.entries(printMethod === 'fdm' ? FDM_MATERIALS : RESIN_TYPES).map(([key, data]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => printMethod === 'fdm' ? setFdmMaterial(key) : setResinType(key)}
+                                    className={`flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${(printMethod === 'fdm' ? fdmMaterial : resinType) === key
+                                            ? 'bg-white/[0.07] border-primary/50 ring-1 ring-primary/20'
+                                            : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                                        }`}
+                                >
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-sm font-bold">{data.name}</span>
+                                            {(printMethod === 'fdm' ? fdmMaterial : resinType) === key && (
+                                                <ChevronRight className="w-4 h-4 text-primary" />
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] text-white/40 leading-relaxed">{(data as any).desc}</p>
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     </div>
-                )}
 
-                <Separator />
+                    {/* Sliders & Switches */}
+                    {printMethod === 'fdm' ? (
+                        <div className="space-y-8 pt-4">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Infill Density</label>
+                                    <span className="font-mono text-sm text-primary font-bold">{infill}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="10" max="100" step="10"
+                                    value={infill}
+                                    onChange={(e) => setInfill(Number(e.target.value))}
+                                    className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary"
+                                />
+                            </div>
 
-                {/* Print Method Selection */}
-                <div className="space-y-3">
-                    <label className="text-sm font-medium">Print Method</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <button
-                            onClick={() => setPrintMethod('fdm')}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${printMethod === 'fdm'
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border hover:bg-muted'
-                                }`}
-                        >
-                            <Printer className="w-5 h-5" />
-                            <span className="text-xs font-semibold">FDM</span>
-                        </button>
-                        <button
-                            onClick={() => setPrintMethod('sla')}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${printMethod === 'sla'
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border hover:bg-muted'
-                                }`}
-                        >
-                            <Droplets className="w-5 h-5" />
-                            <span className="text-xs font-semibold">SLA</span>
-                        </button>
-                        <button
-                            onClick={() => setPrintMethod('dlp')}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${printMethod === 'dlp'
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border hover:bg-muted'
-                                }`}
-                        >
-                            <Zap className="w-5 h-5" />
-                            <span className="text-xs font-semibold">DLP</span>
-                        </button>
+                            <div className="space-y-4">
+                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">Layer Height</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[0.1, 0.2, 0.3].map(h => (
+                                        <button
+                                            key={h}
+                                            onClick={() => setLayerHeight(h)}
+                                            className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${layerHeight === h
+                                                    ? 'bg-white text-black border-white'
+                                                    : 'bg-transparent border-white/10 text-white/40 hover:border-white/20'
+                                                }`}
+                                        >
+                                            {h}mm
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-8 pt-4">
+                            <div className="space-y-4">
+                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">Layer Thickness</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[0.025, 0.05, 0.1].map(h => (
+                                        <button
+                                            key={h}
+                                            onClick={() => setSlaLayerHeight(h)}
+                                            className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${slaLayerHeight === h
+                                                    ? 'bg-white text-black border-white'
+                                                    : 'bg-transparent border-white/10 text-white/40 hover:border-white/20'
+                                                }`}
+                                        >
+                                            {h}mm
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Price Preview Card - Locked to Sidebar Bottom or Floating */}
+            <div className="fixed bottom-0 left-0 w-[400px] xl:w-[450px] p-6 bg-black border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-20">
+                <div className="flex items-center gap-6 mb-6">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                            <Wallet className="w-3 h-3" /> Estimate
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
+                            <span className="text-xs text-white/30 font-medium">KRW</span>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                            <Clock className="w-3 h-3" /> Delivery
+                        </div>
+                        <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
                     </div>
                 </div>
 
-                {/* FDM Options */}
-                {printMethod === 'fdm' && (
-                    <>
-                        <div className="space-y-3">
-                            <label className="text-sm font-medium">Material</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {Object.entries(FDM_MATERIALS).map(([key, mat]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setFdmMaterial(key)}
-                                        className={`text-xs p-2 rounded-md border transition-all ${fdmMaterial === key
-                                            ? 'border-primary bg-primary/10 text-primary font-semibold'
-                                            : 'border-border hover:bg-muted'
-                                            }`}
-                                    >
-                                        {mat.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium">Infill</label>
-                                <span className="text-xs text-muted-foreground">{infill}%</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="10"
-                                max="100"
-                                step="10"
-                                value={infill}
-                                onChange={(e) => setInfill(Number(e.target.value))}
-                                className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium">Layer Height</label>
-                                <span className="text-xs text-muted-foreground">{layerHeight} mm</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {[0.1, 0.2, 0.3].map(height => (
-                                    <button
-                                        key={height}
-                                        onClick={() => setLayerHeight(height)}
-                                        className={`text-xs p-2 rounded-md border transition-all ${layerHeight === height
-                                            ? 'border-primary bg-primary/10 text-primary font-semibold'
-                                            : 'border-border hover:bg-muted'
-                                            }`}
-                                    >
-                                        {height}mm
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40">
-                            <label className="text-sm font-medium">Support Structures</label>
-                            <button
-                                onClick={() => setSupportEnabled(!supportEnabled)}
-                                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${supportEnabled
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-secondary text-secondary-foreground'
-                                    }`}
-                            >
-                                {supportEnabled ? 'ON' : 'OFF'}
-                            </button>
-                        </div>
-                    </>
-                )}
-
-                {/* SLA/DLP Options */}
-                {(printMethod === 'sla' || printMethod === 'dlp') && (
-                    <>
-                        <div className="space-y-3">
-                            <label className="text-sm font-medium">Resin Type</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {Object.entries(RESIN_TYPES).map(([key, res]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setResinType(key)}
-                                        className={`text-xs p-2 rounded-md border transition-all ${resinType === key
-                                            ? 'border-primary bg-primary/10 text-primary font-semibold'
-                                            : 'border-border hover:bg-muted'
-                                            }`}
-                                    >
-                                        {res.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium">Layer Thickness</label>
-                                <span className="text-xs text-muted-foreground">{slaLayerHeight} mm</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {[0.025, 0.05, 0.1].map(height => (
-                                    <button
-                                        key={height}
-                                        onClick={() => setSlaLayerHeight(height)}
-                                        className={`text-xs p-2 rounded-md border transition-all ${slaLayerHeight === height
-                                            ? 'border-primary bg-primary/10 text-primary font-semibold'
-                                            : 'border-border hover:bg-muted'
-                                            }`}
-                                    >
-                                        {height}mm
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40">
-                            <label className="text-sm font-medium">Post-Processing</label>
-                            <button
-                                onClick={() => setPostProcessing(!postProcessing)}
-                                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${postProcessing
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-secondary text-secondary-foreground'
-                                    }`}
-                            >
-                                {postProcessing ? 'YES' : 'NO'}
-                            </button>
-                        </div>
-                    </>
-                )}
-
-                {/* Total Price */}
-                <div className="space-y-3">
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                        <div className="flex flex-col">
-                            <span className="text-xs text-muted-foreground">Estimated Cost</span>
-                            <span className="text-2xl font-bold tracking-tight text-primary">
-                                ${analysis ? totalPrice.toFixed(2) : '---'}
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                                {printMethod.toUpperCase()} • {analysis ? `~${Math.ceil(estimatedTimeHours)}h` : '---'}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button
-                            disabled={!analysis || isSaving}
-                            variant="outline"
-                            size="lg"
-                            onClick={handleSaveQuote}
-                        >
-                            {isSaving ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    저장중...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="w-4 h-4 mr-2" />
-                                    견적 저장
-                                </>
-                            )}
-                        </Button>
-                        <Button
-                            disabled={!analysis || isSaving}
-                            size="lg"
-                            onClick={handleAddToCart}
-                        >
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            장바구니
-                        </Button>
-                    </div>
+                <div className="grid grid-cols-[1fr_2fr] gap-3">
+                    <Button
+                        disabled={!analysis || isSaving}
+                        variant="ghost"
+                        size="lg"
+                        className="h-14 rounded-2xl border border-white/10 hover:bg-white/5 text-xs font-bold uppercase transition-all active:scale-95"
+                        onClick={handleSaveQuote}
+                    >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                        disabled={!analysis || isSaving}
+                        size="lg"
+                        className="h-14 rounded-2xl bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3"
+                        onClick={handleAddToCart}
+                    >
+                        <ShoppingCart className="w-5 h-5" />
+                        주문에 추가하기
+                    </Button>
                 </div>
 
-            </CardContent>
-        </Card>
+                <div className="mt-4 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
+                    <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
+                    Verified by Wow3D Security System
+                </div>
+            </div>
+        </div>
     )
 }

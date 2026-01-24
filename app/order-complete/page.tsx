@@ -3,12 +3,12 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle2, Package, Clock, Loader2 } from 'lucide-react'
+import { CheckCircle2, Package, Clock, Loader2, PartyPopper, ChevronRight, ArrowRight, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import type { Order } from '@/lib/types'
+import { motion } from 'framer-motion'
 
 function OrderCompleteContent() {
     const searchParams = useSearchParams()
@@ -22,6 +22,8 @@ function OrderCompleteContent() {
     useEffect(() => {
         if (orderId && token) {
             loadOrderDetails()
+        } else if (!orderId) {
+            setIsLoading(false)
         }
     }, [orderId, token])
 
@@ -46,162 +48,118 @@ function OrderCompleteContent() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-16">
-                <div className="max-w-2xl mx-auto">
-                    {/* 성공 아이콘 */}
-                    <div className="text-center mb-8">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/10 flex items-center justify-center">
-                            <CheckCircle2 className="w-12 h-12 text-green-500" />
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30 relative overflow-hidden">
+            {/* Ambient Background */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
+
+            <div className="container mx-auto px-6 py-24 relative z-10">
+                <div className="max-w-3xl mx-auto">
+                    {/* Success Hero */}
+                    <div className="text-center mb-16 space-y-6">
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", damping: 12 }}
+                            className="w-24 h-24 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative"
+                        >
+                            <CheckCircle2 className="w-12 h-12 text-emerald-500 relative z-10" />
+                            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
+                        </motion.div>
+
+                        <div className="space-y-2">
+                            <h1 className="text-5xl font-black uppercase tracking-tighter italic">Mission Accomplished</h1>
+                            <p className="text-white/40 font-bold uppercase tracking-[0.3em] text-[10px]">Your order has been recorded successfully</p>
                         </div>
-                        <h1 className="text-3xl font-bold mb-2">주문이 완료되었습니다!</h1>
-                        <p className="text-muted-foreground">
-                            주문이 성공적으로 접수되었습니다
-                        </p>
                     </div>
 
-                    {/* 주문 정보 */}
-                    <Card className="mb-6">
-                        <CardHeader>
-                            <CardTitle>주문 정보</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-[1fr_2fr] gap-8">
+                        {/* Summary Sidebar */}
+                        <div className="space-y-6">
+                            <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 ring-1 ring-white/5 space-y-6">
                                 <div>
-                                    <div className="text-sm text-muted-foreground mb-1">주문 번호</div>
-                                    <div className="font-mono font-semibold text-lg">
-                                        {orderNumber || order?.orderNumber || '-'}
+                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">Order ID</div>
+                                    <div className="font-mono text-sm font-bold text-primary">
+                                        #{orderNumber || order?.orderNumber || '---'}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-muted-foreground mb-1">주문 상태</div>
-                                    <div className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-500">
-                                        접수 대기중
+                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">Status</div>
+                                    <div className="inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                        Pending Review
+                                    </div>
+                                </div>
+                                <Separator className="bg-white/5" />
+                                <div>
+                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">Total Amount</div>
+                                    <div className="text-2xl font-black">
+                                        ₩{(Math.round(order?.totalAmount || 0) * 1300).toLocaleString()}
                                     </div>
                                 </div>
                             </div>
 
-                            <Separator />
+                            <Link href="/my-account" className="block transform transition-transform active:scale-95">
+                                <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
+                                    <Package className="w-4 h-4" />
+                                    Track Order
+                                </Button>
+                            </Link>
+                        </div>
 
-                            {order && (
-                                <>
-                                    <div>
-                                        <div className="text-sm text-muted-foreground mb-1">배송지</div>
-                                        <div className="font-medium">{order.shippingAddress}</div>
-                                        {order.shippingPostalCode && (
-                                            <div className="text-sm text-muted-foreground">
-                                                우편번호: {order.shippingPostalCode}
+                        {/* Main Info */}
+                        <div className="space-y-8">
+                            {/* Workflow Guide */}
+                            <div className="p-8 rounded-[40px] bg-white/[0.02] border border-white/5 space-y-10">
+                                <div className="flex items-center gap-3">
+                                    <Clock className="w-5 h-5 text-primary" />
+                                    <h2 className="text-sm font-black uppercase tracking-[0.2em]">What happens next?</h2>
+                                </div>
+
+                                <div className="grid gap-10">
+                                    {[
+                                        { title: "Technical Review", desc: "A technician will review your 3D files and ensure printability.", icon: "01" },
+                                        { title: "Price Confirmation", desc: "We'll confirm the final quote including shipping and materials.", icon: "02" },
+                                        { title: "Manufacturing", desc: "Once confirmed, your parts enter the production queue.", icon: "03" },
+                                        { title: "Quality Control & Ship", desc: "Parts are inspected, cured, and shipped to your destination.", icon: "04" },
+                                    ].map((step, idx) => (
+                                        <div key={idx} className="flex gap-6 group">
+                                            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/5 flex items-center justify-center text-[10px] font-black group-hover:bg-primary group-hover:text-white transition-all">
+                                                {step.icon}
                                             </div>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <div className="text-sm text-muted-foreground mb-1">받는 사람</div>
-                                        <div className="font-medium">
-                                            {order.recipientName} · {order.recipientPhone}
+                                            <div className="space-y-1">
+                                                <h3 className="text-sm font-bold">{step.title}</h3>
+                                                <p className="text-xs text-white/40 leading-relaxed font-medium">{step.desc}</p>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-lg font-semibold">총 금액</div>
-                                        <div className="text-2xl font-bold text-primary">
-                                            ${order.totalAmount.toFixed(2)}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* 다음 단계 안내 */}
-                    <Card className="mb-6">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Clock className="w-5 h-5" />
-                                다음 단계
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                        1
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">주문 확인</div>
-                                        <div className="text-muted-foreground">
-                                            담당자가 주문 내용을 확인하고 연락드립니다 (영업일 기준 1-2일)
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                        2
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">결제 안내</div>
-                                        <div className="text-muted-foreground">
-                                            최종 견적 확인 후 결제 방법을 안내드립니다
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                        3
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">제작 시작</div>
-                                        <div className="text-muted-foreground">
-                                            결제 완료 후 3D 프린팅 제작을 시작합니다
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                        4
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">배송</div>
-                                        <div className="text-muted-foreground">
-                                            제작 완료 후 입력하신 주소로 배송해드립니다
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* 액션 버튼 */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <Link href="/my-account">
-                            <Button variant="outline" size="lg" className="w-full gap-2">
-                                <Package className="w-4 h-4" />
-                                주문 내역 보기
-                            </Button>
-                        </Link>
-                        <Link href="/quote">
-                            <Button size="lg" className="w-full">
-                                쇼핑 계속하기
-                            </Button>
-                        </Link>
+                            <Link href="/quote" className="block">
+                                <Button size="lg" className="w-full h-16 rounded-3xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 font-black uppercase tracking-[0.2em] gap-3 transition-all active:scale-95 group">
+                                    Scale Up New Quote
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
 
-                    {/* 추가 안내 */}
-                    <div className="mt-8 p-4 rounded-lg bg-muted/30 text-sm text-muted-foreground text-center">
-                        <p>주문 관련 문의사항이 있으시면 마이페이지에서 주문 내역을 확인하시거나</p>
-                        <p className="mt-1">고객센터로 문의해주세요</p>
+                    {/* Footer Info */}
+                    <div className="mt-20 flex flex-col items-center gap-6">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
+                            <ShieldCheck className="w-4 h-4 text-emerald-500/40" />
+                            Wow3D Industrial Grade Service
+                        </div>
+                        <p className="text-[10px] text-white/20 font-medium max-w-sm text-center italic">
+                            Email confirmation has been sent to your registered address.
+                            Our support team is available 24/7 for your questions.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -212,7 +170,7 @@ function OrderCompleteContent() {
 export default function OrderCompletePage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         }>
