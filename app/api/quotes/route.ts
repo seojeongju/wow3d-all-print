@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         }
 
         // D1 Database가 있는 경우에만 실행
-        if (env.DB) {
+        if (env && env.DB) {
             const result = await env.DB.prepare(query).bind(...bindings).all();
             return successResponse(result.results || []);
         }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         }
 
         // D1 Database가 있는 경우에만 실행
-        if (env.DB) {
+        if (env && env.DB) {
             const query = `
         INSERT INTO quotes (
           user_id, session_id, file_name, file_size, file_url,

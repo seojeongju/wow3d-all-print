@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             return errorResponse('비밀번호는 최소 8자 이상이어야 합니다', 400);
         }
 
-        if (!env.DB) {
+        if (!env || !env.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 

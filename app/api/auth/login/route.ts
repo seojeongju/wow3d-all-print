@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
             return errorResponse('이메일과 비밀번호를 입력해주세요', 400);
         }
 
-        if (!env.DB) {
-            return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
+        if (!env || !env.DB) {
+            return errorResponse('데이터베이스를 사용할 수 없습니다 (Env or DB missing)', 503);
         }
 
         // 사용자 조회
