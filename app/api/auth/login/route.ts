@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { getOptionalRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, verifyPassword, generateToken } from '@/lib/api-utils';
 
@@ -18,11 +17,13 @@ function safeJson500(msg: string): Response {
 
 /**
  * POST /api/auth/login - 로그인
+ * @cloudflare/next-on-pages는 POST에서만 동적 import (모듈 로드 시 500 방지)
  */
 export async function POST(request: NextRequest) {
     try {
         let ctx: { env?: { DB?: Env['DB'] } } | undefined;
         try {
+            const { getOptionalRequestContext } = await import('@cloudflare/next-on-pages');
             ctx = getOptionalRequestContext() as { env?: { DB?: Env['DB'] } } | undefined;
         } catch (_e) {
             ctx = undefined;
