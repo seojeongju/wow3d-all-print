@@ -77,6 +77,33 @@ npm run pages:dev
 git push origin main
 ```
 
+## 10. 관리자 계정
+
+관리자 로그인(`admin@wow3d.com` / `admin1234`)이 되려면 **프로덕션 D1**에 해당 계정이 있어야 합니다.
+
+### 관리자 없을 때 생성
+
+```bash
+# 프로덕션 D1에 관리자 추가 (한 번만 실행, 이미 있으면 오류)
+npx wrangler d1 execute wow3d-production --file=./create_admin.sql
+```
+
+- **이메일**: `admin@wow3d.com`  
+- **비밀번호**: `admin1234`  
+- `role` 컬럼이 없다면 먼저: `npx wrangler d1 execute wow3d-production --file=./fix_users.sql`
+
+### 비밀번호 초기화(덮어쓰기)
+
+```bash
+npx wrangler d1 execute wow3d-production --file=./reset_admin.sql
+```
+
+### 확인
+
+```bash
+npx wrangler d1 execute wow3d-production --command="SELECT id, email, name, role FROM users WHERE email='admin@wow3d.com'"
+```
+
 ## 주요 명령어
 
 ```bash

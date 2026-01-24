@@ -47,7 +47,8 @@ export default function AuthPage() {
                 description: `Welcome back, ${result.data.user.name}.`,
             })
 
-            router.push('/cart')
+            // 관리자는 /admin, 일반 사용자는 /cart로 이동
+            router.push(result.data.user?.role === 'admin' ? '/admin' : '/cart')
         } catch (error) {
             toast({
                 title: '❌ Access Denied',

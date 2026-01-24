@@ -10,62 +10,65 @@ export const runtime = 'edge';
  */
 export async function POST(request: NextRequest) {
     try {
-        let env: any;
+        // Cloudflare env (D1, R2 등) 로드 — getRequestContext는 Edge가 아니면 throw
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) {
-            // getRequestContext failed or not in edge context
+            const ctx = getRequestContext() as { env?: { DB?: Env['DB'] } };
+            env = ctx?.env;
+        } catch (_e) {
+            // 로컬 개발/비-Edge: env 없음
         }
 
+        if (!env?.DB) {
+            return errorResponse('데이터베이스를 사용할 수 없습니다. (배포 환경 및 D1 바인딩 확인)', 503);
+        }
 
-        const body = await request.json();
+        let body: { email?: string; password?: string };
+        try {
+            body = await request.json();
+        } catch (_e) {
+            return errorResponse('요청 본문이 올바른 JSON이 아닙니다', 400);
+        }
 
-        // 필수 필드 검증
-        if (!body.email || !body.password) {
+        if (!body?.email || !body?.password) {
             return errorResponse('이메일과 비밀번호를 입력해주세요', 400);
         }
 
-        if (!env || !env.DB) {
-            return errorResponse('데이터베이스를 사용할 수 없습니다 (Env or DB missing)', 503);
-        }
+        // 사용자 조회 (SELECT *: role 컬럼이 없을 수 있음)
+        const raw = await env.DB.prepare('SELECT * FROM users WHERE email = ?')
+            .bind((body.email || '').trim())
+            .first() as Record<string, unknown> | null;
 
-        // 사용자 조회
-        const user = await env.DB
-            .prepare('SELECT * FROM users WHERE email = ?')
-            .bind(body.email)
-            .first() as any;
-
-        if (!user) {
+        const passwordHash = (raw?.password_hash ?? raw?.passwordHash) as string | undefined;
+        if (!raw || !passwordHash) {
             return errorResponse('이메일 또는 비밀번호가 올바르지 않습니다', 401);
         }
 
-        // 비밀번호 검증
-        const isPasswordValid = await verifyPassword(body.password, user.password_hash);
-
+        const isPasswordValid = await verifyPassword(body.password, passwordHash);
         if (!isPasswordValid) {
             return errorResponse('이메일 또는 비밀번호가 올바르지 않습니다', 401);
         }
 
-        // 토큰 생성
-        const token = await generateToken(user.id, user.email);
+        const userId = Number(raw.id ?? raw.ID);
+        const email = String(raw.email ?? '');
+        const token = await generateToken(userId, email);
 
         return successResponse(
             {
                 user: {
-                    id: user.id,
-                    email: user.email,
-                    name: user.name,
-                    phone: user.phone,
+                    id: userId,
+                    email,
+                    name: String(raw.name ?? ''),
+                    phone: raw.phone != null ? String(raw.phone) : undefined,
+                    role: (raw.role as string) ?? 'user',
                 },
                 token,
             },
             '로그인 성공'
         );
-    } catch (error: any) {
-        console.error('POST /api/auth/login error:', error);
-        return errorResponse(error.message || '로그인 실패', 500);
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error('POST /api/auth/login error:', msg, error);
+        return errorResponse('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', 500);
     }
 }

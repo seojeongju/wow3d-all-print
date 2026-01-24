@@ -1,10 +1,12 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings, Users, Package } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Header from "@/components/layout/Header"; // Keeping Main Header for now or create AdminHeader
+import Header from "@/components/layout/Header";
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function AdminLayout({
     children,
@@ -12,6 +14,28 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { isAuthenticated, user } = useAuthStore();
+
+    // 관리자만 /admin 접근: 비로그인 → /auth, 일반 사용자 → /
+    useEffect(() => {
+        if (!isAuthenticated) {
+            router.replace('/auth');
+            return;
+        }
+        if (user && user.role !== 'admin') {
+            router.replace('/');
+        }
+    }, [isAuthenticated, user, router]);
+
+    // 리다이렉트 대기 중에는 로딩만 표시
+    if (!isAuthenticated || (user && user.role !== 'admin')) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-muted/20">
+                <p className="text-muted-foreground">로딩 중...</p>
+            </div>
+        );
+    }
 
     const navItems = [
         {
