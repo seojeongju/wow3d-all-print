@@ -99,23 +99,35 @@ npx wrangler pages deployment tail
 
 **증상**: 사이트 접속 시 "Node.JS Compatibility Error" / "no nodejs_compat compatibility flag set" 메시지가 표시됨.
 
-**원인**: `@cloudflare/next-on-pages`로 빌드된 Next.js 앱이 Node.js API(Buffer, `process` 등)를 사용하는데, Cloudflare Workers/Pages에 `nodejs_compat` 플래그가 없을 때 발생합니다.
+**원인**: `@cloudflare/next-on-pages`로 빌드된 Next.js 앱이 Node.js API(Buffer, `process` 등)를 사용하는데, Cloudflare Workers/Pages에 `nodejs_compat` 플래그가 없을 때 발생합니다.  
+Git 연동 시 `wrangler.toml`이 "valid Pages configuration"으로 인정되지 않으면 **무시**되며, 이 경우 대시보드에서 수동 설정이 필요합니다.
 
-**해결 방법** (둘 중 하나 또는 둘 다 적용):
+**해결 순서**
 
-1. **wrangler.toml (권장)**  
-   프로젝트 `wrangler.toml`에 이미 다음이 포함되어 있어야 합니다:
-   ```toml
-   compatibility_flags = ["nodejs_compat"]
-   ```
-   포함되어 있다면, 변경 사항을 커밋한 뒤 **다시 배포**해 주세요 (예: `git push` 후 자동 배포).
+#### 1단계: wrangler.toml 수정 후 재배포 (시도)
 
-2. **Cloudflare 대시보드에서 수동 설정**  
-   `wrangler.toml`이 빌드에 반영되지 않는 경우 (예: Git 연동만 사용 중):
-   - [Cloudflare 대시보드](https://dash.cloudflare.com) → **Workers & Pages** → 해당 **Pages 프로젝트** 선택
-   - **Settings** → **Functions** → **Compatibility flags**
-   - **Production**과 **Preview** 환경 모두에 `nodejs_compat` 추가 후 **Save**
-   - **Retry deployment** 또는 새 배포를 한 번 더 실행
+- `wrangler.toml`에 `compatibility_flags = ["nodejs_compat"]`와 `pages_build_output_dir = ".vercel/output/static"`(next-on-pages 실제 출력 경로)가 있어야 합니다.
+- `pages_build_output_dir`가 `.next` 등 잘못된 값이면 wrangler가 **유효하지 않다**고 판단해 스킵될 수 있습니다.
+- 위를 맞춘 뒤 `git push`로 재배포하고, 오류가 사라졌는지 확인합니다.
+
+#### 2단계: 그래도 안 되면 → **대시보드에서 수동 설정 (필수)**
+
+`wrangler.toml`이 반영되지 않는 경우, 반드시 대시보드에서 플래그를 추가해야 합니다.
+
+1. [Cloudflare 대시보드](https://dash.cloudflare.com) 접속  
+2. 왼쪽에서 **Workers & Pages** 선택  
+3. **Pages** 목록에서 프로젝트(예: `wow3d-all-print`) 클릭  
+4. **Settings** 탭 이동  
+5. **Functions** 섹션에서 **Compatibility flags** (또는 **Compatibility Flags**) 클릭  
+6. **Production**:
+   - 입력란에 `nodejs_compat` **직접 입력**
+   - 자동완성/드롭다운이 뜨면 **내가 입력한 `nodejs_compat`를 선택** 후 추가 (**Enter만 눌러 다른 항목이 선택되지 않게** 주의)
+7. **Preview**도 위와 동일하게 `nodejs_compat` 추가  
+8. **Save** 클릭  
+9. **Deployments** 탭으로 가서 **Retry deployment** 또는 **Create deployment**로 한 번 더 배포  
+10. 배포 완료 후 사이트를 새로고침해 확인
+
+> **참고**: 대시보드 UI에 `nodejs_compat`가 목록에 안 보일 수 있습니다. 이 경우 **직접 입력**(`nodejs_compat`) 후 추가하는 방식을 사용하면 됩니다.
 
 ### Next.js와 Cloudflare Pages 호환성
 - Edge Runtime을 사용하는 API Routes는 `export const runtime = 'edge'` 추가

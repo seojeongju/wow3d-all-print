@@ -18,5 +18,6 @@ bucket_name = "wow3d-files"
 [vars]
 ENVIRONMENT = "production"
 
-# Pages Configuration
-pages_build_output_dir = ".next"
+# Pages Configuration (next-on-pages 빌드 출력 경로)
+# Git 연동 시 대시보드 "Build output directory"와 동일하게 설정해야 wrangler가 유효하게 인식됨
+pages_build_output_dir = ".vercel/output/static"
