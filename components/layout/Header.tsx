@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useFileStore } from "@/store/useFileStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = [
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
 export default function Header() {
     const { getTotalItems } = useCartStore()
     const { isAuthenticated, user, logout } = useAuthStore()
+    const { reset: resetFileStore } = useFileStore()
     const cartItemCount = getTotalItems()
 
     const [isScrolled, setIsScrolled] = useState(false)
@@ -122,7 +124,7 @@ export default function Header() {
                         </Link>
                     )}
 
-                    <Link href="/quote" className="hidden sm:block">
+                    <Link href="/quote" className="hidden sm:block" onClick={() => resetFileStore()}>
                         <Button className="h-10 sm:h-11 px-5 sm:px-6 rounded-xl bg-white text-black hover:bg-white/95 font-bold text-[13px] gap-2 shadow-lg">
                             <Zap className="w-4 h-4" />
                             견적 받기
@@ -161,7 +163,7 @@ export default function Header() {
                                     {item.label}
                                 </Link>
                             ))}
-                            <Link href="/quote" onClick={() => setMobileOpen(false)} className="mt-4">
+                            <Link href="/quote" onClick={() => { resetFileStore(); setMobileOpen(false); }} className="mt-4">
                                 <Button className="w-full h-12 rounded-xl bg-white text-black font-bold text-[15px] gap-2">
                                     <Zap className="w-4 h-4" />
                                     견적 받기
