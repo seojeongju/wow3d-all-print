@@ -17,9 +17,9 @@ export default function CTA() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-4xl md:text-6xl font-bold mb-8 tracking-tight"
+                        className="text-4xl md:text-6xl font-bold mb-8 tracking-tight word-keep-all"
                     >
-                        Ready to <span className="text-primary">Print?</span>
+                        지금, 출력을 <span className="text-primary">시작하세요</span>
                     </motion.h2>
 
                     <motion.p
@@ -27,10 +27,10 @@ export default function CTA() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto"
+                        className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto break-keep"
                     >
-                        Upload your design now and get an instant quote.
-                        No sign-up required to see the price.
+                        파일을 업로드하고 즉시 견적을 확인해보세요.
+                        회원가입 없이도 가격을 확인할 수 있습니다.
                     </motion.p>
 
                     <motion.div
@@ -42,7 +42,7 @@ export default function CTA() {
                     >
                         <Link href="/quote">
                             <Button size="lg" className="h-16 px-10 text-xl rounded-full shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all duration-300">
-                                Get Instant Quote <ArrowRight className="ml-2" />
+                                무료 견적 받기 <ArrowRight className="ml-2" />
                             </Button>
                         </Link>
                     </motion.div>

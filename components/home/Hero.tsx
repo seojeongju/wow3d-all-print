@@ -36,34 +36,34 @@ export default function Hero() {
                         className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-secondary mb-6 backdrop-blur-md"
                     >
                         <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Next Gen 3D Printing</span>
+                        <span className="text-xs font-semibold tracking-wider text-muted-foreground">차세대 3D 프린팅 서비스</span>
                     </motion.div>
 
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
-                        Bring Your <br />
+                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all">
+                        당신의 <br />
                         <span className="text-primary relative">
-                            Imagination
+                            상상력을
                             <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
                         </span>
                         <br />
-                        To Life.
+                        현실로 만듭니다.
                     </h1>
 
-                    <p className="text-xl text-muted-foreground mb-8 max-w-lg leading-relaxed">
-                        Professional 3D printing service with instant AI quotes.
-                        From prototype to mass production, we deliver precision in every layer.
+                    <p className="text-xl text-muted-foreground mb-8 max-w-lg leading-relaxed break-keep">
+                        AI 기반 실시간 견적부터 전문가급 정밀 출력까지.<br />
+                        시제품 제작부터 양산까지, Wow3D가 함께합니다.
                     </p>
 
                     <div className="flex flex-wrap gap-4">
                         <Link href="/quote">
                             <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_0_rgb(0,118,255,39%)] hover:shadow-[0_6px_20px_rgba(0,118,255,23%)] hover:scale-[1.02] transition-all">
-                                Start Printing <ArrowRight className="ml-2 w-5 h-5" />
+                                견적 확인하기 <ArrowRight className="ml-2 w-5 h-5" />
                             </Button>
                         </Link>
                         <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/80 backdrop-blur-sm">
-                            View Materials
+                            소재 살펴보기
                         </Button>
                     </div>
 
@@ -77,7 +77,7 @@ export default function Hero() {
                         </div>
                         <div>
                             <div className="font-bold text-foreground">1,000+</div>
-                            <div className="text-sm">Makers satisfied</div>
+                            <div className="text-sm">고객 만족 후기</div>
                         </div>
                     </div>
                 </motion.div>
@@ -114,8 +114,8 @@ export default function Hero() {
                                 <Sparkles className="w-6 h-6" />
                             </div>
                             <div>
-                                <div className="font-bold">AI Quoting</div>
-                                <div className="text-xs text-muted-foreground">Analysis Complete</div>
+                                <div className="font-bold">AI 견적 분석</div>
+                                <div className="text-xs text-muted-foreground">분석 완료</div>
                             </div>
                         </div>
                         <div className="space-y-3">
@@ -123,12 +123,12 @@ export default function Hero() {
                                 <div className="h-full w-[90%] bg-green-500 rounded-full" />
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Printability</span>
+                                <span className="text-muted-foreground">출력 가능성</span>
                                 <span className="font-bold text-green-500">98%</span>
                             </div>
                             <div className="mt-8 p-4 bg-secondary/50 rounded-xl">
-                                <div className="text-xs text-muted-foreground mb-1">Estimated Cost</div>
-                                <div className="text-2xl font-bold">$ 24.50</div>
+                                <div className="text-xs text-muted-foreground mb-1">예상 견적가</div>
+                                <div className="text-2xl font-bold">₩ 24,500</div>
                             </div>
                         </div>
                     </motion.div>
