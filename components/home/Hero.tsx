@@ -2,15 +2,42 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Cuboid } from 'lucide-react';
+import { ArrowRight, Sparkles, Cuboid, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useFileStore } from '@/store/useFileStore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Hero() {
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const y2 = useTransform(scrollY, [0, 500], [0, -150]);
+    const router = useRouter();
+    const { setFile } = useFileStore();
+    const { toast } = useToast();
+    const [isLoadingSample, setIsLoadingSample] = useState(false);
+
+    const handleTrySample = async () => {
+        setIsLoadingSample(true);
+        try {
+            const res = await fetch('/test_cube.stl');
+            if (!res.ok) throw new Error('샘플 파일을 불러올 수 없습니다.');
+            const blob = await res.blob();
+            const file = new File([blob], 'sample_cube.stl', { type: 'model/stl' });
+            setFile(file);
+            router.push('/quote');
+        } catch (e) {
+            toast({
+                title: '오류',
+                description: e instanceof Error ? e.message : '샘플 파일 로드에 실패했습니다.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoadingSample(false);
+        }
+    };
 
     return (
         <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
@@ -109,7 +136,7 @@ export default function Hero() {
 
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute left-10 bottom-20 w-[280px] h-[350px] bg-card rounded-[30px] shadow-2xl border border-border p-6 z-20"
+                        className="absolute left-10 bottom-20 w-[280px] h-[380px] bg-card rounded-[30px] shadow-2xl border border-border p-6 z-20"
                     >
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
@@ -132,6 +159,19 @@ export default function Hero() {
                                 <div className="text-xs text-muted-foreground mb-1">예상 견적가</div>
                                 <div className="text-2xl font-bold">₩ 24,500</div>
                             </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-4 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={handleTrySample}
+                                disabled={isLoadingSample}
+                            >
+                                {isLoadingSample ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    '샘플로 체험'
+                                )}
+                            </Button>
                         </div>
                     </motion.div>
                 </div>

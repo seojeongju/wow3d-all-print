@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings, Boxes } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -72,6 +72,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     {item.title}
                                 </Link>
                             ))}
+                            <div className="my-3 mx-3 h-px bg-white/10" />
+                            <Link
+                                href="/"
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/5 hover:text-white border border-transparent transition-all"
+                            >
+                                <Home className="w-4 h-4" />
+                                메인페이지
+                            </Link>
                         </nav>
                     </div>
                 </aside>
