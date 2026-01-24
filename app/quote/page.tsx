@@ -5,19 +5,19 @@ import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/upload/FileUpload";
 import QuotePanel from "@/components/quote/QuotePanel";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Info, Boxes } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFileStore } from "@/store/useFileStore";
 
 export default function QuotePage() {
     const { file, analysis } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
 
-    // Auto-advance to step 2 when file is uploaded and analyzed
-    if (file && analysis && step === 1) {
-        setStep(2);
-    }
+    // Auto-advance to step 2 when file is uploaded and analyzed (in useEffect to avoid setState during render)
+    useEffect(() => {
+        if (file && analysis && step === 1) setStep(2);
+    }, [file, analysis, step]);
 
     return (
         <main className="min-h-screen bg-[#050505] text-white flex flex-col selection:bg-primary/30 overflow-hidden">
@@ -79,7 +79,41 @@ export default function QuotePage() {
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
                             <AnimatePresence mode="wait">
                                 {step === 1 ? (
+                                    // 파일 있음 + 분석 대기: 업로드 UI 대신 "분석 중" 전용 화면 (샘플 견적 등에서 진입 시 리다이렉트처럼 보이는 현상 방지)
+                                    file && !analysis ? (
+                                        <motion.div
+                                            key="analyzing"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-8 flex flex-col items-center justify-center min-h-[320px]"
+                                        >
+                                            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+                                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                            </div>
+                                            <div className="text-center space-y-2">
+                                                <h1 className="text-2xl font-bold tracking-tight">
+                                                    모델 <span className="text-primary">분석 중</span>
+                                                </h1>
+                                                <p className="text-white/50 text-sm break-keep">
+                                                    부피·표면적을 계산하고 있습니다.
+                                                    <br />
+                                                    잠시만 기다려 주세요.
+                                                </p>
+                                            </div>
+                                            <div className="w-full p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                                                    <FileBox className="w-5 h-5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-medium truncate">{file.name}</div>
+                                                    <div className="text-xs text-white/40">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ) : (
                                     <motion.div
+                                        key="upload"
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
@@ -120,6 +154,7 @@ export default function QuotePage() {
                                             </div>
                                         </div>
                                     </motion.div>
+                                    )
                                 ) : (
                                     <motion.div
                                         initial={{ opacity: 0, x: 20 }}

@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Cuboid, Loader2 } from 'lucide-react';
+import { ArrowRight, Sparkles, Cuboid, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -84,12 +84,12 @@ export default function Hero() {
                     </p>
 
                     <div className="flex flex-wrap gap-4">
-                        <Link href="/quote">
+                        <Link href="/print-methods">
                             <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_0_rgb(0,118,255,39%)] hover:shadow-[0_6px_20px_rgba(0,118,255,23%)] hover:scale-[1.02] transition-all">
-                                AI 자동 견적하기 <ArrowRight className="ml-2 w-5 h-5" />
+                                3D 프린터 출력방식 (FDM, SLA, DLP) <ArrowRight className="ml-2 w-5 h-5 shrink-0" />
                             </Button>
                         </Link>
-                        <Link href="#features">
+                        <Link href="/materials">
                             <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/80 backdrop-blur-sm">
                                 소재 살펴보기
                             </Button>
@@ -136,7 +136,7 @@ export default function Hero() {
 
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute left-10 bottom-20 w-[280px] h-[380px] bg-card rounded-[30px] shadow-2xl border border-border p-6 z-20"
+                        className="absolute left-10 bottom-20 w-[280px] h-[420px] bg-card rounded-[30px] shadow-2xl border border-border p-6 z-20"
                     >
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
@@ -172,6 +172,15 @@ export default function Hero() {
                                     '샘플 견적 체험'
                                 )}
                             </Button>
+                            <Link href="/quote" className="block mt-3">
+                                <Button
+                                    size="sm"
+                                    className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.5)] hover:from-primary hover:to-primary/95 ring-2 ring-primary/30 transition-all"
+                                >
+                                    <Zap className="w-4 h-4 mr-2 fill-current" />
+                                    AI실시간 자동견적하기
+                                </Button>
+                            </Link>
                         </div>
                     </motion.div>
                 </div>
