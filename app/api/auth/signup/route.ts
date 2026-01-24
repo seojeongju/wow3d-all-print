@@ -17,9 +17,7 @@ export async function POST(request: NextRequest) {
                 env = (ctx as any).env;
             }
         } catch (e) { }
-        if (!env && typeof process !== 'undefined') {
-            env = process.env;
-        }
+
         const body = await request.json();
 
         // 필수 필드 검증

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const status: any = {
         step: 'init',
         globals: {
-            hasProcess: typeof process !== 'undefined',
+            // pure edge check
             hasCrypto: typeof crypto !== 'undefined',
             hasTextEncoder: typeof TextEncoder !== 'undefined'
         },
@@ -30,21 +30,10 @@ export async function GET(req: NextRequest) {
             status.ctxError = e.message;
         }
 
-        // 2. Fallback
-        if (!env && typeof process !== 'undefined') {
-            status.step = 'process_fallback';
-            try {
-                env = process.env;
-                status.usedFallback = true;
-            } catch (e: any) {
-                status.fallbackError = e.message;
-            }
-        }
-
         status.hasEnv = !!env;
         status.hasDB = !!(env && env.DB);
 
-        // 3. Database Check
+        // 2. Database Check
         if (env && env.DB) {
             status.step = 'db_query';
             const user = await env.DB.prepare("SELECT * FROM users WHERE email = 'admin@wow3d.com'").first();
@@ -54,7 +43,7 @@ export async function GET(req: NextRequest) {
                 status.userRole = user.role;
                 status.userHashPrefix = user.password_hash?.substring(0, 10);
 
-                // 4. Hash Check
+                // 3. Hash Check
                 status.step = 'hash_check';
                 const encoder = new TextEncoder();
                 const data = encoder.encode('admin1234');
@@ -65,7 +54,7 @@ export async function GET(req: NextRequest) {
                 status.match = (calcHash === user.password_hash);
             }
         } else {
-            status.message = "DB Binding Missing. Please check Cloudflare Dashboard Settings.";
+            status.message = "DB Binding Missing (Check Cloudflare Dashboard).";
         }
 
         return NextResponse.json(status);
@@ -77,6 +66,6 @@ export async function GET(req: NextRequest) {
             message: error.message,
             stack: error.stack,
             partial_status: status
-        }, { status: 200 }); // Return 200 to ensure user sees this JSON
+        }, { status: 200 });
     }
 }
