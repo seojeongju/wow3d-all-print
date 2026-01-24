@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-
 export const runtime = 'edge';
 
-/** GET /api/health - Edge/배포 정상 여부 확인 (import 최소화) */
+/** GET /api/health - next/server 제거, Web API만 사용 (CF Edge 500 원인 격리) */
 export async function GET() {
-    return NextResponse.json({ ok: true, t: Date.now() });
+    return new Response(JSON.stringify({ ok: true, t: Date.now() }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+    });
 }
