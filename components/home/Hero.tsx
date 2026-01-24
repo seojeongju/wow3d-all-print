@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Cuboid, Loader2, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Cuboid, Loader2, Zap, Palette } from 'lucide-react';
 import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ export default function Hero() {
             const blob = await res.blob();
             const file = new File([blob], 'sample_cube.stl', { type: 'model/stl' });
             setFile(file);
-            router.push('/quote');
+            router.push('/experience');
         } catch (e) {
             toast({
                 title: '오류',
@@ -85,12 +85,14 @@ export default function Hero() {
 
                     <div className="flex flex-wrap gap-4">
                         <Link href="/print-methods">
-                            <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_0_rgb(0,118,255,39%)] hover:shadow-[0_6px_20px_rgba(0,118,255,23%)] hover:scale-[1.02] transition-all">
-                                3D 프린터 출력방식 (FDM, SLA, DLP) <ArrowRight className="ml-2 w-5 h-5 shrink-0" />
+                            <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_0_rgb(0,118,255,0.35)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.25)] hover:scale-[1.02] transition-all gap-2">
+                                3D 프린터 출력방식 (FDM, SLA, DLP)
+                                <ArrowRight className="w-5 h-5 shrink-0" />
                             </Button>
                         </Link>
                         <Link href="/materials">
-                            <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/80 backdrop-blur-sm">
+                            <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-full bg-secondary text-secondary-foreground shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 hover:scale-[1.02] transition-all gap-2">
+                                <Palette className="w-5 h-5 shrink-0" />
                                 소재 살펴보기
                             </Button>
                         </Link>
