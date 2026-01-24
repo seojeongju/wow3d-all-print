@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, hashPassword, generateToken } from '@/lib/api-utils';
 
@@ -9,7 +10,7 @@ export const runtime = 'edge';
  */
 export async function POST(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
         const body = await request.json();
 
         // 필수 필드 검증

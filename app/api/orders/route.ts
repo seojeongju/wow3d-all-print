@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, generateOrderNumber } from '@/lib/api-utils';
 
@@ -9,7 +10,7 @@ export const runtime = 'edge';
  */
 export async function GET(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
 
         // 인증 확인
         const auth = await requireAuth(request);
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
 
         // 인증 확인
         const auth = await requireAuth(request);

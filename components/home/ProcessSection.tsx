@@ -8,7 +8,7 @@ const steps = [
     {
         id: "01",
         title: "파일 업로드",
-        description: "STL 또는 OBJ 파일을 드래그 앤 드롭하세요. Wow3D의 클라우드 엔진이 모델을 즉시 분석합니다.",
+        description: "STL 또는 OBJ 파일을 드래그 앤 드롭하세요. WOWD의 클라우드 엔진이 모델을 즉시 분석합니다.",
         icon: Upload,
         color: "bg-blue-500"
     },

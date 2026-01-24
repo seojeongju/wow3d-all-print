@@ -177,6 +177,7 @@ export default function AuthModal() {
                                     className="pl-9"
                                     required
                                     minLength={8}
+                                    autoComplete="current-password"
                                 />
                             </div>
                             {!isLogin && (

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { jsonResponse, errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
 import type { QuoteData } from '@/lib/types';
@@ -11,7 +12,7 @@ export const runtime = 'edge';
  */
 export async function GET(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
 
         // 세션 ID 또는 사용자 ID로 필터링
         const sessionId = request.headers.get('X-Session-ID');
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
         const body = await request.json() as QuoteData;
 
         // 필수 필드 검증

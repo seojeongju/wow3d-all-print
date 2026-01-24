@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
 
@@ -9,7 +10,7 @@ export const runtime = 'edge';
  */
 export async function GET(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
         const sessionId = request.headers.get('X-Session-ID');
         const userId = request.headers.get('X-User-ID');
 
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
         const body = await request.json();
 
         if (!body.quoteId) {
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
         const sessionId = request.headers.get('X-Session-ID');
         const userId = request.headers.get('X-User-ID');
 

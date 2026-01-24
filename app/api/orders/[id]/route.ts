@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth } from '@/lib/api-utils';
 
@@ -13,7 +14,7 @@ export async function GET(
 ) {
     try {
         const { id } = await context.params;
-        const env = (process.env as any) as Env;
+        const { env } = getRequestContext() as any;
 
         // 인증 확인
         const auth = await requireAuth(request);

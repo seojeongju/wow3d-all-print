@@ -13,7 +13,7 @@ const features = [
     },
     {
         title: "30종 이상의 소재",
-        description: "PLA, ABS, PETG, 레진, 나일론 등 다양한 산업용 소재 보유.",
+        description: "PLA, ABS, PLA, 레진, 나일론 등 다양한 산업용 소재 보유.",
         icon: Box,
         className: "md:col-span-1 bg-card",
         iconColor: "text-blue-500"
@@ -58,9 +58,9 @@ export default function BentoFeatures() {
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all">왜 Wow3D를 선택해야 할까요?</h2>
+                    <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all">왜 WOW3D를 선택해야 할까요?</h2>
                     <p className="text-muted-foreground text-lg max-w-2xl mx-auto break-keep">
-                        최첨단 3D 프린팅 기술과 숙련된 장인 정신으로 여러분의 아이디어를 완벽하게 구현합니다.
+                        최첨단 3D 프린팅 기술과 15년간 축적된 기술력으로 여러분의 아이디어를 완벽하게 구현합니다.
                     </p>
                 </motion.div>
 
