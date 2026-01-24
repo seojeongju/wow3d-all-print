@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 /**
  * PATCH /api/cart/[id] - 장바구니 아이템 수량 수정
@@ -13,14 +12,14 @@ export async function PATCH(
 ) {
     try {
         const { id } = await context.params;
-        const env = (process.env as any) as Env;
+        const { env } = getCloudflareContext();
         const body = await request.json();
 
         if (!body.quantity || body.quantity < 1) {
             return errorResponse('유효한 수량을 입력해주세요', 400);
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return successResponse({ id: parseInt(id) }, '수량이 수정되었습니다 (개발 모드)');
         }
 
@@ -45,9 +44,9 @@ export async function DELETE(
 ) {
     try {
         const { id } = await context.params;
-        const env = (process.env as any) as Env;
+        const { env } = getCloudflareContext();
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return successResponse({ id: parseInt(id) }, '아이템이 삭제되었습니다 (개발 모드)');
         }
 

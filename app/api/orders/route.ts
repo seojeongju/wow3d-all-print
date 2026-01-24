@@ -1,24 +1,18 @@
 import { NextRequest } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, generateOrderNumber } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 /**
  * GET /api/orders - 주문 목록 조회
  */
 export async function GET(request: NextRequest) {
     try {
-        let env: any;
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) { }
-        if (!env) {
-            env = process.env;
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
         }
 
         // 인증 확인
@@ -27,7 +21,7 @@ export async function GET(request: NextRequest) {
             return auth;
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return successResponse([]);
         }
 
@@ -73,7 +67,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { env } = getRequestContext() as any;
+        const { env } = getCloudflareContext();
 
         // 인증 확인
         const auth = await requireAuth(request);
@@ -92,7 +86,7 @@ export async function POST(request: NextRequest) {
             return errorResponse('주문할 상품이 없습니다', 400);
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 

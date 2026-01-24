@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, verifyPassword, generateToken } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 function safeJson500(msg: string): Response {
     try {
@@ -17,19 +16,15 @@ function safeJson500(msg: string): Response {
 
 /**
  * POST /api/auth/login - 로그인
- * @cloudflare/next-on-pages는 POST에서만 동적 import (모듈 로드 시 500 방지)
  */
 export async function POST(request: NextRequest) {
     try {
-        let ctx: { env?: { DB?: Env['DB'] } } | undefined;
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const { getOptionalRequestContext } = await import('@cloudflare/next-on-pages');
-            ctx = getOptionalRequestContext() as { env?: { DB?: Env['DB'] } } | undefined;
-        } catch (_e) {
-            ctx = undefined;
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
         }
-        const env = ctx?.env;
-
         if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다. (D1 바인딩 확인)', 503);
         }

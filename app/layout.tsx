@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "3D Print Auto Quote | Wow3D",
-  description: "Instant 3D Printing Quotations",
+  title: "3D 프린팅 자동 견적 | WOW3D",
+  description: "STL·OBJ 업로드만으로 10초 실시간 견적. 산업용 3D 프린팅, 시제품·양산까지.",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="ko" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

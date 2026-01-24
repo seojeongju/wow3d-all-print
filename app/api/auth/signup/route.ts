@@ -1,22 +1,19 @@
 import { NextRequest } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, hashPassword, generateToken } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 /**
  * POST /api/auth/signup - 회원가입
  */
 export async function POST(request: NextRequest) {
     try {
-        let env: any;
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) { }
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
+        }
 
         const body = await request.json();
 

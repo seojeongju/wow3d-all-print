@@ -1,10 +1,8 @@
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
-    const { env } = getRequestContext() as any;
+    const { env } = getCloudflareContext();
     try {
         // Fetch users alongside orders for easier display
         const { results } = await env.DB.prepare(`

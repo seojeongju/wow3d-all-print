@@ -1,4 +1,20 @@
-# Cloudflare Pages 배포 가이드
+# Cloudflare 배포 가이드
+
+이 프로젝트는 **OpenNext for Cloudflare Workers**를 사용합니다.  
+(이전: `@cloudflare/next-on-pages` + Cloudflare Pages → 현재: `@opennextjs/cloudflare` + **Workers**)
+
+---
+
+## 0. 현재 배포 구조 (OpenNext / Workers)
+
+- **빌드**: `npx opennextjs-cloudflare build` → `.open-next/worker.js` + `.open-next/assets`
+- **로컬 프리뷰**: `npm run preview` (Wrangler 로컬, D1/R2 시뮬레이션)
+- **배포**: `npm run deploy` → `opennextjs-cloudflare build` 후 `opennextjs-cloudflare deploy` (Cloudflare **Workers**)
+
+`wrangler.toml`에 `main = ".open-next/worker.js"`, `[assets]`, D1, R2, `[[services]]`(WORKER_SELF_REFERENCE)가 설정되어 있습니다.  
+**Pages Git 연동이 아닌 Workers 배포**이므로, CI에서 `npm run deploy` 또는 `opennextjs-cloudflare deploy`를 사용합니다.
+
+---
 
 ## 1. Wrangler CLI 설치 확인
 
@@ -37,45 +53,42 @@ npx wrangler d1 execute wow3d-production --file=./schema.sql
 npx wrangler r2 bucket create wow3d-files
 ```
 
-## 6. Cloudflare Pages 프로젝트 생성
+## 6. (참고) 이전 방식: Cloudflare Pages + next-on-pages
 
-1. Cloudflare 대시보드 접속: https://dash.cloudflare.com/
-2. Pages 섹션으로 이동
-3. "Create a project" 클릭
-4. GitHub 연동 선택
-5. wow3d_all_print 레포지토리 선택
-6. 빌드 설정:
-   - **Framework preset**: Next.js
-   - **Build command**: `npm run pages:build`
-   - **Build output directory**: `.vercel/output/static`
+현재는 **Workers + OpenNext**를 사용하므로 아래는 참고용입니다.
 
-## 7. 환경 변수 설정
+- **Build command**: `npm run pages:build` (구 `@cloudflare/next-on-pages`)
+- **Build output**: `.vercel/output/static`
+- Pages Git 연동 시 `compatibility_flags`(예: `nodejs_compat`)를 대시보드 **Functions**에서 수동 설정해야 하는 경우가 많음.
 
-Cloudflare Pages 프로젝트 설정에서:
+## 7. 환경 변수 / Bindings
 
-### Production 환경
-- `ENVIRONMENT`: `production`
+`wrangler.toml`의 `[vars]`와 바인딩으로 설정됩니다:
 
-### Bindings 설정
-- **D1 Database**: `DB` → `wow3d-production`
-- **R2 Bucket**: `BUCKET` → `wow3d-files`
+- **Vars**: `ENVIRONMENT` = `production`
+- **D1**: `DB` → `wow3d-production`
+- **R2**: `BUCKET` → `wow3d-files`
+
+로컬 프리뷰 시 `.dev.vars`에 `NEXTJS_ENV=development` 등 추가 가능.
 
 ## 8. 로컬 개발
 
 ```bash
-# Next.js 개발 서버 (DB 없음)
+# Next.js 개발 서버 (DB 바인딩 없음)
 npm run dev
 
-# Cloudflare Pages 로컬 개발 (DB 포함)
-npm run pages:dev
+# OpenNext 로컬 프리뷰 (D1/R2 시뮬레이션, Wrangler)
+npm run preview
 ```
 
 ## 9. 배포
 
 ```bash
-# GitHub에 푸시하면 자동 배포
-git push origin main
+# OpenNext 빌드 후 Workers에 배포
+npm run deploy
 ```
+
+CI에서 사용할 경우: `npm run deploy` 또는 `opennextjs-cloudflare build` 후 `opennextjs-cloudflare deploy`.
 
 ## 10. 관리자 계정
 
@@ -116,18 +129,21 @@ npx wrangler d1 execute wow3d-production --local --command="SELECT * FROM users"
 # R2 파일 리스트
 npx wrangler r2 object list wow3d-files
 
-# Pages 로그 확인
-npx wrangler pages deployment tail
+# Workers 로그 확인
+npx wrangler tail
 ```
 
 ## 트러블슈팅
 
-### Node.JS Compatibility Error (`no nodejs_compat compatibility flag set`)
+### Node.JS Compatibility / 500 Internal Server Error (`nodejs_compat` 없음)
 
-**증상**: 사이트 접속 시 "Node.JS Compatibility Error" / "no nodejs_compat compatibility flag set" 메시지가 표시됨.
+**증상** (하나라도 해당 시 의심):
+- "Node.JS Compatibility Error" / "no nodejs_compat compatibility flag set" 문구
+- **500 Internal Server Error** (특히 `/api/*`, 로그인, 메인 접속 시)
+- 브라우저 콘솔·네트워크에서 `process is not defined`·`Buffer is not defined` 유사 에러
 
-**원인**: `@cloudflare/next-on-pages`로 빌드된 Next.js 앱이 Node.js API(Buffer, `process` 등)를 사용하는데, Cloudflare Workers/Pages에 `nodejs_compat` 플래그가 없을 때 발생합니다.  
-Git 연동 시 `wrangler.toml`이 "valid Pages configuration"으로 인정되지 않으면 **무시**되며, 이 경우 대시보드에서 수동 설정이 필요합니다.
+**원인**: `@cloudflare/next-on-pages`로 빌드된 Next.js 앱과 API 라우트(`process.env` 사용)가 Node.js API를 사용하는데, Cloudflare Pages에 `nodejs_compat` 플래그가 없으면 `process` 등이 없어 500이 발생합니다.  
+Git 연동 시 `wrangler.toml`의 `compatibility_flags`가 **반영되지 않는 경우가 많으므로**, 대시보드에서 수동 설정이 필수입니다.
 
 **해결 순서**
 
@@ -161,7 +177,7 @@ Git 연동 시 `wrangler.toml`이 "valid Pages configuration"으로 인정되지
 - Node.js 런타임이 필요한 경우 Cloudflare Workers 사용 권장
 
 ### CORS 이슈
-- `functions/_middleware.ts`에서 CORS 헤더 설정
+- OpenNext/Workers에서는 `functions/` 미사용. 필요 시 `next.config`의 `headers` 또는 API 라우트에서 CORS 헤더 처리.
 
 ### D1 연결 실패
 - `wrangler.toml`의 `database_id`가 올바른지 확인

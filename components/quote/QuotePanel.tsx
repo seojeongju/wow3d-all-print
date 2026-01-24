@@ -188,13 +188,13 @@ export default function QuotePanel() {
             <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
                     <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-white/30 uppercase">
-                        <Box className="w-3 h-3" /> Volume
+                        <Box className="w-3 h-3" /> 부피
                     </div>
                     <span className="text-lg font-bold font-mono tracking-tight">{volumeCm3.toFixed(1)} <span className="text-[10px] font-normal text-white/30">cm³</span></span>
                 </div>
                 <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
                     <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-white/30 uppercase">
-                        <Layers className="w-3 h-3" /> Surface
+                        <Layers className="w-3 h-3" /> 표면적
                     </div>
                     <span className="text-lg font-bold font-mono tracking-tight">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] font-normal text-white/30">cm²</span></span>
                 </div>
@@ -288,7 +288,7 @@ export default function QuotePanel() {
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">Layer Height</label>
+                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.1, 0.2, 0.3].map(h => (
                                         <button
@@ -308,7 +308,7 @@ export default function QuotePanel() {
                     ) : (
                         <div className="space-y-8 pt-4">
                             <div className="space-y-4">
-                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">Layer Thickness</label>
+                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.025, 0.05, 0.1].map(h => (
                                         <button
@@ -334,7 +334,7 @@ export default function QuotePanel() {
                 <div className="flex items-center gap-6 mb-6">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                            <Wallet className="w-3 h-3" /> Estimate
+                            <Wallet className="w-3 h-3" /> 예상 견적
                         </div>
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-3xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
@@ -343,7 +343,7 @@ export default function QuotePanel() {
                     </div>
                     <div className="text-right">
                         <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                            <Clock className="w-3 h-3" /> Delivery
+                            <Clock className="w-3 h-3" /> 예상 소요
                         </div>
                         <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
                     </div>
@@ -372,7 +372,7 @@ export default function QuotePanel() {
 
                 <div className="mt-4 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
                     <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
-                    Verified by Wow3D Security System
+                    WOW3D 보안 인증
                 </div>
             </div>
         </div>

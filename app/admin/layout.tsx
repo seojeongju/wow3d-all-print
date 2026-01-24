@@ -3,21 +3,16 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Header from "@/components/layout/Header";
+import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
 
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { isAuthenticated, user } = useAuthStore();
 
-    // 관리자만 /admin 접근: 비로그인 → /auth, 일반 사용자 → /
     useEffect(() => {
         if (!isAuthenticated) {
             router.replace('/auth');
@@ -28,67 +23,60 @@ export default function AdminLayout({
         }
     }, [isAuthenticated, user, router]);
 
-    // 리다이렉트 대기 중에는 로딩만 표시
     if (!isAuthenticated || (user && user.role !== 'admin')) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-muted/20">
-                <p className="text-muted-foreground">로딩 중...</p>
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+                <p className="text-white/40">로딩 중...</p>
             </div>
         );
     }
 
     const navItems = [
-        {
-            title: "대시보드",
-            href: "/admin",
-            icon: LayoutDashboard,
-            match: (path: string) => path === "/admin"
-        },
-        {
-            title: "주문 관리",
-            href: "/admin/orders",
-            icon: ShoppingCart,
-            match: (path: string) => path.startsWith("/admin/orders")
-        },
-        {
-            title: "설정 & 자재",
-            href: "/admin/settings",
-            icon: Settings,
-            match: (path: string) => path.startsWith("/admin/settings")
-        }
+        { title: '대시보드', href: '/admin', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
+        { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
+        { title: '설정 & 자재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
     ];
 
     return (
-        <div className="min-h-screen bg-muted/20">
-            <Header />
-            <div className="container mx-auto px-4 py-8 flex items-start gap-8">
-                {/* Sidebar */}
-                <aside className="w-64 shrink-0 hidden lg:block rounded-xl border bg-card text-card-foreground shadow">
-                    <div className="p-6">
-                        <h2 className="text-lg font-bold tracking-tight">관리자 메뉴</h2>
-                        <p className="text-sm text-muted-foreground">Wow3D Admin</p>
+        <div className="min-h-screen bg-[#0a0a0a] text-white">
+            <AdminHeader />
+            <div className="flex">
+                {/* Sidebar - 다크 테마 */}
+                <aside className="w-64 shrink-0 hidden lg:flex flex-col border-r border-white/5 bg-[#0c0c0c] min-h-[calc(100vh-3.5rem)]">
+                    <div className="p-5 border-b border-white/5">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
+                                <Boxes className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <div className="font-black text-sm tracking-tight text-white">WOW3D PRO</div>
+                                <div className="text-[10px] text-white/40 uppercase tracking-wider">Industrial 3D System</div>
+                            </div>
+                        </div>
                     </div>
-                    <nav className="px-4 pb-6 space-y-2">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                                    item.match(pathname)
-                                        ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                <item.icon className="w-4 h-4" />
-                                {item.title}
-                            </Link>
-                        ))}
-                    </nav>
+                    <div className="px-3 py-4">
+                        <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3 px-3">관리자 메뉴</div>
+                        <nav className="space-y-1">
+                            {navItems.map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                                        item.match(pathname)
+                                            ? 'bg-primary/20 text-primary border border-primary/30'
+                                            : 'text-white/50 hover:bg-white/5 hover:text-white border border-transparent'
+                                    )}
+                                >
+                                    <item.icon className="w-4 h-4" />
+                                    {item.title}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
                 </aside>
 
-                {/* Main Content */}
-                <main className="flex-1">
+                <main className="flex-1 p-6 lg:p-8 overflow-auto">
                     {children}
                 </main>
             </div>

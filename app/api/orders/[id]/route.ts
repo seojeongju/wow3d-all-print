@@ -1,9 +1,7 @@
 import { NextRequest } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 /**
  * GET /api/orders/[id] - 특정 주문 상세 조회
@@ -14,16 +12,7 @@ export async function GET(
 ) {
     try {
         const { id } = await context.params;
-        let env: any;
-        try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) { }
-        if (!env) {
-            env = process.env;
-        }
+        const { env } = getCloudflareContext();
 
         // 인증 확인
         const auth = await requireAuth(request);
@@ -31,7 +20,7 @@ export async function GET(
             return auth;
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 

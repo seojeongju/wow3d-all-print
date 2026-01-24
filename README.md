@@ -8,10 +8,10 @@
 - **UI Components**: Shadcn/UI
 - **3D Rendering**: Three.js (React Three Fiber)
 - **State Management**: Zustand (with persist)
-- **Hosting**: Cloudflare Pages
+- **Hosting**: Cloudflare Workers (OpenNext for Cloudflare)
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare R2 (3D 파일 저장용)
-- **Runtime**: Edge Runtime (Cloudflare Workers)
+- **Runtime**: OpenNext on Cloudflare Workers (Node.js compat)
 
 ## 현재 구현 완료 상태 (2026-01-23)
 
@@ -113,11 +113,11 @@ wow3d_all_print/
 │   └── useFileStore.ts
 ├── hooks/
 │   └── use-toast.ts        # Toast 알림 hook
-├── functions/
-│   └── _middleware.ts      # Cloudflare Pages Functions
 ├── schema.sql              # D1 데이터베이스 스키마
-├── wrangler.toml           # Cloudflare 설정
-└── env.d.ts                # Cloudflare 타입 정의
+├── wrangler.toml           # Cloudflare Workers 설정 (OpenNext)
+├── open-next.config.ts     # OpenNext for Cloudflare 설정
+├── env.d.ts                # Cloudflare 타입
+└── cloudflare-env.d.ts     # CloudflareEnv (wrangler types)
 ```
 
 ## 로컬 개발 환경 실행
@@ -128,6 +128,9 @@ npm install
 
 # 개발 서버 실행
 npm run dev
+
+# OpenNext 로컬 프리뷰 (D1/R2 시뮬레이션)
+npm run preview
 
 # 브라우저에서 열기
 # http://localhost:3000 - 랜딩페이지
@@ -161,16 +164,12 @@ npx wrangler d1 execute wow3d-production --file=./schema.sql
 npx wrangler r2 bucket create wow3d-files
 ```
 
-### 5. Cloudflare Pages 배포
-1. Cloudflare Dashboard → Pages
-2. GitHub 레포지토리 연동
-3. 빌드 설정:
-   - Framework: Next.js
-   - Build command: `npm run pages:build`
-   - Output: `.vercel/output/static`
-4. Bindings 설정:
-   - D1: `DB` → `wow3d-production`
-   - R2: `BUCKET` → `wow3d-files`
+### 5. Cloudflare Workers 배포 (OpenNext)
+```bash
+npm run deploy
+```
+- `opennextjs-cloudflare build` 후 `opennextjs-cloudflare deploy` 수행
+- `wrangler.toml`에 D1·R2 바인딩이 있으면 그대로 적용
 
 ## 주요 기능
 

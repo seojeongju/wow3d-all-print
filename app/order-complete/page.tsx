@@ -74,8 +74,8 @@ function OrderCompleteContent() {
                         </motion.div>
 
                         <div className="space-y-2">
-                            <h1 className="text-5xl font-black uppercase tracking-tighter italic">Mission Accomplished</h1>
-                            <p className="text-white/40 font-bold uppercase tracking-[0.3em] text-[10px]">Your order has been recorded successfully</p>
+                            <h1 className="text-5xl font-black uppercase tracking-tighter italic">주문 접수 완료</h1>
+                            <p className="text-white/40 font-bold uppercase tracking-[0.3em] text-[10px]">주문이 정상적으로 접수되었습니다</p>
                         </div>
                     </div>
 
@@ -84,20 +84,20 @@ function OrderCompleteContent() {
                         <div className="space-y-6">
                             <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 ring-1 ring-white/5 space-y-6">
                                 <div>
-                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">Order ID</div>
+                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">주문번호</div>
                                     <div className="font-mono text-sm font-bold text-primary">
                                         #{orderNumber || order?.orderNumber || '---'}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">Status</div>
+                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">상태</div>
                                     <div className="inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                                        Pending Review
+                                        검토 대기
                                     </div>
                                 </div>
                                 <Separator className="bg-white/5" />
                                 <div>
-                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">Total Amount</div>
+                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">총 결제 금액</div>
                                     <div className="text-2xl font-black">
                                         ₩{(Math.round(order?.totalAmount || 0) * 1300).toLocaleString()}
                                     </div>
@@ -118,15 +118,15 @@ function OrderCompleteContent() {
                             <div className="p-8 rounded-[40px] bg-white/[0.02] border border-white/5 space-y-10">
                                 <div className="flex items-center gap-3">
                                     <Clock className="w-5 h-5 text-primary" />
-                                    <h2 className="text-sm font-black uppercase tracking-[0.2em]">What happens next?</h2>
+                                    <h2 className="text-sm font-black uppercase tracking-[0.2em]">이후 진행 절차</h2>
                                 </div>
 
                                 <div className="grid gap-10">
                                     {[
-                                        { title: "Technical Review", desc: "A technician will review your 3D files and ensure printability.", icon: "01" },
-                                        { title: "Price Confirmation", desc: "We'll confirm the final quote including shipping and materials.", icon: "02" },
-                                        { title: "Manufacturing", desc: "Once confirmed, your parts enter the production queue.", icon: "03" },
-                                        { title: "Quality Control & Ship", desc: "Parts are inspected, cured, and shipped to your destination.", icon: "04" },
+                                        { title: "기술 검토", desc: "기술자가 3D 파일을 검토하고 출력 가능 여부를 확인합니다.", icon: "01" },
+                                        { title: "최종 견적 확인", desc: "배송비·소재비를 포함한 최종 견적을 안내합니다.", icon: "02" },
+                                        { title: "제작", desc: "확정 후 제품이 제작 대기열에 투입됩니다.", icon: "03" },
+                                        { title: "검수 및 배송", desc: "출력물을 검수·경화 후 배송지로 발송합니다.", icon: "04" },
                                     ].map((step, idx) => (
                                         <div key={idx} className="flex gap-6 group">
                                             <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/5 flex items-center justify-center text-[10px] font-black group-hover:bg-primary group-hover:text-white transition-all">
@@ -143,7 +143,7 @@ function OrderCompleteContent() {
 
                             <Link href="/quote" className="block">
                                 <Button size="lg" className="w-full h-16 rounded-3xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 font-black uppercase tracking-[0.2em] gap-3 transition-all active:scale-95 group">
-                                    Scale Up New Quote
+                                    새 견적 받기
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </Link>
@@ -154,11 +154,11 @@ function OrderCompleteContent() {
                     <div className="mt-20 flex flex-col items-center gap-6">
                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
                             <ShieldCheck className="w-4 h-4 text-emerald-500/40" />
-                            Wow3D Industrial Grade Service
+                            WOW3D 산업용 등급 서비스
                         </div>
                         <p className="text-[10px] text-white/20 font-medium max-w-sm text-center italic">
-                            Email confirmation has been sent to your registered address.
-                            Our support team is available 24/7 for your questions.
+                            등록하신 이메일로 접수 확인 안내를 발송했습니다.
+                            문의 사항은 고객 지원팀(24/7)으로 연락해 주세요.
                         </p>
                     </div>
                 </div>

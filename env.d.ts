@@ -1,3 +1,8 @@
+// Cloudflare Workers 타입 (Fetcher: service bindings)
+interface Fetcher {
+	fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+}
+
 // Cloudflare D1 Database 타입 정의
 interface Env {
     DB: D1Database;

@@ -76,9 +76,9 @@ export default function CartPage() {
             <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
                 <div className="container mx-auto px-6 h-24 flex items-center justify-between">
                     <div className="flex flex-col">
-                        <h1 className="text-2xl font-black uppercase tracking-tighter">Shopping Bag</h1>
+                        <h1 className="text-2xl font-black uppercase tracking-tighter">장바구니</h1>
                         <p className="text-[10px] uppercase font-bold text-white/30 tracking-[0.2em]">
-                            {getTotalItems()} Items in your cart
+                            총 {getTotalItems()}개 품목
                         </p>
                     </div>
                     <Button
@@ -123,7 +123,7 @@ export default function CartPage() {
                                             <div>
                                                 <div className="flex items-start justify-between mb-2">
                                                     <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
-                                                        {item.quote?.fileName || '3D Model Configuration'}
+                                                        {item.quote?.fileName || '3D 모델'}
                                                     </h3>
                                                     <button
                                                         onClick={() => handleRemoveItem(item.id)}
@@ -135,22 +135,22 @@ export default function CartPage() {
 
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] font-bold uppercase tracking-widest text-white/30">
                                                     <div className="flex flex-col gap-1">
-                                                        <span>Method</span>
+                                                        <span>방식</span>
                                                         <span className="text-white text-xs">{item.quote?.printMethod.toUpperCase()}</span>
                                                     </div>
                                                     <div className="flex flex-col gap-1">
-                                                        <span>Material</span>
+                                                        <span>소재</span>
                                                         <span className="text-white text-xs whitespace-nowrap overflow-hidden text-ellipsis">
                                                             {item.quote?.fdmMaterial || item.quote?.resinType || '-'}
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-col gap-1">
-                                                        <span>Volume</span>
+                                                        <span>부피</span>
                                                         <span className="text-white text-xs">{item.quote?.volumeCm3.toFixed(1)} cm³</span>
                                                     </div>
                                                     <div className="flex flex-col gap-1">
-                                                        <span>Lead Time</span>
-                                                        <span className="text-emerald-400 text-xs text-nowrap">~{Math.ceil((item.quote?.estimatedTimeHours || 0) + 24)}h</span>
+                                                        <span>예상 소요</span>
+                                                        <span className="text-emerald-400 text-xs text-nowrap">~{Math.ceil((item.quote?.estimatedTimeHours || 0) + 24)}시간</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -177,7 +177,7 @@ export default function CartPage() {
                                                 </div>
 
                                                 <div className="text-right">
-                                                    <span className="text-xs text-white/30 block mb-0.5">Subtotal</span>
+                                                    <span className="text-xs text-white/30 block mb-0.5">소계</span>
                                                     <span className="text-xl font-black">
                                                         ₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}
                                                     </span>
@@ -197,20 +197,20 @@ export default function CartPage() {
                             <div className="absolute top-[-20%] right-[-20%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[80px]" />
 
                             <div className="relative">
-                                <h2 className="text-xl font-black uppercase tracking-wide mb-6">Summary</h2>
+                                <h2 className="text-xl font-black uppercase tracking-wide mb-6">주문 요약</h2>
 
                                 <div className="space-y-4">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Total items</span>
-                                        <span className="font-bold">{getTotalItems()}</span>
+                                        <span className="text-white/40 font-bold uppercase tracking-widest text-[10px]">총 품목 수</span>
+                                        <span className="font-bold">{getTotalItems()}개</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Shipping</span>
-                                        <span className="text-emerald-400 font-bold uppercase text-[10px]">Custom calc</span>
+                                        <span className="text-white/40 font-bold uppercase tracking-widest text-[10px]">배송비</span>
+                                        <span className="text-emerald-400 font-bold uppercase text-[10px]">결제 시 산정</span>
                                     </div>
                                     <Separator className="bg-white/5 my-6" />
                                     <div className="flex justify-between items-end">
-                                        <span className="text-white/40 font-black uppercase tracking-widest text-xs">Total Amount</span>
+                                        <span className="text-white/40 font-black uppercase tracking-widest text-xs">총 결제 금액</span>
                                         <div className="text-right">
                                             <div className="text-sm text-white/30 font-medium line-through decoration-white/20">
                                                 ₩{(Math.round(getTotalPrice() * 1.1) * 1300).toLocaleString()}
@@ -226,18 +226,18 @@ export default function CartPage() {
                                     {isAuthenticated ? (
                                         <Link href="/checkout">
                                             <Button size="lg" className="w-full h-16 rounded-2xl bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group">
-                                                Checkout Now
+                                                결제하기
                                                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                             </Button>
                                         </Link>
                                     ) : (
                                         <div className="space-y-4">
                                             <p className="text-[10px] text-white/30 font-bold uppercase text-center tracking-widest px-4">
-                                                Please authenticate to proceed with your order
+                                                주문을 이어가려면 로그인해 주세요
                                             </p>
                                             <Link href="/auth">
                                                 <Button size="lg" className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 font-black uppercase tracking-widest transition-all">
-                                                    Sign In
+                                                    로그인
                                                 </Button>
                                             </Link>
                                         </div>
@@ -245,7 +245,7 @@ export default function CartPage() {
 
                                     <Link href="/quote">
                                         <Button variant="ghost" size="lg" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white/60 text-xs font-bold uppercase tracking-widest">
-                                            Continue Browsing
+                                            더 둘러보기
                                         </Button>
                                     </Link>
                                 </div>
@@ -253,10 +253,10 @@ export default function CartPage() {
                                 <div className="pt-10 text-[10px] text-white/20 font-bold uppercase tracking-widest leading-relaxed">
                                     <div className="flex items-center gap-2 mb-2 text-white/40">
                                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
-                                        Secure Ordering Guaranteed
+                                        안전한 주문 환경
                                     </div>
-                                    • Estimates are based on current material rates<br />
-                                    • Final shipping cost calculated after review
+                                    • 견적은 현재 소재 단가 기준입니다<br />
+                                    • 배송비는 검토 후 최종 결제 시 산정됩니다
                                 </div>
                             </div>
                         </div>

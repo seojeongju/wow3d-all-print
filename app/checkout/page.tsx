@@ -112,12 +112,12 @@ export default function CheckoutPage() {
                     <Link href="/cart">
                         <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/10 rounded-full px-4 text-[10px] font-black uppercase tracking-widest gap-2">
                             <ArrowLeft className="w-3.5 h-3.5" />
-                            Return
+                            돌아가기
                         </Button>
                     </Link>
                     <div className="ml-auto flex items-center gap-4">
                         <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Secure Checkout</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">안전 결제</span>
                     </div>
                 </div>
             </div>
@@ -133,22 +133,22 @@ export default function CheckoutPage() {
                             className="space-y-12"
                         >
                             <div className="space-y-2">
-                                <h1 className="text-4xl font-black tracking-tight leading-none uppercase">Order Details</h1>
-                                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">Provide your logistic informations below</p>
+                                <h1 className="text-4xl font-black tracking-tight leading-none uppercase">주문 정보</h1>
+                                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">배송에 필요한 정보를 입력해 주세요</p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-10">
                                 <div className="space-y-8">
                                     <div className="flex items-center gap-3 text-primary">
                                         <MapPin className="w-5 h-5" />
-                                        <h3 className="text-sm font-black uppercase tracking-widest">Shipping Destination</h3>
+                                        <h3 className="text-sm font-black uppercase tracking-widest">배송지</h3>
                                     </div>
 
                                     <div className="grid gap-6">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <User className="w-3 h-3" /> Full Name
+                                                    <User className="w-3 h-3" /> 받는 분
                                                 </Label>
                                                 <Input
                                                     id="recipientName"
@@ -156,13 +156,13 @@ export default function CheckoutPage() {
                                                     value={formData.recipientName}
                                                     onChange={handleInputChange}
                                                     className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                    placeholder="John Doe"
+                                                    placeholder="홍길동"
                                                     required
                                                 />
                                             </div>
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <Phone className="w-3 h-3" /> Phone Number
+                                                    <Phone className="w-3 h-3" /> 연락처
                                                 </Label>
                                                 <Input
                                                     id="recipientPhone"
@@ -179,7 +179,7 @@ export default function CheckoutPage() {
 
                                         <div className="space-y-2.5">
                                             <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                <MapPin className="w-3 h-3" /> Delivery Address
+                                                <MapPin className="w-3 h-3" /> 배송 주소
                                             </Label>
                                             <Input
                                                 id="shippingAddress"
@@ -187,14 +187,14 @@ export default function CheckoutPage() {
                                                 value={formData.shippingAddress}
                                                 onChange={handleInputChange}
                                                 className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                placeholder="Street address, Apartment, Suite, etc."
+                                                placeholder="도로명, 동/호수, 상세주소"
                                                 required
                                             />
                                         </div>
 
                                         <div className="space-y-2.5">
                                             <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                Postal Code
+                                                우편번호
                                             </Label>
                                             <Input
                                                 id="shippingPostalCode"
@@ -215,7 +215,7 @@ export default function CheckoutPage() {
                                                 name="customerNote"
                                                 value={formData.customerNote}
                                                 onChange={handleInputChange}
-                                                placeholder="Leave instructions for the courier..."
+                                                placeholder="배송사에 전달할 요청 사항을 입력하세요..."
                                                 className="w-full min-h-32 px-5 py-4 rounded-3xl bg-white/[0.03] border border-white/10 text-sm font-bold ring-offset-black focus:outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-white/10"
                                             />
                                         </div>
@@ -225,15 +225,15 @@ export default function CheckoutPage() {
                                 <div className="space-y-6 pt-6">
                                     <div className="flex items-center gap-3 text-white/40">
                                         <CreditCard className="w-5 h-5" />
-                                        <h3 className="text-sm font-black uppercase tracking-widest">Payment Method</h3>
+                                        <h3 className="text-sm font-black uppercase tracking-widest">결제 안내</h3>
                                     </div>
                                     <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-black border border-white/10 flex items-center justify-center">
                                             <CreditCard className="w-5 h-5 text-white/20" />
                                         </div>
                                         <div className="flex-1">
-                                            <span className="text-xs font-bold text-white/60 block">Consultation Required</span>
-                                            <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">Payment will be processed after technician review</p>
+                                            <span className="text-xs font-bold text-white/60 block">견적 검토 후 결제</span>
+                                            <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">기술 검토 후 최종 견적·결제를 안내해 드립니다</p>
                                         </div>
                                     </div>
                                 </div>
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
                             className="relative"
                         >
                             <div className="sticky top-12 p-8 rounded-[40px] bg-white/[0.03] border border-white/10 ring-1 ring-white/5 space-y-8">
-                                <h2 className="text-xl font-black uppercase tracking-wide">Review Order</h2>
+                                <h2 className="text-xl font-black uppercase tracking-wide">주문 검토</h2>
 
                                 <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                                     {items.map((item) => (
@@ -257,7 +257,7 @@ export default function CheckoutPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-xs font-bold truncate group-hover:text-primary transition-colors">{item.quote?.fileName}</div>
-                                                <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • Qty {item.quantity}</div>
+                                                <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • 수량 {item.quantity}</div>
                                             </div>
                                             <div className="text-xs font-mono font-bold">
                                                 ₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}
@@ -270,15 +270,15 @@ export default function CheckoutPage() {
 
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                        <span>Items ({totalItems})</span>
+                                        <span>품목 ({totalItems}개)</span>
                                         <span className="text-white">₩{totalPriceKWR.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                        <span>Shipping</span>
-                                        <span className="text-emerald-400">TBD</span>
+                                        <span>배송비</span>
+                                        <span className="text-emerald-400">검토 후 산정</span>
                                     </div>
                                     <div className="flex justify-between items-baseline pt-4 border-t border-white/5 mt-4">
-                                        <span className="text-xs font-black uppercase tracking-widest">Total</span>
+                                        <span className="text-xs font-black uppercase tracking-widest">총 결제 예정</span>
                                         <span className="text-2xl font-black text-primary">₩{totalPriceKWR.toLocaleString()}</span>
                                     </div>
                                 </div>
@@ -294,7 +294,7 @@ export default function CheckoutPage() {
                                             <Loader2 className="w-5 h-5 animate-spin" />
                                         ) : (
                                             <>
-                                                Confirm Order
+                                                주문 확정
                                                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                             </>
                                         )}
@@ -302,7 +302,7 @@ export default function CheckoutPage() {
 
                                     <div className="mt-6 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
                                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
-                                        Enterprise Grade Data Encryption
+                                        엔터프라이즈급 데이터 암호화
                                     </div>
                                 </div>
                             </div>

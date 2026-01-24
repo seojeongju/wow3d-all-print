@@ -1,9 +1,7 @@
 import { NextRequest } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse } from '@/lib/api-utils';
-
-// Edge Runtime 사용
-export const runtime = 'edge';
 
 /**
  * GET /api/quotes/[id] - 특정 견적 조회
@@ -14,9 +12,9 @@ export async function GET(
 ) {
     try {
         const { id } = await context.params;
-        const env = (process.env as any) as Env;
+        const { env } = getCloudflareContext();
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 
@@ -45,9 +43,9 @@ export async function DELETE(
 ) {
     try {
         const { id } = await context.params;
-        const env = (process.env as any) as Env;
+        const { env } = getCloudflareContext();
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 

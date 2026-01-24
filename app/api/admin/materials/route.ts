@@ -1,11 +1,8 @@
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
-import { Env } from '@/env';
-
-export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
-    const { env } = getRequestContext() as any;
+    const { env } = getCloudflareContext();
     try {
         const { results } = await env.DB.prepare(
             "SELECT * FROM materials ORDER BY type, name"
@@ -18,7 +15,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const { env } = getRequestContext() as any;
+    const { env } = getCloudflareContext();
     try {
         const body = await req.json() as any;
         const { name, type, pricePerGram, density, colors } = body;
@@ -35,7 +32,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    const { env } = getRequestContext() as any;
+    const { env } = getCloudflareContext();
     try {
         // Extract ID from query params since 'DELETE' with body is sometimes problematic or we can use dynamic route
         // But for simplicity using searchParams ?id=123

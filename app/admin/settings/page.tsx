@@ -118,23 +118,23 @@ export default function AdminSettings() {
         setSettings(prev => prev.map(s => s.key === key ? { ...s, value } : s));
     };
 
-    if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
+    if (loading) return <div className="flex justify-center p-12"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">설정 및 자재 관리</h1>
-                <p className="text-muted-foreground">견적 계산에 사용되는 기본 값과 자재 정보를 관리합니다.</p>
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">설정 및 자재 관리</h1>
+                <p className="text-white/50 text-sm mt-1">견적 계산에 사용되는 기본 값과 자재 정보를 관리합니다.</p>
             </div>
 
             <Tabs defaultValue="materials" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="materials">자재(Materials)</TabsTrigger>
-                    <TabsTrigger value="pricing">가격 정책(Pricing)</TabsTrigger>
+                <TabsList className="bg-white/5 border border-white/10 p-1">
+                    <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-white">자재</TabsTrigger>
+                    <TabsTrigger value="pricing" className="data-[state=active]:bg-primary data-[state=active]:text-white">가격 정책</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="materials" className="space-y-4">
-                    <Card>
+                    <Card className="bg-white/[0.03] border-white/10">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>자재 목록</CardTitle>
@@ -181,28 +181,28 @@ export default function AdminSettings() {
                             </Dialog>
                         </CardHeader>
                         <CardContent>
-                            <div className="rounded-md border">
+                            <div className="rounded-lg border border-white/10 overflow-hidden">
                                 <table className="w-full text-sm text-left">
-                                    <thead className="bg-muted/50">
-                                        <tr>
-                                            <th className="p-4 font-medium">이름</th>
-                                            <th className="p-4 font-medium">타입</th>
-                                            <th className="p-4 font-medium">g당 가격(원)</th>
-                                            <th className="p-4 font-medium">밀도(g/cm³)</th>
-                                            <th className="p-4 font-medium text-right">관리</th>
+                                    <thead>
+                                        <tr className="border-b border-white/10">
+                                            <th className="p-4 font-medium text-white/70">이름</th>
+                                            <th className="p-4 font-medium text-white/70">타입</th>
+                                            <th className="p-4 font-medium text-white/70">g당 가격(원)</th>
+                                            <th className="p-4 font-medium text-white/70">밀도(g/cm³)</th>
+                                            <th className="p-4 font-medium text-right text-white/70">관리</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {materials.map((m) => (
-                                            <tr key={m.id} className="border-t">
-                                                <td className="p-4 font-medium">{m.name}</td>
+                                            <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                                                <td className="p-4 font-medium text-white">{m.name}</td>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${m.type === 'FDM' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${m.type === 'FDM' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                                         {m.type}
                                                     </span>
                                                 </td>
-                                                <td className="p-4">{m.pricePerGram}원</td>
-                                                <td className="p-4">{m.density}</td>
+                                                <td className="p-4 text-white/90">{m.pricePerGram}원</td>
+                                                <td className="p-4 text-white/90">{m.density}</td>
                                                 <td className="p-4 text-right">
                                                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteMaterial(m.id)}>
                                                         <Trash2 className="w-4 h-4" />
@@ -218,25 +218,25 @@ export default function AdminSettings() {
                 </TabsContent>
 
                 <TabsContent value="pricing" className="space-y-4">
-                    <Card>
+                    <Card className="bg-white/[0.03] border-white/10">
                         <CardHeader>
-                            <CardTitle>기본 가격 정책</CardTitle>
-                            <CardDescription>
-                                장비 운용 비용 및 최소 주문 금액 등을 설정합니다. (변경 시 즉시 반영됩니다)
+                            <CardTitle className="text-white">기본 가격 정책</CardTitle>
+                            <CardDescription className="text-white/50">
+                                장비 운용 비용 및 최소 주문 금액 등을 설정합니다. (변경 시 즉시 반영)
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {settings.map((s) => (
-                                <div key={s.key} className="grid grid-cols-1 md:grid-cols-2 items-center gap-4 py-2 border-b last:border-0">
-                                    <div className="font-medium text-sm">
+                                <div key={s.key} className="grid grid-cols-1 md:grid-cols-2 items-center gap-4 py-3 border-b border-white/5 last:border-0">
+                                    <div className="font-medium text-sm text-white/90">
                                         {s.description || s.key}
-                                        <div className="text-xs text-muted-foreground">{s.key}</div>
+                                        <div className="text-xs text-white/40">{s.key}</div>
                                     </div>
-                                    <Input type="number" value={s.value} onChange={(e) => handleSettingChange(s.key, e.target.value)} />
+                                    <Input type="number" value={s.value} onChange={(e) => handleSettingChange(s.key, e.target.value)} className="bg-white/5 border-white/10 text-white" />
                                 </div>
                             ))}
                             <div className="flex justify-end pt-4">
-                                <Button onClick={handleSaveSettings}><Save className="w-4 h-4 mr-2" /> 변경사항 저장</Button>
+                                <Button onClick={handleSaveSettings} className="bg-primary hover:bg-primary/90"><Save className="w-4 h-4 mr-2" /> 변경사항 저장</Button>
                             </div>
                         </CardContent>
                     </Card>

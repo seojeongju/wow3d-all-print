@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
-
-export const runtime = 'edge';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export async function GET(req: NextRequest) {
     const status: any = {
         step: 'init',
         globals: {
-            // pure edge check
             hasCrypto: typeof crypto !== 'undefined',
             hasTextEncoder: typeof TextEncoder !== 'undefined'
         },
@@ -17,31 +14,28 @@ export async function GET(req: NextRequest) {
     try {
         // 1. Context Access
         status.step = 'context_access';
-        let env: any = null;
+        let env: { DB?: { prepare: (q: string) => { first: () => Promise<unknown> } } } | null = null;
         try {
-            const ctx = getRequestContext();
-            if (ctx) {
-                status.ctxFound = true;
-                env = (ctx as any).env;
-            } else {
-                status.ctxFound = false;
-            }
+            env = getCloudflareContext().env as { DB?: { prepare: (q: string) => { first: () => Promise<unknown> } } };
+            status.ctxFound = true;
         } catch (e: any) {
-            status.ctxError = e.message;
+            status.ctxError = e?.message;
+            status.ctxFound = false;
         }
 
         status.hasEnv = !!env;
         status.hasDB = !!(env && env.DB);
 
         // 2. Database Check
-        if (env && env.DB) {
+        if (env?.DB) {
             status.step = 'db_query';
             const user = await env.DB.prepare("SELECT * FROM users WHERE email = 'admin@wow3d.com'").first();
             status.userFound = !!user;
 
             if (user) {
-                status.userRole = user.role;
-                status.userHashPrefix = user.password_hash?.substring(0, 10);
+                const u = user as Record<string, unknown>;
+                status.userRole = u.role;
+                status.userHashPrefix = (u.password_hash as string)?.substring(0, 10);
 
                 // 3. Hash Check
                 status.step = 'hash_check';
@@ -51,7 +45,7 @@ export async function GET(req: NextRequest) {
                 const hashArray = Array.from(new Uint8Array(hashBuffer));
                 const calcHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                 status.calcHash = calcHash;
-                status.match = (calcHash === user.password_hash);
+                status.match = (calcHash === u.password_hash);
             }
         } else {
             status.message = "DB Binding Missing (Check Cloudflare Dashboard).";

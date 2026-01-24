@@ -23,7 +23,7 @@ export default function Footer() {
                                     WOW3D<span className="text-primary font-light ml-0.5">PRO</span>
                                 </span>
                                 <span className="text-[8px] uppercase font-bold tracking-[0.3em] text-white/30 leading-none mt-1">
-                                    Industrial 3D System
+                                    산업용 3D 시스템
                                 </span>
                             </div>
                         </Link>
@@ -45,7 +45,7 @@ export default function Footer() {
                     {/* Navigation - Center Links */}
                     <div className="lg:col-span-5 grid grid-cols-2 gap-8">
                         <div className="space-y-6">
-                            <h3 className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Location Centers</h3>
+                            <h3 className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">제작 센터</h3>
                             <ul className="space-y-4">
                                 {[
                                     { name: '홍대센터', address: '서울시 마포구 독막로 93 상수빌딩 4층' },
@@ -63,15 +63,15 @@ export default function Footer() {
                             </ul>
                         </div>
                         <div className="space-y-6">
-                            <h3 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">Support Hub</h3>
+                            <h3 className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">고객 지원</h3>
                             <ul className="space-y-4">
                                 <li>
-                                    <div className="text-[11px] font-black text-white/60 uppercase tracking-widest mb-1.5">Contact Line</div>
+                                    <div className="text-[11px] font-black text-white/60 uppercase tracking-widest mb-1.5">대표 전화</div>
                                     <p className="text-[10px] text-white/30 font-bold">02-3144-3137</p>
                                     <p className="text-[10px] text-white/30 font-bold">054-464-3144</p>
                                 </li>
                                 <li>
-                                    <div className="text-[11px] font-black text-white/60 uppercase tracking-widest mb-1.5">Email Support</div>
+                                    <div className="text-[11px] font-black text-white/60 uppercase tracking-widest mb-1.5">이메일 문의</div>
                                     <a href="mailto:wow3d16@naver.com" className="text-[10px] text-primary font-bold hover:underline">wow3d16@naver.com</a>
                                 </li>
                             </ul>
@@ -81,12 +81,12 @@ export default function Footer() {
                     {/* Newsletter / CTA */}
                     <div className="lg:col-span-3 space-y-6">
                         <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 ring-1 ring-white/5">
-                            <h3 className="text-xs font-black uppercase tracking-widest mb-4">Newsletter</h3>
-                            <p className="text-[10px] text-white/30 font-medium mb-4 italic">Get private invitations to our additive manufacturing workshops.</p>
+                            <h3 className="text-xs font-black uppercase tracking-widest mb-4">소식 받기</h3>
+                            <p className="text-[10px] text-white/30 font-medium mb-4 italic">적층 제조 워크숍·신규 소재 소식을 가장 먼저 받아보세요.</p>
                             <div className="flex gap-2">
                                 <input
                                     type="email"
-                                    placeholder="your@email.com"
+                                    placeholder="이메일 주소"
                                     className="flex-1 h-10 bg-black border border-white/10 rounded-xl px-3 text-xs font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                                 />
                                 <button className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-black hover:bg-white/90 transition-all">
@@ -101,12 +101,12 @@ export default function Footer() {
                 {/* Bottom Bar */}
                 <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
-                        © {new Date().getFullYear()} WOW3D PRO INDUSTRIAL SYSTEMS. ALL RIGHTS RESERVED.
+                        © {new Date().getFullYear()} WOW3D PRO. (주)와우3D. All rights reserved.
                     </div>
                     <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-white/40">
-                        <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-                        <Link href="/privacy" className="hover:text-white transition-colors">Privacy Cloud</Link>
-                        <Link href="/terms" className="hover:text-white transition-colors">Material Safety</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors">이용약관</Link>
+                        <Link href="/privacy" className="hover:text-white transition-colors">개인정보처리방침</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors">소재 안전 정보</Link>
                     </div>
                 </div>
             </div>

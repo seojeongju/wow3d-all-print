@@ -1,24 +1,18 @@
 import { NextRequest } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 /**
  * GET /api/cart - 장바구니 조회
  */
 export async function GET(request: NextRequest) {
     try {
-        let env: any;
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) { }
-        if (!env) {
-            env = process.env;
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
         }
         const sessionId = request.headers.get('X-Session-ID');
         const userId = request.headers.get('X-User-ID');
@@ -27,7 +21,7 @@ export async function GET(request: NextRequest) {
             return errorResponse('세션 ID 또는 사용자 ID가 필요합니다', 400);
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return successResponse([]);
         }
 
@@ -67,7 +61,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { env } = getRequestContext() as any;
+        const { env } = getCloudflareContext();
         const body = await request.json();
 
         if (!body.quoteId) {
@@ -81,7 +75,7 @@ export async function POST(request: NextRequest) {
             sessionId = generateSessionId();
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return successResponse(
                 { id: Math.floor(Math.random() * 10000), sessionId },
                 '장바구니에 추가되었습니다 (개발 모드)'
@@ -146,7 +140,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
     try {
-        const { env } = getRequestContext() as any;
+        const { env } = getCloudflareContext();
         const sessionId = request.headers.get('X-Session-ID');
         const userId = request.headers.get('X-User-ID');
 
@@ -154,7 +148,7 @@ export async function DELETE(request: NextRequest) {
             return errorResponse('세션 ID 또는 사용자 ID가 필요합니다', 400);
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return successResponse({}, '장바구니가 비워졌습니다 (개발 모드)');
         }
 

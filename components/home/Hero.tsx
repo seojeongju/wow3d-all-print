@@ -62,7 +62,7 @@ export default function Hero() {
                                 AI 자동 견적하기 <ArrowRight className="ml-2 w-5 h-5" />
                             </Button>
                         </Link>
-                        <Link href="#materials">
+                        <Link href="#features">
                             <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/80 backdrop-blur-sm">
                                 소재 살펴보기
                             </Button>

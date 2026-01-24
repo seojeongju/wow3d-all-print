@@ -1,24 +1,20 @@
 import { NextRequest } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { jsonResponse, errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
 import type { QuoteData } from '@/lib/types';
-
-// Edge Runtime 사용 (Cloudflare Pages 호환)
-export const runtime = 'edge';
 
 /**
  * GET /api/quotes - 견적 목록 조회
  */
 export async function GET(request: NextRequest) {
     try {
-        let env: any;
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) { }
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
+        }
 
 
         // 세션 ID 또는 사용자 ID로 필터링
@@ -59,13 +55,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        let env: any;
+        let env: { DB?: Env['DB'] } | undefined;
         try {
-            const ctx = getRequestContext();
-            if (ctx && (ctx as any).env) {
-                env = (ctx as any).env;
-            }
-        } catch (e) { }
+            env = getCloudflareContext().env;
+        } catch {
+            env = undefined;
+        }
 
         const body = await request.json() as QuoteData;
 

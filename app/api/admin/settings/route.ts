@@ -1,10 +1,8 @@
-import { getRequestContext } from '@cloudflare/next-on-pages';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
-    const { env } = getRequestContext() as any;
+    const { env } = getCloudflareContext();
     try {
         const { results } = await env.DB.prepare(
             "SELECT * FROM print_settings"
@@ -17,7 +15,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const { env } = getRequestContext() as any;
+    const { env } = getCloudflareContext();
     try {
         const body = await req.json() as any[];
         // Expecting array of { key, value }

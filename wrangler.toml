@@ -1,23 +1,32 @@
-name = "wow3d-all-print"
-compatibility_date = "2024-01-01"
-# @cloudflare/next-on-pages 필수: Node.js API 호환 (Buffer, process 등)
-compatibility_flags = ["nodejs_compat"]
+# OpenNext for Cloudflare Workers
+# https://opennext.js.org/cloudflare/get-started
 
-# D1 Database Configuration
+name = "wow3d-all-print"
+main = ".open-next/worker.js"
+compatibility_date = "2024-12-30"
+compatibility_flags = [
+  "nodejs_compat",
+  "global_fetch_strictly_public",
+]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "wow3d-all-print"
+
+# D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "wow3d-production"
 database_id = "8fc9fb41-4fae-4e6f-af47-6195d825ab8d"
 
-# R2 Storage Configuration (3D 파일 저장용)
+# R2 Storage (3D 파일 저장)
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "wow3d-files"
 
-# Environment Variables
 [vars]
 ENVIRONMENT = "production"
-
-# Pages Configuration (next-on-pages 빌드 출력 경로)
-# Git 연동 시 대시보드 "Build output directory"와 동일하게 설정해야 wrangler가 유효하게 인식됨
-pages_build_output_dir = ".vercel/output/static"

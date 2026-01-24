@@ -1,15 +1,14 @@
 import { NextRequest } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth } from '@/lib/api-utils';
-
-export const runtime = 'edge';
 
 /**
  * GET /api/auth/me - 현재 사용자 정보 조회
  */
 export async function GET(request: NextRequest) {
     try {
-        const env = (process.env as any) as Env;
+        const { env } = getCloudflareContext();
 
         // 인증 확인
         const auth = await requireAuth(request);
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
             return auth;
         }
 
-        if (!env.DB) {
+        if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 

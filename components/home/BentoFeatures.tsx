@@ -13,7 +13,7 @@ const features = [
     },
     {
         title: "30종 이상의 소재",
-        description: "PLA, ABS, PLA, 레진, 나일론 등 다양한 산업용 소재 보유.",
+        description: "PLA, ABS, PETG, 레진, 나일론 등 다양한 산업용 소재 보유.",
         icon: Box,
         className: "md:col-span-1 bg-card",
         iconColor: "text-blue-500"
@@ -50,7 +50,7 @@ const features = [
 
 export default function BentoFeatures() {
     return (
-        <section className="py-24 bg-secondary/30 relative">
+        <section id="features" className="py-24 bg-secondary/30 relative">
             <div className="container mx-auto px-4">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

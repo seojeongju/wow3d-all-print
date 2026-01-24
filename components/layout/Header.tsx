@@ -41,7 +41,7 @@ export default function Header() {
                             WOW3D<span className="text-primary font-light ml-0.5 whitespace-nowrap">PRO</span>
                         </span>
                         <span className="text-[8px] uppercase font-bold tracking-[0.3em] text-white/30 leading-none mt-1">
-                            Industrial 3D System
+                            산업용 3D 시스템
                         </span>
                     </div>
                 </Link>
@@ -96,7 +96,7 @@ export default function Header() {
                                         </div>
                                         <div className="flex flex-col text-left">
                                             <span className="text-[10px] font-black text-white leading-none capitalize">{user?.name}</span>
-                                            <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-0.5">Member</span>
+                                            <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-0.5">회원</span>
                                         </div>
                                     </button>
                                 </Link>
@@ -121,7 +121,7 @@ export default function Header() {
                     <Link href="/quote" className="hidden sm:block">
                         <Button className="h-11 px-6 rounded-xl bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 font-black text-[10px] uppercase tracking-[0.2em] gap-2 transition-all active:scale-95">
                             <Zap className="w-3.5 h-3.5 fill-current" />
-                            Get Quote
+                            견적 받기
                         </Button>
                     </Link>
                 </div>

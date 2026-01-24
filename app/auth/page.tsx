@@ -51,16 +51,16 @@ export default function AuthPage() {
             setUser(result.data.user, result.data.token)
 
             toast({
-                title: '✅ Access Granted',
-                description: `Welcome back, ${result.data.user.name}.`,
+                title: '로그인 성공',
+                description: `${result.data.user.name}님, 다시 만나서 반갑습니다.`,
             })
 
             // 관리자는 /admin, 일반 사용자는 /cart로 이동
             router.push(result.data.user?.role === 'admin' ? '/admin' : '/cart')
         } catch (error) {
             toast({
-                title: '❌ Access Denied',
-                description: error instanceof Error ? error.message : 'Invalid credentials provided.',
+                title: '로그인 실패',
+                description: error instanceof Error ? error.message : '이메일 또는 비밀번호를 확인해 주세요.',
                 variant: 'destructive',
             })
         } finally {
@@ -96,15 +96,15 @@ export default function AuthPage() {
             setUser(result.data.user, result.data.token)
 
             toast({
-                title: '✅ Registration Complete',
-                description: `Your account has been successfully created.`,
+                title: '회원가입 완료',
+                description: '계정이 생성되었습니다. 로그인된 상태로 이동합니다.',
             })
 
             router.push('/cart')
         } catch (error) {
             toast({
-                title: '❌ Registration Failed',
-                description: error instanceof Error ? error.message : 'Please check your inputs.',
+                title: '회원가입 실패',
+                description: error instanceof Error ? error.message : '입력 내용을 확인해 주세요.',
                 variant: 'destructive',
             })
         } finally {
@@ -123,21 +123,21 @@ export default function AuthPage() {
                     </div>
                     <div className="space-y-4">
                         <h2 className="text-5xl font-black uppercase tracking-tighter leading-none italic">
-                            Elevate your <br /> <span className="text-primary">Manufacturing</span>
+                            제조의 수준을 <br /> <span className="text-primary">한 단계 높이세요</span>
                         </h2>
                         <p className="text-white/30 text-xs font-bold uppercase tracking-[0.3em] leading-relaxed">
-                            Join the professional network of advanced additive manufacturing.
+                            첨단 적층 제조의 전문가 네트워크에 합류하세요.
                         </p>
                     </div>
 
                     <div className="pt-12 grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 text-left">
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest block mb-2">Efficiency</span>
-                            <p className="text-[11px] font-bold text-white/60 leading-relaxed">Instant quotes in seconds from your 3D geometry.</p>
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest block mb-2">효율</span>
+                            <p className="text-[11px] font-bold text-white/60 leading-relaxed">3D 지오메트리 업로드만으로 초 단위 실시간 견적.</p>
                         </div>
                         <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 text-left">
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest block mb-2">Quality</span>
-                            <p className="text-[11px] font-bold text-white/60 leading-relaxed">Industrial material specs and refined finishes.</p>
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest block mb-2">품질</span>
+                            <p className="text-[11px] font-bold text-white/60 leading-relaxed">산업용 소재 스펙과 정교한 마감 처리.</p>
                         </div>
                     </div>
                 </div>
@@ -152,16 +152,16 @@ export default function AuthPage() {
                 >
                     <div className="space-y-2">
                         <h1 className="text-4xl font-black uppercase tracking-tighter italic">
-                            {isLogin ? 'Sign In' : 'Join Pro'}
+                            {isLogin ? '로그인' : '회원가입'}
                         </h1>
                         <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em]">
-                            {isLogin ? 'Access your industrial dashboard' : 'Create your pro manufacturing account'}
+                            {isLogin ? '대시보드에 접속하세요' : 'WOW3D 프로 계정을 만드세요'}
                         </p>
                     </div>
 
                     <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-6">
                         <div className="space-y-1.5">
-                            <Label htmlFor="email" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Email Address</Label>
+                            <Label htmlFor="email" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">이메일</Label>
                             <div className="relative group">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                 <Input
@@ -184,7 +184,7 @@ export default function AuthPage() {
                                     className="space-y-6"
                                 >
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="name" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Full Name</Label>
+                                        <Label htmlFor="name" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">이름</Label>
                                         <div className="relative group">
                                             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                             <Input
@@ -193,13 +193,13 @@ export default function AuthPage() {
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
                                                 className="h-14 bg-white/[0.03] border-white/10 rounded-2xl pl-12 font-bold"
-                                                placeholder="John Doe"
+                                                placeholder="홍길동"
                                                 required
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="phone" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Phone (Optional)</Label>
+                                        <Label htmlFor="phone" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">전화번호 (선택)</Label>
                                         <div className="relative group">
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                             <Input
@@ -217,7 +217,7 @@ export default function AuthPage() {
                         )}
 
                         <div className="space-y-1.5">
-                            <Label htmlFor="password" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">Secret Password</Label>
+                            <Label htmlFor="password" className="text-[9px] font-black uppercase text-white/30 tracking-widest ml-1">비밀번호</Label>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                 <Input
@@ -241,7 +241,7 @@ export default function AuthPage() {
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <div className="flex items-center gap-2">
-                                    {isLogin ? 'Authenticate' : 'Create Account'}
+                                    {isLogin ? '로그인' : '가입하기'}
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             )}
@@ -250,19 +250,19 @@ export default function AuthPage() {
 
                     <div className="flex flex-col items-center gap-6">
                         <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                            {isLogin ? "No access yet?" : "Already part of the network?"}
+                            {isLogin ? "아직 회원이 아니신가요?" : "이미 계정이 있으신가요?"}
                             <button
                                 type="button"
                                 onClick={() => setIsLogin(!isLogin)}
                                 className="text-primary hover:underline ml-2"
                             >
-                                {isLogin ? 'Join Wow3D Pro' : 'Login Now'}
+                                {isLogin ? 'WOW3D 회원가입' : '로그인하기'}
                             </button>
                         </div>
 
                         <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] text-white/10 uppercase">
                             <ShieldCheck className="w-3 h-3 text-emerald-500/30" />
-                            Biometric Encrypted Connection
+                            암호화된 안전한 연결
                         </div>
                     </div>
                 </motion.div>

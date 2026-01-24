@@ -145,7 +145,7 @@ export default function QuotePage() {
                         <div className="p-6 border-t border-white/5 bg-black/40">
                             <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-white/30 font-bold">
                                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                                Secure Analysis Engine Active
+                                보안 분석 엔진 동작 중
                             </div>
                         </div>
                     </div>
@@ -180,19 +180,19 @@ export default function QuotePage() {
                             <div className="flex items-center gap-8 text-xs font-bold tracking-widest uppercase text-white/40">
                                 <div className="flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    100+ Materials
+                                    100종+ 소재
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    24H Turnaround
+                                    24시간 내 제작
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    ±0.2mm Precision
+                                    ±0.2mm 정밀도
                                 </div>
                             </div>
                             <div className="ml-auto text-[10px] text-white/20">
-                                Powered by Wow3D Professional Engine
+                                WOW3D 프로페셔널 엔진
                             </div>
                         </div>
                     </div>
