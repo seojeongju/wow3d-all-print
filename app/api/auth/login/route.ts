@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
             // getRequestContext failed or not in edge context
         }
 
-        if (!env) {
+        if (!env && typeof process !== 'undefined') {
             env = process.env;
         }
         const body = await request.json();

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
                 env = (ctx as any).env;
             }
         } catch (e) { }
-        if (!env) {
+        if (!env && typeof process !== 'undefined') {
             env = process.env;
         }
 
@@ -61,7 +61,16 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { env } = getRequestContext() as any;
+        let env: any;
+        try {
+            const ctx = getRequestContext();
+            if (ctx && (ctx as any).env) {
+                env = (ctx as any).env;
+            }
+        } catch (e) { }
+        if (!env && typeof process !== 'undefined') {
+            env = process.env;
+        }
         const body = await request.json() as QuoteData;
 
         // 필수 필드 검증

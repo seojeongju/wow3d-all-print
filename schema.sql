@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   name TEXT NOT NULL,
   phone TEXT,
+  role TEXT DEFAULT 'user',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

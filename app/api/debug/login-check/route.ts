@@ -20,8 +20,10 @@ export async function GET(req: NextRequest) {
         }
     } catch (e) { }
 
-    // Fallback
-    if (!env) env = process.env;
+    // Fallback for local development
+    if (!env && typeof process !== 'undefined') {
+        env = process.env;
+    }
 
     const status: any = {
         hasEnv: !!env,
