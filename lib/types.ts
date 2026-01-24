@@ -45,6 +45,7 @@ export interface User {
     email: string;
     name: string;
     phone?: string;
+    role?: 'user' | 'admin';
     createdAt: string;
     updatedAt: string;
 }
@@ -97,5 +98,25 @@ export interface Shipment {
     deliveredAt?: string;
     status: 'preparing' | 'shipped' | 'in_transit' | 'delivered';
     createdAt: string;
+    updatedAt: string;
+}
+
+// Admin & Settings Types
+export interface Material {
+    id: number;
+    name: string;
+    type: string;
+    pricePerGram: number;
+    density: number;
+    colors: string[]; // Parsed from JSON
+    isActive: boolean;
+    description?: string;
+}
+
+export interface PrintSetting {
+    key: string;
+    value: string;
+    category: string;
+    description?: string;
     updatedAt: string;
 }

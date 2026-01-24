@@ -17,7 +17,7 @@ export default function Marquee() {
                 className="flex gap-12 whitespace-nowrap min-w-full"
             >
                 {[...items, ...items, ...items, ...items].map((item, i) => (
-                    <span key={i} className="text-2xl font-bold uppercase text-muted-foreground/50 tracking-wider">
+                    <span key={i} className="text-2xl font-bold uppercase text-muted-foreground/70 tracking-wider hover:text-primary transition-colors cursor-default">
                         {item}
                     </span>
                 ))}

@@ -27,7 +27,7 @@ export default function CTA() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto break-keep"
+                        className="text-xl text-muted-foreground/90 mb-12 max-w-2xl mx-auto break-keep"
                     >
                         파일을 업로드하고 즉시 견적을 확인해보세요.
                         회원가입 없이도 가격을 확인할 수 있습니다.

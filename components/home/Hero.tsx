@@ -39,9 +39,9 @@ export default function Hero() {
                         <span className="text-xs font-semibold tracking-wider text-muted-foreground">차세대 3D 프린팅 서비스</span>
                     </motion.div>
 
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all">
+                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance">
                         당신의 <br />
-                        <span className="text-primary relative">
+                        <span className="text-primary relative inline-block">
                             상상력을
                             <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -51,20 +51,22 @@ export default function Hero() {
                         현실로 만듭니다.
                     </h1>
 
-                    <p className="text-xl text-muted-foreground mb-8 max-w-lg leading-relaxed break-keep">
+                    <p className="text-xl text-muted-foreground/90 mb-8 max-w-lg leading-relaxed break-keep">
                         AI 기반 실시간 견적부터 전문가급 정밀 출력까지.<br />
-                        시제품 제작부터 양산까지, Wow3D가 함께합니다.
+                        시제품 제작부터 양산까지, WOW3D가 함께합니다.
                     </p>
 
                     <div className="flex flex-wrap gap-4">
                         <Link href="/quote">
                             <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_0_rgb(0,118,255,39%)] hover:shadow-[0_6px_20px_rgba(0,118,255,23%)] hover:scale-[1.02] transition-all">
-                                견적 확인하기 <ArrowRight className="ml-2 w-5 h-5" />
+                                AI 자동 견적하기 <ArrowRight className="ml-2 w-5 h-5" />
                             </Button>
                         </Link>
-                        <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/80 backdrop-blur-sm">
-                            소재 살펴보기
-                        </Button>
+                        <Link href="#materials">
+                            <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full hover:bg-secondary/80 backdrop-blur-sm">
+                                소재 살펴보기
+                            </Button>
+                        </Link>
                     </div>
 
                     <div className="mt-12 flex items-center gap-8 text-muted-foreground">

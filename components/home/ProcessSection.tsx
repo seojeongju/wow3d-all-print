@@ -80,7 +80,7 @@ export default function ProcessSection() {
                                 <div className="pt-2">
                                     <span className="text-6xl font-black text-muted/30 -ml-4 block mb-2">{step.id}</span>
                                     <h3 className="text-3xl font-bold mb-4">{step.title}</h3>
-                                    <p className="text-xl text-muted-foreground leading-relaxed max-w-xl break-keep">
+                                    <p className="text-xl text-muted-foreground/90 leading-relaxed max-w-xl break-keep">
                                         {step.description}
                                     </p>
                                 </div>

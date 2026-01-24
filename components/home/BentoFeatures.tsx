@@ -83,8 +83,8 @@ export default function BentoFeatures() {
                                 <div className={`w-12 h-12 rounded-2xl bg-background shadow-sm flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform ${feature.iconColor}`}>
                                     <feature.icon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                                <p className="text-muted-foreground break-keep">{feature.description}</p>
+                                <h3 className="text-xl font-bold mb-3 word-keep-all">{feature.title}</h3>
+                                <p className="text-muted-foreground/90 leading-relaxed break-keep">{feature.description}</p>
                             </div>
                         </motion.div>
                     ))}
