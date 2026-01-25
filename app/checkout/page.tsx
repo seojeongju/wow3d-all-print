@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { motion } from 'framer-motion'
 
 export default function CheckoutPage() {
     const router = useRouter()
-    const { user, isAuthenticated, token } = useAuthStore()
+    const { user, isAuthenticated, token, sessionId } = useAuthStore()
     const { items, getTotalPrice, clearCart } = useCartStore()
     const { toast } = useToast()
 
@@ -26,16 +26,12 @@ export default function CheckoutPage() {
         shippingAddress: '',
         shippingPostalCode: '',
         customerNote: '',
+        guestEmail: '',
     })
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            router.push('/auth')
-        }
-        if (items.length === 0) {
-            router.push('/cart')
-        }
-    }, [isAuthenticated, items.length])
+        if (items.length === 0) router.push('/cart')
+    }, [items.length, router])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
@@ -54,28 +50,45 @@ export default function CheckoutPage() {
             return
         }
 
+        if (!isAuthenticated && !formData.guestEmail?.trim()) {
+            toast({
+                title: '❌ 이메일 필요',
+                description: '비회원 주문 시 연락용 이메일을 입력해 주세요',
+                variant: 'destructive',
+            })
+            return
+        }
+
         setIsSubmitting(true)
 
         try {
+            const headers: HeadersInit = { 'Content-Type': 'application/json' }
+            if (isAuthenticated && token) headers['Authorization'] = `Bearer ${token}`
+            else if (sessionId) headers['X-Session-ID'] = sessionId
+
+            const body: Record<string, unknown> = {
+                recipientName: formData.recipientName,
+                recipientPhone: formData.recipientPhone,
+                shippingAddress: formData.shippingAddress,
+                shippingPostalCode: formData.shippingPostalCode || undefined,
+                customerNote: formData.customerNote || undefined,
+                cartItems: items.map(item => ({
+                    quoteId: item.quoteId,
+                    quantity: item.quantity,
+                    totalPrice: item.quote?.totalPrice || 0,
+                })),
+            }
+            if (!isAuthenticated && formData.guestEmail?.trim()) body.guestEmail = formData.guestEmail.trim()
+
             const response = await fetch('/api/orders', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    ...formData,
-                    cartItems: items.map(item => ({
-                        quoteId: item.quoteId,
-                        quantity: item.quantity,
-                        totalPrice: item.quote?.totalPrice || 0,
-                    })),
-                }),
+                headers,
+                body: JSON.stringify(body),
             })
 
             if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.error || '주문 생성 실패')
+                const err = await response.json().catch(() => ({}))
+                throw new Error(err?.error || '주문 생성 실패')
             }
 
             const result = await response.json()
@@ -86,7 +99,13 @@ export default function CheckoutPage() {
                 description: `주문이 접수되었습니다 (${result.data.orderNumber})`,
             })
 
-            router.push(`/order-complete?orderId=${result.data.orderId}&orderNumber=${result.data.orderNumber}`)
+            const q = new URLSearchParams({
+                orderId: String(result.data.orderId),
+                orderNumber: result.data.orderNumber,
+                totalAmount: String(result.data.totalAmount),
+            })
+            if (result.data.isGuest) q.set('guest', '1')
+            router.push(`/order-complete?${q.toString()}`)
 
         } catch (error) {
             toast({
@@ -99,7 +118,7 @@ export default function CheckoutPage() {
         }
     }
 
-    if (!isAuthenticated || items.length === 0) return null
+    if (items.length === 0) return null
 
     const totalPriceKWR = Math.round(getTotalPrice() * 1300)
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -143,6 +162,25 @@ export default function CheckoutPage() {
                                         <MapPin className="w-5 h-5" />
                                         <h3 className="text-sm font-black uppercase tracking-widest">배송지</h3>
                                     </div>
+
+                                    {!isAuthenticated && (
+                                        <div className="space-y-2.5 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                                            <Label htmlFor="guestEmail" className="text-[10px] font-black uppercase text-amber-200/90 tracking-widest ml-1 flex items-center gap-1.5">
+                                                <Mail className="w-3 h-3" /> 연락용 이메일 (비회원 필수)
+                                            </Label>
+                                            <Input
+                                                id="guestEmail"
+                                                name="guestEmail"
+                                                type="email"
+                                                value={formData.guestEmail}
+                                                onChange={handleInputChange}
+                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                placeholder="order@example.com"
+                                                required={!isAuthenticated}
+                                            />
+                                            <p className="text-[10px] text-white/40 mt-1">주문 접수 및 진행 안내를 이 주소로 보내드립니다.</p>
+                                        </div>
+                                    )}
 
                                     <div className="grid gap-6">
                                         <div className="grid grid-cols-2 gap-4">

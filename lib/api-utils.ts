@@ -124,7 +124,7 @@ export function extractToken(request: Request): string | null {
 }
 
 /**
- * 인증 미들웨어
+ * 인증 미들웨어 (회원 전용)
  */
 export async function requireAuth(request: Request): Promise<{ userId: number; email: string } | Response> {
     const token = extractToken(request);
@@ -140,4 +140,27 @@ export async function requireAuth(request: Request): Promise<{ userId: number; e
     }
 
     return user;
+}
+
+/**
+ * 회원 또는 비회원(세션) 인증
+ * - Authorization Bearer 있으면: { userId, email, isGuest: false }
+ * - X-Session-ID만 있으면: { sessionId, isGuest: true }
+ */
+export async function requireAuthOrGuest(request: Request): Promise<
+    | { userId: number; email: string; isGuest: false }
+    | { sessionId: string; isGuest: true }
+    | Response
+> {
+    const token = extractToken(request);
+    if (token) {
+        const user = await verifyToken(token);
+        if (user) return { userId: user.userId, email: user.email, isGuest: false };
+        return errorResponse('유효하지 않은 토큰입니다', 401);
+    }
+    const sessionId = request.headers.get('X-Session-ID');
+    if (sessionId && sessionId.trim()) {
+        return { sessionId: sessionId.trim(), isGuest: true };
+    }
+    return errorResponse('인증이 필요합니다. 로그인하거나 비회원 주문 시 브라우저 세션(X-Session-ID)이 필요합니다.', 401);
 }

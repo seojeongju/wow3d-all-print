@@ -14,27 +14,26 @@ function OrderCompleteContent() {
     const searchParams = useSearchParams()
     const orderId = searchParams.get('orderId')
     const orderNumber = searchParams.get('orderNumber')
+    const totalAmount = searchParams.get('totalAmount')
+    const isGuest = searchParams.get('guest') === '1'
     const { token } = useAuthStore()
 
     const [order, setOrder] = useState<Order | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        if (orderId && token) {
+        if (orderId && token && !isGuest) {
             loadOrderDetails()
-        } else if (!orderId) {
+        } else {
             setIsLoading(false)
         }
-    }, [orderId, token])
+    }, [orderId, token, isGuest])
 
     const loadOrderDetails = async () => {
         try {
             const response = await fetch(`/api/orders/${orderId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+                headers: { 'Authorization': `Bearer ${token}` },
             })
-
             if (response.ok) {
                 const result = await response.json()
                 setOrder(result.data)
@@ -53,6 +52,12 @@ function OrderCompleteContent() {
             </div>
         )
     }
+
+    const displayTotal = order?.totalAmount != null
+        ? (Math.round(Number(order.totalAmount) * 1300)).toLocaleString()
+        : totalAmount != null
+            ? (Math.round(Number(totalAmount) * 1300)).toLocaleString()
+            : '—'
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30 relative overflow-hidden">
@@ -98,18 +103,27 @@ function OrderCompleteContent() {
                                 <Separator className="bg-white/5" />
                                 <div>
                                     <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">총 결제 금액</div>
-                                    <div className="text-2xl font-black">
-                                        ₩{(Math.round(order?.totalAmount || 0) * 1300).toLocaleString()}
-                                    </div>
+                                    <div className="text-2xl font-black">₩{displayTotal}</div>
                                 </div>
                             </div>
 
-                            <Link href="/my-account" className="block transform transition-transform active:scale-95">
-                                <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
-                                    <Package className="w-4 h-4" />
-                                    주문 조회
-                                </Button>
-                            </Link>
+                            {isGuest ? (
+                                <div className="space-y-3">
+                                    <p className="text-[11px] text-white/50">등록한 이메일로 접수 안내가 발송됩니다. 문의 시 주문번호를 알려주세요.</p>
+                                    <Link href="/" className="block">
+                                        <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
+                                            <Package className="w-4 h-4" /> 홈으로
+                                        </Button>
+                                    </Link>
+                                </div>
+                            ) : (
+                                <Link href="/my-account" className="block transform transition-transform active:scale-95">
+                                    <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
+                                        <Package className="w-4 h-4" />
+                                        주문 조회
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
 
                         {/* Main Info */}

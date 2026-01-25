@@ -221,9 +221,16 @@ export default function CartPage() {
                                     </Link>
                                 ) : (
                                     <div className="space-y-3">
-                                        <p className="text-xs text-white/50 text-center">주문을 이어가려면 로그인이 필요합니다</p>
-                                        <Link href="/auth">
-                                            <Button size="lg" className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 font-semibold">로그인</Button>
+                                        <p className="text-xs text-white/50 text-center">회원으로 주문하거나 비회원으로 바로 주문할 수 있습니다</p>
+                                        <Link href="/checkout" className="block">
+                                            <Button size="lg" className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 font-semibold gap-2">
+                                                비회원으로 주문하기 <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                        <Link href="/auth?return=/cart">
+                                            <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 text-sm font-medium">
+                                                로그인 후 주문
+                                            </Button>
                                         </Link>
                                     </div>
                                 )}

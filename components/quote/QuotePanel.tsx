@@ -222,7 +222,11 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
             }
             const data = result.data as { id: number; sessionId?: string }
             if (data?.sessionId && !token) setSessionId(data.sessionId)
-            toast({ title: '✅ 견적 완료', description: '견적이 성공적으로 기록되었습니다' })
+            if (token && user?.id) {
+                toast({ title: '✅ 견적 저장됨', description: '회원: 내 견적함에 저장되었습니다' })
+            } else {
+                toast({ title: '✅ 견적 저장됨', description: '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.' })
+            }
             return data
         } catch (error) {
             toast({

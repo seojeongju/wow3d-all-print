@@ -153,8 +153,8 @@ function OrderListInner() {
         const rows = filtered.map((o) => [
             o.order_number || '',
             o.recipient_name || '',
-            o.user_name || '-',
-            o.user_email || '-',
+            o.user_id ? (o.user_name || '-') : '비회원',
+            o.user_email || o.guest_email || '-',
             String(o.item_count ?? 1),
             String(Number(o.total_amount || 0)),
             o.status || '',
@@ -280,6 +280,7 @@ function OrderListInner() {
                                 <tr className="border-b border-white/10">
                                     <th className="p-4 font-medium text-white/70">주문번호</th>
                                     <th className="p-4 font-medium text-white/70">고객명</th>
+                                    <th className="p-4 font-medium text-white/70">연락</th>
                                     <th className="p-4 font-medium text-white/70">주문 내역</th>
                                     <th className="p-4 font-medium text-white/70">금액</th>
                                     <th className="p-4 font-medium text-white/70">상태</th>
@@ -293,6 +294,14 @@ function OrderListInner() {
                                     <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                         <td className="p-4 font-medium text-white">{order.order_number}</td>
                                         <td className="p-4 text-white/90">{order.recipient_name}</td>
+                                        <td className="p-4 text-white/70">
+                                            {order.user_id ? (order.user_email || '-') : (
+                                                <>
+                                                    <span className="text-amber-400/90">비회원</span>
+                                                    {order.guest_email && <span className="block text-[11px] text-white/50 truncate max-w-[140px]">{order.guest_email}</span>}
+                                                </>
+                                            )}
+                                        </td>
                                         <td className="p-4 text-white/50">{order.item_count || 1}개 품목</td>
                                         <td className="p-4 font-bold text-white">₩ {Number(order.total_amount || 0).toLocaleString()}</td>
                                         <td className="p-4">{getStatusBadge(order.status)}</td>
@@ -332,7 +341,7 @@ function OrderListInner() {
                                 ))}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="p-12 text-center text-white/40">
+                                        <td colSpan={9} className="p-12 text-center text-white/40">
                                             {orders.length === 0 ? '접수된 주문이 없습니다.' : '검색 결과가 없습니다.'}
                                         </td>
                                     </tr>
@@ -361,12 +370,17 @@ function OrderListInner() {
                                     <span className="text-[10px] font-bold text-white/40 uppercase">수령인</span>
                                     <p className="text-white">{String(detailData.order.recipient_name)}</p>
                                 </div>
-                                {(detailData.order.user_name != null || detailData.order.user_email != null) ? (
+                                {detailData.order.user_id ? (
                                     <div className="col-span-2">
                                         <span className="text-[10px] font-bold text-white/40 uppercase">주문자 (회원)</span>
                                         <p className="text-white/90">{String(detailData.order.user_name ?? '-')} ({String(detailData.order.user_email ?? '')})</p>
                                     </div>
-                                ) : null}
+                                ) : (
+                                    <div className="col-span-2">
+                                        <span className="text-[10px] font-bold text-white/40 uppercase">주문자 (비회원)</span>
+                                        <p className="text-amber-400/90">비회원 · {String(detailData.order.guest_email ?? '-')}</p>
+                                    </div>
+                                )}
                                 <div className="col-span-2">
                                     <span className="text-[10px] font-bold text-white/40 uppercase">배송지</span>
                                     <p className="text-white">{String(detailData.order.shipping_address)} {detailData.order.shipping_postal_code ? `(${detailData.order.shipping_postal_code})` : ''}</p>
