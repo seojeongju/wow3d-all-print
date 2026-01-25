@@ -14,6 +14,7 @@ const NAV_ITEMS = [
     { label: '기능', href: '/#features' },
     { label: '공정', href: '/#process' },
     { label: '주문조회', href: '/my-account' },
+    { label: '문의하기', href: '/contact' },
 ];
 
 export default function Header() {
@@ -21,6 +22,10 @@ export default function Header() {
     const { isAuthenticated, user, logout } = useAuthStore()
     const { reset: resetFileStore } = useFileStore()
     const cartItemCount = getTotalItems()
+
+    const navItems = NAV_ITEMS.map((item) =>
+        item.label === '주문조회' && user?.role === 'admin' ? { ...item, href: '/admin/orders' } : item
+    )
 
     const [isScrolled, setIsScrolled] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
@@ -64,7 +69,7 @@ export default function Header() {
 
                 {/* Desktop Nav - 가독성 중심 */}
                 <nav className="hidden lg:flex items-center gap-0.5 bg-white/[0.06] border border-white/10 rounded-2xl p-1.5 shadow-lg shadow-black/20">
-                    {NAV_ITEMS.map((item) => (
+                    {navItems.map((item) => (
                         <Link
                             key={item.label}
                             href={item.href}
@@ -97,14 +102,14 @@ export default function Header() {
 
                     {isAuthenticated ? (
                         <div className="flex items-center gap-2">
-                            <Link href="/my-account">
+                            <Link href={user?.role === 'admin' ? '/admin' : '/my-account'}>
                                 <button className="flex items-center gap-2.5 pl-2 pr-3.5 py-2 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/10 transition-all">
                                     <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
                                         <User className="w-4 h-4" />
                                     </div>
                                     <div className="hidden sm:flex flex-col text-left">
                                         <span className="text-xs font-bold text-white leading-tight">{user?.name}</span>
-                                        <span className="text-[10px] text-white/50 leading-tight">회원</span>
+                                        <span className="text-[10px] text-white/50 leading-tight">{user?.role === 'admin' ? '관리자' : '회원'}</span>
                                     </div>
                                 </button>
                             </Link>
@@ -153,7 +158,7 @@ export default function Header() {
                         onClick={() => setMobileOpen(false)}
                     >
                         <nav className="flex flex-col gap-1 max-w-sm mx-auto" onClick={(e) => e.stopPropagation()}>
-                            {NAV_ITEMS.map((item) => (
+                            {navItems.map((item) => (
                                 <Link
                                     key={item.label}
                                     href={item.href}

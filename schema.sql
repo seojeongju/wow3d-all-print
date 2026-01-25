@@ -153,3 +153,24 @@ CREATE TABLE IF NOT EXISTS shipments (
 -- 배송 추적 인덱스
 CREATE INDEX IF NOT EXISTS idx_shipments_order_id ON shipments(order_id);
 CREATE INDEX IF NOT EXISTS idx_shipments_tracking_number ON shipments(tracking_number);
+
+-- 문의 테이블
+CREATE TABLE IF NOT EXISTS inquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  category TEXT CHECK(category IN ('general', 'quote', 'tech', 'partnership', 'other')),
+  subject TEXT,
+  message TEXT NOT NULL,
+  status TEXT DEFAULT 'new' CHECK(status IN ('new', 'read', 'replied', 'closed')),
+  admin_note TEXT,
+  ip_address TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_inquiries_email ON inquiries(email);

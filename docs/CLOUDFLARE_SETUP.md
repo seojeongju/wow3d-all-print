@@ -47,6 +47,11 @@ npx wrangler d1 execute wow3d-production --local --file=./schema.sql
 npx wrangler d1 execute wow3d-production --file=./schema.sql
 ```
 
+**문의(inquiries) 테이블**: `schema.sql`에 포함되어 있습니다. 이미 `schema.sql`을 적용한 기존 DB에는 `npx wrangler d1 execute wow3d-production --file=./schema_inquiries.sql` 만 추가 실행하면 됩니다.
+
+**장비 설정(printer_equipment) 테이블**: FDM/SLA/DLP 최대 출력 크기·시간당 비용 등을 저장합니다.  
+`npx wrangler d1 execute wow3d-production --file=./schema_equipment.sql` 로 한 번 실행하세요.
+
 ## 5. R2 버킷 생성
 
 ```bash

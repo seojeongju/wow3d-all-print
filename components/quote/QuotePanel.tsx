@@ -8,15 +8,22 @@ import { Separator } from '@/components/ui/separator'
 import {
     Loader2, Box, Layers, Ruler, Printer,
     Droplets, Zap, Save, ShoppingCart,
-    ChevronRight, Wallet, Clock, ShieldCheck
+    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle
 } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
+type PrintSpecs = {
+  fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number }
+  sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number }
+  dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number }
+}
+
 type PrintMethod = 'fdm' | 'sla' | 'dlp'
 
-export default function QuotePanel() {
+type QuotePanelProps = { embedded?: boolean }
+export default function QuotePanel({ embedded = false }: QuotePanelProps) {
     const { file, analysis } = useFileStore()
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
@@ -37,6 +44,14 @@ export default function QuotePanel() {
     const [slaLayerHeight, setSlaLayerHeight] = useState(0.05) // mm
     const [postProcessing, setPostProcessing] = useState(false)
 
+    const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
+    useEffect(() => {
+      fetch('/api/print-specs')
+        .then((r) => r.json())
+        .then((d) => d?.data && setPrintSpecs(d.data))
+        .catch(() => {})
+    }, [])
+
     // Material Data
     const FDM_MATERIALS = {
         pla: { name: 'PLA', density: 1.24, pricePerGram: 0.05, color: 'text-emerald-400', desc: '가장 대중적인 친환경 소재' },
@@ -55,6 +70,21 @@ export default function QuotePanel() {
     const volumeCm3 = analysis?.volume || 0
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
     const heightMm = analysis?.boundingBox.z || 0
+    const bx = analysis?.boundingBox?.x ?? 0
+    const by = analysis?.boundingBox?.y ?? 0
+    const bz = analysis?.boundingBox?.z ?? 0
+
+    const overflow = useMemo(() => {
+      if (!printSpecs || !analysis) return null
+      const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+      const spec = printSpecs[key]?.max
+      if (!spec) return null
+      const over: string[] = []
+      if (bx > spec.x) over.push(`X(${bx.toFixed(0)}>${spec.x})`)
+      if (by > spec.y) over.push(`Y(${by.toFixed(0)}>${spec.y})`)
+      if (bz > spec.z) over.push(`Z(${bz.toFixed(0)}>${spec.z})`)
+      return over.length ? over.join(', ') : null
+    }, [printSpecs, printMethod, bx, by, bz, analysis])
 
     // Calculate Price Memoized
     const priceInfo = useMemo(() => {
@@ -213,7 +243,7 @@ export default function QuotePanel() {
     if (!file) return null
 
     return (
-        <div className="space-y-8 pb-32">
+        <div className={`space-y-8 ${embedded ? 'pb-8' : 'pb-32'}`}>
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
@@ -258,6 +288,18 @@ export default function QuotePanel() {
                     ))}
                 </div>
             </div>
+
+            {overflow && (
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-bold text-amber-200">최대 출력 크기 초과</p>
+                        <p className="text-xs text-amber-200/80 mt-0.5">
+                            이 모델은 선택한 {printMethod.toUpperCase()} 장비의 최대 치수({overflow})를 초과합니다. 출력이 불가할 수 있으니, 크기를 줄이거나 다른 출력 방식을 선택해 주세요.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <Separator className="bg-white/5" />
 
@@ -359,52 +401,65 @@ export default function QuotePanel() {
                 </motion.div>
             </AnimatePresence>
 
-            {/* Price Preview Card - Locked to Sidebar Bottom or Floating */}
-            <div className="fixed bottom-0 left-0 w-[400px] xl:w-[450px] p-6 bg-black border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-20">
-                <div className="flex items-center gap-6 mb-6">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                            <Wallet className="w-3 h-3" /> 예상 견적
+            {/* Price Preview: embedded=인라인 카드, 아니면 고정 하단바 (겹침 방지) */}
+            {embedded ? (
+                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-4">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                                <Wallet className="w-3 h-3" /> 예상 견적
+                            </div>
+                            <span className="text-2xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
+                            <span className="text-xs text-white/30 font-medium ml-1">KRW</span>
                         </div>
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="text-3xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
-                            <span className="text-xs text-white/30 font-medium">KRW</span>
+                        <div className="text-right">
+                            <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                                <Clock className="w-3 h-3" /> 예상 소요
+                            </div>
+                            <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                            <Clock className="w-3 h-3" /> 예상 소요
-                        </div>
-                        <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button disabled={!analysis || isSaving} variant="ghost" size="sm" className="h-11 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold" onClick={handleSaveQuote}>
+                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        </Button>
+                        <Button disabled={!analysis || isSaving} size="sm" className="h-11 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-bold flex items-center justify-center gap-2" onClick={handleAddToCart}>
+                            <ShoppingCart className="w-4 h-4" /> 주문에 추가
+                        </Button>
                     </div>
                 </div>
-
-                <div className="grid grid-cols-[1fr_2fr] gap-3">
-                    <Button
-                        disabled={!analysis || isSaving}
-                        variant="ghost"
-                        size="lg"
-                        className="h-14 rounded-2xl border border-white/10 hover:bg-white/5 text-xs font-bold uppercase transition-all active:scale-95"
-                        onClick={handleSaveQuote}
-                    >
-                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                        disabled={!analysis || isSaving}
-                        size="lg"
-                        className="h-14 rounded-2xl bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3"
-                        onClick={handleAddToCart}
-                    >
-                        <ShoppingCart className="w-5 h-5" />
-                        주문에 추가하기
-                    </Button>
+            ) : (
+                <div className="fixed bottom-0 left-0 w-[400px] xl:w-[450px] p-6 bg-black border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-20">
+                    <div className="flex items-center gap-6 mb-6">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                                <Wallet className="w-3 h-3" /> 예상 견적
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-3xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
+                                <span className="text-xs text-white/30 font-medium">KRW</span>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                                <Clock className="w-3 h-3" /> 예상 소요
+                            </div>
+                            <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-[1fr_2fr] gap-3">
+                        <Button disabled={!analysis || isSaving} variant="ghost" size="lg" className="h-14 rounded-2xl border border-white/10 hover:bg-white/5 text-xs font-bold uppercase transition-all active:scale-95" onClick={handleSaveQuote}>
+                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        </Button>
+                        <Button disabled={!analysis || isSaving} size="lg" className="h-14 rounded-2xl bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3" onClick={handleAddToCart}>
+                            <ShoppingCart className="w-5 h-5" /> 주문에 추가하기
+                        </Button>
+                    </div>
+                    <div className="mt-4 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
+                        <ShieldCheck className="w-3 h-3 text-emerald-500/50" /> WOW3D 보안 인증
+                    </div>
                 </div>
-
-                <div className="mt-4 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
-                    <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
-                    WOW3D 보안 인증
-                </div>
-            </div>
+            )}
         </div>
     )
 }

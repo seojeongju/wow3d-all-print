@@ -72,7 +72,7 @@ export default function AdminDashboard() {
                         { label: '서비스', href: '/#services' },
                         { label: '기능', href: '/#features' },
                         { label: '공정', href: '/#process' },
-                        { label: '주문조회', href: '/my-account' },
+                        { label: '주문조회', href: '/admin/orders' },
                     ].map((x) => (
                         <Link
                             key={x.href}

@@ -62,8 +62,8 @@ export default function ExperiencePage() {
                 <div className="h-[calc(100vh-6rem)] grid lg:grid-cols-[400px_1fr] xl:grid-cols-[440px_1fr]">
 
                     {/* Left: Control Panel */}
-                    <div className="bg-black/50 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-hidden relative z-10">
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div className="min-w-0 bg-black/50 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-hidden relative z-10">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
                             <AnimatePresence mode="wait">
                                 {step === 1 ? (
                                     /* Step 1: 모델 선택 */
@@ -214,7 +214,7 @@ export default function ExperiencePage() {
                                                 </Link>
                                             </div>
                                         </div>
-                                        <QuotePanel />
+                                        <QuotePanel embedded />
                                         <div className="pt-4 border-t border-white/5">
                                             <p className="text-[11px] text-white/40 leading-relaxed">
                                                 체험용 참고 견적입니다. 정확한 견적은 <Link href="/quote" className="text-amber-400/90 hover:underline">본격 견적</Link>에서 확인하세요.
@@ -250,10 +250,10 @@ export default function ExperiencePage() {
                         <div className="flex-1 relative">
                             <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent pointer-events-none z-10" />
                             <div className="h-full w-full">
-                                <Scene />
+                                <Scene compact />
                             </div>
 
-                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+                            <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2 z-20">
                                 <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/25 text-[10px] font-bold uppercase tracking-wider text-amber-400/95">
                                     샘플 체험
                                 </div>

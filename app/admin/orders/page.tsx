@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Download, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/useAuthStore';
 import {
     Select,
     SelectContent,
@@ -38,10 +39,12 @@ function getStatusBadge(status: string) {
 
 export default function OrderList() {
     const { toast } = useToast();
+    const { user } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [scopeFilter, setScopeFilter] = useState<'all' | 'mine'>('all');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
 
     const fetchOrders = async () => {
@@ -63,6 +66,9 @@ export default function OrderList() {
 
     const filtered = useMemo(() => {
         let list = orders;
+        if (scopeFilter === 'mine' && user?.id) {
+            list = list.filter((o) => Number(o.user_id) === user.id);
+        }
         const q = searchQuery.trim().toLowerCase();
         if (q) {
             list = list.filter(
@@ -75,7 +81,7 @@ export default function OrderList() {
             list = list.filter((o) => o.status === statusFilter);
         }
         return list;
-    }, [orders, searchQuery, statusFilter]);
+    }, [orders, searchQuery, statusFilter, scopeFilter, user?.id]);
 
     const handleStatusChange = async (orderId: number, newStatus: string) => {
         setUpdatingId(orderId);
@@ -114,7 +120,23 @@ export default function OrderList() {
                 <p className="text-white/50 text-sm mt-1">접수된 주문을 확인하고 상태를 변경할 수 있습니다.</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.06] border border-white/10">
+                    <button
+                        type="button"
+                        onClick={() => setScopeFilter('all')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                    >
+                        전체
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setScopeFilter('mine')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/20 text-primary' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                    >
+                        내 주문
+                    </button>
+                </div>
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                     <Input

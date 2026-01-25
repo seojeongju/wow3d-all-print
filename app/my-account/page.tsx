@@ -27,8 +27,12 @@ export default function MyAccountPage() {
             router.push('/auth');
             return;
         }
+        if (user?.role === 'admin') {
+            router.replace('/admin');
+            return;
+        }
         loadData();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, user?.role]);
 
     const loadData = async () => {
         try {
@@ -66,6 +70,7 @@ export default function MyAccountPage() {
     };
 
     if (!isAuthenticated) return null;
+    if (user?.role === 'admin') return null;
 
     // derived stats
     const activeOrders = orders.filter(o => ['pending', 'confirmed', 'production', 'shipping'].includes(o.status));

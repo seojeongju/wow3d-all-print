@@ -120,3 +120,18 @@ export interface PrintSetting {
     description?: string;
     updatedAt: string;
 }
+
+export interface Inquiry {
+    id: number;
+    userId?: number;
+    name: string;
+    email: string;
+    phone?: string;
+    category?: 'general' | 'quote' | 'tech' | 'partnership' | 'other';
+    subject?: string;
+    message: string;
+    status: 'new' | 'read' | 'replied' | 'closed';
+    adminNote?: string;
+    createdAt: string;
+    updatedAt: string;
+}

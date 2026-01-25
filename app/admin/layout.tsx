@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -33,7 +33,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const navItems = [
         { title: '대시보드', href: '/admin', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
+        { title: '내 정보', href: '/admin/profile', icon: User, match: (p: string) => p.startsWith('/admin/profile') },
         { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
+        { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
         { title: '설정 & 자재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
     ];
 
