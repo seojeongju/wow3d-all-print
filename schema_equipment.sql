@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS printer_equipment (
   max_z_mm REAL NOT NULL DEFAULT 250,
   hourly_rate REAL NOT NULL DEFAULT 5000,
   layer_heights_json TEXT,
+  layer_costs_json TEXT,
   is_active INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -20,6 +20,7 @@ type EquipmentRow = {
   max_z_mm: number
   hourly_rate: number
   layer_heights_json: string | null
+  layer_costs_json?: string | null
   is_active: number
 }
 
@@ -48,31 +49,50 @@ export default function AdminSettings() {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
   const [editForm, setEditForm] = useState<Partial<Material>>({})
   const [savingEquip, setSavingEquip] = useState<string | null>(null)
-  const [equipForms, setEquipForms] = useState<Record<string, { name: string; max_x_mm: number; max_y_mm: number; max_z_mm: number; hourly_rate: number; layer_heights_json: string }>>({})
+  const [equipForms, setEquipForms] = useState<Record<string, { name: string; max_x_mm: number; max_y_mm: number; max_z_mm: number; hourly_rate: number; layer_heights_json: string; layer_costs: Record<string, number> }>>({})
 
   useEffect(() => {
     fetchData()
   }, [])
 
   useEffect(() => {
-    const next: Record<string, { name: string; max_x_mm: number; max_y_mm: number; max_z_mm: number; hourly_rate: number; layer_heights_json: string }> = {}
+    const next: Record<string, { name: string; max_x_mm: number; max_y_mm: number; max_z_mm: number; hourly_rate: number; layer_heights_json: string; layer_costs: Record<string, number> }> = {}
     for (const t of ['FDM', 'SLA', 'DLP']) {
       const e = equipment.find((x) => x.type === t)
       const d = EQUIPMENT_DEFAULTS[t]
+      const baseRate = e?.hourly_rate ?? (d?.hourly_rate as number) ?? 5000
       const arr = (() => {
         try {
           const j = e?.layer_heights_json || d?.layer_heights_json || (t === 'FDM' ? '[0.1,0.2,0.3]' : '[0.025,0.05,0.1]')
           const v = typeof j === 'string' && j.startsWith('[') ? JSON.parse(j) : []
-          return Array.isArray(v) ? v : []
+          return Array.isArray(v) ? v : (t === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
         } catch { return t === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1] }
       })()
+      let parsed: Record<string, number> = {}
+      try {
+        if (e?.layer_costs_json && typeof e.layer_costs_json === 'string') {
+          const o = JSON.parse(e.layer_costs_json)
+          if (o && typeof o === 'object' && !Array.isArray(o)) {
+            for (const [k, v] of Object.entries(o)) {
+              const n = Number(v)
+              if (Number.isFinite(n) && n >= 0) parsed[String(k)] = n
+            }
+          }
+        }
+      } catch { /* */ }
+      const layer_costs: Record<string, number> = {}
+      for (const th of arr) {
+        const k = String(th)
+        layer_costs[k] = (parsed[k] != null && Number.isFinite(parsed[k])) ? parsed[k] : baseRate
+      }
       next[t] = {
         name: e?.name ?? '',
         max_x_mm: e?.max_x_mm ?? (d?.max_x_mm as number) ?? 220,
         max_y_mm: e?.max_y_mm ?? (d?.max_y_mm as number) ?? 220,
         max_z_mm: e?.max_z_mm ?? (d?.max_z_mm as number) ?? 250,
-        hourly_rate: e?.hourly_rate ?? (d?.hourly_rate as number) ?? 5000,
+        hourly_rate: baseRate,
         layer_heights_json: arr.join(', '),
+        layer_costs,
       }
     }
     setEquipForms(next)
@@ -116,7 +136,15 @@ export default function AdminSettings() {
   const getDefaultForm = (t: string) => {
     const d = EQUIPMENT_DEFAULTS[t]
     const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (t === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
-    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr }
+    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {} }
+  }
+
+  const setEquipLayerCost = (t: string, thickness: string, value: number) => {
+    setEquipForms((prev) => {
+      const cur = prev[t] || getDefaultForm(t)
+      const lc = { ...(cur.layer_costs || {}), [String(thickness)]: value }
+      return { ...prev, [t]: { ...cur, layer_costs: lc } }
+    })
   }
 
   const handleSaveEquipment = async (type: string) => {
@@ -128,6 +156,14 @@ export default function AdminSettings() {
         .split(',')
         .map((n) => parseFloat(n.trim()))
         .filter(Number.isFinite)
+      const arr = layerArr.length ? layerArr : (type === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
+      const layer_costs: Record<string, number> = {}
+      for (const th of arr) {
+        const k = String(th)
+        layer_costs[k] = (form.layer_costs && form.layer_costs[k] != null && Number.isFinite(form.layer_costs[k]))
+          ? form.layer_costs[k]
+          : form.hourly_rate
+      }
       const res = await fetch('/api/admin/equipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,7 +174,8 @@ export default function AdminSettings() {
           max_y_mm: form.max_y_mm,
           max_z_mm: form.max_z_mm,
           hourly_rate: form.hourly_rate,
-          layer_heights_json: JSON.stringify(layerArr.length ? layerArr : (type === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])),
+          layer_heights_json: JSON.stringify(arr),
+          layer_costs_json: layer_costs,
           is_active: 1,
         }),
       })
@@ -324,21 +361,52 @@ export default function AdminSettings() {
                       <Input type="number" className="mt-1 bg-white/5 border-white/10 text-white" value={f.max_z_mm} onChange={(e) => setEquip(t, 'max_z_mm', parseFloat(e.target.value) || 0)} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-[10px] text-white/50 uppercase">시간당 비용 (원)</Label>
+                      <Label className="text-[10px] text-white/50 uppercase">기본 시간당 비용 (원)</Label>
                       <Input type="number" className="mt-1 bg-white/5 border-white/10 text-white" value={f.hourly_rate} onChange={(e) => setEquip(t, 'hourly_rate', parseFloat(e.target.value) || 0)} />
                     </div>
                     <div>
                       <Label className="text-[10px] text-white/50 uppercase">레이어 두께 (예: 0.1, 0.2, 0.3)</Label>
                       <Input className="mt-1 bg-white/5 border-white/10 text-white" placeholder="0.1, 0.2, 0.3" value={f.layer_heights_json} onChange={(e) => setEquip(t, 'layer_heights_json', e.target.value)} />
                     </div>
-                    <div className="flex items-end">
-                      <Button onClick={() => handleSaveEquipment(t)} disabled={savingEquip === t}>
-                        {savingEquip === t ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        <span className="ml-2">저장</span>
-                      </Button>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-white/50 uppercase">레이어별 시간당 비용 (원) — 견적 시 적용</Label>
+                    <p className="text-[10px] text-white/40 mt-0.5">선택한 레이어 두께마다 다른 비용을 둘 수 있습니다. 미입력 시 위 기본 시간당 비용이 사용됩니다.</p>
+                    <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 text-left text-white/70 font-medium">레이어 두께 (mm)</th><th className="p-2 text-left text-white/70 font-medium">시간당 비용 (원)</th></tr></thead>
+                        <tbody>
+                          {String(f.layer_heights_json || '')
+                            .split(',')
+                            .map((s) => parseFloat(s.trim()))
+                            .filter(Number.isFinite)
+                            .map((th) => (
+                              <tr key={th} className="border-b border-white/5">
+                                <td className="p-2 text-white/90">{th} mm</td>
+                                <td className="p-2">
+                                  <Input
+                                    type="number"
+                                    className="h-9 bg-white/5 border-white/10 text-white w-32"
+                                    value={(f.layer_costs && f.layer_costs[String(th)] != null) ? f.layer_costs[String(th)] : f.hourly_rate}
+                                    onChange={(e) => setEquipLayerCost(t, String(th), parseFloat(e.target.value) || 0)}
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          {String(f.layer_heights_json || '').split(',').map((s) => parseFloat(s.trim())).filter(Number.isFinite).length === 0 && (
+                            <tr><td colSpan={2} className="p-3 text-white/40 text-xs">레이어 두께를 위에 입력한 후 저장하면 여기서 각각 비용을 설정할 수 있습니다.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={() => handleSaveEquipment(t)} disabled={savingEquip === t}>
+                      {savingEquip === t ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      <span className="ml-2">저장</span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Search, Download, Loader2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -15,6 +17,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'pending', label: '접수 대기' },
@@ -37,15 +46,25 @@ function getStatusBadge(status: string) {
     }
 }
 
-export default function OrderList() {
+type DetailData = { order: Record<string, unknown>; items: Record<string, unknown>[]; shipment: Record<string, unknown> | null };
+
+function OrderListInner() {
     const { toast } = useToast();
     const { user } = useAuthStore();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [scopeFilter, setScopeFilter] = useState<'all' | 'mine'>('all');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
+    const [detailOrderId, setDetailOrderId] = useState<number | null>(null);
+    const [detailData, setDetailData] = useState<DetailData | null>(null);
+    const [detailAdminNote, setDetailAdminNote] = useState('');
+    const [detailStatus, setDetailStatus] = useState('');
+    const [savingDetail, setSavingDetail] = useState(false);
+    const [loadingDetail, setLoadingDetail] = useState(false);
 
     const fetchOrders = async () => {
         try {
@@ -60,9 +79,97 @@ export default function OrderList() {
         }
     };
 
+    useEffect(() => { fetchOrders(); }, []);
+
+    // URL ?detail=id 에서 상세 아이디 읽기
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        const d = searchParams.get('detail');
+        const n = d ? parseInt(d, 10) : NaN;
+        if (Number.isInteger(n)) setDetailOrderId(n);
+    }, [searchParams]);
+
+    // 상세 아이디 변경 시 GET /api/admin/orders/[id]
+    useEffect(() => {
+        if (!detailOrderId) {
+            setDetailData(null);
+            return;
+        }
+        setLoadingDetail(true);
+        fetch(`/api/admin/orders/${detailOrderId}`)
+            .then((r) => r.json())
+            .then((j) => {
+                if (j.success && j.data) {
+                    setDetailData(j.data);
+                    setDetailAdminNote(String(j.data.order?.admin_note ?? ''));
+                    setDetailStatus(String(j.data.order?.status ?? 'pending'));
+                } else {
+                    toast({ title: j.error || '주문을 불러올 수 없습니다.', variant: 'destructive' });
+                    setDetailOrderId(null);
+                }
+            })
+            .catch(() => {
+                toast({ title: '주문 상세 조회 실패', variant: 'destructive' });
+                setDetailOrderId(null);
+            })
+            .finally(() => setLoadingDetail(false));
+    }, [detailOrderId, toast]);
+
+    const openDetail = (id: number) => {
+        setDetailOrderId(id);
+        router.replace(`/admin/orders?detail=${id}`, { scroll: false });
+    };
+    const closeDetail = () => {
+        setDetailOrderId(null);
+        setDetailData(null);
+        router.replace('/admin/orders', { scroll: false });
+    };
+
+    const handleSaveDetail = async () => {
+        if (!detailOrderId) return;
+        setSavingDetail(true);
+        try {
+            const res = await fetch(`/api/admin/orders/${detailOrderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: detailStatus, admin_note: detailAdminNote }),
+            });
+            const j = await res.json();
+            if (j.success) {
+                setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, status: detailStatus, admin_note: detailAdminNote } : o)));
+                setDetailData((d) => (d ? { ...d, order: { ...d.order, status: detailStatus, admin_note: detailAdminNote } } : null));
+                toast({ title: '저장되었습니다.' });
+            } else {
+                toast({ title: j.error || '저장 실패', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: '저장 중 오류가 발생했습니다.', variant: 'destructive' });
+        } finally {
+            setSavingDetail(false);
+        }
+    };
+
+    const handleCsvDownload = () => {
+        const headers = ['주문번호', '고객명', '주문자', '이메일', '품목수', '금액', '상태', '날짜'];
+        const rows = filtered.map((o) => [
+            o.order_number || '',
+            o.recipient_name || '',
+            o.user_name || '-',
+            o.user_email || '-',
+            String(o.item_count ?? 1),
+            String(Number(o.total_amount || 0)),
+            o.status || '',
+            o.created_at ? new Date(o.created_at).toLocaleDateString('ko-KR') : '',
+        ]);
+        const BOM = '\uFEFF';
+        const csv = BOM + [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `wow3d-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast({ title: 'CSV 다운로드 완료' });
+    };
 
     const filtered = useMemo(() => {
         let list = orders;
@@ -160,8 +267,8 @@ export default function OrderList() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="border-white/10 text-white/70 hover:bg-white/5">
-                    <Download className="w-4 h-4 mr-2" /> 엑셀 다운로드
+                <Button variant="outline" size="sm" className="border-white/10 text-white/70 hover:bg-white/5" onClick={handleCsvDownload}>
+                    <Download className="w-4 h-4 mr-2" /> CSV 다운로드
                 </Button>
             </div>
 
@@ -178,6 +285,7 @@ export default function OrderList() {
                                     <th className="p-4 font-medium text-white/70">상태</th>
                                     <th className="p-4 font-medium text-white/70">날짜</th>
                                     <th className="p-4 font-medium text-right text-white/70">상태 변경</th>
+                                    <th className="p-4 font-medium text-white/70 w-12">상세</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -210,11 +318,21 @@ export default function OrderList() {
                                                 <Loader2 className="w-3 h-3 animate-spin inline-block ml-1 text-primary" />
                                             )}
                                         </td>
+                                        <td className="p-4">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10"
+                                                onClick={() => openDetail(order.id)}
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                        </td>
                                     </tr>
                                 ))}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="p-12 text-center text-white/40">
+                                        <td colSpan={8} className="p-12 text-center text-white/40">
                                             {orders.length === 0 ? '접수된 주문이 없습니다.' : '검색 결과가 없습니다.'}
                                         </td>
                                     </tr>
@@ -224,6 +342,117 @@ export default function OrderList() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={!!detailOrderId} onOpenChange={(o) => !o && closeDetail()}>
+                <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-white">주문 상세</DialogTitle>
+                    </DialogHeader>
+                    {loadingDetail ? (
+                        <div className="flex justify-center py-12"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
+                    ) : detailData?.order ? (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">주문번호</span>
+                                    <p className="text-white font-medium">{String(detailData.order.order_number)}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">수령인</span>
+                                    <p className="text-white">{String(detailData.order.recipient_name)}</p>
+                                </div>
+                                {(detailData.order.user_name != null || detailData.order.user_email != null) ? (
+                                    <div className="col-span-2">
+                                        <span className="text-[10px] font-bold text-white/40 uppercase">주문자 (회원)</span>
+                                        <p className="text-white/90">{String(detailData.order.user_name ?? '-')} ({String(detailData.order.user_email ?? '')})</p>
+                                    </div>
+                                ) : null}
+                                <div className="col-span-2">
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">배송지</span>
+                                    <p className="text-white">{String(detailData.order.shipping_address)} {detailData.order.shipping_postal_code ? `(${detailData.order.shipping_postal_code})` : ''}</p>
+                                    <p className="text-white/70">{String(detailData.order.recipient_phone)}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">총 금액</span>
+                                    <p className="text-white font-bold">₩ {Number(detailData.order.total_amount || 0).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase">고객 메모</span>
+                                    <p className="text-white/80">{String(detailData.order.customer_note || '-')}</p>
+                                </div>
+                            </div>
+
+                            {detailData.items && detailData.items.length > 0 && (
+                                <div>
+                                    <Label className="text-[10px] font-bold text-white/40 uppercase">주문 항목</Label>
+                                    <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
+                                        <table className="w-full text-sm">
+                                            <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 text-left text-white/70">파일/방식</th><th className="p-2 text-right text-white/70">수량</th><th className="p-2 text-right text-white/70">단가</th><th className="p-2 text-right text-white/70">소계</th></tr></thead>
+                                            <tbody>
+                                                {detailData.items.map((it: any) => (
+                                                    <tr key={it.id} className="border-b border-white/5">
+                                                        <td className="p-2 text-white/90">{it.file_name || '-'} ({it.print_method || '-'})</td>
+                                                        <td className="p-2 text-right">{it.quantity}</td>
+                                                        <td className="p-2 text-right">₩ {Number(it.unit_price || 0).toLocaleString()}</td>
+                                                        <td className="p-2 text-right font-medium">₩ {Number(it.subtotal || 0).toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {detailData.shipment ? (
+                                <div>
+                                    <Label className="text-[10px] font-bold text-white/40 uppercase">배송 추적</Label>
+                                    <p className="text-sm text-white/80 mt-1">
+                                        {String(detailData.shipment.carrier ?? '택배')} {String(detailData.shipment.tracking_number ?? '')} {String(detailData.shipment.status ?? '')}
+                                    </p>
+                                </div>
+                            ) : null}
+
+                            <div>
+                                <Label className="text-[10px] font-bold text-white/40 uppercase">관리자 메모</Label>
+                                <textarea
+                                    value={detailAdminNote}
+                                    onChange={(e) => setDetailAdminNote(e.target.value)}
+                                    rows={2}
+                                    className="mt-1 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/30 resize-y"
+                                    placeholder="내부 메모"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-[10px] font-bold text-white/40 uppercase">상태</Label>
+                                <Select value={detailStatus} onValueChange={setDetailStatus}>
+                                    <SelectTrigger className="mt-1 w-full max-w-[200px] bg-white/5 border-white/10 text-white">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STATUS_OPTIONS.map((s) => (
+                                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    ) : null}
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" className="border-white/10 text-white" onClick={closeDetail}>닫기</Button>
+                        <Button onClick={handleSaveDetail} disabled={savingDetail || loadingDetail}>
+                            {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
+    );
+}
+
+export default function OrderList() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+            <OrderListInner />
+        </Suspense>
     );
 }

@@ -8,16 +8,17 @@ import { Separator } from '@/components/ui/separator'
 import {
     Loader2, Box, Layers, Ruler, Printer,
     Droplets, Zap, Save, ShoppingCart,
-    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle
+    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 type PrintSpecs = {
-  fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number }
-  sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number }
-  dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number }
+  fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number> }
+  sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number> }
+  dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number> }
 }
 
 type PrintMethod = 'fdm' | 'sla' | 'dlp'
@@ -86,9 +87,29 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
       return over.length ? over.join(', ') : null
     }, [printSpecs, printMethod, bx, by, bz, analysis])
 
-    // Calculate Price Memoized
-    const priceInfo = useMemo(() => {
-        if (!analysis) return { total: 0, time: 0 }
+    // 레이어별 시간당 비용(원) → 견적식 내 machineRate 단위 변환 (표시 시 *1300 KRW)
+    const KRW_TO_UNIT = 1300
+
+    const defaultDetail = {
+        total: 0,
+        time: 0,
+        numLayers: 0,
+        materialAmount: 0,
+        materialUnit: 'g' as 'g' | 'mL',
+        materialName: '-',
+        costBreakdown: { material: 0, other: 0, machine: 0, labor: 0 },
+    }
+
+    // 견적 상세: 설정값 변경 시 소요시간·소재소요량·출력레이어·비용구성 등 산출 (상세보기 모달용)
+    const quoteDetail = useMemo(() => {
+        if (!analysis) return defaultDetail
+        const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+        const spec = printSpecs?.[key]
+        const layer = printMethod === 'fdm' ? layerHeight : slaLayerHeight
+        const rateKRW = (spec?.layerCosts && spec.layerCosts[String(layer)] != null)
+            ? spec.layerCosts[String(layer)]
+            : (spec?.hourlyRate ?? (printMethod === 'fdm' ? 5000 : printMethod === 'dlp' ? 9000 : 8000))
+        const machineRate = rateKRW / KRW_TO_UNIT
 
         if (printMethod === 'fdm') {
             const material = FDM_MATERIALS[fdmMaterial as keyof typeof FDM_MATERIALS]
@@ -96,35 +117,48 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
             const adjustedDensity = Math.max(material.density * 0.2, effectiveDensity)
             const weightGrams = volumeCm3 * adjustedDensity
             const materialCost = weightGrams * material.pricePerGram
-            const numLayers = heightMm / layerHeight
+            const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight))
             const estTimeHours = Math.max(1, numLayers * 0.02)
             const supportCost = supportEnabled ? surfaceAreaCm2 * 0.02 : 0
-            const machineRate = 2.5
             const laborCost = 5.0
+            const machineCost = estTimeHours * machineRate
             return {
-                total: materialCost + supportCost + (estTimeHours * machineRate) + laborCost,
-                time: estTimeHours
+                total: materialCost + supportCost + machineCost + laborCost,
+                time: estTimeHours,
+                numLayers,
+                materialAmount: weightGrams,
+                materialUnit: 'g' as const,
+                materialName: material.name,
+                costBreakdown: { material: materialCost, other: supportCost, machine: machineCost, labor: laborCost },
             }
         } else {
             const resin = RESIN_TYPES[resinType as keyof typeof RESIN_TYPES]
             const volumeML = volumeCm3
             const resinCost = volumeML * resin.pricePerML
-            const numLayers = heightMm / slaLayerHeight
+            const numLayers = Math.max(1, Math.ceil(heightMm / slaLayerHeight))
             const layerExposureTime = printMethod === 'dlp' ? 3 : 8
             const estTimeHours = (numLayers * layerExposureTime) / 3600
             const consumablesCost = 3.0
             const postProcessCost = postProcessing ? 8.0 : 0
-            const machineRate = printMethod === 'dlp' ? 4.0 : 3.5
             const laborCost = 7.0
+            const machineCost = estTimeHours * machineRate
+            const otherCost = consumablesCost + postProcessCost
             return {
-                total: resinCost + consumablesCost + postProcessCost + (estTimeHours * machineRate) + laborCost,
-                time: estTimeHours
+                total: resinCost + otherCost + machineCost + laborCost,
+                time: estTimeHours,
+                numLayers,
+                materialAmount: volumeML,
+                materialUnit: 'mL' as const,
+                materialName: resin.name,
+                costBreakdown: { material: resinCost, other: otherCost, machine: machineCost, labor: laborCost },
             }
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing])
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs])
 
-    const totalPrice = priceInfo.total
-    const estimatedTimeHours = priceInfo.time
+    const totalPrice = quoteDetail.total
+    const estimatedTimeHours = quoteDetail.time
+
+    const [detailModalOpen, setDetailModalOpen] = useState(false)
 
     const handleSaveQuote = async () => {
         if (!analysis || !file) return
@@ -401,6 +435,94 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 </motion.div>
             </AnimatePresence>
 
+            {/* 상세보기 모달: 설정값에 따른 소요시간·소재소요량·출력레이어·비용구성 */}
+            <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+                <DialogContent className="max-w-md sm:max-w-lg bg-[#0a0a0a] border-white/10 text-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-white flex items-center gap-2">
+                            <FileText className="w-5 h-5 text-primary" /> 견적 상세
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 pt-2">
+                        {/* 입력 설정 */}
+                        <section>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">입력 설정</h4>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div className="text-white/50">출력 방식</div>
+                                <div className="font-medium">{printMethod.toUpperCase()}</div>
+                                <div className="text-white/50">소재</div>
+                                <div className="font-medium">{printMethod === 'fdm' ? FDM_MATERIALS[fdmMaterial as keyof typeof FDM_MATERIALS]?.name : RESIN_TYPES[resinType as keyof typeof RESIN_TYPES]?.name}</div>
+                                <div className="text-white/50">레이어 두께</div>
+                                <div className="font-medium">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
+                                {printMethod === 'fdm' ? (
+                                    <>
+                                        <div className="text-white/50">Infill</div>
+                                        <div className="font-medium">{infill}%</div>
+                                        <div className="text-white/50">지지 구조</div>
+                                        <div className="font-medium">{supportEnabled ? '사용' : '미사용'}</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-white/50">후가공</div>
+                                        <div className="font-medium">{postProcessing ? '적용' : '미적용'}</div>
+                                    </>
+                                )}
+                            </div>
+                        </section>
+                        {/* 모델 정보 */}
+                        <section>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">모델 정보</h4>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div className="text-white/50">부피</div>
+                                <div className="font-mono">{volumeCm3.toFixed(1)} cm³</div>
+                                <div className="text-white/50">표면적</div>
+                                <div className="font-mono">{surfaceAreaCm2.toFixed(1)} cm²</div>
+                                <div className="text-white/50">치수 (X×Y×Z)</div>
+                                <div className="font-mono">{bx.toFixed(1)} × {by.toFixed(1)} × {bz.toFixed(1)} mm</div>
+                            </div>
+                        </section>
+                        {/* 산출 결과 */}
+                        <section>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">산출 결과</h4>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div className="text-white/50">소요 시간</div>
+                                <div className="font-bold text-emerald-400">{quoteDetail.time.toFixed(2)} h</div>
+                                <div className="text-white/50">소재 소요량</div>
+                                <div className="font-mono font-medium">{quoteDetail.materialAmount.toFixed(1)} {quoteDetail.materialUnit}</div>
+                                <div className="text-white/50">출력 레이어 수</div>
+                                <div className="font-mono font-bold">{quoteDetail.numLayers.toLocaleString()} layers</div>
+                            </div>
+                        </section>
+                        {/* 비용 구분 */}
+                        <section>
+                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">비용 구분</h4>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-white/50">재료비</span>
+                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.material * KRW_TO_UNIT).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-white/50">장비(인쇄)비</span>
+                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.machine * KRW_TO_UNIT).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-white/50">기타</span>
+                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.other * KRW_TO_UNIT).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-white/50">인건비</span>
+                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.labor * KRW_TO_UNIT).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 mt-2 border-t border-white/10 font-bold">
+                                    <span>총 견적</span>
+                                    <span className="text-primary">₩{Math.round(totalPrice * KRW_TO_UNIT).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* Price Preview: embedded=인라인 카드, 아니면 고정 하단바 (겹침 방지) */}
             {embedded ? (
                 <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-4">
@@ -419,6 +541,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                             <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setDetailModalOpen(true)}
+                        className="flex items-center gap-2 text-[11px] text-primary/90 hover:text-primary font-medium"
+                    >
+                        <FileText className="w-3.5 h-3.5" /> 상세보기
+                    </button>
                     <div className="grid grid-cols-2 gap-2">
                         <Button disabled={!analysis || isSaving} variant="ghost" size="sm" className="h-11 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold" onClick={handleSaveQuote}>
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -447,6 +576,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                             <span className="text-sm font-bold text-emerald-400">~{Math.ceil(estimatedTimeHours + 24)}h</span>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setDetailModalOpen(true)}
+                        className="flex items-center gap-2 text-[11px] text-primary/90 hover:text-primary font-medium mb-3"
+                    >
+                        <FileText className="w-3.5 h-3.5" /> 상세보기
+                    </button>
                     <div className="grid grid-cols-[1fr_2fr] gap-3">
                         <Button disabled={!analysis || isSaving} variant="ghost" size="lg" className="h-14 rounded-2xl border border-white/10 hover:bg-white/5 text-xs font-bold uppercase transition-all active:scale-95" onClick={handleSaveQuote}>
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

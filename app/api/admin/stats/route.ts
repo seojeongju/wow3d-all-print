@@ -51,26 +51,43 @@ export async function GET(_req: NextRequest) {
             amount: Number(r.amount ?? 0),
         }));
 
-        // 4) 최근 주문 5건
+        // 4) 최근 주문 5건 (id 포함, 상세 링크용)
         const { results: recentRows } = await env.DB.prepare(`
-            SELECT order_number, recipient_name, created_at, total_amount
+            SELECT id, order_number, recipient_name, created_at, total_amount
             FROM orders
             ORDER BY created_at DESC
             LIMIT 5
-        `).all() as { results: { order_number: string; recipient_name: string; created_at: string; total_amount: number }[] };
+        `).all() as { results: { id: number; order_number: string; recipient_name: string; created_at: string; total_amount: number }[] };
 
-        const recentOrders = (recentRows || []).map((r: { order_number: string; recipient_name: string; created_at: string; total_amount: number }) => ({
+        const recentOrders = (recentRows || []).map((r: { id: number; order_number: string; recipient_name: string; created_at: string; total_amount: number }) => ({
+            id: Number(r.id),
             orderNumber: r.order_number,
             recipientName: r.recipient_name,
             createdAt: r.created_at,
             totalAmount: Number(r.total_amount ?? 0),
         }));
 
-        // 5) 가동률 (print_settings 또는 기본값)
-        const opRate = await env.DB.prepare("SELECT value FROM print_settings WHERE key = 'operating_rate'").first() as { value: string } | null;
-        const opDetail = await env.DB.prepare("SELECT value FROM print_settings WHERE key = 'operating_detail'").first() as { value: string } | null;
-        const operatingRate = opRate?.value ? parseFloat(opRate.value) : 82;
-        const operatingDetail = opDetail?.value || '프린터 12/15대 가동중';
+        // 5) 이번 달 견적 요청, 미확인 문의
+        let quotesThisMonth = 0;
+        let inquiriesNew = 0;
+        try {
+            const qRow = await env.DB.prepare(`SELECT COUNT(*) as c FROM quotes WHERE created_at >= date('now','start of month')`).first() as { c: number } | null;
+            quotesThisMonth = Number(qRow?.c ?? 0);
+        } catch { /* quotes 테이블 없을 수 있음 */ }
+        try {
+            const iRow = await env.DB.prepare(`SELECT COUNT(*) as c FROM inquiries WHERE status = 'new'`).first() as { c: number } | null;
+            inquiriesNew = Number(iRow?.c ?? 0);
+        } catch { /* inquiries 테이블 없을 수 있음 */ }
+
+        // 6) 가동률 (print_settings 또는 기본값)
+        let operatingRate = 82;
+        let operatingDetail = '프린터 12/15대 가동중';
+        try {
+            const opRate = await env.DB.prepare("SELECT value FROM print_settings WHERE key = 'operating_rate'").first() as { value: string } | null;
+            const opDetail = await env.DB.prepare("SELECT value FROM print_settings WHERE key = 'operating_detail'").first() as { value: string } | null;
+            if (opRate?.value) operatingRate = parseFloat(opRate.value);
+            if (opDetail?.value) operatingDetail = opDetail.value;
+        } catch { /* print_settings 없을 수 있음 */ }
 
         return NextResponse.json({
             success: true,
@@ -81,6 +98,8 @@ export async function GET(_req: NextRequest) {
                 pendingOrdersCount,
                 totalUsers,
                 newSignupsCount,
+                quotesThisMonth,
+                inquiriesNew,
                 operatingRate,
                 operatingDetail,
                 salesTrend,

@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS print_settings (
 INSERT OR IGNORE INTO print_settings (key, value, description) VALUES 
 ('fdm_hourly_rate', '5000', 'FDM 시간당 비용 (원)'),
 ('sla_hourly_rate', '8000', 'SLA 시간당 비용 (원)'),
-('min_order_price', '10000', '최소 주문 금액 (원)');
+('min_order_price', '10000', '최소 주문 금액 (원)'),
+('operating_rate', '82', '가동률 (%)'),
+('operating_detail', '프린터 12/15대 가동중', '가동 상세');
 
 -- Attempt to add role column to users (will fail if exists, but that's okay for manual run or we can ignore error)
 -- SQLite doesn't support IF NOT EXISTS for column. 
