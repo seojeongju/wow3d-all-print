@@ -70,7 +70,6 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
     useEffect(() => {
       if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
     }, [materials, resinType])
-    const resinMaterials = materials.filter((m) => m.type === 'SLA' || m.type === 'DLP')
     const MAT_COLORS: Record<string, string> = { PLA: 'text-emerald-400', ABS: 'text-amber-400', PETG: 'text-blue-400', TPU: 'text-pink-400', Standard: 'text-sky-400', Tough: 'text-amber-400', Clear: 'text-cyan-400', Flexible: 'text-lime-400' }
 
     const volumeCm3 = analysis?.volume || 0
