@@ -107,6 +107,7 @@ export interface Material {
     name: string;
     type: string;
     pricePerGram: number;
+    pricePerMl?: number | null; // SLA/DLP용 원/mL
     density: number;
     colors: string[]; // Parsed from JSON
     isActive: boolean;

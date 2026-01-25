@@ -23,14 +23,15 @@ export async function POST(req: NextRequest) {
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 });
     try {
         const body = await req.json() as any;
-        const { name, type, pricePerGram, density, colors, description } = body;
+        const { name, type, pricePerGram, pricePerMl, density, colors, description } = body;
         const allowedTypes = ['FDM', 'SLA', 'DLP'];
         const safeType = allowedTypes.includes(String(type || '').toUpperCase()) ? String(type).toUpperCase() : 'FDM';
+        const pricePerMlVal = (pricePerMl != null && pricePerMl !== '') ? Number(pricePerMl) : null;
 
         const result = await env.DB.prepare(
-            `INSERT INTO materials (name, type, price_per_gram, density, colors, description) 
-             VALUES (?, ?, ?, ?, ?, ?)`
-        ).bind(name, safeType, pricePerGram, density, JSON.stringify(colors || ['#FFFFFF']), description || null).run();
+            `INSERT INTO materials (name, type, price_per_gram, price_per_ml, density, colors, description) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(name, safeType, pricePerGram, pricePerMlVal, density, JSON.stringify(colors || ['#FFFFFF']), description || null).run();
 
         return NextResponse.json({ success: true, id: result.meta.last_row_id });
     } catch (error) {

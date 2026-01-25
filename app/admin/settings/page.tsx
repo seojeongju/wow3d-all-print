@@ -22,6 +22,38 @@ type EquipmentRow = {
   layer_heights_json: string | null
   layer_costs_json?: string | null
   is_active: number
+  fdm_layer_hours_factor?: number | null
+  fdm_labor_cost_krw?: number | null
+  fdm_support_per_cm2_krw?: number | null
+  sla_layer_exposure_sec?: number | null
+  sla_labor_cost_krw?: number | null
+  sla_consumables_krw?: number | null
+  sla_post_process_krw?: number | null
+  dlp_layer_exposure_sec?: number | null
+  dlp_labor_cost_krw?: number | null
+  dlp_consumables_krw?: number | null
+  dlp_post_process_krw?: number | null
+}
+
+type EquipForm = {
+  name: string
+  max_x_mm: number
+  max_y_mm: number
+  max_z_mm: number
+  hourly_rate: number
+  layer_heights_json: string
+  layer_costs: Record<string, number>
+  fdm_layer_hours_factor?: number
+  fdm_labor_cost_krw?: number
+  fdm_support_per_cm2_krw?: number
+  sla_layer_exposure_sec?: number
+  sla_labor_cost_krw?: number
+  sla_consumables_krw?: number
+  sla_post_process_krw?: number
+  dlp_layer_exposure_sec?: number
+  dlp_labor_cost_krw?: number
+  dlp_consumables_krw?: number
+  dlp_post_process_krw?: number
 }
 
 const EQUIPMENT_DEFAULTS: Record<string, Partial<EquipmentRow>> = {
@@ -49,16 +81,16 @@ export default function AdminSettings() {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
   const [editForm, setEditForm] = useState<Partial<Material>>({})
   const [savingEquip, setSavingEquip] = useState<string | null>(null)
-  const [equipForms, setEquipForms] = useState<Record<string, { name: string; max_x_mm: number; max_y_mm: number; max_z_mm: number; hourly_rate: number; layer_heights_json: string; layer_costs: Record<string, number> }>>({})
+  const [equipForms, setEquipForms] = useState<Record<string, EquipForm>>({})
 
   useEffect(() => {
     fetchData()
   }, [])
 
   useEffect(() => {
-    const next: Record<string, { name: string; max_x_mm: number; max_y_mm: number; max_z_mm: number; hourly_rate: number; layer_heights_json: string; layer_costs: Record<string, number> }> = {}
+    const next: Record<string, EquipForm> = {}
     for (const t of ['FDM', 'SLA', 'DLP']) {
-      const e = equipment.find((x) => x.type === t)
+      const e = equipment.find((x) => x.type === t) as EquipmentRow | undefined
       const d = EQUIPMENT_DEFAULTS[t]
       const baseRate = e?.hourly_rate ?? (d?.hourly_rate as number) ?? 5000
       const arr = (() => {
@@ -93,6 +125,17 @@ export default function AdminSettings() {
         hourly_rate: baseRate,
         layer_heights_json: arr.join(', '),
         layer_costs,
+        fdm_layer_hours_factor: e?.fdm_layer_hours_factor ?? 0.02,
+        fdm_labor_cost_krw: e?.fdm_labor_cost_krw ?? 6500,
+        fdm_support_per_cm2_krw: e?.fdm_support_per_cm2_krw ?? 26,
+        sla_layer_exposure_sec: e?.sla_layer_exposure_sec ?? 8,
+        sla_labor_cost_krw: e?.sla_labor_cost_krw ?? 9100,
+        sla_consumables_krw: e?.sla_consumables_krw ?? 3900,
+        sla_post_process_krw: e?.sla_post_process_krw ?? 10400,
+        dlp_layer_exposure_sec: e?.dlp_layer_exposure_sec ?? 3,
+        dlp_labor_cost_krw: e?.dlp_labor_cost_krw ?? 9100,
+        dlp_consumables_krw: e?.dlp_consumables_krw ?? 3900,
+        dlp_post_process_krw: e?.dlp_post_process_krw ?? 10400,
       }
     }
     setEquipForms(next)
@@ -117,6 +160,7 @@ export default function AdminSettings() {
             name: m.name,
             type: m.type,
             pricePerGram: m.price_per_gram,
+            pricePerMl: m.price_per_ml != null ? m.price_per_ml : undefined,
             density: m.density,
             colors: JSON.parse(m.colors || '[]'),
             isActive: m.is_active,
@@ -133,10 +177,10 @@ export default function AdminSettings() {
     }
   }
 
-  const getDefaultForm = (t: string) => {
+  const getDefaultForm = (t: string): EquipForm => {
     const d = EQUIPMENT_DEFAULTS[t]
     const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (t === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
-    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {} }
+    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400 }
   }
 
   const setEquipLayerCost = (t: string, thickness: string, value: number) => {
@@ -177,6 +221,17 @@ export default function AdminSettings() {
           layer_heights_json: JSON.stringify(arr),
           layer_costs_json: layer_costs,
           is_active: 1,
+          fdm_layer_hours_factor: form.fdm_layer_hours_factor ?? 0.02,
+          fdm_labor_cost_krw: form.fdm_labor_cost_krw ?? 6500,
+          fdm_support_per_cm2_krw: form.fdm_support_per_cm2_krw ?? 26,
+          sla_layer_exposure_sec: form.sla_layer_exposure_sec ?? 8,
+          sla_labor_cost_krw: form.sla_labor_cost_krw ?? 9100,
+          sla_consumables_krw: form.sla_consumables_krw ?? 3900,
+          sla_post_process_krw: form.sla_post_process_krw ?? 10400,
+          dlp_layer_exposure_sec: form.dlp_layer_exposure_sec ?? 3,
+          dlp_labor_cost_krw: form.dlp_labor_cost_krw ?? 9100,
+          dlp_consumables_krw: form.dlp_consumables_krw ?? 3900,
+          dlp_post_process_krw: form.dlp_post_process_krw ?? 10400,
         }),
       })
       if (!res.ok) {
@@ -223,6 +278,7 @@ export default function AdminSettings() {
           name: newMaterial.name,
           type: (newMaterial.type || 'FDM').toUpperCase(),
           pricePerGram: newMaterial.pricePerGram ?? 0,
+          pricePerMl: (newMaterial.type === 'SLA' || newMaterial.type === 'DLP') ? (newMaterial.pricePerMl ?? null) : undefined,
           density: newMaterial.density ?? 1.24,
           colors: newMaterial.colors || ['#FFFFFF'],
           description: (newMaterial as any).description || undefined,
@@ -236,7 +292,7 @@ export default function AdminSettings() {
       setIsAddingMaterial(false)
       fetchData()
       toast({ title: '자재 추가 완료' })
-      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, density: 1.24, colors: ['#FFFFFF'] })
+      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'] })
     } catch (e) {
       toast({ title: '추가 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
     }
@@ -244,7 +300,7 @@ export default function AdminSettings() {
 
   const openEdit = (m: Material) => {
     setEditingMaterial(m)
-    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, density: m.density, colors: m.colors || [], description: (m as any).description })
+    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, pricePerMl: m.pricePerMl ?? undefined, density: m.density, colors: m.colors || [], description: (m as any).description })
   }
   const handleSaveMaterialEdit = async () => {
     if (!editingMaterial) return
@@ -256,6 +312,7 @@ export default function AdminSettings() {
           name: editForm.name,
           type: (editForm.type || 'FDM').toUpperCase(),
           pricePerGram: editForm.pricePerGram,
+          pricePerMl: (editForm.type === 'SLA' || editForm.type === 'DLP') ? (editForm.pricePerMl ?? null) : undefined,
           density: editForm.density,
           colors: editForm.colors || ['#FFFFFF'],
           description: (editForm as any).description ?? undefined,
@@ -402,6 +459,67 @@ export default function AdminSettings() {
                       </table>
                     </div>
                   </div>
+                  <div>
+                    <Label className="text-[10px] text-white/50 uppercase">견적 산출 기준 — 출력 시간·인건비·지지/소모품/후가공 (상세보기·견적 금액 연동)</Label>
+                    <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {t === 'FDM' && (
+                        <>
+                          <div>
+                            <Label className="text-[10px] text-white/40">레이어당 소요 시간 (h)</Label>
+                            <Input type="number" step="0.01" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.fdm_layer_hours_factor ?? 0.02} onChange={(e) => setEquip(t, 'fdm_layer_hours_factor', parseFloat(e.target.value) || 0.02)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">인건비 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.fdm_labor_cost_krw ?? 6500} onChange={(e) => setEquip(t, 'fdm_labor_cost_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">지지 구조 단가 (원/cm²)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.fdm_support_per_cm2_krw ?? 26} onChange={(e) => setEquip(t, 'fdm_support_per_cm2_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                        </>
+                      )}
+                      {t === 'SLA' && (
+                        <>
+                          <div>
+                            <Label className="text-[10px] text-white/40">레이어당 노출 시간 (초)</Label>
+                            <Input type="number" step="0.1" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.sla_layer_exposure_sec ?? 8} onChange={(e) => setEquip(t, 'sla_layer_exposure_sec', parseFloat(e.target.value) || 8)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">인건비 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.sla_labor_cost_krw ?? 9100} onChange={(e) => setEquip(t, 'sla_labor_cost_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">소모품비 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.sla_consumables_krw ?? 3900} onChange={(e) => setEquip(t, 'sla_consumables_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">후가공 비용 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.sla_post_process_krw ?? 10400} onChange={(e) => setEquip(t, 'sla_post_process_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                        </>
+                      )}
+                      {t === 'DLP' && (
+                        <>
+                          <div>
+                            <Label className="text-[10px] text-white/40">레이어당 노출 시간 (초)</Label>
+                            <Input type="number" step="0.1" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.dlp_layer_exposure_sec ?? 3} onChange={(e) => setEquip(t, 'dlp_layer_exposure_sec', parseFloat(e.target.value) || 3)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">인건비 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.dlp_labor_cost_krw ?? 9100} onChange={(e) => setEquip(t, 'dlp_labor_cost_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">소모품비 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.dlp_consumables_krw ?? 3900} onChange={(e) => setEquip(t, 'dlp_consumables_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">후가공 비용 (원)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.dlp_post_process_krw ?? 10400} onChange={(e) => setEquip(t, 'dlp_post_process_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex justify-end">
                     <Button onClick={() => handleSaveEquipment(t)} disabled={savingEquip === t}>
                       {savingEquip === t ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -450,12 +568,18 @@ export default function AdminSettings() {
                       </Select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">g당 가격</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram || ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} />
+                      <Label className="text-right">g당 가격 (원)</Label>
+                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} />
                     </div>
+                    {(newMaterial.type === 'SLA' || newMaterial.type === 'DLP') && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">mL당 가격 (원)</Label>
+                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerMl ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP용" />
+                      </div>
+                    )}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">밀도</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.density || ''} onChange={(e) => setNewMaterial({ ...newMaterial, density: parseFloat(e.target.value) || 1.24 })} />
+                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.density ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, density: parseFloat(e.target.value) || 1.24 })} />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">설명 (선택)</Label>
@@ -532,9 +656,15 @@ export default function AdminSettings() {
                     </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">g당 가격</Label>
+                    <Label className="text-right">g당 가격 (원)</Label>
                     <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerGram ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerGram: parseFloat(e.target.value) || 0 })} />
                   </div>
+                  {(editForm.type === 'SLA' || editForm.type === 'DLP') && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">mL당 가격 (원)</Label>
+                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerMl ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP용" />
+                    </div>
+                  )}
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">밀도</Label>
                     <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.density ?? ''} onChange={(e) => setEditForm({ ...editForm, density: parseFloat(e.target.value) || 1.24 })} />

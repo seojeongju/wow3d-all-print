@@ -23,6 +23,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const name = typeof body.name === 'string' ? body.name : (existing.name as string)
     const type = typeof body.type === 'string' && /^(FDM|SLA|DLP)$/i.test(body.type) ? body.type.toUpperCase() : (existing.type as string)
     const pricePerGram = typeof body.pricePerGram === 'number' ? body.pricePerGram : (existing.price_per_gram as number)
+    const pricePerMl = body.pricePerMl !== undefined ? (body.pricePerMl != null && body.pricePerMl !== '' ? Number(body.pricePerMl) : null) : (existing.price_per_ml as number | null)
     const density = typeof body.density === 'number' ? body.density : (existing.density as number)
     const colors =
       body.colors !== undefined
@@ -36,9 +37,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const description = body.description !== undefined ? (body.description as string | null) : (existing.description as string | null)
 
     await env.DB.prepare(
-      `UPDATE materials SET name=?, type=?, price_per_gram=?, density=?, colors=?, is_active=?, description=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+      `UPDATE materials SET name=?, type=?, price_per_gram=?, price_per_ml=?, density=?, colors=?, is_active=?, description=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
     )
-      .bind(name, type, pricePerGram, density, colors, is_active, description, numId)
+      .bind(name, type, pricePerGram, pricePerMl, density, colors, is_active, description, numId)
       .run()
 
     return NextResponse.json({ success: true })

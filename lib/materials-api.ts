@@ -35,5 +35,14 @@ export function materialsErrorResponse(
       status: 503,
     };
   }
+  if (msg.includes('no such column') && msg.includes('price_per_ml')) {
+    return {
+      body: {
+        error:
+          'materials 테이블에 price_per_ml 컬럼이 없습니다. npx wrangler d1 execute wow3d-production --remote --file=./schema_materials_price_per_ml.sql',
+      },
+      status: 503,
+    };
+  }
   return { body: { error: failMsg }, status: 500 };
 }
