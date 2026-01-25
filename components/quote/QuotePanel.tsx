@@ -295,7 +295,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
     if (!file) return null
 
     return (
-        <div className={`space-y-8 ${embedded ? 'pb-8' : 'pb-32'}`}>
+        <div className={`space-y-6 ${embedded ? 'pb-6' : 'pb-4'}`}>
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
@@ -402,7 +402,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
                     {/* Sliders & Switches */}
                     {printMethod === 'fdm' ? (
-                        <div className="space-y-8 pt-4">
+                        <div className="space-y-6 pt-2">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
                                     <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Infill Density</label>
@@ -434,9 +434,16 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                     ))}
                                 </div>
                             </div>
+                            <div className="flex items-center justify-between px-1">
+                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">지지 구조</label>
+                                <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
+                                    className={`relative w-11 h-6 rounded-full border transition-colors ${supportEnabled ? 'bg-primary border-primary' : 'bg-white/10 border-white/20'}`}>
+                                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${supportEnabled ? 'left-6' : 'left-1'}`} />
+                                </button>
+                            </div>
                         </div>
                     ) : (
-                        <div className="space-y-8 pt-4">
+                        <div className="space-y-6 pt-4">
                             <div className="space-y-4">
                                 <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
@@ -453,6 +460,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+                            <div className="flex items-center justify-between px-1">
+                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">후가공</label>
+                                <button type="button" role="switch" aria-checked={postProcessing} onClick={() => setPostProcessing((p) => !p)}
+                                    className={`relative w-11 h-6 rounded-full border transition-colors ${postProcessing ? 'bg-primary border-primary' : 'bg-white/10 border-white/20'}`}>
+                                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${postProcessing ? 'left-6' : 'left-1'}`} />
+                                </button>
                             </div>
                         </div>
                     )}
@@ -547,89 +561,45 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 </DialogContent>
             </Dialog>
 
-            {/* Price Preview: embedded=인라인 카드, 아니면 고정 하단바 (겹침 방지) */}
-            {embedded ? (
-                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-4">
-                    <div className="flex items-center justify-between gap-4">
-                        <div>
-                            <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                                <Wallet className="w-3 h-3" /> 예상 견적
-                            </div>
-                            <span className="text-2xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
-                            <span className="text-xs text-white/30 font-medium ml-1">KRW</span>
+            {/* Price & Actions: 스크롤 흐름 안에 배치해 레이어·지지/후가공까지 모두 보이도록 */}
+            <div className={`${embedded ? 'p-4' : 'p-5'} rounded-2xl bg-white/[0.04] border border-white/10 space-y-4`}>
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                            <Wallet className="w-3 h-3" /> 예상 견적
                         </div>
-                        <div className="text-right">
-                            <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                                <Clock className="w-3 h-3" /> 예상 소요
-                            </div>
-                            <span className="text-sm font-bold text-emerald-400">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'h'))}</span>
+                        <span className={`font-black text-white ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
+                        <span className="text-xs text-white/30 font-medium ml-1">KRW</span>
+                    </div>
+                    <div className="text-right">
+                        <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                            <Clock className="w-3 h-3" /> 예상 소요
                         </div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setDetailModalOpen(true)}
-                        className="flex items-center gap-2 text-[11px] text-primary/90 hover:text-primary font-medium"
-                    >
-                        <FileText className="w-3.5 h-3.5" /> 상세보기
-                    </button>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button disabled={!analysis || isSaving} variant="ghost" size="sm" className="h-11 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold" onClick={handleSaveQuote}>
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button disabled={!analysis || isSaving} size="sm" className="h-11 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-bold flex items-center justify-center gap-2" onClick={handleAddToCart}>
-                            <ShoppingCart className="w-4 h-4" /> 장바구니에 담기
-                        </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        <Link href="/quotes" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
-                        <span className="text-white/20">|</span>
-                        <Link href="/cart" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1"><ShoppingCart className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
+                        <span className="text-sm font-bold text-emerald-400">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'h'))}</span>
                     </div>
                 </div>
-            ) : (
-                <div className="fixed bottom-0 left-0 w-[400px] xl:w-[450px] p-6 bg-black border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.8)] z-20">
-                    <div className="flex items-center gap-6 mb-6">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                                <Wallet className="w-3 h-3" /> 예상 견적
-                            </div>
-                            <div className="flex items-baseline gap-1.5">
-                                <span className="text-3xl font-black text-white">₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
-                                <span className="text-xs text-white/30 font-medium">KRW</span>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                            <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
-                                <Clock className="w-3 h-3" /> 예상 소요
-                            </div>
-                            <span className="text-sm font-bold text-emerald-400">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'h'))}</span>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setDetailModalOpen(true)}
-                        className="flex items-center gap-2 text-[11px] text-primary/90 hover:text-primary font-medium mb-3"
-                    >
-                        <FileText className="w-3.5 h-3.5" /> 상세보기
-                    </button>
-                    <div className="grid grid-cols-[1fr_2fr] gap-3">
-                        <Button disabled={!analysis || isSaving} variant="ghost" size="lg" className="h-14 rounded-2xl border border-white/10 hover:bg-white/5 text-xs font-bold uppercase transition-all active:scale-95" onClick={handleSaveQuote}>
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button disabled={!analysis || isSaving} size="lg" className="h-14 rounded-2xl bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3" onClick={handleAddToCart}>
-                            <ShoppingCart className="w-5 h-5" /> 장바구니에 담기
-                        </Button>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Link href="/quotes" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
-                        <span className="text-white/20">|</span>
-                        <Link href="/cart" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
+                <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] text-primary/90 hover:text-primary font-medium">
+                    <FileText className="w-3.5 h-3.5" /> 상세보기
+                </button>
+                <div className={`grid gap-2 ${embedded ? 'grid-cols-2' : 'grid-cols-[1fr_1.5fr] sm:grid-cols-[1fr_2fr]'}`}>
+                    <Button disabled={!analysis || isSaving} variant="ghost" size={embedded ? 'sm' : 'lg'} className={`rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl'}`} onClick={handleSaveQuote}>
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    </Button>
+                    <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl bg-white text-black hover:bg-white/90 text-xs font-bold flex items-center justify-center gap-2 ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl font-black uppercase tracking-widest'}`} onClick={handleAddToCart}>
+                        <ShoppingCart className={embedded ? 'w-4 h-4' : 'w-5 h-5'} /> 장바구니에 담기
+                    </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Link href="/quotes" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
+                    <span className="text-white/20">|</span>
+                    <Link href="/cart" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
+                </div>
+                {!embedded && (
+                    <div className="flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest pt-1">
                         <ShieldCheck className="w-3 h-3 text-emerald-500/50" /> WOW3D 보안 인증
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     )
 }

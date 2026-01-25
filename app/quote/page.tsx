@@ -82,9 +82,9 @@ export default function QuotePage() {
             <section className="flex-1 relative">
                 <div className="h-full grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr]">
 
-                    {/* Left Sidebar: Settings Panel */}
+                    {/* Left Sidebar: Settings Panel - min-h-0으로 스크롤 영역 정상 동작 */}
                     <div className="bg-black/60 backdrop-blur-3xl border-r border-white/5 h-[calc(100vh-4.5rem)] flex flex-col overflow-hidden relative z-10">
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 pb-8 space-y-6">
                             <AnimatePresence mode="wait">
                                 {step === 1 ? (
                                     // 파일 있음 + 분석 대기: 업로드 UI 대신 "분석 중" 전용 화면 (샘플 견적 등에서 진입 시 리다이렉트처럼 보이는 현상 방지)
@@ -184,11 +184,11 @@ export default function QuotePage() {
                             </AnimatePresence>
                         </div>
 
-                        {/* Sidebar Footer */}
-                        <div className="p-6 border-t border-white/5 bg-black/40">
-                            <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-white/30 font-bold">
+                        {/* Sidebar Footer - 컴팩트 */}
+                        <div className="shrink-0 px-6 py-3 border-t border-white/5 bg-black/40">
+                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/30 font-bold">
                                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                                보안 분석 엔진 동작 중
+                                보안 분석 엔진
                             </div>
                         </div>
                     </div>
