@@ -107,7 +107,7 @@ function OrderCompleteContent() {
                             <Link href="/my-account" className="block transform transition-transform active:scale-95">
                                 <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
                                     <Package className="w-4 h-4" />
-                                    Track Order
+                                    주문 조회
                                 </Button>
                             </Link>
                         </div>

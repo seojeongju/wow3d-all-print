@@ -208,7 +208,7 @@ export default function CheckoutPage() {
 
                                         <div className="space-y-2.5">
                                             <Label htmlFor="customerNote" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                <MessageSquare className="w-3 h-3" /> Delivery Note (Optional)
+                                                <MessageSquare className="w-3 h-3" /> 배송 시 요청사항 (선택)
                                             </Label>
                                             <textarea
                                                 id="customerNote"
