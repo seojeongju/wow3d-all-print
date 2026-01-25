@@ -8,8 +8,9 @@ import { Separator } from '@/components/ui/separator'
 import {
     Loader2, Box, Layers, Ruler, Printer,
     Droplets, Zap, Save, ShoppingCart,
-    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText
+    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight
 } from 'lucide-react'
+import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -576,8 +577,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         </Button>
                         <Button disabled={!analysis || isSaving} size="sm" className="h-11 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-bold flex items-center justify-center gap-2" onClick={handleAddToCart}>
-                            <ShoppingCart className="w-4 h-4" /> 주문에 추가
+                            <ShoppingCart className="w-4 h-4" /> 장바구니에 담기
                         </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        <Link href="/quotes" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
+                        <span className="text-white/20">|</span>
+                        <Link href="/cart" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1"><ShoppingCart className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
                     </div>
                 </div>
             ) : (
@@ -611,8 +617,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         </Button>
                         <Button disabled={!analysis || isSaving} size="lg" className="h-14 rounded-2xl bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3" onClick={handleAddToCart}>
-                            <ShoppingCart className="w-5 h-5" /> 주문에 추가하기
+                            <ShoppingCart className="w-5 h-5" /> 장바구니에 담기
                         </Button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Link href="/quotes" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
+                        <span className="text-white/20">|</span>
+                        <Link href="/cart" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
                     </div>
                     <div className="mt-4 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
                         <ShieldCheck className="w-3 h-3 text-emerald-500/50" /> WOW3D 보안 인증

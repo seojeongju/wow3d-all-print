@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
 import { Button } from '@/components/ui/button'
@@ -13,10 +13,14 @@ import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { motion } from 'framer-motion'
 
-export default function CheckoutPage() {
+function CheckoutContent() {
     const router = useRouter()
     const { user, isAuthenticated, token, sessionId } = useAuthStore()
-    const { items, getTotalPrice, clearCart } = useCartStore()
+    const { items, removeFromCartByIds } = useCartStore()
+    const searchParams = useSearchParams()
+    const idsParam = searchParams.get('ids')
+    const orderItemIds = idsParam ? idsParam.split(',').map((s) => parseInt(s, 10)).filter((n) => !Number.isNaN(n)) : []
+    const orderItems = orderItemIds.length > 0 ? items.filter((i) => orderItemIds.includes(i.id)) : items
     const { toast } = useToast()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,8 +34,8 @@ export default function CheckoutPage() {
     })
 
     useEffect(() => {
-        if (items.length === 0) router.push('/cart')
-    }, [items.length, router])
+        if (items.length === 0 || orderItems.length === 0) router.push('/cart')
+    }, [items.length, orderItems.length, router])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
@@ -72,7 +76,7 @@ export default function CheckoutPage() {
                 shippingAddress: formData.shippingAddress,
                 shippingPostalCode: formData.shippingPostalCode || undefined,
                 customerNote: formData.customerNote || undefined,
-                cartItems: items.map(item => ({
+                cartItems: orderItems.map((item) => ({
                     quoteId: item.quoteId,
                     quantity: item.quantity,
                     totalPrice: item.quote?.totalPrice || 0,
@@ -92,7 +96,7 @@ export default function CheckoutPage() {
             }
 
             const result = await response.json()
-            clearCart()
+            removeFromCartByIds(orderItems.map((i) => i.id))
 
             toast({
                 title: '✅ 주문 성공',
@@ -118,10 +122,10 @@ export default function CheckoutPage() {
         }
     }
 
-    if (items.length === 0) return null
+    if (items.length === 0 || orderItems.length === 0) return null
 
-    const totalPriceKWR = Math.round(getTotalPrice() * 1300)
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
+    const totalPriceKWR = Math.round(orderItems.reduce((s, i) => s + (i.quote?.totalPrice || 0) * i.quantity, 0) * 1300)
+    const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0)
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
@@ -288,7 +292,7 @@ export default function CheckoutPage() {
                                 <h2 className="text-xl font-black uppercase tracking-wide">주문 검토</h2>
 
                                 <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                                    {items.map((item) => (
+                                    {orderItems.map((item) => (
                                         <div key={item.id} className="flex gap-4 group">
                                             <div className="w-12 h-12 rounded-xl bg-black border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-primary/30 transition-all">
                                                 <Package className="w-5 h-5 text-white/20" />
@@ -350,5 +354,13 @@ export default function CheckoutPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function CheckoutPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" /></div>}>
+            <CheckoutContent />
+        </Suspense>
     )
 }

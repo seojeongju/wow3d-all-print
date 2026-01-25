@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/upload/FileUpload";
 import QuotePanel from "@/components/quote/QuotePanel";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useFileStore } from "@/store/useFileStore";
@@ -61,12 +61,20 @@ export default function QuotePage() {
                         </nav>
                     </div>
 
-                    <Link href="/">
-                        <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/5">
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            나가기
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link href="/quotes" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 transition-all">
+                            <FileText className="w-4 h-4" /> 저장 목록
+                        </Link>
+                        <Link href="/cart" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 transition-all">
+                            <ShoppingCart className="w-4 h-4" /> 장바구니
+                        </Link>
+                        <Link href="/">
+                            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10 border border-white/5">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                나가기
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </header>
 

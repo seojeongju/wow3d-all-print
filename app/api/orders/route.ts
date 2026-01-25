@@ -138,10 +138,19 @@ export async function POST(request: NextRequest) {
                 .run();
         }
 
-        if (isGuest) {
-            await env.DB.prepare('DELETE FROM cart WHERE session_id = ?').bind(auth.sessionId).run();
-        } else {
-            await env.DB.prepare('DELETE FROM cart WHERE user_id = ?').bind(auth.userId).run();
+        // 주문한 quote_id만 장바구니에서 삭제 (선택 주문 지원)
+        const quoteIds = [...new Set((body.cartItems as { quoteId: number }[]).map((x) => x.quoteId))];
+        if (quoteIds.length > 0) {
+            const placeholders = quoteIds.map(() => '?').join(',');
+            if (isGuest) {
+                await env.DB.prepare(`DELETE FROM cart WHERE session_id = ? AND quote_id IN (${placeholders})`)
+                    .bind(auth.sessionId, ...quoteIds)
+                    .run();
+            } else {
+                await env.DB.prepare(`DELETE FROM cart WHERE user_id = ? AND quote_id IN (${placeholders})`)
+                    .bind(auth.userId, ...quoteIds)
+                    .run();
+            }
         }
 
         await env.DB.prepare('INSERT INTO shipments (order_id) VALUES (?)').bind(orderId).run();

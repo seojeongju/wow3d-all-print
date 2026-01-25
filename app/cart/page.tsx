@@ -6,16 +6,29 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
 
 export default function CartPage() {
-    const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCartStore()
+    const { items, removeFromCart, removeFromCartByIds, updateQuantity, clearCart, getTotalPriceForItems, getTotalItems } = useCartStore()
     const { isAuthenticated } = useAuthStore()
     const { toast } = useToast()
     const [isClearing, setIsClearing] = useState(false)
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+
+    useEffect(() => {
+        if (items.length === 0) { setSelectedIds(new Set()); return }
+        setSelectedIds((s) => {
+            const kept = [...s].filter((id) => items.some((i) => i.id === id))
+            return new Set(kept.length > 0 ? kept : items.map((i) => i.id))
+        })
+    }, [items])
+
+    const selectedItems = items.filter((i) => selectedIds.has(i.id))
+    const selectedTotal = getTotalPriceForItems(selectedItems)
+    const selectedCount = selectedItems.reduce((s, i) => s + i.quantity, 0)
 
     const handleQuantityChange = (itemId: number, newQuantity: number) => {
         if (newQuantity < 1) return
@@ -24,10 +37,20 @@ export default function CartPage() {
 
     const handleRemoveItem = (itemId: number) => {
         removeFromCart(itemId)
-        toast({
-            title: '✅ 항목 삭제됨',
-            description: '장바구니에서 안전하게 제거되었습니다',
-        })
+        toast({ title: '✅ 항목 삭제됨', description: '장바구니에서 제거되었습니다' })
+    }
+
+    const handleDeleteSelected = () => {
+        if (selectedIds.size === 0) return
+        removeFromCartByIds(Array.from(selectedIds))
+        toast({ title: '✅ 선택 항목 삭제됨', description: `${selectedIds.size}개 항목이 제거되었습니다` })
+    }
+
+    const toggleSelect = (itemId: number) => {
+        setSelectedIds((s) => { const n = new Set(s); if (n.has(itemId)) n.delete(itemId); else n.add(itemId); return n })
+    }
+    const toggleSelectAll = () => {
+        setSelectedIds(selectedIds.size >= items.length ? new Set() : new Set(items.map((i) => i.id)))
     }
 
     const handleClearCart = () => {
@@ -63,9 +86,9 @@ export default function CartPage() {
                             </p>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <Link href="/" className="flex-1">
+                            <Link href="/quotes" className="flex-1">
                                 <Button variant="outline" size="lg" className="w-full h-12 rounded-xl border-white/15 hover:bg-white/10 gap-2 font-semibold">
-                                    <Home className="w-4 h-4" /> 홈으로
+                                    저장 목록
                                 </Button>
                             </Link>
                             <Link href="/quote" className="flex-1">
@@ -74,6 +97,7 @@ export default function CartPage() {
                                 </Button>
                             </Link>
                         </div>
+                        <Link href="/" className="text-xs text-white/40 hover:text-white/60">홈으로</Link>
                     </div>
                 </div>
             </div>
@@ -93,14 +117,24 @@ export default function CartPage() {
                             총 <span className="font-semibold text-white/80">{getTotalItems()}</span>개 품목
                         </p>
                     </div>
-                    <Button
-                        variant="ghost"
-                        onClick={handleClearCart}
-                        disabled={isClearing}
-                        className="self-start sm:self-center text-white/50 hover:text-red-400 hover:bg-red-400/10 rounded-xl px-4 py-2 text-sm font-medium gap-2"
-                    >
-                        <Trash2 className="w-4 h-4" /> 전체 비우기
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            onClick={handleDeleteSelected}
+                            disabled={selectedIds.size === 0 || isClearing}
+                            className="text-white/50 hover:text-red-400 hover:bg-red-400/10 rounded-xl px-4 py-2 text-sm font-medium gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" /> 선택 삭제
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={handleClearCart}
+                            disabled={isClearing}
+                            className="text-white/50 hover:text-red-400 hover:bg-red-400/10 rounded-xl px-4 py-2 text-sm font-medium gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" /> 전체 비우기
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -109,6 +143,17 @@ export default function CartPage() {
 
                     {/* Items List */}
                     <div className="space-y-5">
+                        <div className="flex items-center gap-2 pb-2">
+                            <button
+                                type="button"
+                                onClick={toggleSelectAll}
+                                className="text-xs font-medium text-white/50 hover:text-white"
+                            >
+                                {selectedIds.size >= items.length ? '선택 해제' : '전체 선택'}
+                            </button>
+                            <span className="text-white/30">|</span>
+                            <span className="text-xs text-white/50">{selectedIds.size}개 선택</span>
+                        </div>
                         <AnimatePresence mode="popLayout">
                             {items.map((item) => (
                                 <motion.div
@@ -118,10 +163,18 @@ export default function CartPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, x: -40 }}
                                     transition={{ duration: 0.25 }}
-                                    className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-white/15 transition-all group"
+                                    className={`p-5 sm:p-6 rounded-2xl border transition-all group ${selectedIds.has(item.id) ? 'bg-white/[0.04] border-white/10 hover:border-white/15' : 'bg-white/[0.02] border-white/5 opacity-75'}`}
                                 >
                                     <div className="flex flex-col sm:flex-row gap-6">
-                                        {/* Preview */}
+                                        <label className="flex items-start gap-3 sm:items-center cursor-pointer shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(item.id)}
+                                                onChange={() => toggleSelect(item.id)}
+                                                className="w-5 h-5 rounded border-white/30 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0"
+                                            />
+                                            <span className="text-xs text-white/50 sm:sr-only">주문에 포함</span>
+                                        </label>
                                         <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0">
                                             <Box className="w-10 h-10 text-white/20" />
                                         </div>
@@ -194,12 +247,16 @@ export default function CartPage() {
                     {/* Summary Sidebar */}
                     <div className="lg:pt-0">
                         <div className="sticky top-24 p-6 sm:p-7 rounded-2xl bg-white/[0.04] border border-white/10 space-y-6">
-                            <h2 className="text-lg font-bold text-white">주문 요약</h2>
+                            <div>
+                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">1단계</span>
+                                <h2 className="text-lg font-bold text-white">장바구니 확인</h2>
+                                <p className="text-xs text-white/50 mt-0.5">저장 목록·장바구니를 확인하셨다면, 아래 2단계로 주문을 진행하세요.</p>
+                            </div>
 
                             <div className="space-y-4">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-white/50">총 품목 수</span>
-                                    <span className="font-semibold text-white">{getTotalItems()}개</span>
+                                    <span className="text-white/50">선택 품목</span>
+                                    <span className="font-semibold text-white">{selectedCount}개</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-white/50">배송비</span>
@@ -208,42 +265,61 @@ export default function CartPage() {
                                 <Separator className="bg-white/10" />
                                 <div className="flex justify-between items-baseline">
                                     <span className="text-sm font-medium text-white/70">총 결제 금액</span>
-                                    <span className="text-2xl font-bold text-primary">₩{(Math.round(getTotalPrice()) * 1300).toLocaleString()}</span>
+                                    <span className="text-2xl font-bold text-primary">₩{(Math.round(selectedTotal) * 1300).toLocaleString()}</span>
                                 </div>
                             </div>
 
                             <div className="space-y-3 pt-2">
+                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block">2단계: 주문하기</span>
+                                {selectedCount === 0 && <p className="text-xs text-amber-400/90">주문할 항목을 선택하세요.</p>}
                                 {isAuthenticated ? (
-                                    <Link href="/checkout" className="block">
-                                        <Button size="lg" className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 font-bold gap-2">
-                                            결제하기 <ChevronRight className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <p className="text-xs text-white/50 text-center">회원으로 주문하거나 비회원으로 바로 주문할 수 있습니다</p>
-                                        <Link href="/checkout" className="block">
-                                            <Button size="lg" className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 font-semibold gap-2">
-                                                비회원으로 주문하기 <ChevronRight className="w-4 h-4" />
+                                    selectedCount > 0 ? (
+                                        <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className="block">
+                                            <Button size="lg" className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 font-bold gap-2">
+                                                회원 주문 · 결제하기 <ChevronRight className="w-4 h-4" />
                                             </Button>
                                         </Link>
+                                    ) : (
+                                        <Button size="lg" className="w-full h-14 rounded-xl bg-primary/50 font-bold gap-2 cursor-not-allowed" disabled>
+                                            회원 주문 · 결제하기 <ChevronRight className="w-4 h-4" />
+                                        </Button>
+                                    )
+                                ) : (
+                                    <div className="space-y-3">
+                                        <p className="text-xs text-white/50">비회원으로 주문하거나, 로그인 후 회원 주문을 진행하세요.</p>
+                                        {selectedCount > 0 ? (
+                                            <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className="block">
+                                                <Button size="lg" className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 font-semibold gap-2">
+                                                    비회원 주문 <ChevronRight className="w-4 h-4" />
+                                                </Button>
+                                            </Link>
+                                        ) : (
+                                            <Button size="lg" className="w-full h-12 rounded-xl bg-white/30 font-semibold gap-2 cursor-not-allowed" disabled>
+                                                비회원 주문 <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                         <Link href="/auth?return=/cart">
                                             <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 text-sm font-medium">
-                                                로그인 후 주문
+                                                회원(로그인) 후 주문
                                             </Button>
                                         </Link>
                                     </div>
                                 )}
 
                                 <div className="grid grid-cols-2 gap-2">
-                                    <Link href="/">
+                                    <Link href="/quotes">
                                         <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 gap-1.5 text-sm font-medium">
-                                            <Home className="w-4 h-4" /> 홈
+                                            저장 목록
                                         </Button>
                                     </Link>
                                     <Link href="/quote">
                                         <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 gap-1.5 text-sm font-medium">
                                             견적 더 받기
+                                        </Button>
+                                    </Link>
+                                    <Link href="/" className="col-span-2">
+                                        <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 gap-1.5 text-sm font-medium">
+                                            <Home className="w-4 h-4" /> 홈
                                         </Button>
                                     </Link>
                                 </div>

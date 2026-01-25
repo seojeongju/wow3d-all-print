@@ -7,9 +7,11 @@ interface CartState {
 
     addToCart: (quote: Quote, quantity?: number) => void;
     removeFromCart: (cartItemId: number) => void;
+    removeFromCartByIds: (ids: number[]) => void;
     updateQuantity: (cartItemId: number, quantity: number) => void;
     clearCart: () => void;
     getTotalPrice: () => number;
+    getTotalPriceForItems: (itemList: CartItem[]) => number;
     getTotalItems: () => number;
 }
 
@@ -50,6 +52,10 @@ export const useCartStore = create<CartState>()(
                 items: state.items.filter(item => item.id !== cartItemId)
             })),
 
+            removeFromCartByIds: (ids) => set((state) => ({
+                items: state.items.filter(item => !ids.includes(item.id))
+            })),
+
             updateQuantity: (cartItemId, quantity) => set((state) => {
                 if (quantity < 1) return state;
 
@@ -67,6 +73,13 @@ export const useCartStore = create<CartState>()(
             getTotalPrice: () => {
                 const state = get();
                 return state.items.reduce(
+                    (total, item) => total + (item.quote?.totalPrice || 0) * item.quantity,
+                    0
+                );
+            },
+
+            getTotalPriceForItems: (itemList) => {
+                return itemList.reduce(
                     (total, item) => total + (item.quote?.totalPrice || 0) * item.quantity,
                     0
                 );
