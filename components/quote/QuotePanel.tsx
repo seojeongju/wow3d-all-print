@@ -138,7 +138,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 numLayers,
                 materialAmount: weightGrams,
                 materialUnit: 'g' as const,
-                materialName: mat?.name ?? fdmMaterial || '-',
+                materialName: (mat?.name ?? fdmMaterial) || '-',
                 costBreakdown: { material: materialCost, other: supportCost, machine: machineCost, labor: laborCost },
             }
         } else {
@@ -163,7 +163,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 numLayers,
                 materialAmount: volumeML,
                 materialUnit: 'mL' as const,
-                materialName: mat?.name ?? resinType || '-',
+                materialName: (mat?.name ?? resinType) || '-',
                 costBreakdown: { material: resinCost, other: otherCost, machine: machineCost, labor: laborCost },
             }
         }
