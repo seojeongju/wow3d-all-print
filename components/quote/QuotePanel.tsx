@@ -80,13 +80,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
     }, [refreshMaterials, refreshPrintSpecs])
 
     const fdmMaterials = materials.filter((m) => m.type === 'FDM')
-    const resinMaterials = materials.filter((m) => m.type === 'SLA' || m.type === 'DLP')
+    const resinMaterials = materials.filter((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA'))
     useEffect(() => {
       if (fdmMaterials.length && (fdmMaterial === '' || !fdmMaterials.some((m) => m.name === fdmMaterial))) setFdmMaterial(fdmMaterials[0].name)
     }, [materials, fdmMaterial])
     useEffect(() => {
       if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
-    }, [materials, resinType])
+    }, [materials, resinType, printMethod])
     const MAT_COLORS: Record<string, string> = { PLA: 'text-emerald-400', ABS: 'text-amber-400', PETG: 'text-blue-400', TPU: 'text-pink-400', Standard: 'text-sky-400', Tough: 'text-amber-400', Clear: 'text-cyan-400', Flexible: 'text-lime-400' }
 
     const volumeCm3 = analysis?.volume || 0
@@ -158,7 +158,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 costBreakdown: { material: materialCost, other: supportCost, machine: machineCost, labor: laborCost },
             }
         } else {
-            const mat = materials.find((m) => (m.type === 'SLA' || m.type === 'DLP') && m.name === resinType)
+            const mat = materials.find((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA') && m.name === resinType)
             const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
             const volumeML = volumeCm3
             const resinCost = (pricePerMlKr / KRW_TO_UNIT) * volumeML
@@ -411,7 +411,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                                 )}
                                             </div>
                                             <p className="text-[11px] text-slate-400 leading-relaxed">
-                                                {printMethod === 'fdm' ? `g당 ₩${(m.price_per_gram || 0).toLocaleString()} · 밀도 ${m.density}` : `mL당 ₩${(m.price_per_ml || 0).toLocaleString()}`}
+                                                {printMethod === 'fdm' ? `g당 ₩${(m.price_per_gram || 0).toLocaleString()} · 밀도 ${m.density}` : (m.price_per_ml != null && m.price_per_ml > 0) ? `mL당 ₩${m.price_per_ml.toLocaleString()}` : 'mL당 가격 미설정 (관리자에서 설정)'}
                                             </p>
                                         </div>
                                     </button>

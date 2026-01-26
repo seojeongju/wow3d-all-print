@@ -136,10 +136,10 @@ export default function Header() {
                         </Button>
                     </Link>
 
-                    {/* 모바일 메뉴 버튼 */}
+                    {/* 모바일 메뉴 버튼 - 대비 확보 */}
                     <button
                         onClick={() => setMobileOpen((o) => !o)}
-                        className="lg:hidden w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/90 hover:bg-white/10"
+                        className="lg:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-800/80 border border-slate-600/60 flex items-center justify-center text-white hover:bg-slate-700"
                         aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
                     >
                         {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -147,30 +147,78 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* 모바일 메뉴 패널 */}
+            {/* 모바일 메뉴 패널 - 슬레이트 톤·대비 개선, safe-area, Cart·Auth 포함 */}
             <AnimatePresence>
                 {mobileOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 top-0 z-[99] lg:hidden pt-20 pb-8 px-6 bg-black/95 backdrop-blur-xl overflow-y-auto"
+                        className="fixed inset-0 top-0 z-[99] lg:hidden pt-[max(5rem,calc(5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+2rem))] px-6 bg-slate-950 backdrop-blur-xl overflow-y-auto"
+                        style={{ paddingLeft: 'max(1.5rem, env(safe-area-inset-left, 0px))', paddingRight: 'max(1.5rem, env(safe-area-inset-right, 0px))' }}
                         onClick={() => setMobileOpen(false)}
                     >
-                        <nav className="flex flex-col gap-1 max-w-sm mx-auto" onClick={(e) => e.stopPropagation()}>
+                        <nav className="flex flex-col gap-3 max-w-sm mx-auto" onClick={(e) => e.stopPropagation()}>
                             {navItems.map((item) => (
                                 <Link
                                     key={item.label}
                                     href={item.href}
                                     onClick={() => setMobileOpen(false)}
-                                    className="px-5 py-4 rounded-xl text-[15px] font-semibold text-white bg-white/[0.06] border border-white/10 hover:bg-white/10"
+                                    className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center"
                                 >
                                     {item.label}
                                 </Link>
                             ))}
-                            <Link href="/quote" onClick={() => { resetFileStore(); setMobileOpen(false); }} className="mt-4">
-                                <Button className="w-full h-12 rounded-xl bg-white text-black font-bold text-[15px] gap-2">
-                                    <Zap className="w-4 h-4" />
+                            <Link
+                                href="/cart"
+                                onClick={() => setMobileOpen(false)}
+                                className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center gap-3"
+                            >
+                                <ShoppingCart className="w-5 h-5 shrink-0 text-slate-300" />
+                                <span>장바구니</span>
+                                {cartItemCount > 0 && (
+                                    <span className="ml-auto min-w-[22px] h-[22px] px-1.5 flex items-center justify-center bg-primary text-white text-xs font-bold rounded-full">
+                                        {cartItemCount > 99 ? '99+' : cartItemCount}
+                                    </span>
+                                )}
+                            </Link>
+                            {isAuthenticated ? (
+                                <>
+                                    <Link
+                                        href={user?.role === 'admin' ? '/admin' : '/my-account'}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center gap-3"
+                                    >
+                                        <User className="w-5 h-5 shrink-0 text-slate-300" />
+                                        <span>{user?.name}</span>
+                                        <span className="text-slate-400 text-xs">({user?.role === 'admin' ? '관리자' : '회원'})</span>
+                                    </Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => { logout(); setMobileOpen(false); }}
+                                        className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-red-300 bg-slate-800/80 border border-slate-600/60 hover:bg-red-500/10 hover:border-red-500/30 active:bg-red-500/20 flex items-center gap-3 w-full text-left"
+                                    >
+                                        <LogOut className="w-5 h-5 shrink-0" />
+                                        로그아웃
+                                    </button>
+                                </>
+                            ) : (
+                                <Link
+                                    href="/auth"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center gap-3"
+                                >
+                                    <User className="w-5 h-5 shrink-0 text-slate-300" />
+                                    로그인
+                                </Link>
+                            )}
+                            <Link
+                                href="/quote"
+                                onClick={() => { resetFileStore(); setMobileOpen(false); }}
+                                className="mt-2"
+                            >
+                                <Button className="w-full h-14 min-h-[48px] rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-[15px] gap-2">
+                                    <Zap className="w-5 h-5" />
                                     견적 받기
                                 </Button>
                             </Link>

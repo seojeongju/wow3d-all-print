@@ -2,9 +2,8 @@
 
 ## ✅ 현재 상태
 
-- **Git**: `main` 브랜치, `origin/main`과 동기화됨 (커밋 `4588b93`)
-- **백업**: `_backups/wow3d_backup_20260125_eod.zip` (git archive, 커밋 `4588b93` 기준)
-- **배포**: https://wow3d-all-print.jayseo36.workers.dev (Version ID: `b0dc9e68`)
+- **Git**: `main` 브랜치, `origin/main`과 동기화됨 (커밋 `b5ec220`)
+- **배포**: https://wow3d-all-print.jayseo36.workers.dev (Version ID: `144cfa30`)
 
 ---
 
@@ -35,6 +34,11 @@
 - Checkout: `ids` 쿼리로 선택 항목만 주문, 성공 시 해당만 cart에서 제거
 - Orders API: 주문한 `quote_id`만 cart DELETE
 
+### 4. 메인 페이지 레이아웃·Hero (오늘 후반)
+- **ModelUploadSection** (3D 모델 업로드·실시간 견적)을 **ServicesSection(서비스 영역)** 위로 이동 (`app/page.tsx`)
+- **Hero**: 「고객 만족 후기」 → 「고객 만족」 문구 변경 (`components/home/Hero.tsx`)
+- 커밋: `layout: ModelUploadSection above ServicesSection, Hero copy tweak` (`b5ec220`)
+
 ---
 
 ## 📂 이번 세션에서 수정·추가된 파일
@@ -46,6 +50,8 @@
 | `store/useAuthStore.ts` | logout 시 clearCart, useCartStore import |
 | `app/quote/page.tsx` | min-h-0, overflow-x-hidden, 푸터 컴팩트, space-y-6 |
 | `components/quote/QuotePanel.tsx` | fixed → in-flow 가격 블록, FDM 지지/SLA·DLP 후가공 토글 |
+| `app/page.tsx` | ModelUploadSection을 ServicesSection 위로 이동 |
+| `components/home/Hero.tsx` | 고객 만족 후기 → 고객 만족 |
 
 ---
 
