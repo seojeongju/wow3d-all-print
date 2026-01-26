@@ -35,9 +35,14 @@ export default function QuotePage() {
                             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all">
                                 <Boxes className="w-5 h-5 text-white" />
                             </div>
-                            <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                                Wow3D <span className="text-primary font-light">Pro</span>
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                                    Wow3D <span className="text-primary font-light">Pro</span>
+                                </span>
+                                <span className="text-[9px] font-medium text-white/50 leading-tight mt-0.5">
+                                    AI 실시간자동 견적시스템
+                                </span>
+                            </div>
                         </Link>
 
                         <nav className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">

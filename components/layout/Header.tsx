@@ -62,7 +62,7 @@ export default function Header() {
                             WOW3D<span className="text-primary/90 font-semibold ml-0.5">PRO</span>
                         </span>
                         <span className="text-[10px] sm:text-xs font-medium text-white/60 leading-tight mt-0.5">
-                            산업용 3D 시스템
+                            <span className="text-primary/80 font-semibold">AI</span> 실시간자동 견적시스템
                         </span>
                     </div>
                 </Link>
