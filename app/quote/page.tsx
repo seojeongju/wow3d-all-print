@@ -7,11 +7,11 @@ import QuotePanel from "@/components/quote/QuotePanel";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 
-export default function QuotePage() {
+function QuoteContent() {
     const { file, analysis, reset, setFile } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
     const searchParams = useSearchParams();
@@ -295,4 +295,16 @@ export default function QuotePage() {
             </section>
         </main>
     );
+}
+
+export default function QuotePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            </div>
+        }>
+            <QuoteContent />
+        </Suspense>
+    )
 }
