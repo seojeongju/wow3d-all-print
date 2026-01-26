@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
         const pricePerMlVal = (pricePerMl != null && pricePerMl !== '') ? Number(pricePerMl) : null;
 
         const result = await env.DB.prepare(
-            `INSERT INTO materials (name, type, price_per_gram, price_per_ml, density, colors, description) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO materials (name, type, price_per_gram, price_per_ml, density, colors, description, is_active) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, 1)`
         ).bind(name, safeType, pricePerGram, pricePerMlVal, density, JSON.stringify(colors || ['#FFFFFF']), description || null).run();
 
         return NextResponse.json({ success: true, id: result.meta.last_row_id });

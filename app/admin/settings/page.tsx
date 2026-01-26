@@ -264,7 +264,7 @@ export default function AdminSettings() {
     try {
       await fetch(`/api/admin/materials?id=${id}`, { method: 'DELETE' })
       setMaterials((m) => m.filter((x) => x.id !== id))
-      toast({ title: '자재 삭제 완료' })
+      toast({ title: '소재 삭제 완료' })
     } catch {
       toast({ title: '삭제 실패', variant: 'destructive' })
     }
@@ -296,7 +296,7 @@ export default function AdminSettings() {
       }
       setIsAddingMaterial(false)
       fetchData()
-      toast({ title: '자재 추가 완료' })
+      toast({ title: '소재 추가 완료' })
       setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'] })
     } catch (e) {
       toast({ title: '추가 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
@@ -334,7 +334,7 @@ export default function AdminSettings() {
       }
       setEditingMaterial(null)
       fetchData()
-      toast({ title: '자재 수정 완료' })
+      toast({ title: '소재 수정 완료' })
     } catch (e) {
       toast({ title: '수정 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
     }
@@ -380,8 +380,8 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">설정 및 자재 관리</h1>
-        <p className="text-white/50 text-sm mt-1">장비별 최대 출력 크기, 자재, 가격 정책을 관리합니다.</p>
+        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">설정 및 소재 관리</h1>
+        <p className="text-white/50 text-sm mt-1">장비별 최대 출력 크기, 소재, 가격 정책을 관리합니다.</p>
       </div>
 
       <Tabs defaultValue="equipment" className="space-y-4">
@@ -389,7 +389,7 @@ export default function AdminSettings() {
           <TabsTrigger value="equipment" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-2">
             <Printer className="w-4 h-4" /> 장비 설정
           </TabsTrigger>
-          <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-white">자재</TabsTrigger>
+          <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-white">소재</TabsTrigger>
           <TabsTrigger value="pricing" className="data-[state=active]:bg-primary data-[state=active]:text-white">가격 정책</TabsTrigger>
         </TabsList>
 
@@ -545,18 +545,18 @@ export default function AdminSettings() {
           <Card className="bg-white/[0.03] border-white/10">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>자재 목록</CardTitle>
-                <CardDescription>FDM / SLA / DLP 견적에 사용되는 자재</CardDescription>
+                <CardTitle>소재 목록</CardTitle>
+                <CardDescription>FDM / SLA / DLP 견적에 사용되는 소재</CardDescription>
               </div>
               <Dialog open={isAddingMaterial} onOpenChange={setIsAddingMaterial}>
                 <DialogTrigger asChild>
                   <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" /> 자재 추가
+                    <Plus className="w-4 h-4 mr-2" /> 소재 추가
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>새 자재 추가</DialogTitle>
+                    <DialogTitle>새 소재 추가</DialogTitle>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -592,7 +592,7 @@ export default function AdminSettings() {
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">설명 (선택)</Label>
-                      <Input className="col-span-3 bg-white/5 border-white/10" value={(newMaterial as any).description || ''} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} placeholder="자재 설명" />
+                      <Input className="col-span-3 bg-white/5 border-white/10" value={(newMaterial as any).description || ''} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} placeholder="소재 설명" />
                     </div>
                   </div>
                   <DialogFooter>
@@ -643,7 +643,7 @@ export default function AdminSettings() {
           <Dialog open={!!editingMaterial} onOpenChange={(o) => !o && setEditingMaterial(null)}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>자재 수정</DialogTitle>
+                <DialogTitle>소재 수정</DialogTitle>
               </DialogHeader>
               {editingMaterial && (
                 <div className="grid gap-4 py-4">
@@ -680,7 +680,7 @@ export default function AdminSettings() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">설명</Label>
-                    <Input className="col-span-3 bg-white/5 border-white/10" value={(editForm as any).description || ''} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="자재 설명" />
+                    <Input className="col-span-3 bg-white/5 border-white/10" value={(editForm as any).description || ''} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="소재 설명" />
                   </div>
                 </div>
               )}

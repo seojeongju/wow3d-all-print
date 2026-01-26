@@ -115,16 +115,18 @@ export default function AdminDashboard() {
                         <p className="text-xs text-white/50 mt-1">{s.pendingOrdersCount}건 대기중</p>
                     </CardContent>
                 </Card>
-                <Card className="bg-white/[0.03] border-white/10">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-white/70">활성 사용자</CardTitle>
-                        <Users className="h-4 w-4 text-white/40" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-white">{s.totalUsers}</div>
-                        <p className="text-xs text-white/50 mt-1">+{s.newSignupsCount} 신규 가입</p>
-                    </CardContent>
-                </Card>
+                <Link href="/admin/users">
+                    <Card className="bg-white/[0.03] border-white/10 hover:bg-white/[0.05] transition-colors">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-white/70">활성 사용자</CardTitle>
+                            <Users className="h-4 w-4 text-white/40" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-white">{s.totalUsers}</div>
+                            <p className="text-xs text-white/50 mt-1">+{s.newSignupsCount} 신규 가입 · 사용자 관리</p>
+                        </CardContent>
+                    </Card>
+                </Link>
                 <Card className="bg-white/[0.03] border-white/10">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-white/70">가동률</CardTitle>

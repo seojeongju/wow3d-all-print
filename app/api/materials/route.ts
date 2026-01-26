@@ -2,10 +2,11 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { NextResponse } from 'next/server'
 
 /**
- * GET /api/materials - 견적용 자재 목록 (공개, is_active=1)
+ * GET /api/materials - 견적용 소재 목록 (관리자 “소재”와 동일 소스, is_active=1 또는 NULL)
  * id, name, type, price_per_gram, price_per_ml, density
  * - FDM: price_per_gram(원/g), density 사용
  * - SLA/DLP: price_per_ml(원/mL) 사용, 없으면 0 처리
+ * - 관리자에서 추가·수정한 소재와 동일 테이블(materials) 참조
  */
 export async function GET() {
   try {
@@ -14,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ success: true, data: [] })
     }
     const { results } = await env.DB.prepare(
-      'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE is_active = 1 ORDER BY type, name'
+      'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type, name'
     ).all()
     const rows = (results || []) as Array<{ id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }>
     return NextResponse.json(

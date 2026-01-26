@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/lib/types';
 import { useCartStore } from '@/store/useCartStore';
+import { useFileStore } from '@/store/useFileStore';
+import { useQuoteStore } from '@/store/useQuoteStore';
 
 interface AuthState {
     user: User | null;
@@ -43,6 +45,11 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => {
                 useCartStore.getState().clearCart();
+                useFileStore.getState().reset();
+                useQuoteStore.setState({ savedQuotes: [], currentQuote: null });
+                if (typeof window !== 'undefined') {
+                    try { localStorage.removeItem('wow3d-cart'); } catch { /* ignore */ }
+                }
                 set({
                     user: null,
                     token: null,

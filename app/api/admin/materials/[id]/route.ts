@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { materialsErrorResponse } from '@/lib/materials-api'
 
 /**
- * PATCH /api/admin/materials/[id] - 자재 수정
+ * PATCH /api/admin/materials/[id] - 소재 수정
  * Body: { name?, type?, pricePerGram?, density?, colors?, is_active?, description? }
  */
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {

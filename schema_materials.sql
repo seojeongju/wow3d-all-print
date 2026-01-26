@@ -1,4 +1,4 @@
--- materials 테이블 (자재 추가/수정에 필요)
+-- materials 테이블 (소재 추가/수정에 필요)
 -- 실행: npx wrangler d1 execute wow3d-production --remote --file=./schema_materials.sql
 
 CREATE TABLE IF NOT EXISTS materials (

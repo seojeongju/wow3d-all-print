@@ -38,13 +38,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
     // Print Method Selection
     const [printMethod, setPrintMethod] = useState<PrintMethod>('fdm')
 
-    // FDM Options (fdmMaterial = 자재 이름, API와 연동)
+    // FDM Options (fdmMaterial = 소재 이름, API와 연동)
     const [fdmMaterial, setFdmMaterial] = useState('')
     const [infill, setInfill] = useState(20)
     const [layerHeight, setLayerHeight] = useState(0.2) // mm
     const [supportEnabled, setSupportEnabled] = useState(false)
 
-    // SLA/DLP Options (resinType = 자재 이름)
+    // SLA/DLP Options (resinType = 소재 이름)
     const [resinType, setResinType] = useState('')
     const [slaLayerHeight, setSlaLayerHeight] = useState(0.05) // mm
     const [postProcessing, setPostProcessing] = useState(false)
@@ -121,7 +121,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
         costBreakdown: { material: 0, other: 0, machine: 0, labor: 0 },
     }
 
-    // 견적 상세: 관리자 산출 기준(printSpecs)·자재(materials) 연동
+    // 견적 상세: 관리자 산출 기준(printSpecs)·소재(materials) 연동
     const quoteDetail = useMemo(() => {
         if (!analysis) return defaultDetail
         const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
@@ -392,7 +392,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
                         <div className="grid gap-2">
                             {(printMethod === 'fdm' ? fdmMaterials : resinMaterials).length === 0 ? (
-                                <p className="text-xs text-slate-400 py-2">자재가 없습니다. 관리자 설정 → 자재에서 추가하세요.</p>
+                                <p className="text-xs text-slate-400 py-2">소재가 없습니다. 관리자 설정 → 소재에서 추가하세요.</p>
                             ) : (
                                 (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => (
                                     <button
