@@ -17,9 +17,9 @@ export default function HomePage() {
 
       <Hero />
       <Marquee />
+      <ModelUploadSection />
       <ServicesSection />
       <BentoFeatures />
-      <ModelUploadSection />
       <ProcessSection />
       <CTA />
 

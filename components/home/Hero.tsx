@@ -149,7 +149,7 @@ export default function Hero() {
                         </div>
                         <div>
                             <div className="font-bold text-foreground">1,000+</div>
-                            <div className="text-sm">고객 만족 후기</div>
+                            <div className="text-sm">고객 만족</div>
                         </div>
                     </div>
                 </motion.div>
