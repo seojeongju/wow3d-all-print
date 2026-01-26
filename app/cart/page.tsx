@@ -247,7 +247,7 @@ export default function CartPage() {
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="block text-xs text-white/50">소계</span>
-                                                    <span className="text-lg font-bold text-white">₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}</span>
+                                                    <span className="text-lg font-bold text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity * 1300).toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -278,7 +278,7 @@ export default function CartPage() {
                                 <Separator className="bg-white/10" />
                                 <div className="flex justify-between items-baseline">
                                     <span className="text-sm font-medium text-white/70">총 결제 금액</span>
-                                    <span className="text-2xl font-bold text-primary">₩{(Math.round(selectedTotal) * 1300).toLocaleString()}</span>
+                                    <span className="text-2xl font-bold text-primary">₩{Math.round(selectedTotal * 1300).toLocaleString()}</span>
                                 </div>
                             </div>
 
