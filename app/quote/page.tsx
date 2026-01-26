@@ -9,10 +9,45 @@ import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, Shopp
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useFileStore } from "@/store/useFileStore";
+import { useSearchParams } from "next/navigation";
 
 export default function QuotePage() {
-    const { file, analysis, reset } = useFileStore();
+    const { file, analysis, reset, setFile } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
+    const searchParams = useSearchParams();
+    const loadQuoteId = searchParams.get('load_quote_id');
+    const [loadedQuote, setLoadedQuote] = useState<any>(null); // DB quote data
+
+    // Load quote data if ID is present
+    useEffect(() => {
+        if (!loadQuoteId) return;
+
+        const load = async () => {
+            try {
+                // Fetch quote data
+                const res = await fetch(`/api/quotes/${loadQuoteId}`);
+                const json = await res.json();
+
+                if (json.success && json.data) {
+                    const q = json.data;
+                    setLoadedQuote(q);
+
+                    // Fetch and set file if URL exists
+                    if (q.file_url) {
+                        const fileRes = await fetch(q.file_url);
+                        const blob = await fileRes.blob();
+                        const newFile = new File([blob], q.file_name, { type: blob.type });
+                        setFile(newFile);
+                        // setStep(2) will be triggered by the existing useEffect when analysis is complete
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load quote:", error);
+            }
+        };
+
+        load();
+    }, [loadQuoteId, setFile]);
 
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
 
@@ -65,10 +100,10 @@ export default function QuotePage() {
                                 <div
                                     key={item.id}
                                     className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${item.id === step
-                                            ? "bg-white text-slate-900 shadow-lg"
-                                            : item.active
-                                                ? "text-slate-300"
-                                                : "text-slate-500"
+                                        ? "bg-white text-slate-900 shadow-lg"
+                                        : item.active
+                                            ? "text-slate-300"
+                                            : "text-slate-500"
                                         }`}
                                 >
                                     {item.label}
@@ -136,48 +171,48 @@ export default function QuotePage() {
                                             </div>
                                         </motion.div>
                                     ) : (
-                                    <motion.div
-                                        key="upload"
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-6"
-                                    >
-                                        <div className="space-y-2">
-                                            <h1 className="text-3xl font-bold tracking-tight text-slate-50">
-                                                새로운 프로젝트 <br />
-                                                <span className="text-primary">시작하기</span>
-                                            </h1>
-                                            <p className="text-slate-400 text-sm">
-                                                STL, OBJ, 3MF, PLY ,step ,stp 파일을 드래그하여 업로드하세요. <br />
-                                                자동으로 지오메트리를 분석합니다.
-                                            </p>
-                                        </div>
-                                        <div className="p-1 rounded-3xl bg-slate-800/60 border border-slate-600/50">
-                                            <FileUpload />
-                                        </div>
+                                        <motion.div
+                                            key="upload"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-6"
+                                        >
+                                            <div className="space-y-2">
+                                                <h1 className="text-3xl font-bold tracking-tight text-slate-50">
+                                                    새로운 프로젝트 <br />
+                                                    <span className="text-primary">시작하기</span>
+                                                </h1>
+                                                <p className="text-slate-400 text-sm">
+                                                    STL, OBJ, 3MF, PLY ,step ,stp 파일을 드래그하여 업로드하세요. <br />
+                                                    자동으로 지오메트리를 분석합니다.
+                                                </p>
+                                            </div>
+                                            <div className="p-1 rounded-3xl bg-slate-800/60 border border-slate-600/50">
+                                                <FileUpload />
+                                            </div>
 
-                                        <div className="pt-8 grid gap-4">
-                                            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-primary/40 transition-all">
-                                                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                                    <CheckCircle2 className="w-5 h-5" />
+                                            <div className="pt-8 grid gap-4">
+                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-primary/40 transition-all">
+                                                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h3 className="text-sm font-semibold text-slate-100">초정밀 분석</h3>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">부피, 표면적, 출력 예상 시간을 정밀 계산 엔진이 분석합니다.</p>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <h3 className="text-sm font-semibold text-slate-100">초정밀 분석</h3>
-                                                    <p className="text-xs text-slate-400 leading-relaxed">부피, 표면적, 출력 예상 시간을 정밀 계산 엔진이 분석합니다.</p>
+                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-blue-500/40 transition-all">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                                        <Info className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h3 className="text-sm font-semibold text-slate-100">보안 클라우드</h3>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">업로드된 모든 파일은 암호화되어 안전하게 처리됩니다.</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-blue-500/40 transition-all">
-                                                <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                                                    <Info className="w-5 h-5" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <h3 className="text-sm font-semibold text-slate-100">보안 클라우드</h3>
-                                                    <p className="text-xs text-slate-400 leading-relaxed">업로드된 모든 파일은 암호화되어 안전하게 처리됩니다.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
+                                        </motion.div>
                                     )
                                 ) : (
                                     <motion.div
@@ -194,7 +229,7 @@ export default function QuotePage() {
                                                 파일 재업로드
                                             </button>
                                         </div>
-                                        <QuotePanel />
+                                        <QuotePanel initialQuote={loadedQuote} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>

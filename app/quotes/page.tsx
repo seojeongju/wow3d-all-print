@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
 import { Button } from '@/components/ui/button'
-import { FileText, ShoppingCart, Loader2, Boxes, ArrowRight, Plus, Home } from 'lucide-react'
+import { FileText, ShoppingCart, Loader2, Boxes, ArrowRight, Plus, Home, Trash2, RotateCcw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
@@ -13,46 +14,47 @@ import ModelThumbnail from '@/components/ModelThumbnail'
 import type { Quote } from '@/lib/types'
 
 type QuoteRow = {
-  id: number
-  file_name: string
-  file_size: number
-  file_url?: string
-  volume_cm3: number
-  surface_area_cm2: number
-  dimensions_x: number
-  dimensions_y: number
-  dimensions_z: number
-  print_method: string
-  fdm_material?: string
-  resin_type?: string
-  total_price: number
-  estimated_time_hours: number
-  created_at: string
-  updated_at: string
+    id: number
+    file_name: string
+    file_size: number
+    file_url?: string
+    volume_cm3: number
+    surface_area_cm2: number
+    dimensions_x: number
+    dimensions_y: number
+    dimensions_z: number
+    print_method: string
+    fdm_material?: string
+    resin_type?: string
+    total_price: number
+    estimated_time_hours: number
+    created_at: string
+    updated_at: string
 }
 
 function toQuote(r: QuoteRow): Quote {
-  return {
-    id: r.id,
-    fileName: r.file_name,
-    fileSize: r.file_size,
-    fileUrl: r.file_url,
-    volumeCm3: r.volume_cm3,
-    surfaceAreaCm2: r.surface_area_cm2,
-    dimensionsX: r.dimensions_x,
-    dimensionsY: r.dimensions_y,
-    dimensionsZ: r.dimensions_z,
-    printMethod: r.print_method as 'fdm' | 'sla' | 'dlp',
-    fdmMaterial: r.fdm_material as Quote['fdmMaterial'],
-    resinType: r.resin_type as Quote['resinType'],
-    totalPrice: r.total_price,
-    estimatedTimeHours: r.estimated_time_hours,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  }
+    return {
+        id: r.id,
+        fileName: r.file_name,
+        fileSize: r.file_size,
+        fileUrl: r.file_url,
+        volumeCm3: r.volume_cm3,
+        surfaceAreaCm2: r.surface_area_cm2,
+        dimensionsX: r.dimensions_x,
+        dimensionsY: r.dimensions_y,
+        dimensionsZ: r.dimensions_z,
+        printMethod: r.print_method as 'fdm' | 'sla' | 'dlp',
+        fdmMaterial: r.fdm_material as Quote['fdmMaterial'],
+        resinType: r.resin_type as Quote['resinType'],
+        totalPrice: r.total_price,
+        estimatedTimeHours: r.estimated_time_hours,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+    }
 }
 
 export default function SavedQuotesPage() {
+    const router = useRouter()
     const { sessionId, token, user } = useAuthStore()
     const { addToCart, items } = useCartStore()
     const { toast } = useToast()
@@ -75,6 +77,31 @@ export default function SavedQuotesPage() {
             .catch(() => setQuotes([]))
             .finally(() => setLoading(false))
     }, [sessionId, token, user?.id])
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return
+
+        const headers: HeadersInit = {}
+        if (token && user?.id) {
+            headers['Authorization'] = `Bearer ${token}`
+            headers['X-User-ID'] = String(user.id)
+        } else {
+            headers['X-Session-ID'] = sessionId || ''
+        }
+
+        try {
+            const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE', headers })
+            if (!res.ok) throw new Error('삭제 실패')
+            setQuotes((prev) => prev.filter((q) => q.id !== id))
+            toast({ title: '🗑️ 삭제 완료', description: '견적이 삭제되었습니다' })
+        } catch {
+            toast({ title: '❌ 삭제 실패', description: '다시 시도해 주세요', variant: 'destructive' })
+        }
+    }
+
+    const handleRequote = (id: number) => {
+        router.push(`/quote?load_quote_id=${id}`)
+    }
 
     const handleAddToCart = async (row: QuoteRow) => {
         setAddingId(row.id)
@@ -188,6 +215,24 @@ export default function SavedQuotesPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-primary hover:bg-primary/10"
+                                            onClick={() => handleRequote(row.id)}
+                                            title="수정(재견적)"
+                                        >
+                                            <RotateCcw className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                                            onClick={() => handleDelete(row.id)}
+                                            title="삭제"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
                                         <Button
                                             size="sm"
                                             variant="outline"

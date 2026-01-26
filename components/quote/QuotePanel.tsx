@@ -18,17 +18,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 type PrintSpecs = {
-  fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
-  sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number }
-  dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number }
+    fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
+    sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number }
+    dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number }
 }
 
 type ApiMaterial = { id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }
 
 type PrintMethod = 'fdm' | 'sla' | 'dlp'
 
-type QuotePanelProps = { embedded?: boolean }
-export default function QuotePanel({ embedded = false }: QuotePanelProps) {
+type QuotePanelProps = {
+    embedded?: boolean
+    initialQuote?: any
+}
+
+export default function QuotePanel({ embedded = false, initialQuote }: QuotePanelProps) {
     const { file, analysis } = useFileStore()
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
@@ -37,6 +41,24 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
     // Print Method Selection
     const [printMethod, setPrintMethod] = useState<PrintMethod>('fdm')
+
+    // Initial Data Effect
+    useEffect(() => {
+        if (!initialQuote) return
+
+        if (initialQuote.print_method) setPrintMethod(initialQuote.print_method as PrintMethod)
+
+        if (initialQuote.print_method === 'fdm') {
+            if (initialQuote.fdm_material) setFdmMaterial(initialQuote.fdm_material)
+            if (initialQuote.fdm_infill) setInfill(initialQuote.fdm_infill)
+            if (initialQuote.fdm_layer_height) setLayerHeight(initialQuote.fdm_layer_height)
+            if (initialQuote.fdm_support !== undefined) setSupportEnabled(!!initialQuote.fdm_support)
+        } else {
+            if (initialQuote.resin_type) setResinType(initialQuote.resin_type)
+            if (initialQuote.layer_thickness) setSlaLayerHeight(initialQuote.layer_thickness)
+            if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
+        }
+    }, [initialQuote])
 
     // FDM Options (fdmMaterial = 소재 이름, API와 연동)
     const [fdmMaterial, setFdmMaterial] = useState('')
@@ -54,38 +76,38 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
-      fetch('/api/materials', { cache: 'no-store' })
-        .then((r) => r.json())
-        .then((d) => d?.data && setMaterials(Array.isArray(d.data) ? d.data : []))
-        .catch(() => {})
+        fetch('/api/materials', { cache: 'no-store' })
+            .then((r) => r.json())
+            .then((d) => d?.data && setMaterials(Array.isArray(d.data) ? d.data : []))
+            .catch(() => { })
     }, [])
     const refreshPrintSpecs = useCallback(() => {
-      fetch('/api/print-specs', { cache: 'no-store' })
-        .then((r) => r.json())
-        .then((d) => d?.data && setPrintSpecs(d.data))
-        .catch(() => {})
+        fetch('/api/print-specs', { cache: 'no-store' })
+            .then((r) => r.json())
+            .then((d) => d?.data && setPrintSpecs(d.data))
+            .catch(() => { })
     }, [])
 
     useEffect(() => {
-      refreshMaterials()
-      refreshPrintSpecs()
+        refreshMaterials()
+        refreshPrintSpecs()
     }, [refreshMaterials, refreshPrintSpecs])
 
     // 탭 전환 후 복귀 시·주기적: 관리자 소재 변경 실시간 반영
     useEffect(() => {
-      const onVisible = () => { if (document.visibilityState === 'visible') { refreshMaterials(); refreshPrintSpecs(); } }
-      document.addEventListener('visibilitychange', onVisible)
-      const t = setInterval(() => { refreshMaterials(); refreshPrintSpecs(); }, 45_000)
-      return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t) }
+        const onVisible = () => { if (document.visibilityState === 'visible') { refreshMaterials(); refreshPrintSpecs(); } }
+        document.addEventListener('visibilitychange', onVisible)
+        const t = setInterval(() => { refreshMaterials(); refreshPrintSpecs(); }, 45_000)
+        return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t) }
     }, [refreshMaterials, refreshPrintSpecs])
 
     const fdmMaterials = materials.filter((m) => m.type === 'FDM')
     const resinMaterials = materials.filter((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA'))
     useEffect(() => {
-      if (fdmMaterials.length && (fdmMaterial === '' || !fdmMaterials.some((m) => m.name === fdmMaterial))) setFdmMaterial(fdmMaterials[0].name)
+        if (fdmMaterials.length && (fdmMaterial === '' || !fdmMaterials.some((m) => m.name === fdmMaterial))) setFdmMaterial(fdmMaterials[0].name)
     }, [materials, fdmMaterial])
     useEffect(() => {
-      if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
+        if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
     }, [materials, resinType, printMethod])
     const MAT_COLORS: Record<string, string> = { PLA: 'text-emerald-400', ABS: 'text-amber-400', PETG: 'text-blue-400', TPU: 'text-pink-400', Standard: 'text-sky-400', Tough: 'text-amber-400', Clear: 'text-cyan-400', Flexible: 'text-lime-400' }
 
@@ -97,15 +119,15 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
     const bz = analysis?.boundingBox?.z ?? 0
 
     const overflow = useMemo(() => {
-      if (!printSpecs || !analysis) return null
-      const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
-      const spec = printSpecs[key]?.max
-      if (!spec) return null
-      const over: string[] = []
-      if (bx > spec.x) over.push(`X(${bx.toFixed(0)}>${spec.x})`)
-      if (by > spec.y) over.push(`Y(${by.toFixed(0)}>${spec.y})`)
-      if (bz > spec.z) over.push(`Z(${bz.toFixed(0)}>${spec.z})`)
-      return over.length ? over.join(', ') : null
+        if (!printSpecs || !analysis) return null
+        const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+        const spec = printSpecs[key]?.max
+        if (!spec) return null
+        const over: string[] = []
+        if (bx > spec.x) over.push(`X(${bx.toFixed(0)}>${spec.x})`)
+        if (by > spec.y) over.push(`Y(${by.toFixed(0)}>${spec.y})`)
+        if (bz > spec.z) over.push(`Z(${bz.toFixed(0)}>${spec.z})`)
+        return over.length ? over.join(', ') : null
     }, [printSpecs, printMethod, bx, by, bz, analysis])
 
     // 레이어별 시간당 비용(원) → 견적식 내 machineRate 단위 변환 (표시 시 *1300 KRW)
@@ -198,7 +220,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
             // 먼저 파일을 R2에 업로드
             const uploadFormData = new FormData();
             uploadFormData.append('file', file);
-            
+
             const uploadHeaders: HeadersInit = {};
             if (token) {
                 uploadHeaders['Authorization'] = `Bearer ${token}`;
@@ -273,7 +295,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 throw new Error(msg)
             }
             const data = result.data as { id: number; sessionId?: string }
-            
+
             // 업로드한 파일이 있지만 quoteId가 다른 경우, file_url 업데이트
             if (fileUrl && uploadedQuoteId && data.id && uploadedQuoteId !== data.id) {
                 try {
@@ -290,7 +312,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                     console.error('file_url 업데이트 실패:', e);
                 }
             }
-            
+
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {
                 toast({ title: '✅ 견적 저장됨', description: '회원: 내 견적함에 저장되었습니다' })
@@ -401,8 +423,8 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                             key={method.id}
                             onClick={() => setPrintMethod(method.id as PrintMethod)}
                             className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${printMethod === method.id
-                                    ? 'bg-primary border-primary shadow-lg shadow-primary/20'
-                                    : 'bg-slate-800/70 border-slate-600/40 hover:border-slate-500 text-slate-300'
+                                ? 'bg-primary border-primary shadow-lg shadow-primary/20'
+                                : 'bg-slate-800/70 border-slate-600/40 hover:border-slate-500 text-slate-300'
                                 }`}
                         >
                             <method.icon className={`w-6 h-6 ${printMethod === method.id ? 'text-white' : 'text-slate-400'}`} />
@@ -452,8 +474,8 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                         key={m.id}
                                         onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
                                         className={`flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
-                                                ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
-                                                : 'bg-slate-800/60 border-slate-600/40 hover:bg-slate-700/50 hover:border-slate-500/50'
+                                            ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
+                                            : 'bg-slate-800/60 border-slate-600/40 hover:bg-slate-700/50 hover:border-slate-500/50'
                                             }`}
                                     >
                                         <div className="flex-1">
@@ -498,8 +520,8 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                             key={h}
                                             onClick={() => setLayerHeight(h)}
                                             className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${layerHeight === h
-                                                    ? 'bg-primary text-white border-primary'
-                                                    : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
+                                                ? 'bg-primary text-white border-primary'
+                                                : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
                                                 }`}
                                         >
                                             {h}mm
@@ -525,8 +547,8 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                             key={h}
                                             onClick={() => setSlaLayerHeight(h)}
                                             className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${slaLayerHeight === h
-                                                    ? 'bg-primary text-white border-primary'
-                                                    : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
+                                                ? 'bg-primary text-white border-primary'
+                                                : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
                                                 }`}
                                         >
                                             {h}mm
