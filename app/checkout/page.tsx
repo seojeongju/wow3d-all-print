@@ -203,263 +203,272 @@ function CheckoutContent() {
                 onLoad={() => setIsAddressScriptLoaded(true)}
             />
             <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
-            {/* Minimal Header */}
-            <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
-                <div className="container mx-auto px-6 h-20 flex items-center">
-                    <Link href="/cart">
-                        <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/10 rounded-full px-4 text-[10px] font-black uppercase tracking-widest gap-2">
-                            <ArrowLeft className="w-3.5 h-3.5" />
-                            돌아가기
-                        </Button>
-                    </Link>
-                    <div className="ml-auto flex items-center gap-4">
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">안전 결제</span>
+                {/* Minimal Header */}
+                <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
+                    <div className="container mx-auto px-6 h-20 flex items-center">
+                        <Link href="/cart">
+                            <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/10 rounded-full px-4 text-[10px] font-black uppercase tracking-widest gap-2">
+                                <ArrowLeft className="w-3.5 h-3.5" />
+                                돌아가기
+                            </Button>
+                        </Link>
+                        <div className="ml-auto flex items-center gap-4">
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">안전 결제</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="container mx-auto px-6 py-16">
-                <div className="max-w-5xl mx-auto">
-                    <div className="grid lg:grid-cols-[1fr_360px] gap-16">
+                <div className="container mx-auto px-6 py-16">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="grid lg:grid-cols-[1fr_360px] gap-16">
 
-                        {/* Delivery Form */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="space-y-12"
-                        >
-                            <div className="space-y-2">
-                                <h1 className="text-4xl font-black tracking-tight leading-none uppercase">주문 정보</h1>
-                                <p className="text-white/30 text-xs font-bold uppercase tracking-widest">배송에 필요한 정보를 입력해 주세요</p>
-                            </div>
+                            {/* Delivery Form */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-12"
+                            >
+                                <div className="space-y-2">
+                                    <h1 className="text-4xl font-black tracking-tight leading-none uppercase">주문 정보</h1>
+                                    <p className="text-white/30 text-xs font-bold uppercase tracking-widest">배송에 필요한 정보를 입력해 주세요</p>
+                                </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-10">
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-3 text-primary">
-                                        <MapPin className="w-5 h-5" />
-                                        <h3 className="text-sm font-black uppercase tracking-widest">배송지</h3>
-                                    </div>
-
-                                    {!isAuthenticated && (
-                                        <div className="space-y-2.5 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                                            <Label htmlFor="guestEmail" className="text-[10px] font-black uppercase text-amber-200/90 tracking-widest ml-1 flex items-center gap-1.5">
-                                                <Mail className="w-3 h-3" /> 연락용 이메일 (비회원 필수)
-                                            </Label>
-                                            <Input
-                                                id="guestEmail"
-                                                name="guestEmail"
-                                                type="email"
-                                                value={formData.guestEmail}
-                                                onChange={handleInputChange}
-                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                placeholder="order@example.com"
-                                                required={!isAuthenticated}
-                                            />
-                                            <p className="text-[10px] text-white/40 mt-1">주문 접수 및 진행 안내를 이 주소로 보내드립니다.</p>
-                                        </div>
-                                    )}
-
-                                    <div className="grid gap-6">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2.5">
-                                                <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <User className="w-3 h-3" /> 받는 분
-                                                </Label>
-                                                <Input
-                                                    id="recipientName"
-                                                    name="recipientName"
-                                                    value={formData.recipientName}
-                                                    onChange={handleInputChange}
-                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                    placeholder="홍길동"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-2.5">
-                                                <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <Phone className="w-3 h-3" /> 연락처
-                                                </Label>
-                                                <Input
-                                                    id="recipientPhone"
-                                                    name="recipientPhone"
-                                                    type="tel"
-                                                    value={formData.recipientPhone}
-                                                    onChange={handleInputChange}
-                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                    placeholder="010-0000-0000"
-                                                    required
-                                                />
-                                            </div>
+                                <form onSubmit={handleSubmit} className="space-y-10">
+                                    <div className="space-y-8">
+                                        <div className="flex items-center gap-3 text-primary">
+                                            <MapPin className="w-5 h-5" />
+                                            <h3 className="text-sm font-black uppercase tracking-widest">배송지</h3>
                                         </div>
 
-                                        <div className="space-y-2.5">
-                                            <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                우편번호
-                                            </Label>
-                                            <div className="flex gap-2">
+                                        {!isAuthenticated && (
+                                            <div className="space-y-2.5 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                                                <Label htmlFor="guestEmail" className="text-[10px] font-black uppercase text-amber-200/90 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    <Mail className="w-3 h-3" /> 연락용 이메일 (비회원 필수)
+                                                </Label>
                                                 <Input
-                                                    id="shippingPostalCode"
-                                                    name="shippingPostalCode"
-                                                    value={formData.shippingPostalCode}
+                                                    id="guestEmail"
+                                                    name="guestEmail"
+                                                    type="email"
+                                                    value={formData.guestEmail}
                                                     onChange={handleInputChange}
                                                     className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                    placeholder="00000"
+                                                    placeholder="order@example.com"
+                                                    required={!isAuthenticated}
+                                                />
+                                                <p className="text-[10px] text-white/40 mt-1">주문 접수 및 진행 안내를 이 주소로 보내드립니다.</p>
+
+                                                <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5">
+                                                    <h4 className="text-[10px] font-bold text-amber-500 mb-1">⚡ 비회원 주문 유의사항</h4>
+                                                    <ul className="text-[10px] text-white/40 list-disc pl-3 space-y-0.5 tracking-tight">
+                                                        <li><span className="text-white/60 font-medium">포인트 적립</span> 및 회원 혜택이 적용되지 않습니다.</li>
+                                                        <li>주문 내역은 <span className="text-white/60 font-medium">주문번호와 이메일</span>로만 조회 가능합니다.</li>
+                                                        <li>주문 완료 후 나오는 주문번호를 반드시 보관해 주세요.</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="grid gap-6">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2.5">
+                                                    <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                        <User className="w-3 h-3" /> 받는 분
+                                                    </Label>
+                                                    <Input
+                                                        id="recipientName"
+                                                        name="recipientName"
+                                                        value={formData.recipientName}
+                                                        onChange={handleInputChange}
+                                                        className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                        placeholder="홍길동"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-2.5">
+                                                    <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                        <Phone className="w-3 h-3" /> 연락처
+                                                    </Label>
+                                                    <Input
+                                                        id="recipientPhone"
+                                                        name="recipientPhone"
+                                                        type="tel"
+                                                        value={formData.recipientPhone}
+                                                        onChange={handleInputChange}
+                                                        className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                        placeholder="010-0000-0000"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2.5">
+                                                <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    우편번호
+                                                </Label>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        id="shippingPostalCode"
+                                                        name="shippingPostalCode"
+                                                        value={formData.shippingPostalCode}
+                                                        onChange={handleInputChange}
+                                                        className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                        placeholder="00000"
+                                                        readOnly
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        onClick={handleAddressSearch}
+                                                        className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold whitespace-nowrap flex items-center gap-2"
+                                                    >
+                                                        <Search className="w-4 h-4" />
+                                                        주소 찾기
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2.5">
+                                                <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    <MapPin className="w-3 h-3" /> 배송 주소
+                                                </Label>
+                                                <Input
+                                                    id="shippingAddress"
+                                                    name="shippingAddress"
+                                                    value={formData.shippingAddress}
+                                                    onChange={handleInputChange}
+                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                    placeholder="주소 찾기를 클릭하세요"
+                                                    required
                                                     readOnly
                                                 />
-                                                <Button
-                                                    type="button"
-                                                    onClick={handleAddressSearch}
-                                                    className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold whitespace-nowrap flex items-center gap-2"
-                                                >
-                                                    <Search className="w-4 h-4" />
-                                                    주소 찾기
-                                                </Button>
+                                            </div>
+
+                                            <div className="space-y-2.5">
+                                                <Label htmlFor="detailAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    상세 주소
+                                                </Label>
+                                                <Input
+                                                    id="detailAddress"
+                                                    name="detailAddress"
+                                                    value={detailAddress}
+                                                    onChange={(e) => {
+                                                        setDetailAddress(e.target.value)
+                                                        const fullAddress = formData.shippingAddress
+                                                            ? `${formData.shippingAddress} ${e.target.value}`.trim()
+                                                            : e.target.value
+                                                        setFormData(prev => ({ ...prev, shippingAddress: fullAddress }))
+                                                    }}
+                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                    placeholder="동/호수, 상세주소를 입력하세요"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2.5">
+                                                <Label htmlFor="customerNote" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                    <MessageSquare className="w-3 h-3" /> 배송 시 요청사항 (선택)
+                                                </Label>
+                                                <textarea
+                                                    id="customerNote"
+                                                    name="customerNote"
+                                                    value={formData.customerNote}
+                                                    onChange={handleInputChange}
+                                                    placeholder="배송사에 전달할 요청 사항을 입력하세요..."
+                                                    className="w-full min-h-32 px-5 py-4 rounded-3xl bg-white/[0.03] border border-white/10 text-sm font-bold ring-offset-black focus:outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-white/10"
+                                                />
                                             </div>
                                         </div>
-
-                                        <div className="space-y-2.5">
-                                            <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                <MapPin className="w-3 h-3" /> 배송 주소
-                                            </Label>
-                                            <Input
-                                                id="shippingAddress"
-                                                name="shippingAddress"
-                                                value={formData.shippingAddress}
-                                                onChange={handleInputChange}
-                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                placeholder="주소 찾기를 클릭하세요"
-                                                required
-                                                readOnly
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2.5">
-                                            <Label htmlFor="detailAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                상세 주소
-                                            </Label>
-                                            <Input
-                                                id="detailAddress"
-                                                name="detailAddress"
-                                                value={detailAddress}
-                                                onChange={(e) => {
-                                                    setDetailAddress(e.target.value)
-                                                    const fullAddress = formData.shippingAddress
-                                                        ? `${formData.shippingAddress} ${e.target.value}`.trim()
-                                                        : e.target.value
-                                                    setFormData(prev => ({ ...prev, shippingAddress: fullAddress }))
-                                                }}
-                                                className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                placeholder="동/호수, 상세주소를 입력하세요"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2.5">
-                                            <Label htmlFor="customerNote" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                <MessageSquare className="w-3 h-3" /> 배송 시 요청사항 (선택)
-                                            </Label>
-                                            <textarea
-                                                id="customerNote"
-                                                name="customerNote"
-                                                value={formData.customerNote}
-                                                onChange={handleInputChange}
-                                                placeholder="배송사에 전달할 요청 사항을 입력하세요..."
-                                                className="w-full min-h-32 px-5 py-4 rounded-3xl bg-white/[0.03] border border-white/10 text-sm font-bold ring-offset-black focus:outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-white/10"
-                                            />
-                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="space-y-6 pt-6">
-                                    <div className="flex items-center gap-3 text-white/40">
-                                        <CreditCard className="w-5 h-5" />
-                                        <h3 className="text-sm font-black uppercase tracking-widest">결제 안내</h3>
-                                    </div>
-                                    <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-black border border-white/10 flex items-center justify-center">
-                                            <CreditCard className="w-5 h-5 text-white/20" />
+                                    <div className="space-y-6 pt-6">
+                                        <div className="flex items-center gap-3 text-white/40">
+                                            <CreditCard className="w-5 h-5" />
+                                            <h3 className="text-sm font-black uppercase tracking-widest">결제 안내</h3>
                                         </div>
-                                        <div className="flex-1">
-                                            <span className="text-xs font-bold text-white/60 block">견적 검토 후 결제</span>
-                                            <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">기술 검토 후 최종 견적·결제를 안내해 드립니다</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        </motion.div>
-
-                        {/* Order Summary Sticky Panel */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="relative"
-                        >
-                            <div className="sticky top-12 p-8 rounded-[40px] bg-white/[0.03] border border-white/10 ring-1 ring-white/5 space-y-8">
-                                <h2 className="text-xl font-black uppercase tracking-wide">주문 검토</h2>
-
-                                <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                                    {orderItems.map((item) => (
-                                        <div key={item.id} className="flex gap-4 group">
-                                            <div className="w-12 h-12 rounded-xl bg-black border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-primary/30 transition-all">
-                                                <Package className="w-5 h-5 text-white/20" />
+                                        <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-black border border-white/10 flex items-center justify-center">
+                                                <CreditCard className="w-5 h-5 text-white/20" />
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold truncate group-hover:text-primary transition-colors">{item.quote?.fileName}</div>
-                                                <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • 수량 {item.quantity}</div>
-                                            </div>
-                                            <div className="text-xs font-mono font-bold">
-                                                ₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}
+                                            <div className="flex-1">
+                                                <span className="text-xs font-bold text-white/60 block">견적 검토 후 결제</span>
+                                                <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">기술 검토 후 최종 견적·결제를 안내해 드립니다</p>
                                             </div>
                                         </div>
-                                    ))}
+                                    </div>
+                                </form>
+                            </motion.div>
+
+                            {/* Order Summary Sticky Panel */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="relative"
+                            >
+                                <div className="sticky top-12 p-8 rounded-[40px] bg-white/[0.03] border border-white/10 ring-1 ring-white/5 space-y-8">
+                                    <h2 className="text-xl font-black uppercase tracking-wide">주문 검토</h2>
+
+                                    <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                                        {orderItems.map((item) => (
+                                            <div key={item.id} className="flex gap-4 group">
+                                                <div className="w-12 h-12 rounded-xl bg-black border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-primary/30 transition-all">
+                                                    <Package className="w-5 h-5 text-white/20" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-xs font-bold truncate group-hover:text-primary transition-colors">{item.quote?.fileName}</div>
+                                                    <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • 수량 {item.quantity}</div>
+                                                </div>
+                                                <div className="text-xs font-mono font-bold">
+                                                    ₩{(Math.round((item.quote?.totalPrice || 0) * item.quantity) * 1300).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <Separator className="bg-white/5" />
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
+                                            <span>품목 ({totalItems}개)</span>
+                                            <span className="text-white">₩{totalPriceKWR.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
+                                            <span>배송비</span>
+                                            <span className="text-emerald-400">검토 후 산정</span>
+                                        </div>
+                                        <div className="flex justify-between items-baseline pt-4 border-t border-white/5 mt-4">
+                                            <span className="text-xs font-black uppercase tracking-widest">총 결제 예정</span>
+                                            <span className="text-2xl font-black text-primary">₩{totalPriceKWR.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-6">
+                                        <Button
+                                            size="lg"
+                                            className="w-full h-18 rounded-2xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group"
+                                            onClick={handleSubmit}
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting ? (
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    주문 확정
+                                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        <div className="mt-6 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
+                                            엔터프라이즈급 데이터 암호화
+                                        </div>
+                                    </div>
                                 </div>
+                            </motion.div>
 
-                                <Separator className="bg-white/5" />
-
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                        <span>품목 ({totalItems}개)</span>
-                                        <span className="text-white">₩{totalPriceKWR.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                        <span>배송비</span>
-                                        <span className="text-emerald-400">검토 후 산정</span>
-                                    </div>
-                                    <div className="flex justify-between items-baseline pt-4 border-t border-white/5 mt-4">
-                                        <span className="text-xs font-black uppercase tracking-widest">총 결제 예정</span>
-                                        <span className="text-2xl font-black text-primary">₩{totalPriceKWR.toLocaleString()}</span>
-                                    </div>
-                                </div>
-
-                                <div className="pt-6">
-                                    <Button
-                                        size="lg"
-                                        className="w-full h-18 rounded-2xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group"
-                                        onClick={handleSubmit}
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : (
-                                            <>
-                                                주문 확정
-                                                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                            </>
-                                        )}
-                                    </Button>
-
-                                    <div className="mt-6 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
-                                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
-                                        엔터프라이즈급 데이터 암호화
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
         </>
     )
 }
