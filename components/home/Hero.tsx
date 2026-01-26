@@ -113,27 +113,64 @@ export default function Hero() {
                     </div>
                 </motion.div>
 
-                {/* Right Visual - Abstract 3D Composition */}
+                {/* Right Visual - 3D 지원 정보 카드 + 플레이스홀더 */}
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
                     <motion.div
                         style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        className="absolute right-0 top-10 w-[400px] h-[500px] bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-[40px] border border-white/20 backdrop-blur-xl z-10 flex items-center justify-center group"
+                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border border-white/10 bg-[#0d0d0d]/95 backdrop-blur-xl shadow-2xl shadow-black/30 z-10 overflow-hidden flex flex-col"
                     >
-                        <div className="absolute inset-0 bg-grid-white/[0.05] rounded-[40px]" />
-                        {/* Fake Interface Elements */}
-                        <div className="absolute top-8 left-8 right-8 h-4 bg-white/10 rounded-full" />
-                        <div className="absolute top-16 left-8 w-2/3 h-4 bg-white/10 rounded-full" />
+                        {/* 그리드 배경 */}
+                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
 
-                        {/* Floating Cube */}
-                        <motion.div
-                            animate={{ rotate: 360, y: [0, -20, 0] }}
-                            transition={{ rotate: { duration: 20, repeat: Infinity, ease: "linear" }, y: { duration: 4, repeat: Infinity, ease: "easeInOut" } }}
-                            className="relative"
-                        >
-                            <div className="w-40 h-40 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl shadow-2xl flex items-center justify-center opacity-90">
-                                <Cuboid className="w-20 h-20 text-white" />
+                        {/* 상단: 타이틀 + 지원 형식 텍스트 */}
+                        <div className="relative p-6 pb-4 border-b border-white/5">
+                            <h3 className="text-lg font-bold text-white tracking-tight mb-1">3D 모델 지원</h3>
+                            <p className="text-[13px] text-white/50 leading-relaxed">
+                                STL, OBJ, 3MF, PLY, STEP, STP를 업로드하면 AI가 부피·표면적을 분석해 실시간 견적을 제공합니다.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
+                                    <span
+                                        key={fmt}
+                                        className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-semibold text-white/80 tracking-wide"
+                                    >
+                                        .{fmt.toLowerCase()}
+                                    </span>
+                                ))}
                             </div>
-                        </motion.div>
+                        </div>
+
+                        {/* 중앙: 3D 플레이스홀더 */}
+                        <div className="relative flex-1 flex items-center justify-center min-h-[200px] p-6">
+                            <motion.div
+                                animate={{ rotate: [0, 8, -8, 0], y: [0, -12, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                                className="w-36 h-36 rounded-2xl bg-gradient-to-br from-primary/90 via-primary/70 to-purple-600 flex items-center justify-center shadow-xl shadow-primary/25"
+                            >
+                                <Cuboid className="w-16 h-16 text-white/95" strokeWidth={1.5} />
+                            </motion.div>
+                        </div>
+
+                        {/* 하단: 부가 정보 텍스트 */}
+                        <div className="relative px-6 pb-6 pt-2 border-t border-white/5">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-white/40 font-medium">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-emerald-500/80" />
+                                    최대 100MB
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-primary/80" />
+                                    실시간 견적
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-blue-500/80" />
+                                    암호화 업로드
+                                </span>
+                            </div>
+                            <p className="mt-3 text-[10px] text-white/30">
+                                파일을 업로드하면 3D 미리보기와 상세 견적이 활성화됩니다.
+                            </p>
+                        </div>
                     </motion.div>
 
                     <motion.div
