@@ -305,7 +305,7 @@ export default function AdminSettings() {
 
   const openEdit = (m: Material) => {
     setEditingMaterial(m)
-    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, density: m.density, colors: m.colors || [], description: (m as any).description })
+    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, pricePerMl: m.pricePerMl ?? undefined, density: m.density, colors: m.colors || [], description: (m as any).description })
   }
   const handleSaveMaterialEdit = async () => {
     if (!editingMaterial) return
