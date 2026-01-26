@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
@@ -8,10 +8,34 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail } from 'lucide-react'
+import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { motion } from 'framer-motion'
+import Script from 'next/script'
+
+declare global {
+    interface Window {
+        daum?: {
+            Postcode: new (options: {
+                oncomplete: (data: {
+                    zonecode: string
+                    address: string
+                    addressEnglish: string
+                    addressType: 'R' | 'J'
+                    bname: string
+                    buildingName: string
+                }) => void
+                onclose?: () => void
+                width?: string | number
+                height?: string | number
+            }) => {
+                open: () => void
+                embed: (element: HTMLElement) => void
+            }
+        }
+    }
+}
 
 function CheckoutContent() {
     const router = useRouter()
@@ -24,6 +48,8 @@ function CheckoutContent() {
     const { toast } = useToast()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isAddressScriptLoaded, setIsAddressScriptLoaded] = useState(false)
+    const [detailAddress, setDetailAddress] = useState('')
     const [formData, setFormData] = useState({
         recipientName: user?.name || '',
         recipientPhone: user?.phone || '',
@@ -36,6 +62,48 @@ function CheckoutContent() {
     useEffect(() => {
         if (items.length === 0 || orderItems.length === 0) router.push('/cart')
     }, [items.length, orderItems.length, router])
+
+    const handleAddressSearch = () => {
+        if (!window.daum?.Postcode) {
+            toast({
+                title: '주소 API 로딩 중',
+                description: '잠시 후 다시 시도해 주세요',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        new window.daum.Postcode({
+            oncomplete: (data) => {
+                let fullAddress = ''
+                let extraAddress = ''
+
+                if (data.addressType === 'R') {
+                    if (data.bname !== '') {
+                        extraAddress += data.bname
+                    }
+                    if (data.buildingName !== '') {
+                        extraAddress += extraAddress !== '' ? `, ${data.buildingName}` : data.buildingName
+                    }
+                    fullAddress = extraAddress !== '' ? `${data.address} (${extraAddress})` : data.address
+                } else {
+                    fullAddress = data.address
+                }
+
+                setFormData(prev => ({
+                    ...prev,
+                    shippingPostalCode: data.zonecode,
+                    shippingAddress: fullAddress,
+                }))
+                setDetailAddress('')
+            },
+            onclose: () => {
+                // 주소 선택 창이 닫혔을 때
+            },
+            width: '100%',
+            height: '100%',
+        }).open()
+    }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
@@ -128,7 +196,13 @@ function CheckoutContent() {
     const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0)
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
+        <>
+            <Script
+                src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+                strategy="lazyOnload"
+                onLoad={() => setIsAddressScriptLoaded(true)}
+            />
+            <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
             {/* Minimal Header */}
             <div className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
                 <div className="container mx-auto px-6 h-20 flex items-center">
@@ -220,6 +294,31 @@ function CheckoutContent() {
                                         </div>
 
                                         <div className="space-y-2.5">
+                                            <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                우편번호
+                                            </Label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id="shippingPostalCode"
+                                                    name="shippingPostalCode"
+                                                    value={formData.shippingPostalCode}
+                                                    onChange={handleInputChange}
+                                                    className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
+                                                    placeholder="00000"
+                                                    readOnly
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleAddressSearch}
+                                                    className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold whitespace-nowrap flex items-center gap-2"
+                                                >
+                                                    <Search className="w-4 h-4" />
+                                                    주소 찾기
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2.5">
                                             <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
                                                 <MapPin className="w-3 h-3" /> 배송 주소
                                             </Label>
@@ -229,22 +328,29 @@ function CheckoutContent() {
                                                 value={formData.shippingAddress}
                                                 onChange={handleInputChange}
                                                 className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                placeholder="도로명, 동/호수, 상세주소"
+                                                placeholder="주소 찾기를 클릭하세요"
                                                 required
+                                                readOnly
                                             />
                                         </div>
 
                                         <div className="space-y-2.5">
-                                            <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                우편번호
+                                            <Label htmlFor="detailAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
+                                                상세 주소
                                             </Label>
                                             <Input
-                                                id="shippingPostalCode"
-                                                name="shippingPostalCode"
-                                                value={formData.shippingPostalCode}
-                                                onChange={handleInputChange}
+                                                id="detailAddress"
+                                                name="detailAddress"
+                                                value={detailAddress}
+                                                onChange={(e) => {
+                                                    setDetailAddress(e.target.value)
+                                                    const fullAddress = formData.shippingAddress
+                                                        ? `${formData.shippingAddress} ${e.target.value}`.trim()
+                                                        : e.target.value
+                                                    setFormData(prev => ({ ...prev, shippingAddress: fullAddress }))
+                                                }}
                                                 className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                placeholder="00000"
+                                                placeholder="동/호수, 상세주소를 입력하세요"
                                             />
                                         </div>
 
@@ -354,6 +460,7 @@ function CheckoutContent() {
                 </div>
             </div>
         </div>
+        </>
     )
 }
 
