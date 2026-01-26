@@ -217,7 +217,7 @@ export default function ExperiencePage() {
                                         <QuotePanel embedded />
                                         <div className="pt-4 border-t border-white/5">
                                             <p className="text-[11px] text-white/40 leading-relaxed">
-                                                체험용 참고 견적입니다. 정확한 견적은 <Link href="/quote" className="text-amber-400/90 hover:underline">본격 견적</Link>에서 확인하세요.
+                                                체험용 참고 견적입니다. 정확한 견적은 <Link href="/quote" onClick={goBackToSelect} className="text-amber-400/90 hover:underline">본격 견적</Link>에서 확인하세요.
                                             </p>
                                             <div className="mt-4 flex gap-2">
                                                 <Link href="/" className="flex-1">

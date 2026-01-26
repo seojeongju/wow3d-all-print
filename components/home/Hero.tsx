@@ -20,7 +20,10 @@ export default function Hero() {
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const y2 = useTransform(scrollY, [0, 500], [0, -150]);
     const router = useRouter();
-    const { setFile, file, analysis } = useFileStore();
+    const { setFile, file, analysis, reset } = useFileStore();
+
+    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
+    const clearSampleIfPresent = () => { if (file && SAMPLE_NAMES.includes(file.name)) reset(); };
     const { toast } = useToast();
     const [isLoadingSample, setIsLoadingSample] = useState(false);
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null);
@@ -265,7 +268,7 @@ export default function Hero() {
                                     '샘플 견적 체험'
                                 )}
                             </Button>
-                            <Link href="/quote" className="block mt-3">
+                            <Link href="/quote" className="block mt-3" onClick={clearSampleIfPresent}>
                                 <Button
                                     size="sm"
                                     className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.5)] hover:from-primary hover:to-primary/95 ring-2 ring-primary/30 transition-all"

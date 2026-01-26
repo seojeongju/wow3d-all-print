@@ -11,7 +11,7 @@ import {
     ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -51,18 +51,33 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
-    useEffect(() => {
-      fetch('/api/print-specs')
-        .then((r) => r.json())
-        .then((d) => d?.data && setPrintSpecs(d.data))
-        .catch(() => {})
-    }, [])
-    useEffect(() => {
-      fetch('/api/materials')
+
+    // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
+    const refreshMaterials = useCallback(() => {
+      fetch('/api/materials', { cache: 'no-store' })
         .then((r) => r.json())
         .then((d) => d?.data && setMaterials(Array.isArray(d.data) ? d.data : []))
         .catch(() => {})
     }, [])
+    const refreshPrintSpecs = useCallback(() => {
+      fetch('/api/print-specs', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d) => d?.data && setPrintSpecs(d.data))
+        .catch(() => {})
+    }, [])
+
+    useEffect(() => {
+      refreshMaterials()
+      refreshPrintSpecs()
+    }, [refreshMaterials, refreshPrintSpecs])
+
+    // 탭 전환 후 복귀 시·주기적: 관리자 소재 변경 실시간 반영
+    useEffect(() => {
+      const onVisible = () => { if (document.visibilityState === 'visible') { refreshMaterials(); refreshPrintSpecs(); } }
+      document.addEventListener('visibilitychange', onVisible)
+      const t = setInterval(() => { refreshMaterials(); refreshPrintSpecs(); }, 45_000)
+      return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t) }
+    }, [refreshMaterials, refreshPrintSpecs])
 
     const fdmMaterials = materials.filter((m) => m.type === 'FDM')
     const resinMaterials = materials.filter((m) => m.type === 'SLA' || m.type === 'DLP')
@@ -301,19 +316,19 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
     return (
         <div className={`space-y-6 ${embedded ? 'pb-6' : 'pb-4'}`}>
-            {/* Quick Stats Grid */}
+            {/* Quick Stats Grid - 카드·라벨 대비 개선 */}
             <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
-                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-white/30 uppercase">
-                        <Box className="w-3 h-3" /> 부피
+                <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-600/40 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                        <Box className="w-3 h-3 text-slate-500" /> 부피
                     </div>
-                    <span className="text-lg font-bold font-mono tracking-tight">{volumeCm3.toFixed(1)} <span className="text-[10px] font-normal text-white/30">cm³</span></span>
+                    <span className="text-lg font-bold font-mono tracking-tight text-slate-50">{volumeCm3.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">cm³</span></span>
                 </div>
-                <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/5 flex flex-col gap-1.5 ring-1 ring-white/5">
-                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-white/30 uppercase">
-                        <Layers className="w-3 h-3" /> 표면적
+                <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-600/40 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                        <Layers className="w-3 h-3 text-slate-500" /> 표면적
                     </div>
-                    <span className="text-lg font-bold font-mono tracking-tight">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] font-normal text-white/30">cm²</span></span>
+                    <span className="text-lg font-bold font-mono tracking-tight text-slate-50">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">cm²</span></span>
                 </div>
             </div>
 
@@ -321,7 +336,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
             <div className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
                     <Printer className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/50">출력 방식 선택</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">출력 방식 선택</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                     {[
@@ -332,13 +347,13 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                         <button
                             key={method.id}
                             onClick={() => setPrintMethod(method.id as PrintMethod)}
-                            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all relative overflow-hidden group ${printMethod === method.id
+                            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${printMethod === method.id
                                     ? 'bg-primary border-primary shadow-lg shadow-primary/20'
-                                    : 'bg-white/[0.03] border-white/5 hover:border-white/20'
+                                    : 'bg-slate-800/70 border-slate-600/40 hover:border-slate-500 text-slate-300'
                                 }`}
                         >
-                            <method.icon className={`w-6 h-6 ${printMethod === method.id ? 'text-white' : 'text-white/40 group-hover:text-white/70'}`} />
-                            <span className={`text-[10px] font-black tracking-tighter ${printMethod === method.id ? 'text-white' : 'text-white/30'}`}>
+                            <method.icon className={`w-6 h-6 ${printMethod === method.id ? 'text-white' : 'text-slate-400'}`} />
+                            <span className={`text-[10px] font-black tracking-tighter ${printMethod === method.id ? 'text-white' : 'text-slate-400'}`}>
                                 {method.label}
                             </span>
                         </button>
@@ -347,18 +362,18 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
             </div>
 
             {overflow && (
-                <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm font-bold text-amber-200">최대 출력 크기 초과</p>
-                        <p className="text-xs text-amber-200/80 mt-0.5">
-                            이 모델은 선택한 {printMethod.toUpperCase()} 장비의 최대 치수({overflow})를 초과합니다. 출력이 불가할 수 있으니, 크기를 줄이거나 다른 출력 방식을 선택해 주세요.
+                        <p className="text-sm font-bold text-amber-100">최대 출력 크기 초과</p>
+                        <p className="text-xs text-amber-200/90 mt-0.5">
+                            이 모델은 선택한 {printMethod.toUpperCase()} 장비의 최대 치수({overflow})를 초과합니다. 크기를 줄이거나 다른 출력 방식을 선택해 주세요.
                         </p>
                     </div>
                 </div>
             )}
 
-            <Separator className="bg-white/5" />
+            <Separator className="bg-slate-600/40" />
 
             <AnimatePresence mode="wait">
                 <motion.div
@@ -372,30 +387,30 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 px-1">
                             <Box className="w-4 h-4 text-primary" />
-                            <span className="text-xs font-bold uppercase tracking-widest text-white/50">소재 설정</span>
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">소재 설정</span>
                         </div>
 
                         <div className="grid gap-2">
                             {(printMethod === 'fdm' ? fdmMaterials : resinMaterials).length === 0 ? (
-                                <p className="text-xs text-white/40 py-2">자재가 없습니다. 관리자 설정 → 자재에서 추가하세요.</p>
+                                <p className="text-xs text-slate-400 py-2">자재가 없습니다. 관리자 설정 → 자재에서 추가하세요.</p>
                             ) : (
                                 (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => (
                                     <button
                                         key={m.id}
                                         onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
                                         className={`flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
-                                                ? 'bg-white/[0.07] border-primary/50 ring-1 ring-primary/20'
-                                                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                                                ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
+                                                : 'bg-slate-800/60 border-slate-600/40 hover:bg-slate-700/50 hover:border-slate-500/50'
                                             }`}
                                     >
                                         <div className="flex-1">
                                             <div className="flex items-center justify-between mb-1">
-                                                <span className={`text-sm font-bold ${MAT_COLORS[m.name] || ''}`}>{m.name}</span>
+                                                <span className={`text-sm font-bold text-slate-100 ${MAT_COLORS[m.name] || ''}`}>{m.name}</span>
                                                 {(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name && (
                                                     <ChevronRight className="w-4 h-4 text-primary" />
                                                 )}
                                             </div>
-                                            <p className="text-[11px] text-white/40 leading-relaxed">
+                                            <p className="text-[11px] text-slate-400 leading-relaxed">
                                                 {printMethod === 'fdm' ? `g당 ₩${(m.price_per_gram || 0).toLocaleString()} · 밀도 ${m.density}` : `mL당 ₩${(m.price_per_ml || 0).toLocaleString()}`}
                                             </p>
                                         </div>
@@ -410,7 +425,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                         <div className="space-y-6 pt-2">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Infill Density</label>
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Infill Density</label>
                                     <span className="font-mono text-sm text-primary font-bold">{infill}%</span>
                                 </div>
                                 <input
@@ -418,20 +433,20 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                     min="10" max="100" step="10"
                                     value={infill}
                                     onChange={(e) => setInfill(Number(e.target.value))}
-                                    className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary"
+                                    className="w-full h-1.5 bg-slate-600/50 rounded-full appearance-none cursor-pointer accent-primary"
                                 />
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">레이어 두께</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.1, 0.2, 0.3].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setLayerHeight(h)}
                                             className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${layerHeight === h
-                                                    ? 'bg-white text-black border-white'
-                                                    : 'bg-transparent border-white/10 text-white/40 hover:border-white/20'
+                                                    ? 'bg-primary text-white border-primary'
+                                                    : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
                                                 }`}
                                         >
                                             {h}mm
@@ -440,9 +455,9 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                 </div>
                             </div>
                             <div className="flex items-center justify-between px-1">
-                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">지지 구조</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">지지 구조</label>
                                 <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
-                                    className={`relative w-11 h-6 rounded-full border transition-colors ${supportEnabled ? 'bg-primary border-primary' : 'bg-white/10 border-white/20'}`}>
+                                    className={`relative w-11 h-6 rounded-full border transition-colors ${supportEnabled ? 'bg-primary border-primary' : 'bg-slate-700 border-slate-600'}`}>
                                     <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${supportEnabled ? 'left-6' : 'left-1'}`} />
                                 </button>
                             </div>
@@ -450,15 +465,15 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                     ) : (
                         <div className="space-y-6 pt-4">
                             <div className="space-y-4">
-                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest block px-1">레이어 두께</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.025, 0.05, 0.1].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setSlaLayerHeight(h)}
                                             className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${slaLayerHeight === h
-                                                    ? 'bg-white text-black border-white'
-                                                    : 'bg-transparent border-white/10 text-white/40 hover:border-white/20'
+                                                    ? 'bg-primary text-white border-primary'
+                                                    : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
                                                 }`}
                                         >
                                             {h}mm
@@ -467,9 +482,9 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                                 </div>
                             </div>
                             <div className="flex items-center justify-between px-1">
-                                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest">후가공</label>
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">후가공</label>
                                 <button type="button" role="switch" aria-checked={postProcessing} onClick={() => setPostProcessing((p) => !p)}
-                                    className={`relative w-11 h-6 rounded-full border transition-colors ${postProcessing ? 'bg-primary border-primary' : 'bg-white/10 border-white/20'}`}>
+                                    className={`relative w-11 h-6 rounded-full border transition-colors ${postProcessing ? 'bg-primary border-primary' : 'bg-slate-700 border-slate-600'}`}>
                                     <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${postProcessing ? 'left-6' : 'left-1'}`} />
                                 </button>
                             </div>
@@ -478,86 +493,70 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 </motion.div>
             </AnimatePresence>
 
-            {/* 상세보기 모달: 설정값에 따른 소요시간·소재소요량·출력레이어·비용구성 */}
+            {/* 상세보기 모달 - 슬레이트 톤으로 가독성 */}
             <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-                <DialogContent className="max-w-md sm:max-w-lg bg-[#0a0a0a] border-white/10 text-white">
+                <DialogContent className="max-w-md sm:max-w-lg bg-slate-900 border-slate-600/60 text-slate-100">
                     <DialogHeader>
-                        <DialogTitle className="text-white flex items-center gap-2">
+                        <DialogTitle className="text-slate-50 flex items-center gap-2">
                             <FileText className="w-5 h-5 text-primary" /> 견적 상세
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 pt-2">
-                        {/* 입력 설정 */}
                         <section>
-                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">입력 설정</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">입력 설정</h4>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-white/50">출력 방식</div>
-                                <div className="font-medium">{printMethod.toUpperCase()}</div>
-                                <div className="text-white/50">소재</div>
-                                <div className="font-medium">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
-                                <div className="text-white/50">레이어 두께</div>
-                                <div className="font-medium">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
+                                <div className="text-slate-400">출력 방식</div>
+                                <div className="font-medium text-slate-100">{printMethod.toUpperCase()}</div>
+                                <div className="text-slate-400">소재</div>
+                                <div className="font-medium text-slate-100">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
+                                <div className="text-slate-400">레이어 두께</div>
+                                <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
                                 {printMethod === 'fdm' ? (
                                     <>
-                                        <div className="text-white/50">Infill</div>
-                                        <div className="font-medium">{infill}%</div>
-                                        <div className="text-white/50">지지 구조</div>
-                                        <div className="font-medium">{supportEnabled ? '사용' : '미사용'}</div>
+                                        <div className="text-slate-400">Infill</div>
+                                        <div className="font-medium text-slate-100">{infill}%</div>
+                                        <div className="text-slate-400">지지 구조</div>
+                                        <div className="font-medium text-slate-100">{supportEnabled ? '사용' : '미사용'}</div>
                                     </>
                                 ) : (
                                     <>
-                                        <div className="text-white/50">후가공</div>
-                                        <div className="font-medium">{postProcessing ? '적용' : '미적용'}</div>
+                                        <div className="text-slate-400">후가공</div>
+                                        <div className="font-medium text-slate-100">{postProcessing ? '적용' : '미적용'}</div>
                                     </>
                                 )}
                             </div>
                         </section>
-                        {/* 모델 정보 */}
                         <section>
-                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">모델 정보</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">모델 정보</h4>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-white/50">부피</div>
-                                <div className="font-mono">{volumeCm3.toFixed(1)} cm³</div>
-                                <div className="text-white/50">표면적</div>
-                                <div className="font-mono">{surfaceAreaCm2.toFixed(1)} cm²</div>
-                                <div className="text-white/50">치수 (X×Y×Z)</div>
-                                <div className="font-mono">{bx.toFixed(1)} × {by.toFixed(1)} × {bz.toFixed(1)} mm</div>
+                                <div className="text-slate-400">부피</div>
+                                <div className="font-mono text-slate-100">{volumeCm3.toFixed(1)} cm³</div>
+                                <div className="text-slate-400">표면적</div>
+                                <div className="font-mono text-slate-100">{surfaceAreaCm2.toFixed(1)} cm²</div>
+                                <div className="text-slate-400">치수 (X×Y×Z)</div>
+                                <div className="font-mono text-slate-100">{bx.toFixed(1)} × {by.toFixed(1)} × {bz.toFixed(1)} mm</div>
                             </div>
                         </section>
-                        {/* 산출 결과 */}
                         <section>
-                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">산출 결과</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">산출 결과</h4>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-white/50">소요 시간</div>
+                                <div className="text-slate-400">소요 시간</div>
                                 <div className="font-bold text-emerald-400">{quoteDetail.time.toFixed(2)} h</div>
-                                <div className="text-white/50">소재 소요량</div>
-                                <div className="font-mono font-medium">{quoteDetail.materialAmount.toFixed(1)} {quoteDetail.materialUnit}</div>
-                                <div className="text-white/50">출력 레이어 수</div>
-                                <div className="font-mono font-bold">{quoteDetail.numLayers.toLocaleString()} layers</div>
+                                <div className="text-slate-400">소재 소요량</div>
+                                <div className="font-mono font-medium text-slate-100">{quoteDetail.materialAmount.toFixed(1)} {quoteDetail.materialUnit}</div>
+                                <div className="text-slate-400">출력 레이어 수</div>
+                                <div className="font-mono font-bold text-slate-100">{quoteDetail.numLayers.toLocaleString()} layers</div>
                             </div>
                         </section>
-                        {/* 비용 구분 */}
                         <section>
-                            <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">비용 구분</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">비용 구분</h4>
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-white/50">재료비</span>
-                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.material * KRW_TO_UNIT).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-white/50">장비(인쇄)비</span>
-                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.machine * KRW_TO_UNIT).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-white/50">기타</span>
-                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.other * KRW_TO_UNIT).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-white/50">인건비</span>
-                                    <span className="font-mono">₩{Math.round(quoteDetail.costBreakdown.labor * KRW_TO_UNIT).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between pt-2 mt-2 border-t border-white/10 font-bold">
-                                    <span>총 견적</span>
+                                <div className="flex justify-between"><span className="text-slate-400">재료비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.material * KRW_TO_UNIT).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">장비(인쇄)비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine * KRW_TO_UNIT).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">기타</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other * KRW_TO_UNIT).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">인건비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor * KRW_TO_UNIT).toLocaleString()}</span></div>
+                                <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50 font-bold">
+                                    <span className="text-slate-100">총 견적</span>
                                     <span className="text-primary">₩{Math.round(totalPrice * KRW_TO_UNIT).toLocaleString()}</span>
                                 </div>
                             </div>
@@ -566,42 +565,42 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 </DialogContent>
             </Dialog>
 
-            {/* Price & Actions: 스크롤 흐름 안에 배치해 레이어·지지/후가공까지 모두 보이도록 */}
-            <div className={`${embedded ? 'p-4' : 'p-5'} rounded-2xl bg-white/[0.04] border border-white/10 space-y-4`}>
+            {/* Price & Actions - 카드·라벨 가독성 */}
+            <div className={`${embedded ? 'p-4' : 'p-5'} rounded-2xl bg-slate-800/80 border border-slate-600/40 space-y-4`}>
                 <div className="flex items-center justify-between gap-4">
                     <div>
-                        <div className="flex items-center gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">
                             <Wallet className="w-3 h-3" /> 예상 견적
                         </div>
-                        <span className={`font-black text-white ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
-                        <span className="text-xs text-white/30 font-medium ml-1">KRW</span>
+                        <span className={`font-black text-slate-50 ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
+                        <span className="text-xs text-slate-400 font-medium ml-1">KRW</span>
                     </div>
                     <div className="text-right">
-                        <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">
+                        <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">
                             <Clock className="w-3 h-3" /> 예상 소요
                         </div>
                         <span className="text-sm font-bold text-emerald-400">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'h'))}</span>
                     </div>
                 </div>
-                <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] text-primary/90 hover:text-primary font-medium">
+                <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] text-primary hover:text-primary/90 font-medium">
                     <FileText className="w-3.5 h-3.5" /> 상세보기
                 </button>
                 <div className={`grid gap-2 ${embedded ? 'grid-cols-2' : 'grid-cols-[1fr_1.5fr] sm:grid-cols-[1fr_2fr]'}`}>
-                    <Button disabled={!analysis || isSaving} variant="ghost" size={embedded ? 'sm' : 'lg'} className={`rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl'}`} onClick={handleSaveQuote}>
+                    <Button disabled={!analysis || isSaving} variant="ghost" size={embedded ? 'sm' : 'lg'} className={`rounded-xl border border-slate-600/50 hover:bg-slate-700/50 text-slate-200 text-xs font-bold ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl'}`} onClick={handleSaveQuote}>
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     </Button>
-                    <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl bg-white text-black hover:bg-white/90 text-xs font-bold flex items-center justify-center gap-2 ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl font-black uppercase tracking-widest'}`} onClick={handleAddToCart}>
+                    <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold flex items-center justify-center gap-2 ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl font-black uppercase tracking-widest'}`} onClick={handleAddToCart}>
                         <ShoppingCart className={embedded ? 'w-4 h-4' : 'w-5 h-5'} /> 장바구니에 담기
                     </Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Link href="/quotes" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
-                    <span className="text-white/20">|</span>
-                    <Link href="/cart" className="text-[11px] text-white/50 hover:text-primary font-medium flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
+                    <Link href="/quotes" className="text-[11px] text-slate-400 hover:text-primary font-medium flex items-center gap-1.5"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
+                    <span className="text-slate-600">|</span>
+                    <Link href="/cart" className="text-[11px] text-slate-400 hover:text-primary font-medium flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
                 </div>
                 {!embedded && (
-                    <div className="flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest pt-1">
-                        <ShieldCheck className="w-3 h-3 text-emerald-500/50" /> WOW3D 보안 인증
+                    <div className="flex items-center justify-center gap-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-widest pt-1">
+                        <ShieldCheck className="w-3 h-3 text-emerald-500/60" /> WOW3D 보안 인증
                     </div>
                 )}
             </div>

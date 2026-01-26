@@ -8,7 +8,9 @@ import FileUpload from '@/components/upload/FileUpload';
 import { useFileStore } from '@/store/useFileStore';
 
 export default function ModelUploadSection() {
-    const { file } = useFileStore();
+    const { file, reset } = useFileStore();
+    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
+    const clearSampleIfPresent = () => { if (file && SAMPLE_NAMES.includes(file.name)) reset(); };
 
     return (
         <section id="upload" className="py-24 md:py-32 bg-[#0a0a0a] relative overflow-hidden">
@@ -63,7 +65,7 @@ export default function ModelUploadSection() {
                                         </div>
                                         <p className="text-lg font-semibold text-white mb-2">업로드 완료</p>
                                         <p className="text-sm text-white/50 mb-6">상세 견적과 3D 미리보기를 확인하세요</p>
-                                        <Link href="/quote">
+                                        <Link href="/quote" onClick={clearSampleIfPresent}>
                                             <Button size="lg" className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-lg shadow-primary/25">
                                                 <Zap className="w-4 h-4" />
                                                 견적 확인하기
