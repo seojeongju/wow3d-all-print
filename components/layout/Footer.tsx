@@ -106,7 +106,7 @@ export default function Footer() {
                     <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-white/40">
                         <Link href="/terms" className="hover:text-white transition-colors">이용약관</Link>
                         <Link href="/privacy" className="hover:text-white transition-colors">개인정보처리방침</Link>
-                        <Link href="/terms" className="hover:text-white transition-colors">소재 안전 정보</Link>
+                        <Link href="/materials/safety" className="hover:text-white transition-colors">소재 안전 정보</Link>
                     </div>
                 </div>
             </div>

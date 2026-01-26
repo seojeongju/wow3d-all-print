@@ -4,7 +4,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
@@ -286,23 +286,25 @@ export default function CartPage() {
                                     )
                                 ) : (
                                     <div className="space-y-3">
-                                        <p className="text-xs text-white/50">비회원으로 주문하거나, 로그인 후 회원 주문을 진행하세요.</p>
+                                        <p className="text-xs text-white/50">로그인 후 회원 주문을 진행하시거나, 비회원으로 주문하세요.</p>
+                                        <Link href="/auth?return=/cart" className="block">
+                                            <Button size="lg" className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 font-bold gap-2 shadow-lg shadow-primary/25 ring-2 ring-primary/40">
+                                                <LogIn className="w-5 h-5" />
+                                                회원(로그인) 후 주문 <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                        <p className="text-[10px] text-primary/80 -mt-1">주문 내역·회원 혜택 이용</p>
                                         {selectedCount > 0 ? (
                                             <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className="block">
-                                                <Button size="lg" className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 font-semibold gap-2">
+                                                <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 text-sm font-medium gap-2">
                                                     비회원 주문 <ChevronRight className="w-4 h-4" />
                                                 </Button>
                                             </Link>
                                         ) : (
-                                            <Button size="lg" className="w-full h-12 rounded-xl bg-white/30 font-semibold gap-2 cursor-not-allowed" disabled>
+                                            <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/10 text-white/40 font-medium gap-2 cursor-not-allowed" disabled>
                                                 비회원 주문 <ChevronRight className="w-4 h-4" />
                                             </Button>
                                         )}
-                                        <Link href="/auth?return=/cart">
-                                            <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 text-sm font-medium">
-                                                회원(로그인) 후 주문
-                                            </Button>
-                                        </Link>
                                     </div>
                                 )}
 

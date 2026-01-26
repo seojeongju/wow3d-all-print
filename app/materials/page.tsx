@@ -3,7 +3,7 @@
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Printer, Droplets, Zap, ArrowRight, Box, Layers } from 'lucide-react';
+import { Printer, Droplets, Zap, ArrowRight, Box, Layers, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -115,6 +115,10 @@ export default function MaterialsPage() {
                         <p className="text-xl text-muted-foreground break-keep">
                             각 소재의 특징·적용 분야를 확인하고, 출력방식(FDM, SLA, DLP)별로 사용 가능한 소재를 선택하세요.
                         </p>
+                        <Link href="/materials/safety" className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors">
+                            <Shield className="w-4 h-4" />
+                            소재 안전 정보
+                        </Link>
                     </motion.div>
                 </div>
             </section>

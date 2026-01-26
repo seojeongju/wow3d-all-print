@@ -278,7 +278,6 @@ export default function AdminSettings() {
           name: newMaterial.name,
           type: (newMaterial.type || 'FDM').toUpperCase(),
           pricePerGram: newMaterial.pricePerGram ?? 0,
-          pricePerMl: (newMaterial.type === 'SLA' || newMaterial.type === 'DLP') ? (newMaterial.pricePerMl ?? null) : undefined,
           density: newMaterial.density ?? 1.24,
           colors: newMaterial.colors || ['#FFFFFF'],
           description: (newMaterial as any).description || undefined,
@@ -292,7 +291,7 @@ export default function AdminSettings() {
       setIsAddingMaterial(false)
       fetchData()
       toast({ title: '자재 추가 완료' })
-      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'] })
+      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, density: 1.24, colors: ['#FFFFFF'] })
     } catch (e) {
       toast({ title: '추가 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
     }
@@ -300,7 +299,7 @@ export default function AdminSettings() {
 
   const openEdit = (m: Material) => {
     setEditingMaterial(m)
-    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, pricePerMl: m.pricePerMl ?? undefined, density: m.density, colors: m.colors || [], description: (m as any).description })
+    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, density: m.density, colors: m.colors || [], description: (m as any).description })
   }
   const handleSaveMaterialEdit = async () => {
     if (!editingMaterial) return
@@ -312,7 +311,6 @@ export default function AdminSettings() {
           name: editForm.name,
           type: (editForm.type || 'FDM').toUpperCase(),
           pricePerGram: editForm.pricePerGram,
-          pricePerMl: (editForm.type === 'SLA' || editForm.type === 'DLP') ? (editForm.pricePerMl ?? null) : undefined,
           density: editForm.density,
           colors: editForm.colors || ['#FFFFFF'],
           description: (editForm as any).description ?? undefined,
@@ -571,12 +569,6 @@ export default function AdminSettings() {
                       <Label className="text-right">g당 가격 (원)</Label>
                       <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} />
                     </div>
-                    {(newMaterial.type === 'SLA' || newMaterial.type === 'DLP') && (
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">mL당 가격 (원)</Label>
-                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerMl ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP용" />
-                      </div>
-                    )}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">밀도</Label>
                       <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.density ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, density: parseFloat(e.target.value) || 1.24 })} />
