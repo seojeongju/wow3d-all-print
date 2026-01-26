@@ -609,6 +609,7 @@ export default function AdminSettings() {
                       <th className="p-4 font-medium text-white/70">이름</th>
                       <th className="p-4 font-medium text-white/70">타입</th>
                       <th className="p-4 font-medium text-white/70">g당 가격(원)</th>
+                      <th className="p-4 font-medium text-white/70">mL당 가격(원)</th>
                       <th className="p-4 font-medium text-white/70">밀도</th>
                       <th className="p-4 font-medium text-white/70">설명</th>
                       <th className="p-4 font-medium text-right text-white/70">관리</th>
@@ -622,6 +623,14 @@ export default function AdminSettings() {
                           <span className={`px-2 py-1 rounded text-xs font-bold border ${typeBadge(m.type || '')}`}>{m.type}</span>
                         </td>
                         <td className="p-4 text-white/90">{m.pricePerGram}원</td>
+                        <td className="p-4 text-white/90">
+                          {(m.type === 'SLA' || m.type === 'DLP')
+                            ? (m.pricePerMl != null && m.pricePerMl > 0
+                              ? `${m.pricePerMl}원`
+                              : <span className="text-amber-400 text-xs">미설정</span>)
+                            : <span className="text-white/30 text-xs">-</span>
+                          }
+                        </td>
                         <td className="p-4 text-white/90">{m.density}</td>
                         <td className="p-4 text-white/50 max-w-[160px] truncate" title={(m as any).description}>{(m as any).description || '-'}</td>
                         <td className="p-4 text-right flex items-center justify-end gap-1">
