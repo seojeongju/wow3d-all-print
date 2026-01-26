@@ -73,7 +73,7 @@
 - `/quotes`, `/cart`, `/checkout` 플로우 점검 (비회원/회원, `?ids=` 등)
 
 ### 3. 관리자·D1
-- admin 설정/장비/자재: 레이어당 단가·출력시간 산출 기준 상세 입력·연동 검증
+- admin 설정/장비/소재: 레이어당 단가·출력시간 산출 기준 상세 입력·연동 검증
 - D1: `wrangler d1 execute wow3d-production --remote --file=./schema.sql` (스키마/마이그레이션)
 
 ### 4. 공통

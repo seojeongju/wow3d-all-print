@@ -195,9 +195,44 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
 
         setIsSaving(true)
         try {
+            // 먼저 파일을 R2에 업로드
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            
+            const uploadHeaders: HeadersInit = {};
+            if (token) {
+                uploadHeaders['Authorization'] = `Bearer ${token}`;
+                if (user?.id) uploadHeaders['X-User-ID'] = String(user.id);
+            } else {
+                uploadHeaders['X-Session-ID'] = sessionId || '';
+            }
+
+            let fileUrl: string | null = null;
+            let uploadedQuoteId: number | null = null;
+
+            try {
+                const uploadRes = await fetch('/api/files/upload', {
+                    method: 'POST',
+                    headers: uploadHeaders,
+                    body: uploadFormData,
+                });
+
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    fileUrl = uploadData.data?.fileUrl || null;
+                    uploadedQuoteId = uploadData.data?.quoteId || null;
+                } else {
+                    console.warn('파일 업로드 실패, fileUrl 없이 견적 저장 진행');
+                }
+            } catch (uploadError) {
+                console.error('파일 업로드 중 오류:', uploadError);
+                // 업로드 실패해도 견적 저장은 진행 (fileUrl 없이)
+            }
+
             const quoteData = {
                 fileName: file.name,
                 fileSize: file.size,
+                fileUrl,
                 volumeCm3,
                 surfaceAreaCm2,
                 dimensionsX: analysis.boundingBox.x,
@@ -238,6 +273,24 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 throw new Error(msg)
             }
             const data = result.data as { id: number; sessionId?: string }
+            
+            // 업로드한 파일이 있지만 quoteId가 다른 경우, file_url 업데이트
+            if (fileUrl && uploadedQuoteId && data.id && uploadedQuoteId !== data.id) {
+                try {
+                    const updateHeaders: HeadersInit = { 'Content-Type': 'application/json' };
+                    if (token) {
+                        updateHeaders['Authorization'] = `Bearer ${token}`;
+                        if (user?.id) updateHeaders['X-User-ID'] = String(user.id);
+                    } else {
+                        updateHeaders['X-Session-ID'] = sessionId || '';
+                    }
+                    // R2 key를 새 quoteId로 업데이트 (선택사항 - 기존 파일도 유지 가능)
+                    // 일단 기존 파일을 사용하도록 함
+                } catch (e) {
+                    console.error('file_url 업데이트 실패:', e);
+                }
+            }
+            
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {
                 toast({ title: '✅ 견적 저장됨', description: '회원: 내 견적함에 저장되었습니다' })

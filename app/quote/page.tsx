@@ -51,7 +51,7 @@ export default function QuotePage() {
                                     Wow3D <span className="text-primary font-light">Pro</span>
                                 </span>
                                 <span className="text-[9px] font-medium text-slate-400 leading-tight mt-0.5">
-                                    AI 실시간자동 견적시스템
+                                    AI 실시간 자동견적시스템
                                 </span>
                             </div>
                         </Link>
@@ -149,7 +149,7 @@ export default function QuotePage() {
                                                 <span className="text-primary">시작하기</span>
                                             </h1>
                                             <p className="text-slate-400 text-sm">
-                                                STL, OBJ, 3MF, PLY 파일을 드래그하여 업로드하세요. <br />
+                                                STL, OBJ, 3MF, PLY ,step ,stp 파일을 드래그하여 업로드하세요. <br />
                                                 자동으로 지오메트리를 분석합니다.
                                             </p>
                                         </div>
@@ -239,19 +239,19 @@ export default function QuotePage() {
                             <div className="flex items-center gap-8 text-xs font-bold tracking-widest uppercase text-slate-400">
                                 <div className="flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    100종+ 소재
+                                    30종+ 소재
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    24시간 내 제작
+                                    24시간 내 제작시작
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                     ±0.2mm 정밀도
                                 </div>
                             </div>
-                            <div className="ml-auto text-[10px] text-slate-500">
-                                WOW3D 프로페셔널 엔진
+                            <div className="ml-auto text-[14px] text-slate-500">
+                                (주)WOW3D 프로페셔널 엔진
                             </div>
                         </div>
                     </div>

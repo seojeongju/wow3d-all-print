@@ -27,7 +27,7 @@ export async function GET(
         if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
         const { results: items } = await env.DB.prepare(`
-            SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
+            SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.file_url, q.print_method
             FROM order_items oi
             LEFT JOIN quotes q ON oi.quote_id = q.id
             WHERE oi.order_id = ?

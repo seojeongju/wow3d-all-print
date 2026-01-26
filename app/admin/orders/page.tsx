@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Download, Loader2, Eye } from 'lucide-react';
+import { Search, Download, Loader2, Eye, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -50,7 +50,7 @@ type DetailData = { order: Record<string, unknown>; items: Record<string, unknow
 
 function OrderListInner() {
     const { toast } = useToast();
-    const { user } = useAuthStore();
+    const { user, token } = useAuthStore();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
@@ -65,6 +65,7 @@ function OrderListInner() {
     const [detailStatus, setDetailStatus] = useState('');
     const [savingDetail, setSavingDetail] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
+    const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
 
     const fetchOrders = async () => {
         try {
@@ -211,6 +212,83 @@ function OrderListInner() {
             setUpdatingId(null);
         }
     };
+
+    const handleFileDownload = async (itemId: number, quoteId: number, fileName: string) => {
+        setDownloadingFileId(itemId);
+        try {
+            const url = `/api/admin/orders/${detailOrderId}/file?quoteId=${quoteId}`;
+            const headers: HeadersInit = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            const res = await fetch(url, { headers });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err?.error || '다운로드 실패');
+            }
+            const blob = await res.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName || 'model.stl';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+            toast({ title: '✅ 파일 다운로드 완료' });
+        } catch (e) {
+            toast({
+                title: '❌ 다운로드 실패',
+                description: e instanceof Error ? e.message : '파일을 다운로드할 수 없습니다',
+                variant: 'destructive',
+            });
+        } finally {
+            setDownloadingFileId(null);
+        }
+    };
+
+
+    const handleBulkDownload = async () => {
+        if (!detailData?.items || detailData.items.length === 0) {
+            toast({ title: '다운로드할 파일이 없습니다.', variant: 'destructive' });
+            return;
+        }
+
+        const filesToDownload = detailData.items.filter((it: any) => it.file_url);
+        if (filesToDownload.length === 0) {
+            toast({ title: '다운로드할 파일이 없습니다.', variant: 'destructive' });
+            return;
+        }
+
+        toast({ title: `${filesToDownload.length}개 파일 다운로드 시작...` });
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const item of filesToDownload) {
+            try {
+                await handleFileDownload(Number(item.id), Number(item.quote_id), String(item.file_name));
+                successCount++;
+                // 다운로드 사이에 약간의 지연 추가 (브라우저가 처리할 시간 제공)
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (e) {
+                failCount++;
+                console.error(`Failed to download ${item.file_name}:`, e);
+            }
+        }
+
+        if (failCount === 0) {
+            toast({ title: `✅ ${successCount}개 파일 다운로드 완료` });
+        } else {
+            toast({
+                title: `다운로드 완료`,
+                description: `성공: ${successCount}개, 실패: ${failCount}개`,
+                variant: failCount > successCount ? 'destructive' : 'default',
+            });
+        }
+    };
+
+
 
     if (loading) {
         return (
@@ -398,10 +476,24 @@ function OrderListInner() {
 
                             {detailData.items && detailData.items.length > 0 && (
                                 <div>
-                                    <Label className="text-[10px] font-bold text-white/40 uppercase">주문 항목</Label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <Label className="text-[10px] font-bold text-white/40 uppercase">주문 항목</Label>
+                                        {detailData.items.filter((it: any) => it.file_url).length > 1 && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 px-3 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                                                onClick={handleBulkDownload}
+                                                disabled={downloadingFileId !== null}
+                                            >
+                                                <Download className="w-3 h-3 mr-1.5" />
+                                                전체 다운로드 ({detailData.items.filter((it: any) => it.file_url).length}개)
+                                            </Button>
+                                        )}
+                                    </div>
                                     <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
                                         <table className="w-full text-sm">
-                                            <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 text-left text-white/70">파일/방식</th><th className="p-2 text-right text-white/70">수량</th><th className="p-2 text-right text-white/70">단가</th><th className="p-2 text-right text-white/70">소계</th></tr></thead>
+                                            <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 text-left text-white/70">파일/방식</th><th className="p-2 text-right text-white/70">수량</th><th className="p-2 text-right text-white/70">단가</th><th className="p-2 text-right text-white/70">소계</th><th className="p-2 text-center text-white/70 w-24">파일</th></tr></thead>
                                             <tbody>
                                                 {detailData.items.map((it: any) => (
                                                     <tr key={it.id} className="border-b border-white/5">
@@ -409,6 +501,31 @@ function OrderListInner() {
                                                         <td className="p-2 text-right">{it.quantity}</td>
                                                         <td className="p-2 text-right">₩ {Number(it.unit_price || 0).toLocaleString()}</td>
                                                         <td className="p-2 text-right font-medium">₩ {Number(it.subtotal || 0).toLocaleString()}</td>
+                                                        <td className="p-2 text-center">
+                                                            {it.file_url ? (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 px-3 text-xs text-primary hover:text-primary/90 hover:bg-primary/10 disabled:opacity-50"
+                                                                    disabled={downloadingFileId === it.id}
+                                                                    onClick={() => handleFileDownload(it.id, it.quote_id, it.file_name)}
+                                                                >
+                                                                    {downloadingFileId === it.id ? (
+                                                                        <>
+                                                                            <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                                                                            다운로드 중...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <FileDown className="w-3.5 h-3.5 mr-1" />
+                                                                            다운로드
+                                                                        </>
+                                                                    )}
+                                                                </Button>
+                                                            ) : (
+                                                                <span className="text-[10px] text-white/30">파일 없음</span>
+                                                            )}
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
