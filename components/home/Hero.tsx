@@ -4,10 +4,15 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Cuboid, Loader2, Zap, Palette } from 'lucide-react';
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
+
+const KRW_TO_UNIT = 1300;
+
+type PrintSpecs = { fdm?: { max?: { x?: number; y?: number; z?: number }; layerCosts?: Record<string, number>; hourlyRate?: number; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number }; sla?: unknown; dlp?: unknown };
+type ApiMaterial = { type: string; price_per_gram?: number; density?: number };
 
 export default function Hero() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -15,9 +20,45 @@ export default function Hero() {
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const y2 = useTransform(scrollY, [0, 500], [0, -150]);
     const router = useRouter();
-    const { setFile, reset } = useFileStore();
+    const { setFile, file, analysis } = useFileStore();
     const { toast } = useToast();
     const [isLoadingSample, setIsLoadingSample] = useState(false);
+    const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null);
+    const [materials, setMaterials] = useState<ApiMaterial[]>([]);
+
+    useEffect(() => {
+        fetch('/api/print-specs').then((r) => r.json()).then((d) => d?.data && setPrintSpecs(d.data)).catch(() => {});
+        fetch('/api/materials').then((r) => r.json()).then((d) => Array.isArray(d?.data) && setMaterials(d.data)).catch(() => {});
+    }, []);
+
+    const heroEstimate = useMemo(() => {
+        if (!analysis || !printSpecs?.fdm) return null;
+        const spec = printSpecs.fdm;
+        const max = spec.max || { x: 220, y: 220, z: 250 };
+        const bx = analysis.boundingBox?.x ?? 0;
+        const by = analysis.boundingBox?.y ?? 0;
+        const bz = analysis.boundingBox?.z ?? 0;
+        const overflow = bx > (max.x ?? 220) || by > (max.y ?? 220) || bz > (max.z ?? 250);
+
+        const mat = materials.find((m) => m.type === 'FDM');
+        const density = mat?.density ?? 1.24;
+        const pricePerGramKr = mat && typeof mat.price_per_gram === 'number' ? mat.price_per_gram : 0;
+        const adjustedDensity = Math.max(density * 0.2, density * 0.2);
+        const volumeCm3 = analysis.volume || 0;
+        const heightMm = bz;
+        const weightGrams = volumeCm3 * adjustedDensity;
+        const materialCost = (pricePerGramKr / KRW_TO_UNIT) * weightGrams;
+        const layerHeight = 0.2;
+        const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight));
+        const layerHoursFactor = spec.fdm_layer_hours_factor ?? 0.02;
+        const estTimeHours = Math.max(1, numLayers * layerHoursFactor);
+        const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
+        const machineRate = rateKRW / KRW_TO_UNIT;
+        const machineCost = estTimeHours * machineRate;
+        const laborCost = (spec.fdm_labor_cost_krw ?? 6500) / KRW_TO_UNIT;
+        const total = materialCost + machineCost + laborCost;
+        return { total, printability: overflow ? 85 : 100, overflow };
+    }, [analysis, printSpecs, materials]);
 
     const handleTrySample = async () => {
         setIsLoadingSample(true);
@@ -117,7 +158,7 @@ export default function Hero() {
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
                     <motion.div
                         style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border border-white/10 bg-[#0d0d0d]/95 backdrop-blur-xl shadow-2xl shadow-black/30 z-10 overflow-hidden flex flex-col"
+                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border-2 border-white/25 bg-[#0d0d0d]/95 backdrop-blur-xl shadow-2xl shadow-black/30 z-10 overflow-hidden flex flex-col ring-1 ring-white/10"
                     >
                         {/* 그리드 배경 */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
@@ -178,25 +219,38 @@ export default function Hero() {
                         className="absolute left-10 bottom-20 w-[280px] h-[420px] bg-card rounded-[30px] shadow-2xl border border-border p-6 z-20"
                     >
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-                                <Sparkles className="w-6 h-6" />
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500' : analysis ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'}`}>
+                                {file && !analysis ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
                             </div>
                             <div>
                                 <div className="font-bold">AI 견적 분석</div>
-                                <div className="text-xs text-muted-foreground">분석 완료</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {!file ? '업로드 대기' : !analysis ? '분석 중' : '분석 완료'}
+                                </div>
                             </div>
                         </div>
                         <div className="space-y-3">
                             <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                <div className="h-full w-[90%] bg-green-500 rounded-full" />
+                                <motion.div
+                                    className={`h-full rounded-full ${file && !analysis ? 'bg-amber-500/80 animate-pulse' : 'bg-green-500'}`}
+                                    initial={false}
+                                    animate={{
+                                        width: !file ? '0%' : !analysis ? '50%' : `${heroEstimate?.printability ?? 100}%`,
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                />
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">출력 가능성</span>
-                                <span className="font-bold text-green-500">98%</span>
+                                <span className={`font-bold ${heroEstimate?.overflow ? 'text-amber-500' : 'text-green-500'}`}>
+                                    {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? '크기 초과' : `${heroEstimate?.printability ?? 100}%`}
+                                </span>
                             </div>
                             <div className="mt-8 p-4 bg-secondary/50 rounded-xl">
                                 <div className="text-xs text-muted-foreground mb-1">예상 견적가</div>
-                                <div className="text-2xl font-bold">₩ 24,500</div>
+                                <div className={`text-2xl font-bold ${!file || !analysis || !heroEstimate ? 'text-muted-foreground' : ''}`}>
+                                    {!file ? '업로드 후 확인' : !analysis ? '—' : heroEstimate ? `₩ ${Math.round(heroEstimate.total * KRW_TO_UNIT).toLocaleString()}` : '—'}
+                                </div>
                             </div>
                             <Button
                                 variant="outline"
@@ -211,7 +265,7 @@ export default function Hero() {
                                     '샘플 견적 체험'
                                 )}
                             </Button>
-                            <Link href="/quote" className="block mt-3" onClick={() => reset()}>
+                            <Link href="/quote" className="block mt-3">
                                 <Button
                                     size="sm"
                                     className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.5)] hover:from-primary hover:to-primary/95 ring-2 ring-primary/30 transition-all"
