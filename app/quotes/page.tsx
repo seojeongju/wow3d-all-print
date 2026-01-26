@@ -9,6 +9,7 @@ import { FileText, ShoppingCart, Loader2, Boxes, ArrowRight, Plus, Home } from '
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
+import ModelThumbnail from '@/components/ModelThumbnail'
 import type { Quote } from '@/lib/types'
 
 type QuoteRow = {
@@ -168,8 +169,17 @@ export default function SavedQuotesPage() {
                                     transition={{ delay: i * 0.05 }}
                                     className="p-5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-white/15 transition-all flex flex-col sm:flex-row sm:items-center gap-4"
                                 >
-                                    <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
-                                        <Boxes className="w-6 h-6 text-white/30" />
+                                    <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                        {row.file_url ? (
+                                            <ModelThumbnail
+                                                fileUrl={row.file_url}
+                                                fileName={row.file_name}
+                                                size={128}
+                                                className="w-full h-full"
+                                            />
+                                        ) : (
+                                            <Boxes className="w-6 h-6 text-white/30" />
+                                        )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-semibold text-white truncate">{row.file_name}</div>

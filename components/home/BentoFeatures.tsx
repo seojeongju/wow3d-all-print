@@ -6,7 +6,7 @@ import { Zap, Box, Ruler, Truck, ShieldCheck, FileBox, Layers } from 'lucide-rea
 const features = [
     {
         title: "AI 실시간 견적",
-        description: "STL·OBJ 업로드 시 부피·표면적을 자동 분석하고, 소재·옵션 선택에 따라 견적이 즉시 반영됩니다.",
+        description: "STL·OBJ·3MF·PLY 업로드 시 부피·표면적을 자동 분석하고, 소재·옵션 선택에 따라 견적이 즉시 반영됩니다.",
         icon: Zap,
         className: "md:col-span-2 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border-primary/20",
         iconColor: "text-primary"
@@ -20,7 +20,7 @@ const features = [
     },
     {
         title: "다중 파일 포맷",
-        description: "STL, OBJ, 3MF 등 주요 포맷을 지원. 업로드 후 자동 지오메트리 분석으로 출력 가능 여부를 판별합니다.",
+        description: "STL, OBJ, 3MF, PLY 형식을 지원. STEP/STP는 변환 후 업로드. 업로드 후 자동 지오메트리 분석으로 출력 가능 여부를 판별합니다.",
         icon: FileBox,
         className: "md:col-span-1 bg-card",
         iconColor: "text-green-500"

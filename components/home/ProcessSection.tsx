@@ -8,7 +8,7 @@ const steps = [
     {
         id: "01",
         title: "파일 업로드 & 분석",
-        description: "STL·OBJ 파일을 드래그 앤 드롭하면 즉시 부피·표면적·치수가 분석됩니다. 3D 뷰어에서 확인한 뒤 견적 단계로 이어집니다.",
+        description: "STL·OBJ·3MF·PLY 파일을 드래그 앤 드롭하면 즉시 부피·표면적·치수가 분석됩니다. 3D 뷰어에서 확인한 뒤 견적 단계로 이어집니다.",
         details: ["드래그 앤 드롭 또는 클릭 업로드", "자동 지오메트리 분석", "웹 3D 뷰어에서 미리보기"],
         icon: Upload,
         color: "bg-blue-500"

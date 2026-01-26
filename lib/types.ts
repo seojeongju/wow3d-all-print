@@ -38,6 +38,8 @@ export interface Quote extends QuoteData {
     sessionId?: string;
     createdAt: string;
     updatedAt: string;
+    /** STL 등에서 생성한 썸네일 data URL (장바구니 미리보기용) */
+    thumbnailDataUrl?: string;
 }
 
 export interface User {

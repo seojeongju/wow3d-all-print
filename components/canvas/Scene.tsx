@@ -5,9 +5,9 @@ import { OrbitControls, Stage, Grid, Html, Bounds, useBounds } from '@react-thre
 import { Suspense, useEffect, useState, useRef, createContext, useContext } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
-import { STLLoader } from 'three-stdlib'
-import { OBJLoader } from 'three-stdlib'
+import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries } from 'three-stdlib'
 import { analyzeGeometry } from '@/lib/geometry'
+import { loadStepAsBufferGeometry } from '@/lib/stepLoader'
 import { Button } from '@/components/ui/button'
 import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
 
@@ -54,6 +54,19 @@ function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
     )
 }
 
+type ModelType = 'stl' | 'obj' | '3mf' | 'ply' | 'step'
+
+function collectGeometriesFromGroup(group: THREE.Group): THREE.BufferGeometry[] {
+    const out: THREE.BufferGeometry[] = []
+    group.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+            const g = (child as THREE.Mesh).geometry
+            if (g && g.attributes?.position) out.push(g)
+        }
+    })
+    return out
+}
+
 // 3D 모델 컴포넌트
 function Model({
     url,
@@ -62,7 +75,7 @@ function Model({
     showMeasurements
 }: {
     url: string;
-    type: 'stl' | 'obj';
+    type: ModelType;
     color: string;
     showMeasurements: boolean;
 }) {
@@ -93,28 +106,34 @@ function Model({
                     const loader = new OBJLoader()
                     const text = new TextDecoder().decode(arrayBuffer)
                     const object = loader.parse(text)
-
                     object.traverse((child) => {
-                        if ((child as THREE.Mesh).isMesh) {
-                            geo = (child as THREE.Mesh).geometry
+                        if ((child as THREE.Mesh).isMesh && !geo) {
+                            geo = (child as THREE.Mesh).geometry as THREE.BufferGeometry
                         }
                     })
+                } else if (type === '3mf') {
+                    const loader = new ThreeMFLoader()
+                    const group = loader.parse(arrayBuffer)
+                    const arr = collectGeometriesFromGroup(group)
+                    if (arr.length === 1) geo = arr[0]
+                    else if (arr.length > 1) geo = mergeBufferGeometries(arr) ?? arr[0]
+                } else if (type === 'ply') {
+                    const loader = new PLYLoader()
+                    geo = loader.parse(arrayBuffer)
+                } else if (type === 'step') {
+                    geo = await loadStepAsBufferGeometry(arrayBuffer)
                 }
 
                 if (geo) {
                     geo.center()
                     geo.computeVertexNormals()
 
-                    // Compute bounding box
                     geo.computeBoundingBox()
                     const bbox = geo.boundingBox
-                    if (bbox) {
-                        setBoundingBox(bbox)
-                    }
+                    if (bbox) setBoundingBox(bbox)
 
                     setGeometry(geo)
 
-                    // Run analysis
                     try {
                         const analysis = analyzeGeometry(geo)
                         setAnalysis(analysis)
@@ -123,7 +142,6 @@ function Model({
                         console.error('❌ Analysis failed:', e)
                     }
 
-                    // 모델 로드 완료 후 카메라 피팅
                     setTimeout(() => {
                         bounds.refresh().clip().fit()
                     }, 100)
@@ -225,18 +243,21 @@ function ViewPresetHandler() {
     return null
 }
 
+const SUPPORTED_EXT = ['stl', 'obj', '3mf', 'ply', 'step', 'stp'] as const
+
 // 뷰어 컨텐츠 컴포넌트
 function ViewerContent({ color, showMeasurements }: { color: string, showMeasurements: boolean }) {
     const { file, fileUrl } = useFileStore()
 
     const fileExtension = file?.name.split('.').pop()?.toLowerCase()
-    const isSupported = fileExtension === 'stl' || fileExtension === 'obj'
+    const isSupported = fileExtension && SUPPORTED_EXT.includes(fileExtension as any)
+    const modelType: ModelType = (fileExtension === 'stp' ? 'step' : fileExtension) as ModelType
 
     if (fileUrl && isSupported) {
         return (
             <Model
                 url={fileUrl}
-                type={fileExtension as 'stl' | 'obj'}
+                type={modelType}
                 color={color}
                 showMeasurements={showMeasurements}
             />

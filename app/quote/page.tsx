@@ -133,7 +133,7 @@ export default function QuotePage() {
                                                 <span className="text-primary">시작하기</span>
                                             </h1>
                                             <p className="text-white/50 text-sm">
-                                                STL, OBJ 또는 3MF 파일을 드래그하여 업로드하세요. <br />
+                                                STL, OBJ, 3MF, PLY 파일을 드래그하여 업로드하세요. <br />
                                                 자동으로 지오메트리를 분석합니다.
                                             </p>
                                         </div>

@@ -6,27 +6,31 @@ import { Upload, FileBox, X } from 'lucide-react'
 import { useFileStore } from '@/store/useFileStore'
 import { cn } from '@/lib/utils'
 
+const ACCEPT = {
+    'model/stl': ['.stl'],
+    'model/obj': ['.obj'],
+    'application/sla': ['.stl'],
+    'application/vnd.ms-pki.stl': ['.stl'],
+    'text/plain': ['.obj', '.ply'],
+    'application/octet-stream': ['.3mf', '.ply', '.step', '.stp'],
+    'application/vnd.ms-package.3dmanufacturing-3dmodel+xml': ['.3mf'],
+}
+
 export default function FileUpload() {
     const { file, setFile, reset } = useFileStore()
 
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-        if (acceptedFiles?.length > 0) {
-            setFile(acceptedFiles[0])
-        }
-    }, [setFile])
+    const onDrop = useCallback(
+        (acceptedFiles: File[]) => {
+            if (acceptedFiles?.length > 0) setFile(acceptedFiles[0])
+        },
+        [setFile]
+    )
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: {
-            'model/stl': ['.stl'],
-            'model/obj': ['.obj'],
-            // standard binary stl mime type often used
-            'application/sla': ['.stl'],
-            'application/vnd.ms-pki.stl': ['.stl'],
-            'text/plain': ['.obj'] // sometimes obj is treated as text
-        },
+        accept: ACCEPT,
         maxFiles: 1,
-        multiple: false
+        multiple: false,
     })
 
     if (file) {
@@ -64,7 +68,7 @@ export default function FileUpload() {
             </div>
             <h3 className="text-lg font-semibold mb-1">3D 모델 업로드</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-                STL 또는 OBJ 파일을 드래그하거나 클릭하여 업로드하세요
+                STL, OBJ, 3MF, PLY, STEP, STP 파일을 드래그하거나 클릭하여 업로드하세요
             </p>
             <div className="text-xs text-muted-foreground/60 px-3 py-1 bg-muted rounded-full">
                 최대 크기: 100MB

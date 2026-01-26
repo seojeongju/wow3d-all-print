@@ -13,6 +13,7 @@ import {
 import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -256,11 +257,14 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 headers['X-Session-ID'] = sid || ''
             }
 
-            const response = await fetch('/api/cart', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ quoteId: savedQuote.id, quantity: 1 }),
-            })
+            const [response, thumbnailDataUrl] = await Promise.all([
+                fetch('/api/cart', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ quoteId: savedQuote.id, quantity: 1 }),
+                }),
+                generateModelThumbnail(file, 256).catch(() => null),
+            ])
 
             if (!response.ok) throw new Error('장바구니 추가 실패')
 
@@ -280,6 +284,7 @@ export default function QuotePanel({ embedded = false }: QuotePanelProps) {
                 estimatedTimeHours,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                thumbnailDataUrl: thumbnailDataUrl || undefined,
             }
             toast({ title: '🛒 장바구니 추가', description: '제품이 장바구니에 담겼습니다' })
             addToCart(quoteForCart as any, 1)

@@ -10,9 +10,10 @@ import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
+import ModelThumbnail from '@/components/ModelThumbnail'
 
 export default function CartPage() {
-    const { items, removeFromCart, removeFromCartByIds, updateQuantity, clearCart, getTotalPriceForItems, getTotalItems } = useCartStore()
+    const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems } = useCartStore()
     const { isAuthenticated } = useAuthStore()
     const { toast } = useToast()
     const [isClearing, setIsClearing] = useState(false)
@@ -175,8 +176,20 @@ export default function CartPage() {
                                             />
                                             <span className="text-xs text-white/50 sm:sr-only">주문에 포함</span>
                                         </label>
-                                        <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0">
-                                            <Box className="w-10 h-10 text-white/20" />
+                                        <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                            {item.quote?.thumbnailDataUrl ? (
+                                                <img src={item.quote.thumbnailDataUrl} alt="" className="w-full h-full object-contain" />
+                                            ) : item.quote?.fileUrl ? (
+                                                <ModelThumbnail
+                                                    fileUrl={item.quote.fileUrl}
+                                                    fileName={item.quote?.fileName || (item.quote as any)?.file_name}
+                                                    onThumbnailReady={(url) => setQuoteThumbnail(item.id, url)}
+                                                    size={256}
+                                                    className="w-full h-full"
+                                                />
+                                            ) : (
+                                                <Box className="w-10 h-10 text-white/20" />
+                                            )}
                                         </div>
 
                                         {/* Item Info */}
@@ -184,7 +197,7 @@ export default function CartPage() {
                                             <div>
                                                 <div className="flex items-start justify-between gap-3">
                                                     <h3 className="font-semibold text-base sm:text-lg text-white truncate">
-                                                        {item.quote?.fileName || '3D 모델'}
+                                                        {item.quote?.fileName || (item.quote as any)?.file_name || '3D 모델'}
                                                     </h3>
                                                     <button
                                                         onClick={() => handleRemoveItem(item.id)}

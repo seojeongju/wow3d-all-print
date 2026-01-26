@@ -9,6 +9,7 @@ interface CartState {
     removeFromCart: (cartItemId: number) => void;
     removeFromCartByIds: (ids: number[]) => void;
     updateQuantity: (cartItemId: number, quantity: number) => void;
+    setQuoteThumbnail: (cartItemId: number, thumbnailDataUrl: string) => void;
     clearCart: () => void;
     getTotalPrice: () => number;
     getTotalPriceForItems: (itemList: CartItem[]) => number;
@@ -67,6 +68,14 @@ export const useCartStore = create<CartState>()(
                     )
                 };
             }),
+
+            setQuoteThumbnail: (cartItemId, thumbnailDataUrl) => set((state) => ({
+                items: state.items.map((item) =>
+                    item.id === cartItemId && item.quote
+                        ? { ...item, quote: { ...item.quote, thumbnailDataUrl } }
+                        : item
+                ),
+            })),
 
             clearCart: () => set({ items: [] }),
 
