@@ -5,7 +5,14 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import { User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Quote, Order } from '@/lib/types';
@@ -21,6 +28,7 @@ export default function MyAccountPage() {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -213,11 +221,12 @@ export default function MyAccountPage() {
                                                         <th className="p-4">날짜</th>
                                                         <th className="p-4">상태</th>
                                                         <th className="p-4 text-right">금액</th>
+                                                        <th className="p-4 w-16"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {orders.map(order => (
-                                                        <tr key={order.id} className="border-t">
+                                                        <tr key={order.id} className="border-t hover:bg-muted/20 transition-colors">
                                                             <td className="p-4 font-mono">{order.orderNumber}</td>
                                                             <td className="p-4 text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</td>
                                                             <td className="p-4">
@@ -225,6 +234,16 @@ export default function MyAccountPage() {
                                                             </td>
                                                             <td className="p-4 text-right font-medium">
                                                                 {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(order.totalAmount)}
+                                                            </td>
+                                                            <td className="p-4 text-right">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                                    onClick={() => setSelectedOrder(order)}
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </Button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -291,6 +310,113 @@ export default function MyAccountPage() {
                     </div>
                 )}
             </div>
+
+            <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>주문 상세 정보</DialogTitle>
+                        <DialogDescription>
+                            주문번호: <span className="font-mono text-primary">{selectedOrder?.orderNumber}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedOrder && (
+                        <div className="space-y-6">
+                            {/* 주문 상태 및 날짜 */}
+                            <div className="flex flex-wrap gap-4 p-4 bg-muted/30 rounded-lg justify-between items-center">
+                                <div>
+                                    <span className="text-xs text-muted-foreground block mb-1">주문 일자</span>
+                                    <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString('ko-KR')}</span>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-muted-foreground block mb-1">주문 상태</span>
+                                    <Badge>{selectedOrder.status}</Badge>
+                                </div>
+                            </div>
+
+                            {/* 배송 정보 */}
+                            <div>
+                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                    <Package className="w-4 h-4" /> 배송 정보
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm p-4 border rounded-lg">
+                                    <div>
+                                        <span className="text-muted-foreground block mb-1">받는 분</span>
+                                        <span className="font-medium">{selectedOrder.recipientName}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground block mb-1">연락처</span>
+                                        <span className="font-medium">{selectedOrder.recipientPhone}</span>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className="text-muted-foreground block mb-1">주소</span>
+                                        <span className="font-medium">{selectedOrder.shippingAddress} {selectedOrder.shippingPostalCode && `(${selectedOrder.shippingPostalCode})`}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 주문 상품 목록 */}
+                            <div>
+                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                    <FileText className="w-4 h-4" /> 주문 상품
+                                </h4>
+                                <div className="border rounded-lg overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                                            <tr>
+                                                <th className="p-3 text-left font-medium">상품 정보</th>
+                                                <th className="p-3 text-center font-medium w-20">수량</th>
+                                                <th className="p-3 text-right font-medium w-32">가격</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {selectedOrder.items?.map((item) => (
+                                                <tr key={item.id}>
+                                                    <td className="p-3">
+                                                        <div className="font-medium">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
+                                                        <div className="text-xs text-muted-foreground mt-0.5">
+                                                            {item.quote?.printMethod && <Badge variant="outline" className="text-[10px] h-5 mr-1">{item.quote.printMethod.toUpperCase()}</Badge>}
+                                                            {item.quote?.fileSize && <span className="ml-1">{(item.quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-center">{item.quantity}</td>
+                                                    <td className="p-3 text-right font-medium">
+                                                        {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(item.subtotal)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {!selectedOrder.items?.length && (
+                                                <tr>
+                                                    <td colSpan={3} className="p-4 text-center text-muted-foreground">
+                                                        상세 품목 정보가 없습니다.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                        <tfoot className="bg-muted/30 font-medium">
+                                            <tr>
+                                                <td colSpan={2} className="p-3 text-right">총 결제 금액</td>
+                                                <td className="p-3 text-right text-base text-primary">
+                                                    {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(selectedOrder.totalAmount)}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {selectedOrder.customerNote && (
+                                <div>
+                                    <h4 className="text-sm font-semibold mb-2">배송 메세지</h4>
+                                    <div className="p-3 bg-muted/30 rounded-md text-sm text-muted-foreground">
+                                        {selectedOrder.customerNote}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

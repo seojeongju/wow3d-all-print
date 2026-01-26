@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
             .bind(auth.userId)
             .all();
 
-        // 각 주문의 아이템 조회
-        const ordersWithItems = await Promise.all(
+        // 데이터 변환 (snake_case -> camelCase)
+        const formattedOrders = await Promise.all(
             (orders.results || []).map(async (order: any) => {
                 const items = await env.DB!
                     .prepare(`
@@ -49,13 +49,44 @@ export async function GET(request: NextRequest) {
                     .all();
 
                 return {
-                    ...order,
-                    items: items.results || [],
+                    id: order.id,
+                    userId: order.user_id,
+                    orderNumber: order.order_number,
+                    recipientName: order.recipient_name,
+                    recipientPhone: order.recipient_phone,
+                    shippingAddress: order.shipping_address,
+                    shippingPostalCode: order.shipping_postal_code,
+                    totalAmount: order.total_amount,
+                    status: order.status,
+                    paymentMethod: order.payment_method,
+                    paymentStatus: order.payment_status,
+                    customerNote: order.customer_note,
+                    adminNote: order.admin_note,
+                    createdAt: order.created_at,
+                    updatedAt: order.updated_at,
+                    items: (items.results || []).map((item: any) => ({
+                        id: item.id,
+                        orderId: item.order_id,
+                        quoteId: item.quote_id,
+                        quantity: item.quantity,
+                        unitPrice: item.unit_price,
+                        subtotal: item.subtotal,
+                        createdAt: item.created_at,
+                        quote: {
+                            id: item.quote_id, // items 조회 시 quotes 테이블과 조인했으므로 quote 정보도 포함됨
+                            fileName: item.file_name,
+                            fileSize: item.file_size,
+                            fileUrl: item.file_url,
+                            printMethod: item.print_method,
+                            totalPrice: item.total_price,
+                            // 필요한 경우 다른 quote 필드도 추가
+                        }
+                    })),
                 };
             })
         );
 
-        return successResponse(ordersWithItems);
+        return successResponse(formattedOrders);
     } catch (error: any) {
         console.error('GET /api/orders error:', error);
         return errorResponse(error.message || '주문 목록 조회 실패', 500);

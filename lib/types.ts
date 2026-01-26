@@ -78,6 +78,7 @@ export interface Order {
     adminNote?: string;
     createdAt: string;
     updatedAt: string;
+    items?: OrderItem[];
 }
 
 export interface OrderItem {
