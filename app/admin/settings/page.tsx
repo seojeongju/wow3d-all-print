@@ -576,14 +576,15 @@ export default function AdminSettings() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">g당 가격 (원)</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} />
-                    </div>
-                    {(newMaterial.type === 'SLA' || newMaterial.type === 'DLP') && (
+                    {newMaterial.type === 'FDM' ? (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">g당 가격 (원)</Label>
+                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} placeholder="FDM 필라멘트 가격" />
+                      </div>
+                    ) : (
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">mL당 가격 (원)</Label>
-                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerMl ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP용" />
+                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerMl ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP 레진 가격" />
                       </div>
                     )}
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -608,8 +609,7 @@ export default function AdminSettings() {
                     <tr className="border-b border-white/10">
                       <th className="p-4 font-medium text-white/70">이름</th>
                       <th className="p-4 font-medium text-white/70">타입</th>
-                      <th className="p-4 font-medium text-white/70">g당 가격(원)</th>
-                      <th className="p-4 font-medium text-white/70">mL당 가격(원)</th>
+                      <th className="p-4 font-medium text-white/70">가격</th>
                       <th className="p-4 font-medium text-white/70">밀도</th>
                       <th className="p-4 font-medium text-white/70">설명</th>
                       <th className="p-4 font-medium text-right text-white/70">관리</th>
@@ -622,13 +622,12 @@ export default function AdminSettings() {
                         <td className="p-4">
                           <span className={`px-2 py-1 rounded text-xs font-bold border ${typeBadge(m.type || '')}`}>{m.type}</span>
                         </td>
-                        <td className="p-4 text-white/90">{m.pricePerGram}원</td>
                         <td className="p-4 text-white/90">
-                          {(m.type === 'SLA' || m.type === 'DLP')
-                            ? (m.pricePerMl != null && m.pricePerMl > 0
-                              ? `${m.pricePerMl}원`
+                          {m.type === 'FDM'
+                            ? `${m.pricePerGram}원/g`
+                            : (m.pricePerMl != null && m.pricePerMl > 0
+                              ? `${m.pricePerMl}원/mL`
                               : <span className="text-amber-400 text-xs">미설정</span>)
-                            : <span className="text-white/30 text-xs">-</span>
                           }
                         </td>
                         <td className="p-4 text-white/90">{m.density}</td>
@@ -673,14 +672,15 @@ export default function AdminSettings() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">g당 가격 (원)</Label>
-                    <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerGram ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerGram: parseFloat(e.target.value) || 0 })} />
-                  </div>
-                  {(editForm.type === 'SLA' || editForm.type === 'DLP') && (
+                  {editForm.type === 'FDM' ? (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">g당 가격 (원)</Label>
+                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerGram ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerGram: parseFloat(e.target.value) || 0 })} placeholder="FDM 필라멘트 가격" />
+                    </div>
+                  ) : (
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">mL당 가격 (원)</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerMl ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP용" />
+                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerMl ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP 레진 가격" />
                     </div>
                   )}
                   <div className="grid grid-cols-4 items-center gap-4">
