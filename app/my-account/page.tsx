@@ -12,7 +12,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock, Eye } from 'lucide-react';
+import { User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock, Eye, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Quote, Order } from '@/lib/types';
@@ -75,6 +75,27 @@ export default function MyAccountPage() {
             description: '안전하게 로그아웃되었습니다',
         });
         router.push('/');
+    };
+
+    const handleDeleteQuote = async (quoteId: number) => {
+        if (!confirm('정말로 이 견적을 삭제하시겠습니까?')) return;
+
+        try {
+            const res = await fetch(`/api/quotes/${quoteId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+
+            if (res.ok) {
+                setQuotes(prev => prev.filter(q => q.id !== quoteId));
+                toast({ title: '✅ 견적이 삭제되었습니다' });
+            } else {
+                const data = await res.json();
+                toast({ title: data.error || '삭제 실패', variant: 'destructive' });
+            }
+        } catch (error) {
+            toast({ title: '삭제 중 오류가 발생했습니다', variant: 'destructive' });
+        }
     };
 
     if (!isAuthenticated) return null;
@@ -273,7 +294,17 @@ export default function MyAccountPage() {
                                                             {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(quote.totalPrice)}
                                                         </div>
                                                     </div>
-                                                    <Button size="sm" variant="secondary">다시 계산</Button>
+                                                    <div className="flex gap-2">
+                                                        <Button size="sm" variant="secondary">다시 계산</Button>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="outline"
+                                                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleDeleteQuote(quote.id)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </CardContent>
                                         </Card>
