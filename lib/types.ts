@@ -47,7 +47,8 @@ export interface User {
     email: string;
     name: string;
     phone?: string;
-    role?: 'user' | 'admin';
+    role?: 'user' | 'admin' | 'super_admin';
+    store_id?: number;
     createdAt: string;
     updatedAt: string;
 }
