@@ -543,70 +543,7 @@ export default function AdminSettings() {
           })}
 
           {/* 가격 정책 계산기 */}
-          <PricingCalculator equipmentParams={{
-            fdm: equipForms.FDM ? {
-              hourly_rate: equipForms.FDM.hourly_rate,
-              layer_costs: equipForms.FDM.layer_costs,
-              fdm_layer_hours_factor: equipForms.FDM.fdm_layer_hours_factor ?? 0.02,
-              fdm_labor_cost_krw: equipForms.FDM.fdm_labor_cost_krw ?? 6500,
-              fdm_support_per_cm2_krw: equipForms.FDM.fdm_support_per_cm2_krw ?? 26,
-              sla_layer_exposure_sec: 0,
-              sla_labor_cost_krw: 0,
-              sla_consumables_krw: 0,
-              sla_post_process_krw: 0,
-              dlp_layer_exposure_sec: 0,
-              dlp_labor_cost_krw: 0,
-              dlp_consumables_krw: 0,
-              dlp_post_process_krw: 0,
-            } : undefined,
-            sla: equipForms.SLA ? {
-              hourly_rate: equipForms.SLA.hourly_rate,
-              layer_costs: equipForms.SLA.layer_costs,
-              fdm_layer_hours_factor: 0,
-              fdm_labor_cost_krw: 0,
-              fdm_support_per_cm2_krw: 0,
-              sla_layer_exposure_sec: equipForms.SLA.sla_layer_exposure_sec ?? 8,
-              sla_labor_cost_krw: equipForms.SLA.sla_labor_cost_krw ?? 9100,
-              sla_consumables_krw: equipForms.SLA.sla_consumables_krw ?? 3900,
-              sla_post_process_krw: equipForms.SLA.sla_post_process_krw ?? 10400,
-              dlp_layer_exposure_sec: 0,
-              dlp_labor_cost_krw: 0,
-              dlp_consumables_krw: 0,
-              dlp_post_process_krw: 0,
-            } : undefined,
-            dlp: equipForms.DLP ? {
-              hourly_rate: equipForms.DLP.hourly_rate,
-              layer_costs: equipForms.DLP.layer_costs,
-              fdm_layer_hours_factor: 0,
-              fdm_labor_cost_krw: 0,
-              fdm_support_per_cm2_krw: 0,
-              sla_layer_exposure_sec: 0,
-              sla_labor_cost_krw: 0,
-              sla_consumables_krw: 0,
-              sla_post_process_krw: 0,
-              dlp_layer_exposure_sec: equipForms.DLP.dlp_layer_exposure_sec ?? 3,
-              dlp_labor_cost_krw: equipForms.DLP.dlp_labor_cost_krw ?? 9100,
-              dlp_consumables_krw: equipForms.DLP.dlp_consumables_krw ?? 3900,
-              dlp_post_process_krw: equipForms.DLP.dlp_post_process_krw ?? 10400,
-            } : undefined,
-          }} />
 
-          {/* 프리셋 */}
-          <PricingPresets onApplyPreset={(preset) => {
-            // 프리셋 적용
-            const newForms = { ...equipForms }
-            if (preset.equipment.fdm) {
-              newForms.FDM = { ...equipForms.FDM, ...preset.equipment.fdm }
-            }
-            if (preset.equipment.sla) {
-              newForms.SLA = { ...equipForms.SLA, ...preset.equipment.sla }
-            }
-            if (preset.equipment.dlp) {
-              newForms.DLP = { ...equipForms.DLP, ...preset.equipment.dlp }
-            }
-            setEquipForms(newForms)
-            toast({ title: `"${preset.name}" 프리셋이 적용되었습니다`, description: '변경사항을 저장하려면 각 장비의 저장 버튼을 클릭하세요.' })
-          }} />
         </TabsContent>
 
         <TabsContent value="materials" className="space-y-4">
@@ -792,7 +729,74 @@ export default function AdminSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* 가격 정책 계산기 */}
+          <PricingCalculator equipmentParams={{
+            fdm: equipForms.FDM ? {
+              hourly_rate: equipForms.FDM.hourly_rate,
+              layer_costs: equipForms.FDM.layer_costs,
+              fdm_layer_hours_factor: equipForms.FDM.fdm_layer_hours_factor ?? 0.02,
+              fdm_labor_cost_krw: equipForms.FDM.fdm_labor_cost_krw ?? 6500,
+              fdm_support_per_cm2_krw: equipForms.FDM.fdm_support_per_cm2_krw ?? 26,
+              sla_layer_exposure_sec: 0,
+              sla_labor_cost_krw: 0,
+              sla_consumables_krw: 0,
+              sla_post_process_krw: 0,
+              dlp_layer_exposure_sec: 0,
+              dlp_labor_cost_krw: 0,
+              dlp_consumables_krw: 0,
+              dlp_post_process_krw: 0,
+            } : undefined,
+            sla: equipForms.SLA ? {
+              hourly_rate: equipForms.SLA.hourly_rate,
+              layer_costs: equipForms.SLA.layer_costs,
+              fdm_layer_hours_factor: 0,
+              fdm_labor_cost_krw: 0,
+              fdm_support_per_cm2_krw: 0,
+              sla_layer_exposure_sec: equipForms.SLA.sla_layer_exposure_sec ?? 8,
+              sla_labor_cost_krw: equipForms.SLA.sla_labor_cost_krw ?? 9100,
+              sla_consumables_krw: equipForms.SLA.sla_consumables_krw ?? 3900,
+              sla_post_process_krw: equipForms.SLA.sla_post_process_krw ?? 10400,
+              dlp_layer_exposure_sec: 0,
+              dlp_labor_cost_krw: 0,
+              dlp_consumables_krw: 0,
+              dlp_post_process_krw: 0,
+            } : undefined,
+            dlp: equipForms.DLP ? {
+              hourly_rate: equipForms.DLP.hourly_rate,
+              layer_costs: equipForms.DLP.layer_costs,
+              fdm_layer_hours_factor: 0,
+              fdm_labor_cost_krw: 0,
+              fdm_support_per_cm2_krw: 0,
+              sla_layer_exposure_sec: 0,
+              sla_labor_cost_krw: 0,
+              sla_consumables_krw: 0,
+              sla_post_process_krw: 0,
+              dlp_layer_exposure_sec: equipForms.DLP.dlp_layer_exposure_sec ?? 3,
+              dlp_labor_cost_krw: equipForms.DLP.dlp_labor_cost_krw ?? 9100,
+              dlp_consumables_krw: equipForms.DLP.dlp_consumables_krw ?? 3900,
+              dlp_post_process_krw: equipForms.DLP.dlp_post_process_krw ?? 10400,
+            } : undefined,
+          }} />
+
+          {/* 프리셋 */}
+          <PricingPresets onApplyPreset={(preset) => {
+            // 프리셋 적용
+            const newForms = { ...equipForms }
+            if (preset.equipment.fdm) {
+              newForms.FDM = { ...equipForms.FDM, ...preset.equipment.fdm }
+            }
+            if (preset.equipment.sla) {
+              newForms.SLA = { ...equipForms.SLA, ...preset.equipment.sla }
+            }
+            if (preset.equipment.dlp) {
+              newForms.DLP = { ...equipForms.DLP, ...preset.equipment.dlp }
+            }
+            setEquipForms(newForms)
+            toast({ title: `"${preset.name}" 프리셋이 적용되었습니다`, description: '변경사항을 저장하려면 각 장비 탭에서 저장 버튼을 클릭하세요.' })
+          }} />
         </TabsContent>
+
       </Tabs>
     </div>
   )

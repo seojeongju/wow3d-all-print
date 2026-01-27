@@ -399,7 +399,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-white/60">{method === 'fdm' ? '지지구조비' : '기타비용'}</span>
-                                <span className="font-mono text-white">₩{Math.round(method === 'fdm' ? (currentCalc as any).supportCost : currentCalc.otherCost).toLocaleString()}</span>
+                                <span className="font-mono text-white">₩{Math.round(method === 'fdm' ? (currentCalc as any).supportCost : (currentCalc as any).otherCost).toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-white/60">장비비</span>
