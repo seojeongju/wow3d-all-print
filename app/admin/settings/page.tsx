@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,10 +82,27 @@ export default function AdminSettings() {
     colors: ['#FFFFFF'],
   })
 
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
   const [editForm, setEditForm] = useState<Partial<Material>>({})
+
+  // URL에서 초기 탭 상태 가져오기
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'equipment')
+
   const [savingEquip, setSavingEquip] = useState<string | null>(null)
   const [equipForms, setEquipForms] = useState<Record<string, EquipForm>>({})
+
+  // 탭 변경 핸들러
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    // 히스토리 스택에 추가하지 않고 URL 교체
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   useEffect(() => {
     fetchData()
@@ -386,7 +404,7 @@ export default function AdminSettings() {
         <p className="text-white/50 text-sm mt-1">장비별 최대 출력 크기, 소재, 가격 정책을 관리합니다.</p>
       </div>
 
-      <Tabs defaultValue="equipment" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="bg-white/5 border border-white/10 p-1">
           <TabsTrigger value="equipment" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-2">
             <Printer className="w-4 h-4" /> 장비 설정
