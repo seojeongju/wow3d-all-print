@@ -173,12 +173,12 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             // 1. 부피에 따른 기본 출력 시간 (cm³ 당 약 3~6분 소요 가정, 인필 반영)
             // adjustedDensity는 density * (infill/100)와 최소밀도 보정이 적용된 값
             // 즉, 재료 소모량(g)에 비례하여 시간 산출 (대략 10g당 1시간)
-            const materialTimeFactor = 0.013; // 1g 출력에 약 0.8분 (재튜닝)
+            const materialTimeFactor = 0.015; // 1g 출력에 약 0.9분 (재튜닝)
             const volumeTime = weightGrams * materialTimeFactor;
 
             // 2. 레이어 변경 및 Z축 이동 시간 (레이어당 0.002시간 = 7.2초)
             const baseLayerFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.02;
-            const layerTimeFactor = baseLayerFactor * 0.015;
+            const layerTimeFactor = baseLayerFactor * 0.08; // 0.015 -> 0.08 (약 5배 상향)
             const movementTime = numLayers * layerTimeFactor;
 
             // 3. 표면적에 따른 외벽 출력 시간 보정 (cm² 당 0.001시간으로 하향 조정)

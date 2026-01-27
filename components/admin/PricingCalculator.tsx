@@ -100,9 +100,9 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.fdm_layer_height))
 
         // [개선된 알고리즘] 부피, 표면적, 높이를 모두 고려한 시간 산출 (2차 튜닝)
-        const materialTimeFactor = 0.013; // 0.022 -> 0.013
+        const materialTimeFactor = 0.015; // 0.013 -> 0.015 상향
         const volumeTime = weightGrams * materialTimeFactor;
-        const layerTimeFactor = (ep.fdm_layer_hours_factor ?? 0.02) * 0.015; // 0.1 -> 0.015 (약 1초)
+        const layerTimeFactor = (ep.fdm_layer_hours_factor ?? 0.02) * 0.08; // 0.015 -> 0.08 (약 6초)
         const movementTime = numLayers * layerTimeFactor;
         const surfaceTime = params.surfaceAreaCm2 * 0.0005; // 0.001 -> 0.0005
 
