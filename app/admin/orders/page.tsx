@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Download, Loader2, Eye, FileDown } from 'lucide-react';
+import { Search, Download, Loader2, Eye, FileDown, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -569,6 +569,14 @@ function OrderListInner() {
                         </div>
                     ) : null}
                     <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            className="border-white/10 text-white mr-auto hover:bg-white/10"
+                            onClick={() => window.open(`/print/estimate/${detailOrderId}`, '_blank', 'width=900,height=1000')}
+                        >
+                            <Printer className="w-4 h-4 mr-2" />
+                            견적서 인쇄
+                        </Button>
                         <Button variant="outline" className="border-white/10 text-white" onClick={closeDetail}>닫기</Button>
                         <Button onClick={handleSaveDetail} disabled={savingDetail || loadingDetail}>
                             {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
