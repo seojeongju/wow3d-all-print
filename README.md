@@ -215,5 +215,10 @@ npm run deploy
 - [Cloudflare 배포 가이드](./docs/CLOUDFLARE_SETUP.md)
 - [Phase 2 진행 현황](./docs/PHASE2_PROGRESS.md)
 
+### 견적 산출 관련 문서
+- [견적금액 산출식 상세 가이드](./docs/QUOTE_CALCULATION_FORMULA.md) - 4가지 단가 입력 위치와 계산 공식
+- [견적 산출 빠른 참조](./docs/QUOTE_CALCULATION_QUICK_REFERENCE.md) - 요약표와 예시
+- [견적 관리 가이드](./docs/QUOTE_MANAGEMENT_GUIDE.md) - 관리자용 설정 가이드 및 FAQ
+
 ## 라이선스
 © 2026 Wow3D. All rights reserved.
