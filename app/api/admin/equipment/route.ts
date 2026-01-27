@@ -1,14 +1,20 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdminAuth } from '@/lib/api-utils'
 
 /**
  * GET /api/admin/equipment - 장비 설정 목록 (FDM, SLA, DLP)
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const { env } = getCloudflareContext()
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 })
-    const { results } = await env.DB.prepare('SELECT * FROM printer_equipment ORDER BY type').all()
+
+    const auth = await requireAdminAuth(req, env.DB);
+    if (auth instanceof Response) return auth;
+    const { storeId } = auth;
+
+    const { results } = await env.DB.prepare('SELECT * FROM printer_equipment WHERE store_id = ? ORDER BY type').bind(storeId).all()
     return NextResponse.json({ success: true, data: results || [] })
   } catch (e) {
     console.error('GET /api/admin/equipment', e)
@@ -59,6 +65,11 @@ export async function POST(req: NextRequest) {
   try {
     const { env } = getCloudflareContext()
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 })
+
+    const auth = await requireAdminAuth(req, env.DB);
+    if (auth instanceof Response) return auth;
+    const { storeId } = auth;
+
     const body = (await req.json()) as Record<string, unknown>
     const type = body.type as string
     if (!type || !['FDM', 'SLA', 'DLP'].includes(type)) {
@@ -104,15 +115,15 @@ export async function POST(req: NextRequest) {
     const hasLayerCosts = layer_costs_json != null
 
     const sql = hasLayerCosts
-      ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-         ON CONFLICT(type) DO UPDATE SET
+      ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+         ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
            is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
-      : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-         ON CONFLICT(type) DO UPDATE SET
+      : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+         ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
            is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
@@ -120,9 +131,9 @@ export async function POST(req: NextRequest) {
     const calcArr = [calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw]
 
     if (hasLayerCosts) {
-      await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ...calcArr).run()
+      await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ...calcArr, storeId).run()
     } else {
-      await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ...calcArr).run()
+      await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ...calcArr, storeId).run()
     }
 
     return NextResponse.json({ success: true })
