@@ -3,6 +3,7 @@ import { create } from 'zustand'
 interface GeometryData {
     volume: number
     surfaceArea: number
+    overhangArea?: number
     boundingBox: { x: number; y: number; z: number }
 }
 

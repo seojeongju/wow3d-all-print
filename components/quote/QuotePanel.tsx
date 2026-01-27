@@ -113,6 +113,8 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
     const volumeCm3 = analysis?.volume || 0
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
+    const overhangAreaRaw = analysis?.overhangArea // 오버행 정보 존재 여부 확인용
+    const needsSupport = overhangAreaRaw !== undefined && overhangAreaRaw > (surfaceAreaCm2 * 0.05) // 5% 이상 오버행 시 지지대 권장
     const heightMm = analysis?.boundingBox.z || 0
     const bx = analysis?.boundingBox?.x ?? 0
     const by = analysis?.boundingBox?.y ?? 0
@@ -185,7 +187,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
             // 비용 계산
             const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
-            const supportCost = supportEnabled ? (supportPerCm2Kr / KRW_TO_UNIT) * surfaceAreaCm2 : 0
+            // [개선된 알고리즘] 지지대 비용 (오버행 면적 기반)
+            // overhangArea 정보가 있으면(0 포함) 사용하고, 없으면(undefined) 전체 표면적의 30%를 추정
+            const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
+            const supportCost = supportEnabled ? (supportPerCm2Kr / KRW_TO_UNIT) * supportTargetArea : 0
             const laborKr = (spec as any)?.fdm_labor_cost_krw ?? 6500
             const laborCost = laborKr / KRW_TO_UNIT
             const machineCost = estTimeHours * machineRate
@@ -548,12 +553,24 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between px-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">지지 구조</label>
-                                <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
-                                    className={`relative w-11 h-6 rounded-full border transition-colors ${supportEnabled ? 'bg-primary border-primary' : 'bg-slate-700 border-slate-600'}`}>
-                                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${supportEnabled ? 'left-6' : 'left-1'}`} />
-                                </button>
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <div className="flex flex-col gap-0.5">
+                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">지지 구조</label>
+                                        {needsSupport && <span className="text-[9px] text-amber-500 font-medium">⚠️ 오버행 감지됨</span>}
+                                    </div>
+                                    <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
+                                        className={`relative w-11 h-6 rounded-full border transition-colors ${supportEnabled ? 'bg-primary border-primary' : 'bg-slate-700 border-slate-600'}`}>
+                                        <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${supportEnabled ? 'left-6' : 'left-1'}`} />
+                                    </button>
+                                </div>
+                                {needsSupport && !supportEnabled && (
+                                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                        <p className="text-[10px] text-amber-200/90 leading-relaxed">
+                                            모델에 45도 이상 기울어진 오버행이 있습니다. 정상적인 출력을 위해 <b>지지 구조를 활성화</b>하는 것이 좋습니다.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
