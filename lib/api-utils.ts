@@ -164,3 +164,48 @@ export async function requireAuthOrGuest(request: Request): Promise<
     }
     return errorResponse('인증이 필요합니다. 로그인하거나 비회원 주문 시 브라우저 세션(X-Session-ID)이 필요합니다.', 401);
 }
+
+/**
+ * 관리자 인증 + Store ID 반환 (Multi-Tenant 격리용)
+ * DB에서 사용자의 store_id와 role을 조회하여 반환합니다.
+ */
+export async function requireAdminAuth(
+    request: Request,
+    db: any // D1Database (타입 추론 간소화)
+): Promise<{ userId: number; email: string; storeId: number; role: string } | Response> {
+    const token = extractToken(request);
+    if (!token) {
+        return errorResponse('인증이 필요합니다', 401);
+    }
+
+    const user = await verifyToken(token);
+    if (!user) {
+        return errorResponse('유효하지 않은 토큰입니다', 401);
+    }
+
+    // DB에서 사용자 정보 조회 (store_id, role)
+    try {
+        const userInfo = await db.prepare('SELECT role, store_id FROM users WHERE id = ?')
+            .bind(user.userId)
+            .first() as { role?: string; store_id?: number } | null;
+
+        if (!userInfo) {
+            return errorResponse('사용자 정보를 찾을 수 없습니다', 403);
+        }
+
+        // 관리자 권한 체크 (선택: admin 또는 super_admin만 허용)
+        if (userInfo.role !== 'admin' && userInfo.role !== 'super_admin') {
+            return errorResponse('관리자 권한이 필요합니다', 403);
+        }
+
+        return {
+            userId: user.userId,
+            email: user.email,
+            storeId: userInfo.store_id ?? 1, // 기본값 1 (마이그레이션 안 된 경우 대비)
+            role: userInfo.role ?? 'user'
+        };
+    } catch (e) {
+        console.error('requireAdminAuth DB error:', e);
+        return errorResponse('인증 처리 중 오류가 발생했습니다', 500);
+    }
+}

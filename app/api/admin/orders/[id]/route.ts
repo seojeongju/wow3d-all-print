@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { requireAdminAuth } from '@/lib/api-utils';
 
 const ALLOWED = ['pending', 'confirmed', 'production', 'shipping', 'completed', 'cancelled'];
 
@@ -7,7 +8,7 @@ const ALLOWED = ['pending', 'confirmed', 'production', 'shipping', 'completed', 
  * GET /api/admin/orders/[id] - 주문 상세 (항목, 배송, 관리자메모)
  */
 export async function GET(
-    _req: NextRequest,
+    req: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     const { id } = await context.params;
@@ -17,13 +18,19 @@ export async function GET(
     const numId = parseInt(id, 10);
     if (!Number.isInteger(numId)) return NextResponse.json({ error: 'Invalid order id' }, { status: 400 });
 
+    // 인증 및 store_id 획득
+    const auth = await requireAdminAuth(req, env.DB);
+    if (auth instanceof Response) return auth;
+    const { storeId } = auth;
+
     try {
         const order = await env.DB.prepare(`
             SELECT o.*, u.name as user_name, u.email as user_email
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            WHERE o.id = ?
-        `).bind(numId).first();
+            WHERE o.id = ? AND o.store_id = ?
+        `).bind(numId, storeId).first();
+
         if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
         const { results: items } = await env.DB.prepare(`
@@ -62,23 +69,35 @@ export async function PATCH(
     const numId = parseInt(id, 10);
     if (!Number.isInteger(numId)) return NextResponse.json({ error: 'Invalid order id' }, { status: 400 });
 
+    // 인증 및 store_id 획득
+    const auth = await requireAdminAuth(req, env.DB);
+    if (auth instanceof Response) return auth;
+    const { storeId } = auth;
+
     try {
+        // 먼저 해당 주문이 이 스토어 소속인지 확인
+        const check = await env.DB.prepare('SELECT id FROM orders WHERE id = ? AND store_id = ?')
+            .bind(numId, storeId).first();
+        if (!check) {
+            return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
+        }
+
         const body = (await req.json()) as { status?: string; admin_note?: string };
         const status = body?.status && ALLOWED.includes(body.status) ? body.status : null;
         const adminNote = body?.admin_note !== undefined ? String(body.admin_note) : null;
 
         if (status !== null && adminNote !== null) {
             await env.DB.prepare(
-                'UPDATE orders SET status = ?, admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-            ).bind(status, adminNote, numId).run();
+                'UPDATE orders SET status = ?, admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
+            ).bind(status, adminNote, numId, storeId).run();
         } else if (status !== null) {
             await env.DB.prepare(
-                'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-            ).bind(status, numId).run();
+                'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
+            ).bind(status, numId, storeId).run();
         } else if (adminNote !== null) {
             await env.DB.prepare(
-                'UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-            ).bind(adminNote, numId).run();
+                'UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
+            ).bind(adminNote, numId, storeId).run();
         } else {
             return NextResponse.json({ error: 'status or admin_note required' }, { status: 400 });
         }
