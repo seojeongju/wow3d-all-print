@@ -210,7 +210,9 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const resinCost = (pricePerMlKr / KRW_TO_UNIT) * volumeML
             const numLayers = Math.max(1, Math.ceil(heightMm / slaLayerHeight))
             const layerExp = printMethod === 'dlp' ? ((spec as any)?.dlp_layer_exposure_sec ?? 3) : ((spec as any)?.sla_layer_exposure_sec ?? 8)
-            const estTimeHours = (numLayers * layerExp) / 3600
+            // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8~9초)
+            const mechanicDelay = 8.5;
+            const estTimeHours = (numLayers * (layerExp + mechanicDelay)) / 3600
             const consKr = printMethod === 'dlp' ? ((spec as any)?.dlp_consumables_krw ?? 3900) : ((spec as any)?.sla_consumables_krw ?? 3900)
             const postKr = printMethod === 'dlp' ? ((spec as any)?.dlp_post_process_krw ?? 10400) : ((spec as any)?.sla_post_process_krw ?? 10400)
             const consumablesCost = consKr / KRW_TO_UNIT

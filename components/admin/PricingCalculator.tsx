@@ -141,7 +141,9 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const resinCost = (params.sla_material_price_per_ml / KRW_TO_UNIT) * volumeML
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.sla_layer_height))
-        const estTimeHours = (numLayers * ep.sla_layer_exposure_sec) / 3600
+        // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
+        const mechanicDelay = 8.5;
+        const estTimeHours = (numLayers * (ep.sla_layer_exposure_sec + mechanicDelay)) / 3600
 
         const consumablesCost = ep.sla_consumables_krw / KRW_TO_UNIT
         const postProcessCost = params.sla_post_processing
@@ -178,7 +180,9 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const resinCost = (params.dlp_material_price_per_ml / KRW_TO_UNIT) * volumeML
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.dlp_layer_height))
-        const estTimeHours = (numLayers * ep.dlp_layer_exposure_sec) / 3600
+        // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
+        const mechanicDelay = 8.5;
+        const estTimeHours = (numLayers * (ep.dlp_layer_exposure_sec + mechanicDelay)) / 3600
 
         const consumablesCost = ep.dlp_consumables_krw / KRW_TO_UNIT
         const postProcessCost = params.dlp_post_processing
