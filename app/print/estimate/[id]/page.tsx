@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 export default function EstimatePrintPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const id = params?.id;
+    const isTemp = searchParams.get('temp') === 'true';
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
@@ -15,6 +17,21 @@ export default function EstimatePrintPage() {
     useEffect(() => {
         if (!id) return;
 
+        if (isTemp) {
+            // 임시 저장된 데이터 로드 (관리자 수정본)
+            try {
+                const stored = localStorage.getItem(`quote_temp_${id}`);
+                if (stored) {
+                    setData(JSON.parse(stored));
+                    setLoading(false);
+                    return;
+                }
+            } catch (e) {
+                console.error('Failed to load temp quote', e);
+            }
+        }
+
+        // 없으면 DB 로드
         fetch(`/api/admin/orders/${id}`)
             .then(res => res.json())
             .then(json => {
@@ -29,7 +46,7 @@ export default function EstimatePrintPage() {
                 console.error(err);
             })
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [id, isTemp]);
 
     useEffect(() => {
         if (!loading && data) {
