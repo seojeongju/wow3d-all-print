@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
 
 // 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
-const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPreset: (v: string | null) => void }>({ viewPreset: null, setViewPreset: () => {} })
+const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPreset: (v: string | null) => void }>({ viewPreset: null, setViewPreset: () => { } })
 
 // 로딩 컴포넌트
 function LoadingSpinner() {
@@ -106,11 +106,19 @@ function Model({
                     const loader = new OBJLoader()
                     const text = new TextDecoder().decode(arrayBuffer)
                     const object = loader.parse(text)
+
+                    const geometries: THREE.BufferGeometry[] = []
                     object.traverse((child) => {
-                        if ((child as THREE.Mesh).isMesh && !geo) {
-                            geo = (child as THREE.Mesh).geometry as THREE.BufferGeometry
+                        if ((child as THREE.Mesh).isMesh) {
+                            const g = (child as THREE.Mesh).geometry
+                            if (g) geometries.push(g)
                         }
                     })
+
+                    if (geometries.length > 0) {
+                        // 모든 메쉬를 하나로 병합하여 전체 분석 수행
+                        geo = geometries.length === 1 ? geometries[0] : (mergeBufferGeometries(geometries) ?? geometries[0])
+                    }
                 } else if (type === '3mf') {
                     const loader = new ThreeMFLoader()
                     const group = loader.parse(arrayBuffer)
@@ -329,103 +337,103 @@ export default function Scene({ compact = false }: SceneProps) {
     return (
         <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/20 pointer-events-none z-10" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/20 pointer-events-none z-10" />
 
-            {/* 3D Canvas */}
-            <div ref={canvasRef} className="w-full h-full">
-                <Canvas shadows dpr={[1, 2]} camera={{ position: [50, 50, 50], fov: 45 }}>
-                    <Suspense fallback={<LoadingSpinner />}>
-                        <Stage environment="city" intensity={0.6}>
-                            <Bounds fit clip observe margin={1.5}>
-                                <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
-                                <ViewPresetHandler />
-                            </Bounds>
-                        </Stage>
-                        <Grid
-                            renderOrder={-1}
-                            position={[0, -1, 0]}
-                            infiniteGrid
-                            cellSize={0.6}
-                            sectionSize={3}
-                            sectionColor="#4d4d66"
-                            cellColor="#1a1a33"
-                            fadeDistance={100}
+                {/* 3D Canvas */}
+                <div ref={canvasRef} className="w-full h-full">
+                    <Canvas shadows dpr={[1, 2]} camera={{ position: [50, 50, 50], fov: 45 }}>
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <Stage environment="city" intensity={0.6}>
+                                <Bounds fit clip observe margin={1.5}>
+                                    <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
+                                    <ViewPresetHandler />
+                                </Bounds>
+                            </Stage>
+                            <Grid
+                                renderOrder={-1}
+                                position={[0, -1, 0]}
+                                infiniteGrid
+                                cellSize={0.6}
+                                sectionSize={3}
+                                sectionColor="#4d4d66"
+                                cellColor="#1a1a33"
+                                fadeDistance={100}
+                            />
+                        </Suspense>
+                        <OrbitControls
+                            makeDefault
+                            enableDamping
+                            dampingFactor={0.05}
+                            minDistance={0.1}
+                            maxDistance={1000}
                         />
-                    </Suspense>
-                    <OrbitControls
-                        makeDefault
-                        enableDamping
-                        dampingFactor={0.05}
-                        minDistance={0.1}
-                        maxDistance={1000}
-                    />
-                </Canvas>
-            </div>
-
-            {/* 컨트롤 패널 (compact 모드에서는 숨김) */}
-            {!compact && (
-                <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
-                    <Button size="sm" variant="secondary" className="gap-2 shadow-lg backdrop-blur-sm bg-background/90" onClick={takeScreenshot}>
-                        <Download className="w-4 h-4" />
-                        스크린샷
-                    </Button>
-                    <Button size="sm" variant={showMeasurements ? "default" : "secondary"} className="gap-2 shadow-lg backdrop-blur-sm" onClick={() => setShowMeasurements(!showMeasurements)}>
-                        <Ruler className="w-4 h-4" />
-                        측정
-                    </Button>
+                    </Canvas>
                 </div>
-            )}
 
-            {/* 색상 선택 패널 */}
-            <div className="absolute bottom-4 right-4 z-20 bg-background/95 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg max-w-xs">
-                <div className="flex items-center gap-2 mb-3">
-                    <Palette className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">모델 색상</span>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                    {colorPresets.map((preset) => (
-                        <button
-                            key={preset.color}
-                            onClick={() => setModelColor(preset.color)}
-                            className={`
+                {/* 컨트롤 패널 (compact 모드에서는 숨김) */}
+                {!compact && (
+                    <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                        <Button size="sm" variant="secondary" className="gap-2 shadow-lg backdrop-blur-sm bg-background/90" onClick={takeScreenshot}>
+                            <Download className="w-4 h-4" />
+                            스크린샷
+                        </Button>
+                        <Button size="sm" variant={showMeasurements ? "default" : "secondary"} className="gap-2 shadow-lg backdrop-blur-sm" onClick={() => setShowMeasurements(!showMeasurements)}>
+                            <Ruler className="w-4 h-4" />
+                            측정
+                        </Button>
+                    </div>
+                )}
+
+                {/* 색상 선택 패널 */}
+                <div className="absolute bottom-4 right-4 z-20 bg-background/95 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg max-w-xs">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Palette className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold">모델 색상</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                        {colorPresets.map((preset) => (
+                            <button
+                                key={preset.color}
+                                onClick={() => setModelColor(preset.color)}
+                                className={`
                                 w-10 h-10 rounded-lg border-2 transition-all hover:scale-110
                                 ${modelColor === preset.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
                             `}
-                            style={{ backgroundColor: preset.color }}
-                            title={preset.name}
-                        />
-                    ))}
-                </div>
-            </div>
-
-            {/* 상태 표시 (compact에서는 숨김, 하단 스트립과 겹침 방지) */}
-            {!compact && (
-                <div className="absolute bottom-4 left-4 z-20">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs text-slate-400 font-medium">3D Viewer Active</span>
+                                style={{ backgroundColor: preset.color }}
+                                title={preset.name}
+                            />
+                        ))}
                     </div>
                 </div>
-            )}
 
-            {/* 뷰 프리셋: 홈, 전, 후, 좌, 우 */}
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
-                <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('home')} title="홈">
-                    <Home className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('front')} title="전(앞)">
-                    <ArrowUp className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('back')} title="후(뒤)">
-                    <ArrowDown className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('left')} title="좌">
-                    <ArrowLeft className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('right')} title="우">
-                    <ArrowRight className="w-4 h-4" />
-                </Button>
-            </div>
+                {/* 상태 표시 (compact에서는 숨김, 하단 스트립과 겹침 방지) */}
+                {!compact && (
+                    <div className="absolute bottom-4 left-4 z-20">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-xs text-slate-400 font-medium">3D Viewer Active</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* 뷰 프리셋: 홈, 전, 후, 좌, 우 */}
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('home')} title="홈">
+                        <Home className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('front')} title="전(앞)">
+                        <ArrowUp className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('back')} title="후(뒤)">
+                        <ArrowDown className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('left')} title="좌">
+                        <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('right')} title="우">
+                        <ArrowRight className="w-4 h-4" />
+                    </Button>
+                </div>
             </ViewPresetContext.Provider>
         </div>
     )
