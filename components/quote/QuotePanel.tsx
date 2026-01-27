@@ -177,7 +177,8 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const volumeTime = weightGrams * materialTimeFactor;
 
             // 2. 레이어 변경 및 Z축 이동 시간 (레이어당 0.002시간 = 7.2초)
-            const layerTimeFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.0003;
+            const baseLayerFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.02;
+            const layerTimeFactor = baseLayerFactor * 0.015;
             const movementTime = numLayers * layerTimeFactor;
 
             // 3. 표면적에 따른 외벽 출력 시간 보정 (cm² 당 0.001시간으로 하향 조정)
