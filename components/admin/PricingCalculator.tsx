@@ -98,7 +98,15 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const materialCost = (params.fdm_material_price_per_gram / KRW_TO_UNIT) * weightGrams
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.fdm_layer_height))
-        const estTimeHours = Math.max(1, numLayers * ep.fdm_layer_hours_factor)
+
+        // [개선된 알고리즘] 부피, 표면적, 높이를 모두 고려한 시간 산출
+        const materialTimeFactor = 0.1;
+        const volumeTime = weightGrams * materialTimeFactor;
+        const layerTimeFactor = (ep.fdm_layer_hours_factor ?? 0.02) * 0.1; // 기존 factor 비중 축소
+        const movementTime = numLayers * layerTimeFactor;
+        const surfaceTime = params.surfaceAreaCm2 * 0.005;
+
+        const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
         const supportCost = params.fdm_support_enabled
             ? (ep.fdm_support_per_cm2_krw / KRW_TO_UNIT) * params.surfaceAreaCm2

@@ -163,8 +163,27 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const weightGrams = volumeCm3 * adjustedDensity
             const materialCost = (pricePerGramKr / KRW_TO_UNIT) * weightGrams
             const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight))
-            const layerHours = (spec as any)?.fdm_layer_hours_factor ?? 0.02
-            const estTimeHours = Math.max(1, numLayers * layerHours)
+
+            // [개선된 알고리즘] 부피 기반 시간 산출
+            // 기존 단순 높이 비례 방식은 컵과 같이 속이 빈 모델의 특성을 반영하지 못함
+            // 개선: (부피 × 부피계수) + (높이 × 레이어계수)로 형상의 복잡도와 크기를 모두 반영
+
+            // 1. 부피에 따른 기본 출력 시간 (cm³ 당 약 3~6분 소요 가정, 인필 반영)
+            // adjustedDensity는 density * (infill/100)와 최소밀도 보정이 적용된 값
+            // 즉, 재료 소모량(g)에 비례하여 시간 산출 (대략 10g당 1시간)
+            const materialTimeFactor = 0.1; // 1g 출력에 0.1시간 (6분)
+            const volumeTime = weightGrams * materialTimeFactor;
+
+            // 2. 레이어 변경 및 Z축 이동 시간 (레이어당 0.002시간 = 7.2초)
+            const layerTimeFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.002;
+            const movementTime = numLayers * layerTimeFactor;
+
+            // 3. 표면적에 따른 외벽 출력 시간 보정 (cm² 당 0.005시간)
+            const surfaceTime = surfaceAreaCm2 * 0.005;
+
+            const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
+
+            // 비용 계산
             const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
             const supportCost = supportEnabled ? (supportPerCm2Kr / KRW_TO_UNIT) * surfaceAreaCm2 : 0
             const laborKr = (spec as any)?.fdm_labor_cost_krw ?? 6500
