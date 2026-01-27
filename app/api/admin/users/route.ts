@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { errorResponse, successResponse, requireAuth } from '@/lib/api-utils';
+import { errorResponse, successResponse, requireAdminAuth } from '@/lib/api-utils';
 
 /**
  * GET /api/admin/users - 사용자 목록 (관리자 전용)
@@ -9,18 +9,14 @@ import { errorResponse, successResponse, requireAuth } from '@/lib/api-utils';
  */
 export async function GET(req: NextRequest) {
     try {
-        const auth = await requireAuth(req);
-        if (auth instanceof Response) return auth;
-
         const { env } = getCloudflareContext();
         if (!env?.DB) return errorResponse('DB를 사용할 수 없습니다', 503);
 
-        const me = await env.DB.prepare('SELECT role FROM users WHERE id = ?')
-            .bind(auth.userId)
-            .first() as { role?: string } | null;
-        if (!me || me.role !== 'admin') {
-            return errorResponse('관리자만 접근할 수 있습니다', 403);
-        }
+        // 인증 및 store_id 획득
+        const auth = await requireAdminAuth(req, env.DB);
+        if (auth instanceof Response) return auth;
+
+        const { storeId } = auth;
 
         const q = (req.nextUrl.searchParams.get('q') || '').trim();
         let stmt;
@@ -29,17 +25,18 @@ export async function GET(req: NextRequest) {
             stmt = env.DB.prepare(
                 `SELECT id, email, name, phone, role, created_at 
                  FROM users 
-                 WHERE email LIKE ? OR name LIKE ? 
+                 WHERE store_id = ? AND (email LIKE ? OR name LIKE ?)
                  ORDER BY created_at DESC 
                  LIMIT 200`
-            ).bind(like, like);
+            ).bind(storeId, like, like);
         } else {
             stmt = env.DB.prepare(
                 `SELECT id, email, name, phone, role, created_at 
                  FROM users 
+                 WHERE store_id = ?
                  ORDER BY created_at DESC 
                  LIMIT 200`
-            );
+            ).bind(storeId);
         }
         const { results } = await stmt.all();
 
