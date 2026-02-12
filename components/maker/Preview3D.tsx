@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Center, Environment } from '@react-three/drei';
 import * as THREE from 'three';
+// @ts-ignore
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
 import { useMakerStore } from '@/store/useMakerStore';
 
