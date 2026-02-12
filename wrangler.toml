@@ -1,7 +1,7 @@
 # OpenNext for Cloudflare Workers
 # https://opennext.js.org/cloudflare/get-started
 
-name = "wow3d-all-print"
+name = "wow3d-2dto3d"
 main = ".open-next/worker.js"
 compatibility_date = "2024-12-30"
 compatibility_flags = [
