@@ -53,6 +53,10 @@ interface MakerState {
   addImportedSvg: (svg: ImportedSvg) => void;
   removeImportedSvg: (id: string) => void;
 
+  // Export
+  exportTrigger: number;
+  triggerExport: () => void;
+
   // Helpers
   updateCanvasSize: (width: number, height: number) => void;
 }
@@ -66,6 +70,7 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   strokeWidth: 5,
   strokeColor: '#000000',
   canvasSize: { width: 800, height: 600 },
+  exportTrigger: 0,
 
   extrusionHeight: 5,
   basePlateType: 'none',
@@ -125,6 +130,8 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   removeImportedSvg: (id) => set((state) => ({
     importedSvgs: state.importedSvgs.filter(s => s.id !== id)
   })),
+
+  triggerExport: () => set({ exportTrigger: Date.now() }),
 
   setTool: (tool) => set({ tool }),
   setStrokeWidth: (width) => set({ strokeWidth: width }),

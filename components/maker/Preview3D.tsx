@@ -8,11 +8,15 @@ import * as THREE from 'three';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
 import { useMakerStore } from '@/store/useMakerStore';
 
+import { Exporter } from './Exporter';
+
 export function Preview3D() {
     const { paths, importedSvgs, extrusionHeight, basePlateType, baseHeight, canvasSize } = useMakerStore();
 
     return (
         <Canvas camera={{ position: [0, -10, 10], fov: 45 }}>
+            <Exporter />
+
             {/* Lights */}
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 10]} intensity={1} castShadow />
@@ -25,7 +29,7 @@ export function Preview3D() {
 
             {/* Main Content */}
             <Center>
-                <group>
+                <group name="export-target">
                     {/* Base Plate */}
                     {basePlateType !== 'none' && (
                         <BasePlate
@@ -118,7 +122,7 @@ function ExtrudedSvg({ svgContent, height, baseHeight }: {
 
         // Flatten all paths into shapes
         const allShapes: THREE.Shape[] = [];
-        data.paths.forEach((path) => {
+        data.paths.forEach((path: any) => {
             const shapes = SVGLoader.createShapes(path);
             allShapes.push(...shapes);
         });

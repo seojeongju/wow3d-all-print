@@ -15,7 +15,7 @@ export function MakerWorkspace() {
         tool, setTool,
         strokeWidth, setStrokeWidth,
         extrusionHeight, setExtrusionHeight,
-        undo, clearCanvas
+        undo, clearCanvas, triggerExport
     } = useMakerStore();
 
     const [activeTab, setActiveTab] = useState('draw');
@@ -39,7 +39,7 @@ export function MakerWorkspace() {
 
                     <div className="w-px h-6 bg-gray-200 mx-1" />
 
-                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={triggerExport}>
                         <Download className="w-3 h-3 mr-1.5" />
                         STL
                     </Button>
