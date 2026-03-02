@@ -186,7 +186,7 @@ export default function Hero() {
                         </div>
 
                         {/* 중앙: 3D 플레이스홀더 (인터랙티브 3D 뷰어) */}
-                        <div className="relative flex-1 w-full min-h-[300px] flex items-center justify-center">
+                        <div className="relative flex-1 w-full min-h-[300px]">
                             <LandingHeroScene />
                         </div>
 

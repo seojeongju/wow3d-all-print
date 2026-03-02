@@ -36,7 +36,7 @@ export default function LandingHeroScene() {
     if (!mounted) return null;
 
     return (
-        <div className="w-full h-full relative group cursor-grab active:cursor-grabbing">
+        <div className="absolute inset-0 group cursor-grab active:cursor-grabbing">
             <Canvas
                 shadows
                 dpr={[1, 2]}

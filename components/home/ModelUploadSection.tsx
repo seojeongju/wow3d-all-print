@@ -47,7 +47,7 @@ export default function ModelUploadSection() {
                             <div className="flex flex-col items-center justify-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/10 min-h-[280px]">
                                 {!file ? (
                                     <>
-                                        <div className="w-full h-full min-h-[300px] flex items-center justify-center">
+                                        <div className="relative w-full h-full min-h-[300px]">
                                             <LandingHeroScene />
                                         </div>
                                         <p className="mt-2 text-sm text-white/40 font-medium">

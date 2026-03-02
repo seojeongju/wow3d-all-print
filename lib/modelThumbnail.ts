@@ -178,6 +178,7 @@ export type GenerateFromUrlOptions = {
   size?: number
   fileType?: ModelFileType
   fileName?: string
+  headers?: Record<string, string>
 }
 
 /**
@@ -194,7 +195,18 @@ export async function generateModelThumbnailFromUrl(
   if (!fileType) return null
 
   try {
-    const res = await fetch(url)
+    let fetchUrl = url;
+    if (!url.startsWith('http') && !url.startsWith('/api/') && !url.startsWith('blob:')) {
+      if (url.startsWith('quotes/')) {
+        fetchUrl = `/api/files/${url}`;
+      } else if (url.startsWith('/quotes/')) {
+        fetchUrl = `/api/files${url}`;
+      } else if (!url.startsWith('/')) {
+        fetchUrl = `/api/files/${url}`;
+      }
+    }
+
+    const res = await fetch(fetchUrl, { headers: options.headers })
     if (!res.ok) return null
     const buffer = await res.arrayBuffer()
     const geometry = await loadGeometryFromBufferAsync(buffer, fileType)

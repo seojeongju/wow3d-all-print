@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { generateModelThumbnailFromUrl } from '@/lib/modelThumbnail'
 import { Box, Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
 
 type ModelThumbnailProps = {
   fileUrl: string
@@ -24,6 +25,7 @@ export default function ModelThumbnail({
   className = '',
   size = 256,
 }: ModelThumbnailProps) {
+  const { sessionId, token, user } = useAuthStore()
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [dataUrl, setDataUrl] = useState<string | null>(null)
   const onReadyRef = useRef(onThumbnailReady)
@@ -38,7 +40,15 @@ export default function ModelThumbnail({
     setState('loading')
     setDataUrl(null)
 
-    generateModelThumbnailFromUrl(fileUrl, { size, fileName })
+    const headers: Record<string, string> = {}
+    if (token && user?.id) {
+      headers['Authorization'] = `Bearer ${token}`
+      headers['X-User-ID'] = String(user.id)
+    } else if (sessionId) {
+      headers['X-Session-ID'] = sessionId
+    }
+
+    generateModelThumbnailFromUrl(fileUrl, { size, fileName, headers })
       .then((url) => {
         if (cancelled) return
         if (url) {
