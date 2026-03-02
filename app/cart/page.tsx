@@ -4,28 +4,111 @@ import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import ModelThumbnail from '@/components/ModelThumbnail'
+import type { Quote } from '@/lib/types'
+
+type QuoteRow = {
+    id: number
+    file_name: string
+    file_size: number
+    file_url?: string
+    volume_cm3: number
+    surface_area_cm2: number
+    dimensions_x: number
+    dimensions_y: number
+    dimensions_z: number
+    print_method: string
+    fdm_material?: string
+    resin_type?: string
+    total_price: number
+    estimated_time_hours: number
+    created_at: string
+    updated_at: string
+}
+
+function toQuote(r: QuoteRow): Quote {
+    return {
+        id: r.id,
+        fileName: r.file_name,
+        fileSize: r.file_size,
+        fileUrl: r.file_url,
+        volumeCm3: r.volume_cm3,
+        surfaceAreaCm2: r.surface_area_cm2,
+        dimensionsX: r.dimensions_x,
+        dimensionsY: r.dimensions_y,
+        dimensionsZ: r.dimensions_z,
+        printMethod: r.print_method as 'fdm' | 'sla' | 'dlp',
+        fdmMaterial: r.fdm_material as Quote['fdmMaterial'],
+        resinType: r.resin_type as Quote['resinType'],
+        totalPrice: r.total_price,
+        estimatedTimeHours: r.estimated_time_hours,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+    }
+}
 
 export default function CartPage() {
-    const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems } = useCartStore()
-    const { isAuthenticated } = useAuthStore()
-    const { toast } = useToast()
+    const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems, addToCart } = useCartStore()
+    const { isAuthenticated, sessionId, token, user } = useAuthStore()
     const [isClearing, setIsClearing] = useState(false)
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
+    // 신규 추가: 저장된 견적 관련 상태
+    const [savedQuotes, setSavedQuotes] = useState<QuoteRow[]>([])
+    const [isLoadingSaved, setIsLoadingSaved] = useState(false)
+    const [activeTab, setActiveTab] = useState<'cart' | 'saved'>('cart')
+    const [addingId, setAddingId] = useState<number | null>(null)
+
     useEffect(() => {
-        if (items.length === 0) { setSelectedIds(new Set()); return }
+        if (items.length === 0) {
+            setSelectedIds(new Set())
+            // 장바구니가 비어있고 저장된 목록을 아직 안 불러왔다면 '저장 목록' 탭으로 자동 전환 의논
+            // (사용자 요청: "저장된 목록이 먼저 보이게")
+            return
+        }
         setSelectedIds((s) => {
             const kept = [...s].filter((id) => items.some((i) => i.id === id))
             return new Set(kept.length > 0 ? kept : items.map((i) => i.id))
         })
     }, [items])
+
+    // 저장된 견적 목록 불러오기
+    useEffect(() => {
+        const fetchSavedQuotes = async () => {
+            setIsLoadingSaved(true)
+            const headers: HeadersInit = {}
+            if (token && user?.id) {
+                headers['Authorization'] = `Bearer ${token}`
+                headers['X-User-ID'] = String(user.id)
+            } else {
+                headers['X-Session-ID'] = sessionId || ''
+            }
+
+            try {
+                const res = await fetch('/api/quotes', { headers })
+                const data = await res.json()
+                const quotes = Array.isArray(data?.data) ? data.data : []
+                setSavedQuotes(quotes)
+
+                // 사용자가 장바구니에 들어왔을 때 장바구니가 비어있고 저장된 목록이 있다면 저장된 목록 탭을 먼저 보여줌
+                if (items.length === 0 && quotes.length > 0) {
+                    setActiveTab('saved')
+                }
+            } catch (err) {
+                console.error('Failed to fetch saved quotes:', err)
+            } finally {
+                setIsLoadingSaved(false)
+            }
+        }
+
+        fetchSavedQuotes()
+    }, [sessionId, token, user?.id, items.length])
 
     const selectedItems = items.filter((i) => selectedIds.has(i.id))
     const selectedTotal = getTotalPriceForItems(selectedItems)
@@ -38,13 +121,13 @@ export default function CartPage() {
 
     const handleRemoveItem = (itemId: number) => {
         removeFromCart(itemId)
-        toast({ title: '✅ 항목 삭제됨', description: '장바구니에서 제거되었습니다' })
+        showToast.success('항목 삭제됨', '장바구니에서 제거되었습니다')
     }
 
     const handleDeleteSelected = () => {
         if (selectedIds.size === 0) return
         removeFromCartByIds(Array.from(selectedIds))
-        toast({ title: '✅ 선택 항목 삭제됨', description: `${selectedIds.size}개 항목이 제거되었습니다` })
+        showToast.success('선택 항목 삭제됨', `${selectedIds.size}개 항목이 제거되었습니다`)
     }
 
     const toggleSelect = (itemId: number) => {
@@ -59,14 +142,40 @@ export default function CartPage() {
         setTimeout(() => {
             clearCart()
             setIsClearing(false)
-            toast({
-                title: '✅ 장바구니 비움',
-                description: '모든 항목이 초기화되었습니다',
-            })
+            showToast.success('장바구니 비움', '모든 항목이 초기화되었습니다')
         }, 300)
     }
 
-    if (items.length === 0) {
+    const handleAddToCartFromSaved = async (row: QuoteRow) => {
+        setAddingId(row.id)
+        const headers: HeadersInit = { 'Content-Type': 'application/json' }
+        if (token && user?.id) {
+            headers['Authorization'] = `Bearer ${token}`
+            headers['X-User-ID'] = String(user.id)
+        } else {
+            headers['X-Session-ID'] = sessionId || ''
+        }
+
+        try {
+            const res = await fetch('/api/cart', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ quoteId: row.id, quantity: 1 }),
+            })
+            if (!res.ok) throw new Error('장바구니 추가 실패')
+            addToCart(toQuote(row), 1)
+            showToast.success('장바구니 담기', `${row.file_name}이(가) 추가되었습니다`)
+            setActiveTab('cart')
+        } catch (error) {
+            showToast.error('추가 실패', error)
+        } finally {
+            setAddingId(null)
+        }
+    }
+
+    const inCart = (quoteId: number) => items.some((i) => i.quoteId === quoteId)
+
+    if (items.length === 0 && savedQuotes.length === 0 && !isLoadingSaved) {
         return (
             <div className="min-h-screen bg-[#050505] text-white">
                 <Header />
@@ -82,23 +191,18 @@ export default function CartPage() {
                         <div className="space-y-3">
                             <h2 className="text-2xl font-bold text-white">장바구니가 비어있습니다</h2>
                             <p className="text-white/50 text-sm leading-relaxed">
-                                아직 장바구니에 담긴 3D 모델이 없습니다.<br />
+                                아직 담긴 모델이나 저장된 견적이 없습니다.<br />
                                 지금 바로 견적을 내고 최상의 출력을 경험하세요.
                             </p>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <Link href="/quotes" className="flex-1">
-                                <Button variant="outline" size="lg" className="w-full h-12 rounded-xl border-white/15 hover:bg-white/10 gap-2 font-semibold">
-                                    저장 목록
-                                </Button>
-                            </Link>
-                            <Link href="/quote" className="flex-1">
-                                <Button size="lg" className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90 gap-2 font-bold">
-                                    견적 시작하기 <ArrowRight className="w-4 h-4" />
-                                </Button>
-                            </Link>
+                        <Link href="/quote" className="inline-block">
+                            <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-black hover:bg-white/90 gap-2 font-bold transition-transform hover:scale-105">
+                                견적 시작하기 <ArrowRight className="w-4 h-4" />
+                            </Button>
+                        </Link>
+                        <div className="block pt-4">
+                            <Link href="/" className="text-xs text-white/40 hover:text-white/60">홈으로</Link>
                         </div>
-                        <Link href="/" className="text-xs text-white/40 hover:text-white/60">홈으로</Link>
                     </div>
                 </div>
             </div>
@@ -140,121 +244,173 @@ export default function CartPage() {
             </div>
 
             <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 max-w-7xl">
+                {/* Tab Switcher */}
+                <div className="flex items-center p-1 bg-white/[0.04] border border-white/10 rounded-2xl w-fit mb-8">
+                    <button
+                        onClick={() => setActiveTab('cart')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'cart' ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/50 hover:text-white'}`}
+                    >
+                        <ShoppingCart className="w-4 h-4" />
+                        장바구니 ({items.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('saved')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'saved' ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/50 hover:text-white'}`}
+                    >
+                        <FileText className="w-4 h-4" />
+                        저장 목록 ({savedQuotes.length})
+                    </button>
+                </div>
+
                 <div className="grid lg:grid-cols-[1fr_360px] gap-8 lg:gap-12">
 
-                    {/* Items List */}
+                    {/* Left Column: Items List OR Saved Quotes List */}
                     <div className="space-y-5">
-                        <div className="flex items-center gap-2 pb-2">
-                            <button
-                                type="button"
-                                onClick={toggleSelectAll}
-                                className="text-xs font-medium text-white/50 hover:text-white"
-                            >
-                                {selectedIds.size >= items.length ? '선택 해제' : '전체 선택'}
-                            </button>
-                            <span className="text-white/30">|</span>
-                            <span className="text-xs text-white/50">{selectedIds.size}개 선택</span>
-                        </div>
-                        <AnimatePresence mode="popLayout">
-                            {items.map((item) => (
-                                <motion.div
-                                    key={item.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -40 }}
-                                    transition={{ duration: 0.25 }}
-                                    className={`p-5 sm:p-6 rounded-2xl border transition-all group ${selectedIds.has(item.id) ? 'bg-white/[0.04] border-white/10 hover:border-white/15' : 'bg-white/[0.02] border-white/5 opacity-75'}`}
-                                >
-                                    <div className="flex flex-col sm:flex-row gap-6">
-                                        <label className="flex items-start gap-3 sm:items-center cursor-pointer shrink-0">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.has(item.id)}
-                                                onChange={() => toggleSelect(item.id)}
-                                                className="w-5 h-5 rounded border-white/30 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0"
-                                            />
-                                            <span className="text-xs text-white/50 sm:sr-only">주문에 포함</span>
-                                        </label>
-                                        <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
-                                            {item.quote?.thumbnailDataUrl ? (
-                                                <img src={item.quote.thumbnailDataUrl} alt="" className="w-full h-full object-contain" />
-                                            ) : item.quote?.fileUrl ? (
-                                                <ModelThumbnail
-                                                    fileUrl={item.quote.fileUrl}
-                                                    fileName={item.quote?.fileName || (item.quote as any)?.file_name}
-                                                    onThumbnailReady={(url) => setQuoteThumbnail(item.id, url)}
-                                                    size={256}
-                                                    className="w-full h-full"
-                                                />
-                                            ) : (
-                                                <Box className="w-10 h-10 text-white/20" />
-                                            )}
+                        {activeTab === 'cart' ? (
+                            <>
+                                <div className="flex items-center gap-2 pb-2">
+                                    <button
+                                        type="button"
+                                        onClick={toggleSelectAll}
+                                        className="text-xs font-medium text-white/50 hover:text-white"
+                                    >
+                                        {selectedIds.size >= items.length ? '선택 해제' : '전체 선택'}
+                                    </button>
+                                    <span className="text-white/30">|</span>
+                                    <span className="text-xs text-white/50">{selectedIds.size}개 선택</span>
+                                </div>
+                                <AnimatePresence mode="popLayout">
+                                    {items.length > 0 ? (
+                                        items.map((item) => (
+                                            <motion.div
+                                                key={item.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 16 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, x: -40 }}
+                                                className={`p-5 sm:p-6 rounded-2xl border transition-all group ${selectedIds.has(item.id) ? 'bg-white/[0.04] border-white/10 hover:border-white/15' : 'bg-white/[0.02] border-white/5 opacity-75'}`}
+                                            >
+                                                <div className="flex flex-col sm:flex-row gap-6">
+                                                    <label className="flex items-start gap-3 sm:items-center cursor-pointer shrink-0">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedIds.has(item.id)}
+                                                            onChange={() => toggleSelect(item.id)}
+                                                            className="w-5 h-5 rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
+                                                        />
+                                                    </label>
+                                                    <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                        {item.quote?.thumbnailDataUrl ? (
+                                                            <img src={item.quote.thumbnailDataUrl} alt="" className="w-full h-full object-contain" />
+                                                        ) : item.quote?.fileUrl ? (
+                                                            <ModelThumbnail
+                                                                fileUrl={item.quote.fileUrl}
+                                                                fileName={item.quote?.fileName || (item.quote as any)?.file_name}
+                                                                onThumbnailReady={(url) => setQuoteThumbnail(item.id, url)}
+                                                                size={256}
+                                                                className="w-full h-full"
+                                                            />
+                                                        ) : (
+                                                            <Box className="w-10 h-10 text-white/20" />
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0 flex flex-col justify-between gap-4">
+                                                        <div>
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <h3 className="font-semibold text-white truncate">
+                                                                    {item.quote?.fileName || (item.quote as any)?.file_name || '3D 모델'}
+                                                                </h3>
+                                                                <button onClick={() => handleRemoveItem(item.id)} className="p-2 text-white/40 hover:text-red-400">
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                            <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                                <div>
+                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">방식</dt>
+                                                                    <dd className="text-sm font-medium mt-0.5">{item.quote?.printMethod?.toUpperCase()}</dd>
+                                                                </div>
+                                                                <div>
+                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">소재</dt>
+                                                                    <dd className="text-sm font-medium mt-0.5 truncate">{item.quote?.fdmMaterial || item.quote?.resinType || '미지정'}</dd>
+                                                                </div>
+                                                                <div>
+                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">부피</dt>
+                                                                    <dd className="text-sm font-medium mt-0.5">{item.quote?.volumeCm3?.toFixed(1)}cm³</dd>
+                                                                </div>
+                                                                <div>
+                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">예상가</dt>
+                                                                    <dd className="text-sm font-bold text-primary mt-0.5">₩{Math.round((item.quote?.totalPrice || 0) * 1300).toLocaleString()}</dd>
+                                                                </div>
+                                                            </dl>
+                                                        </div>
+                                                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                                            <div className="flex items-center gap-1 bg-black/30 rounded-lg p-0.5 border border-white/5">
+                                                                <button onClick={() => handleQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1} className="w-8 h-8 flex items-center justify-center text-white/40 disabled:opacity-20"><Minus className="w-3 h-3" /></button>
+                                                                <span className="w-8 text-center text-xs font-bold">{item.quantity}</span>
+                                                                <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-white/40"><Plus className="w-3 h-3" /></button>
+                                                            </div>
+                                                            <span className="text-lg font-black tracking-tight">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity * 1300).toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    ) : (
+                                        <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                            <p className="text-white/30 text-sm">장바구니에 담긴 항목이 없습니다.</p>
                                         </div>
-
-                                        {/* Item Info */}
-                                        <div className="flex-1 min-w-0 flex flex-col justify-between gap-4">
-                                            <div>
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <h3 className="font-semibold text-base sm:text-lg text-white truncate">
-                                                        {item.quote?.fileName || (item.quote as any)?.file_name || '3D 모델'}
-                                                    </h3>
-                                                    <button
-                                                        onClick={() => handleRemoveItem(item.id)}
-                                                        className="p-2 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors shrink-0"
-                                                        aria-label="항목 삭제"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                    )}
+                                </AnimatePresence>
+                            </>
+                        ) : (
+                            /* Saved Quotes Tab Content */
+                            <div className="space-y-4">
+                                <AnimatePresence mode="popLayout">
+                                    {savedQuotes.length > 0 ? (
+                                        savedQuotes.map((row) => (
+                                            <motion.div
+                                                key={row.id}
+                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all flex flex-col sm:flex-row gap-5 items-center"
+                                            >
+                                                <div className="w-20 h-20 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                                    {row.file_url ? (
+                                                        <ModelThumbnail fileUrl={row.file_url} fileName={row.file_name} size={128} className="w-full h-full" />
+                                                    ) : (
+                                                        <Box className="w-8 h-8 text-white/20" />
+                                                    )}
                                                 </div>
-
-                                                <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
-                                                    <div>
-                                                        <dt className="text-xs text-white/50 font-medium">방식</dt>
-                                                        <dd className="text-sm font-medium text-white mt-0.5">{item.quote?.printMethod?.toUpperCase() || '—'}</dd>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-bold text-white truncate">{row.file_name}</h3>
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                                        <span className="text-xs text-white/40">{row.print_method?.toUpperCase()}</span>
+                                                        <span className="text-xs text-white/40">{row.volume_cm3?.toFixed(1)}cm³</span>
+                                                        <span className="text-xs font-bold text-white/70">₩{Math.round(row.total_price * 1300).toLocaleString()}</span>
                                                     </div>
-                                                    <div>
-                                                        <dt className="text-xs text-white/50 font-medium">소재</dt>
-                                                        <dd className="text-sm font-medium text-white mt-0.5 truncate">{item.quote?.fdmMaterial || item.quote?.resinType || '미지정'}</dd>
-                                                    </div>
-                                                    <div>
-                                                        <dt className="text-xs text-white/50 font-medium">부피</dt>
-                                                        <dd className="text-sm font-medium text-white mt-0.5">{item.quote?.volumeCm3?.toFixed(1) ?? '—'} cm³</dd>
-                                                    </div>
-                                                    <div>
-                                                        <dt className="text-xs text-white/50 font-medium">예상 소요</dt>
-                                                        <dd className="text-sm font-medium text-emerald-400 mt-0.5">~{Math.ceil((item.quote?.estimatedTimeHours || 0) + 24)}시간</dd>
-                                                    </div>
-                                                </dl>
-                                            </div>
-
-                                            <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                                                <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
-                                                    <button
-                                                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                                        disabled={item.quantity <= 1}
-                                                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                                    >
-                                                        <Minus className="w-4 h-4" />
-                                                    </button>
-                                                    <span className="w-10 text-center text-sm font-semibold text-white">{item.quantity}</span>
-                                                    <button
-                                                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </button>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className="block text-xs text-white/50">소계</span>
-                                                    <span className="text-lg font-bold text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity * 1300).toLocaleString()}</span>
+                                                <div className="flex gap-2 w-full sm:w-auto">
+                                                    <Button
+                                                        onClick={() => handleAddToCartFromSaved(row)}
+                                                        disabled={addingId === row.id || inCart(row.id)}
+                                                        className={`flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold gap-2 ${inCart(row.id) ? 'bg-white/10 text-white/40 border border-white/5' : 'bg-primary text-primary-foreground hover:scale-105'}`}
+                                                    >
+                                                        {addingId === row.id ? <Loader2 className="w-4 h-4 animate-spin" /> : inCart(row.id) ? '장바구니 담김' : (
+                                                            <>담기 <Plus className="w-4 h-4" /></>
+                                                        )}
+                                                    </Button>
                                                 </div>
-                                            </div>
+                                            </motion.div>
+                                        ))
+                                    ) : (
+                                        <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                            <p className="text-white/30 text-sm">저장된 견적이 없습니다.</p>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
                     </div>
 
                     {/* Summary Sidebar */}

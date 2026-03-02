@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail, Search } from 'lucide-react'
 import Link from 'next/link'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast-helper'
 import { motion } from 'framer-motion'
 import Script from 'next/script'
 
@@ -45,7 +45,6 @@ function CheckoutContent() {
     const idsParam = searchParams.get('ids')
     const orderItemIds = idsParam ? idsParam.split(',').map((s) => parseInt(s, 10)).filter((n) => !Number.isNaN(n)) : []
     const orderItems = orderItemIds.length > 0 ? items.filter((i) => orderItemIds.includes(i.id)) : items
-    const { toast } = useToast()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isAddressScriptLoaded, setIsAddressScriptLoaded] = useState(false)
@@ -65,11 +64,7 @@ function CheckoutContent() {
 
     const handleAddressSearch = () => {
         if (!window.daum?.Postcode) {
-            toast({
-                title: '주소 API 로딩 중',
-                description: '잠시 후 다시 시도해 주세요',
-                variant: 'destructive',
-            })
+            showToast.info('로딩 중', '주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
             return
         }
 
@@ -114,21 +109,13 @@ function CheckoutContent() {
         e.preventDefault()
 
         if (!formData.recipientName || !formData.recipientPhone || !formData.shippingAddress) {
-            toast({
-                title: '❌ 정보 부족',
-                description: '배송을 위한 필수 정보를 모두 입력해 주세요',
-                variant: 'destructive',
-            })
-            return
+            showToast.error('입력 확인', '배송을 위한 필수 정보를 모두 입력해 주세요.');
+            return;
         }
 
         if (!isAuthenticated && !formData.guestEmail?.trim()) {
-            toast({
-                title: '❌ 이메일 필요',
-                description: '비회원 주문 시 연락용 이메일을 입력해 주세요',
-                variant: 'destructive',
-            })
-            return
+            showToast.error('이메일 확인', '비회원 주문 시 연락용 이메일을 입력해 주세요.');
+            return;
         }
 
         setIsSubmitting(true)
@@ -166,10 +153,7 @@ function CheckoutContent() {
             const result = await response.json()
             removeFromCartByIds(orderItems.map((i) => i.id))
 
-            toast({
-                title: '✅ 주문 성공',
-                description: `주문이 접수되었습니다 (${result.data.orderNumber})`,
-            })
+            showToast.success('주문 성공', `주문이 접수되었습니다 (${result.data.orderNumber})`);
 
             const q = new URLSearchParams({
                 orderId: String(result.data.orderId),
@@ -180,11 +164,7 @@ function CheckoutContent() {
             router.push(`/order-complete?${q.toString()}`)
 
         } catch (error) {
-            toast({
-                title: '❌ 주문 실패',
-                description: error instanceof Error ? error.message : '주문 도중 문제가 발생했습니다',
-                variant: 'destructive',
-            })
+            showToast.error('주문 실패', error);
         } finally {
             setIsSubmitting(false)
         }

@@ -9,7 +9,8 @@ import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries }
 import { analyzeGeometry } from '@/lib/geometry'
 import { loadStepAsBufferGeometry } from '@/lib/stepLoader'
 import { Button } from '@/components/ui/button'
-import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MousePointer2, Touchpad, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
 const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPreset: (v: string | null) => void }>({ viewPreset: null, setViewPreset: () => { } })
@@ -290,6 +291,13 @@ export default function Scene({ compact = false }: SceneProps) {
     const [modelColor, setModelColor] = useState('#6366f1')
     const [showMeasurements, setShowMeasurements] = useState(false)
     const [viewPreset, setViewPreset] = useState<string | null>(null)
+    const [showGuide, setShowGuide] = useState(true)
+    const [colorPanelOpen, setColorPanelOpen] = useState(false)
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowGuide(false), 5000)
+        return () => clearTimeout(timer)
+    }, [])
 
     useEffect(() => {
         setMounted(true)
@@ -340,8 +348,8 @@ export default function Scene({ compact = false }: SceneProps) {
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/20 pointer-events-none z-10" />
 
                 {/* 3D Canvas */}
-                <div ref={canvasRef} className="w-full h-full">
-                    <Canvas shadows dpr={[1, 2]} camera={{ position: [50, 50, 50], fov: 45 }}>
+                <div ref={canvasRef} className="w-full h-full" style={{ touchAction: 'none' }}>
+                    <Canvas shadows dpr={[1, 2]} camera={{ position: [50, 50, 50], fov: 45 }} eventSource={canvasRef.current || undefined}>
                         <Suspense fallback={<LoadingSpinner />}>
                             <Stage environment="city" intensity={0.6}>
                                 <Bounds fit clip observe margin={1.5}>
@@ -366,44 +374,93 @@ export default function Scene({ compact = false }: SceneProps) {
                             dampingFactor={0.05}
                             minDistance={0.1}
                             maxDistance={1000}
+                            maxPolarAngle={Math.PI / 1.5}
                         />
                     </Canvas>
                 </div>
 
+                {/* 모바일 터치 가이드 */}
+                <AnimatePresence>
+                    {showGuide && !compact && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                        >
+                            <div className="bg-black/60 backdrop-blur-md p-6 rounded-3xl border border-white/20 flex flex-col items-center gap-4 text-white text-center shadow-2xl">
+                                <div className="flex gap-8">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 outline-dashed outline-1 outline-primary/50 animate-[spin_4s_linear_infinite]">
+                                            <MousePointer2 className="w-6 h-6 text-primary" />
+                                        </div>
+                                        <span className="text-xs font-bold">1 손가락<br />회전</span>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                                            <Touchpad className="w-6 h-6 text-blue-400" />
+                                        </div>
+                                        <span className="text-xs font-bold">2 손가락<br />확대/이동</span>
+                                    </div>
+                                </div>
+                                <Button size="sm" variant="outline" className="mt-2 pointer-events-auto rounded-full px-4 h-8 bg-white/10 text-[10px]" onClick={() => setShowGuide(false)}>알겠습니다</Button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* 컨트롤 패널 (compact 모드에서는 숨김) */}
                 {!compact && (
                     <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
-                        <Button size="sm" variant="secondary" className="gap-2 shadow-lg backdrop-blur-sm bg-background/90" onClick={takeScreenshot}>
+                        <Button size="sm" variant="secondary" className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm bg-background/90 rounded-xl" onClick={takeScreenshot}>
                             <Download className="w-4 h-4" />
-                            스크린샷
+                            <span className="hidden sm:inline">스크린샷</span>
                         </Button>
-                        <Button size="sm" variant={showMeasurements ? "default" : "secondary"} className="gap-2 shadow-lg backdrop-blur-sm" onClick={() => setShowMeasurements(!showMeasurements)}>
+                        <Button size="sm" variant={showMeasurements ? "default" : "secondary"} className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowMeasurements(!showMeasurements)}>
                             <Ruler className="w-4 h-4" />
-                            측정
+                            <span className="hidden sm:inline">치수측정</span>
+                        </Button>
+                        <Button size="icon" variant="secondary" className="sm:hidden h-10 w-10 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowGuide(true)}>
+                            <HelpCircle className="w-5 h-5" />
                         </Button>
                     </div>
                 )}
 
-                {/* 색상 선택 패널 */}
-                <div className="absolute bottom-4 right-4 z-20 bg-background/95 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg max-w-xs">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Palette className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-semibold">모델 색상</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                        {colorPresets.map((preset) => (
-                            <button
-                                key={preset.color}
-                                onClick={() => setModelColor(preset.color)}
-                                className={`
-                                w-10 h-10 rounded-lg border-2 transition-all hover:scale-110
-                                ${modelColor === preset.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
-                            `}
-                                style={{ backgroundColor: preset.color }}
-                                title={preset.name}
-                            />
-                        ))}
-                    </div>
+                {/* 색상 선택 패널 (모바일 대응 피봇) */}
+                <div className={`
+                    absolute bottom-4 right-4 z-20 transition-all duration-300
+                    ${colorPanelOpen ? 'w-[200px]' : 'w-12 h-12 rounded-xl'}
+                    bg-background/95 backdrop-blur-sm border border-border shadow-lg overflow-hidden
+                    ${!colorPanelOpen && 'flex items-center justify-center cursor-pointer hover:bg-background'}
+                `} onClick={() => !colorPanelOpen && setColorPanelOpen(true)}>
+                    {colorPanelOpen ? (
+                        <div className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Palette className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-semibold">모델 색상</span>
+                                </div>
+                                <button onClick={(e) => { e.stopPropagation(); setColorPanelOpen(false); }} className="hover:text-primary p-1">
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {colorPresets.map((preset) => (
+                                    <button
+                                        key={preset.color}
+                                        onClick={(e) => { e.stopPropagation(); setModelColor(preset.color); }}
+                                        className={`
+                                            w-8 h-8 rounded-lg border-2 transition-all hover:scale-110
+                                            ${modelColor === preset.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
+                                        `}
+                                        style={{ backgroundColor: preset.color }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <Palette className="w-5 h-5 text-primary" />
+                    )}
                 </div>
 
                 {/* 상태 표시 (compact에서는 숨김, 하단 스트립과 겹침 방지) */}

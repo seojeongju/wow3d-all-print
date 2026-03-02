@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import FileUpload from '@/components/upload/FileUpload';
 import { useFileStore } from '@/store/useFileStore';
+import LandingHeroScene from './LandingHeroScene';
 
 export default function ModelUploadSection() {
     const { file, reset } = useFileStore();
@@ -46,16 +47,11 @@ export default function ModelUploadSection() {
                             <div className="flex flex-col items-center justify-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/10 min-h-[280px]">
                                 {!file ? (
                                     <>
-                                        {/* 그라데이션 3D 큐브 아이콘 (이미지 1 스타일) */}
-                                        <motion.div
-                                            animate={{ rotate: [0, 5, -5, 0], y: [0, -8, 0] }}
-                                            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                                            className="w-40 h-40 md:w-48 md:h-48 rounded-2xl bg-gradient-to-br from-primary/90 via-primary/70 to-purple-600 flex items-center justify-center shadow-xl shadow-primary/20 rotate-6"
-                                        >
-                                            <Boxes className="w-20 h-20 md:w-24 md:h-24 text-white/95" strokeWidth={1.5} />
-                                        </motion.div>
-                                        <p className="mt-6 text-sm text-white/40 font-medium">
-                                            파일을 업로드하면 3D 미리보기가 활성화됩니다
+                                        <div className="w-full h-full min-h-[300px] flex items-center justify-center">
+                                            <LandingHeroScene />
+                                        </div>
+                                        <p className="mt-2 text-sm text-white/40 font-medium">
+                                            샘플 모델을 직접 돌려보고 확대해보세요
                                         </p>
                                     </>
                                 ) : (

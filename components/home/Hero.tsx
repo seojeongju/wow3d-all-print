@@ -8,6 +8,7 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
+import LandingHeroScene from './LandingHeroScene';
 
 const KRW_TO_UNIT = 1300;
 
@@ -30,8 +31,8 @@ export default function Hero() {
     const [materials, setMaterials] = useState<ApiMaterial[]>([]);
 
     useEffect(() => {
-        fetch('/api/print-specs').then((r) => r.json()).then((d) => d?.data && setPrintSpecs(d.data)).catch(() => {});
-        fetch('/api/materials').then((r) => r.json()).then((d) => Array.isArray(d?.data) && setMaterials(d.data)).catch(() => {});
+        fetch('/api/print-specs').then((r) => r.json()).then((d) => d?.data && setPrintSpecs(d.data)).catch(() => { });
+        fetch('/api/materials').then((r) => r.json()).then((d) => Array.isArray(d?.data) && setMaterials(d.data)).catch(() => { });
     }, []);
 
     const heroEstimate = useMemo(() => {
@@ -184,15 +185,9 @@ export default function Hero() {
                             </div>
                         </div>
 
-                        {/* 중앙: 3D 플레이스홀더 */}
-                        <div className="relative flex-1 flex items-center justify-center min-h-[200px] p-6">
-                            <motion.div
-                                animate={{ rotate: [0, 8, -8, 0], y: [0, -12, 0] }}
-                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                                className="w-36 h-36 rounded-2xl bg-gradient-to-br from-primary/90 via-primary/70 to-purple-600 flex items-center justify-center shadow-xl shadow-primary/25"
-                            >
-                                <Cuboid className="w-16 h-16 text-white/95" strokeWidth={1.5} />
-                            </motion.div>
+                        {/* 중앙: 3D 플레이스홀더 (인터랙티브 3D 뷰어) */}
+                        <div className="relative flex-1 w-full min-h-[300px] flex items-center justify-center">
+                            <LandingHeroScene />
                         </div>
 
                         {/* 하단: 부가 정보 텍스트 */}

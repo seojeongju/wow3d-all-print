@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Mail, Lock, User, Phone, Sparkles, Zap, Layers, ArrowRight, ShieldCheck } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast-helper'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -14,7 +14,6 @@ function AuthContent() {
     const [isLogin, setIsLogin] = useState(true)
     const [isLoading, setIsLoading] = useState(false)
     const { setUser } = useAuthStore()
-    const { toast } = useToast()
     const router = useRouter()
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('return') || undefined
@@ -51,19 +50,12 @@ function AuthContent() {
             const result = await response.json()
             setUser(result.data.user, result.data.token)
 
-            toast({
-                title: '로그인 성공',
-                description: `${result.data.user.name}님, 다시 만나서 반갑습니다.`,
-            })
+            showToast.success('로그인 성공', `${result.data.user.name}님, 다시 만나서 반갑습니다.`)
 
             const target = returnTo || (result.data.user?.role === 'admin' ? '/admin' : '/cart')
             router.push(target)
         } catch (error) {
-            toast({
-                title: '로그인 실패',
-                description: error instanceof Error ? error.message : '이메일 또는 비밀번호를 확인해 주세요.',
-                variant: 'destructive',
-            })
+            showToast.error('로그인 실패', error instanceof Error ? error.message : '이메일 또는 비밀번호를 확인해 주세요.')
         } finally {
             setIsLoading(false)
         }
@@ -96,18 +88,11 @@ function AuthContent() {
             const result = await response.json()
             setUser(result.data.user, result.data.token)
 
-            toast({
-                title: '회원가입 완료',
-                description: '계정이 생성되었습니다. 로그인된 상태로 이동합니다.',
-            })
+            showToast.success('회원가입 완료', '계정이 생성되었습니다. 로그인된 상태로 이동합니다.')
 
             router.push(returnTo || '/cart')
         } catch (error) {
-            toast({
-                title: '회원가입 실패',
-                description: error instanceof Error ? error.message : '입력 내용을 확인해 주세요.',
-                variant: 'destructive',
-            })
+            showToast.error('회원가입 실패', error instanceof Error ? error.message : '입력 내용을 확인해 주세요.')
         } finally {
             setIsLoading(false)
         }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast-helper'
 import { motion } from 'framer-motion'
 import {
   Select,
@@ -27,7 +27,7 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
 
 export default function ContactPage() {
   const { user, isAuthenticated, token } = useAuthStore()
-  const { toast } = useToast()
+
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -58,19 +58,19 @@ export default function ContactPage() {
     e.preventDefault()
 
     if (!formData.name?.trim()) {
-      toast({ title: '이름을 입력해 주세요.', variant: 'destructive' })
+      showToast.error('입력 확인', '이름을 입력해 주세요.')
       return
     }
     if (!formData.email?.trim()) {
-      toast({ title: '이메일을 입력해 주세요.', variant: 'destructive' })
+      showToast.error('입력 확인', '이메일을 입력해 주세요.')
       return
     }
     if (!formData.message?.trim()) {
-      toast({ title: '문의 내용을 입력해 주세요.', variant: 'destructive' })
+      showToast.error('입력 확인', '문의 내용을 입력해 주세요.')
       return
     }
     if (formData.message.trim().length < 10) {
-      toast({ title: '문의 내용은 10자 이상 입력해 주세요.', variant: 'destructive' })
+      showToast.error('입력 확인', '문의 내용은 10자 이상 입력해 주세요.')
       return
     }
 
@@ -98,18 +98,11 @@ export default function ContactPage() {
         throw new Error(json.error || '문의 접수에 실패했습니다.')
       }
 
-      toast({
-        title: '문의가 접수되었습니다.',
-        description: '입력하신 이메일로 답변드리겠습니다.',
-      })
+      showToast.success('문의가 접수되었습니다.', '입력하신 이메일로 답변드리겠습니다.')
 
       setFormData({ name: formData.name, email: formData.email, phone: '', category: '', subject: '', message: '' })
     } catch (err) {
-      toast({
-        title: '문의 접수 실패',
-        description: err instanceof Error ? err.message : '잠시 후 다시 시도해 주세요.',
-        variant: 'destructive',
-      })
+      showToast.error('문의 접수 실패', err)
     } finally {
       setIsSubmitting(false)
     }

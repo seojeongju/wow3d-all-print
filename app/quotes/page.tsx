@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
 import { Button } from '@/components/ui/button'
 import { FileText, ShoppingCart, Loader2, Boxes, ArrowRight, Plus, Home, Trash2, RotateCcw } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import ModelThumbnail from '@/components/ModelThumbnail'
@@ -57,7 +57,6 @@ export default function SavedQuotesPage() {
     const router = useRouter()
     const { sessionId, token, user } = useAuthStore()
     const { addToCart, items } = useCartStore()
-    const { toast } = useToast()
     const [quotes, setQuotes] = useState<QuoteRow[]>([])
     const [loading, setLoading] = useState(true)
     const [addingId, setAddingId] = useState<number | null>(null)
@@ -93,9 +92,9 @@ export default function SavedQuotesPage() {
             const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE', headers })
             if (!res.ok) throw new Error('삭제 실패')
             setQuotes((prev) => prev.filter((q) => q.id !== id))
-            toast({ title: '🗑️ 삭제 완료', description: '견적이 삭제되었습니다' })
-        } catch {
-            toast({ title: '❌ 삭제 실패', description: '다시 시도해 주세요', variant: 'destructive' })
+            showToast.success('삭제 완료', '견적이 삭제되었습니다')
+        } catch (error) {
+            showToast.error('삭제 실패', error)
         }
     }
 
@@ -122,9 +121,9 @@ export default function SavedQuotesPage() {
             if (!res.ok) throw new Error('장바구니 추가 실패')
             const q = toQuote(row)
             addToCart(q, 1)
-            toast({ title: '🛒 장바구니 담기', description: `${row.file_name}이(가) 장바구니에 담겼습니다` })
-        } catch {
-            toast({ title: '❌ 추가 실패', description: '다시 시도해 주세요', variant: 'destructive' })
+            showToast.success('장바구니 담기', `${row.file_name}이(가) 장바구니에 담겼습니다`)
+        } catch (error) {
+            showToast.error('추가 실패', error)
         } finally {
             setAddingId(null)
         }

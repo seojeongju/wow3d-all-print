@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Save, Trash2, Loader2, Printer, Pencil, Calculator, Zap } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
 import { Material, PrintSetting } from '@/lib/types'
+import { showToast } from '@/lib/toast-helper'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -66,7 +66,6 @@ const EQUIPMENT_DEFAULTS: Record<string, Partial<EquipmentRow>> = {
 }
 
 export default function AdminSettings() {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [materials, setMaterials] = useState<Material[]>([])
   const [settings, setSettings] = useState<PrintSetting[]>([])
@@ -192,7 +191,7 @@ export default function AdminSettings() {
       if (setData.success) setSettings(setData.data || [])
       if (eqData.success) setEquipment(eqData.data || [])
     } catch (e) {
-      toast({ title: '데이터 로딩 실패', variant: 'destructive' })
+      showToast.error('데이터 로딩 실패', e)
     } finally {
       setLoading(false)
     }
@@ -263,10 +262,10 @@ export default function AdminSettings() {
         } catch { /* non-JSON response */ }
         throw new Error(errMsg)
       }
-      toast({ title: `${type} 장비 설정 저장 완료` })
+      showToast.success(`${type} 장비 설정 저장 완료`)
       fetchData()
     } catch (e) {
-      toast({ title: '저장 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
+      showToast.error('저장 실패', e)
     } finally {
       setSavingEquip(null)
     }
@@ -284,9 +283,9 @@ export default function AdminSettings() {
     try {
       await fetch(`/api/admin/materials?id=${id}`, { method: 'DELETE' })
       setMaterials((m) => m.filter((x) => x.id !== id))
-      toast({ title: '소재 삭제 완료' })
-    } catch {
-      toast({ title: '삭제 실패', variant: 'destructive' })
+      showToast.success('소재 삭제 완료')
+    } catch (e) {
+      showToast.error('삭제 실패', e)
     }
   }
 
@@ -316,10 +315,10 @@ export default function AdminSettings() {
       }
       setIsAddingMaterial(false)
       fetchData()
-      toast({ title: '소재 추가 완료' })
+      showToast.success('소재 추가 완료')
       setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'] })
     } catch (e) {
-      toast({ title: '추가 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
+      showToast.error('추가 실패', e)
     }
   }
 
@@ -354,9 +353,9 @@ export default function AdminSettings() {
       }
       setEditingMaterial(null)
       fetchData()
-      toast({ title: '소재 수정 완료' })
+      showToast.success('소재 수정 완료')
     } catch (e) {
-      toast({ title: '수정 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
+      showToast.error('수정 실패', e)
     }
   }
 
@@ -372,9 +371,9 @@ export default function AdminSettings() {
         try { const j = await res.json(); if (j && typeof j.error === 'string') errMsg = j.error } catch { /* */ }
         throw new Error(errMsg)
       }
-      toast({ title: '가격 정책 저장 완료' })
+      showToast.success('가격 정책 저장 완료')
     } catch (e) {
-      toast({ title: '저장 실패', description: e instanceof Error ? e.message : undefined, variant: 'destructive' })
+      showToast.error('저장 실패', e)
     }
   }
 
@@ -811,7 +810,7 @@ export default function AdminSettings() {
               newForms.DLP = { ...equipForms.DLP, ...preset.equipment.dlp }
             }
             setEquipForms(newForms)
-            toast({ title: `"${preset.name}" 프리셋이 적용되었습니다`, description: '변경사항을 저장하려면 각 장비 탭에서 저장 버튼을 클릭하세요.' })
+            showToast.success(`"${preset.name}" 프리셋이 적용되었습니다`, '각 장비 탭에서 저장 버튼을 눌러 변경사항을 확정하세요.')
           }} />
         </TabsContent>
 

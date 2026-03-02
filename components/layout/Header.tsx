@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X } from "lucide-react";
+import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
@@ -154,75 +154,132 @@ export default function Header() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 top-0 z-[99] lg:hidden pt-[max(5rem,calc(5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+2rem))] px-6 bg-slate-950 backdrop-blur-xl overflow-y-auto"
-                        style={{ paddingLeft: 'max(1.5rem, env(safe-area-inset-left, 0px))', paddingRight: 'max(1.5rem, env(safe-area-inset-right, 0px))' }}
+                        className="fixed inset-0 top-0 z-[99] lg:hidden bg-slate-950/95 backdrop-blur-2xl"
                         onClick={() => setMobileOpen(false)}
                     >
-                        <nav className="flex flex-col gap-3 max-w-sm mx-auto" onClick={(e) => e.stopPropagation()}>
+                        <motion.nav
+                            initial="hidden"
+                            animate="show"
+                            variants={{
+                                hidden: { opacity: 0 },
+                                show: {
+                                    opacity: 1,
+                                    transition: {
+                                        staggerChildren: 0.05,
+                                        delayChildren: 0.1
+                                    }
+                                }
+                            }}
+                            className="flex flex-col gap-2.5 max-w-sm mx-auto h-full pt-[max(6rem,calc(6rem+env(safe-area-inset-top,0px)))] pb-10 px-6 overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="mb-4">
+                                <span className="text-[10px] font-bold text-primary/80 uppercase tracking-[0.2em] ml-1">Menu Navigation</span>
+                            </div>
+
                             {navItems.map((item) => (
-                                <Link
-                                    key={item.label}
-                                    href={item.href}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center"
-                                >
-                                    {item.label}
-                                </Link>
+                                <motion.div key={item.label} variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
+                                    <Link
+                                        href={item.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-100 bg-white/[0.03] border border-white/10 hover:bg-white/10 active:scale-[0.98] transition-all flex items-center group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+                                            {item.label === '서비스' && <Boxes className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
+                                            {item.label === '기능' && <Zap className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
+                                            {item.label === '공정' && <Layers className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
+                                            {item.label === '주문조회' && <Search className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
+                                            {item.label === '문의하기' && <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
+                                        </div>
+                                        <span className="group-hover:translate-x-1 transition-transform">{item.label}</span>
+                                        <ChevronRight className="w-4 h-4 ml-auto text-slate-600 group-hover:text-primary/50 transition-colors" />
+                                    </Link>
+                                </motion.div>
                             ))}
-                            <Link
-                                href="/cart"
-                                onClick={() => setMobileOpen(false)}
-                                className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center gap-3"
-                            >
-                                <ShoppingCart className="w-5 h-5 shrink-0 text-slate-300" />
-                                <span>장바구니</span>
-                                {cartItemCount > 0 && (
-                                    <span className="ml-auto min-w-[22px] h-[22px] px-1.5 flex items-center justify-center bg-primary text-white text-xs font-bold rounded-full">
-                                        {cartItemCount > 99 ? '99+' : cartItemCount}
-                                    </span>
-                                )}
-                            </Link>
+
+                            <div className="h-px bg-white/5 my-2" />
+
+                            <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
+                                <Link
+                                    href="/cart"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-100 bg-white/[0.03] border border-white/10 hover:bg-white/10 active:scale-[0.98] transition-all flex items-center gap-3 relative group"
+                                >
+                                    <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+                                        <ShoppingCart className="w-5 h-5" />
+                                    </div>
+                                    <span>장바구니</span>
+                                    {cartItemCount > 0 && (
+                                        <span className="ml-auto min-w-[22px] h-[22px] px-2 flex items-center justify-center bg-primary text-white text-[11px] font-black rounded-full shadow-lg shadow-primary/30">
+                                            {cartItemCount > 99 ? '99+' : cartItemCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            </motion.div>
+
                             {isAuthenticated ? (
                                 <>
-                                    <Link
-                                        href={user?.role === 'admin' ? '/admin' : '/my-account'}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center gap-3"
-                                    >
-                                        <User className="w-5 h-5 shrink-0 text-slate-300" />
-                                        <span>{user?.name}</span>
-                                        <span className="text-slate-400 text-xs">({user?.role === 'admin' ? '관리자' : '회원'})</span>
-                                    </Link>
-                                    <button
-                                        type="button"
-                                        onClick={() => { logout(); setMobileOpen(false); }}
-                                        className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-red-300 bg-slate-800/80 border border-slate-600/60 hover:bg-red-500/10 hover:border-red-500/30 active:bg-red-500/20 flex items-center gap-3 w-full text-left"
-                                    >
-                                        <LogOut className="w-5 h-5 shrink-0" />
-                                        로그아웃
-                                    </button>
+                                    <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
+                                        <Link
+                                            href={user?.role === 'admin' ? '/admin' : '/my-account'}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-100 bg-white/[0.03] border border-white/10 hover:bg-white/10 active:scale-[0.98] transition-all flex items-center gap-3 group"
+                                        >
+                                            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                <User className="w-5 h-5" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span>{user?.name}</span>
+                                                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{user?.role === 'admin' ? 'Administrator' : 'Premium Member'}</span>
+                                            </div>
+                                        </Link>
+                                    </motion.div>
+                                    <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => { logout(); setMobileOpen(false); }}
+                                            className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-red-300 bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 active:scale-[0.98] transition-all flex items-center gap-3 w-full text-left"
+                                        >
+                                            <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400">
+                                                <LogOut className="w-5 h-5" />
+                                            </div>
+                                            로그아웃
+                                        </button>
+                                    </motion.div>
                                 </>
                             ) : (
-                                <Link
-                                    href="/auth"
-                                    onClick={() => setMobileOpen(false)}
-                                    className="px-5 py-4 min-h-[48px] rounded-xl text-[15px] font-semibold text-slate-100 bg-slate-800 border border-slate-600/60 hover:bg-slate-700 active:bg-slate-600 flex items-center gap-3"
-                                >
-                                    <User className="w-5 h-5 shrink-0 text-slate-300" />
-                                    로그인
-                                </Link>
+                                <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
+                                    <Link
+                                        href="/auth"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-100 bg-white/[0.03] border border-white/10 hover:bg-white/10 active:scale-[0.98] transition-all flex items-center gap-3 group"
+                                    >
+                                        <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-400 transition-colors">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        로그인
+                                    </Link>
+                                </motion.div>
                             )}
-                            <Link
-                                href="/quote"
-                                onClick={() => { resetFileStore(); setMobileOpen(false); }}
-                                className="mt-2"
+
+                            <motion.div
+                                variants={{ hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } }}
+                                className="mt-4 pt-4 border-t border-white/5"
                             >
-                                <Button className="w-full h-14 min-h-[48px] rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-[15px] gap-2">
-                                    <Zap className="w-5 h-5" />
-                                    견적 받기
-                                </Button>
-                            </Link>
-                        </nav>
+                                <Link
+                                    href="/quote"
+                                    onClick={() => { resetFileStore(); setMobileOpen(false); }}
+                                >
+                                    <Button className="w-full h-16 rounded-2xl bg-white text-black hover:bg-slate-100 font-black text-[17px] gap-2 shadow-2xl shadow-white/5 group active:scale-[0.98] transition-all">
+                                        <Zap className="w-5 h-5 fill-black group-hover:scale-110 transition-transform" />
+                                        견적 시작하기
+                                    </Button>
+                                </Link>
+                                <p className="text-center text-[10px] text-white/30 font-medium mt-4 uppercase tracking-[0.3em]">
+                                    Wow3d Pro © 2024
+                                </p>
+                            </motion.div>
+                        </motion.nav>
                     </motion.div>
                 )}
             </AnimatePresence>

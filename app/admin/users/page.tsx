@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, Users } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast-helper';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     Select,
@@ -38,7 +38,6 @@ function getRoleBadge(role: string) {
 }
 
 export default function AdminUsersPage() {
-    const { toast } = useToast();
     const { user: currentUser, token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState<UserRow[]>([]);
@@ -62,11 +61,11 @@ export default function AdminUsersPage() {
             if (data.success) {
                 setUsers(Array.isArray(data.data) ? data.data : []);
             } else {
-                toast({ title: data.error || '사용자 목록 조회 실패', variant: 'destructive' });
+                showToast.error('사용자 목록 조회 실패', data);
             }
         } catch (e) {
             console.error('Failed to fetch users', e);
-            toast({ title: '사용자 목록 조회 실패', variant: 'destructive' });
+            showToast.error('사용자 목록 조회 실패', e);
         } finally {
             setLoading(false);
         }
@@ -78,7 +77,7 @@ export default function AdminUsersPage() {
 
     const handleRoleChange = async (userId: number, newRole: string) => {
         if (userId === currentUser?.id) {
-            toast({ title: '자신의 역할은 변경할 수 없습니다', variant: 'destructive' });
+            showToast.info('주의', '자신의 역할은 변경할 수 없습니다.');
             return;
         }
         setUpdatingId(userId);
@@ -96,12 +95,12 @@ export default function AdminUsersPage() {
                 setUsers((prev) =>
                     prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
                 );
-                toast({ title: '역할이 변경되었습니다.' });
+                showToast.success('역할이 변경되었습니다.');
             } else {
-                toast({ title: json.error || '변경 실패', variant: 'destructive' });
+                showToast.error('변경 실패', json);
             }
         } catch (e) {
-            toast({ title: '변경 중 오류가 발생했습니다.', variant: 'destructive' });
+            showToast.error('변경 중 오류가 발생했습니다.', e);
         } finally {
             setUpdatingId(null);
         }

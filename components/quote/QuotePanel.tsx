@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { useToast } from '@/hooks/use-toast'
+import { showToast } from '@/lib/toast-helper'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -36,7 +36,6 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     const { file, analysis } = useFileStore()
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
-    const { toast } = useToast()
     const [isSaving, setIsSaving] = useState(false)
 
     // Print Method Selection
@@ -342,17 +341,13 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {
-                toast({ title: '✅ 견적 저장됨', description: '회원: 내 견적함에 저장되었습니다' })
+                showToast.success('견적 저장됨', '회원: 내 견적함에 저장되었습니다.');
             } else {
-                toast({ title: '✅ 견적 저장됨', description: '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.' })
+                showToast.info('견적 저장됨', '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.');
             }
             return data
         } catch (error) {
-            toast({
-                title: '❌ 오류 발생',
-                description: error instanceof Error ? error.message : '저장 중 오류가 발생했습니다',
-                variant: 'destructive',
-            })
+            showToast.error('오류 발생', error);
             return null
         } finally {
             setIsSaving(false)
@@ -403,14 +398,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 updatedAt: new Date().toISOString(),
                 thumbnailDataUrl: thumbnailDataUrl || undefined,
             }
-            toast({ title: '🛒 장바구니 추가', description: '제품이 장바구니에 담겼습니다' })
+            showToast.success('장바구니 추가', '제품이 장바구니에 담겼습니다.');
             addToCart(quoteForCart as any, 1)
         } catch (error) {
-            toast({
-                title: '❌ 추가 실패',
-                description: error instanceof Error ? error.message : '오류가 발생했습니다',
-                variant: 'destructive',
-            })
+            showToast.error('추가 실패', error);
         }
     }
 
