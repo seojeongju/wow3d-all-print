@@ -95,7 +95,7 @@ export function Canvas2D() {
     }, [paths, currentPath, strokeWidth, strokeColor, tool]);
 
     return (
-        <div ref={containerRef} className="w-full h-full bg-white cursor-crosshair touch-none">
+        <div ref={containerRef} className="w-full h-full bg-[#fcfdff] cursor-crosshair touch-none">
             <canvas
                 ref={canvasRef}
                 width={800} // Fixed size for now to match parent

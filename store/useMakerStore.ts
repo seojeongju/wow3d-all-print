@@ -48,6 +48,7 @@ interface MakerState {
   setStrokeWidth: (width: number) => void;
   setExtrusionHeight: (height: number) => void;
   setBasePlateType: (type: 'none' | 'rect' | 'circle' | 'outline') => void;
+  setShowGrid: (show: boolean) => void;
 
   // Importer
   addImportedSvg: (svg: ImportedSvg) => void;
@@ -137,5 +138,6 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   setStrokeWidth: (width) => set({ strokeWidth: width }),
   setExtrusionHeight: (height) => set({ extrusionHeight: height }),
   setBasePlateType: (type) => set({ basePlateType: type }),
+  setShowGrid: (show) => set({ showGrid: show }),
   updateCanvasSize: (width, height) => set({ canvasSize: { width, height } })
 }));

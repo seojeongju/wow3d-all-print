@@ -9,7 +9,12 @@ import BentoFeatures from "@/components/home/BentoFeatures";
 import ModelUploadSection from "@/components/home/ModelUploadSection";
 import ProcessSection from "@/components/home/ProcessSection";
 import CTA from "@/components/home/CTA";
-import { MakerWorkspace } from "@/components/maker/MakerWorkspace";
+import dynamic from "next/dynamic";
+
+const MakerWorkspace = dynamic(
+  () => import("@/components/maker/MakerWorkspace").then((mod) => mod.MakerWorkspace),
+  { ssr: false }
+);
 
 export default function HomePage() {
   return (

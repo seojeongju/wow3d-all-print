@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Center, Environment } from '@react-three/drei';
+import { OrbitControls, Center, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 // @ts-ignore
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
@@ -11,24 +11,43 @@ import { useMakerStore } from '@/store/useMakerStore';
 import { Exporter } from './Exporter';
 
 export function Preview3D() {
-    const { paths, importedSvgs, extrusionHeight, basePlateType, baseHeight, canvasSize } = useMakerStore();
+    const { paths, importedSvgs, extrusionHeight, basePlateType, baseHeight, canvasSize, showGrid } = useMakerStore();
 
     return (
-        <Canvas camera={{ position: [0, -10, 10], fov: 45 }}>
+        <Canvas
+            shadows
+            camera={{ position: [0, -15, 15], fov: 40 }}
+            gl={{ antialias: true, alpha: true }}
+        >
             <Exporter />
 
-            {/* Lights */}
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 10]} intensity={1} castShadow />
+            {/* Premium Lighting Setup */}
+            <ambientLight intensity={0.4} />
+            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
+            <pointLight position={[-10, -10, 10]} intensity={0.5} />
+            <directionalLight
+                position={[5, 5, 20]}
+                intensity={0.8}
+                castShadow
+                shadow-mapSize={[2048, 2048]}
+            />
 
-            {/* Controls */}
-            <OrbitControls makeDefault />
+            {/* Controls with smooth behavior */}
+            <OrbitControls
+                makeDefault
+                enableDamping={true}
+                dampingFactor={0.1}
+                minDistance={2}
+                maxDistance={100}
+                maxPolarAngle={Math.PI / 1.5}
+                screenSpacePanning={true}
+            />
 
-            {/* Environment for nice reflections */}
+            {/* Environment for realistic reflections */}
             <Environment preset="city" />
 
             {/* Main Content */}
-            <Center>
+            <Center top>
                 <group name="export-target">
                     {/* Base Plate */}
                     {basePlateType !== 'none' && (
@@ -62,8 +81,22 @@ export function Preview3D() {
                 </group>
             </Center>
 
-            {/* Helper Grid */}
-            <gridHelper args={[20, 20]} rotation={[Math.PI / 2, 0, 0]} />
+            {/* Visual Polish: Shadows and Grid */}
+            <ContactShadows
+                position={[0, 0, -0.05]}
+                opacity={0.4}
+                scale={20}
+                blur={2.5}
+                far={1.5}
+            />
+
+            {showGrid && (
+                <gridHelper
+                    args={[30, 30, "#444", "#222"]}
+                    rotation={[Math.PI / 2, 0, 0]}
+                    position={[0, 0, -0.1]}
+                />
+            )}
         </Canvas>
     );
 }

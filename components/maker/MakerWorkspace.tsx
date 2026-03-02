@@ -16,6 +16,8 @@ export function MakerWorkspace() {
         tool, setTool,
         strokeWidth, setStrokeWidth,
         extrusionHeight, setExtrusionHeight,
+        basePlateType, setBasePlateType,
+        showGrid, setShowGrid,
         undo, clearCanvas, triggerExport
     } = useMakerStore();
 
@@ -149,6 +151,7 @@ export function MakerWorkspace() {
                         </h3>
 
                         <div className="space-y-6 relative">
+                            {/* Extrusion Height */}
                             <div>
                                 <div className="flex justify-between items-center mb-3">
                                     <label className="text-sm font-medium text-white/70">돌출 높이 (Z-Axis)</label>
@@ -160,6 +163,39 @@ export function MakerWorkspace() {
                                     onValueChange={([v]) => setExtrusionHeight(v)}
                                     className="pt-2"
                                 />
+                            </div>
+
+                            <div className="h-px bg-white/5" />
+
+                            {/* Base Plate Type */}
+                            <div>
+                                <label className="text-sm font-medium text-white/70 mb-3 block">바닥 판형 (Base Plate)</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(['none', 'rect'] as const).map((type) => (
+                                        <Button
+                                            key={type}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setBasePlateType(type)}
+                                            className={`text-[11px] h-9 border-white/10 transition-all ${basePlateType === type ? 'bg-primary/20 text-primary border-primary/40' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                        >
+                                            {type === 'none' ? '없음' : '사각형'}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-white/5" />
+
+                            {/* Grid Visibility */}
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-white/70">그리드 표시 (Grid)</label>
+                                <button
+                                    onClick={() => setShowGrid(!showGrid)}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showGrid ? 'bg-primary' : 'bg-white/10'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showGrid ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
                             </div>
                         </div>
                     </div>
