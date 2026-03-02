@@ -126,11 +126,24 @@ function renderGeometryToDataUrl(geometry: THREE.BufferGeometry, size: number): 
   renderer.setClearColor(0x000000, 0)
 
   const scene = new THREE.Scene()
+
+  // 조명 추가 (썸네일 모델이 선명하게 보이도록)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+  scene.add(ambientLight)
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1.5)
+  mainLight.position.set(10, 20, 10)
+  scene.add(mainLight)
+
+  const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
+  fillLight.position.set(-10, 0, -10)
+  scene.add(fillLight)
+
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000)
   const material = new THREE.MeshStandardMaterial({
     color: 0x6366f1,
-    roughness: 0.3,
-    metalness: 0.7,
+    roughness: 0.2,
+    metalness: 0.6,
     side: THREE.DoubleSide,
   })
   const mesh = new THREE.Mesh(geometry, material)
