@@ -47,24 +47,25 @@ export function ImageUploader() {
                 className="hidden"
             />
 
-            <Button
-                variant="ghost"
-                className="w-full flex justify-start gap-3 px-3 py-6 h-auto"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing}
-            >
-                <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
+            <div className="group relative w-full flex justify-center mt-2">
+                <Button
+                    variant="ghost"
+                    className="w-12 h-12 p-0 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,118,255,0.15)] flex flex-col items-center justify-center transition-all duration-300"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isProcessing}
+                >
                     {isProcessing ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                         <ImageIcon className="w-5 h-5" />
                     )}
+                </Button>
+                {/* Tooltip */}
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-2 bg-white/10 backdrop-blur-md border border-white/20 text-white whitespace-nowrap rounded font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-50">
+                    <div className="text-xs">이미지 스케치</div>
+                    <div className="text-[10px] text-white/50">JPG, PNG 파일</div>
                 </div>
-                <div className="text-left">
-                    <div className="font-medium text-sm">Upload Image</div>
-                    <div className="text-xs text-gray-500">JPG, PNG to 3D</div>
-                </div>
-            </Button>
+            </div>
         </>
     );
 }
