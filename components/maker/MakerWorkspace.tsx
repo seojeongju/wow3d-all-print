@@ -5,7 +5,7 @@ import { useMakerStore } from '@/store/useMakerStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap } from 'lucide-react';
+import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check } from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
@@ -21,10 +21,23 @@ export function MakerWorkspace() {
         extrusionHeight, setExtrusionHeight,
         basePlateType, setBasePlateType,
         showGrid, setShowGrid,
-        undo, clearCanvas, triggerExport
+        undo, clearCanvas, triggerExport,
+        addImportedSvg
     } = useMakerStore();
 
     const [activeTab, setActiveTab] = useState('draw');
+    const [pendingSvg, setPendingSvg] = useState<{ name: string; svgContent: string } | null>(null);
+
+    const handleAddPendingTo3D = () => {
+        if (!pendingSvg) return;
+        addImportedSvg({
+            id: crypto.randomUUID(),
+            name: pendingSvg.name,
+            svgContent: pendingSvg.svgContent
+        });
+        setPendingSvg(null);
+        setActiveTab('3d');
+    };
 
     return (
         <>
@@ -93,7 +106,7 @@ export function MakerWorkspace() {
 
                     <div className="w-8 h-px bg-white/10 my-2" />
                     <div className="w-full px-3 flex justify-center">
-                        <ImageUploader />
+                        <ImageUploader onSvgConverted={(data) => setPendingSvg(data)} />
                     </div>
                 </aside>
 
@@ -239,13 +252,65 @@ export function MakerWorkspace() {
                         </div>
                     </div>
 
-                    {/* Helper text */}
+                    {/* 이미지 → SVG 변환 결과: 돌출 높이 지정 후 3D에 추가 */}
+                    {pendingSvg && (
+                        <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5 shadow-xl">
+                            <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
+                                <ImagePlus className="w-4 h-4 text-primary" />
+                                이미지 → SVG → 돌출
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="text-[11px] text-white/70 space-y-1.5">
+                                    <p className="flex items-center gap-2">
+                                        <span className="inline-flex w-5 h-5 rounded-full bg-primary/30 text-primary text-[10px] font-bold items-center justify-center">1</span>
+                                        SVG 변환 완료
+                                    </p>
+                                    <p className="flex items-center gap-2">
+                                        <span className="inline-flex w-5 h-5 rounded-full bg-white/10 text-white/70 text-[10px] font-bold items-center justify-center">2</span>
+                                        아래 돌출 높이를 지정한 뒤
+                                    </p>
+                                    <p className="flex items-center gap-2">
+                                        <span className="inline-flex w-5 h-5 rounded-full bg-white/10 text-white/70 text-[10px] font-bold items-center justify-center">3</span>
+                                        [3D에 추가]를 누르세요.
+                                    </p>
+                                </div>
+                                <div className="rounded-xl overflow-hidden bg-black/40 border border-white/10 aspect-square max-h-32 flex items-center justify-center">
+                                    <img
+                                        src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(pendingSvg.svgContent)}`}
+                                        alt="SVG 미리보기"
+                                        className="max-w-full max-h-full object-contain"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-white/50 truncate" title={pendingSvg.name}>{pendingSvg.name}</p>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        className="flex-1 h-10 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+                                        onClick={handleAddPendingTo3D}
+                                    >
+                                        <Check className="w-4 h-4 mr-1.5" />
+                                        3D에 추가
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-10 px-4 text-xs rounded-xl border-white/20 text-white/70 hover:bg-white/10"
+                                        onClick={() => setPendingSvg(null)}
+                                    >
+                                        취소
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 도움말: 스케치/이미지 → 돌출 3D 출력 */}
                     <div className="mt-auto pt-6 border-t border-white/10">
                         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
                             <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                             <div className="text-xs text-white/60 leading-relaxed">
-                                <span className="text-white/90 font-semibold block mb-1">스마트 AI 렌더링</span>
-                                2D 스케치를 그리면 실시간으로 뒷단에서 3D 모델로 계산됩니다. <strong className="text-primary font-medium">결과물(3D)</strong> 탭을 클릭하여 확인하세요.
+                                <span className="text-white/90 font-semibold block mb-1">작업 순서</span>
+                                <strong className="text-primary font-medium">이미지</strong>: 업로드 → SVG 변환 → 오른쪽에서 돌출 높이 지정 → [3D에 추가]. <strong className="text-primary font-medium">스케치(2D)</strong>: 마우스로 그리면 바로 <strong className="text-primary font-medium">결과물(3D)</strong> 탭에서 확인 가능. <strong className="text-white/80">STL 저장</strong>으로 내보내기.
                             </div>
                         </div>
                     </div>

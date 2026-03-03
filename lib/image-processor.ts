@@ -5,10 +5,16 @@ import ImageTracer from 'imagetracerjs';
 
 const SVG_CONVERT_TIMEOUT_MS = 60000;
 
-export async function convertImageToSVG(file: File): Promise<string> {
+export async function convertImageToSVG(file: File, signal?: AbortSignal): Promise<string> {
+    const checkAbort = () => {
+        if (signal?.aborted) throw new DOMException('Conversion aborted', 'AbortError');
+    };
+
     const svgPromise = new Promise<string>((resolve, reject) => {
+        checkAbort();
         const reader = new FileReader();
         reader.onload = (e) => {
+            checkAbort();
             const dataUrl = e.target?.result as string;
             if (!dataUrl || typeof dataUrl !== 'string') {
                 reject(new Error('Failed to read file'));
@@ -16,6 +22,7 @@ export async function convertImageToSVG(file: File): Promise<string> {
             }
             const img = new Image();
             img.onload = () => {
+                checkAbort();
                 const options = {
                     ltres: 1,
                     qtres: 1,
@@ -35,6 +42,10 @@ export async function convertImageToSVG(file: File): Promise<string> {
                     blurdelta: 20
                 };
                 ImageTracer.imageToSVG(img.src, (svgstr: string) => {
+                    if (signal?.aborted) {
+                        reject(new DOMException('Conversion aborted', 'AbortError'));
+                        return;
+                    }
                     if (typeof svgstr !== 'string' || !svgstr.trim()) {
                         reject(new Error('ImageTracer returned empty SVG'));
                         return;
