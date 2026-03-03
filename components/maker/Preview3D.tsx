@@ -20,6 +20,24 @@ export function Preview3D() {
 
     if (!mounted) return <div className="w-full h-full bg-black/20 animate-pulse" />;
 
+    const hasPaths = paths.length > 0 && paths.some((p) => p.points.length >= 2);
+    const hasSvgs = importedSvgs.length > 0;
+    const hasBase = basePlateType !== 'none';
+    const hasContent = hasPaths || hasSvgs || hasBase;
+
+    if (!hasContent) {
+        return (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 bg-gradient-to-b from-[#0a0a0f] to-[#12121a]">
+                <p className="text-sm font-medium text-white/80 text-center">
+                    표시할 3D 모델이 없습니다
+                </p>
+                <p className="text-xs text-white/50 text-center max-w-[260px]">
+                    <strong className="text-white/70">스케치(2D)</strong> 탭에서 마우스로 그리거나, 왼쪽 도구에서 <strong className="text-white/70">이미지</strong>를 넣어 주세요.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <Canvas
             shadows

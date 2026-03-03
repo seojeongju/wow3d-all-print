@@ -9,6 +9,7 @@ import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap } fr
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
+import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { motion } from 'framer-motion';
 
 export function MakerWorkspace() {
@@ -108,9 +109,10 @@ export function MakerWorkspace() {
 
                         {/* 3D Preview Layer */}
                         <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-                            {/* Inner dark gradient for 3D view context */}
                             <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] to-[#12121a]" />
-                            <Preview3D />
+                            <Maker3DErrorBoundary onRetry={() => setActiveTab('draw')}>
+                                <Preview3D />
+                            </Maker3DErrorBoundary>
                         </div>
                     </motion.div>
                 </main>

@@ -10,12 +10,13 @@ const CANVAS_HEIGHT = 600;
 function getCanvasPoint(canvas: HTMLCanvasElement | null, clientX: number, clientY: number): { x: number; y: number } | null {
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-    };
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
 }
 
 export function Canvas2D() {

@@ -31,7 +31,12 @@ export function ImageUploader() {
             }
         } catch (error) {
             console.error('Failed to process image:', error);
-            alert('이미지 변환에 실패했습니다.');
+            const msg = error instanceof Error ? error.message : '';
+            alert(
+                msg.includes('decode') || msg.includes('load')
+                    ? '이미지를 불러올 수 없습니다. JPG/PNG 파일인지, 손상되지 않았는지 확인해 주세요.'
+                    : '이미지를 3D용으로 변환하지 못했습니다. 다른 이미지로 시도해 주세요.'
+            );
         } finally {
             setIsProcessing(false);
         }
