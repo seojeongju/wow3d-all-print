@@ -47,6 +47,7 @@ interface MakerState {
 
   setTool: (tool: 'pen' | 'eraser') => void;
   setStrokeWidth: (width: number) => void;
+  setStrokeColor: (color: string) => void;
   setExtrusionHeight: (height: number) => void;
   setBasePlateType: (type: 'none' | 'rect' | 'circle' | 'outline') => void;
   setShowGrid: (show: boolean) => void;
@@ -139,6 +140,7 @@ export const useMakerStore = create<MakerState>((set, get) => ({
 
   setTool: (tool) => set({ tool }),
   setStrokeWidth: (width) => set({ strokeWidth: width }),
+  setStrokeColor: (color) => set({ strokeColor: color }),
   setExtrusionHeight: (height) => set({ extrusionHeight: height }),
   setBasePlateType: (type) => set({ basePlateType: type }),
   setShowGrid: (show) => set({ showGrid: show }),

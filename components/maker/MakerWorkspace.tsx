@@ -15,6 +15,7 @@ export function MakerWorkspace() {
     const {
         tool, setTool,
         strokeWidth, setStrokeWidth,
+        strokeColor, setStrokeColor,
         extrusionHeight, setExtrusionHeight,
         basePlateType, setBasePlateType,
         showGrid, setShowGrid,
@@ -137,6 +138,33 @@ export function MakerWorkspace() {
                                         onValueChange={([v]) => setStrokeWidth(v)}
                                         className="cursor-pointer"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Brush Color */}
+                            <div>
+                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-4 block">색상 (Color)</label>
+                                <div className="flex gap-3">
+                                    {[
+                                        { id: 'white', value: '#ffffff' },
+                                        { id: 'neon-blue', value: '#00f0ff' },
+                                        { id: 'neon-pink', value: '#ff007f' },
+                                        { id: 'neon-green', value: '#39ff14' },
+                                        { id: 'neon-yellow', value: '#ccff00' },
+                                    ].map((c) => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => setStrokeColor(c.value)}
+                                            className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${strokeColor === c.value
+                                                ? 'border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.4)]'
+                                                : 'border-transparent hover:scale-110'
+                                                }`}
+                                            style={{
+                                                backgroundColor: c.value,
+                                                boxShadow: strokeColor === c.value ? `0 0 15px ${c.value}80` : undefined
+                                            }}
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         </div>
