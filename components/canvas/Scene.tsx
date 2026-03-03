@@ -141,7 +141,11 @@ function Model({
                     const bbox = geo.boundingBox
                     if (bbox) setBoundingBox(bbox)
 
-                    setGeometry(geo)
+                    // 클린업: 이전 geometry가 있다면 메모리 해제
+                    setGeometry(prev => {
+                        if (prev) prev.dispose()
+                        return geo
+                    })
 
                     try {
                         const analysis = analyzeGeometry(geo)
@@ -165,6 +169,14 @@ function Model({
         }
 
         loadModel()
+
+        // 컴포넌트 언마운트 시 geometry 메모리 해제
+        return () => {
+            setGeometry(prev => {
+                if (prev) prev.dispose()
+                return null
+            })
+        }
     }, [url, type, setAnalysis, bounds])
 
     if (isLoading) {
@@ -348,8 +360,18 @@ export default function Scene({ compact = false }: SceneProps) {
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/20 pointer-events-none z-10" />
 
                 {/* 3D Canvas */}
-                <div ref={canvasRef} className="w-full h-full" style={{ touchAction: 'none' }}>
-                    <Canvas shadows dpr={[1, 2]} camera={{ position: [50, 50, 50], fov: 45 }} eventSource={canvasRef.current || undefined}>
+                <div ref={canvasRef} className="w-full h-full relative z-0" style={{ touchAction: 'none' }}>
+                    <Canvas
+                        shadows
+                        dpr={[1, 2]}
+                        camera={{ position: [50, 50, 50], fov: 45 }}
+                        gl={{
+                            preserveDrawingBuffer: true,
+                            antialias: true,
+                            powerPreference: 'high-performance'
+                        }}
+                        eventSource={canvasRef.current || undefined}
+                    >
                         <Suspense fallback={<LoadingSpinner />}>
                             <Stage environment="city" intensity={0.6}>
                                 <Bounds fit clip observe margin={1.5}>
@@ -375,35 +397,75 @@ export default function Scene({ compact = false }: SceneProps) {
                             minDistance={0.1}
                             maxDistance={1000}
                             maxPolarAngle={Math.PI / 1.5}
+                            enableRotate={true}
+                            enableZoom={true}
+                            enablePan={true}
                         />
                     </Canvas>
                 </div>
 
-                {/* 모바일 터치 가이드 */}
+                {/* 마우스/터치 조작 가이드 */}
                 <AnimatePresence>
                     {showGuide && !compact && (
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
                             className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
                         >
-                            <div className="bg-black/60 backdrop-blur-md p-6 rounded-3xl border border-white/20 flex flex-col items-center gap-4 text-white text-center shadow-2xl">
-                                <div className="flex gap-8">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 outline-dashed outline-1 outline-primary/50 animate-[spin_4s_linear_infinite]">
-                                            <MousePointer2 className="w-6 h-6 text-primary" />
+                            <div className="bg-slate-900/90 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 flex flex-col items-center gap-8 text-white text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-[90%] w-[500px]">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl font-black uppercase tracking-tighter italic text-primary">Control Guide</h3>
+                                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">3D Viewer Manipulation</p>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-6 w-full">
+                                    {/* 회전 */}
+                                    <div className="flex flex-col items-center gap-3 group">
+                                        <div className="w-16 h-20 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-start p-2 relative overflow-hidden group-hover:border-primary/50 transition-colors">
+                                            <div className="w-full h-1/2 rounded-lg bg-primary/40 mb-1" />
+                                            <div className="w-3 h-3 rounded-full bg-white/20" />
+                                            <div className="absolute top-2 left-2 w-4 h-8 bg-primary rounded-sm animate-pulse" />
                                         </div>
-                                        <span className="text-xs font-bold">1 손가락<br />회전</span>
+                                        <div className="space-y-1">
+                                            <span className="text-[11px] font-black block leading-tight">좌클릭 / 1핑거</span>
+                                            <span className="text-[9px] text-white/40 font-bold uppercase">회전</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                                            <Touchpad className="w-6 h-6 text-blue-400" />
+
+                                    {/* 줌 */}
+                                    <div className="flex flex-col items-center gap-3 group">
+                                        <div className="w-16 h-20 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center p-2 group-hover:border-blue-500/50 transition-colors">
+                                            <div className="w-1.5 h-6 bg-blue-500 rounded-full animate-bounce" />
+                                            <div className="w-4 h-4 rounded-full border border-blue-500/30 mt-2" />
                                         </div>
-                                        <span className="text-xs font-bold">2 손가락<br />확대/이동</span>
+                                        <div className="space-y-1">
+                                            <span className="text-[11px] font-black block leading-tight">마우스 휠 / 핀치</span>
+                                            <span className="text-[9px] text-white/40 font-bold uppercase">줌 인/아웃</span>
+                                        </div>
+                                    </div>
+
+                                    {/* 이동 */}
+                                    <div className="flex flex-col items-center gap-3 group">
+                                        <div className="w-16 h-20 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-start p-2 relative overflow-hidden group-hover:border-emerald-500/50 transition-colors">
+                                            <div className="w-full h-1/2 rounded-lg bg-white/5 mb-1" />
+                                            <div className="w-3 h-3 rounded-full bg-white/20" />
+                                            <div className="absolute top-2 right-2 w-4 h-8 bg-emerald-500 rounded-sm animate-pulse" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[11px] font-black block leading-tight">우클릭 / 2핑거</span>
+                                            <span className="text-[9px] text-white/40 font-bold uppercase">화면 이동</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <Button size="sm" variant="outline" className="mt-2 pointer-events-auto rounded-full px-4 h-8 bg-white/10 text-[10px]" onClick={() => setShowGuide(false)}>알겠습니다</Button>
+
+                                <Button
+                                    size="sm"
+                                    className="pointer-events-auto rounded-full px-8 h-10 bg-white text-black hover:bg-white/90 font-black text-[11px] uppercase tracking-widest shadow-xl"
+                                    onClick={() => setShowGuide(false)}
+                                >
+                                    알겠습니다
+                                </Button>
                             </div>
                         </motion.div>
                     )}
