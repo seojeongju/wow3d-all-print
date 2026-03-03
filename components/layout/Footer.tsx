@@ -1,9 +1,15 @@
-'use client'
+'use client';
 
 import Link from 'next/link'
 import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Github, Twitter, Instagram, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 export default function Footer() {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
     return (
         <footer className="bg-[#030303] border-t border-white/5 pt-24 pb-12 relative overflow-hidden">
             {/* Ambient Background Blur */}
@@ -104,7 +110,7 @@ export default function Footer() {
                 {/* Bottom Bar */}
                 <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
-                        © {new Date().getFullYear()} WOW3D PRO. (주)와우3D. All rights reserved.
+                        {mounted ? `© ${new Date().getFullYear()} WOW3D PRO. (주)와우3D. All rights reserved.` : '© WOW3D PRO.'}
                     </div>
                     <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-white/40">
                         <Link href="/terms" className="hover:text-white transition-colors">이용약관</Link>

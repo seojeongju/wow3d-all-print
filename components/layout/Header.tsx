@@ -25,14 +25,18 @@ export default function Header() {
     const { reset: resetFileStore } = useFileStore()
     const cartItemCount = getTotalItems()
 
-    const navItems = NAV_ITEMS.map((item) =>
-        item.label === '주문조회' && user?.role === 'admin' ? { ...item, href: '/admin/orders' } : item
-    )
-
     const [isScrolled, setIsScrolled] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    const navItems = mounted
+        ? NAV_ITEMS.map((item) =>
+            item.label === '주문조회' && user?.role === 'admin' ? { ...item, href: '/admin/orders' } : item
+        )
+        : NAV_ITEMS
 
     useEffect(() => {
+        setMounted(true)
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 10)
         }
@@ -91,7 +95,7 @@ export default function Header() {
                         <button className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95" title="장바구니">
                             <ShoppingCart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                             <AnimatePresence>
-                                {cartItemCount > 0 && (
+                                {mounted && cartItemCount > 0 && (
                                     <motion.span
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
@@ -105,7 +109,7 @@ export default function Header() {
                         </button>
                     </Link>
 
-                    {isAuthenticated ? (
+                    {mounted && isAuthenticated ? (
                         <div className="flex items-center gap-2">
                             <Link href={user?.role === 'admin' ? '/admin' : '/my-account'}>
                                 <button className="flex items-center gap-2.5 pl-2 pr-3.5 py-2 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/10 transition-all">
@@ -214,7 +218,7 @@ export default function Header() {
                                         <ShoppingCart className="w-5 h-5" />
                                     </div>
                                     <span>장바구니</span>
-                                    {cartItemCount > 0 && (
+                                    {mounted && cartItemCount > 0 && (
                                         <span className="ml-auto min-w-[22px] h-[22px] px-2 flex items-center justify-center bg-primary text-white text-[11px] font-black rounded-full shadow-lg shadow-primary/30">
                                             {cartItemCount > 99 ? '99+' : cartItemCount}
                                         </span>

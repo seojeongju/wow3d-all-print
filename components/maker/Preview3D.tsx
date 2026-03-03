@@ -133,61 +133,46 @@ function BasePlate({ type, width, height, depth }: {
 function ExtrudedPath({ path, height, baseHeight }: {
     path: any, height: number, baseHeight: number
 }) {
-    const shape = useMemo(() => {
+    const scale = 0.02;
+
+    const curve = useMemo(() => {
         if (path.points.length < 2) return null;
 
-        const scale = 0.02;
-        const newShape = new THREE.Shape();
+        const points = path.points.map((p: any) =>
+            new THREE.Vector3(p.x * scale, -p.y * scale, 0)
+        );
 
-        // 고도화 알고리즘: 스케치 포인트를 기반으로 단면Shape를 형성
-        // 단순 선이 아닌 '면'의 개념으로 확장하여 돌출력과 가시성을 극대화합니다.
-        const firstPoint = path.points[0];
-        newShape.moveTo(firstPoint.x * scale, -firstPoint.y * scale);
-
-        for (let i = 1; i < path.points.length; i++) {
-            newShape.lineTo(path.points[i].x * scale, -path.points[i].y * scale);
-        }
-
-        return newShape;
+        // 점이 너무 적으면 보간이 안되므로 최소 2개 이상의 연속된 점 필요
+        return new THREE.CatmullRomCurve3(points);
     }, [path.points]);
 
-    if (!shape) return null;
+    if (!curve) return null;
 
     return (
         <group position={[0, 0, baseHeight]}>
-            {/* 알고리즘 개선: 풍부한 볼륨감을 위해 Extrude 알고리즘과 Bevel 시스템 적용 */}
+            {/* 고도화: 선을 입체적인 튜브로 렌더링하여 가시성과 모델링 품질을 보장 */}
             <mesh castShadow receiveShadow>
-                <extrudeGeometry
-                    args={[shape, {
-                        depth: height * 0.1, // 실제 돌출 높이 조절
-                        bevelEnabled: true,
-                        bevelThickness: 0.1,
-                        bevelSize: 0.1,
-                        bevelSegments: 5,
-                        curveSegments: 32
-                    }]}
+                <tubeGeometry
+                    args={[curve, 64, path.width * scale * 0.1, 8, false]}
                 />
                 <meshStandardMaterial
                     color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
                     roughness={0.1}
-                    metalness={0.9}
+                    metalness={0.8}
                     emissive={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
-                    emissiveIntensity={0.3}
+                    emissiveIntensity={0.2}
                 />
             </mesh>
 
-            {/* 조형미 강조를 위한 보조 메쉬 알고리즘 */}
-            <mesh position={[0, 0, 0.01]}>
-                <extrudeGeometry
-                    args={[shape, {
-                        depth: 0.05,
-                        bevelEnabled: false
-                    }]}
+            {/* 수직 방향 돌출감을 주기 위한 보조 렌더링 (옵션) */}
+            <mesh position={[0, 0, (height * 0.1) / 2]}>
+                <tubeGeometry
+                    args={[curve, 64, path.width * scale * 0.12, 8, false]}
                 />
                 <meshStandardMaterial
                     color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
-                    opacity={0.4}
                     transparent
+                    opacity={0.3}
                 />
             </mesh>
         </group>
