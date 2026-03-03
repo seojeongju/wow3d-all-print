@@ -1,23 +1,41 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useMemo, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 // @ts-ignore
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
 import { useMakerStore } from '@/store/useMakerStore';
 
-import { Exporter } from './Exporter';
+/** WebGL context 손실 감지 → 상위 state 갱신 후 render 단계에서 throw 해서 에러 바운더리 포착 */
+function ContextLossHandler({ onContextLost }: { onContextLost: () => void }) {
+    const { gl } = useThree();
+    const fired = useRef(false);
+    React.useEffect(() => {
+        const canvas = gl.domElement;
+        const onLost = (e: Event) => {
+            e.preventDefault();
+            if (fired.current) return;
+            fired.current = true;
+            onContextLost();
+        };
+        canvas.addEventListener('webglcontextlost', onLost, false);
+        return () => canvas.removeEventListener('webglcontextlost', onLost);
+    }, [gl, onContextLost]);
+    return null;
+}
 
 export function Preview3D() {
     const [mounted, setMounted] = React.useState(false);
+    const [webglContextLost, setWebglContextLost] = React.useState(false);
     const { paths, importedSvgs, extrusionHeight, basePlateType, baseHeight, canvasSize, showGrid } = useMakerStore();
 
     React.useEffect(() => {
         setMounted(true);
     }, []);
 
+    if (webglContextLost) throw new Error('WebGL context lost');
     if (!mounted) return <div className="w-full h-full bg-black/20 animate-pulse" />;
 
     const hasPaths = paths.length > 0 && paths.some((p) => p.points.length >= 2);
@@ -42,19 +60,28 @@ export function Preview3D() {
         <Canvas
             shadows
             camera={{ position: [0, -15, 15], fov: 40 }}
-            gl={{ antialias: true, alpha: true }}
+            gl={{
+                antialias: true,
+                alpha: true,
+                powerPreference: 'low-power',
+                stencil: false,
+                depth: true
+            }}
+            dpr={[1, 2]}
         >
-            <Exporter />
+            <ContextLossHandler onContextLost={() => setWebglContextLost(true)} />
 
-            {/* Premium Lighting Setup */}
+            {/* 조명: 그림자 1개만 사용해 GPU 부하 감소 */}
             <ambientLight intensity={0.6} />
-            <spotLight position={[20, 20, 20]} angle={0.2} penumbra={1} intensity={2} castShadow />
+            <spotLight position={[20, 20, 20]} angle={0.2} penumbra={1} intensity={2} />
             <pointLight position={[-20, -20, 20]} intensity={1} />
             <directionalLight
                 position={[10, 10, 30]}
                 intensity={1.2}
                 castShadow
-                shadow-mapSize={[2048, 2048]}
+                shadow-mapSize={1024}
+                shadow-camera-far={50}
+                shadow-bias={-0.0001}
             />
 
             {/* Controls with smooth behavior */}
@@ -166,10 +193,10 @@ function ExtrudedPath({ path, height, baseHeight }: {
 
     return (
         <group position={[0, 0, baseHeight]}>
-            {/* 선을 입체 튜브로 렌더링 (가시성: 반지름 = strokeWidth에 비례) */}
+            {/* 선을 입체 튜브 1개로 렌더 (세그먼트 감소로 rAF 부하 완화) */}
             <mesh castShadow receiveShadow>
                 <tubeGeometry
-                    args={[curve, 64, Math.max(0.03, path.width * scale * 0.2), 8, false]}
+                    args={[curve, 32, Math.max(0.03, path.width * scale * 0.2), 6, false]}
                 />
                 <meshStandardMaterial
                     color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
@@ -179,57 +206,79 @@ function ExtrudedPath({ path, height, baseHeight }: {
                     emissiveIntensity={0.2}
                 />
             </mesh>
-
-            {/* 돌출 높이만큼 위로 올라간 보조 튜브 (돌출감) */}
-            <mesh position={[0, 0, (height * 0.01) / 2]}>
-                <tubeGeometry
-                    args={[curve, 64, Math.max(0.025, path.width * scale * 0.18), 8, false]}
-                />
-                <meshStandardMaterial
-                    color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
-                    transparent
-                    opacity={0.35}
-                />
-            </mesh>
         </group>
     );
+}
+
+/** 이미지 SVG에서 생성하는 shape 수 제한 (과다 메시로 인한 WebGL Context Lost 방지) */
+const MAX_SHAPES_PER_SVG = 40;
+
+/** SVG 파싱 결과: shapes + bbox로 스케일/중심 계산, shape 수 제한 */
+function useParsedSvg(svgContent: string): { shapes: THREE.Shape[]; scale: number; centerX: number; centerY: number } | null {
+    return useMemo(() => {
+        try {
+            const loader = new SVGLoader();
+            const data = loader.parse(svgContent);
+            const allShapes: THREE.Shape[] = [];
+            (data.paths || []).forEach((path: any) => {
+                try {
+                    const created = SVGLoader.createShapes(path);
+                    if (created && created.length) allShapes.push(...created);
+                } catch (_) {
+                    /* path 하나 실패 시 스킵 */
+                }
+            });
+            if (allShapes.length === 0) return null;
+            const shapes = allShapes.slice(0, MAX_SHAPES_PER_SVG);
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            const getPoints = (s: THREE.Shape) => (typeof (s as any).getPoints === 'function' ? (s as any).getPoints(12) : (s as any).getSpacedPoints?.(12) ?? []);
+            shapes.forEach((shape) => {
+                const points = getPoints(shape);
+                points.forEach((p: THREE.Vector2) => {
+                    minX = Math.min(minX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x);
+                    maxY = Math.max(maxY, p.y);
+                });
+            });
+            const w = Math.max(1, maxX - minX);
+            const h = Math.max(1, maxY - minY);
+            const targetSize = 12;
+            const scale = Math.min(targetSize / w, targetSize / h, 0.05);
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            return { shapes, scale, centerX, centerY };
+        } catch (_) {
+            return null;
+        }
+    }, [svgContent]);
 }
 
 function ExtrudedSvg({ svgContent, height, baseHeight }: {
     svgContent: string, height: number, baseHeight: number
 }) {
-    const shapes = useMemo(() => {
-        const loader = new SVGLoader();
-        const data = loader.parse(svgContent);
+    const parsed = useParsedSvg(svgContent);
+    if (!parsed || parsed.shapes.length === 0) return null;
 
-        // Flatten all paths into shapes
-        const allShapes: THREE.Shape[] = [];
-        data.paths.forEach((path: any) => {
-            const shapes = SVGLoader.createShapes(path);
-            allShapes.push(...shapes);
-        });
-        return allShapes;
-    }, [svgContent]);
-
-    if (!shapes || shapes.length === 0) return null;
-
-    // Scale down SVG to match our world (SVG pixels -> World Units)
-    // Assuming 800px width ~ 16 units
-    const scale = 0.02;
+    const { shapes, scale, centerX, centerY } = parsed;
+    const depth = Math.max(0.5, height * 0.15);
 
     return (
-        <group position={[0, 0, baseHeight]} scale={[scale, -scale, 1]}> {/* Flip Y for SVG */}
-            {shapes.map((shape, i) => (
-                <mesh key={i} position={[0, 0, 0]}>
-                    <extrudeGeometry
-                        args={[shape, {
-                            depth: height / scale, // Adjust depth for scale
-                            bevelEnabled: false
-                        }]}
-                    />
-                    <meshStandardMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
-                </mesh>
-            ))}
+        <group
+            position={[0, 0, baseHeight]}
+            scale={[scale, -scale, 1]}
+        >
+            <group position={[-centerX, -centerY, 0]}>
+                {shapes.map((shape, i) => (
+                    <mesh key={i} position={[0, 0, 0]}>
+                        <extrudeGeometry
+                            args={[shape, { depth, bevelEnabled: false }]}
+                        />
+                        <meshStandardMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
+                    </mesh>
+                ))}
+            </group>
         </group>
     );
 }

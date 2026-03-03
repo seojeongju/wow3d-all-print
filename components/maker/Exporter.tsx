@@ -62,29 +62,48 @@ export function Exporter() {
                 exportGroup.add(boxMesh);
             }
 
-            // 3) 임포트된 SVG → 압출 메시 (있으면 동일 스케일로)
+            // 3) 임포트된 SVG → 압출 메시 (Preview3D와 동일 bbox 스케일/깊이)
             if (importedSvgs.length > 0) {
                 const loader = new SVGLoader();
+                const depth = Math.max(0.5, extrusionHeight * 0.15);
+                const targetSize = 12;
                 importedSvgs.forEach((svg) => {
                     try {
                         const data = loader.parse(svg.svgContent);
-                        const scale = SCENE_SCALE;
-                        data.paths.forEach((path: any) => {
-                            const shapes = SVGLoader.createShapes(path);
-                            shapes.forEach((shape: THREE.Shape) => {
-                                const geom = new THREE.ExtrudeGeometry(shape, {
-                                    depth: extrusionHeight / scale,
-                                    bevelEnabled: false
-                                });
-                                const mesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial());
-                                mesh.scale.set(scale, -scale, 1);
-                                mesh.position.z = baseHeight;
-                                exportGroup.add(mesh);
+                        const allShapes: THREE.Shape[] = [];
+                        (data.paths || []).forEach((path: any) => {
+                            try {
+                                const created = SVGLoader.createShapes(path);
+                                if (created?.length) allShapes.push(...created);
+                            } catch (_) { /* skip */ }
+                        });
+                        if (allShapes.length === 0) return;
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        const getPoints = (s: THREE.Shape) => (typeof (s as any).getPoints === 'function' ? (s as any).getPoints(12) : (s as any).getSpacedPoints?.(12) ?? []);
+                        allShapes.forEach((shape) => {
+                            getPoints(shape).forEach((p: THREE.Vector2) => {
+                                minX = Math.min(minX, p.x);
+                                minY = Math.min(minY, p.y);
+                                maxX = Math.max(maxX, p.x);
+                                maxY = Math.max(maxY, p.y);
                             });
                         });
-                    } catch (_) {
-                        // SVG 파싱 실패 시 스킵
-                    }
+                        const w = Math.max(1, maxX - minX);
+                        const h = Math.max(1, maxY - minY);
+                        const scale = Math.min(targetSize / w, targetSize / h, 0.05);
+                        const centerX = (minX + maxX) / 2;
+                        const centerY = (minY + maxY) / 2;
+                        const svgGroup = new THREE.Group();
+                        svgGroup.position.set(0, 0, baseHeight);
+                        svgGroup.scale.set(scale, -scale, 1);
+                        allShapes.forEach((shape) => {
+                            const geom = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+                            const mesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial());
+                            mesh.position.set(-centerX, -centerY, 0);
+                            svgGroup.add(mesh);
+                        });
+                        exportGroup.add(svgGroup);
+                    } catch (_) { /* skip this SVG */ }
                 });
             }
 

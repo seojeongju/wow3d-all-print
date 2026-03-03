@@ -3,25 +3,25 @@
 // @ts-ignore
 import ImageTracer from 'imagetracerjs';
 
+const SVG_CONVERT_TIMEOUT_MS = 60000;
+
 export async function convertImageToSVG(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
+    const svgPromise = new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-
         reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            if (!dataUrl || typeof dataUrl !== 'string') {
+                reject(new Error('Failed to read file'));
+                return;
+            }
             const img = new Image();
-            img.src = e.target?.result as string;
-
             img.onload = () => {
-                // Create an offscreen canvas to process the image
-                // Or directly use ImageTracer.imageToSVG(src, callback, options)
-
-                // Options for better results (customizable)
                 const options = {
                     ltres: 1,
                     qtres: 1,
                     pathomit: 8,
-                    colorsampling: 2, // 0: disabled, 1: random, 2: deterministic
-                    numberofcolors: 2, // Reduced colors for cleaner SVG (Black/White style)
+                    colorsampling: 2,
+                    numberofcolors: 2,
                     mincolorratio: 0.02,
                     colorquantcycles: 3,
                     scale: 1,
@@ -34,16 +34,27 @@ export async function convertImageToSVG(file: File): Promise<string> {
                     blurradius: 0,
                     blurdelta: 20
                 };
-
-                // ImageTracer reads from URL/Base64
                 ImageTracer.imageToSVG(img.src, (svgstr: string) => {
+                    if (typeof svgstr !== 'string' || !svgstr.trim()) {
+                        reject(new Error('ImageTracer returned empty SVG'));
+                        return;
+                    }
+                    if (!/<\s*path[\s>]/i.test(svgstr) && !/<\s*svg/i.test(svgstr)) {
+                        reject(new Error('No vector paths in image'));
+                        return;
+                    }
                     resolve(svgstr);
                 }, options);
             };
-
-            img.onerror = reject;
+            img.onerror = () => reject(new Error('Image load failed'));
+            img.src = dataUrl;
         };
-        reader.onerror = reject;
+        reader.onerror = () => reject(new Error('File read failed'));
         reader.readAsDataURL(file);
     });
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Image conversion timed out')), SVG_CONVERT_TIMEOUT_MS)
+    );
+    return Promise.race([svgPromise, timeoutPromise]);
 }

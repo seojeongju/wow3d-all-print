@@ -24,11 +24,8 @@ export function ImageUploader() {
                 name: file.name,
                 svgContent: svgContent
             });
-
-            // Clear input
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            alert('이미지가 3D용으로 변환되었습니다. 결과물(3D) 탭에서 확인하세요.');
         } catch (error) {
             console.error('Failed to process image:', error);
             const msg = error instanceof Error ? error.message : '';

@@ -10,6 +10,7 @@ import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
+import { Exporter } from '@/components/maker/Exporter';
 import { motion } from 'framer-motion';
 
 export function MakerWorkspace() {
@@ -26,6 +27,8 @@ export function MakerWorkspace() {
     const [activeTab, setActiveTab] = useState('draw');
 
     return (
+        <>
+        <Exporter />
         <div className="flex flex-col w-full max-w-6xl h-[800px] bg-[#0d0d0d]/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-black/80 ring-1 ring-white/5 mx-auto">
             {/* Header */}
             <header className="h-16 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-6 z-20">
@@ -107,12 +110,14 @@ export function MakerWorkspace() {
                             <Canvas2D />
                         </div>
 
-                        {/* 3D Preview Layer */}
+                        {/* 3D Preview Layer: 결과물(3D) 탭 선택 시에만 WebGL 마운트 → Context Lost 방지 */}
                         <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                             <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] to-[#12121a]" />
-                            <Maker3DErrorBoundary onRetry={() => setActiveTab('draw')}>
-                                <Preview3D />
-                            </Maker3DErrorBoundary>
+                            {activeTab === '3d' && (
+                                <Maker3DErrorBoundary onRetry={() => setActiveTab('draw')}>
+                                    <Preview3D />
+                                </Maker3DErrorBoundary>
+                            )}
                         </div>
                     </motion.div>
                 </main>
@@ -248,6 +253,7 @@ export function MakerWorkspace() {
                 </aside>
             </div>
         </div>
+        </>
     );
 }
 
