@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Center, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 // @ts-ignore
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
@@ -50,9 +50,7 @@ export function Preview3D() {
                 screenSpacePanning={true}
             />
 
-            {/* Environment for realistic reflections */}
-            <Environment preset="city" />
-
+            {/* HDR Environment 제거: 외부 URL 로드 실패 시 오류/Context Lost 방지. 조명만으로 렌더링 */}
             {/* Main Content */}
             <Center top>
                 <group name="export-target">
