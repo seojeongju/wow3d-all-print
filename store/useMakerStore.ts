@@ -64,6 +64,8 @@ interface MakerState {
   // Importer
   addImportedSvg: (svg: ImportedSvg) => void;
   removeImportedSvg: (id: string) => void;
+  addTripoModel: (model: TripoModel) => void;
+  removeTripoModel: (id: string) => void;
 
   // Export
   exportTrigger: number;
