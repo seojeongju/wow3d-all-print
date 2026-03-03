@@ -1,9 +1,9 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight } from "lucide-react";
+import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight, Printer } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     { label: '서비스', href: '/#services' },
     { label: '기능', href: '/#features' },
     { label: '공정', href: '/#process' },
+    { label: '제품소개', href: '/hardware/3d-printer' },
     { label: '주문조회', href: '/my-account' },
     { label: '문의하기', href: '/contact' },
 ];
