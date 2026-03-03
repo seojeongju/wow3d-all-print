@@ -10,6 +10,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import Image from 'next/image';
 
 /* ─────────────────────────────────────────────────────────────
    제품 데이터
@@ -22,7 +23,9 @@ const PRODUCTS = [
         name: 'P7 Pro',
         tagline: '소형 고정밀 — 복잡한 모델에 최적화',
         desc: '9K 해상도의 MSLA 방식으로 복잡한 구조와 정밀한 디테일을 요구하는 소형 출력물에 최적화된 엔트리 프로 모델.',
-        buildSize: '330 × 330 × 445 mm',
+        printerSize: '230 × 230 × 446 mm',
+        buildSize: '153 × 77 × 160 mm',
+        weight: '7.8 kg',
         resolution: '9K · 28~50 μm',
         speed: '최대 60 mm/h',
         led: '단일 구조 LED',
@@ -32,6 +35,7 @@ const PRODUCTS = [
         gradient: 'from-violet-500/10 via-transparent to-transparent',
         border: 'border-violet-500/20',
         glow: 'shadow-violet-500/10',
+        image: '/images/products/p7-pro.png',
     },
     {
         id: 'p10-pro',
@@ -40,7 +44,9 @@ const PRODUCTS = [
         name: 'P10 Pro',
         tagline: '중형 올라운더 — 볼륨과 디테일의 균형',
         desc: '228×128×250mm 빌드·14.85μm XY 픽셀로 애니메이션·피규어·중형 산업 부품까지 커버하는 베스트셀러 데스크탑 프로 모델.',
-        buildSize: '365 × 280 × 510 mm',
+        printerSize: '365 × 380 × 610 mm',
+        buildSize: '228 × 128 × 250 mm',
+        weight: '25.5 kg',
         resolution: '8K · 14.85 μm',
         speed: '최대 60 mm/h',
         led: '내장 활성탄소 필터',
@@ -50,6 +56,7 @@ const PRODUCTS = [
         gradient: 'from-primary/15 via-indigo-500/5 to-transparent',
         border: 'border-primary/40',
         glow: 'shadow-primary/20',
+        image: '/images/products/p10-pro.png',
     },
     {
         id: 'p13-pro',
@@ -58,7 +65,9 @@ const PRODUCTS = [
         name: 'P13 Pro',
         tagline: '대형·초고해상도 — 산업용 최상급',
         desc: '16K 패널과 91유닛 LED Matrix로 산업 최상급 해상도와 대형 빌드를 동시에 구현. 고정밀 산업·의료·덴탈 출력의 최종 선택.',
-        buildSize: '500 × 430 × 760 mm',
+        printerSize: '500 × 420 × 769 mm',
+        buildSize: '302 × 162 × 380 mm',
+        weight: '58 kg',
         resolution: '16K · 초고해상도',
         speed: '최대 60 mm/h',
         led: '91 units LED Matrix',
@@ -68,6 +77,7 @@ const PRODUCTS = [
         gradient: 'from-amber-500/10 via-transparent to-transparent',
         border: 'border-amber-500/20',
         glow: 'shadow-amber-500/10',
+        image: '/images/products/p13-pro.png',
     },
     {
         id: 'p13',
@@ -76,7 +86,9 @@ const PRODUCTS = [
         name: 'P13',
         tagline: '대형·효율 — 양산 환경 최적화',
         desc: '대형 빌드 볼륨과 효율적인 6K 해상도를 결합해 반복 양산 환경에 최적화. 비용 대비 최고의 생산성을 요구하는 현장을 위한 모델.',
-        buildSize: '500 × 430 × 760 mm',
+        printerSize: '500 × 420 × 769 mm',
+        buildSize: '277 × 156 × 380 mm',
+        weight: '58 kg',
         resolution: '6K · 양산 최적',
         speed: '최대 60 mm/h',
         led: '91 units LED Matrix',
@@ -86,6 +98,7 @@ const PRODUCTS = [
         gradient: 'from-emerald-500/10 via-transparent to-transparent',
         border: 'border-emerald-500/20',
         glow: 'shadow-emerald-500/10',
+        image: '/images/products/p13.png',
     },
 ];
 
@@ -347,12 +360,23 @@ export default function PrinterProductPage() {
                                     {product.tagline}
                                 </p>
 
+                                {/* 제품 이미지 추가 - 화이트 디스플레이 케이스 방식 */}
+                                <div className="relative w-full aspect-[4/3] mb-6 bg-white rounded-xl overflow-hidden group/img shadow-[inner_0_2px_4px_rgba(0,0,0,0.05)] border border-white/10">
+                                    <Image
+                                        src={product.image || ''}
+                                        alt={product.name}
+                                        fill
+                                        className="object-contain p-2 group-hover/img:scale-105 transition-transform duration-500 brightness-[1.02]"
+                                    />
+                                    {/* 유광 반사 효과 추가 */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-black/5 via-transparent to-transparent pointer-events-none" />
+                                </div>
+
                                 {/* 스펙 */}
                                 <div className="space-y-0">
-                                    <SpecRow label="PRINTER SIZE" value={product.buildSize} />
-                                    <SpecRow label="RESOLUTION" value={product.resolution} />
-                                    <SpecRow label="MAX SPEED" value={product.speed} />
-                                    <SpecRow label="CHAMBER" value={product.chamber} />
+                                    <SpecRow label="PRINTER SIZE" value={product.printerSize!} />
+                                    <SpecRow label="NET WEIGHT" value={product.weight!} />
+                                    <SpecRow label="BUILD VOLUME" value={product.buildSize} />
                                 </div>
 
                                 {activeProduct === product.id && (
@@ -385,25 +409,41 @@ export default function PrinterProductPage() {
                             하드웨어 스펙{' '}
                             <span className="text-primary">— {active.name}</span>
                         </h2>
-                        <p className="text-sm text-muted-foreground">카드를 클릭해 모델별 상세 스펙을 확인하세요.</p>
+                        <p className="text-sm text-muted-foreground mb-8">카드를 클릭하거나 메뉴를 선택해 모델별 상세 스펙을 확인하세요.</p>
+
+                        {/* 스펙 상세 섹션 전용 제품 선택 탭 */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {PRODUCTS.map((p) => (
+                                <button
+                                    key={`spec-tab-${p.id}`}
+                                    onClick={() => setActiveProduct(p.id)}
+                                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all duration-200 border ${activeProduct === p.id
+                                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                                        : 'border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 hover:bg-white/5'
+                                        }`}
+                                >
+                                    {p.name}
+                                </button>
+                            ))}
+                        </div>
                     </motion.div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
                         {[
                             {
-                                title: '빌드 사이즈', value: active.buildSize, icon: Layers,
+                                title: '빌드 볼륨', value: active.buildSize, icon: Layers,
                                 color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20',
                             },
                             {
-                                title: '해상도', value: active.resolution, icon: Cpu,
+                                title: '장비 규격', value: active.printerSize || '', icon: Zap,
                                 color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
                             },
                             {
-                                title: '최대 속도', value: active.speed, icon: Zap,
+                                title: '장비 무게', value: active.weight || '', icon: Cpu,
                                 color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
                             },
                             {
-                                title: '챔버 온도', value: active.chamber, icon: Thermometer,
+                                title: '해상도', value: active.resolution, icon: Thermometer,
                                 color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20',
                             },
                         ].map((spec, i) => (
@@ -438,7 +478,8 @@ export default function PrinterProductPage() {
                                 <Thermometer className="w-4 h-4 text-rose-400" /> 온도 · 환경
                             </h3>
                             <div className="space-y-1">
-                                <SpecRow label="환경 온도" value="18 – 28 °C (64 – 82 °F)" />
+                                <SpecRow label="장비 규격" value={active.printerSize || ''} />
+                                <SpecRow label="장비 무게" value={active.weight || ''} />
                                 <SpecRow label="챔버 가열" value={active.chamber} />
                                 <SpecRow label="공기 정화" value={active.led} />
                             </div>

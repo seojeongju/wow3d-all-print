@@ -1,17 +1,21 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Boxes, CheckCircle2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import FileUpload from '@/components/upload/FileUpload';
 import { useFileStore } from '@/store/useFileStore';
-import LandingHeroScene from './LandingHeroScene';
+import Scene from '@/components/canvas/Scene';
 
 export default function ModelUploadSection() {
     const { file, reset } = useFileStore();
-    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
-    const clearSampleIfPresent = () => { if (file && SAMPLE_NAMES.includes(file.name)) reset(); };
+
+    const handleQuoteClick = () => {
+        // 이미 파일이 업로드된 경우 견적 페이지로 이동 시 리셋이 필요한 경우에만 사용 (필요 시)
+        // 현재는 초기 상태가 비어있으므로 특별한 처리가 필요 없습니다.
+    };
 
     return (
         <section id="upload" className="py-24 md:py-32 bg-[#0a0a0a] relative overflow-hidden">
@@ -48,7 +52,9 @@ export default function ModelUploadSection() {
                                 {!file ? (
                                     <>
                                         <div className="relative w-full h-full min-h-[300px]">
-                                            <LandingHeroScene />
+                                            <div className="absolute inset-0">
+                                                <Scene compact />
+                                            </div>
                                         </div>
                                         <p className="mt-2 text-sm text-white/40 font-medium">
                                             샘플 모델을 직접 돌려보고 확대해보세요
@@ -61,7 +67,7 @@ export default function ModelUploadSection() {
                                         </div>
                                         <p className="text-lg font-semibold text-white mb-2">업로드 완료</p>
                                         <p className="text-sm text-white/50 mb-6">상세 견적과 3D 미리보기를 확인하세요</p>
-                                        <Link href="/quote" onClick={clearSampleIfPresent}>
+                                        <Link href="/quote" onClick={handleQuoteClick}>
                                             <Button size="lg" className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-lg shadow-primary/25">
                                                 <Zap className="w-4 h-4" />
                                                 견적 확인하기

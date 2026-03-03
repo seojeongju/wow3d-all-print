@@ -49,16 +49,19 @@ function QuoteContent() {
         load();
     }, [loadQuoteId, setFile]);
 
-    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
+    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
 
     // 샘플 견적 체험 후 실시간 견적 진입 시: 샘플 파일이면 제거 (업로드부터 다시)
     useEffect(() => {
-        const f = useFileStore.getState().file;
-        if (f && SAMPLE_NAMES.includes(f.name)) {
-            useFileStore.getState().reset();
-            setStep(1);
-        }
-    }, []);
+        const checkAndResetSample = () => {
+            const f = useFileStore.getState().file;
+            if (f && SAMPLE_NAMES.includes(f.name)) {
+                useFileStore.getState().reset();
+                setStep(1);
+            }
+        };
+        checkAndResetSample();
+    }, [setStep]);
 
     // Auto-advance to step 2 when file is uploaded and analyzed (in useEffect to avoid setState during render)
     useEffect(() => {

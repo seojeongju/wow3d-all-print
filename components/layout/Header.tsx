@@ -16,6 +16,7 @@ const NAV_ITEMS = [
     { label: '제품소개', href: '/hardware/3d-printer' },
     { label: '주문조회', href: '/my-account' },
     { label: '문의하기', href: '/contact' },
+    { label: '대리점 모집', href: '/partnership' },
 ];
 
 export default function Header() {
