@@ -357,10 +357,12 @@ export default function Scene({ compact = false }: SceneProps) {
     return (
         <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900/20 pointer-events-none z-10" />
-
-                {/* 3D Canvas */}
-                <div ref={canvasRef} className="w-full h-full relative z-0" style={{ touchAction: 'none' }}>
+                {/* 3D Canvas - 배경 방해 요소 제거 및 이벤트 직접 수신 설정 */}
+                <div
+                    ref={canvasRef}
+                    className="absolute inset-0 z-0 pointer-events-auto"
+                    style={{ touchAction: 'none' }}
+                >
                     <Canvas
                         shadows
                         dpr={[1, 2]}
