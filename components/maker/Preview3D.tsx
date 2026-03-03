@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Center, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Center, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 // @ts-ignore
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader';
@@ -29,7 +29,7 @@ function ContextLossHandler({ onContextLost }: { onContextLost: () => void }) {
 export function Preview3D() {
     const [mounted, setMounted] = React.useState(false);
     const [webglContextLost, setWebglContextLost] = React.useState(false);
-    const { paths, importedSvgs, extrusionHeight, basePlateType, baseHeight, canvasSize, showGrid } = useMakerStore();
+    const { paths, importedSvgs, tripoModels, extrusionHeight, basePlateType, baseHeight, canvasSize, showGrid } = useMakerStore();
 
     React.useEffect(() => {
         setMounted(true);
@@ -40,8 +40,9 @@ export function Preview3D() {
 
     const hasPaths = paths.length > 0 && paths.some((p) => p.points.length >= 2);
     const hasSvgs = importedSvgs.length > 0;
+    const hasTripo = tripoModels.length > 0;
     const hasBase = basePlateType !== 'none';
-    const hasContent = hasPaths || hasSvgs || hasBase;
+    const hasContent = hasPaths || hasSvgs || hasTripo || hasBase;
 
     if (!hasContent) {
         return (
@@ -127,6 +128,16 @@ export function Preview3D() {
                             height={extrusionHeight}
                             baseHeight={basePlateType !== 'none' ? baseHeight : 0}
                         />
+                    ))}
+
+                    {/* Tripo3D GLB models */}
+                    {tripoModels.map((m, index) => (
+                        <Suspense key={m.id} fallback={null}>
+                            <GlbFromUrl
+                                url={m.glbUrl}
+                                position={[index * 3, 0, 0]}
+                            />
+                        </Suspense>
                     ))}
                 </group>
             </Center>
@@ -279,6 +290,36 @@ function ExtrudedSvg({ svgContent, height, baseHeight }: {
                     </mesh>
                 ))}
             </group>
+        </group>
+    );
+}
+
+/** Tripo3D GLB from URL; scale to fit and position */
+function GlbFromUrl({ url, position }: { url: string; position: [number, number, number] }) {
+    const { scene } = useGLTF(url);
+    const cloned = useMemo(() => {
+        const s = scene.clone();
+        s.traverse((obj) => {
+            if ((obj as THREE.Mesh).isMesh) {
+                const mesh = obj as THREE.Mesh;
+                if (mesh.material) {
+                    const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+                    if ((mat as THREE.MeshStandardMaterial).emissive) (mat as THREE.MeshStandardMaterial).emissiveIntensity = 0.2;
+                }
+            }
+        });
+        return s;
+    }, [scene]);
+    const box = useMemo(() => {
+        const b = new THREE.Box3().setFromObject(cloned);
+        const size = new THREE.Vector3();
+        b.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        return 8 / maxDim;
+    }, [cloned]);
+    return (
+        <group position={position} scale={[box, box, box]}>
+            <primitive object={cloned} />
         </group>
     );
 }

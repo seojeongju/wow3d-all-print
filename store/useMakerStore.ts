@@ -20,10 +20,19 @@ interface ImportedSvg {
   svgContent: string;
 }
 
+export interface TripoModel {
+  id: string;
+  name: string;
+  taskId: string;
+  glbUrl: string;
+  createdAt: number;
+}
+
 interface MakerState {
   // Canvas State
   paths: Path[];
   importedSvgs: ImportedSvg[];
+  tripoModels: TripoModel[];
   currentPath: Point[];
   isDrawing: boolean;
   tool: 'pen' | 'eraser';
@@ -67,6 +76,7 @@ interface MakerState {
 export const useMakerStore = create<MakerState>((set, get) => ({
   paths: [],
   importedSvgs: [],
+  tripoModels: [],
   currentPath: [],
   isDrawing: false,
   tool: 'pen',
@@ -134,6 +144,14 @@ export const useMakerStore = create<MakerState>((set, get) => ({
 
   removeImportedSvg: (id) => set((state) => ({
     importedSvgs: state.importedSvgs.filter(s => s.id !== id)
+  })),
+
+  addTripoModel: (model) => set((state) => ({
+    tripoModels: [...state.tripoModels, model]
+  })),
+
+  removeTripoModel: (id) => set((state) => ({
+    tripoModels: state.tripoModels.filter(m => m.id !== id)
   })),
 
   triggerExport: () => set((state) => ({ exportTrigger: state.exportTrigger + 1 })),

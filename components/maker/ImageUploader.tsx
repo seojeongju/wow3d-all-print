@@ -3,13 +3,18 @@
 import React, { useRef, useState } from 'react';
 import { Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { convertImageToSVG } from '@/lib/image-processor';
+import { convertImageToSVG, removeBackground, type ConvertMode } from '@/lib/image-processor';
 
 type Props = {
     onSvgConverted: (data: { name: string; svgContent: string }) => void;
+    convertMode?: ConvertMode;
+    useRemoveBg?: boolean;
+    /** AI 3D(Tripo3D) 사용 시: 이미지 업로드 후 task_id만 콜백, SVG 변환 생략 */
+    useTripo3D?: boolean;
+    onTripoTaskId?: (data: { taskId: string; name: string }) => void;
 };
 
-export function ImageUploader({ onSvgConverted }: Props) {
+export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRemoveBg = false, useTripo3D = false, onTripoTaskId }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -31,7 +36,35 @@ export function ImageUploader({ onSvgConverted }: Props) {
         if (fileInputRef.current) fileInputRef.current.value = '';
 
         try {
-            const svgContent = await convertImageToSVG(file, signal);
+            if (useTripo3D && onTripoTaskId) {
+                const form = new FormData();
+                form.append('type', 'image_to_model');
+                form.append('image', file);
+                const res = await fetch('/api/maker/tripo3d', { method: 'POST', body: form, signal });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(json?.error ?? 'AI 3D 생성 요청 실패');
+                }
+                const taskId = json?.task_id;
+                if (!taskId) throw new Error('task_id를 받지 못했습니다.');
+                onTripoTaskId({ taskId, name: file.name });
+                return;
+            }
+
+            let imageToConvert: File = file;
+            if (useRemoveBg) {
+                try {
+                    imageToConvert = await removeBackground(file, signal);
+                } catch (bgErr) {
+                    const msg = bgErr instanceof Error ? bgErr.message : '';
+                    if (msg.includes('설정되지 않았습니다') || msg.includes('503')) {
+                        alert('배경 제거 기능이 설정되지 않았습니다. 배경 제거 없이 변환합니다.');
+                    } else {
+                        alert(`배경 제거 실패: ${msg}. 배경 제거 없이 변환합니다.`);
+                    }
+                }
+            }
+            const svgContent = await convertImageToSVG(imageToConvert, signal, convertMode);
             onSvgConverted({ name: file.name, svgContent });
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
