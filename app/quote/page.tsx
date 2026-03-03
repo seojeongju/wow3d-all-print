@@ -248,10 +248,9 @@ function QuoteContent() {
                     </div>
 
                     {/* Right Column: 3D Visualization - 뷰어는 어두운 배경 유지 */}
-                    <div className="relative flex flex-col bg-slate-950">
+                    <div className="relative flex flex-col bg-slate-950 overflow-hidden">
                         <div className="flex-1 relative group">
-                            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent pointer-events-none z-10" />
-                            <div className="h-full w-full">
+                            <div className="h-full w-full relative z-0">
                                 <Scene />
                             </div>
 

@@ -357,12 +357,8 @@ export default function Scene({ compact = false }: SceneProps) {
     return (
         <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
-                {/* 3D Canvas - 배경 방해 요소 제거 및 이벤트 직접 수신 설정 */}
-                <div
-                    ref={canvasRef}
-                    className="absolute inset-0 z-0 pointer-events-auto"
-                    style={{ touchAction: 'none' }}
-                >
+                {/* 3D Canvas - R3F 기본 시스템으로 복원 */}
+                <div className="absolute inset-0 z-0">
                     <Canvas
                         shadows
                         dpr={[1, 2]}
@@ -372,7 +368,6 @@ export default function Scene({ compact = false }: SceneProps) {
                             antialias: true,
                             powerPreference: 'high-performance'
                         }}
-                        eventSource={canvasRef.current || undefined}
                     >
                         <Suspense fallback={<LoadingSpinner />}>
                             <Stage environment="city" intensity={0.6}>
@@ -406,68 +401,36 @@ export default function Scene({ compact = false }: SceneProps) {
                     </Canvas>
                 </div>
 
-                {/* 마우스/터치 조작 가이드 */}
+                {/* 조작 가이드 - 하단 플로팅 바 형태로 변경 (전체화면 차단 방지) */}
                 <AnimatePresence>
                     {showGuide && !compact && (
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
                         >
-                            <div className="bg-slate-900/90 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 flex flex-col items-center gap-8 text-white text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-[90%] w-[500px]">
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-black uppercase tracking-tighter italic text-primary">Control Guide</h3>
-                                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">3D Viewer Manipulation</p>
+                            <div className="bg-slate-900/90 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 flex items-center gap-6 text-white text-xs shadow-2xl pointer-events-auto">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                    <span>좌클릭: 회전</span>
                                 </div>
-
-                                <div className="grid grid-cols-3 gap-6 w-full">
-                                    {/* 회전 */}
-                                    <div className="flex flex-col items-center gap-3 group">
-                                        <div className="w-16 h-20 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-start p-2 relative overflow-hidden group-hover:border-primary/50 transition-colors">
-                                            <div className="w-full h-1/2 rounded-lg bg-primary/40 mb-1" />
-                                            <div className="w-3 h-3 rounded-full bg-white/20" />
-                                            <div className="absolute top-2 left-2 w-4 h-8 bg-primary rounded-sm animate-pulse" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <span className="text-[11px] font-black block leading-tight">좌클릭 / 1핑거</span>
-                                            <span className="text-[9px] text-white/40 font-bold uppercase">회전</span>
-                                        </div>
-                                    </div>
-
-                                    {/* 줌 */}
-                                    <div className="flex flex-col items-center gap-3 group">
-                                        <div className="w-16 h-20 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center p-2 group-hover:border-blue-500/50 transition-colors">
-                                            <div className="w-1.5 h-6 bg-blue-500 rounded-full animate-bounce" />
-                                            <div className="w-4 h-4 rounded-full border border-blue-500/30 mt-2" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <span className="text-[11px] font-black block leading-tight">마우스 휠 / 핀치</span>
-                                            <span className="text-[9px] text-white/40 font-bold uppercase">줌 인/아웃</span>
-                                        </div>
-                                    </div>
-
-                                    {/* 이동 */}
-                                    <div className="flex flex-col items-center gap-3 group">
-                                        <div className="w-16 h-20 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-start p-2 relative overflow-hidden group-hover:border-emerald-500/50 transition-colors">
-                                            <div className="w-full h-1/2 rounded-lg bg-white/5 mb-1" />
-                                            <div className="w-3 h-3 rounded-full bg-white/20" />
-                                            <div className="absolute top-2 right-2 w-4 h-8 bg-emerald-500 rounded-sm animate-pulse" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <span className="text-[11px] font-black block leading-tight">우클릭 / 2핑거</span>
-                                            <span className="text-[9px] text-white/40 font-bold uppercase">화면 이동</span>
-                                        </div>
-                                    </div>
+                                <div className="w-px h-4 bg-white/10" />
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                    <span>휠: 확대/축소</span>
                                 </div>
-
-                                <Button
-                                    size="sm"
-                                    className="pointer-events-auto rounded-full px-8 h-10 bg-white text-black hover:bg-white/90 font-black text-[11px] uppercase tracking-widest shadow-xl"
+                                <div className="w-px h-4 bg-white/10" />
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>우클릭: 이동</span>
+                                </div>
+                                <button
+                                    className="ml-4 p-1 hover:bg-white/10 rounded-md transition-colors"
                                     onClick={() => setShowGuide(false)}
                                 >
-                                    알겠습니다
-                                </Button>
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
                             </div>
                         </motion.div>
                     )}
