@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { simplifyPoints, smoothPoints } from '@/lib/sketch-optimizer';
 
 interface Point {
   x: number;
@@ -69,7 +70,7 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   isDrawing: false,
   tool: 'pen',
   strokeWidth: 5,
-  strokeColor: '#000000',
+  strokeColor: '#ffffff',
   canvasSize: { width: 800, height: 600 },
   exportTrigger: 0,
 
@@ -104,10 +105,12 @@ export const useMakerStore = create<MakerState>((set, get) => ({
       return;
     }
 
+    const optimizedPoints = smoothPoints(simplifyPoints(currentPath, 1), 2);
+
     const newPath: Path = {
       id: crypto.randomUUID(),
-      points: currentPath,
-      color: tool === 'eraser' ? '#ffffff' : strokeColor, // Simplistic eraser
+      points: optimizedPoints,
+      color: tool === 'eraser' ? '#0f172a' : strokeColor, // Match canvas background
       width: strokeWidth
     };
 
@@ -132,7 +135,7 @@ export const useMakerStore = create<MakerState>((set, get) => ({
     importedSvgs: state.importedSvgs.filter(s => s.id !== id)
   })),
 
-  triggerExport: () => set({ exportTrigger: Date.now() }),
+  triggerExport: () => set((state) => ({ exportTrigger: state.exportTrigger + 1 })),
 
   setTool: (tool) => set({ tool }),
   setStrokeWidth: (width) => set({ strokeWidth: width }),

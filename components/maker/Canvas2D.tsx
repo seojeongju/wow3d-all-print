@@ -83,7 +83,8 @@ export function Canvas2D() {
         if (currentPath.length > 1) {
             ctx.beginPath();
             ctx.lineWidth = strokeWidth;
-            ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : strokeColor; // Eraser simulates white stroke for now
+            // Eraser 컬러를 캔버스 배경색과 일치시킴
+            ctx.strokeStyle = tool === 'eraser' ? '#0f172a' : strokeColor;
 
             ctx.moveTo(currentPath[0].x, currentPath[0].y);
             for (let i = 1; i < currentPath.length; i++) {
@@ -95,7 +96,7 @@ export function Canvas2D() {
     }, [paths, currentPath, strokeWidth, strokeColor, tool]);
 
     return (
-        <div ref={containerRef} className="w-full h-full bg-[#fcfdff] cursor-crosshair touch-none">
+        <div ref={containerRef} className="w-full h-full bg-[#0f172a] cursor-crosshair touch-none">
             <canvas
                 ref={canvasRef}
                 width={800} // Fixed size for now to match parent

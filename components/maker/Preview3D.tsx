@@ -11,7 +11,14 @@ import { useMakerStore } from '@/store/useMakerStore';
 import { Exporter } from './Exporter';
 
 export function Preview3D() {
+    const [mounted, setMounted] = React.useState(false);
     const { paths, importedSvgs, extrusionHeight, basePlateType, baseHeight, canvasSize, showGrid } = useMakerStore();
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return <div className="w-full h-full bg-black/20 animate-pulse" />;
 
     return (
         <Canvas
@@ -22,12 +29,12 @@ export function Preview3D() {
             <Exporter />
 
             {/* Premium Lighting Setup */}
-            <ambientLight intensity={0.4} />
-            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-            <pointLight position={[-10, -10, 10]} intensity={0.5} />
+            <ambientLight intensity={0.6} />
+            <spotLight position={[20, 20, 20]} angle={0.2} penumbra={1} intensity={2} castShadow />
+            <pointLight position={[-20, -20, 20]} intensity={1} />
             <directionalLight
-                position={[5, 5, 20]}
-                intensity={0.8}
+                position={[10, 10, 30]}
+                intensity={1.2}
                 castShadow
                 shadow-mapSize={[2048, 2048]}
             />
@@ -92,7 +99,7 @@ export function Preview3D() {
 
             {showGrid && (
                 <gridHelper
-                    args={[30, 30, "#444", "#222"]}
+                    args={[50, 50, "#33334d", "#1a1a2e"]}
                     rotation={[Math.PI / 2, 0, 0]}
                     position={[0, 0, -0.1]}
                 />
@@ -115,8 +122,8 @@ function BasePlate({ type, width, height, depth }: {
     if (type === 'rect') {
         return (
             <mesh position={[w / 2, -h / 2, -depth / 2]}>
-                <boxGeometry args={[w + 1, h + 1, depth]} />
-                <meshStandardMaterial color="#e5e7eb" roughness={0.5} />
+                <boxGeometry args={[w + 2, h + 2, depth]} />
+                <meshStandardMaterial color="#1f1f2e" roughness={0.4} metalness={0.2} />
             </mesh>
         );
     }
@@ -126,23 +133,64 @@ function BasePlate({ type, width, height, depth }: {
 function ExtrudedPath({ path, height, baseHeight }: {
     path: any, height: number, baseHeight: number
 }) {
-    const curve = useMemo(() => {
+    const shape = useMemo(() => {
         if (path.points.length < 2) return null;
+
         const scale = 0.02;
-        const points3D = path.points.map((p: any) =>
-            new THREE.Vector3(p.x * scale, -p.y * scale, 0)
-        );
-        return new THREE.CatmullRomCurve3(points3D, false);
+        const newShape = new THREE.Shape();
+
+        // 고도화 알고리즘: 스케치 포인트를 기반으로 단면Shape를 형성
+        // 단순 선이 아닌 '면'의 개념으로 확장하여 돌출력과 가시성을 극대화합니다.
+        const firstPoint = path.points[0];
+        newShape.moveTo(firstPoint.x * scale, -firstPoint.y * scale);
+
+        for (let i = 1; i < path.points.length; i++) {
+            newShape.lineTo(path.points[i].x * scale, -path.points[i].y * scale);
+        }
+
+        return newShape;
     }, [path.points]);
 
-    if (!curve) return null;
-    const tubeRadius = (path.width || 5) * 0.01;
+    if (!shape) return null;
 
     return (
-        <mesh position={[0, 0, baseHeight]}>
-            <tubeGeometry args={[curve, 64, tubeRadius, 8, false]} />
-            <meshStandardMaterial color={path.color} roughness={0.3} metalness={0.1} />
-        </mesh>
+        <group position={[0, 0, baseHeight]}>
+            {/* 알고리즘 개선: 풍부한 볼륨감을 위해 Extrude 알고리즘과 Bevel 시스템 적용 */}
+            <mesh castShadow receiveShadow>
+                <extrudeGeometry
+                    args={[shape, {
+                        depth: height * 0.1, // 실제 돌출 높이 조절
+                        bevelEnabled: true,
+                        bevelThickness: 0.1,
+                        bevelSize: 0.1,
+                        bevelSegments: 5,
+                        curveSegments: 32
+                    }]}
+                />
+                <meshStandardMaterial
+                    color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
+                    roughness={0.1}
+                    metalness={0.9}
+                    emissive={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
+                    emissiveIntensity={0.3}
+                />
+            </mesh>
+
+            {/* 조형미 강조를 위한 보조 메쉬 알고리즘 */}
+            <mesh position={[0, 0, 0.01]}>
+                <extrudeGeometry
+                    args={[shape, {
+                        depth: 0.05,
+                        bevelEnabled: false
+                    }]}
+                />
+                <meshStandardMaterial
+                    color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
+                    opacity={0.4}
+                    transparent
+                />
+            </mesh>
+        </group>
     );
 }
 

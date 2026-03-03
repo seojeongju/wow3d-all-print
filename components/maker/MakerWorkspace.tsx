@@ -118,66 +118,70 @@ export function MakerWorkspace() {
                 <aside className="w-80 bg-black/40 border-l border-white/10 p-6 flex flex-col gap-8 z-20 backdrop-blur-xl shrink-0 overflow-y-auto custom-scrollbar">
 
                     {/* Tool Settings */}
-                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
-                        <h3 className="font-semibold text-[13px] text-white/90 mb-5 flex items-center gap-2 uppercase tracking-widest">
+                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+                        <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-6">
                             <Settings className="w-4 h-4 text-primary" />
                             브러쉬 설정
                         </h3>
 
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <label className="text-sm font-medium text-white/70">두께 (Stroke Width)</label>
-                                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{strokeWidth}px</span>
+                                <div className="flex justify-between items-center mb-4">
+                                    <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">두께 (Stroke Width)</label>
+                                    <span className="text-xs font-black text-primary bg-primary/20 px-3 py-1 rounded-full border border-primary/30">{strokeWidth}px</span>
                                 </div>
-                                <Slider
-                                    value={[strokeWidth]}
-                                    min={1} max={50} step={1}
-                                    onValueChange={([v]) => setStrokeWidth(v)}
-                                    className="pt-2"
-                                />
+                                <div className="px-1">
+                                    <Slider
+                                        value={[strokeWidth]}
+                                        min={1} max={50} step={1}
+                                        onValueChange={([v]) => setStrokeWidth(v)}
+                                        className="cursor-pointer"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* 3D Properties */}
-                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 relative overflow-hidden group">
+                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 relative overflow-hidden group shadow-xl backdrop-blur-md">
                         {/* Glow effect on hover */}
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none" />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none" />
 
-                        <h3 className="font-semibold text-[13px] text-white/90 mb-5 flex items-center gap-2 uppercase tracking-widest relative">
+                        <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-6 relative">
                             <Layers className="w-4 h-4 text-primary" />
                             3D 변환 설정
                         </h3>
 
-                        <div className="space-y-6 relative">
+                        <div className="space-y-8 relative">
                             {/* Extrusion Height */}
                             <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <label className="text-sm font-medium text-white/70">돌출 높이 (Z-Axis)</label>
-                                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{extrusionHeight}mm</span>
+                                <div className="flex justify-between items-center mb-4">
+                                    <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">돌출 높이 (Z-Axis)</label>
+                                    <span className="text-xs font-black text-primary bg-primary/20 px-3 py-1 rounded-full border border-primary/30">{extrusionHeight}mm</span>
                                 </div>
-                                <Slider
-                                    value={[extrusionHeight]}
-                                    min={1} max={50} step={0.5}
-                                    onValueChange={([v]) => setExtrusionHeight(v)}
-                                    className="pt-2"
-                                />
+                                <div className="px-1">
+                                    <Slider
+                                        value={[extrusionHeight]}
+                                        min={1} max={50} step={0.5}
+                                        onValueChange={([v]) => setExtrusionHeight(v)}
+                                        className="cursor-pointer"
+                                    />
+                                </div>
                             </div>
 
                             <div className="h-px bg-white/5" />
 
                             {/* Base Plate Type */}
                             <div>
-                                <label className="text-sm font-medium text-white/70 mb-3 block">바닥 판형 (Base Plate)</label>
-                                <div className="grid grid-cols-2 gap-2">
+                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-4 block">바닥 판형 (Base Plate)</label>
+                                <div className="grid grid-cols-2 gap-3">
                                     {(['none', 'rect'] as const).map((type) => (
                                         <Button
                                             key={type}
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setBasePlateType(type)}
-                                            className={`text-[11px] h-9 border-white/10 transition-all ${basePlateType === type ? 'bg-primary/20 text-primary border-primary/40' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                            className={`text-[12px] font-bold h-10 border-white/10 transition-all rounded-xl ${basePlateType === type ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
                                         >
                                             {type === 'none' ? '없음' : '사각형'}
                                         </Button>
@@ -189,12 +193,12 @@ export function MakerWorkspace() {
 
                             {/* Grid Visibility */}
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-white/70">그리드 표시 (Grid)</label>
+                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">그리드 표시 (Grid)</label>
                                 <button
                                     onClick={() => setShowGrid(!showGrid)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showGrid ? 'bg-primary' : 'bg-white/10'}`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none ring-offset-black focus:ring-2 focus:ring-primary/50 ${showGrid ? 'bg-primary' : 'bg-white/10'}`}
                                 >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showGrid ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${showGrid ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
                             </div>
                         </div>
