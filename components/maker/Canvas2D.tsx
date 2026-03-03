@@ -1,7 +1,22 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useMakerStore } from '@/store/useMakerStore';
+
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+
+/** Get canvas-space coordinates (0..width, 0..height) from client position. Required when canvas is CSS-scaled. */
+function getCanvasPoint(canvas: HTMLCanvasElement | null, clientX: number, clientY: number): { x: number; y: number } | null {
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+    };
+}
 
 export function Canvas2D() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,40 +25,50 @@ export function Canvas2D() {
     const {
         paths, currentPath, isDrawing,
         startDrawing, continueDrawing, endDrawing,
-        canvasSize, updateCanvasSize,
+        updateCanvasSize,
         tool, strokeWidth, strokeColor
     } = useMakerStore();
 
-    // Initialize and Resize Observer
     useEffect(() => {
-        if (!containerRef.current) return;
-
-        // Set initial size
-        // updateCanvasSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-
-        // const resizeObserver = new ResizeObserver((entries) => {
-        //   for (const entry of entries) {
-        //     updateCanvasSize(entry.contentRect.width, entry.contentRect.height);
-        //   }
-        // });
-
-        // resizeObserver.observe(containerRef.current);
-        // return () => resizeObserver.disconnect();
+        updateCanvasSize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }, [updateCanvasSize]);
 
-    // Handle Drawing Logic
+    const getPoint = useCallback((e: { clientX: number; clientY: number }) => {
+        return getCanvasPoint(canvasRef.current, e.clientX, e.clientY);
+    }, []);
+
     const handleMouseDown = (e: React.MouseEvent) => {
-        const { offsetX, offsetY } = e.nativeEvent;
-        startDrawing({ x: offsetX, y: offsetY });
+        const point = getPoint(e.nativeEvent);
+        if (point) startDrawing(point);
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDrawing) return;
-        const { offsetX, offsetY } = e.nativeEvent;
-        continueDrawing({ x: offsetX, y: offsetY });
+        const point = getPoint(e.nativeEvent);
+        if (point) continueDrawing(point);
     };
 
     const handleMouseUp = () => {
+        if (isDrawing) endDrawing();
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const point = getCanvasPoint(canvasRef.current, touch.clientX, touch.clientY);
+        if (point) startDrawing(point);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        e.preventDefault();
+        if (!isDrawing) return;
+        const touch = e.touches[0];
+        const point = getCanvasPoint(canvasRef.current, touch.clientX, touch.clientY);
+        if (point) continueDrawing(point);
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.preventDefault();
         if (isDrawing) endDrawing();
     };
 
@@ -99,12 +124,16 @@ export function Canvas2D() {
         <div ref={containerRef} className="w-full h-full bg-[#0f172a] cursor-crosshair touch-none">
             <canvas
                 ref={canvasRef}
-                width={800} // Fixed size for now to match parent
-                height={600}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
                 className="w-full h-full"
             />
         </div>

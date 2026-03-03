@@ -150,10 +150,10 @@ function ExtrudedPath({ path, height, baseHeight }: {
 
     return (
         <group position={[0, 0, baseHeight]}>
-            {/* 고도화: 선을 입체적인 튜브로 렌더링하여 가시성과 모델링 품질을 보장 */}
+            {/* 선을 입체 튜브로 렌더링 (가시성: 반지름 = strokeWidth에 비례) */}
             <mesh castShadow receiveShadow>
                 <tubeGeometry
-                    args={[curve, 64, path.width * scale * 0.1, 8, false]}
+                    args={[curve, 64, Math.max(0.03, path.width * scale * 0.2), 8, false]}
                 />
                 <meshStandardMaterial
                     color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
@@ -164,15 +164,15 @@ function ExtrudedPath({ path, height, baseHeight }: {
                 />
             </mesh>
 
-            {/* 수직 방향 돌출감을 주기 위한 보조 렌더링 (옵션) */}
-            <mesh position={[0, 0, (height * 0.1) / 2]}>
+            {/* 돌출 높이만큼 위로 올라간 보조 튜브 (돌출감) */}
+            <mesh position={[0, 0, (height * 0.01) / 2]}>
                 <tubeGeometry
-                    args={[curve, 64, path.width * scale * 0.12, 8, false]}
+                    args={[curve, 64, Math.max(0.025, path.width * scale * 0.18), 8, false]}
                 />
                 <meshStandardMaterial
                     color={path.color === '#000000' || path.color === '#0f172a' ? '#ffffff' : path.color}
                     transparent
-                    opacity={0.3}
+                    opacity={0.35}
                 />
             </mesh>
         </group>
