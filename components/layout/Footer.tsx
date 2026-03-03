@@ -22,8 +22,11 @@ export default function Footer() {
                                 <span className="font-black text-xl tracking-tighter text-white leading-none">
                                     WOW3D<span className="text-primary font-light ml-0.5">PRO</span>
                                 </span>
-                                <span className="text-[8px] sm:text-[9px] font-bold tracking-[0.12em] text-white/40 leading-tight mt-1">
-                                    AI 실시간자동 견적시스템
+                                <span className="text-[10px] font-bold text-white/80 leading-tight mt-1.5">
+                                    (주)와우쓰리디
+                                </span>
+                                <span className="text-[8px] sm:text-[9px] font-bold tracking-[0.12em] text-white/30 leading-tight mt-1">
+                                    AI 실시간 자동 견적시스템
                                 </span>
                             </div>
                         </Link>

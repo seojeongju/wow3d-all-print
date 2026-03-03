@@ -60,11 +60,14 @@ export default function Header() {
                         <Boxes className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-black text-lg sm:text-xl text-white leading-tight">
+                        <span className="font-black text-lg sm:text-xl text-white leading-none">
                             WOW3D<span className="text-primary/90 font-semibold ml-0.5">PRO</span>
                         </span>
-                        <span className="text-[10px] sm:text-xs font-medium text-white/60 leading-tight mt-0.5">
-                            <span className="text-primary/80 font-semibold">AI</span> 실시간자동 견적시스템
+                        <span className="text-[10px] sm:text-[11px] font-bold text-white/90 leading-tight mt-1">
+                            (주)와우쓰리디
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] font-medium text-white/50 leading-tight mt-0.5">
+                            <span className="text-primary/70 font-semibold">AI</span> 실시간 자동 견적시스템
                         </span>
                     </div>
                 </Link>
