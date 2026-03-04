@@ -60,7 +60,18 @@ export default function QuoteEditPage() {
 
     const handleItemChange = (idx: number, field: string, value: any) => {
         const newItems = [...items];
-        newItems[idx] = { ...newItems[idx], [field]: value };
+        let processedValue = value;
+
+        // 단가나 수량 입력 시 숫자로 변환 (콤마 제거 포함)
+        if (field === 'unit_price' || field === 'quantity') {
+            if (typeof value === 'string') {
+                processedValue = Number(value.replace(/,/g, ''));
+            } else {
+                processedValue = Number(value);
+            }
+        }
+
+        newItems[idx] = { ...newItems[idx], [field]: processedValue };
         setItems(newItems);
     };
 
@@ -73,8 +84,8 @@ export default function QuoteEditPage() {
     };
 
     // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
-    const totalSupply = items.reduce((acc, it) => acc + (Number(it.unit_price || 0) * Number(it.quantity || 0)), 0);
-    const totalVat = Math.round(totalSupply * 0.1);
+    const totalSupply = items.reduce((acc, it) => acc + Math.round(Number(it.unit_price || 0) * Number(it.quantity || 0)), 0);
+    const totalVat = Math.floor(totalSupply * 0.1); // 절삭 처리하여 부가세 계산
     const totalAmount = totalSupply + totalVat;
 
     const handlePrint = () => {
@@ -227,18 +238,18 @@ export default function QuoteEditPage() {
                                         </td>
                                         <td className="p-2">
                                             <Input
-                                                type="number"
+                                                type="text"
                                                 className="bg-transparent border-transparent hover:border-white/20 text-white text-right h-8"
                                                 value={item.quantity}
-                                                onChange={e => handleItemChange(idx, 'quantity', Number(e.target.value))}
+                                                onChange={e => handleItemChange(idx, 'quantity', e.target.value)}
                                             />
                                         </td>
                                         <td className="p-2">
                                             <Input
-                                                type="number"
+                                                type="text"
                                                 className="bg-transparent border-transparent hover:border-white/20 text-white text-right h-8"
-                                                value={item.unit_price}
-                                                onChange={e => handleItemChange(idx, 'unit_price', Number(e.target.value))}
+                                                value={item.unit_price?.toLocaleString()}
+                                                onChange={e => handleItemChange(idx, 'unit_price', e.target.value)}
                                             />
                                         </td>
                                         <td className="p-2 text-right text-white/90">

@@ -123,7 +123,7 @@ export default function EstimatePrintPage() {
     // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
     const totalSupply = items.reduce((acc: number, item: any) =>
         acc + Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
-    const totalVat = Math.round(totalSupply * 0.1);
+    const totalVat = Math.floor(totalSupply * 0.1); // 소수점 절삭하여 공급가액의 10% 계산
     const totalAmount = totalSupply + totalVat;
 
     // 견적서 특이사항 분리 처리
