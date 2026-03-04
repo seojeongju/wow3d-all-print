@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMakerStore } from '@/store/useMakerStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check } from 'lucide-react';
+import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check, ImageIcon } from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
@@ -13,6 +13,9 @@ import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
 import { motion } from 'framer-motion';
+
+/** 3D → 스케치 전환 시 WebGL을 즉시 언마운트하면 Context Lost 발생. 짧은 지연 후 언마운트로 완화 */
+const UNMOUNT_3D_DELAY_MS = 180;
 
 export function MakerWorkspace() {
     const {
@@ -24,12 +27,32 @@ export function MakerWorkspace() {
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
         addImportedSvg,
+        importedSvgs,
+        removeImportedSvg,
     } = useMakerStore();
 
     const [activeTab, setActiveTab] = useState('draw');
+    const [show3dCanvas, setShow3dCanvas] = useState(false);
     const [pendingSvg, setPendingSvg] = useState<{ name: string; svgContent: string } | null>(null);
     const [convertMode, setConvertMode] = useState<ConvertMode>('detailed');
     const [useRemoveBg, setUseRemoveBg] = useState(false);
+    const [removeBgConfigured, setRemoveBgConfigured] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        fetch('/api/maker/remove-bg')
+            .then((r) => r.json())
+            .then((j: { configured?: boolean }) => setRemoveBgConfigured(!!j?.configured))
+            .catch(() => setRemoveBgConfigured(false));
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === '3d') {
+            setShow3dCanvas(true);
+        } else {
+            const t = setTimeout(() => setShow3dCanvas(false), UNMOUNT_3D_DELAY_MS);
+            return () => clearTimeout(t);
+        }
+    }, [activeTab]);
 
     const handleAddPendingTo3D = () => {
         if (!pendingSvg) return;
@@ -130,10 +153,10 @@ export function MakerWorkspace() {
                             <Canvas2D />
                         </div>
 
-                        {/* 3D Preview Layer: 결과물(3D) 탭 선택 시에만 WebGL 마운트 → Context Lost 방지 */}
+                        {/* 3D Preview Layer: 지연 언마운트로 3D→스케치 전환 시 Context Lost 완화 */}
                         <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                             <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] to-[#12121a]" />
-                            {activeTab === '3d' && (
+                            {show3dCanvas && (
                                 <Maker3DErrorBoundary onRetry={() => setActiveTab('draw')}>
                                     <Preview3D />
                                 </Maker3DErrorBoundary>
@@ -309,9 +332,40 @@ export function MakerWorkspace() {
                                     배경 제거 후 변환
                                 </label>
                             </div>
-                            <p className="text-[10px] text-white/40">remove.bg API 키 설정 시 사용 가능</p>
+                            <p className="text-[10px] text-white/40">
+                                {removeBgConfigured === true && '배경 제거 사용 가능'}
+                                {removeBgConfigured === false && 'API 미설정 — 켜도 배경 제거 없이 변환됩니다'}
+                                {removeBgConfigured === null && 'remove.bg API 키 설정 시 사용 가능'}
+                            </p>
                         </div>
                     </div>
+
+                    {/* 추가된 이미지(SVG): 스케치 탭에서도 삭제 가능 — 3D 탭 열지 않아도 됨 */}
+                    {importedSvgs.length > 0 && (
+                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
+                            <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
+                                <ImageIcon className="w-4 h-4 text-primary" />
+                                추가된 이미지 ({importedSvgs.length})
+                            </h3>
+                            <ul className="space-y-2">
+                                {importedSvgs.map((svg) => (
+                                    <li key={svg.id} className="flex items-center gap-2 p-2 rounded-xl bg-black/30 border border-white/10">
+                                        <span className="text-[11px] text-white/80 truncate flex-1 min-w-0" title={svg.name}>{svg.name}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 shrink-0 text-white/50 hover:text-red-400 hover:bg-red-500/10"
+                                            onClick={() => removeImportedSvg(svg.id)}
+                                            title="삭제"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="text-[10px] text-white/40 mt-2">3D 보기 없이 여기서 삭제할 수 있습니다.</p>
+                        </div>
+                    )}
 
                     {/* 이미지 → SVG 변환 결과: 돌출 높이 지정 후 3D에 추가 */}
                     {pendingSvg && (

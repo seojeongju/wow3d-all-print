@@ -16,6 +16,12 @@ function getRemoveBgApiKey(): string | null {
     return null;
 }
 
+/** 배경 제거 API 설정 여부 확인 (UI에서 토글 안내용) */
+export async function GET() {
+    const configured = !!getRemoveBgApiKey();
+    return NextResponse.json({ configured });
+}
+
 export async function POST(request: NextRequest) {
     const apiKey = getRemoveBgApiKey();
     if (!apiKey) {

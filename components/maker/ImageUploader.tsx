@@ -38,9 +38,15 @@ export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRem
                 try {
                     imageToConvert = await removeBackground(file, signal);
                 } catch (bgErr) {
+                    imageToConvert = file;
                     const msg = bgErr instanceof Error ? bgErr.message : '';
-                    if (msg.includes('설정되지 않았습니다') || msg.includes('503')) {
-                        alert('배경 제거 기능이 설정되지 않았습니다. 배경 제거 없이 변환합니다.');
+                    const status = (bgErr as Error & { status?: number }).status;
+                    const isUnavailable = status === 503 || msg.includes('503') || msg.includes('설정되지 않았습니다') || msg.includes('Service Unavailable');
+                    const isLimit = status === 402 || msg.includes('한도');
+                    if (isUnavailable) {
+                        alert('배경 제거 API가 설정되지 않았거나 일시적으로 사용할 수 없습니다. 배경 제거 없이 변환합니다.');
+                    } else if (isLimit) {
+                        alert('배경 제거 API 한도 초과. 배경 제거 없이 변환합니다.');
                     } else {
                         alert(`배경 제거 실패: ${msg}. 배경 제거 없이 변환합니다.`);
                     }

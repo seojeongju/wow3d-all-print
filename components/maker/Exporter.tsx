@@ -13,6 +13,37 @@ const SCENE_SCALE = 0.02;
 /** STL 파일에서 1 unit = 1mm 되도록 (800px 캔버스 ≈ 80mm) */
 const EXPORT_SCALE = 5;
 
+/** Path(구멍) → Shape (이미지만 양각 돌출, 음각 아님) */
+function holePathToShape(hole: THREE.Path): THREE.Shape {
+    const getPts = (p: THREE.Path) => (typeof (p as any).getPoints === 'function' ? (p as any).getPoints(12) : (p as any).getSpacedPoints?.(12) ?? []);
+    const points = getPts(hole) as THREE.Vector2[];
+    const shape = new THREE.Shape();
+    if (points.length === 0) return shape;
+    shape.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i].x, points[i].y);
+    return shape;
+}
+
+/** SVG paths → 평탄화된 shapes (holes 있으면 구멍만 양각, 바깥 contour 제외) */
+function flattenSvgShapes(data: { paths?: any[] }): THREE.Shape[] {
+    const allShapes: THREE.Shape[] = [];
+    (data.paths || []).forEach((path: any) => {
+        try {
+            const created = SVGLoader.createShapes(path) as THREE.Shape[];
+            if (!created?.length) return;
+            created.forEach((shape) => {
+                const holes = (shape as any).holes as THREE.Path[] | undefined;
+                if (holes?.length) {
+                    holes.forEach((hole) => allShapes.push(holePathToShape(hole)));
+                } else {
+                    allShapes.push(shape);
+                }
+            });
+        } catch (_) { /* skip */ }
+    });
+    return allShapes;
+}
+
 export function Exporter() {
     const {
         exportTrigger,
@@ -70,13 +101,7 @@ export function Exporter() {
                 importedSvgs.forEach((svg) => {
                     try {
                         const data = loader.parse(svg.svgContent);
-                        const allShapes: THREE.Shape[] = [];
-                        (data.paths || []).forEach((path: any) => {
-                            try {
-                                const created = SVGLoader.createShapes(path);
-                                if (created?.length) allShapes.push(...created);
-                            } catch (_) { /* skip */ }
-                        });
+                        const allShapes = flattenSvgShapes(data);
                         if (allShapes.length === 0) return;
                         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                         const getPoints = (s: THREE.Shape) => (typeof (s as any).getPoints === 'function' ? (s as any).getPoints(12) : (s as any).getSpacedPoints?.(12) ?? []);

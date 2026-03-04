@@ -215,21 +215,46 @@ function ExtrudedPath({ path, height, baseHeight }: {
 /** 이미지 SVG에서 생성하는 shape 수 제한 (과다 메시로 인한 WebGL Context Lost 방지) */
 const MAX_SHAPES_PER_SVG = 40;
 
+/** Path(구멍)의 점으로 새 Shape 생성 — 음각이 아닌 이미지만 양각 돌출용 */
+function holePathToShape(hole: THREE.Path): THREE.Shape {
+    const getPts = (p: THREE.Path) => (typeof (p as any).getPoints === 'function' ? (p as any).getPoints(12) : (p as any).getSpacedPoints?.(12) ?? []);
+    const points = getPts(hole) as THREE.Vector2[];
+    const shape = new THREE.Shape();
+    if (points.length === 0) return shape;
+    shape.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) shape.lineTo(points[i].x, points[i].y);
+    return shape;
+}
+
+/** SVG 파싱 결과: shapes + bbox. holes가 있으면 바깥 contour(판)은 제외하고 구멍만 양각 돌출 */
+function flattenSvgShapes(loader: typeof SVGLoader, data: { paths?: any[] }): THREE.Shape[] {
+    const allShapes: THREE.Shape[] = [];
+    (data.paths || []).forEach((path: any) => {
+        try {
+            const created = SVGLoader.createShapes(path) as THREE.Shape[];
+            if (!created?.length) return;
+            created.forEach((shape) => {
+                const holes = (shape as any).holes as THREE.Path[] | undefined;
+                if (holes?.length) {
+                    holes.forEach((hole) => allShapes.push(holePathToShape(hole)));
+                } else {
+                    allShapes.push(shape);
+                }
+            });
+        } catch (_) {
+            /* path 하나 실패 시 스킵 */
+        }
+    });
+    return allShapes;
+}
+
 /** SVG 파싱 결과: shapes + bbox로 스케일/중심 계산, shape 수 제한 */
 function useParsedSvg(svgContent: string): { shapes: THREE.Shape[]; scale: number; centerX: number; centerY: number } | null {
     return useMemo(() => {
         try {
             const loader = new SVGLoader();
             const data = loader.parse(svgContent);
-            const allShapes: THREE.Shape[] = [];
-            (data.paths || []).forEach((path: any) => {
-                try {
-                    const created = SVGLoader.createShapes(path);
-                    if (created && created.length) allShapes.push(...created);
-                } catch (_) {
-                    /* path 하나 실패 시 스킵 */
-                }
-            });
+            const allShapes = flattenSvgShapes(loader, data);
             if (allShapes.length === 0) return null;
             const shapes = allShapes.slice(0, MAX_SHAPES_PER_SVG);
 

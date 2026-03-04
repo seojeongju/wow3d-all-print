@@ -106,7 +106,10 @@ export async function removeBackground(file: File, signal?: AbortSignal): Promis
     });
     if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j?.error || res.statusText || '배경 제거 실패');
+        const msg = j?.error || res.statusText || '배경 제거 실패';
+        const err = new Error(msg) as Error & { status?: number };
+        err.status = res.status;
+        throw err;
     }
     const blob = await res.blob();
     return new File([blob], file.name.replace(/\.[^.]+$/, '.png') || 'no-bg.png', { type: blob.type || 'image/png' });
