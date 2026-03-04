@@ -47,12 +47,19 @@ export const useAuthStore = create<AuthState>()(
                 useCartStore.getState().clearCart();
                 useFileStore.getState().reset();
                 useQuoteStore.setState({ savedQuotes: [], currentQuote: null });
+
+                // 로그아웃 시 새로운 세션 ID 생성 (비회원 데이터 격리)
+                let newSessionId = '';
                 if (typeof window !== 'undefined') {
                     try { localStorage.removeItem('wow3d-cart'); } catch { /* ignore */ }
+                    newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+                    try { localStorage.setItem('wow3d-session-id', newSessionId); } catch { /* ignore */ }
                 }
+
                 set({
                     user: null,
                     token: null,
+                    sessionId: newSessionId, // 세션 ID를 새로 생성하여 할당
                     isAuthenticated: false
                 });
             },

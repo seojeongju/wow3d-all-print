@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
 
 
         // 세션 ID 또는 사용자 ID로 필터링
-        const sessionId = request.headers.get('X-Session-ID');
-        const userId = request.headers.get('X-User-ID');
+        const sessionId = request.headers.get('X-Session-ID')?.trim();
+        const userId = request.headers.get('X-User-ID')?.trim();
 
         if (!sessionId && !userId) {
-            return errorResponse('세션 ID 또는 사용자 ID가 필요합니다', 400);
+            return successResponse([], '인증 정보 없음');
         }
 
         let query: string;

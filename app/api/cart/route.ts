@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         const userId = request.headers.get('X-User-ID');
 
         if (!sessionId && !userId) {
-            return errorResponse('세션 ID 또는 사용자 ID가 필요합니다', 400);
+            return successResponse([], '인증 정보 없음');
         }
 
         if (!env?.DB) {
