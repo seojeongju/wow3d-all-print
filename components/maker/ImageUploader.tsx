@@ -93,36 +93,36 @@ export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRem
                 className="hidden"
             />
 
-            <div className="flex flex-col items-center gap-2 mt-2">
-                <div className="group relative flex items-center gap-2">
-                    <Button
-                        variant="ghost"
-                        className="w-12 h-12 p-0 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,118,255,0.15)] flex items-center justify-center transition-all duration-300"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isProcessing}
-                    >
-                        {isProcessing ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <ImageIcon className="w-5 h-5" />
-                        )}
-                    </Button>
-                    {isProcessing && (
+            <div className="flex flex-col items-center gap-1 mt-2">
+                <div className="group relative flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-1">
                         <Button
-                            type="button"
                             variant="ghost"
-                            size="sm"
-                            className="w-9 h-9 p-0 rounded-xl text-white/60 hover:text-white hover:bg-red-500/20 border border-white/10"
-                            onClick={handleCancel}
-                            title="변환 중단"
+                            title="이미지 업로드 (JPG, PNG)"
+                            className="w-12 h-12 p-0 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,118,255,0.15)] flex items-center justify-center transition-all duration-300"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isProcessing}
                         >
-                            <X className="w-4 h-4" />
+                            {isProcessing ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <ImageIcon className="w-5 h-5" />
+                            )}
                         </Button>
-                    )}
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-2 bg-white/10 backdrop-blur-md border border-white/20 text-white whitespace-nowrap rounded font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-50">
-                        <div className="text-xs">이미지 스케치</div>
-                        <div className="text-[10px] text-white/50">JPG, PNG · 변환 중 취소 가능</div>
+                        {isProcessing && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="w-9 h-9 p-0 rounded-xl text-white/60 hover:text-white hover:bg-red-500/20 border border-white/10"
+                                onClick={handleCancel}
+                                title="변환 중단"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        )}
                     </div>
+                    <span className="text-[9px] font-medium text-white/70 text-center">이미지</span>
                 </div>
                 {isProcessing && (
                     <span className="text-[10px] text-white/50">3D 변환 중… × 버튼으로 중단</span>

@@ -7,4 +7,8 @@ interface CloudflareEnv {
 	DB: D1Database;
 	WORKER_SELF_REFERENCE: Fetcher;
 	ASSETS: Fetcher;
+	/** Cloudflare Workers Variables and Secrets (대시보드에서 설정) */
+	REMOVE_BG_API_KEY?: string;
+	TRIPO3D_API_KEY?: string;
+	TRIPO_API_KEY?: string;
 }

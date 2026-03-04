@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const REMOVE_BG_URL = 'https://api.remove.bg/v1.0/removebg';
 
+function getRemoveBgApiKey(): string | null {
+    // process.env 우선 (Workers에서 nodejs_compat_populate_process_env 사용 시 대시보드 변수 포함)
+    if (process.env.REMOVE_BG_API_KEY) return process.env.REMOVE_BG_API_KEY;
+    try {
+        const { env } = getCloudflareContext();
+        const e = env as unknown as Record<string, string | undefined>;
+        if (e?.REMOVE_BG_API_KEY) return e.REMOVE_BG_API_KEY;
+    } catch {
+        // 로컬 등 Cloudflare 컨텍스트 없을 때
+    }
+    return null;
+}
+
 export async function POST(request: NextRequest) {
-    const apiKey = process.env.REMOVE_BG_API_KEY;
+    const apiKey = getRemoveBgApiKey();
     if (!apiKey) {
         return NextResponse.json(
             { error: '배경 제거 API가 설정되지 않았습니다. REMOVE_BG_API_KEY를 설정해 주세요.' },

@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const TRIPO_BASE = 'https://api.tripo3d.ai/v2/openapi';
 
 function getApiKey(): string | null {
-    return process.env.TRIPO3D_API_KEY ?? process.env.TRIPO_API_KEY ?? null;
+    // process.env 우선 (Workers에서 nodejs_compat_populate_process_env 사용 시 대시보드 변수 포함)
+    const fromProcess = process.env.TRIPO3D_API_KEY ?? process.env.TRIPO_API_KEY;
+    if (fromProcess) return fromProcess;
+    try {
+        const { env } = getCloudflareContext();
+        const e = env as unknown as Record<string, string | undefined>;
+        if (e?.TRIPO3D_API_KEY) return e.TRIPO3D_API_KEY;
+        if (e?.TRIPO_API_KEY) return e.TRIPO_API_KEY;
+    } catch {
+        // 로컬 등 Cloudflare 컨텍스트 없을 때
+    }
+    return null;
 }
 
 /** POST: submit task (image_to_model or text_to_model). Returns { task_id }. */

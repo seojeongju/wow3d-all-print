@@ -350,7 +350,7 @@ export function MakerWorkspace() {
                         </div>
                     </div>
 
-                    {/* 이미지 생성 방식: 돌출(SVG) vs AI 3D(Tripo3D) */}
+                    {/* 이미지 생성 방식: 돌출(SVG) vs AI 3D(Tripo3D) - 호버 없이 글자 항상 표시 */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 생성 방식</h3>
                         <div className="grid grid-cols-2 gap-2 mb-4">
@@ -358,8 +358,9 @@ export function MakerWorkspace() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                title="이미지 → SVG → 돌출 높이로 3D"
                                 onClick={() => setImageMode('extrude')}
-                                className={`text-[11px] h-9 rounded-xl border-white/10 ${imageMode === 'extrude' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                                className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 text-white ${imageMode === 'extrude' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
                             >
                                 돌출(SVG)
                             </Button>
@@ -367,17 +368,18 @@ export function MakerWorkspace() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                title="이미지 한 장으로 입체 메시 생성 (Tripo3D)"
                                 onClick={() => setImageMode('ai3d')}
-                                className={`text-[11px] h-9 rounded-xl border-white/10 ${imageMode === 'ai3d' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                                className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 flex items-center justify-center gap-1 text-white ${imageMode === 'ai3d' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
                             >
-                                <Sparkles className="w-3.5 h-3.5 mr-1" />
+                                <Sparkles className="w-3.5 h-3.5 shrink-0" />
                                 AI 3D
                             </Button>
                         </div>
                         <p className="text-[10px] text-white/40">AI 3D: 이미지 한 장으로 입체 메시 생성 (Tripo3D)</p>
                     </div>
 
-                    {/* 이미지 변환 품질: 간단/상세, 배경 제거 (돌출 모드일 때만 의미 있음) */}
+                    {/* 이미지 변환 품질: 간단/상세, 배경 제거 (돌출 모드일 때만 의미 있음) - 라벨 항상 표시 */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 변환 품질</h3>
                         <div className="space-y-4">
@@ -388,8 +390,9 @@ export function MakerWorkspace() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
+                                        title="로고·단순 도형에 적합"
                                         onClick={() => setConvertMode('simple')}
-                                        className={`text-[11px] h-9 rounded-xl border-white/10 ${convertMode === 'simple' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                                        className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 text-white ${convertMode === 'simple' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
                                     >
                                         간단(로고)
                                     </Button>
@@ -397,8 +400,9 @@ export function MakerWorkspace() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
+                                        title="사진·실물·펜 등 디테일 권장"
                                         onClick={() => setConvertMode('detailed')}
-                                        className={`text-[11px] h-9 rounded-xl border-white/10 ${convertMode === 'detailed' ? 'bg-primary text-primary-foreground border-primary' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                                        className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 text-white ${convertMode === 'detailed' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
                                     >
                                         상세(사진·실물)
                                     </Button>
@@ -568,9 +572,10 @@ export function MakerWorkspace() {
 
 function ToolbarButton({ active, onClick, icon, label, className = '' }: any) {
     return (
-        <div className="group relative">
+        <div className="group relative flex flex-col items-center gap-1">
             <button
                 onClick={onClick}
+                title={label}
                 className={`w-12 h-12 rounded-2xl transition-all duration-300 flex items-center justify-center
                 ${active ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(0,118,255,0.4)]' : 'bg-white/[0.03] text-white/50 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10'}
                 ${className}
@@ -578,10 +583,10 @@ function ToolbarButton({ active, onClick, icon, label, className = '' }: any) {
             >
                 {icon}
             </button>
-            {/* Tooltip */}
-            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2 py-1 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] whitespace-nowrap rounded font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">
+            {/* 항상 보이는 라벨 (호버 불필요) */}
+            <span className="text-[9px] font-medium text-white/70 group-hover:text-white/90 text-center leading-tight max-w-[48px] truncate">
                 {label}
-            </div>
+            </span>
         </div>
     );
 }

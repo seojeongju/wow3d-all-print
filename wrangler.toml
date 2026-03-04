@@ -4,8 +4,10 @@
 name = "wow3d-all-print"
 main = ".open-next/worker.js"
 compatibility_date = "2024-12-30"
+# nodejs_compat_populate_process_env: 대시보드 Variables/Secrets가 process.env에 채워지도록 함
 compatibility_flags = [
   "nodejs_compat",
+  "nodejs_compat_populate_process_env",
   "global_fetch_strictly_public",
 ]
 

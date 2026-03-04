@@ -66,9 +66,10 @@ export function Preview3D() {
                 alpha: true,
                 powerPreference: 'low-power',
                 stencil: false,
-                depth: true
+                depth: true,
+                preserveDrawingBuffer: false,
             }}
-            dpr={[1, 2]}
+            dpr={[1, 1.5]}
         >
             <ContextLossHandler onContextLost={() => setWebglContextLost(true)} />
 
@@ -315,7 +316,8 @@ function GlbFromUrl({ url, position }: { url: string; position: [number, number,
         const size = new THREE.Vector3();
         b.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-        return 8 / maxDim;
+        const scale = 8 / maxDim;
+        return Number.isFinite(scale) && scale > 0 ? scale : 1;
     }, [cloned]);
     return (
         <group position={position} scale={[box, box, box]}>
