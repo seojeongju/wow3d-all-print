@@ -72,8 +72,10 @@ export default function QuoteEditPage() {
         setItems(items.filter((_, i) => i !== idx));
     };
 
-    // 총액 자동 계산
-    const totalAmount = items.reduce((acc, it) => acc + (Number(it.unit_price || 0) * Number(it.quantity || 0)), 0);
+    // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
+    const totalSupply = items.reduce((acc, it) => acc + (Number(it.unit_price || 0) * Number(it.quantity || 0)), 0);
+    const totalVat = Math.round(totalSupply * 0.1);
+    const totalAmount = totalSupply + totalVat;
 
     const handlePrint = () => {
         // 인쇄용 데이터 구성 (DB 구조와 일치시키기 위해 매핑)
@@ -167,8 +169,16 @@ export default function QuoteEditPage() {
                             <span className="text-white/70">견적 일자</span>
                             <span className="text-white">{new Date(orderInfo.created_at).toLocaleDateString()}</span>
                         </div>
+                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                            <span className="text-white/70">공급가액</span>
+                            <span className="text-white">₩ {totalSupply.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-white/10">
+                            <span className="text-white/70">부가세 (10%)</span>
+                            <span className="text-white">₩ {totalVat.toLocaleString()}</span>
+                        </div>
                         <div className="flex justify-between items-center py-4">
-                            <span className="text-lg font-bold text-white">총 합계</span>
+                            <span className="text-lg font-bold text-white">합계금액 (VAT포함)</span>
                             <span className="text-2xl font-bold text-primary">₩ {totalAmount.toLocaleString()}</span>
                         </div>
                     </CardContent>

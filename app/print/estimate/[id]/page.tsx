@@ -81,10 +81,13 @@ export default function EstimatePrintPage() {
     const today = new Date();
     const orderDate = new Date(order.created_at);
 
-    // 총 합계 계산
-    const totalAmount = Number(order.total_amount || 0);
-    const supplyValue = Math.round(totalAmount / 1.1);
-    const vat = totalAmount - supplyValue;
+    // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
+    const totalSupply = items.reduce((acc: number, item: any) => {
+        const itemSupply = Number(item.unit_price || 0) * Number(item.quantity || 0);
+        return acc + itemSupply;
+    }, 0);
+    const totalVat = Math.round(totalSupply * 0.1);
+    const totalAmount = totalSupply + totalVat;
 
     return (
         <div className="bg-white text-black min-h-screen p-8 md:p-12 print:p-0">
@@ -179,9 +182,9 @@ export default function EstimatePrintPage() {
                     </thead>
                     <tbody>
                         {items.map((item: any, idx: number) => {
-                            const itemPrice = Number(item.subtotal || (Number(item.unit_price || 0) * Number(item.quantity || 0)));
-                            const itemSupply = Math.round(itemPrice / 1.1);
-                            const itemVat = itemPrice - itemSupply;
+                            // 품목별: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세
+                            const itemSupply = Number(item.unit_price || 0) * Number(item.quantity || 0);
+                            const itemVat = Math.round(itemSupply * 0.1);
                             return (
                                 <tr key={item.id || idx} className="text-center">
                                     <td className="border border-black p-2">{idx + 1}</td>
@@ -217,8 +220,8 @@ export default function EstimatePrintPage() {
                                 {items.reduce((acc: number, curr: any) => acc + Number(curr.quantity || 0), 0)}
                             </td>
                             <td className="border border-black p-2 text-right">-</td>
-                            <td className="border border-black p-2 text-right">{supplyValue.toLocaleString()}</td>
-                            <td className="border border-black p-2 text-right">{vat.toLocaleString()}</td>
+                            <td className="border border-black p-2 text-right">{totalSupply.toLocaleString()}</td>
+                            <td className="border border-black p-2 text-right">{totalVat.toLocaleString()}</td>
                         </tr>
                     </tfoot>
                 </table>
