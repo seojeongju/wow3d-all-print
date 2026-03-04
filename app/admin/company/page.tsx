@@ -52,12 +52,12 @@ export default function CompanyInfoPage() {
     const [logoUploading, setLogoUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
-
     useEffect(() => {
         const load = async () => {
+            const headers: Record<string, string> = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
             try {
-                const res = await fetch('/api/admin/company', { headers: authHeaders });
+                const res = await fetch('/api/admin/company', { headers });
                 const json = await res.json();
                 if (json.success && json.data) {
                     setInfo({ ...EMPTY, ...json.data });
@@ -79,10 +79,12 @@ export default function CompanyInfoPage() {
 
     const handleSave = async () => {
         setSaving(true);
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         try {
             const res = await fetch('/api/admin/company', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...authHeaders },
+                headers,
                 body: JSON.stringify({ ...info, logo_url: logoPreview || info.logo_url }),
             });
             const json = await res.json();

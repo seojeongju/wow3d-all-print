@@ -49,7 +49,8 @@ export default function EstimatePrintPage() {
 
         // localStorage에 저장된 관리자 토큰
         const savedToken = typeof window !== 'undefined' ? localStorage.getItem('admin_print_token') : null;
-        const authHeader = savedToken ? { Authorization: `Bearer ${savedToken}` } : {};
+        const authHeader: Record<string, string> = {};
+        if (savedToken) authHeader['Authorization'] = `Bearer ${savedToken}`;
 
         // 회사 정보 로드 (인증 토큰이 있을 때)
         if (savedToken) {
