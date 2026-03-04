@@ -367,7 +367,11 @@ export function MakerWorkspace() {
                                             variant="ghost"
                                             size="sm"
                                             className="h-8 w-8 p-0 shrink-0 text-white/50 hover:text-red-400 hover:bg-red-500/10"
-                                            onClick={() => removeImportedSvg(svg.id)}
+                                            onClick={() => {
+                                                if (window.confirm(`"${svg.name}"을(를) 3D 목록에서 삭제하시겠습니까?`)) {
+                                                    removeImportedSvg(svg.id);
+                                                }
+                                            }}
                                             title="삭제"
                                         >
                                             <Trash2 className="w-4 h-4" />
