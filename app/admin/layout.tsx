@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User, Users, FileText, Store, CreditCard } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User, Users, FileText, Store, CreditCard, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -39,6 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p.startsWith('/admin/quotes') },
         { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
         { title: '설정 & 소재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
+        { title: '회사 정보', href: '/admin/company', icon: Building2, match: (p: string) => p.startsWith('/admin/company') },
     ];
 
     const isSuperAdmin = user?.store_id === 1 || user?.role === 'super_admin';
