@@ -211,6 +211,7 @@ function AuthContent() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="h-12 pl-12 bg-white/[0.05] border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-400/40 font-medium placeholder:text-white/20 transition-all"
                                     placeholder="you@example.com"
+                                    autoComplete="email"
                                     required
                                 />
                             </div>
@@ -236,6 +237,7 @@ function AuthContent() {
                                                 onChange={(e) => setName(e.target.value)}
                                                 className="h-12 pl-12 bg-white/[0.05] border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-400/40 font-medium"
                                                 placeholder="홍길동"
+                                                autoComplete="name"
                                                 required
                                             />
                                         </div>
@@ -251,6 +253,7 @@ function AuthContent() {
                                                 onChange={(e) => setPhone(e.target.value)}
                                                 className="h-12 pl-12 bg-white/[0.05] border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-400/40 font-medium"
                                                 placeholder="010-0000-0000"
+                                                autoComplete="tel"
                                             />
                                         </div>
                                     </div>
@@ -269,6 +272,7 @@ function AuthContent() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="h-12 pl-12 bg-white/[0.05] border-white/10 rounded-xl focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-400/40 font-medium"
                                     placeholder="••••••••"
+                                    autoComplete={isLogin ? 'current-password' : 'new-password'}
                                     required
                                 />
                             </div>

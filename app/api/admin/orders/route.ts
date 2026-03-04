@@ -15,10 +15,31 @@ export async function GET(req: NextRequest) {
     try {
         const { results } = await env.DB.prepare(`
             SELECT 
-                o.*, 
-                u.name as user_name, 
+                o.id,
+                o.order_number,
+                o.recipient_name,
+                o.guest_email,
+                o.total_amount,
+                o.status,
+                o.created_at,
+                o.has_expert_quote,
+                o.expert_quote_data,
+                u.name as user_name,
                 u.email as user_email,
-                (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+                (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+                (
+                    SELECT JSON_GROUP_ARRAY(
+                        JSON_OBJECT(
+                            'id', oi.id, 
+                            'quote_id', oi.quote_id, 
+                            'file_name', q.file_name, 
+                            'file_url', q.file_url
+                        )
+                    )
+                    FROM order_items oi
+                    JOIN quotes q ON oi.quote_id = q.id
+                    WHERE oi.order_id = o.id
+                ) as items_summary
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
             WHERE o.store_id = ?

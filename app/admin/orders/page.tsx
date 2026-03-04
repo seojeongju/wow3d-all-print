@@ -66,6 +66,8 @@ function OrderListInner() {
     const [savingDetail, setSavingDetail] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
+    // 상태를 제작중으로 변경 시 수정 견적 금액 확인 다이얼로그
+    const [confirmProductionDialog, setConfirmProductionDialog] = useState<{ orderId: number; expertAmount: number; autoAmount: number } | null>(null);
 
     const fetchOrders = async () => {
         try {
@@ -199,6 +201,28 @@ function OrderListInner() {
     }, [orders, searchQuery, statusFilter, scopeFilter, user?.id]);
 
     const handleStatusChange = async (orderId: number, newStatus: string) => {
+        // 제작중으로 변경 시 수정 견적 금액이 있으면 확인 다이얼로그 출력
+        if (newStatus === 'production') {
+            const order = orders.find(o => o.id === orderId);
+            if (order?.has_expert_quote && order?.expert_quote_data) {
+                try {
+                    const expertData = JSON.parse(order.expert_quote_data);
+                    const expertAmount = Number(expertData.total_amount || 0);
+                    if (expertAmount > 0) {
+                        setConfirmProductionDialog({
+                            orderId,
+                            expertAmount,
+                            autoAmount: Number(order.total_amount || 0),
+                        });
+                        return; // 다이얼로그 확인 후 실행
+                    }
+                } catch { }
+            }
+        }
+        await doStatusChange(orderId, newStatus);
+    };
+
+    const doStatusChange = async (orderId: number, newStatus: string) => {
         setUpdatingId(orderId);
         try {
             const res = await fetch(`/api/admin/orders/${orderId}`, {
@@ -223,10 +247,10 @@ function OrderListInner() {
         }
     };
 
-    const handleFileDownload = async (itemId: number, quoteId: number, fileName: string) => {
+    const handleFileDownload = async (orderId: number, itemId: number, quoteId: number, fileName: string) => {
         setDownloadingFileId(itemId);
         try {
-            const url = `/api/admin/orders/${detailOrderId}/file?quoteId=${quoteId}`;
+            const url = `/api/admin/orders/${orderId}/file?quoteId=${quoteId}`;
             const headers: HeadersInit = {};
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
@@ -245,7 +269,7 @@ function OrderListInner() {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
-            toast({ title: '✅ 파일 다운로드 완료' });
+            toast({ title: `✅ ${fileName} 다운로드 완료` });
         } catch (e) {
             toast({
                 title: '❌ 다운로드 실패',
@@ -258,13 +282,16 @@ function OrderListInner() {
     };
 
 
-    const handleBulkDownload = async () => {
-        if (!detailData?.items || detailData.items.length === 0) {
+    const handleBulkDownload = async (orderId?: number, itemsToUse?: any[]) => {
+        const orderIdToUse = orderId || detailOrderId;
+        const items = itemsToUse || (detailData?.items as any[]);
+
+        if (!orderIdToUse || !items || items.length === 0) {
             toast({ title: '다운로드할 파일이 없습니다.', variant: 'destructive' });
             return;
         }
 
-        const filesToDownload = detailData.items.filter((it: any) => it.file_url);
+        const filesToDownload = items.filter((it: any) => it.file_url || it.quote_id);
         if (filesToDownload.length === 0) {
             toast({ title: '다운로드할 파일이 없습니다.', variant: 'destructive' });
             return;
@@ -277,7 +304,7 @@ function OrderListInner() {
 
         for (const item of filesToDownload) {
             try {
-                await handleFileDownload(Number(item.id), Number(item.quote_id), String(item.file_name));
+                await handleFileDownload(Number(orderIdToUse), Number(item.id), Number(item.quote_id), String(item.file_name));
                 successCount++;
                 // 다운로드 사이에 약간의 지연 추가 (브라우저가 처리할 시간 제공)
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -390,8 +417,59 @@ function OrderListInner() {
                                                 </>
                                             )}
                                         </td>
-                                        <td className="p-4 text-white/50">{order.item_count || 1}개 품목</td>
-                                        <td className="p-4 font-bold text-white">₩ {Number(order.total_amount || 0).toLocaleString()}</td>
+                                        <td className="p-4 text-white/50">
+                                            <div className="flex items-center gap-2">
+                                                <span>{order.item_count || 1}개 품목</span>
+                                                {(() => {
+                                                    let items: any[] = [];
+                                                    try {
+                                                        if (typeof order.items_summary === 'string') {
+                                                            items = JSON.parse(order.items_summary);
+                                                        } else if (Array.isArray(order.items_summary)) {
+                                                            items = order.items_summary;
+                                                        }
+                                                    } catch (e) { }
+
+                                                    if (items.length > 0) {
+                                                        return (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 text-primary hover:text-primary/80 hover:bg-primary/10"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleBulkDownload(order.id, items);
+                                                                }}
+                                                                title="모든 파일 다운로드"
+                                                            >
+                                                                <FileDown className="w-4 h-4" />
+                                                            </Button>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            {(() => {
+                                                let expertAmount: number | null = null;
+                                                if (order.has_expert_quote && order.expert_quote_data) {
+                                                    try {
+                                                        const d = JSON.parse(order.expert_quote_data);
+                                                        expertAmount = Number(d.total_amount || 0);
+                                                    } catch { }
+                                                }
+                                                const autoAmount = Number(order.total_amount || 0);
+                                                return expertAmount && expertAmount > 0 ? (
+                                                    <div>
+                                                        <div className="font-bold text-emerald-400">₩ {expertAmount.toLocaleString()}</div>
+                                                        <div className="text-xs text-white/30 line-through">₩ {autoAmount.toLocaleString()}</div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="font-bold text-white">₩ {autoAmount.toLocaleString()}</span>
+                                                );
+                                            })()}
+                                        </td>
                                         <td className="p-4">{getStatusBadge(order.status)}</td>
                                         <td className="p-4 text-white/50">{order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}</td>
                                         <td className="p-4 text-right">
@@ -476,7 +554,25 @@ function OrderListInner() {
                                 </div>
                                 <div>
                                     <span className="text-[10px] font-bold text-white/40 uppercase">총 금액</span>
-                                    <p className="text-white font-bold">₩ {Number(detailData.order.total_amount || 0).toLocaleString()}</p>
+                                    {(() => {
+                                        const order = detailData.order as any;
+                                        let expertAmount: number | null = null;
+                                        if (order.has_expert_quote && order.expert_quote_data) {
+                                            try {
+                                                const d = JSON.parse(order.expert_quote_data);
+                                                expertAmount = Number(d.total_amount || 0);
+                                            } catch { }
+                                        }
+                                        const autoAmount = Number(order.total_amount || 0);
+                                        return expertAmount && expertAmount > 0 ? (
+                                            <div className="mt-0.5">
+                                                <p className="font-bold text-emerald-400">₩ {expertAmount.toLocaleString()} <span className="text-[10px] text-emerald-500/70 font-normal">(수정견적)</span></p>
+                                                <p className="text-xs text-white/30 line-through">₩ {autoAmount.toLocaleString()} (자동견적)</p>
+                                            </div>
+                                        ) : (
+                                            <p className="text-white font-bold">₩ {autoAmount.toLocaleString()}</p>
+                                        );
+                                    })()}
                                 </div>
                                 <div>
                                     <span className="text-[10px] font-bold text-white/40 uppercase">고객 메모</span>
@@ -493,7 +589,7 @@ function OrderListInner() {
                                                 variant="outline"
                                                 size="sm"
                                                 className="h-7 px-3 text-xs border-primary/30 text-primary hover:bg-primary/10"
-                                                onClick={handleBulkDownload}
+                                                onClick={() => handleBulkDownload()}
                                                 disabled={downloadingFileId !== null}
                                             >
                                                 <Download className="w-3 h-3 mr-1.5" />
@@ -518,7 +614,7 @@ function OrderListInner() {
                                                                     size="sm"
                                                                     className="h-8 px-3 text-xs text-primary hover:text-primary/90 hover:bg-primary/10 disabled:opacity-50"
                                                                     disabled={downloadingFileId === it.id}
-                                                                    onClick={() => handleFileDownload(it.id, it.quote_id, it.file_name)}
+                                                                    onClick={() => handleFileDownload(Number(detailOrderId), it.id, it.quote_id, it.file_name)}
                                                                 >
                                                                     {downloadingFileId === it.id ? (
                                                                         <>
@@ -590,6 +686,48 @@ function OrderListInner() {
                         <Button variant="outline" className="border-white/10 text-white" onClick={closeDetail}>닫기</Button>
                         <Button onClick={handleSaveDetail} disabled={savingDetail || loadingDetail}>
                             {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 제작중 전환 시 수정견적 금액 확인 다이얼로그 */}
+            <Dialog open={!!confirmProductionDialog} onOpenChange={(o) => !o && setConfirmProductionDialog(null)}>
+                <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-white flex items-center gap-2">
+                            🔔 제작 시작 전 확인
+                        </DialogTitle>
+                    </DialogHeader>
+                    {confirmProductionDialog && (
+                        <div className="space-y-4 py-2">
+                            <p className="text-white/70 text-sm">이 주문은 전문가 수정 견적이 있습니다.</p>
+                            <div className="rounded-lg bg-white/[0.03] border border-white/10 p-4 space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-white/50 text-sm">자동 견적 금액</span>
+                                    <span className="text-white/40 text-sm line-through">₩ {confirmProductionDialog.autoAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-emerald-400 font-medium text-sm">수정 견적 금액 (확정)</span>
+                                    <span className="text-emerald-400 font-bold text-lg">₩ {confirmProductionDialog.expertAmount.toLocaleString()}</span>
+                                </div>
+                            </div>
+                            <p className="text-white/50 text-xs">수정 견적 금액으로 제작을 시작합니다. 계속하시겠습니까?</p>
+                        </div>
+                    )}
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" className="border-white/10 text-white" onClick={() => setConfirmProductionDialog(null)}>취소</Button>
+                        <Button
+                            className="bg-purple-600 hover:bg-purple-500 text-white font-bold"
+                            onClick={async () => {
+                                if (confirmProductionDialog) {
+                                    const { orderId } = confirmProductionDialog;
+                                    setConfirmProductionDialog(null);
+                                    await doStatusChange(orderId, 'production');
+                                }
+                            }}
+                        >
+                            제작 시작 확인
                         </Button>
                     </DialogFooter>
                 </DialogContent>

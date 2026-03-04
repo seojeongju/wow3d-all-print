@@ -82,7 +82,7 @@ export async function PATCH(
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
         }
 
-        const body = (await req.json()) as { status?: string; admin_note?: string };
+        const body = (await req.json()) as { status?: string; admin_note?: string; expert_quote_data?: any };
         const status = body?.status && ALLOWED.includes(body.status) ? body.status : null;
         const adminNote = body?.admin_note !== undefined ? String(body.admin_note) : null;
 
@@ -98,8 +98,14 @@ export async function PATCH(
             await env.DB.prepare(
                 'UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
             ).bind(adminNote, numId, storeId).run();
+        } else if (body?.expert_quote_data) {
+            // 전문가 견적 저장
+            const expertData = JSON.stringify(body.expert_quote_data);
+            await env.DB.prepare(
+                'UPDATE orders SET expert_quote_data = ?, has_expert_quote = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
+            ).bind(expertData, numId, storeId).run();
         } else {
-            return NextResponse.json({ error: 'status or admin_note required' }, { status: 400 });
+            return NextResponse.json({ error: 'status, admin_note or expert_quote_data required' }, { status: 400 });
         }
 
         return NextResponse.json({ success: true });
