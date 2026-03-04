@@ -350,7 +350,7 @@ export function MakerWorkspace() {
                         </div>
                     </div>
 
-                    {/* 이미지 생성 방식: 돌출(SVG) vs AI 3D(Tripo3D) - 호버 없이 글자 항상 표시 */}
+                    {/* 이미지 생성 방식: 돌출(SVG) vs AI 3D(Tripo3D) - 선택 상태 명확히 표시 */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 생성 방식</h3>
                         <div className="grid grid-cols-2 gap-2 mb-4">
@@ -360,8 +360,11 @@ export function MakerWorkspace() {
                                 size="sm"
                                 title="이미지 → SVG → 돌출 높이로 3D"
                                 onClick={() => setImageMode('extrude')}
-                                className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 text-white ${imageMode === 'extrude' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
+                                className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${imageMode === 'extrude'
+                                    ? 'bg-primary border-2 border-primary text-white font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
+                                    : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
                             >
+                                {imageMode === 'extrude' && <Check className="w-3.5 h-3.5 shrink-0" />}
                                 돌출(SVG)
                             </Button>
                             <Button
@@ -370,10 +373,13 @@ export function MakerWorkspace() {
                                 size="sm"
                                 title="이미지 한 장으로 입체 메시 생성 (Tripo3D)"
                                 onClick={() => setImageMode('ai3d')}
-                                className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 flex items-center justify-center gap-1 text-white ${imageMode === 'ai3d' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
+                                className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${imageMode === 'ai3d'
+                                    ? 'bg-primary border-2 border-primary text-white font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
+                                    : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
                             >
                                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
                                 AI 3D
+                                {imageMode === 'ai3d' && <Check className="w-3.5 h-3.5 shrink-0" />}
                             </Button>
                         </div>
                         <p className="text-[10px] text-white/40">AI 3D: 이미지 한 장으로 입체 메시 생성 (Tripo3D)</p>
@@ -392,8 +398,11 @@ export function MakerWorkspace() {
                                         size="sm"
                                         title="로고·단순 도형에 적합"
                                         onClick={() => setConvertMode('simple')}
-                                        className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 text-white ${convertMode === 'simple' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
+                                        className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${convertMode === 'simple'
+                                            ? 'bg-primary border-2 border-primary text-white font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
+                                            : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
                                     >
+                                        {convertMode === 'simple' && <Check className="w-3.5 h-3.5 shrink-0" />}
                                         간단(로고)
                                     </Button>
                                     <Button
@@ -402,8 +411,11 @@ export function MakerWorkspace() {
                                         size="sm"
                                         title="사진·실물·펜 등 디테일 권장"
                                         onClick={() => setConvertMode('detailed')}
-                                        className={`h-9 rounded-xl border-white/10 text-center text-[11px] font-medium leading-tight px-2 min-w-0 text-white ${convertMode === 'detailed' ? 'bg-primary border-primary' : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
+                                        className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${convertMode === 'detailed'
+                                            ? 'bg-primary border-2 border-primary text-white font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
+                                            : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
                                     >
+                                        {convertMode === 'detailed' && <Check className="w-3.5 h-3.5 shrink-0" />}
                                         상세(사진·실물)
                                     </Button>
                                 </div>
