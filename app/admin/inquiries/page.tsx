@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Search, Loader2, Eye } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuthStore } from '@/store/useAuthStore'
 import {
   Select,
   SelectContent,
@@ -55,6 +56,7 @@ function getStatusBadge(status: string) {
 
 export default function AdminInquiriesPage() {
   const { toast } = useToast()
+  const { token } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [inquiries, setInquiries] = useState<Record<string, unknown>[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -69,7 +71,9 @@ export default function AdminInquiriesPage() {
     setLoading(true)
     try {
       const url = statusFilter && statusFilter !== 'all' ? `/api/admin/inquiries?status=${statusFilter}` : '/api/admin/inquiries'
-      const res = await fetch(url)
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       const data = await res.json()
       if (data.success) setInquiries(data.data || [])
     } catch (e) {
@@ -100,7 +104,10 @@ export default function AdminInquiriesPage() {
     try {
       const res = await fetch(`/api/admin/inquiries/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ status: newStatus }),
       })
       const json = await res.json()
@@ -130,7 +137,10 @@ export default function AdminInquiriesPage() {
     try {
       const res = await fetch(`/api/admin/inquiries/${detail.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ status: detailStatus, admin_note: detailNote }),
       })
       const json = await res.json()
