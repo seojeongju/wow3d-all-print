@@ -34,18 +34,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const navItems = [
         { title: '대시보드', href: '/admin', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
         { title: '내 정보', href: '/admin/profile', icon: User, match: (p: string) => p.startsWith('/admin/profile') },
-        { title: '사용자 관리', href: '/admin/users', icon: Users, match: (p: string) => p.startsWith('/admin/users') },
         { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
         { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p.startsWith('/admin/quotes') },
         { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
         { title: '설정 & 소재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
-        { title: '회사 정보', href: '/admin/company', icon: Building2, match: (p: string) => p.startsWith('/admin/company') },
     ];
 
     const isSuperAdmin = user?.store_id === 1 || user?.role === 'super_admin';
     const platformNavItems = [
+        { title: '사용자 관리', href: '/admin/users', icon: Users, match: (p: string) => p.startsWith('/admin/users') },
+        { title: '회사 정보', href: '/admin/company', icon: Building2, match: (p: string) => p.startsWith('/admin/company') },
         { title: '스토어 관리', href: '/admin/platform/stores', icon: Store, match: (p: string) => p.startsWith('/admin/platform/stores') },
-        // { title: '전체 결제', href: '/admin/platform/billing', icon: CreditCard, match: (p: string) => p.startsWith('/admin/platform/billing') },
     ];
 
     return (
