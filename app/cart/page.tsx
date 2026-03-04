@@ -94,12 +94,13 @@ export default function CartPage() {
                 const res = await fetch('/api/quotes', { headers })
                 const data = await res.json()
                 const quotes = Array.isArray(data?.data) ? data.data : []
-                setSavedQuotes(quotes)
+                // 데이터가 불완전한(부피 0) 견적 필터링
+                setSavedQuotes(quotes.filter((q: any) => q.volume_cm3 > 0))
 
-                // 사용자가 장바구니에 들어왔을 때 장바구니가 비어있고 저장된 목록이 있다면 저장된 목록 탭을 먼저 보여줌
-                if (items.length === 0 && quotes.length > 0) {
-                    setActiveTab('saved')
-                }
+                // 자동으로 탭을 전환하지 않음 (Zustand persist 동기화 지연으로 인한 오탐 방지)
+                // if (items.length === 0 && quotes.length > 0) {
+                //     setActiveTab('saved')
+                // }
             } catch (err) {
                 console.error('Failed to fetch saved quotes:', err)
             } finally {
@@ -135,6 +136,25 @@ export default function CartPage() {
     }
     const toggleSelectAll = () => {
         setSelectedIds(selectedIds.size >= items.length ? new Set() : new Set(items.map((i) => i.id)))
+    }
+
+    const handleDeleteSavedQuote = async (id: number) => {
+        const headers: HeadersInit = {}
+        if (token && user?.id) {
+            headers['Authorization'] = `Bearer ${token}`
+            headers['X-User-ID'] = String(user.id)
+        } else {
+            headers['X-Session-ID'] = sessionId || ''
+        }
+
+        try {
+            const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE', headers })
+            if (!res.ok) throw new Error('삭제 실패')
+            setSavedQuotes(prev => prev.filter(q => q.id !== id))
+            showToast.success('삭제 성공', '견적이 목록에서 제거되었습니다')
+        } catch (error) {
+            showToast.error('삭제 오류', error)
+        }
     }
 
     const handleClearCart = () => {
@@ -400,6 +420,14 @@ export default function CartPage() {
                                                             <>담기 <Plus className="w-4 h-4" /></>
                                                         )}
                                                     </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteSavedQuote(row.id)}
+                                                        className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/5 text-white/30 hover:text-red-400 hover:bg-red-400/10"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
                                                 </div>
                                             </motion.div>
                                         ))
@@ -470,9 +498,14 @@ export default function CartPage() {
                                                 </Button>
                                             </Link>
                                         ) : (
-                                            <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/10 text-white/40 font-medium gap-2 cursor-not-allowed" disabled>
-                                                비회원 주문 <ChevronRight className="w-4 h-4" />
-                                            </Button>
+                                            <div className="space-y-2">
+                                                <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/10 text-white/40 font-medium gap-2 cursor-not-allowed" disabled>
+                                                    비회원 주문 <ChevronRight className="w-4 h-4" />
+                                                </Button>
+                                                {activeTab === 'saved' && savedQuotes.length > 0 && (
+                                                    <p className="text-[10px] text-primary/70 text-center animate-pulse">상단의 '담기' 버튼을 눌러 장바구니로 옮겨주세요</p>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 )}

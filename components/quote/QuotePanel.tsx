@@ -37,6 +37,8 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
     const [isSaving, setIsSaving] = useState(false)
+    const [uploadedQuoteId, setUploadedQuoteId] = useState<number | null>(null)
+    const [lastSavedConfig, setLastSavedConfig] = useState<string>('')
 
     // Print Method Selection
     const [printMethod, setPrintMethod] = useState<PrintMethod>('fdm')
@@ -256,28 +258,34 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             }
 
             let fileUrl: string | null = null;
-            let uploadedQuoteId: number | null = null;
+            let currentQuoteId = uploadedQuoteId;
 
-            try {
-                const uploadRes = await fetch('/api/files/upload', {
-                    method: 'POST',
-                    headers: uploadHeaders,
-                    body: uploadFormData,
-                });
+            // 이미 업로드된 파일이 없고 새로 업로드해야 하는 경우
+            if (!currentQuoteId) {
+                try {
+                    const uploadRes = await fetch('/api/files/upload', {
+                        method: 'POST',
+                        headers: uploadHeaders,
+                        body: uploadFormData,
+                    });
 
-                if (uploadRes.ok) {
-                    const uploadData = await uploadRes.json();
-                    fileUrl = uploadData.data?.fileUrl || null;
-                    uploadedQuoteId = uploadData.data?.quoteId || null;
-                } else {
-                    console.warn('파일 업로드 실패, fileUrl 없이 견적 저장 진행');
+                    if (uploadRes.ok) {
+                        const uploadData = await uploadRes.json();
+                        fileUrl = uploadData.data?.fileUrl || null;
+                        currentQuoteId = uploadData.data?.quoteId || null;
+                        setUploadedQuoteId(currentQuoteId);
+                    } else {
+                        console.warn('파일 업로드 실패, fileUrl 없이 견적 저장 진행');
+                    }
+                } catch (uploadError) {
+                    console.error('파일 업로드 중 오류:', uploadError);
                 }
-            } catch (uploadError) {
-                console.error('파일 업로드 중 오류:', uploadError);
-                // 업로드 실패해도 견적 저장은 진행 (fileUrl 없이)
+            } else {
+                // 이미 업로드된 경우 기존 fileUrl 정보 유지 (보통 DB에 이미 있음)
             }
 
-            const quoteData = {
+            const quoteData: any = {
+                id: currentQuoteId,
                 fileName: file.name,
                 fileSize: file.size,
                 fileUrl,
@@ -301,6 +309,20 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 estimatedTimeHours,
             }
 
+            // 설정값 변경 여부 확인용 키 생성
+            const configKey = JSON.stringify({
+                printMethod,
+                fdmMaterial,
+                infill,
+                layerHeight,
+                supportEnabled,
+                resinType,
+                slaLayerHeight,
+                postProcessing,
+                totalPrice
+            });
+            setLastSavedConfig(configKey);
+
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`
@@ -322,22 +344,9 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             }
             const data = result.data as { id: number; sessionId?: string }
 
-            // 업로드한 파일이 있지만 quoteId가 다른 경우, file_url 업데이트
-            if (fileUrl && uploadedQuoteId && data.id && uploadedQuoteId !== data.id) {
-                try {
-                    const updateHeaders: HeadersInit = { 'Content-Type': 'application/json' };
-                    if (token) {
-                        updateHeaders['Authorization'] = `Bearer ${token}`;
-                        if (user?.id) updateHeaders['X-User-ID'] = String(user.id);
-                    } else {
-                        updateHeaders['X-Session-ID'] = sessionId || '';
-                    }
-                    // R2 key를 새 quoteId로 업데이트 (선택사항 - 기존 파일도 유지 가능)
-                    // 일단 기존 파일을 사용하도록 함
-                } catch (e) {
-                    console.error('file_url 업데이트 실패:', e);
-                }
-            }
+            // data.id가 위에서 전달한 currentQuoteId와 같을 것입니다 (업데이트됨)
+            const finalQuoteId = data.id || currentQuoteId;
+            if (finalQuoteId) setUploadedQuoteId(finalQuoteId);
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {
@@ -345,7 +354,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             } else {
                 showToast.info('견적 저장됨', '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.');
             }
-            return data
+            return { ...data, id: finalQuoteId };
         } catch (error) {
             showToast.error('오류 발생', error);
             return null
@@ -355,8 +364,26 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     }
 
     const handleAddToCart = async () => {
-        if (!analysis || !file) return
-        const savedQuote = await handleSaveQuote()
+        const configKey = JSON.stringify({
+            printMethod,
+            fdmMaterial,
+            infill,
+            layerHeight,
+            supportEnabled,
+            resinType,
+            slaLayerHeight,
+            postProcessing,
+            totalPrice
+        });
+
+        let savedQuote;
+        // 설정이 바뀌지 않았고 이미 저장된 ID가 있으면 재사용
+        if (uploadedQuoteId && configKey === lastSavedConfig) {
+            savedQuote = { id: uploadedQuoteId };
+        } else {
+            savedQuote = await handleSaveQuote();
+        }
+
         if (!savedQuote) return
 
         try {

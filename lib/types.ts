@@ -1,6 +1,7 @@
 // 견적 데이터 타입 정의
 
 export interface QuoteData {
+    id?: number;
     // 파일 정보
     fileName: string;
     fileSize: number;

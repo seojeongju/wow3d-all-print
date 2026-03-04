@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
         if (userId) {
             const parsed = parseInt(userId, 10);
             if (Number.isNaN(parsed)) return errorResponse('유효하지 않은 X-User-ID', 400);
-            query = 'SELECT * FROM quotes WHERE user_id = ? ORDER BY created_at DESC';
+            query = 'SELECT * FROM quotes WHERE user_id = ? AND volume_cm3 > 0 ORDER BY created_at DESC';
             bindings = [parsed];
         } else {
-            query = 'SELECT * FROM quotes WHERE session_id = ? ORDER BY created_at DESC';
+            query = 'SELECT * FROM quotes WHERE session_id = ? AND volume_cm3 > 0 ORDER BY created_at DESC';
             bindings = [sessionId];
         }
 
@@ -132,41 +132,82 @@ export async function POST(request: NextRequest) {
 
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
-            const query = `
-        INSERT INTO quotes (
-          user_id, session_id, file_name, file_size, file_url,
-          volume_cm3, surface_area_cm2, dimensions_x, dimensions_y, dimensions_z,
-          print_method,
-          fdm_material, fdm_infill, fdm_layer_height, fdm_support,
-          resin_type, layer_thickness, post_processing,
-          total_price, estimated_time_hours
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-            const runResult = await env.DB.prepare(query)
-                .bind(
-                    uid,
-                    sessionId ?? null,
-                    body.fileName,
-                    fileSize,
-                    body.fileUrl || null,
-                    volumeCm3,
-                    surfaceAreaCm2,
-                    dimensionsX,
-                    dimensionsY,
-                    dimensionsZ,
-                    body.printMethod,
-                    fdmMaterial,
-                    fdmInfill,
-                    fdmLayerHeight,
-                    body.fdmSupport ? 1 : 0,
-                    resinType,
-                    layerThickness,
-                    body.postProcessing ? 1 : 0,
-                    totalPrice,
-                    estimatedTimeHours
-                )
-                .run();
+            let runResult;
+            if (body.id) {
+                // 기존 견적 업데이트 (파일 업로드 시 이미 생성된 경우 등)
+                const query = `
+                    UPDATE quotes SET 
+                        user_id = ?, session_id = ?, file_name = ?, file_size = ?, file_url = ?,
+                        volume_cm3 = ?, surface_area_cm2 = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
+                        print_method = ?,
+                        fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
+                        resin_type = ?, layer_thickness = ?, post_processing = ?,
+                        total_price = ?, estimated_time_hours = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `;
+                runResult = await env.DB.prepare(query)
+                    .bind(
+                        uid,
+                        sessionId ?? null,
+                        body.fileName,
+                        fileSize,
+                        body.fileUrl || null,
+                        volumeCm3,
+                        surfaceAreaCm2,
+                        dimensionsX,
+                        dimensionsY,
+                        dimensionsZ,
+                        body.printMethod,
+                        fdmMaterial,
+                        fdmInfill,
+                        fdmLayerHeight,
+                        body.fdmSupport ? 1 : 0,
+                        resinType,
+                        layerThickness,
+                        body.postProcessing ? 1 : 0,
+                        totalPrice,
+                        estimatedTimeHours,
+                        body.id
+                    )
+                    .run();
+            } else {
+                // 신규 견적 생성
+                const query = `
+                    INSERT INTO quotes (
+                        user_id, session_id, file_name, file_size, file_url,
+                        volume_cm3, surface_area_cm2, dimensions_x, dimensions_y, dimensions_z,
+                        print_method,
+                        fdm_material, fdm_infill, fdm_layer_height, fdm_support,
+                        resin_type, layer_thickness, post_processing,
+                        total_price, estimated_time_hours
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `;
+                runResult = await env.DB.prepare(query)
+                    .bind(
+                        uid,
+                        sessionId ?? null,
+                        body.fileName,
+                        fileSize,
+                        body.fileUrl || null,
+                        volumeCm3,
+                        surfaceAreaCm2,
+                        dimensionsX,
+                        dimensionsY,
+                        dimensionsZ,
+                        body.printMethod,
+                        fdmMaterial,
+                        fdmInfill,
+                        fdmLayerHeight,
+                        body.fdmSupport ? 1 : 0,
+                        resinType,
+                        layerThickness,
+                        body.postProcessing ? 1 : 0,
+                        totalPrice,
+                        estimatedTimeHours
+                    )
+                    .run();
+            }
 
             const r = runResult as { success?: boolean; error?: string; meta?: { last_row_id?: number } };
             if (r && r.success === false && r.error) throw new Error(r.error);

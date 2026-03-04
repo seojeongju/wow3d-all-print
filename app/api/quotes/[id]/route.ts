@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
-import { errorResponse, successResponse, requireAuth } from '@/lib/api-utils';
+import { errorResponse, successResponse, requireAuthOrGuest } from '@/lib/api-utils';
 
 /**
  * GET /api/quotes/[id] - 특정 견적 조회
@@ -45,8 +45,8 @@ export async function DELETE(
         const { id } = await context.params;
         const { env } = getCloudflareContext();
 
-        // 1. 인증 확인
-        const auth = await requireAuth(request);
+        // 1. 인증 확인 (회원 또는 비회원)
+        const auth = await requireAuthOrGuest(request);
         if (auth instanceof Response) return auth;
 
         if (!env?.DB) {
@@ -55,26 +55,32 @@ export async function DELETE(
 
         const quoteId = parseInt(id);
 
-        // 2. 소유권 확인 (또는 관리자)
-        // 먼저 해당 견적이 존재하는지, 그리고 현재 사용자의 것인지 확인
+        // 2. 소유권 확인
         const quote = await env.DB
-            .prepare('SELECT user_id FROM quotes WHERE id = ?')
+            .prepare('SELECT user_id, session_id FROM quotes WHERE id = ?')
             .bind(quoteId)
-            .first<{ user_id: number }>();
+            .first<{ user_id: number | null; session_id: string | null }>();
 
         if (!quote) {
             return errorResponse('견적을 찾을 수 없습니다', 404);
         }
 
-        // 관리자가 아니고, 본인의 견적이 아니라면 거부
-        const isAdmin = await env.DB
-            .prepare('SELECT role FROM users WHERE id = ?')
-            .bind(auth.userId)
-            .first<{ role: string }>()
-            .then((res: { role?: string } | null) => res?.role === 'admin');
+        if (auth.isGuest) {
+            // 비회원의 경우 세션 ID 일치 확인
+            if (quote.session_id !== auth.sessionId) {
+                return errorResponse('삭제 권한이 없습니다', 403);
+            }
+        } else {
+            // 회원의 경우 사용자 ID 일치 확인 (또는 관리자)
+            const isAdmin = await env.DB
+                .prepare('SELECT role FROM users WHERE id = ?')
+                .bind(auth.userId)
+                .first<{ role: string }>()
+                .then((res: { role?: string } | null) => res?.role === 'admin' || res?.role === 'super_admin');
 
-        if (!isAdmin && quote.user_id !== auth.userId) {
-            return errorResponse('삭제 권한이 없습니다', 403);
+            if (!isAdmin && quote.user_id !== auth.userId) {
+                return errorResponse('삭제 권한이 없습니다', 403);
+            }
         }
 
         // 3. 삭제 실행
