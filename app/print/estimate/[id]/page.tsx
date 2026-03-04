@@ -122,7 +122,7 @@ export default function EstimatePrintPage() {
 
     // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
     const totalSupply = items.reduce((acc: number, item: any) =>
-        acc + (Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
+        acc + Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
     const totalVat = Math.round(totalSupply * 0.1);
     const totalAmount = totalSupply + totalVat;
 
@@ -218,12 +218,12 @@ export default function EstimatePrintPage() {
                             <th className="border border-black p-2 font-bold w-14">수량</th>
                             <th className="border border-black p-2 font-bold w-24">단가</th>
                             <th className="border border-black p-2 font-bold w-24">공급가액</th>
-                            <th className="border border-black p-2 font-bold w-20">세액(10%)</th>
+                            <th className="border border-black p-2 font-bold w-20">부가세(10%)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((item: any, idx: number) => {
-                            const itemSupply = Number(item.unit_price || 0) * Number(item.quantity || 0);
+                            const itemSupply = Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0));
                             const itemVat = Math.round(itemSupply * 0.1);
                             return (
                                 <tr key={item.id || idx} className="text-center">
