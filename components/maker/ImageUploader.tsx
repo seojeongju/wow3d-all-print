@@ -9,12 +9,9 @@ type Props = {
     onSvgConverted: (data: { name: string; svgContent: string }) => void;
     convertMode?: ConvertMode;
     useRemoveBg?: boolean;
-    /** AI 3D(Tripo3D) 사용 시: 이미지 업로드 후 task_id만 콜백, SVG 변환 생략 */
-    useTripo3D?: boolean;
-    onTripoTaskId?: (data: { taskId: string; name: string }) => void;
 };
 
-export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRemoveBg = false, useTripo3D = false, onTripoTaskId }: Props) {
+export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRemoveBg = false }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -36,21 +33,6 @@ export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRem
         if (fileInputRef.current) fileInputRef.current.value = '';
 
         try {
-            if (useTripo3D && onTripoTaskId) {
-                const form = new FormData();
-                form.append('type', 'image_to_model');
-                form.append('image', file);
-                const res = await fetch('/api/maker/tripo3d', { method: 'POST', body: form, signal });
-                const json = await res.json().catch(() => ({}));
-                if (!res.ok) {
-                    throw new Error(json?.error ?? 'AI 3D 생성 요청 실패');
-                }
-                const taskId = json?.task_id;
-                if (!taskId) throw new Error('task_id를 받지 못했습니다.');
-                onTripoTaskId({ taskId, name: file.name });
-                return;
-            }
-
             let imageToConvert: File = file;
             if (useRemoveBg) {
                 try {

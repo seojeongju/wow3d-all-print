@@ -1,23 +1,18 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMakerStore } from '@/store/useMakerStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check, Loader2, Sparkles } from 'lucide-react';
+import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check } from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
-import type { TripoModel } from '@/store/useMakerStore';
 import { motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
-
-const TRIPO_POLL_INTERVAL_MS = 3500;
-const TRIPO_POLL_MAX_ATTEMPTS = 120;
 
 export function MakerWorkspace() {
     const {
@@ -29,20 +24,12 @@ export function MakerWorkspace() {
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
         addImportedSvg,
-        addTripoModel,
-        tripoModels,
-        removeTripoModel
     } = useMakerStore();
 
     const [activeTab, setActiveTab] = useState('draw');
     const [pendingSvg, setPendingSvg] = useState<{ name: string; svgContent: string } | null>(null);
     const [convertMode, setConvertMode] = useState<ConvertMode>('detailed');
     const [useRemoveBg, setUseRemoveBg] = useState(false);
-    const [imageMode, setImageMode] = useState<'extrude' | 'ai3d'>('extrude');
-    const [tripoPending, setTripoPending] = useState<{ taskId: string; name: string } | null>(null);
-    const [textPrompt, setTextPrompt] = useState('');
-    const [textSubmitting, setTextSubmitting] = useState(false);
-    const tripoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const handleAddPendingTo3D = () => {
         if (!pendingSvg) return;
@@ -54,82 +41,6 @@ export function MakerWorkspace() {
         setPendingSvg(null);
         setActiveTab('3d');
     };
-
-    const handleTripoTaskId = (data: { taskId: string; name: string }) => {
-        setTripoPending(data);
-        setActiveTab('3d');
-    };
-
-    const handleTextTo3D = async () => {
-        const prompt = textPrompt.trim();
-        if (!prompt || textSubmitting) return;
-        setTextSubmitting(true);
-        try {
-            const res = await fetch('/api/maker/tripo3d', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'text_to_model', prompt }),
-            });
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(json?.error ?? '요청 실패');
-            const taskId = json?.task_id;
-            if (!taskId) throw new Error('task_id를 받지 못했습니다.');
-            handleTripoTaskId({ taskId, name: prompt.slice(0, 40) || '텍스트 3D' });
-        } catch (e) {
-            alert(e instanceof Error ? e.message : '텍스트 3D 생성 요청에 실패했습니다.');
-        } finally {
-            setTextSubmitting(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!tripoPending) return;
-
-        let attempts = 0;
-        const clearPoll = () => {
-            if (tripoPollRef.current) {
-                clearInterval(tripoPollRef.current);
-                tripoPollRef.current = null;
-            }
-        };
-
-        const poll = async () => {
-            attempts++;
-            try {
-                const res = await fetch(`/api/maker/tripo3d?task_id=${encodeURIComponent(tripoPending.taskId)}`);
-                const json = await res.json().catch(() => ({}));
-                if (json.status === 'success' && json.glb_url) {
-                    clearPoll();
-                    addTripoModel({
-                        id: crypto.randomUUID(),
-                        name: tripoPending.name.replace(/\.[^.]+$/, '') || 'AI 3D',
-                        taskId: tripoPending.taskId,
-                        glbUrl: json.glb_url,
-                        createdAt: Date.now()
-                    });
-                    setTripoPending(null);
-                    return;
-                }
-                if (json.status === 'failed') {
-                    clearPoll();
-                    alert(json.error ?? 'AI 3D 생성에 실패했습니다.');
-                    setTripoPending(null);
-                    return;
-                }
-                if (attempts >= TRIPO_POLL_MAX_ATTEMPTS) {
-                    clearPoll();
-                    alert('제한 시간이 지났습니다. 다시 시도해 주세요.');
-                    setTripoPending(null);
-                }
-            } catch (e) {
-                console.error('[Tripo3D] poll error', e);
-            }
-        };
-
-        poll();
-        tripoPollRef.current = setInterval(poll, TRIPO_POLL_INTERVAL_MS);
-        return () => clearPoll();
-    }, [tripoPending?.taskId, tripoPending?.name, addTripoModel]);
 
     return (
         <>
@@ -202,8 +113,6 @@ export function MakerWorkspace() {
                             onSvgConverted={(data) => setPendingSvg(data)}
                             convertMode={convertMode}
                             useRemoveBg={useRemoveBg}
-                            useTripo3D={imageMode === 'ai3d'}
-                            onTripoTaskId={imageMode === 'ai3d' ? handleTripoTaskId : undefined}
                         />
                     </div>
                 </aside>
@@ -350,42 +259,7 @@ export function MakerWorkspace() {
                         </div>
                     </div>
 
-                    {/* 이미지 생성 방식: 돌출(SVG) vs AI 3D(Tripo3D) - 선택 상태 명확히 표시 */}
-                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-                        <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 생성 방식</h3>
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                title="이미지 → SVG → 돌출 높이로 3D"
-                                onClick={() => setImageMode('extrude')}
-                                className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${imageMode === 'extrude'
-                                    ? 'bg-primary border-2 border-primary text-white font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
-                                    : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
-                            >
-                                {imageMode === 'extrude' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                                돌출(SVG)
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                title="이미지 한 장으로 입체 메시 생성 (Tripo3D)"
-                                onClick={() => setImageMode('ai3d')}
-                                className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${imageMode === 'ai3d'
-                                    ? 'bg-primary border-2 border-primary text-white font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
-                                    : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
-                            >
-                                <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                                AI 3D
-                                {imageMode === 'ai3d' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                            </Button>
-                        </div>
-                        <p className="text-[10px] text-white/40">AI 3D: 이미지 한 장으로 입체 메시 생성 (Tripo3D)</p>
-                    </div>
-
-                    {/* 이미지 변환 품질: 간단/상세, 배경 제거 (돌출 모드일 때만 의미 있음) - 라벨 항상 표시 */}
+                    {/* 이미지 변환 품질: 간단/상세, 배경 제거 */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 변환 품질</h3>
                         <div className="space-y-4">
@@ -436,79 +310,6 @@ export function MakerWorkspace() {
                                 </label>
                             </div>
                             <p className="text-[10px] text-white/40">remove.bg API 키 설정 시 사용 가능</p>
-                        </div>
-                    </div>
-
-                    {/* AI 3D 생성 중 */}
-                    {tripoPending && (
-                        <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5 shadow-xl">
-                            <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
-                                <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                                AI 3D 생성 중
-                            </h3>
-                            <p className="text-[11px] text-white/70 truncate" title={tripoPending.name}>{tripoPending.name}</p>
-                            <p className="text-[10px] text-white/50 mt-1">완료되면 결과물(3D) 탭에 표시됩니다. 1~2분 소요될 수 있습니다.</p>
-                        </div>
-                    )}
-
-                    {/* AI 3D 결과 목록: GLB 다운로드, 삭제 */}
-                    {tripoModels.length > 0 && (
-                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-                            <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
-                                <Sparkles className="w-4 h-4 text-primary" />
-                                AI 3D 결과
-                            </h3>
-                            <ul className="space-y-3">
-                                {tripoModels.map((m) => (
-                                    <li key={m.id} className="flex items-center gap-2 p-2 rounded-xl bg-black/30 border border-white/10">
-                                        <span className="text-[11px] text-white/80 truncate flex-1" title={m.name}>{m.name}</span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 px-2 text-[10px] rounded-lg border-white/20"
-                                            onClick={() => window.open(m.glbUrl, '_blank')}
-                                        >
-                                            GLB
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 w-8 p-0 text-white/50 hover:text-red-400 hover:bg-red-500/10"
-                                            onClick={() => removeTripoModel(m.id)}
-                                            title="삭제"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* 텍스트 → 3D */}
-                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-                        <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
-                            <Sparkles className="w-4 h-4 text-primary" />
-                            텍스트 → 3D
-                        </h3>
-                        <div className="space-y-3">
-                            <Input
-                                placeholder="예: 나무 의자, 로봇 피규어"
-                                value={textPrompt}
-                                onChange={(e) => setTextPrompt(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleTextTo3D()}
-                                disabled={!!tripoPending}
-                                className="bg-black/30 border-white/10 text-white placeholder:text-white/40 rounded-xl h-10 text-xs"
-                            />
-                            <Button
-                                size="sm"
-                                className="w-full h-10 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
-                                onClick={handleTextTo3D}
-                                disabled={!textPrompt.trim() || !!tripoPending || textSubmitting}
-                            >
-                                {textSubmitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : '3D 생성'}
-                            </Button>
-                            <p className="text-[10px] text-white/40">설명을 입력하면 AI가 3D 모델을 생성합니다.</p>
                         </div>
                     </div>
 
@@ -568,9 +369,10 @@ export function MakerWorkspace() {
                     <div className="mt-auto pt-6 border-t border-white/10">
                         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
                             <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                            <div className="text-xs text-white/60 leading-relaxed">
+                            <div className="text-xs text-white/60 leading-relaxed space-y-1">
                                 <span className="text-white/90 font-semibold block mb-1">작업 순서</span>
-                                <strong className="text-primary font-medium">이미지</strong>: 업로드 → SVG 변환 → 오른쪽에서 돌출 높이 지정 → [3D에 추가]. <strong className="text-primary font-medium">스케치(2D)</strong>: 마우스로 그리면 바로 <strong className="text-primary font-medium">결과물(3D)</strong> 탭에서 확인 가능. <strong className="text-white/80">STL 저장</strong>으로 내보내기.
+                                <p><strong className="text-primary font-medium">이미지</strong>: 업로드 → SVG 변환 → 돌출 높이 지정 → [3D에 추가]. <strong className="text-primary font-medium">스케치(2D)</strong>: 그리면 결과물(3D) 탭에서 확인. <strong className="text-white/80">STL 저장</strong>으로 내보내기.</p>
+                                <p className="text-white/50">돌출은 실루엣을 높이로 올린 2.5D 형태입니다. 로고·단순 도형에 적합합니다.</p>
                             </div>
                         </div>
                     </div>
