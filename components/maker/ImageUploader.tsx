@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { Image as ImageIcon, Loader2, X, FileCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { convertImageToSVG, removeBackground, type ConvertMode } from '@/lib/image-processor';
 
@@ -13,6 +13,7 @@ type Props = {
 
 export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRemoveBg = false }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const svgInputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -23,7 +24,24 @@ export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRem
         }
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSvgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (svgInputRef.current) svgInputRef.current.value = '';
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = reader.result as string;
+            if (typeof text === 'string' && (text.includes('<svg') || text.includes('<SVG'))) {
+                onSvgConverted({ name: file.name, svgContent: text });
+            } else {
+                alert('유효한 SVG 파일이 아닙니다.');
+            }
+        };
+        reader.onerror = () => alert('SVG 파일을 읽지 못했습니다.');
+        reader.readAsText(file, 'utf-8');
+    };
+
+    const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -76,44 +94,65 @@ export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRem
             <input
                 type="file"
                 ref={fileInputRef}
-                onChange={handleFileChange}
+                onChange={handleImageFileChange}
                 accept="image/png, image/jpeg, image/jpg"
                 className="hidden"
             />
+            <input
+                type="file"
+                ref={svgInputRef}
+                onChange={handleSvgFileChange}
+                accept=".svg,image/svg+xml"
+                className="hidden"
+            />
 
-            <div className="flex flex-col items-center gap-1 mt-2">
-                <div className="group relative flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-1">
-                        <Button
-                            variant="ghost"
-                            title="이미지 업로드 (JPG, PNG)"
-                            className="w-12 h-12 p-0 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,118,255,0.15)] flex items-center justify-center transition-all duration-300"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isProcessing}
-                        >
-                            {isProcessing ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <ImageIcon className="w-5 h-5" />
-                            )}
-                        </Button>
-                        {isProcessing && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="w-9 h-9 p-0 rounded-xl text-white/60 hover:text-white hover:bg-red-500/20 border border-white/10"
-                                onClick={handleCancel}
-                                title="변환 중단"
-                            >
-                                <X className="w-4 h-4" />
-                            </Button>
+            <div className="flex flex-col items-center gap-2 mt-2">
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        title="이미지 (PNG, JPEG) → SVG 변환"
+                        className="w-12 h-12 p-0 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 flex items-center justify-center transition-all duration-300"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <ImageIcon className="w-5 h-5" />
                         )}
-                    </div>
-                    <span className="text-[9px] font-medium text-white/70 text-center">이미지</span>
+                    </Button>
+                    {isProcessing && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="w-9 h-9 p-0 rounded-xl text-white/60 hover:text-white hover:bg-red-500/20 border border-white/10"
+                            onClick={handleCancel}
+                            title="변환 중단"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
+                    )}
                 </div>
+                <span className="text-[9px] font-medium text-white/70 text-center">이미지</span>
+
+                <div className="w-8 h-px bg-white/10" />
+
+                <div className="flex flex-col items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        title="SVG 파일 직접 사용 (변환 없음)"
+                        className="w-12 h-12 p-0 rounded-2xl bg-white/5 text-white/80 hover:bg-white/10 hover:text-white border border-white/10 flex items-center justify-center transition-all duration-300"
+                        onClick={() => svgInputRef.current?.click()}
+                        disabled={isProcessing}
+                    >
+                        <FileCode className="w-5 h-5" />
+                    </Button>
+                    <span className="text-[9px] font-medium text-white/70 text-center">SVG</span>
+                </div>
+
                 {isProcessing && (
-                    <span className="text-[10px] text-white/50">3D 변환 중… × 버튼으로 중단</span>
+                    <span className="text-[10px] text-white/50">변환 중… × 로 중단</span>
                 )}
             </div>
         </>

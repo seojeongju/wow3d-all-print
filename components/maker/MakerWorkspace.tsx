@@ -168,6 +168,17 @@ export function MakerWorkspace() {
                 {/* Right Settings Panel */}
                 <aside className="w-80 bg-black/40 border-l border-white/10 p-6 flex flex-col gap-8 z-20 backdrop-blur-xl shrink-0 overflow-y-auto custom-scrollbar">
 
+                    {/* 1. 이미지 또는 SVG 입력 */}
+                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 shadow-xl">
+                        <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-3">
+                            <span className="inline-flex w-6 h-6 rounded-full bg-primary/30 text-primary text-[11px] font-black items-center justify-center">1</span>
+                            이미지 또는 SVG 입력
+                        </h3>
+                        <p className="text-[11px] text-white/70 leading-relaxed">
+                            왼쪽 도구에서 <strong className="text-white/90">이미지</strong>(PNG/JPEG → SVG 변환) 또는 <strong className="text-white/90">SVG</strong>(파일 직접 사용)를 선택하세요. SVG 직접 입력이 가장 안정적입니다.
+                        </p>
+                    </div>
+
                     {/* Tool Settings */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 shadow-xl backdrop-blur-md">
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-6">
@@ -226,8 +237,9 @@ export function MakerWorkspace() {
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none" />
 
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-6 relative">
+                            <span className="inline-flex w-6 h-6 rounded-full bg-primary/30 text-primary text-[11px] font-black items-center justify-center">3</span>
                             <Layers className="w-4 h-4 text-primary" />
-                            3D 변환 설정
+                            3D 돌출 설정
                         </h3>
 
                         <div className="space-y-8 relative">
@@ -282,9 +294,9 @@ export function MakerWorkspace() {
                         </div>
                     </div>
 
-                    {/* 이미지 변환 품질: 간단/상세, 배경 제거 */}
+                    {/* 이미지 선택 시 변환 옵션 (1단계에서 이미지 사용 시만 해당) */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-                        <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 변환 품질</h3>
+                        <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 선택 시 변환 옵션</h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-2 block">변환 모드 (돌출 시)</label>
@@ -367,26 +379,23 @@ export function MakerWorkspace() {
                         </div>
                     )}
 
-                    {/* 이미지 → SVG 변환 결과: 돌출 높이 지정 후 3D에 추가 */}
+                    {/* 2. SVG 미리보기 — 확인 후 3D에 추가 */}
                     {pendingSvg && (
                         <div className="bg-primary/10 border border-primary/30 rounded-2xl p-5 shadow-xl">
                             <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
+                                <span className="inline-flex w-6 h-6 rounded-full bg-primary/30 text-primary text-[11px] font-black items-center justify-center">2</span>
                                 <ImagePlus className="w-4 h-4 text-primary" />
-                                이미지 → SVG → 돌출
+                                SVG 미리보기
                             </h3>
                             <div className="space-y-4">
                                 <div className="text-[11px] text-white/70 space-y-1.5">
                                     <p className="flex items-center gap-2">
-                                        <span className="inline-flex w-5 h-5 rounded-full bg-primary/30 text-primary text-[10px] font-bold items-center justify-center">1</span>
-                                        SVG 변환 완료
-                                    </p>
-                                    <p className="flex items-center gap-2">
-                                        <span className="inline-flex w-5 h-5 rounded-full bg-white/10 text-white/70 text-[10px] font-bold items-center justify-center">2</span>
-                                        아래 돌출 높이를 지정한 뒤
+                                        <span className="inline-flex w-5 h-5 rounded-full bg-primary/30 text-primary text-[10px] font-bold items-center justify-center">2</span>
+                                        SVG 확인 (변환됨 또는 직접 입력)
                                     </p>
                                     <p className="flex items-center gap-2">
                                         <span className="inline-flex w-5 h-5 rounded-full bg-white/10 text-white/70 text-[10px] font-bold items-center justify-center">3</span>
-                                        [3D에 추가]를 누르세요.
+                                        돌출 높이 설정 후 [3D에 추가] → 결과물(3D) 탭에서 확인
                                     </p>
                                 </div>
                                 <div className="rounded-xl overflow-hidden bg-black/40 border border-white/10 aspect-square max-h-32 flex items-center justify-center">
@@ -419,14 +428,14 @@ export function MakerWorkspace() {
                         </div>
                     )}
 
-                    {/* 도움말: 스케치/이미지 → 돌출 3D 출력 */}
+                    {/* 도움말: 1 → 2 → 3 작업 순서 */}
                     <div className="mt-auto pt-6 border-t border-white/10">
                         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
                             <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                             <div className="text-xs text-white/60 leading-relaxed space-y-1">
                                 <span className="text-white/90 font-semibold block mb-1">작업 순서</span>
-                                <p><strong className="text-primary font-medium">이미지</strong>: 업로드 → SVG 변환 → 돌출 높이 지정 → [3D에 추가]. <strong className="text-primary font-medium">스케치(2D)</strong>: 그리면 결과물(3D) 탭에서 확인. <strong className="text-white/80">STL 저장</strong>으로 내보내기.</p>
-                                <p className="text-white/50">돌출은 실루엣을 높이로 올린 2.5D 형태입니다. 로고·단순 도형에 적합합니다.</p>
+                                <p><strong className="text-primary font-medium">1</strong> 이미지 또는 SVG 입력 → <strong className="text-primary font-medium">2</strong> SVG 미리보기 → <strong className="text-primary font-medium">3</strong> 3D 돌출(결과물 탭). <strong className="text-white/80">STL 저장</strong>으로 내보내기.</p>
+                                <p className="text-white/50">SVG 파일 직접 입력 시 변환 없이 사용해 가장 안정적입니다. 스케치(2D)는 그리면 결과물(3D)에서 바로 확인됩니다.</p>
                             </div>
                         </div>
                     </div>
