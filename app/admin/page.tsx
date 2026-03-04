@@ -6,6 +6,7 @@ import {
     Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
 import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 type Stats = {
     totalSales: number;
@@ -25,11 +26,14 @@ type Stats = {
 export default function AdminDashboard() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+    const { token } = useAuthStore();
 
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch('/api/admin/stats');
+                const res = await fetch('/api/admin/stats', {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
                 const json = await res.json();
                 if (json.success && json.data) setStats(json.data);
             } catch (e) {
@@ -39,7 +43,7 @@ export default function AdminDashboard() {
             }
         };
         load();
-    }, []);
+    }, [token]);
 
     if (loading) {
         return (

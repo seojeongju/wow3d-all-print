@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Plus, Store as StoreIcon, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function StoreManagementPage() {
     const { toast } = useToast();
+    const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [stores, setStores] = useState<any[]>([]);
 
@@ -21,7 +23,9 @@ export default function StoreManagementPage() {
 
     const fetchStores = async () => {
         try {
-            const res = await fetch('/api/admin/platform/stores');
+            const res = await fetch('/api/admin/platform/stores', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const json = await res.json();
             if (json.success) {
                 setStores(json.data);
@@ -47,7 +51,10 @@ export default function StoreManagementPage() {
         try {
             const res = await fetch('/api/admin/platform/stores', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify(formData)
             });
             const json = await res.json();

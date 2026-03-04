@@ -69,7 +69,9 @@ function OrderListInner() {
 
     const fetchOrders = async () => {
         try {
-            const res = await fetch('/api/admin/orders');
+            const res = await fetch('/api/admin/orders', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             if (data.success) setOrders(data.data || []);
         } catch (e) {
@@ -96,7 +98,9 @@ function OrderListInner() {
             return;
         }
         setLoadingDetail(true);
-        fetch(`/api/admin/orders/${detailOrderId}`)
+        fetch(`/api/admin/orders/${detailOrderId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
             .then((r) => r.json())
             .then((j) => {
                 if (j.success && j.data) {
@@ -131,7 +135,10 @@ function OrderListInner() {
         try {
             const res = await fetch(`/api/admin/orders/${detailOrderId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({ status: detailStatus, admin_note: detailAdminNote }),
             });
             const j = await res.json();
@@ -196,7 +203,10 @@ function OrderListInner() {
         try {
             const res = await fetch(`/api/admin/orders/${orderId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({ status: newStatus }),
             });
             const json = await res.json();

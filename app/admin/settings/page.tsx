@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import PricingCalculator from '@/components/admin/PricingCalculator'
 import PricingPresets from '@/components/admin/PricingPresets'
+import { useAuthStore } from '@/store/useAuthStore'
 
 type EquipmentRow = {
   type: string
@@ -70,6 +71,7 @@ export default function AdminSettings() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [settings, setSettings] = useState<PrintSetting[]>([])
   const [equipment, setEquipment] = useState<EquipmentRow[]>([])
+  const { token } = useAuthStore()
 
   const [isAddingMaterial, setIsAddingMaterial] = useState(false)
   const [newMaterial, setNewMaterial] = useState<Partial<Material>>({
@@ -164,10 +166,11 @@ export default function AdminSettings() {
   const fetchData = async () => {
     try {
       setLoading(true)
+      const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
       const [matRes, setRes, eqRes] = await Promise.all([
-        fetch('/api/admin/materials'),
-        fetch('/api/admin/settings'),
-        fetch('/api/admin/equipment').catch(() => ({ json: () => ({ success: false, data: [] }) })),
+        fetch('/api/admin/materials', { headers: authHeaders }),
+        fetch('/api/admin/settings', { headers: authHeaders }),
+        fetch('/api/admin/equipment', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
       ])
       const matData = await matRes.json()
       const setData = await setRes.json()
@@ -230,7 +233,10 @@ export default function AdminSettings() {
       }
       const res = await fetch('/api/admin/equipment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           type,
           name: form.name?.trim() || null,
@@ -281,7 +287,10 @@ export default function AdminSettings() {
   const handleDeleteMaterial = async (id: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
     try {
-      await fetch(`/api/admin/materials?id=${id}`, { method: 'DELETE' })
+      await fetch(`/api/admin/materials?id=${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       setMaterials((m) => m.filter((x) => x.id !== id))
       showToast.success('소재 삭제 완료')
     } catch (e) {
@@ -305,7 +314,10 @@ export default function AdminSettings() {
       }
       const res = await fetch('/api/admin/materials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       })
       if (!res.ok) {
@@ -343,7 +355,10 @@ export default function AdminSettings() {
       }
       const res = await fetch(`/api/admin/materials/${editingMaterial.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(patchBody),
       })
       if (!res.ok) {
@@ -363,7 +378,10 @@ export default function AdminSettings() {
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(settings),
       })
       if (!res.ok) {

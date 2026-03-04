@@ -8,17 +8,21 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, FileText, Loader2, Printer, PenLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function QuoteList() {
     const { toast } = useToast();
     const router = useRouter();
+    const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
 
     const fetchOrders = async () => {
         try {
-            const res = await fetch('/api/admin/orders');
+            const res = await fetch('/api/admin/orders', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
             const data = await res.json();
             if (data.success) {
                 // 수동으로 견적서 상태(가상) 추가 가능
