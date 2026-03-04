@@ -31,14 +31,18 @@ export default function EstimatePrintPage() {
             }
         }
 
-        // 없으면 DB 로드
-        fetch(`/api/admin/orders/${id}`)
+        // localStorage에 저장된 관리자 토큰 사용 (새 창에서도 인증 가능)
+        const savedToken = typeof window !== 'undefined' ? localStorage.getItem('admin_print_token') : null;
+
+        fetch(`/api/admin/orders/${id}`, {
+            headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {},
+        })
             .then(res => res.json())
             .then(json => {
                 if (json.success) {
                     setData(json.data);
                 } else {
-                    setError(json.error || '주문 정보를 불러올 수 없습니다.');
+                    setError(json.error || '주문 정보를 불러올 수 없습니다. 관리자 페이지에서 인쇄해주세요.');
                 }
             })
             .catch(err => {
@@ -50,15 +54,27 @@ export default function EstimatePrintPage() {
 
     useEffect(() => {
         if (!loading && data) {
-            // 데이터 로드 후 잠시 뒤 자동 인쇄 창 띄우기 (옵션)
+            // 데이터 로드 후 자동 인쇄 창 띄우기
             setTimeout(() => {
                 window.print();
             }, 800);
         }
     }, [loading, data]);
 
-    if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
-    if (error) return <div className="flex h-screen items-center justify-center text-red-500">{error}</div>;
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex h-screen items-center justify-center flex-col gap-4 text-center p-8">
+            <div className="text-red-500 text-lg font-bold">❌ 인증 오류</div>
+            <div className="text-slate-600 text-sm max-w-sm">{error}</div>
+            <div className="text-slate-400 text-xs mt-2">관리자 페이지 → 주문/견적 관리에서 견적서 인쇄 버튼을 통해 열어주세요.</div>
+        </div>
+    );
+
     if (!data) return null;
 
     const { order, items } = data;
@@ -67,15 +83,15 @@ export default function EstimatePrintPage() {
 
     // 총 합계 계산
     const totalAmount = Number(order.total_amount || 0);
-    const supplyValue = Math.round(totalAmount / 1.1); // 공급가액 (VAT 포함 가정 시 역산)
-    const vat = totalAmount - supplyValue; // 부가세
+    const supplyValue = Math.round(totalAmount / 1.1);
+    const vat = totalAmount - supplyValue;
 
     return (
         <div className="bg-white text-black min-h-screen p-8 md:p-12 print:p-0">
             {/* A4 용지 스타일 컨테이너 */}
             <div className="max-w-[210mm] mx-auto bg-white print:max-w-none">
 
-                {/* 헤더: 제목 및 결재란(선택사항) */}
+                {/* 헤더 */}
                 <div className="flex justify-between items-start mb-12 border-b-2 border-black pb-4">
                     <h1 className="text-4xl font-serif font-bold tracking-widest">견 적 서</h1>
                     <div className="text-sm text-right">
@@ -84,7 +100,7 @@ export default function EstimatePrintPage() {
                     </div>
                 </div>
 
-                {/* 공급자/수요자 정보 테이블 */}
+                {/* 공급자/수요자 정보 */}
                 <div className="flex flex-col md:flex-row gap-0 border border-black mb-8">
                     {/* 공급받는자 */}
                     <div className="w-full md:w-1/2 p-0 border-b md:border-b-0 md:border-r border-black">
@@ -124,7 +140,6 @@ export default function EstimatePrintPage() {
                             <div className="flex">
                                 <span className="w-20 font-bold text-slate-500">대표자</span>
                                 <span>서정주</span>
-                                {/* 도장 이미지 (Optional) */}
                                 <div className="absolute right-4 top-10 opacity-50">
                                     <span className="border border-red-500 text-red-500 rounded-sm px-1 text-xs select-none">(인)</span>
                                 </div>
@@ -144,7 +159,10 @@ export default function EstimatePrintPage() {
                 {/* 합계 금액 */}
                 <div className="border-b-2 border-black pb-2 mb-6 flex justify-between items-end">
                     <span className="font-bold text-lg">합계금액 (Supply Price Total)</span>
-                    <span className="text-2xl font-bold">₩ {totalAmount.toLocaleString()} <span className="text-sm font-normal text-slate-600">(VAT 포함)</span></span>
+                    <span className="text-2xl font-bold">
+                        ₩ {totalAmount.toLocaleString()}
+                        <span className="text-sm font-normal text-slate-600"> (VAT 포함)</span>
+                    </span>
                 </div>
 
                 {/* 품목 리스트 */}
@@ -152,7 +170,7 @@ export default function EstimatePrintPage() {
                     <thead>
                         <tr className="bg-slate-100 text-center">
                             <th className="border border-black p-2 font-bold w-12">No</th>
-                            <th className="border border-black p-2 font-bold max-w-[200px]">품목명 / 사양</th>
+                            <th className="border border-black p-2 font-bold">품목명 / 사양</th>
                             <th className="border border-black p-2 font-bold w-16">수량</th>
                             <th className="border border-black p-2 font-bold w-24">단가</th>
                             <th className="border border-black p-2 font-bold w-24">공급가액</th>
@@ -161,17 +179,17 @@ export default function EstimatePrintPage() {
                     </thead>
                     <tbody>
                         {items.map((item: any, idx: number) => {
-                            const itemPrice = Number(item.subtotal || 0);
+                            const itemPrice = Number(item.subtotal || (Number(item.unit_price || 0) * Number(item.quantity || 0)));
                             const itemSupply = Math.round(itemPrice / 1.1);
                             const itemVat = itemPrice - itemSupply;
-
                             return (
-                                <tr key={item.id} className="text-center">
+                                <tr key={item.id || idx} className="text-center">
                                     <td className="border border-black p-2">{idx + 1}</td>
                                     <td className="border border-black p-2 text-left">
                                         <div className="font-bold">{item.file_name}</div>
                                         <div className="text-xs text-slate-500">
-                                            {item.print_method?.toUpperCase()} / {item.material_name}
+                                            {item.print_method ? item.print_method.toUpperCase() : ''}
+                                            {item.material_name ? ` / ${item.material_name}` : ''}
                                         </div>
                                     </td>
                                     <td className="border border-black p-2">{item.quantity}</td>
@@ -181,8 +199,6 @@ export default function EstimatePrintPage() {
                                 </tr>
                             );
                         })}
-
-                        {/* 여백용 빈 줄 (필요 시) */}
                         {Array.from({ length: Math.max(0, 10 - items.length) }).map((_, i) => (
                             <tr key={`empty-${i}`} className="text-center h-8">
                                 <td className="border border-black p-2"></td>
@@ -197,7 +213,9 @@ export default function EstimatePrintPage() {
                     <tfoot>
                         <tr className="bg-slate-50 font-bold">
                             <td className="border border-black p-2 text-center" colSpan={2}>합 계</td>
-                            <td className="border border-black p-2 text-center">{items.reduce((acc: number, curr: any) => acc + (curr.quantity || 0), 0)}</td>
+                            <td className="border border-black p-2 text-center">
+                                {items.reduce((acc: number, curr: any) => acc + Number(curr.quantity || 0), 0)}
+                            </td>
                             <td className="border border-black p-2 text-right">-</td>
                             <td className="border border-black p-2 text-right">{supplyValue.toLocaleString()}</td>
                             <td className="border border-black p-2 text-right">{vat.toLocaleString()}</td>
@@ -205,7 +223,7 @@ export default function EstimatePrintPage() {
                     </tfoot>
                 </table>
 
-                {/* 하단 메모 */}
+                {/* 특이사항 */}
                 <div className="mt-8 text-sm space-y-2">
                     <p className="font-bold border-b border-black inline-block mb-2">특이사항</p>
                     <ul className="list-disc list-inside space-y-1 text-slate-700">
@@ -215,7 +233,7 @@ export default function EstimatePrintPage() {
                     </ul>
                 </div>
 
-                {/* 하단 서명란 */}
+                {/* 서명란 */}
                 <div className="mt-16 text-center">
                     <p className="text-lg font-serif">위와 같이 견적합니다.</p>
                     <p className="mt-4 font-bold">{orderDate.toLocaleDateString()}</p>

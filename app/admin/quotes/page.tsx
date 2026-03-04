@@ -51,6 +51,10 @@ export default function QuoteList() {
     }, [orders, searchQuery]);
 
     const handlePrint = (id: number) => {
+        // 새 창에서도 인증이 되도록 토큰을 localStorage에 저장
+        if (token) {
+            localStorage.setItem('admin_print_token', token);
+        }
         window.open(`/print/estimate/${id}`, '_blank', 'width=900,height=1000');
     };
 

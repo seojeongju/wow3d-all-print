@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function QuoteEditPage() {
     const { toast } = useToast();
+    const { token } = useAuthStore();
     const router = useRouter();
     const params = useParams();
     const id = params?.id;
@@ -24,7 +26,9 @@ export default function QuoteEditPage() {
 
     useEffect(() => {
         if (!id) return;
-        fetch(`/api/admin/orders/${id}`)
+        fetch(`/api/admin/orders/${id}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
             .then(res => res.json())
             .then(json => {
                 if (json.success && json.data) {
@@ -52,7 +56,7 @@ export default function QuoteEditPage() {
             })
             .catch(() => toast({ title: '오류 발생', variant: 'destructive' }))
             .finally(() => setLoading(false));
-    }, [id, toast]);
+    }, [id, toast, token]);
 
     const handleItemChange = (idx: number, field: string, value: any) => {
         const newItems = [...items];
@@ -78,25 +82,28 @@ export default function QuoteEditPage() {
                 ...orderInfo,
                 recipient_name: recipient.name,
                 recipient_phone: recipient.phone,
-                user_email: recipient.email, // or guest_email logic
+                user_email: recipient.email,
                 guest_email: recipient.email,
                 shipping_address: recipient.address,
                 total_amount: totalAmount,
-                created_at: orderInfo.created_at // 유지
+                created_at: orderInfo.created_at
             },
             items: items.map(it => ({
                 id: it.id,
                 file_name: it.name,
-                print_method: it.spec, // 단순화
-                material_name: '', // display 용으로 spec에 합침
+                print_method: it.spec,
+                material_name: '',
                 quantity: it.quantity,
                 unit_price: it.unit_price,
                 subtotal: Number(it.unit_price) * Number(it.quantity)
             }))
         };
 
-        // localStorage에 임시 저장 후 인쇄 창 열기
+        // localStorage에 인쇄 데이터 + 인증 토큰 저장
         localStorage.setItem(`quote_temp_${id}`, JSON.stringify(printData));
+        if (token) {
+            localStorage.setItem('admin_print_token', token);
+        }
         window.open(`/print/estimate/${id}?temp=true`, '_blank', 'width=900,height=1000');
     };
 
