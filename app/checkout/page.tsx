@@ -420,7 +420,12 @@ function CheckoutContent() {
                                         </div>
                                     </div>
 
-                                    <div className="pt-6">
+                                    <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary/90 leading-relaxed font-medium">
+                                        <span className="font-bold block mb-0.5">※ 안내사항</span>
+                                        자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출후 견적서 발송됩니다.
+                                    </div>
+
+                                    <div className="pt-2">
                                         <Button
                                             size="lg"
                                             className="w-full h-18 rounded-2xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group"

@@ -529,7 +529,11 @@ export default function CartPage() {
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-white/5">
+                            <div className="pt-4 border-t border-white/5 space-y-3">
+                                <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary/90 leading-relaxed font-medium">
+                                    <span className="font-bold block mb-0.5">※ 안내사항</span>
+                                    자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출후 견적서 발송됩니다.
+                                </div>
                                 <div className="flex items-start gap-2">
                                     <ShieldCheck className="w-4 h-4 text-emerald-500/70 shrink-0 mt-0.5" />
                                     <div className="text-xs text-white/45 leading-relaxed">
