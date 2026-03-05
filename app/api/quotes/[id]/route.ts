@@ -89,11 +89,32 @@ export async function DELETE(
             }
         }
 
-        // 3. 삭제 실행
-        await env.DB
-            .prepare('DELETE FROM quotes WHERE id = ?')
+        // 3. 삭제(또는 숨김) 실행
+        // 이 견적이 이미 주문에 포함된 경우, 외래 키(order_items) 제약조건으로 인해 DELETE시 500 오류가 발생합니다.
+        // 따라서 주문 항목에 있다면 사용자/세션 ID만 NULL로 업데이트하여 사용자의 목록에서 숨김 처리합니다.
+        const inOrder = await env.DB
+            .prepare('SELECT 1 FROM order_items WHERE quote_id = ? LIMIT 1')
             .bind(quoteId)
-            .run();
+            .first();
+
+        if (inOrder) {
+            // 목록에서 보이지 않도록 연결 해제
+            await env.DB
+                .prepare('UPDATE quotes SET user_id = NULL, session_id = NULL WHERE id = ?')
+                .bind(quoteId)
+                .run();
+            // 외래 키 제약을 위해 수동으로 카트에서만 제거
+            await env.DB
+                .prepare('DELETE FROM cart WHERE quote_id = ?')
+                .bind(quoteId)
+                .run();
+        } else {
+            // 아직 주문되지 않은 견적은 완전 삭제
+            await env.DB
+                .prepare('DELETE FROM quotes WHERE id = ?')
+                .bind(quoteId)
+                .run();
+        }
 
         return successResponse({ id: quoteId }, '견적이 삭제되었습니다');
     } catch (error: any) {
