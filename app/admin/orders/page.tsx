@@ -396,7 +396,7 @@ function OrderListInner() {
                                     <th className="p-4 font-medium text-white/70">주문번호</th>
                                     <th className="p-4 font-medium text-white/70">고객명</th>
                                     <th className="p-4 font-medium text-white/70">연락</th>
-                                    <th className="p-4 font-medium text-white/70">주문 내역</th>
+                                    <th className="p-4 font-medium text-white/70">주문 내역(파일다운)</th>
                                     <th className="p-4 font-medium text-white/70">금액</th>
                                     <th className="p-4 font-medium text-white/70">상태</th>
                                     <th className="p-4 font-medium text-white/70">날짜</th>
@@ -433,16 +433,17 @@ function OrderListInner() {
                                                     if (items.length > 0) {
                                                         return (
                                                             <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-7 w-7 text-primary hover:text-primary/80 hover:bg-primary/10"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-7 px-2.5 text-[11px] font-semibold border-primary/50 text-primary hover:bg-primary hover:text-white transition-all shadow-[0_0_10px_rgba(99,102,241,0.15)] group"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleBulkDownload(order.id, items);
                                                                 }}
                                                                 title="모든 파일 다운로드"
                                                             >
-                                                                <FileDown className="w-4 h-4" />
+                                                                <FileDown className="w-3.5 h-3.5 mr-1 group-hover:scale-110 transition-transform" />
+                                                                다운로드
                                                             </Button>
                                                         );
                                                     }
