@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,9 +40,11 @@ export default function AdminGalleryPage() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Add Form 
+    // Add / Edit Form 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [editId, setEditId] = useState<number | null>(null);
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -81,19 +83,55 @@ export default function AdminGalleryPage() {
         }
     };
 
-    const handleAddSubmit = async () => {
-        if (!formData.title || !formData.image) {
-            toast({ title: '제목과 이미지는 필수 항목입니다', variant: 'destructive' });
+    const openAddModal = () => {
+        setEditId(null);
+        setFormData({ title: '', description: '', material: '', print_method: '', tags: '', image: null });
+        setPreviewUrl(null);
+        setIsAddOpen(true);
+    };
+
+    const openEditModal = (item: GalleryItem) => {
+        setEditId(item.id);
+
+        // Tags array to comma string
+        let tagsStr = '';
+        try {
+            const arr = JSON.parse(item.tags || '[]');
+            tagsStr = arr.join(', ');
+        } catch {
+            tagsStr = item.tags || '';
+        }
+
+        setFormData({
+            title: item.title || '',
+            description: item.description || '',
+            material: item.material || '',
+            print_method: item.print_method || '',
+            tags: tagsStr,
+            image: null
+        });
+        setPreviewUrl(item.image_url ? `/api/gallery/image/${item.image_url.replace('gallery/', '')}` : null);
+        setIsAddOpen(true);
+    };
+
+    const handleAddOrEditSubmit = async () => {
+        if (!formData.title) {
+            toast({ title: '제목은 필수 항목입니다', variant: 'destructive' });
+            return;
+        }
+
+        if (!editId && !formData.image) {
+            toast({ title: '업로드할 이미지를 선택해주세요', variant: 'destructive' });
             return;
         }
 
         setIsSaving(true);
         try {
             const data = new FormData();
-            data.append('title', formData.title);
-            data.append('description', formData.description);
-            data.append('material', formData.material);
-            data.append('print_method', formData.print_method);
+            if (formData.title) data.append('title', formData.title);
+            if (formData.description) data.append('description', formData.description);
+            if (formData.material) data.append('material', formData.material);
+            if (formData.print_method) data.append('print_method', formData.print_method);
 
             // # 붙은 태그들을 JSON 배열로 변환해서 저장
             const tagsArray = formData.tags
@@ -101,23 +139,27 @@ export default function AdminGalleryPage() {
                 .map(t => t.trim().replace(/^#/, ''))
                 .filter(Boolean);
             data.append('tags', JSON.stringify(tagsArray));
-            data.append('image', formData.image);
 
-            const res = await fetch('/api/gallery', {
-                method: 'POST',
+            if (formData.image) {
+                data.append('image', formData.image);
+            }
+
+            const url = editId ? `/api/gallery/${editId}` : '/api/gallery';
+            const method = editId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 body: data
             });
 
             const json = await res.json();
             if (json.success) {
-                toast({ title: '갤러리에 이미지가 추가되었습니다.' });
+                toast({ title: `갤러리 정보가 ${editId ? '수정' : '추가'}되었습니다.` });
                 setIsAddOpen(false);
-                setFormData({ title: '', description: '', material: '', print_method: '', tags: '', image: null });
-                setPreviewUrl(null);
                 fetchGallery();
             } else {
-                toast({ title: json.error || '등록 실패', variant: 'destructive' });
+                toast({ title: json.error || '저장 실패', variant: 'destructive' });
             }
         } catch (e) {
             toast({ title: '오류가 발생했습니다.', variant: 'destructive' });
@@ -170,7 +212,7 @@ export default function AdminGalleryPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">출력 갤러리 관리</h1>
                     <p className="text-white/50 text-sm mt-1">메인 페이지 갤러리 섹션에 표시될 출력물을 관리합니다.</p>
                 </div>
-                <Button onClick={() => setIsAddOpen(true)} className="gap-2 bg-primary text-white hover:bg-primary/90">
+                <Button onClick={openAddModal} className="gap-2 bg-primary text-white hover:bg-primary/90">
                     <Plus className="w-4 h-4" /> 갤러리 업로드
                 </Button>
             </div>
@@ -233,7 +275,10 @@ export default function AdminGalleryPage() {
                                                     {item.is_visible ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                                                 </button>
                                             </td>
-                                            <td className="p-4 text-right">
+                                            <td className="p-4 text-right whitespace-nowrap">
+                                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 mr-1" onClick={() => openEditModal(item)}>
+                                                    <Edit2 className="w-4 h-4" />
+                                                </Button>
                                                 <Button variant="ghost" size="icon" className="text-destructive hover:bg-red-500/10" onClick={() => handleDelete(item.id)}>
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
@@ -250,7 +295,7 @@ export default function AdminGalleryPage() {
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="text-white">출력물 갤러리 업로드</DialogTitle>
+                        <DialogTitle className="text-white">출력물 갤러리 {editId ? '정보 수정' : '업로드'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="flex flex-col items-center justify-center gap-4">
@@ -259,7 +304,12 @@ export default function AdminGalleryPage() {
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 {previewUrl ? (
-                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                                    <>
+                                        <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
+                                            <span className="text-white text-sm font-medium">사진 변경하기</span>
+                                        </div>
+                                    </>
                                 ) : (
                                     <>
                                         <ImageIcon className="w-8 h-8 text-white/40 mb-2" />
@@ -298,7 +348,7 @@ export default function AdminGalleryPage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" className="border-white/10 text-white bg-transparent hover:bg-white/10" onClick={() => setIsAddOpen(false)}>취소</Button>
-                        <Button className="bg-primary hover:bg-primary/90 text-white" onClick={handleAddSubmit} disabled={isSaving}>
+                        <Button className="bg-primary hover:bg-primary/90 text-white" onClick={handleAddOrEditSubmit} disabled={isSaving}>
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} 업로드 및 저장
                         </Button>
                     </DialogFooter>
