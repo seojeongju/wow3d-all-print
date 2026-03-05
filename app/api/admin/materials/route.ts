@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     try {
         const { results } = await env.DB.prepare(
-            "SELECT * FROM materials WHERE store_id = ? ORDER BY type, name"
+            "SELECT * FROM materials WHERE store_id = ? ORDER BY type ASC, sort_order ASC, name ASC"
         ).bind(storeId).all();
 
         return NextResponse.json({ success: true, data: results });

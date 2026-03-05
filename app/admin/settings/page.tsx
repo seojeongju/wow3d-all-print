@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Save, Trash2, Loader2, Printer, Pencil, Calculator, Zap } from 'lucide-react'
+import { Plus, Save, Trash2, Loader2, Printer, Pencil, Calculator, Zap, ArrowUp, ArrowDown } from 'lucide-react'
 import { Material, PrintSetting } from '@/lib/types'
 import { showToast } from '@/lib/toast-helper'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
@@ -297,6 +297,38 @@ export default function AdminSettings() {
       showToast.error('삭제 실패', e)
     }
   }
+
+  const handleMoveMaterial = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return
+    if (direction === 'down' && index === materials.length - 1) return
+
+    const newMaterials = [...materials]
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+
+    // Swap
+    const temp = newMaterials[index]
+    newMaterials[index] = newMaterials[targetIndex]
+    newMaterials[targetIndex] = temp
+
+    // Optimistic Update
+    setMaterials(newMaterials)
+
+    try {
+      const res = await fetch('/api/admin/materials/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ orderedIds: newMaterials.map(m => m.id) })
+      })
+      if (!res.ok) throw new Error('Failed to reorder')
+    } catch (e) {
+      showToast.error('순서 변경 실패', e)
+      fetchData() // Rollback on error
+    }
+  }
+
 
   const handleAddMaterial = async () => {
     try {
@@ -656,7 +688,7 @@ export default function AdminSettings() {
                     </tr>
                   </thead>
                   <tbody>
-                    {materials.map((m) => (
+                    {materials.map((m, index) => (
                       <tr key={m.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                         <td className="p-4 font-medium text-white">{m.name}</td>
                         <td className="p-4">
@@ -673,6 +705,22 @@ export default function AdminSettings() {
                         <td className="p-4 text-white/90">{m.density}</td>
                         <td className="p-4 text-white/50 max-w-[160px] truncate" title={(m as any).description}>{(m as any).description || '-'}</td>
                         <td className="p-4 text-right flex items-center justify-end gap-1">
+                          <div className="flex flex-col mr-2 bg-white/5 rounded overflow-hidden">
+                            <button
+                              className="p-1 hover:bg-white/10 text-white/60 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+                              onClick={() => handleMoveMaterial(index, 'up')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              className="p-1 hover:bg-white/10 text-white/60 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+                              onClick={() => handleMoveMaterial(index, 'down')}
+                              disabled={index === materials.length - 1}
+                            >
+                              <ArrowDown className="w-3 h-3" />
+                            </button>
+                          </div>
                           <Button variant="ghost" size="icon" className="text-white/60 hover:text-white" onClick={() => openEdit(m)}>
                             <Pencil className="w-4 h-4" />
                           </Button>
