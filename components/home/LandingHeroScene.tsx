@@ -39,20 +39,17 @@ export default function LandingHeroScene() {
         <div className="absolute inset-0 group cursor-grab active:cursor-grabbing">
             <Canvas
                 shadows
-                dpr={[1, 2]}
-                gl={{ antialias: true, alpha: true }}
+                dpr={[1, 1.5]}
+                gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
             >
                 <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={40} />
                 <Suspense fallback={null}>
-                    <Stage
-                        intensity={0.6}
-                        environment="city"
-                        adjustCamera={false}
-                        preset="rembrandt"
-                        shadows={{ type: 'contact', opacity: 0.2, blur: 3 }}
-                    >
-                        <RotatingModel />
-                    </Stage>
+                    {/* Stage environment="city" 제거: GPU Context Lost 방지 및 메모리 최소화 */}
+                    <ambientLight intensity={0.5} />
+                    <directionalLight position={[10, 10, 10]} intensity={1.5} castShadow shadow-mapSize={512} />
+                    <directionalLight position={[-10, -5, -10]} intensity={0.5} />
+
+                    <RotatingModel />
 
                     <OrbitControls
                         enableZoom={true}

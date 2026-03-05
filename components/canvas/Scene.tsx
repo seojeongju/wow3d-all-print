@@ -374,6 +374,7 @@ export default function Scene({ compact = false }: SceneProps) {
                     <Canvas
                         shadows
                         dpr={[1, 1.5]}
+                        frameloop="demand"
                         camera={{ position: [50, 50, 50], fov: 45 }}
                         gl={{
                             preserveDrawingBuffer: true,
