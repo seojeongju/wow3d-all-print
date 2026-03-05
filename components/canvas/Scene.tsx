@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Stage, Grid, Html, Bounds, useBounds } from '@react-three/drei'
+import { OrbitControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef, createContext, useContext } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
@@ -86,6 +86,14 @@ function Model({
     const [isLoading, setIsLoading] = useState(true)
     const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null)
     const bounds = useBounds()
+    const mountedRef = useRef(true)
+
+    useEffect(() => {
+        mountedRef.current = true
+        return () => {
+            mountedRef.current = false
+        }
+    }, [])
 
     useEffect(() => {
         if (!url) return
@@ -141,9 +149,11 @@ function Model({
                     const bbox = geo.boundingBox
                     if (bbox) setBoundingBox(bbox)
 
-                    // 클린업: 이전 geometry가 있다면 메모리 해제
+                    // 클린업: 이전 geometry가 있다면 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
                     setGeometry(prev => {
-                        if (prev) prev.dispose()
+                        if (prev) {
+                            try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
+                        }
                         return geo
                     })
 
@@ -170,14 +180,16 @@ function Model({
 
         loadModel()
 
-        // 컴포넌트 언마운트 시 geometry 메모리 해제
+        // 컴포넌트 언마운트 시 geometry 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
         return () => {
             setGeometry(prev => {
-                if (prev) prev.dispose()
+                if (prev) {
+                    try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
+                }
                 return null
             })
         }
-    }, [url, type, setAnalysis, bounds])
+    }, [url, type, setAnalysis]) // bounds 를 의존성에서 제거 (불필요한 재실행 방지)
 
     if (isLoading) {
         return <LoadingSpinner />
@@ -358,24 +370,28 @@ export default function Scene({ compact = false }: SceneProps) {
         <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
                 {/* 3D Canvas - R3F 기본 시스템으로 복원 */}
-                <div className="absolute inset-0 z-0">
+                <div ref={canvasRef} className="absolute inset-0 z-0">
                     <Canvas
                         shadows
-                        dpr={[1, 2]}
+                        dpr={[1, 1.5]}
                         camera={{ position: [50, 50, 50], fov: 45 }}
                         gl={{
                             preserveDrawingBuffer: true,
                             antialias: true,
-                            powerPreference: 'high-performance'
+                            powerPreference: 'default',
+                            stencil: false,
                         }}
                     >
                         <Suspense fallback={<LoadingSpinner />}>
-                            <Stage environment="city" intensity={0.6}>
-                                <Bounds fit clip observe margin={1.5}>
-                                    <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
-                                    <ViewPresetHandler />
-                                </Bounds>
-                            </Stage>
+                            {/* Stage+environment="city" 제거: 외부 HDR 로드가 Context Lost 유발 → 수동 조명으로 대체 */}
+                            <ambientLight intensity={0.5} />
+                            <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow shadow-mapSize={1024} />
+                            <directionalLight position={[-10, -5, -10]} intensity={0.4} />
+                            <pointLight position={[0, 20, 0]} intensity={0.6} />
+                            <Bounds fit clip observe margin={1.5}>
+                                <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
+                                <ViewPresetHandler />
+                            </Bounds>
                             <Grid
                                 renderOrder={-1}
                                 position={[0, -1, 0]}

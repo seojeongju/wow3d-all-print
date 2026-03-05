@@ -16,6 +16,11 @@ const MakerWorkspace = dynamic(
   { ssr: false }
 );
 
+const GallerySection = dynamic(
+  () => import("@/components/home/GallerySection"),
+  { ssr: false }
+);
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
@@ -45,6 +50,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <GallerySection />
 
       <ServicesSection />
       <BentoFeatures />

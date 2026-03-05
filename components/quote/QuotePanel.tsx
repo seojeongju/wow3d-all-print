@@ -364,6 +364,11 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     }
 
     const handleAddToCart = async () => {
+        if (!file || !analysis) {
+            showToast.error('추가 실패', '파일 분석 정보가 없습니다.');
+            return;
+        }
+
         const configKey = JSON.stringify({
             printMethod,
             fdmMaterial,
