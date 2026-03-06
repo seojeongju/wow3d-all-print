@@ -460,55 +460,57 @@ export default function GallerySection() {
                 </div>
 
                 {/* 자동 무한 스크롤 마키 슬라이더 */}
-                <div className="w-full overflow-hidden flex select-none pb-8 pt-4">
-                    {loading ? (
-                        <div className="flex gap-5 px-4 md:px-[max(1rem,calc((100vw-1400px)/2))]">
-                            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-                        </div>
-                    ) : isEmpty ? (
-                        <div className="flex gap-5 px-4 md:px-[max(1rem,calc((100vw-1400px)/2))]">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className="flex-shrink-0 w-72 md:w-80 h-[380px]">
-                                    <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col">
-                                        <div className="flex-1 bg-slate-800/60 flex flex-col items-center justify-center gap-3">
-                                            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                                <Box className="w-8 h-8 text-primary/40" />
+                <div className="w-full overflow-hidden flex justify-center pb-8 pt-4">
+                    <div className="w-full max-w-[1340px] overflow-hidden relative px-4 xl:px-0 [mask-image:linear-gradient(to_right,transparent,black_2%,black_98%,transparent)] md:[mask-image:none]">
+                        {loading ? (
+                            <div className="flex gap-5">
+                                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                            </div>
+                        ) : isEmpty ? (
+                            <div className="flex gap-5">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="flex-shrink-0 w-72 md:w-80 h-[380px]">
+                                        <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col">
+                                            <div className="flex-1 bg-slate-800/60 flex flex-col items-center justify-center gap-3">
+                                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                    <Box className="w-8 h-8 text-primary/40" />
+                                                </div>
+                                                <p className="text-white/20 text-xs">출력물 준비 중</p>
                                             </div>
-                                            <p className="text-white/20 text-xs">출력물 준비 중</p>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <motion.div
+                                className="flex w-max"
+                                animate={{ x: ["0%", "-50%"] }}
+                                transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+                                // 마우스 오버 시 일시 정지 효과를 위한 스타일
+                                style={{ "--animation-play-state": "running" } as React.CSSProperties}
+                            >
+                                {/* 무한 롤링을 위해 2개의 세트를 렌더링 */}
+                                <div className="flex gap-5 pr-5">
+                                    {items.map((item, i) => (
+                                        <GalleryCard
+                                            key={`set1-${item.id}-${i}`}
+                                            item={item}
+                                            onClick={setSelectedItem}
+                                        />
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <motion.div
-                            className="flex w-max"
-                            animate={{ x: ["0%", "-50%"] }}
-                            transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
-                            // 마우스 오버 시 일시 정지 효과를 위한 스타일
-                            style={{ "--animation-play-state": "running" } as React.CSSProperties}
-                        >
-                            {/* 무한 롤링을 위해 2개의 세트를 렌더링 */}
-                            <div className="flex gap-5 pr-5">
-                                {items.map((item, i) => (
-                                    <GalleryCard
-                                        key={`set1-${item.id}-${i}`}
-                                        item={item}
-                                        onClick={setSelectedItem}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex gap-5 pr-5">
-                                {items.map((item, i) => (
-                                    <GalleryCard
-                                        key={`set2-${item.id}-${i}`}
-                                        item={item}
-                                        onClick={setSelectedItem}
-                                    />
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
+                                <div className="flex gap-5 pr-5">
+                                    {items.map((item, i) => (
+                                        <GalleryCard
+                                            key={`set2-${item.id}-${i}`}
+                                            item={item}
+                                            onClick={setSelectedItem}
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
                 </div>
 
                 {/* 하단 CTA */}
