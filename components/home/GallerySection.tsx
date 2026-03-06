@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight, Box, Layers, Droplets, Zap, X, ZoomIn } from 'lucide-react';
+import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -18,14 +18,6 @@ interface GalleryItem {
     print_method?: string;
     tags?: string;
     created_at: string;
-}
-
-interface Pagination {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
 }
 
 // ─────────────────────────────────────────────────────
@@ -57,30 +49,26 @@ function resolveImageUrl(url: string): string {
 // ─────────────────────────────────────────────────────
 function GalleryCard({
     item,
-    index,
     onClick,
+    className
 }: {
     item: GalleryItem;
-    index: number;
-    onClick: (item: GalleryItem) => void;
+    onClick?: (item: GalleryItem) => void;
+    className?: string;
 }) {
     const tags: string[] = (() => {
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.08, duration: 0.4 }}
-            whileHover={{ y: -6, scale: 1.015 }}
-            className="group relative flex-shrink-0 w-72 md:w-80 cursor-pointer"
-            onClick={() => onClick(item)}
+        <div
+            className={className || "group relative flex-shrink-0 w-72 md:w-80 cursor-pointer"}
+            onClick={() => onClick && onClick(item)}
         >
             {/* 카드 글로우 */}
             <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/30 via-transparent to-violet-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
 
-            <div className="relative bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="relative bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-full flex flex-col">
                 {/* 이미지 영역 */}
                 <div className="relative aspect-square overflow-hidden bg-slate-800">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -111,7 +99,7 @@ function GalleryCard({
                 </div>
 
                 {/* 카드 하단 정보 */}
-                <div className="p-5">
+                <div className="p-5 flex-1 flex flex-col">
                     <h3 className="text-white font-bold text-sm truncate mb-1.5">{item.title}</h3>
                     {item.description && (
                         <p className="text-white/50 text-xs leading-relaxed line-clamp-2 mb-3 break-keep">
@@ -119,7 +107,7 @@ function GalleryCard({
                         </p>
                     )}
 
-                    <div className="flex items-center justify-between">
+                    <div className="mt-auto pt-2 flex items-center justify-between">
                         {/* 소재 */}
                         {item.material && (
                             <span className="text-[10px] text-primary/80 bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full font-medium">
@@ -140,12 +128,12 @@ function GalleryCard({
                     </div>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }
 
 // ─────────────────────────────────────────────────────
-// 라이트박스 모달
+// 라이트박스 모달 (이미지 자세히 보기)
 // ─────────────────────────────────────────────────────
 function LightboxModal({ item, onClose }: { item: GalleryItem; onClose: () => void }) {
     const tags: string[] = (() => {
@@ -231,14 +219,129 @@ function LightboxModal({ item, onClose }: { item: GalleryItem; onClose: () => vo
 }
 
 // ─────────────────────────────────────────────────────
+// 전체 갤러리 모달창 (더보기 클릭 시 노출)
+// ─────────────────────────────────────────────────────
+function FullGalleryModal({ onClose, onImageClick }: { onClose: () => void, onImageClick: (item: GalleryItem) => void }) {
+    const [items, setItems] = useState<GalleryItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasNext, setHasNext] = useState(false);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [onClose]);
+
+    // 모달창이 열렸을 때 부모 스크롤 고정
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = 'unset'; };
+    }, []);
+
+    const fetchGallery = async (p: number) => {
+        try {
+            const res = await fetch(`/api/gallery?page=${p}&limit=12`);
+            if (res.ok) {
+                const json = await res.json();
+                if (json.success) {
+                    setItems(prev => p === 1 ? json.data.items : [...prev, ...json.data.items]);
+                    setHasNext(json.data.pagination.hasNext);
+                }
+            }
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchGallery(1);
+    }, []);
+
+    const handleLoadMore = () => {
+        if (loadingMore || !hasNext) return;
+        setLoadingMore(true);
+        const next = page + 1;
+        setPage(next);
+        fetchGallery(next);
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[150] bg-slate-950 flex flex-col"
+        >
+            <div className="flex items-center justify-between p-6 border-b border-white/10 bg-slate-950/80 backdrop-blur-md sticky top-0 z-[160] shadow-xl">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                    <Grid3X3 className="w-7 h-7 text-primary" />
+                    전체 출력물 갤러리
+                </h2>
+                <button
+                    onClick={onClose}
+                    className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                    <X className="w-6 h-6" />
+                </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-40 gap-4">
+                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                        <p className="text-white/50 text-sm">출력물을 불러오는 중입니다...</p>
+                    </div>
+                ) : items.length === 0 ? (
+                    <div className="text-center text-white/50 py-20 bg-white/5 rounded-3xl max-w-2xl mx-auto border border-white/10">
+                        <Box className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                        <p>아직 등록된 출력물이 없습니다.</p>
+                    </div>
+                ) : (
+                    <div className="max-w-[1600px] mx-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            {items.map((item) => (
+                                <GalleryCard
+                                    key={item.id}
+                                    item={item}
+                                    onClick={onImageClick}
+                                    className="group relative w-full cursor-pointer"
+                                />
+                            ))}
+                        </div>
+
+                        {hasNext && (
+                            <div className="flex justify-center mt-12 mb-8">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                    className="bg-white/5 border-white/20 text-white hover:bg-white/10 w-full max-w-xs rounded-full h-12"
+                                >
+                                    {loadingMore ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" /> : '더 많이 보기'}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </motion.div>
+    );
+}
+
+// ─────────────────────────────────────────────────────
 // 스켈레톤 카드
 // ─────────────────────────────────────────────────────
-function SkeletonCard() {
+function SkeletonCard({ className }: { className?: string }) {
     return (
-        <div className="flex-shrink-0 w-72 md:w-80">
-            <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden animate-pulse">
+        <div className={className || "flex-shrink-0 w-72 md:w-80"}>
+            <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden animate-pulse h-full flex flex-col">
                 <div className="aspect-square bg-slate-800" />
-                <div className="p-5 space-y-2">
+                <div className="p-5 space-y-2 flex-1">
                     <div className="h-4 bg-slate-700 rounded-full w-3/4" />
                     <div className="h-3 bg-slate-800 rounded-full w-full" />
                     <div className="h-3 bg-slate-800 rounded-full w-2/3" />
@@ -249,117 +352,51 @@ function SkeletonCard() {
 }
 
 // ─────────────────────────────────────────────────────
-// 메인 갤러리 섹션
+// 메인 갤러리 섹션 (4개만 노출, 자동 무한 스크롤 마키)
 // ─────────────────────────────────────────────────────
-const INITIAL_LIMIT = 8;
-const MORE_PER_PAGE = 4;
-
 export default function GallerySection() {
     const [items, setItems] = useState<GalleryItem[]>([]);
-    const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
     const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+    const [isFullGalleryOpen, setIsFullGalleryOpen] = useState(false);
 
-    const trackRef = useRef<HTMLDivElement>(null);
-    const [canScrollLeft, setCanScrollLeft] = useState(false);
-    const [canScrollRight, setCanScrollRight] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-
-    // 스크롤 상태 업데이트
-    const updateScrollButtons = useCallback(() => {
-        const el = trackRef.current;
-        if (!el) return;
-        setCanScrollLeft(el.scrollLeft > 8);
-        setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
-    }, []);
-
+    // 4개만 가져옵니다.
     useEffect(() => {
-        const el = trackRef.current;
-        if (!el) return;
-        el.addEventListener('scroll', updateScrollButtons, { passive: true });
-        updateScrollButtons();
-        return () => el.removeEventListener('scroll', updateScrollButtons);
-    }, [updateScrollButtons, items]);
-
-    // 초기 데이터 페치
-    const fetchGallery = useCallback(async (page: number, append = false) => {
-        try {
-            const limit = page === 1 ? INITIAL_LIMIT : MORE_PER_PAGE;
-            const res = await fetch(`/api/gallery?page=${page}&limit=${limit}`);
-            if (!res.ok) throw new Error('fetch failed');
-            const json = await res.json() as { success: boolean; data: { items: GalleryItem[]; pagination: Pagination } };
-            if (json.success) {
-                setItems(prev => append ? [...prev, ...json.data.items] : json.data.items);
-                setPagination(json.data.pagination);
-            }
-        } catch {
-            // API 미구성 or 테이블 미생성 → 데모 데이터 표시
-            if (!append) {
+        async function fetchGallery() {
+            try {
+                const res = await fetch(`/api/gallery?page=1&limit=4`);
+                if (!res.ok) throw new Error('fetch failed');
+                const json = await res.json();
+                if (json.success && json.data.items) {
+                    setItems(json.data.items.slice(0, 4));
+                }
+            } catch {
                 setItems([]);
-                setPagination(null);
+            } finally {
+                setLoading(false);
             }
-        } finally {
-            setLoading(false);
-            setLoadingMore(false);
         }
+        fetchGallery();
     }, []);
 
-    useEffect(() => {
-        fetchGallery(1);
-    }, [fetchGallery]);
-
-    // 자동 슬라이드 로직
-    useEffect(() => {
-        if (isHovered || loading || items.length === 0) return;
-
-        const interval = setInterval(() => {
-            const el = trackRef.current;
-            if (!el) return;
-
-            // 끝에 도달했는지 확인 (스크롤 오차 감안 16px)
-            if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 16) {
-                // 처음으로 부드럽게 되돌아가기
-                el.scrollTo({ left: 0, behavior: 'smooth' });
-            } else {
-                // 다음 카드로 넘어감 (카드 너비 + 갭 크기)
-                const cardWidth = window.innerWidth >= 768 ? 340 : 308;
-                el.scrollBy({ left: cardWidth, behavior: 'smooth' });
-            }
-        }, 3000); // 3초마다 슬라이드
-
-        return () => clearInterval(interval);
-    }, [isHovered, loading, items]);
-
-    const handleLoadMore = async () => {
-        const nextPage = currentPage + 1;
-        setLoadingMore(true);
-        setCurrentPage(nextPage);
-        await fetchGallery(nextPage, true);
-        // 더 로드 후 스크롤 끝으로 이동
-        setTimeout(() => {
-            const el = trackRef.current;
-            if (el) el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
-        }, 300);
-    };
-
-    const scroll = (dir: 'left' | 'right') => {
-        const el = trackRef.current;
-        if (!el) return;
-        const cardWidth = 336; // w-80 + gap
-        el.scrollBy({ left: dir === 'left' ? -cardWidth * 2 : cardWidth * 2, behavior: 'smooth' });
-    };
-
-    const hasMore = pagination ? pagination.hasNext : false;
     const isEmpty = !loading && items.length === 0;
 
     return (
         <>
-            {/* 라이트박스 */}
+            {/* 개별 이미지 라이트박스 */}
             {selectedItem && (
                 <LightboxModal item={selectedItem} onClose={() => setSelectedItem(null)} />
             )}
+
+            {/* 전체 갤러리 모달 */}
+            <AnimatePresence>
+                {isFullGalleryOpen && (
+                    <FullGalleryModal
+                        onClose={() => setIsFullGalleryOpen(false)}
+                        onImageClick={setSelectedItem}
+                    />
+                )}
+            </AnimatePresence>
 
             <section className="py-20 relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0a0a14] to-slate-950">
                 {/* 배경 데코 */}
@@ -368,7 +405,7 @@ export default function GallerySection() {
 
                 <div className="container mx-auto px-4 mb-10">
                     {/* 헤더 */}
-                    <div className="flex items-end justify-between max-w-6xl mx-auto">
+                    <div className="flex items-end justify-between max-w-[1400px] mx-auto w-full">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -386,104 +423,91 @@ export default function GallerySection() {
                             </p>
                         </motion.div>
 
-                        {/* 스크롤 화살표 (데스크탑) */}
+                        {/* 더보기 버튼 */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
-                            className="hidden md:flex items-center gap-2"
+                            className="hidden sm:block"
                         >
-                            <button
-                                onClick={() => scroll('left')}
-                                disabled={!canScrollLeft}
-                                className="w-10 h-10 rounded-full border border-white/15 bg-white/[0.04] hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            <Button
+                                variant="outline"
+                                className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white transition-all h-10 px-5"
+                                onClick={() => setIsFullGalleryOpen(true)}
                             >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => scroll('right')}
-                                disabled={!canScrollRight}
-                                className="w-10 h-10 rounded-full border border-white/15 bg-white/[0.04] hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                                <Grid3X3 className="w-4 h-4 text-primary" />
+                                <span className="font-semibold">더보기</span>
+                            </Button>
                         </motion.div>
                     </div>
+
+                    {/* 모바일 화면용 더보기 버튼 (헤더 아래 정렬) */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        className="mt-6 sm:hidden"
+                    >
+                        <Button
+                            variant="outline"
+                            className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white w-full h-12"
+                            onClick={() => setIsFullGalleryOpen(true)}
+                        >
+                            <Grid3X3 className="w-4 h-4 text-primary" />
+                            <span className="font-semibold">전체 출력물 보기</span>
+                        </Button>
+                    </motion.div>
                 </div>
 
-                {/* 슬라이더 트랙 */}
-                <div
-                    ref={trackRef}
-                    className="flex gap-5 overflow-x-auto pb-4 px-4 md:px-[max(1rem,calc((100vw-72rem)/2))] scroll-smooth no-scrollbar"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    onMouseEnter={() => setIsHovered(true)}
-                    onMouseLeave={() => setIsHovered(false)}
-                    onTouchStart={() => setIsHovered(true)}
-                    onTouchEnd={() => {
-                        // 터치 종료 후 잠시 멈췄다가 다시 슬라이드 시작
-                        setTimeout(() => setIsHovered(false), 2000);
-                    }}
-                >
+                {/* 자동 무한 스크롤 마키 슬라이더 */}
+                <div className="w-full overflow-hidden flex select-none pb-8 pt-4">
                     {loading ? (
-                        Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+                        <div className="flex gap-5 px-4 md:px-[max(1rem,calc((100vw-1400px)/2))]">
+                            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                        </div>
                     ) : isEmpty ? (
-                        // 데이터 없을 때 플레이스홀더
-                        Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="flex-shrink-0 w-72 md:w-80">
-                                <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
-                                    <div className="aspect-square bg-slate-800/60 flex flex-col items-center justify-center gap-3">
-                                        <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                            <Box className="w-8 h-8 text-primary/40" />
-                                        </div>
-                                        <p className="text-white/20 text-xs">출력물 준비 중</p>
-                                    </div>
-                                    <div className="p-5">
-                                        <div className="h-4 bg-white/5 rounded-full w-2/3 mb-2" />
-                                        <div className="h-3 bg-white/[0.03] rounded-full w-full" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <>
-                            {items.map((item, i) => (
-                                <GalleryCard
-                                    key={item.id}
-                                    item={item}
-                                    index={i}
-                                    onClick={setSelectedItem}
-                                />
-                            ))}
-
-                            {/* 더보기 카드 */}
-                            {(hasMore || loadingMore) && (
-                                <div className="flex-shrink-0 w-72 md:w-80 flex items-center justify-center">
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.97 }}
-                                        onClick={handleLoadMore}
-                                        disabled={loadingMore}
-                                        className="group flex flex-col items-center gap-4 p-8 bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-primary/30 rounded-3xl transition-all duration-300 w-full aspect-square cursor-pointer disabled:opacity-60"
-                                    >
-                                        {loadingMore ? (
-                                            <div className="w-12 h-12 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                                        ) : (
-                                            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 flex items-center justify-center transition-colors">
-                                                <ArrowRight className="w-6 h-6 text-primary" />
+                        <div className="flex gap-5 px-4 md:px-[max(1rem,calc((100vw-1400px)/2))]">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="flex-shrink-0 w-72 md:w-80 h-[380px]">
+                                    <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col">
+                                        <div className="flex-1 bg-slate-800/60 flex flex-col items-center justify-center gap-3">
+                                            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                <Box className="w-8 h-8 text-primary/40" />
                                             </div>
-                                        )}
-                                        <div className="text-center">
-                                            <p className="text-white font-bold text-sm">더 보기</p>
-                                            {pagination && (
-                                                <p className="text-white/40 text-xs mt-1">
-                                                    {pagination.total - items.length}개 더 있음
-                                                </p>
-                                            )}
+                                            <p className="text-white/20 text-xs">출력물 준비 중</p>
                                         </div>
-                                    </motion.button>
+                                    </div>
                                 </div>
-                            )}
-                        </>
+                            ))}
+                        </div>
+                    ) : (
+                        <motion.div
+                            className="flex w-max"
+                            animate={{ x: ["0%", "-50%"] }}
+                            transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+                            // 마우스 오버 시 일시 정지 효과를 위한 스타일
+                            style={{ "--animation-play-state": "running" } as React.CSSProperties}
+                        >
+                            {/* 무한 롤링을 위해 2개의 세트를 렌더링 */}
+                            <div className="flex gap-5 pr-5">
+                                {items.map((item, i) => (
+                                    <GalleryCard
+                                        key={`set1-${item.id}-${i}`}
+                                        item={item}
+                                        onClick={setSelectedItem}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex gap-5 pr-5">
+                                {items.map((item, i) => (
+                                    <GalleryCard
+                                        key={`set2-${item.id}-${i}`}
+                                        item={item}
+                                        onClick={setSelectedItem}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
                     )}
                 </div>
 
@@ -492,7 +516,7 @@ export default function GallerySection() {
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="container mx-auto px-4 mt-10 flex justify-center"
+                    className="container mx-auto px-4 mt-6 flex justify-center"
                 >
                     <Link href="/quote">
                         <Button
