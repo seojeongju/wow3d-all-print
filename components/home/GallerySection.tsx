@@ -265,6 +265,7 @@ export default function GallerySection() {
     const trackRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     // 스크롤 상태 업데이트
     const updateScrollButtons = useCallback(() => {
@@ -308,6 +309,28 @@ export default function GallerySection() {
     useEffect(() => {
         fetchGallery(1);
     }, [fetchGallery]);
+
+    // 자동 슬라이드 로직
+    useEffect(() => {
+        if (isHovered || loading || items.length === 0) return;
+
+        const interval = setInterval(() => {
+            const el = trackRef.current;
+            if (!el) return;
+
+            // 끝에 도달했는지 확인 (스크롤 오차 감안 16px)
+            if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 16) {
+                // 처음으로 부드럽게 되돌아가기
+                el.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                // 다음 카드로 넘어감 (카드 너비 + 갭 크기)
+                const cardWidth = window.innerWidth >= 768 ? 340 : 308;
+                el.scrollBy({ left: cardWidth, behavior: 'smooth' });
+            }
+        }, 3000); // 3초마다 슬라이드
+
+        return () => clearInterval(interval);
+    }, [isHovered, loading, items]);
 
     const handleLoadMore = async () => {
         const nextPage = currentPage + 1;
@@ -393,6 +416,13 @@ export default function GallerySection() {
                     ref={trackRef}
                     className="flex gap-5 overflow-x-auto pb-4 px-4 md:px-[max(1rem,calc((100vw-72rem)/2))] scroll-smooth no-scrollbar"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    onTouchStart={() => setIsHovered(true)}
+                    onTouchEnd={() => {
+                        // 터치 종료 후 잠시 멈췄다가 다시 슬라이드 시작
+                        setTimeout(() => setIsHovered(false), 2000);
+                    }}
                 >
                     {loading ? (
                         Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
