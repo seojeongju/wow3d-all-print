@@ -6,8 +6,10 @@ import { requireAdminAuth } from '@/lib/api-utils';
 const FALLBACK_SQL = `
     SELECT 
         o.id,
+        o.user_id,
         o.order_number,
         o.recipient_name,
+        o.guest_email,
         o.total_amount,
         o.status,
         o.created_at,
@@ -41,6 +43,7 @@ export async function GET(req: NextRequest) {
         const { results } = await env.DB.prepare(`
             SELECT 
                 o.id,
+                o.user_id,
                 o.order_number,
                 o.recipient_name,
                 o.guest_email,

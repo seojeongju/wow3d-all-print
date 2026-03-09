@@ -65,6 +65,17 @@ export default function QuoteList() {
         });
     };
 
+    // 주문 상태 → 한글 라벨
+    const statusLabel: Record<string, string> = {
+        pending: '접수대기',
+        confirmed: '주문확인',
+        production: '제작중',
+        shipping: '배송중',
+        completed: '완료',
+        cancelled: '취소',
+    };
+    const getStatusLabel = (status: string) => statusLabel[status] || status || '-';
+
     const handlePrint = (id: number, expertData?: any) => {
         if (token) localStorage.setItem('admin_print_token', token);
 
@@ -138,6 +149,7 @@ export default function QuoteList() {
                                     <th className="p-4 font-medium text-white/60">자동견적 금액</th>
                                     <th className="p-4 font-medium text-white/60">수정견적 금액</th>
                                     <th className="p-4 font-medium text-white/60">접수일</th>
+                                    <th className="p-4 font-medium text-white/60">현재 상태</th>
                                     <th className="p-4 font-medium text-right text-white/60">관리</th>
                                 </tr>
                             </thead>
@@ -192,6 +204,22 @@ export default function QuoteList() {
                                                 <td className="p-4 text-white/50 text-xs">
                                                     {order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}
                                                 </td>
+                                                <td className="p-4">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={`text-xs font-medium ${
+                                                            order.status === 'completed'
+                                                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                                : order.status === 'cancelled'
+                                                                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                                                : order.status === 'pending'
+                                                                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                                : 'bg-white/10 text-white/80 border-white/20'
+                                                        }`}
+                                                    >
+                                                        {getStatusLabel(order.status)}
+                                                    </Badge>
+                                                </td>
                                                 <td className="p-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Button
@@ -217,7 +245,7 @@ export default function QuoteList() {
                                             {/* 확장 행: 자동견적 vs 수정견적 비교 */}
                                             {expertData && isExpanded && (
                                                 <tr key={`${order.id}-expand`} className="border-b border-white/5 bg-white/[0.015]">
-                                                    <td colSpan={8} className="px-6 py-4">
+                                                    <td colSpan={9} className="px-6 py-4">
                                                         <div className="grid grid-cols-2 gap-4">
                                                             {/* 자동견적 원본 */}
                                                             <div className="space-y-2">
@@ -288,7 +316,7 @@ export default function QuoteList() {
                                 })}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="p-12 text-center text-white/40">
+                                        <td colSpan={9} className="p-12 text-center text-white/40">
                                             데이터가 없습니다.
                                         </td>
                                     </tr>
