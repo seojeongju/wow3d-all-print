@@ -172,7 +172,7 @@ function CheckoutContent() {
 
     if (items.length === 0 || orderItems.length === 0) return null
 
-    const totalPriceKWR = Math.round(orderItems.reduce((s, i) => s + (i.quote?.totalPrice || 0) * i.quantity, 0) * 1300)
+    const totalPriceKWR = Math.round(orderItems.reduce((s, i) => s + (i.quote?.totalPrice || 0) * i.quantity, 0))
     const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0)
 
     return (
@@ -397,7 +397,7 @@ function CheckoutContent() {
                                                     <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • 수량 {item.quantity}</div>
                                                 </div>
                                                 <div className="text-xs font-mono font-bold">
-                                                    ₩{Math.round((item.quote?.totalPrice || 0) * item.quantity * 1300).toLocaleString()}
+                                                    ₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}
                                                 </div>
                                             </div>
                                         ))}

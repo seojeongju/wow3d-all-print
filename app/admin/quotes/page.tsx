@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+
+/** DB 주문 금액 단위 → 원화 (주문관리·견적서 수정과 동일) */
+// 금액은 DB/API에서 원화(KRW)로 저장·전달됨
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -189,7 +192,7 @@ export default function QuoteList() {
                                                 <td className="p-4 text-white/50">{order.item_count || 1}개</td>
                                                 <td className="p-4 text-white/60">
                                                     <span className={expertData ? 'line-through text-white/30' : 'font-bold text-white'}>
-                                                        ₩ {Number(order.total_amount || 0).toLocaleString()}
+                                                        ₩ {Math.round(Number(order.total_amount || 0)).toLocaleString()}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
@@ -256,7 +259,7 @@ export default function QuoteList() {
                                                                 <div className="bg-white/[0.03] rounded-lg p-3 text-xs space-y-1.5">
                                                                     <div className="flex justify-between text-white/60">
                                                                         <span>총 금액</span>
-                                                                        <span className="line-through text-white/30">₩ {Number(order.total_amount || 0).toLocaleString()}</span>
+                                                                        <span className="line-through text-white/30">₩ {Math.round(Number(order.total_amount || 0)).toLocaleString()}</span>
                                                                     </div>
                                                                     <div className="flex justify-between text-white/40">
                                                                         <span>접수일</span>

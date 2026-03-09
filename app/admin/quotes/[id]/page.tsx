@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 /** DB/API 금액 단위 → 원화 표시 (다른 페이지와 동일) */
-const KRW_RATE = 1300;
+// 금액은 원화(KRW)로 저장·표시
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +52,7 @@ export default function QuoteEditPage() {
 
                     const autoItemsMapped = items.map((it: any) => {
                         const unitPriceBase = Number(it.unit_price) || 0;
-                        const unitPriceKr = Math.round(unitPriceBase * KRW_RATE);
+                        const unitPriceKr = Math.round(unitPriceBase);
                         return {
                             id: it.id || Math.random(),
                             name: it.file_name,

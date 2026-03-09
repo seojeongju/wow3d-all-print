@@ -396,7 +396,7 @@ export default function CartPage() {
                                                                 </div>
                                                                 <div>
                                                                     <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">예상가</dt>
-                                                                    <dd className="text-sm font-bold text-primary mt-0.5">₩{Math.round((item.quote?.totalPrice || 0) * 1300).toLocaleString()}</dd>
+                                                                    <dd className="text-sm font-bold text-primary mt-0.5">₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}</dd>
                                                                 </div>
                                                             </dl>
                                                         </div>
@@ -406,7 +406,7 @@ export default function CartPage() {
                                                                 <span className="w-8 text-center text-xs font-bold">{item.quantity}</span>
                                                                 <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-white/40"><Plus className="w-3 h-3" /></button>
                                                             </div>
-                                                            <span className="text-lg font-black tracking-tight">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity * 1300).toLocaleString()}</span>
+                                                            <span className="text-lg font-black tracking-tight">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -443,7 +443,7 @@ export default function CartPage() {
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
                                                         <span className="text-xs text-white/40">{row.print_method?.toUpperCase()}</span>
                                                         <span className="text-xs text-white/40">{row.volume_cm3?.toFixed(1)}cm³</span>
-                                                        <span className="text-xs font-bold text-white/70">₩{Math.round(row.total_price * 1300).toLocaleString()}</span>
+                                                        <span className="text-xs font-bold text-white/70">₩{Math.round(row.total_price).toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 w-full sm:w-auto">
@@ -506,7 +506,7 @@ export default function CartPage() {
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-white/50">
                                                         <span>{new Date(order.createdAt).toLocaleDateString('ko-KR')}</span>
                                                         <span className="capitalize">{order.status}</span>
-                                                        <span className="font-bold text-primary">₩{Math.round((order.totalAmount || 0) * 1300).toLocaleString()}</span>
+                                                        <span className="font-bold text-primary">₩{Math.round((order.totalAmount || 0)).toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                                 <Link href="/my-account" className="shrink-0">
@@ -552,7 +552,7 @@ export default function CartPage() {
                                 <Separator className="bg-white/10" />
                                 <div className="flex justify-between items-baseline">
                                     <span className="text-sm font-medium text-white/70">총 결제 금액</span>
-                                    <span className="text-2xl font-bold text-primary">₩{Math.round(selectedTotal * 1300).toLocaleString()}</span>
+                                    <span className="text-2xl font-bold text-primary">₩{Math.round(selectedTotal).toLocaleString()}</span>
                                 </div>
                             </div>
 

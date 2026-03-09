@@ -25,6 +25,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 
+/** 금액은 DB에서 원화(KRW)로 저장·표시 */
+
 const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'pending', label: '접수 대기' },
     { value: 'confirmed', label: '주문 확인' },
@@ -178,12 +180,15 @@ function OrderListInner() {
                 email: String(order.user_email ?? order.guest_email ?? ''),
                 address: String(order.shipping_address ?? ''),
             };
-            const expertItems = items.map((it: any) => ({
-                name: it.file_name || '-',
-                spec: it.print_method || '',
-                quantity: Number(it.quantity) || 1,
-                unit_price: Math.round(Number(it.unit_price) || 0),
-            }));
+            const expertItems = items.map((it: any) => {
+                const unitKr = Math.round(Number(it.unit_price) || 0);
+                return {
+                    name: it.file_name || '-',
+                    spec: it.print_method || '',
+                    quantity: Number(it.quantity) || 1,
+                    unit_price: unitKr,
+                };
+            });
             const totalSupply = expertItems.reduce((acc: number, it: any) => acc + it.unit_price * it.quantity, 0);
             const totalAmount = totalSupply + Math.floor(totalSupply * 0.1);
             const res = await fetch(`/api/admin/orders/${detailOrderId}`, {
@@ -305,7 +310,7 @@ function OrderListInner() {
             o.user_id ? (o.user_name || '-') : '비회원',
             o.user_email || o.guest_email || '-',
             String(o.item_count ?? 1),
-            String(Number(o.total_amount || 0)),
+            String(Math.round(Number(o.total_amount || 0))),
             o.status || '',
             o.created_at ? new Date(o.created_at).toLocaleDateString('ko-KR') : '',
         ]);
@@ -351,7 +356,7 @@ function OrderListInner() {
                         setConfirmProductionDialog({
                             orderId,
                             expertAmount,
-                            autoAmount: Number(order.total_amount || 0),
+                            autoAmount: Math.round(Number(order.total_amount || 0)),
                         });
                         return; // 다이얼로그 확인 후 실행
                     }
@@ -600,14 +605,14 @@ function OrderListInner() {
                                                         expertAmount = Number(d.total_amount || 0);
                                                     } catch { }
                                                 }
-                                                const autoAmount = Number(order.total_amount || 0);
+                                                const autoAmountKr = Math.round(Number(order.total_amount || 0));
                                                 return expertAmount && expertAmount > 0 ? (
                                                     <div>
                                                         <div className="font-bold text-emerald-400">₩ {expertAmount.toLocaleString()}</div>
-                                                        <div className="text-xs text-white/30 line-through">₩ {autoAmount.toLocaleString()}</div>
+                                                        <div className="text-xs text-white/30 line-through">₩ {autoAmountKr.toLocaleString()}</div>
                                                     </div>
                                                 ) : (
-                                                    <span className="font-bold text-white">₩ {autoAmount.toLocaleString()}</span>
+                                                    <span className="font-bold text-white">₩ {autoAmountKr.toLocaleString()}</span>
                                                 );
                                             })()}
                                         </td>
@@ -713,14 +718,14 @@ function OrderListInner() {
                                                 expertAmount = Number(d.total_amount || 0);
                                             } catch { }
                                         }
-                                        const autoAmount = Number(order.total_amount || 0);
+                                        const autoAmountKr = Math.round(Number(order.total_amount || 0));
                                         return expertAmount && expertAmount > 0 ? (
                                             <div className="mt-0.5">
                                                 <p className="font-bold text-emerald-400">₩ {expertAmount.toLocaleString()} <span className="text-[10px] text-emerald-500/70 font-normal">(수정견적)</span></p>
-                                                <p className="text-xs text-white/30 line-through">₩ {autoAmount.toLocaleString()} (자동견적)</p>
+                                                <p className="text-xs text-white/30 line-through">₩ {autoAmountKr.toLocaleString()} (자동견적)</p>
                                             </div>
                                         ) : (
-                                            <p className="text-white font-bold">₩ {autoAmount.toLocaleString()}</p>
+                                            <p className="text-white font-bold">₩ {autoAmountKr.toLocaleString()}</p>
                                         );
                                     })()}
                                 </div>
@@ -763,8 +768,8 @@ function OrderListInner() {
                                                     <tr key={it.id} className="border-b border-white/5">
                                                         <td className="p-2 text-white/90">{it.file_name || '-'} ({it.print_method || '-'})</td>
                                                         <td className="p-2 text-right">{it.quantity}</td>
-                                                        <td className="p-2 text-right">₩ {Number(it.unit_price || 0).toLocaleString()}</td>
-                                                        <td className="p-2 text-right font-medium">₩ {Number(it.subtotal || 0).toLocaleString()}</td>
+                                                        <td className="p-2 text-right">₩ {Math.round(Number(it.unit_price || 0)).toLocaleString()}</td>
+                                                        <td className="p-2 text-right font-medium">₩ {Math.round(Number(it.subtotal || 0)).toLocaleString()}</td>
                                                         <td className="p-2 text-center">
                                                             {it.file_url ? (
                                                                 <Button
@@ -799,7 +804,7 @@ function OrderListInner() {
                                     <div className="mt-2 flex justify-end">
                                         <span className="text-white/50 text-xs">자동 견적 총액 </span>
                                         <span className="ml-2 font-bold text-white">
-                                            ₩ {(detailData.items as any[]).reduce((acc: number, it: any) => acc + Number(it.subtotal || 0), 0).toLocaleString()}
+                                            ₩ {(detailData.items as any[]).reduce((acc: number, it: any) => acc + Math.round(Number(it.subtotal || 0)), 0).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>

@@ -54,9 +54,9 @@ function OrderCompleteContent() {
     }
 
     const displayTotal = order?.totalAmount != null
-        ? (Math.round(Number(order.totalAmount) * 1300)).toLocaleString()
+        ? (Math.round(Number(order.totalAmount))).toLocaleString()
         : totalAmount != null
-            ? (Math.round(Number(totalAmount) * 1300)).toLocaleString()
+            ? (Math.round(Number(totalAmount))).toLocaleString()
             : '—'
 
     return (

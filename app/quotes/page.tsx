@@ -210,7 +210,7 @@ export default function SavedQuotesPage() {
                                     <div className="flex-1 min-w-0">
                                         <div className="font-semibold text-white truncate">{row.file_name}</div>
                                         <div className="text-xs text-white/50 mt-0.5">
-                                            {row.print_method?.toUpperCase() || '—'} · {row.volume_cm3?.toFixed(1) ?? '—'} cm³ · ₩{(Math.round((row.total_price || 0) * 1300)).toLocaleString()}
+                                            {row.print_method?.toUpperCase() || '—'} · {row.volume_cm3?.toFixed(1) ?? '—'} cm³ · ₩{(Math.round((row.total_price || 0))).toLocaleString()}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">

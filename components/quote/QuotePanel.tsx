@@ -133,9 +133,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
         return over.length ? over.join(', ') : null
     }, [printSpecs, printMethod, bx, by, bz, analysis])
 
-    // 레이어별 시간당 비용(원) → 견적식 내 machineRate 단위 변환 (표시 시 *1300 KRW)
-    const KRW_TO_UNIT = 1300
-
+    // 금액은 전부 원화(KRW)로 계산·저장·표시 (한국 사용자 대상)
     const defaultDetail = {
         total: 0,
         time: 0,
@@ -155,7 +153,6 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
         const rateKRW = (spec?.layerCosts && spec.layerCosts[String(layer)] != null)
             ? spec.layerCosts[String(layer)]
             : (spec?.hourlyRate ?? (printMethod === 'fdm' ? 5000 : printMethod === 'dlp' ? 9000 : 8000))
-        const machineRate = rateKRW / KRW_TO_UNIT
 
         if (printMethod === 'fdm') {
             const mat = materials.find((m) => m.type === 'FDM' && m.name === fdmMaterial)
@@ -164,7 +161,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const effectiveDensity = density * (infill / 100)
             const adjustedDensity = Math.max(density * 0.2, effectiveDensity)
             const weightGrams = volumeCm3 * adjustedDensity
-            const materialCost = (pricePerGramKr / KRW_TO_UNIT) * weightGrams
+            const materialCost = pricePerGramKr * weightGrams
             const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight))
 
             // [개선된 알고리즘] 부피 기반 시간 산출
@@ -189,13 +186,11 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
             // 비용 계산
             const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
-            // [개선된 알고리즘] 지지대 비용 (오버행 면적 기반)
-            // overhangArea 정보가 있으면(0 포함) 사용하고, 없으면(undefined) 전체 표면적의 30%를 추정
             const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
-            const supportCost = supportEnabled ? (supportPerCm2Kr / KRW_TO_UNIT) * supportTargetArea : 0
+            const supportCost = supportEnabled ? supportPerCm2Kr * supportTargetArea : 0
             const laborKr = (spec as any)?.fdm_labor_cost_krw ?? 6500
-            const laborCost = laborKr / KRW_TO_UNIT
-            const machineCost = estTimeHours * machineRate
+            const laborCost = laborKr
+            const machineCost = estTimeHours * rateKRW
             return {
                 total: materialCost + supportCost + machineCost + laborCost,
                 time: estTimeHours,
@@ -209,19 +204,18 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const mat = materials.find((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA') && m.name === resinType)
             const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
             const volumeML = volumeCm3
-            const resinCost = (pricePerMlKr / KRW_TO_UNIT) * volumeML
+            const resinCost = pricePerMlKr * volumeML
             const numLayers = Math.max(1, Math.ceil(heightMm / slaLayerHeight))
             const layerExp = printMethod === 'dlp' ? ((spec as any)?.dlp_layer_exposure_sec ?? 3) : ((spec as any)?.sla_layer_exposure_sec ?? 8)
-            // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8~9초)
             const mechanicDelay = 8.5;
             const estTimeHours = (numLayers * (layerExp + mechanicDelay)) / 3600
             const consKr = printMethod === 'dlp' ? ((spec as any)?.dlp_consumables_krw ?? 3900) : ((spec as any)?.sla_consumables_krw ?? 3900)
             const postKr = printMethod === 'dlp' ? ((spec as any)?.dlp_post_process_krw ?? 10400) : ((spec as any)?.sla_post_process_krw ?? 10400)
-            const consumablesCost = consKr / KRW_TO_UNIT
-            const postProcessCost = postProcessing ? postKr / KRW_TO_UNIT : 0
+            const consumablesCost = consKr
+            const postProcessCost = postProcessing ? postKr : 0
             const laborKr = printMethod === 'dlp' ? ((spec as any)?.dlp_labor_cost_krw ?? 9100) : ((spec as any)?.sla_labor_cost_krw ?? 9100)
-            const laborCost = laborKr / KRW_TO_UNIT
-            const machineCost = estTimeHours * machineRate
+            const laborCost = laborKr
+            const machineCost = estTimeHours * rateKRW
             const otherCost = consumablesCost + postProcessCost
             return {
                 total: resinCost + otherCost + machineCost + laborCost,
@@ -688,13 +682,13 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <section>
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">비용 구분</h4>
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span className="text-slate-400">재료비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.material * KRW_TO_UNIT).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">장비(인쇄)비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine * KRW_TO_UNIT).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">기타</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other * KRW_TO_UNIT).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">인건비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor * KRW_TO_UNIT).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">재료비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.material).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">장비(인쇄)비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">기타</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-400">인건비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor).toLocaleString()}</span></div>
                                 <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50 font-bold">
                                     <span className="text-slate-100">총 견적</span>
-                                    <span className="text-primary">₩{Math.round(totalPrice * KRW_TO_UNIT).toLocaleString()}</span>
+                                    <span className="text-primary">₩{Math.round(totalPrice).toLocaleString()}</span>
                                 </div>
                             </div>
                         </section>
@@ -709,7 +703,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">
                             <Wallet className="w-3 h-3" /> 예상 견적
                         </div>
-                        <span className={`font-black text-slate-50 ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice * 1300).toLocaleString()}</span>
+                        <span className={`font-black text-slate-50 ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
                         <span className="text-xs text-slate-400 font-medium ml-1">KRW</span>
                     </div>
                     <div className="text-right">

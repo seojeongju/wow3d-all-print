@@ -10,8 +10,7 @@ import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import LandingHeroScene from './LandingHeroScene';
 
-const KRW_TO_UNIT = 1300;
-
+// 금액은 원화(KRW)로만 계산·표시
 type PrintSpecs = { fdm?: { max?: { x?: number; y?: number; z?: number }; layerCosts?: Record<string, number>; hourlyRate?: number; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number }; sla?: unknown; dlp?: unknown };
 type ApiMaterial = { type: string; price_per_gram?: number; density?: number };
 
@@ -51,15 +50,14 @@ export default function Hero() {
         const volumeCm3 = analysis.volume || 0;
         const heightMm = bz;
         const weightGrams = volumeCm3 * adjustedDensity;
-        const materialCost = (pricePerGramKr / KRW_TO_UNIT) * weightGrams;
+        const materialCost = pricePerGramKr * weightGrams;
         const layerHeight = 0.2;
         const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight));
         const layerHoursFactor = spec.fdm_layer_hours_factor ?? 0.02;
         const estTimeHours = Math.max(1, numLayers * layerHoursFactor);
         const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
-        const machineRate = rateKRW / KRW_TO_UNIT;
-        const machineCost = estTimeHours * machineRate;
-        const laborCost = (spec.fdm_labor_cost_krw ?? 6500) / KRW_TO_UNIT;
+        const machineCost = estTimeHours * rateKRW;
+        const laborCost = spec.fdm_labor_cost_krw ?? 6500;
         const total = materialCost + machineCost + laborCost;
         return { total, printability: overflow ? 85 : 100, overflow };
     }, [analysis, printSpecs, materials]);
@@ -247,7 +245,7 @@ export default function Hero() {
                             <div className="mt-8 p-4 bg-secondary/50 rounded-xl">
                                 <div className="text-xs text-muted-foreground mb-1">예상 견적가</div>
                                 <div className={`text-2xl font-bold ${!file || !analysis || !heroEstimate ? 'text-muted-foreground' : ''}`}>
-                                    {!file ? '업로드 후 확인' : !analysis ? '—' : heroEstimate ? `₩ ${Math.round(heroEstimate.total * KRW_TO_UNIT).toLocaleString()}` : '—'}
+                                    {!file ? '업로드 후 확인' : !analysis ? '—' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString()}` : '—'}
                                 </div>
                             </div>
                             <Button

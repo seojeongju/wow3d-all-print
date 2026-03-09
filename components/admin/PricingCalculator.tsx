@@ -64,8 +64,7 @@ type Props = {
     }
 }
 
-const KRW_TO_UNIT = 1300
-
+// 금액은 전부 원화(KRW)로 계산·표시 (한국 사용자 대상)
 export default function PricingCalculator({ equipmentParams }: Props) {
     const [method, setMethod] = useState<'fdm' | 'sla' | 'dlp'>('fdm')
 
@@ -95,7 +94,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const effectiveDensity = params.fdm_material_density * (params.fdm_infill / 100)
         const adjustedDensity = Math.max(params.fdm_material_density * 0.2, effectiveDensity)
         const weightGrams = params.volumeCm3 * adjustedDensity
-        const materialCost = (params.fdm_material_price_per_gram / KRW_TO_UNIT) * weightGrams
+        const materialCost = params.fdm_material_price_per_gram * weightGrams
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.fdm_layer_height))
 
@@ -112,23 +111,23 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
         const supportCost = params.fdm_support_enabled
-            ? (ep.fdm_support_per_cm2_krw / KRW_TO_UNIT) * params.surfaceAreaCm2
+            ? ep.fdm_support_per_cm2_krw * params.surfaceAreaCm2
             : 0
 
-        const laborCost = ep.fdm_labor_cost_krw / KRW_TO_UNIT
+        const laborCost = ep.fdm_labor_cost_krw
 
         const machineRate = ep.layer_costs[String(params.fdm_layer_height)]
             ?? ep.hourly_rate
-        const machineCost = estTimeHours * (machineRate / KRW_TO_UNIT)
+        const machineCost = estTimeHours * machineRate
 
         const total = materialCost + supportCost + machineCost + laborCost
 
         return {
-            materialCost: materialCost * KRW_TO_UNIT,
-            supportCost: supportCost * KRW_TO_UNIT,
-            machineCost: machineCost * KRW_TO_UNIT,
-            laborCost: laborCost * KRW_TO_UNIT,
-            total: total * KRW_TO_UNIT,
+            materialCost,
+            supportCost,
+            machineCost,
+            laborCost,
+            total,
             timeHours: estTimeHours,
             numLayers,
             weightGrams,
@@ -141,33 +140,33 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         if (!ep) return null
 
         const volumeML = params.volumeCm3
-        const resinCost = (params.sla_material_price_per_ml / KRW_TO_UNIT) * volumeML
+        const resinCost = params.sla_material_price_per_ml * volumeML
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.sla_layer_height))
         // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
         const mechanicDelay = 8.5;
         const estTimeHours = (numLayers * (ep.sla_layer_exposure_sec + mechanicDelay)) / 3600
 
-        const consumablesCost = ep.sla_consumables_krw / KRW_TO_UNIT
+        const consumablesCost = ep.sla_consumables_krw
         const postProcessCost = params.sla_post_processing
-            ? ep.sla_post_process_krw / KRW_TO_UNIT
+            ? ep.sla_post_process_krw
             : 0
         const otherCost = consumablesCost + postProcessCost
 
-        const laborCost = ep.sla_labor_cost_krw / KRW_TO_UNIT
+        const laborCost = ep.sla_labor_cost_krw
 
         const machineRate = ep.layer_costs[String(params.sla_layer_height)]
             ?? ep.hourly_rate
-        const machineCost = estTimeHours * (machineRate / KRW_TO_UNIT)
+        const machineCost = estTimeHours * machineRate
 
         const total = resinCost + otherCost + machineCost + laborCost
 
         return {
-            materialCost: resinCost * KRW_TO_UNIT,
-            otherCost: otherCost * KRW_TO_UNIT,
-            machineCost: machineCost * KRW_TO_UNIT,
-            laborCost: laborCost * KRW_TO_UNIT,
-            total: total * KRW_TO_UNIT,
+            materialCost: resinCost,
+            otherCost,
+            machineCost,
+            laborCost,
+            total,
             timeHours: estTimeHours,
             numLayers,
             volumeML,
@@ -180,33 +179,33 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         if (!ep) return null
 
         const volumeML = params.volumeCm3
-        const resinCost = (params.dlp_material_price_per_ml / KRW_TO_UNIT) * volumeML
+        const resinCost = params.dlp_material_price_per_ml * volumeML
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.dlp_layer_height))
         // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
         const mechanicDelay = 8.5;
         const estTimeHours = (numLayers * (ep.dlp_layer_exposure_sec + mechanicDelay)) / 3600
 
-        const consumablesCost = ep.dlp_consumables_krw / KRW_TO_UNIT
+        const consumablesCost = ep.dlp_consumables_krw
         const postProcessCost = params.dlp_post_processing
-            ? ep.dlp_post_process_krw / KRW_TO_UNIT
+            ? ep.dlp_post_process_krw
             : 0
         const otherCost = consumablesCost + postProcessCost
 
-        const laborCost = ep.dlp_labor_cost_krw / KRW_TO_UNIT
+        const laborCost = ep.dlp_labor_cost_krw
 
         const machineRate = ep.layer_costs[String(params.dlp_layer_height)]
             ?? ep.hourly_rate
-        const machineCost = estTimeHours * (machineRate / KRW_TO_UNIT)
+        const machineCost = estTimeHours * machineRate
 
         const total = resinCost + otherCost + machineCost + laborCost
 
         return {
-            materialCost: resinCost * KRW_TO_UNIT,
-            otherCost: otherCost * KRW_TO_UNIT,
-            machineCost: machineCost * KRW_TO_UNIT,
-            laborCost: laborCost * KRW_TO_UNIT,
-            total: total * KRW_TO_UNIT,
+            materialCost: resinCost,
+            otherCost,
+            machineCost,
+            laborCost,
+            total,
             timeHours: estTimeHours,
             numLayers,
             volumeML,
