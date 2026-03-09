@@ -545,7 +545,10 @@ export default function GallerySection() {
                                     className="flex"
                                     style={{ width: `${slideCount * 100}%` }}
                                     animate={{ x: `${-(currentSlideIndex * (100 / slideCount))}%` }}
-                                    transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                                    transition={{
+                                        duration: 1.1,
+                                        ease: [0.32, 0.72, 0, 1],
+                                    }}
                                 >
                                     {slides.map((slide, slideIdx) => (
                                         <div
