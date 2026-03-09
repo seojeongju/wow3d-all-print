@@ -35,6 +35,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+/** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
+const KRW_RATE = 1300;
+
 export default function MyAccountPage() {
     const { user, token, isAuthenticated, logout, updateUser } = useAuthStore();
     const { addToCart } = useCartStore();
@@ -240,10 +243,10 @@ export default function MyAccountPage() {
     if (!isAuthenticated) return null;
     if (user?.role === 'admin') return null;
 
-    // derived stats
+    // derived stats (실제 주문 데이터 기준)
     const activeOrders = orders.filter(o => ['pending', 'confirmed', 'production', 'shipping'].includes(o.status));
     const completedOrders = orders.filter(o => o.status === 'completed');
-    const totalSpent = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const totalSpentKr = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0) * KRW_RATE, 0);
 
     return (
         <div className="min-h-screen bg-muted/20 pb-20">
@@ -314,7 +317,7 @@ export default function MyAccountPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(totalSpent)}
+                                        ₩{Math.round(totalSpentKr).toLocaleString('ko-KR')}
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-1">누적 이용 금액</p>
                                 </CardContent>
@@ -354,7 +357,7 @@ export default function MyAccountPage() {
                                                     <CardDescription>{new Date(order.createdAt).toLocaleDateString('ko-KR')} 주문</CardDescription>
                                                 </div>
                                                 <Badge variant="outline" className="text-base px-3 py-1 bg-background">
-                                                    {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(order.totalAmount)}
+                                                    ₩{Math.round((Number(order.totalAmount) || 0) * KRW_RATE).toLocaleString('ko-KR')}
                                                 </Badge>
                                             </CardHeader>
                                             <CardContent className="p-6">
@@ -376,7 +379,7 @@ export default function MyAccountPage() {
                                                                 </div>
                                                             </div>
                                                             <div className="text-sm font-bold text-right">
-                                                                ₩{item.subtotal.toLocaleString()}
+                                                                ₩{Math.round((Number(item.subtotal) || 0) * KRW_RATE).toLocaleString('ko-KR')}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -510,7 +513,7 @@ export default function MyAccountPage() {
                                                             <div className="text-right">
                                                                 <div className="text-xs text-muted-foreground mb-1 text-left md:text-right">결제 금액</div>
                                                                 <div className="text-xl font-black text-primary text-left md:text-right">
-                                                                    ₩{order.totalAmount.toLocaleString()}
+                                                                    ₩{Math.round((Number(order.totalAmount) || 0) * KRW_RATE).toLocaleString('ko-KR')}
                                                                 </div>
                                                             </div>
                                                             <div className="flex gap-2">
@@ -785,7 +788,7 @@ export default function MyAccountPage() {
                                                     </td>
                                                     <td className="p-3 text-center">{item.quantity}</td>
                                                     <td className="p-3 text-right font-medium">
-                                                        {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(item.subtotal)}
+                                                        ₩{Math.round((Number(item.subtotal) || 0) * KRW_RATE).toLocaleString('ko-KR')}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -801,7 +804,7 @@ export default function MyAccountPage() {
                                             <tr>
                                                 <td colSpan={2} className="p-3 text-right">총 결제 금액</td>
                                                 <td className="p-3 text-right text-base text-primary">
-                                                    {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(selectedOrder.totalAmount)}
+                                                    ₩{Math.round((Number(selectedOrder.totalAmount) || 0) * KRW_RATE).toLocaleString('ko-KR')}
                                                 </td>
                                             </tr>
                                         </tfoot>
