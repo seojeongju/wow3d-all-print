@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
                 o.created_at,
                 o.has_expert_quote,
                 o.expert_quote_data,
+                o.quotation_sent_at,
                 u.name as user_name,
                 u.email as user_email,
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,

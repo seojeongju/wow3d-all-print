@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Download, Loader2, Eye, FileDown, Printer } from 'lucide-react';
+import { Search, Download, Loader2, Eye, FileDown, Printer, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -68,6 +68,11 @@ function OrderListInner() {
     const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
     // 상태를 제작중으로 변경 시 수정 견적 금액 확인 다이얼로그
     const [confirmProductionDialog, setConfirmProductionDialog] = useState<{ orderId: number; expertAmount: number; autoAmount: number } | null>(null);
+    // 견적 검토: 수정 견적 입력 폼 표시 여부, 수정 견적 총액 입력값
+    const [showExpertQuoteForm, setShowExpertQuoteForm] = useState(false);
+    const [expertTotalInput, setExpertTotalInput] = useState('');
+    const [savingExpertQuote, setSavingExpertQuote] = useState(false);
+    const [sendingQuotation, setSendingQuotation] = useState(false);
 
     const fetchOrders = async () => {
         try {
@@ -109,6 +114,8 @@ function OrderListInner() {
                     setDetailData(j.data);
                     setDetailAdminNote(String(j.data.order?.admin_note ?? ''));
                     setDetailStatus(String(j.data.order?.status ?? 'pending'));
+                    setShowExpertQuoteForm(false);
+                    setExpertTotalInput('');
                 } else {
                     toast({ title: j.error || '주문을 불러올 수 없습니다.', variant: 'destructive' });
                     setDetailOrderId(null);
@@ -155,6 +162,137 @@ function OrderListInner() {
             toast({ title: '저장 중 오류가 발생했습니다.', variant: 'destructive' });
         } finally {
             setSavingDetail(false);
+        }
+    };
+
+    /** 자동 견적 그대로 사용 → expert_quote_data에 현재 주문 항목 금액 그대로 저장 */
+    const handleConfirmAutoQuote = async () => {
+        if (!detailOrderId || !detailData?.order || !detailData?.items?.length) return;
+        setSavingExpertQuote(true);
+        try {
+            const order = detailData.order as any;
+            const items = detailData.items as any[];
+            const recipient = {
+                name: String(order.recipient_name ?? ''),
+                phone: String(order.recipient_phone ?? ''),
+                email: String(order.user_email ?? order.guest_email ?? ''),
+                address: String(order.shipping_address ?? ''),
+            };
+            const expertItems = items.map((it: any) => ({
+                name: it.file_name || '-',
+                spec: it.print_method || '',
+                quantity: Number(it.quantity) || 1,
+                unit_price: Math.round(Number(it.unit_price) || 0),
+            }));
+            const totalSupply = expertItems.reduce((acc: number, it: any) => acc + it.unit_price * it.quantity, 0);
+            const totalAmount = totalSupply + Math.floor(totalSupply * 0.1);
+            const res = await fetch(`/api/admin/orders/${detailOrderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: JSON.stringify({
+                    expert_quote_data: { items: expertItems, recipient, total_amount: totalAmount, updated_at: new Date().toISOString() },
+                }),
+            });
+            const j = await res.json();
+            if (j.success) {
+                setDetailData((d) => {
+                    if (!d) return d;
+                    const nextOrder = { ...d.order, has_expert_quote: 1, expert_quote_data: JSON.stringify({ items: expertItems, recipient, total_amount: totalAmount }) };
+                    return { ...d, order: nextOrder };
+                });
+                setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, has_expert_quote: 1, expert_quote_data: JSON.stringify({ total_amount: totalAmount }) } : o)));
+                setShowExpertQuoteForm(false);
+                toast({ title: '검토 완료(자동 견적 그대로 사용) 저장되었습니다.' });
+            } else {
+                toast({ title: j.error || '저장 실패', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: '저장 중 오류가 발생했습니다.', variant: 'destructive' });
+        } finally {
+            setSavingExpertQuote(false);
+        }
+    };
+
+    /** 수정 견적 총액 입력 후 검토 완료(저장) */
+    const handleSaveExpertQuote = async () => {
+        if (!detailOrderId || !detailData?.order || !detailData?.items?.length) return;
+        const amount = Math.round(Number(String(expertTotalInput).replace(/[^0-9]/g, '')) || 0;
+        if (amount <= 0) {
+            toast({ title: '수정 견적 총액을 입력해 주세요.', variant: 'destructive' });
+            return;
+        }
+        setSavingExpertQuote(true);
+        try {
+            const order = detailData.order as any;
+            const items = detailData.items as any[];
+            const totalSub = items.reduce((acc: number, it: any) => acc + Number(it.subtotal || 0), 0);
+            const supplyAmount = Math.floor(amount / 1.1); // 공급가액
+            const expertItems = totalSub > 0
+                ? items.map((it: any) => {
+                    const ratio = Number(it.subtotal || 0) / totalSub;
+                    const itemSupply = Math.round(supplyAmount * ratio);
+                    const qty = Number(it.quantity) || 1;
+                    const unitPrice = Math.round(itemSupply / qty);
+                    return { name: it.file_name || '-', spec: it.print_method || '', quantity: qty, unit_price: unitPrice };
+                })
+                : items.map((it: any) => ({ name: it.file_name || '-', spec: it.print_method || '', quantity: Number(it.quantity) || 1, unit_price: Math.floor(supplyAmount / items.length) }));
+            const recipient = {
+                name: String(order.recipient_name ?? ''),
+                phone: String(order.recipient_phone ?? ''),
+                email: String(order.user_email ?? order.guest_email ?? ''),
+                address: String(order.shipping_address ?? ''),
+            };
+            const res = await fetch(`/api/admin/orders/${detailOrderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: JSON.stringify({
+                    expert_quote_data: { items: expertItems, recipient, total_amount: amount, updated_at: new Date().toISOString() },
+                }),
+            });
+            const j = await res.json();
+            if (j.success) {
+                setDetailData((d) => {
+                    if (!d) return d;
+                    const nextOrder = { ...d.order, has_expert_quote: 1, expert_quote_data: JSON.stringify({ items: expertItems, recipient, total_amount: amount }) };
+                    return { ...d, order: nextOrder };
+                });
+                setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, has_expert_quote: 1, expert_quote_data: JSON.stringify({ total_amount: amount }) } : o)));
+                setShowExpertQuoteForm(false);
+                setExpertTotalInput('');
+                toast({ title: '수정 견적이 저장되었습니다.' });
+            } else {
+                toast({ title: j.error || '저장 실패', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: '저장 중 오류가 발생했습니다.', variant: 'destructive' });
+        } finally {
+            setSavingExpertQuote(false);
+        }
+    };
+
+    /** 견적서 발송: POST send-quotation → quotation_sent_at 갱신 및 이메일 발송 */
+    const handleSendQuotation = async () => {
+        if (!detailOrderId) return;
+        setSendingQuotation(true);
+        try {
+            const res = await fetch(`/api/admin/orders/${detailOrderId}/send-quotation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: JSON.stringify({}),
+            });
+            const j = await res.json();
+            if (j.success) {
+                const sentAt = j.sentAt;
+                setDetailData((d) => (d ? { ...d, order: { ...d.order, quotation_sent_at: sentAt } } : null));
+                setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, quotation_sent_at: sentAt } : o)));
+                toast({ title: j.message || '견적서 발송 처리되었습니다.' });
+            } else {
+                toast({ title: j.error || '발송 처리 실패', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: '발송 중 오류가 발생했습니다.', variant: 'destructive' });
+        } finally {
+            setSendingQuotation(false);
         }
     };
 
@@ -398,6 +536,7 @@ function OrderListInner() {
                                     <th className="p-4 font-medium text-white/70">연락</th>
                                     <th className="p-4 font-medium text-white/70">주문 내역(파일다운)</th>
                                     <th className="p-4 font-medium text-white/70">금액</th>
+                                    <th className="p-4 font-medium text-white/70">견적 발송</th>
                                     <th className="p-4 font-medium text-white/70">상태</th>
                                     <th className="p-4 font-medium text-white/70">날짜</th>
                                     <th className="p-4 font-medium text-right text-white/70">상태 변경</th>
@@ -471,6 +610,15 @@ function OrderListInner() {
                                                 );
                                             })()}
                                         </td>
+                                        <td className="p-4">
+                                            {order.quotation_sent_at ? (
+                                                <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px]">
+                                                    발송됨
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-white/30 text-xs">미발송</span>
+                                            )}
+                                        </td>
                                         <td className="p-4">{getStatusBadge(order.status)}</td>
                                         <td className="p-4 text-white/50">{order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}</td>
                                         <td className="p-4 text-right">
@@ -508,7 +656,7 @@ function OrderListInner() {
                                 ))}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={9} className="p-12 text-center text-white/40">
+                                        <td colSpan={10} className="p-12 text-center text-white/40">
                                             {orders.length === 0 ? '접수된 주문이 없습니다.' : '검색 결과가 없습니다.'}
                                         </td>
                                     </tr>
@@ -579,6 +727,14 @@ function OrderListInner() {
                                     <span className="text-[10px] font-bold text-white/40 uppercase">고객 메모</span>
                                     <p className="text-white/80">{String(detailData.order.customer_note || '-')}</p>
                                 </div>
+                                {(detailData.order as any).quotation_sent_at && (
+                                    <div className="col-span-2">
+                                        <span className="text-[10px] font-bold text-white/40 uppercase">견적서 발송 일시</span>
+                                        <p className="text-emerald-400/90 text-sm">
+                                            {new Date((detailData.order as any).quotation_sent_at).toLocaleString('ko-KR')}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {detailData.items && detailData.items.length > 0 && (
@@ -638,6 +794,79 @@ function OrderListInner() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    {/* 자동 견적 총액 요약 */}
+                                    <div className="mt-2 flex justify-end">
+                                        <span className="text-white/50 text-xs">자동 견적 총액 </span>
+                                        <span className="ml-2 font-bold text-white">
+                                            ₩ {(detailData.items as any[]).reduce((acc: number, it: any) => acc + Number(it.subtotal || 0), 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 견적 검토 블록 */}
+                            {detailData.items && detailData.items.length > 0 && (
+                                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                                    <Label className="text-[10px] font-bold text-white/40 uppercase">견적 검토</Label>
+                                    {(() => {
+                                        const order = detailData.order as any;
+                                        const hasExpert = order?.has_expert_quote && order?.expert_quote_data;
+                                        let expertAmount: number | null = null;
+                                        if (hasExpert) {
+                                            try {
+                                                const d = JSON.parse(order.expert_quote_data);
+                                                expertAmount = Number(d.total_amount || 0);
+                                            } catch { }
+                                        }
+                                        const autoTotal = (detailData.items as any[]).reduce((acc: number, it: any) => acc + Number(it.subtotal || 0), 0);
+                                        if (showExpertQuoteForm) {
+                                            return (
+                                                <div className="space-y-3 pt-1">
+                                                    <p className="text-white/60 text-sm">수정 견적 총액을 입력한 뒤 검토 완료(저장)를 누르세요.</p>
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <Input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            placeholder="예: 150000"
+                                                            value={expertTotalInput}
+                                                            onChange={(e) => setExpertTotalInput(e.target.value)}
+                                                            className="w-40 bg-white/5 border-white/10 text-white"
+                                                        />
+                                                        <span className="text-white/50 text-sm">원</span>
+                                                        <Button size="sm" onClick={handleSaveExpertQuote} disabled={savingExpertQuote}>
+                                                            {savingExpertQuote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                            검토 완료(저장)
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" className="text-white/60" onClick={() => { setShowExpertQuoteForm(false); setExpertTotalInput(''); }}>
+                                                            취소
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        if (hasExpert && expertAmount != null && expertAmount > 0) {
+                                            return (
+                                                <div className="flex flex-wrap items-center gap-3 pt-1">
+                                                    <span className="text-emerald-400 font-bold">수정 견적 금액 ₩ {expertAmount.toLocaleString()}</span>
+                                                    <Button variant="outline" size="sm" className="border-white/20 text-white/80 hover:bg-white/10" onClick={() => setShowExpertQuoteForm(true)}>
+                                                        수정 견적 다시 입력
+                                                    </Button>
+                                                    <span className="text-[11px] text-white/40">상세 항목 수정은 견적 관리에서 가능합니다.</span>
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                                                <Button size="sm" variant="outline" className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10" onClick={handleConfirmAutoQuote} disabled={savingExpertQuote}>
+                                                    {savingExpertQuote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                    자동 견적 그대로 사용
+                                                </Button>
+                                                <Button size="sm" variant="outline" className="border-white/20 text-white/80 hover:bg-white/10" onClick={() => setShowExpertQuoteForm(true)}>
+                                                    수정 견적 입력
+                                                </Button>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
 
@@ -683,6 +912,15 @@ function OrderListInner() {
                         >
                             <Printer className="w-4 h-4 mr-2" />
                             견적서 인쇄
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+                            onClick={handleSendQuotation}
+                            disabled={sendingQuotation}
+                        >
+                            {sendingQuotation ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                            견적서 발송
                         </Button>
                         <Button variant="outline" className="border-white/10 text-white" onClick={closeDetail}>닫기</Button>
                         <Button onClick={handleSaveDetail} disabled={savingDetail || loadingDetail}>
