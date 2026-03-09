@@ -4,6 +4,8 @@
 name = "wow3d-all-print"
 main = ".open-next/worker.js"
 compatibility_date = "2024-12-30"
+# /memberships API 호출 없이 배포하려면 account_id 명시 (CLOUDFLARE_API_TOKEN 사용 시)
+account_id = "85c8e953bdefb825af5374f0d66ca5dc"
 # nodejs_compat_populate_process_env: 대시보드 Variables/Secrets가 process.env에 채워지도록 함
 compatibility_flags = [
   "nodejs_compat",

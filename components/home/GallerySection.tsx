@@ -371,7 +371,6 @@ export default function GallerySection() {
     const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
     const [isFullGalleryOpen, setIsFullGalleryOpen] = useState(false);
     const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-    const [direction, setDirection] = useState(0); // -1: 이전, 1: 다음 (애니메이션 방향)
 
     const slides = chunkByFour(items);
     const slideCount = slides.length;
@@ -400,13 +399,11 @@ export default function GallerySection() {
 
     const goNext = useCallback(() => {
         if (!hasMultipleSlides) return;
-        setDirection(1);
         setCurrentSlideIndex((i) => (i + 1) % slideCount);
     }, [hasMultipleSlides, slideCount]);
 
     const goPrev = useCallback(() => {
         if (!hasMultipleSlides) return;
-        setDirection(-1);
         setCurrentSlideIndex((i) => (i - 1 + slideCount) % slideCount);
     }, [hasMultipleSlides, slideCount]);
 
@@ -542,34 +539,33 @@ export default function GallerySection() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="w-full max-w-[1280px] mx-auto overflow-hidden relative min-h-[380px]">
-                                <AnimatePresence initial={false} custom={direction}>
-                                    <motion.div
-                                        key={currentSlideIndex}
-                                        custom={direction}
-                                        variants={{
-                                            enter: (d: number) => ({ x: d ? d * 80 : 0, opacity: 0.8 }),
-                                            center: { x: 0, opacity: 1 },
-                                            exit: (d: number) => ({ x: d ? -d * 80 : 0, opacity: 0.8 }),
-                                        }}
-                                        initial="enter"
-                                        animate="center"
-                                        exit="exit"
-                                        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                                        className="absolute inset-0 flex justify-center items-start"
-                                    >
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full max-w-[1280px]">
-                                            {slides[currentSlideIndex].map((item, i) => (
-                                                <GalleryCard
-                                                    key={`${currentSlideIndex}-${item.id}-${i}`}
-                                                    item={item}
-                                                    onClick={setSelectedItem}
-                                                    className="w-72 md:w-80 flex-shrink-0"
-                                                />
-                                            ))}
+                            <div className="w-full max-w-[1280px] mx-auto overflow-hidden min-h-[380px]">
+                                {/* 트랙 방식: 슬라이드를 가로로 나열 후 translateX로만 이동 → 겹침 없음 */}
+                                <motion.div
+                                    className="flex"
+                                    style={{ width: `${slideCount * 100}%` }}
+                                    animate={{ x: `${-(currentSlideIndex * (100 / slideCount))}%` }}
+                                    transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                                >
+                                    {slides.map((slide, slideIdx) => (
+                                        <div
+                                            key={slideIdx}
+                                            className="flex-shrink-0 flex justify-center"
+                                            style={{ width: `${100 / slideCount}%` }}
+                                        >
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full">
+                                                {slide.map((item, i) => (
+                                                    <GalleryCard
+                                                        key={`${slideIdx}-${item.id}-${i}`}
+                                                        item={item}
+                                                        onClick={setSelectedItem}
+                                                        className="w-72 md:w-80 flex-shrink-0"
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
-                                    </motion.div>
-                                </AnimatePresence>
+                                    ))}
+                                </motion.div>
                             </div>
                         )}
                     </div>
