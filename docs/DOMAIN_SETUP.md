@@ -94,3 +94,39 @@ DNS에 **A 레코드**가 있으면 Cloudflare가 그 IP로 접속을 시도해 
 - [ ] 브라우저에서 https://wow3dp.co.kr 접속 확인
 - [ ] 522 발생 시: DNS에서 A 레코드(115.68.229.23) 삭제 후 재확인
 - [ ] **연결 시간 초과** 시: DNS에 예전 IP용 A 레코드 없애기 + Worker **도메인 및 경로**에 wow3dp.co.kr, www 추가 확인
+
+---
+
+## 7. 사이트 연결이 자주 끊기는 경우 (ERR_CONNECTION_TIMED_OUT)
+
+연결이 **간헐적으로** 또는 **특정 환경에서만** 안 될 때 의심할 수 있는 원인과 대응입니다.
+
+### 7-1. 가능한 원인
+
+| 원인 | 설명 |
+|------|------|
+| **Cold Start** | Cloudflare Worker가 한동안 요청이 없으면 슬립했다가, 첫 요청 시 깨우는 시간(수 초)이 걸릴 수 있음. 그 사이에 브라우저가 타임아웃하면 연결 실패로 보임. |
+| **Worker 실행 시간** | Next.js(OpenNext) 앱은 무거워서 첫 응답까지 시간이 걸릴 수 있음. 무료 플랜 CPU 시간 제한(예: 10ms)을 넘기면 Worker가 중단될 수 있음. |
+| **사용자 네트워크** | 특정 통신사/회사망/공유기에서 Cloudflare IP로 가는 경로가 느리거나 차단되는 경우. |
+| **Cloudflare 장애** | [Cloudflare Status](https://www.cloudflarestatus.com/) 에서 전역/지역 장애 확인. |
+| **DNS 캐시** | PC/공유기가 예전 IP를 캐시해 두고 있으면, 그 IP(응답 없는 서버)로 접속 시도 → 타임아웃. |
+
+### 7-2. 사용자 측에서 확인할 것
+
+1. **workers.dev로 접속**  
+   `https://wow3d-all-print.jayseo36.workers.dev` 가 잘 열리면, 도메인/경로 문제일 가능성이 큼. wow3dp.co.kr만 안 되면 DNS·Custom Domain 설정을 다시 확인.
+2. **다른 네트워크에서 시도**  
+   휴대폰 데이터만 켜서 wow3dp.co.kr 접속. 여기서는 되는데 특정 Wi‑Fi/회사망에서만 안 되면 해당 네트워크(방화벽, 프록시) 이슈.
+3. **DNS 캐시 비우기**  
+   Windows: `ipconfig /flushdns` 실행 후 브라우저 완전 종료 후 재접속.
+4. **DNS 서버 변경**  
+   PC 또는 공유기 DNS를 Google(8.8.8.8) 또는 Cloudflare(1.1.1.1)로 바꿔서 테스트.
+
+### 7-3. 운영 측에서 할 수 있는 것
+
+- **Cloudflare 유료 플랜**  
+  Workers Paid 플랜이면 CPU 시간·요청 제한이 늘어나 Cold Start·무거운 페이지에서 더 안정적일 수 있음.
+- **Keep-Alive(Keep-Warm)**  
+  Cron Trigger로 1~5분마다 `https://wow3d-all-print.jayseo36.workers.dev` 또는 `https://wow3dp.co.kr` 를 호출해 두면, Worker가 자주 슬립하지 않아 Cold Start로 인한 타임아웃이 줄어들 수 있음. (Cloudflare 대시보드 → Workers → Triggers → Cron Triggers)
+- **모니터링**  
+  Cloudflare 대시보드 **Analytics**에서 요청 수·에러율·응답 시간을 보고, 특정 시간대에만 실패하는지 확인.
