@@ -1,10 +1,11 @@
-# Cloudflare Workers 자동 배포 (main/master 푸시 시)
+# Cloudflare Workers 배포 (수동 실행만 - Actions에서 "Run workflow"로 배포)
+# 푸시 시 자동 배포를 원하면 아래 push 블록 주석 해제
 name: Deploy to Cloudflare Workers
 
 on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:  # 수동 실행 가능 (Actions 탭에서 Run workflow)
+  workflow_dispatch:  # 수동: GitHub Actions > Deploy to Cloudflare Workers > Run workflow
+  # push:
+  #   branches: [main]
 
 jobs:
   deploy:

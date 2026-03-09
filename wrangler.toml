@@ -5,14 +5,14 @@ name = "wow3d-all-print"
 main = ".open-next/worker.js"
 compatibility_date = "2024-12-30"
 
-# 커스텀 도메인 (wow3dp.co.kr) - 해당 도메인이 이 계정의 Cloudflare Zone에 있어야 함
-[[routes]]
-pattern = "wow3dp.co.kr"
-custom_domain = true
-
-[[routes]]
-pattern = "www.wow3dp.co.kr"
-custom_domain = true
+# 커스텀 도메인은 Cloudflare 대시보드에서 연결 (Workers & Pages > wow3d-all-print > 설정 > 도메인 및 경로 > Custom Domain)
+# wrangler에 routes를 두면 CI 배포 시 zone/권한 오류로 실패할 수 있으므로 대시보드에서만 관리
+# [[routes]]
+# pattern = "wow3dp.co.kr"
+# custom_domain = true
+# [[routes]]
+# pattern = "www.wow3dp.co.kr"
+# custom_domain = true
 # /memberships API 호출 없이 배포하려면 account_id 명시 (CLOUDFLARE_API_TOKEN 사용 시)
 account_id = "85c8e953bdefb825af5374f0d66ca5dc"
 # nodejs_compat_populate_process_env: 대시보드 Variables/Secrets가 process.env에 채워지도록 함

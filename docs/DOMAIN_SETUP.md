@@ -1,13 +1,11 @@
 # wow3dp.co.kr 도메인 연결 가이드
 
-## 1. wrangler.toml 설정 (완료)
+## 1. Custom Domain 연결 (대시보드에서 관리)
 
-프로젝트에 다음 Custom Domain이 설정되어 있습니다.
+Custom Domain은 **Cloudflare 대시보드**에서 연결합니다. (wrangler.toml에 routes를 두면 CI 배포가 실패할 수 있어 대시보드만 사용)
 
-- `wow3dp.co.kr`
-- `www.wow3dp.co.kr`
-
-배포 시(`npm run deploy` 또는 GitHub Actions) 이 도메인들이 Worker에 자동으로 연결됩니다.
+- **Workers & Pages** → **wow3d-all-print** → **설정** → **도메인 및 경로** → **+ Add** → **Custom Domain**
+- `wow3dp.co.kr`, `www.wow3dp.co.kr` 추가
 
 ---
 
@@ -23,7 +21,7 @@
 ### 2-2. Custom Domain이 동작하는 조건
 
 - **wow3dp.co.kr** 이 **같은 Cloudflare 계정**의 **Zone**으로 추가되어 있어야 함
-- Zone이 없으면 Wrangler 배포 시 Custom Domain 연결이 실패할 수 있음
+- 도메인은 **대시보드**에서 Worker에 연결 (CI 배포 실패 방지)
 
 ### 2-3. 배포 후 확인
 
@@ -43,10 +41,29 @@
 
 ---
 
-## 4. 요약 체크리스트
+## 4. Error 522 (Connection timed out) 해결
+
+사이트가 **Worker**로만 동작하므로 **오리진 서버(별도 IP)가 없습니다**.  
+DNS에 **A 레코드**가 있으면 Cloudflare가 그 IP로 접속을 시도해 522가 납니다.
+
+**조치:** Cloudflare **DNS**에서 아래 레코드를 **삭제**하세요.
+
+1. [Cloudflare 대시보드](https://dash.cloudflare.com) → **wow3dp.co.kr** Zone 선택
+2. **DNS** → **레코드** 이동
+3. **A 레코드** 중 다음을 찾아 **삭제**:
+   - **이름** `@`(또는 `wow3dp.co.kr`), **콘텐츠** `115.68.229.23`
+   - **이름** `www`, **콘텐츠** `115.68.229.23`
+
+삭제 후 Worker의 Custom Domain만 남으므로, 트래픽이 Worker로 가서 522가 사라집니다.  
+(Worker Custom Domain은 **도메인 및 경로**에 등록된 상태로 동작하며, A 레코드가 없어도 됩니다.)
+
+---
+
+## 5. 요약 체크리스트
 
 - [ ] wow3dp.co.kr 도메인이 Cloudflare에 사이트(Zone)로 추가됨
 - [ ] 도메인 등록처에서 네임서버를 Cloudflare로 변경함
 - [ ] `npm run deploy` 또는 main/master 푸시로 배포 실행
 - [ ] (선택) `NEXT_PUBLIC_APP_URL` = `https://wow3dp.co.kr` 설정
 - [ ] 브라우저에서 https://wow3dp.co.kr 접속 확인
+- [ ] 522 발생 시: DNS에서 A 레코드(115.68.229.23) 삭제 후 재확인
