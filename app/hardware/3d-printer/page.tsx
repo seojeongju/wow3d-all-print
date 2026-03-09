@@ -111,36 +111,36 @@ const TECH_FEATURES = [
         title: '그레이스케일 XY 픽셀',
         subtitle: 'Imadjust™',
         desc: 'XY 픽셀 그레이스케일 조정으로 DLP급 디테일 성능을 MSLA에서 구현합니다.',
-        color: 'text-primary',
-        bg: 'bg-primary/10',
-        border: 'border-primary/20',
+        color: 'text-indigo-300',
+        bg: 'bg-indigo-500/20',
+        border: 'border-indigo-500/30',
     },
     {
         icon: Zap,
         title: '60 mm/h 공통 최대 속도',
         subtitle: '전 모델 동일 적용',
         desc: '전 모델 60 mm/h 최대 출력 속도로 효율적인 생산 프로덕션을 실현합니다.',
-        color: 'text-amber-400',
-        bg: 'bg-amber-500/10',
-        border: 'border-amber-500/20',
+        color: 'text-amber-300',
+        bg: 'bg-amber-500/20',
+        border: 'border-amber-500/30',
     },
     {
         icon: Thermometer,
         title: '챔버 온도 제어',
         subtitle: '에어 히팅 프린트 챔버',
         desc: '18~28℃ 환경에서 모델별 35~38℃ 내부 자동 가열로 일관된 출력 품질을 보장합니다.',
-        color: 'text-rose-400',
-        bg: 'bg-rose-500/10',
-        border: 'border-rose-500/20',
+        color: 'text-rose-300',
+        bg: 'bg-rose-500/20',
+        border: 'border-rose-500/30',
     },
     {
         icon: Shield,
         title: '전문 A/S 지원',
         subtitle: '기술 엔지니어 직접 지원',
         desc: '전문 엔지니어 기반 사후지원 및 기술 백업으로 장비 가동률을 최대화합니다.',
-        color: 'text-emerald-400',
-        bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/20',
+        color: 'text-emerald-300',
+        bg: 'bg-emerald-500/20',
+        border: 'border-emerald-500/30',
     },
 ];
 
@@ -174,12 +174,12 @@ const CERTIFICATIONS = [
    호환 레진 소재
 ───────────────────────────────────────────────────────────── */
 const RESINS = [
-    { name: '범용 레진', category: 'Standard', color: 'bg-slate-500/20 text-slate-300 border-slate-500/30', desc: '프로토타입·교육·디자인 검증용 경제적 범용' },
-    { name: '덴탈 레진', category: 'Dental', color: 'bg-pink-500/20 text-pink-300 border-pink-500/30', desc: '치과 기공·의료 보조기기 전용 생체적합성' },
-    { name: '주얼리 레진', category: 'Jewelry', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30', desc: '주얼리·금속 캐스팅 마스터 패턴 전용' },
-    { name: '산업용 레진', category: 'Engineering', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', desc: '고강도·내열·기능 부품 산업용 엔지니어링' },
-    { name: 'Flexible 레진', category: 'Flexible', color: 'bg-violet-500/20 text-violet-300 border-violet-500/30', desc: '탄성·완충 특성이 필요한 유연 부품용' },
-    { name: 'Tough 레진', category: 'Tough', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', desc: '충격·마모 저항이 요구되는 구조 부품용' },
+    { name: '범용 레진', category: 'Standard', color: 'bg-slate-500/25 text-slate-200 border-slate-400/40', desc: '프로토타입·교육·디자인 검증용 경제적 범용' },
+    { name: '덴탈 레진', category: 'Dental', color: 'bg-pink-500/25 text-pink-200 border-pink-400/40', desc: '치과 기공·의료 보조기기 전용 생체적합성' },
+    { name: '주얼리 레진', category: 'Jewelry', color: 'bg-amber-500/25 text-amber-200 border-amber-400/40', desc: '주얼리·금속 캐스팅 마스터 패턴 전용' },
+    { name: '산업용 레진', category: 'Engineering', color: 'bg-blue-500/25 text-blue-200 border-blue-400/40', desc: '고강도·내열·기능 부품 산업용 엔지니어링' },
+    { name: 'Flexible 레진', category: 'Flexible', color: 'bg-violet-500/25 text-violet-200 border-violet-400/40', desc: '탄성·완충 특성이 필요한 유연 부품용' },
+    { name: 'Tough 레진', category: 'Tough', color: 'bg-emerald-500/25 text-emerald-200 border-emerald-400/40', desc: '충격·마모 저항이 요구되는 구조 부품용' },
 ];
 
 /* ─────────────────────────────────────────────────────────────
@@ -187,9 +187,9 @@ const RESINS = [
 ───────────────────────────────────────────────────────────── */
 function SpecRow({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex items-start justify-between py-2.5 border-b border-white/5 last:border-0">
-            <span className="text-xs text-muted-foreground font-medium shrink-0 w-28">{label}</span>
-            <span className="text-xs text-foreground/90 text-right font-semibold">{value}</span>
+        <div className="flex items-start justify-between py-2.5 border-b border-white/10 last:border-0">
+            <span className="text-xs text-foreground/75 font-semibold shrink-0 w-28">{label}</span>
+            <span className="text-xs text-foreground font-semibold text-right">{value}</span>
         </div>
     );
 }
@@ -270,10 +270,10 @@ export default function PrinterProductPage() {
                         ].map((b) => (
                             <span
                                 key={b.label}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.04] text-sm"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 bg-white/[0.07] text-sm"
                             >
                                 <span className="text-primary font-bold text-xs">{b.label}</span>
-                                <span className="text-foreground/80">{b.value}</span>
+                                <span className="text-foreground font-medium">{b.value}</span>
                             </span>
                         ))}
                     </motion.div>
@@ -307,8 +307,8 @@ export default function PrinterProductPage() {
                         viewport={{ once: true }}
                         className="mb-12"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-2">제품 라인업</h2>
-                        <p className="text-sm text-muted-foreground">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-2 text-foreground">제품 라인업</h2>
+                        <p className="text-sm text-foreground/70">
                             * 사이즈 정보는 반올림된 수치일 수 있습니다. (W×D×H)
                         </p>
                     </motion.div>
@@ -356,7 +356,7 @@ export default function PrinterProductPage() {
                                     {product.series}
                                 </div>
                                 <h3 className="text-2xl font-black mb-1">{product.name}</h3>
-                                <p className="text-xs text-muted-foreground mb-5 break-keep leading-relaxed">
+                                <p className="text-xs text-foreground/75 mb-5 break-keep leading-relaxed">
                                     {product.tagline}
                                 </p>
 
@@ -385,7 +385,7 @@ export default function PrinterProductPage() {
                                         animate={{ opacity: 1, height: 'auto' }}
                                         className="mt-4 pt-4 border-t border-white/10"
                                     >
-                                        <p className="text-xs text-muted-foreground leading-relaxed break-keep">
+                                        <p className="text-xs text-foreground/75 leading-relaxed break-keep">
                                             {product.desc}
                                         </p>
                                     </motion.div>
@@ -405,11 +405,11 @@ export default function PrinterProductPage() {
                         viewport={{ once: true }}
                         className="mb-10"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-3">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">
                             하드웨어 스펙{' '}
-                            <span className="text-primary">— {active.name}</span>
+                            <span className="text-indigo-300">— {active.name}</span>
                         </h2>
-                        <p className="text-sm text-muted-foreground mb-8">카드를 클릭하거나 메뉴를 선택해 모델별 상세 스펙을 확인하세요.</p>
+                        <p className="text-sm text-foreground/75 mb-8">카드를 클릭하거나 메뉴를 선택해 모델별 상세 스펙을 확인하세요.</p>
 
                         {/* 스펙 상세 섹션 전용 제품 선택 탭 */}
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -432,19 +432,19 @@ export default function PrinterProductPage() {
                         {[
                             {
                                 title: '빌드 볼륨', value: active.buildSize, icon: Layers,
-                                color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20',
+                                color: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/30',
                             },
                             {
                                 title: '장비 규격', value: active.printerSize || '', icon: Zap,
-                                color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20',
+                                color: 'text-amber-300', bg: 'bg-amber-500/20', border: 'border-amber-500/30',
                             },
                             {
                                 title: '장비 무게', value: active.weight || '', icon: Cpu,
-                                color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20',
+                                color: 'text-emerald-300', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30',
                             },
                             {
                                 title: '해상도', value: active.resolution, icon: Thermometer,
-                                color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20',
+                                color: 'text-rose-300', bg: 'bg-rose-500/20', border: 'border-rose-500/30',
                             },
                         ].map((spec, i) => (
                             <motion.div
@@ -453,15 +453,15 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.07 }}
-                                className={`p-6 rounded-2xl border ${spec.border} bg-gradient-to-br from-white/[0.03] to-transparent`}
+                                className={`p-6 rounded-2xl border ${spec.border} bg-gradient-to-br from-white/[0.05] to-transparent`}
                             >
-                                <div className={`w-10 h-10 rounded-xl ${spec.bg} flex items-center justify-center mb-4 ${spec.color}`}>
-                                    <spec.icon className="w-5 h-5" />
+                                <div className={`w-11 h-11 rounded-xl ${spec.bg} flex items-center justify-center mb-4 ${spec.color}`}>
+                                    <spec.icon className="w-6 h-6" strokeWidth={2} />
                                 </div>
-                                <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">
+                                <div className="text-xs text-foreground/80 font-semibold uppercase tracking-wider mb-1">
                                     {spec.title}
                                 </div>
-                                <div className="text-base font-bold">{spec.value}</div>
+                                <div className="text-base font-bold text-foreground">{spec.value}</div>
                             </motion.div>
                         ))}
                     </div>
@@ -473,9 +473,9 @@ export default function PrinterProductPage() {
                         viewport={{ once: true }}
                         className="mt-8 grid md:grid-cols-2 gap-5"
                     >
-                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                                <Thermometer className="w-4 h-4 text-rose-400" /> 온도 · 환경
+                        <div className="p-6 rounded-2xl border border-white/15 bg-white/[0.04]">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/90 mb-4 flex items-center gap-2">
+                                <Thermometer className="w-4 h-4 text-rose-300 shrink-0" /> 온도 · 환경
                             </h3>
                             <div className="space-y-1">
                                 <SpecRow label="장비 규격" value={active.printerSize || ''} />
@@ -484,9 +484,9 @@ export default function PrinterProductPage() {
                                 <SpecRow label="공기 정화" value={active.led} />
                             </div>
                         </div>
-                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                                <Zap className="w-4 h-4 text-amber-400" /> 전원 · 연결
+                        <div className="p-6 rounded-2xl border border-white/15 bg-white/[0.04]">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/90 mb-4 flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-amber-300 shrink-0" /> 전원 · 연결
                             </h3>
                             <div className="space-y-1">
                                 <SpecRow label="전원" value={active.power} />
@@ -508,8 +508,8 @@ export default function PrinterProductPage() {
                         viewport={{ once: true }}
                         className="text-center mb-14"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">핵심 기술 우위</h2>
-                        <p className="text-muted-foreground break-keep max-w-xl mx-auto">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">핵심 기술 우위</h2>
+                        <p className="text-foreground/75 break-keep max-w-xl mx-auto">
                             와우쓰리디 P-Pro Series만의 독자 기술로 경쟁 제품과 차별화된 출력 품질을 경험하세요.
                         </p>
                     </motion.div>
@@ -522,16 +522,16 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
-                                className={`group p-6 rounded-2xl border ${feat.border} bg-gradient-to-br from-white/[0.03] to-transparent hover:from-white/[0.06] transition-all duration-300 hover:scale-[1.02]`}
+                                className={`group p-6 rounded-2xl border ${feat.border} bg-gradient-to-br from-white/[0.05] to-transparent hover:from-white/[0.08] transition-all duration-300 hover:scale-[1.02]`}
                             >
                                 <div className={`w-12 h-12 rounded-2xl ${feat.bg} flex items-center justify-center mb-5 ${feat.color} group-hover:scale-110 transition-transform`}>
-                                    <feat.icon className="w-6 h-6" />
+                                    <feat.icon className="w-6 h-6" strokeWidth={2} />
                                 </div>
                                 <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${feat.color}`}>
                                     {feat.subtitle}
                                 </div>
-                                <h3 className="text-base font-bold mb-3 leading-snug">{feat.title}</h3>
-                                <p className="text-xs text-muted-foreground leading-relaxed break-keep">{feat.desc}</p>
+                                <h3 className="text-base font-bold text-foreground mb-3 leading-snug">{feat.title}</h3>
+                                <p className="text-xs text-foreground/75 leading-relaxed break-keep">{feat.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -547,8 +547,8 @@ export default function PrinterProductPage() {
                         viewport={{ once: true }}
                         className="mb-10"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-3">호환 레진 소재</h2>
-                        <p className="text-muted-foreground text-sm">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">호환 레진 소재</h2>
+                        <p className="text-foreground/75 text-sm">
                             405nm UV 광원 기반 — 산업·주얼리·덴탈 응용
                         </p>
                     </motion.div>
@@ -561,14 +561,14 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.07 }}
-                                className="flex items-start gap-4 p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                                className="flex items-start gap-4 p-5 rounded-2xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.06] transition-colors"
                             >
                                 <span className={`px-2.5 py-1 rounded-lg text-xs font-black border shrink-0 ${resin.color}`}>
                                     {resin.category}
                                 </span>
                                 <div>
-                                    <div className="font-bold text-sm mb-1">{resin.name}</div>
-                                    <div className="text-xs text-muted-foreground break-keep">{resin.desc}</div>
+                                    <div className="font-bold text-sm text-foreground mb-1">{resin.name}</div>
+                                    <div className="text-xs text-foreground/75 break-keep">{resin.desc}</div>
                                 </div>
                             </motion.div>
                         ))}
@@ -585,10 +585,10 @@ export default function PrinterProductPage() {
                         viewport={{ once: true }}
                         className="text-center mb-12"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            <span className="text-primary">(주)와우쓰리디</span> 제품인증현황
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                            <span className="text-indigo-300">(주)와우쓰리디</span> 제품인증현황
                         </h2>
-                        <p className="text-muted-foreground break-keep max-w-xl mx-auto text-sm">
+                        <p className="text-foreground/75 break-keep max-w-xl mx-auto text-sm">
                             품질과 기술력을 입증하는 국가 공인 인증 및 특허를 보유하고 있습니다.
                         </p>
                     </motion.div>
@@ -601,14 +601,14 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.08 }}
-                                className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center hover:bg-white/[0.05] transition-all hover:scale-[1.02]"
+                                className="p-6 rounded-2xl border border-white/15 bg-white/[0.04] text-center hover:bg-white/[0.06] transition-all hover:scale-[1.02]"
                             >
-                                <div className="text-4xl mb-4">{cert.icon}</div>
+                                <div className="text-4xl mb-4" aria-hidden>{cert.icon}</div>
                                 <div className="flex items-center justify-center gap-1.5 mb-3">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                                    <h3 className="font-bold text-sm">{cert.title}</h3>
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" strokeWidth={2} />
+                                    <h3 className="font-bold text-sm text-foreground">{cert.title}</h3>
                                 </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed break-keep">{cert.desc}</p>
+                                <p className="text-xs text-foreground/80 leading-relaxed break-keep">{cert.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -635,7 +635,7 @@ export default function PrinterProductPage() {
                             용도에 맞는 P-Pro 모델과<br />
                             <span className="text-primary">레진을 1:1로 추천</span>해 드립니다.
                         </h2>
-                        <p className="text-muted-foreground mb-10 break-keep max-w-lg mx-auto">
+                        <p className="text-foreground/75 mb-10 break-keep max-w-lg mx-auto">
                             WOW3DHD · (주)와우쓰리디에 문의하세요.<br />
                             전문 엔지니어가 도입부터 운용까지 함께합니다.
                         </p>
