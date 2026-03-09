@@ -124,8 +124,8 @@ export default function Hero() {
                     </h1>
 
                     <p className="text-xl text-muted-foreground/90 mb-8 max-w-lg leading-relaxed break-keep">
-                        AI 기반 실시간 견적부터 전문가급 정밀 출력까지.<br />
-                        시제품 제작부터 양산까지, WOW3D가 함께합니다.
+                        <span className="text-foreground/90">3D 프린팅 출력 서비스</span>, 3D 프린팅 자동 견적으로 10초 만에 견적 확인.<br />
+                        3D 프린터 출력부터 시제품·양산까지, WOW3D가 함께합니다.
                     </p>
 
                     <div className="flex flex-wrap gap-4">

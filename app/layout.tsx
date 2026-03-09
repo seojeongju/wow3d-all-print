@@ -19,13 +19,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "3D 프린팅 자동 견적 | WOW3D - 시제품·양산 견적 10초",
+    default: "3D 프린팅 출력·자동 견적 | WOW3D - 3D 프린터 출력 서비스",
     template: "%s | WOW3D",
   },
   description:
-    "STL·OBJ·3MF·PLY 업로드만으로 10초 실시간 견적. 산업용 3D 프린팅, 시제품·소량양산·프로토타입 제작. FDM·SLA·DLP, 다양한 소재.",
+    "3D 프린팅 출력, 3D 프린팅 자동 견적, 3D 프린터 출력 서비스. STL·OBJ 업로드만으로 10초 실시간 견적. 시제품·프로토타입·소량양산. FDM·SLA·DLP.",
   keywords: [
-    "3D 프린팅",
+    "3D 프린팅 출력",
+    "3D 프린팅 자동 견적",
+    "3D 프린터 출력",
+    "3D 프린팅 출력 서비스",
     "3D 프린팅 견적",
     "시제품 제작",
     "프로토타입",
@@ -39,15 +42,15 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: SITE_URL,
     siteName: "WOW3D",
-    title: "3D 프린팅 자동 견적 | WOW3D - 시제품·양산 견적 10초",
+    title: "3D 프린팅 출력·자동 견적 | WOW3D - 3D 프린터 출력 서비스",
     description:
-      "STL·OBJ·3MF·PLY 업로드만으로 10초 실시간 견적. 산업용 3D 프린팅, 시제품·소량양산까지.",
+      "3D 프린팅 출력, 3D 프린팅 자동 견적, 3D 프린터 출력 서비스. 10초 실시간 견적, 시제품·양산.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "WOW3D 3D 프린팅 견적" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "3D 프린팅 자동 견적 | WOW3D",
-    description: "STL·OBJ·3MF·PLY 업로드만으로 10초 실시간 견적. 시제품·양산까지.",
+    title: "3D 프린팅 출력·자동 견적 | WOW3D",
+    description: "3D 프린팅 출력, 3D 프린터 출력 서비스. 10초 실시간 자동 견적. 시제품·양산.",
   },
   robots: {
     index: true,
@@ -55,6 +58,14 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   alternates: { canonical: SITE_URL },
+  // 검색엔진 소유 확인 (Search Console/서치어드바이저에서 발급한 content 값)
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "-9piNXSyjNzl442zz",
+    other: {
+      "naver-site-verification":
+        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || "ce7e7d3489dc31609cfceda1d5ad6648d527bbf8",
+    },
+  },
 };
 
 export const viewport: Viewport = {
@@ -74,6 +85,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "LocalBusiness",
+              name: "WOW3D",
+              description:
+                "3D 프린팅 출력, 3D 프린팅 자동 견적, 3D 프린터 출력, 3D 프린팅 출력 서비스. STL·OBJ 업로드로 10초 실시간 견적. 시제품·프로토타입·소량양산.",
+              url: SITE_URL,
+              image: `${SITE_URL}/og-image.png`,
+            }),
+          }}
+        />
         <ClearCartWhenGuest />
         {children}
         <Toaster />

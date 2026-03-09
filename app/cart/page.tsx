@@ -4,14 +4,14 @@ import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2 } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2, Package } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import ModelThumbnail from '@/components/ModelThumbnail'
-import type { Quote } from '@/lib/types'
+import type { Quote, Order } from '@/lib/types'
 
 type QuoteRow = {
     id: number
@@ -62,8 +62,12 @@ export default function CartPage() {
     // 신규 추가: 저장된 견적 관련 상태
     const [savedQuotes, setSavedQuotes] = useState<QuoteRow[]>([])
     const [isLoadingSaved, setIsLoadingSaved] = useState(false)
-    const [activeTab, setActiveTab] = useState<'cart' | 'saved'>('cart')
+    const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>('cart')
     const [addingId, setAddingId] = useState<number | null>(null)
+
+    // 주문조회
+    const [orders, setOrders] = useState<Order[]>([])
+    const [isLoadingOrders, setIsLoadingOrders] = useState(false)
 
     useEffect(() => {
         if (items.length === 0) {
@@ -110,6 +114,29 @@ export default function CartPage() {
 
         fetchSavedQuotes()
     }, [sessionId, token, user?.id, items.length])
+
+    // 주문 목록 불러오기 (로그인 시)
+    useEffect(() => {
+        if (!isAuthenticated || !token || !user?.id) {
+            setOrders([])
+            return
+        }
+        const fetchOrders = async () => {
+            setIsLoadingOrders(true)
+            try {
+                const res = await fetch('/api/orders', {
+                    headers: { Authorization: `Bearer ${token}`, 'X-User-ID': String(user.id) },
+                })
+                const data = await res.json()
+                setOrders(Array.isArray(data?.data) ? data.data : [])
+            } catch (err) {
+                console.error('Failed to fetch orders:', err)
+            } finally {
+                setIsLoadingOrders(false)
+            }
+        }
+        fetchOrders()
+    }, [isAuthenticated, token, user?.id])
 
     const selectedItems = items.filter((i) => selectedIds.has(i.id))
     const selectedTotal = getTotalPriceForItems(selectedItems)
@@ -195,7 +222,9 @@ export default function CartPage() {
 
     const inCart = (quoteId: number) => items.some((i) => i.quoteId === quoteId)
 
-    if (items.length === 0 && savedQuotes.length === 0 && !isLoadingSaved) {
+    const hasOrders = isAuthenticated && orders.length > 0
+    const maybeHasOrders = isAuthenticated && isLoadingOrders
+    if (items.length === 0 && savedQuotes.length === 0 && !isLoadingSaved && !hasOrders && !maybeHasOrders) {
         return (
             <div className="min-h-screen bg-[#050505] text-white">
                 <Header />
@@ -279,6 +308,13 @@ export default function CartPage() {
                     >
                         <FileText className="w-4 h-4" />
                         저장 목록 ({savedQuotes.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('orders')}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/50 hover:text-white'}`}
+                    >
+                        <Package className="w-4 h-4" />
+                        주문조회 ({orders.length})
                     </button>
                 </div>
 
@@ -383,7 +419,7 @@ export default function CartPage() {
                                     )}
                                 </AnimatePresence>
                             </>
-                        ) : (
+                        ) : activeTab === 'saved' ? (
                             /* Saved Quotes Tab Content */
                             <div className="space-y-4">
                                 <AnimatePresence mode="popLayout">
@@ -437,6 +473,60 @@ export default function CartPage() {
                                         </div>
                                     )}
                                 </AnimatePresence>
+                            </div>
+                        ) : (
+                            /* 주문조회 Tab Content */
+                            <div className="space-y-4">
+                                {!isAuthenticated ? (
+                                    <div className="py-16 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                        <Package className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                                        <p className="text-white/70 font-medium mb-1">로그인 후 주문 내역을 확인하세요</p>
+                                        <p className="text-white/40 text-sm mb-6">회원으로 로그인하면 주문조회가 가능합니다.</p>
+                                        <Link href="/auth?return=/cart">
+                                            <Button className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                                                <LogIn className="w-4 h-4" /> 로그인
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                ) : isLoadingOrders ? (
+                                    <div className="py-20 flex items-center justify-center">
+                                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                                    </div>
+                                ) : orders.length > 0 ? (
+                                    <AnimatePresence mode="popLayout">
+                                        {orders.map((order) => (
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all flex flex-col sm:flex-row gap-5 items-center justify-between"
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-bold text-white font-mono">{order.orderNumber}</h3>
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-white/50">
+                                                        <span>{new Date(order.createdAt).toLocaleDateString('ko-KR')}</span>
+                                                        <span className="capitalize">{order.status}</span>
+                                                        <span className="font-bold text-primary">₩{Math.round((order.totalAmount || 0) * 1300).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                                <Link href="/my-account" className="shrink-0">
+                                                    <Button variant="outline" size="sm" className="rounded-xl border-white/15 hover:bg-white/10 gap-1.5">
+                                                        상세보기 <ChevronRight className="w-4 h-4" />
+                                                    </Button>
+                                                </Link>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                ) : (
+                                    <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                        <p className="text-white/30 text-sm">주문 내역이 없습니다.</p>
+                                        <Link href="/quote" className="inline-block mt-3">
+                                            <Button variant="outline" size="sm" className="rounded-xl border-white/15 text-white/60 hover:text-white">
+                                                견적 받기
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
