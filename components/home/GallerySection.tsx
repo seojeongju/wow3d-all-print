@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -351,32 +351,24 @@ function SkeletonCard({ className }: { className?: string }) {
     );
 }
 
-// 4개 단위로 묶은 슬라이드 배열 생성
-function chunkByFour<T>(arr: T[]): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < arr.length; i += 4) {
-        chunks.push(arr.slice(i, i + 4));
-    }
-    return chunks;
-}
-
 // ─────────────────────────────────────────────────────
-// 메인 갤러리 섹션 (1x4 고정, 섹션 중앙, 무한루프 슬라이드)
+// 메인 갤러리 섹션: 4장 고정 뷰, 한 장씩 자연스럽게 왼쪽으로 흐르는 연속 마키
 // ─────────────────────────────────────────────────────
-const SLIDES_AUTO_PLAY_MS = 6000;
+const CARD_SLOT_PX = 340; // 카드 너비 + 간격 (한 장 기준)
+const MARQUEE_CYCLE_SEC = 45; // 한 사이클(전체 한 바퀴) 초
 
 export default function GallerySection() {
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
     const [isFullGalleryOpen, setIsFullGalleryOpen] = useState(false);
-    const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+    const [marqueeKey, setMarqueeKey] = useState(0);
 
-    const slides = chunkByFour(items);
-    const slideCount = slides.length;
-    const hasMultipleSlides = slideCount > 1;
+    const itemCount = items.length;
+    const hasItems = itemCount > 0;
+    // 끊김 없이 한 장씩 흐르도록 아이템 2벌 연결
+    const displayItems = useMemo(() => (itemCount > 0 ? [...items, ...items] : []), [items, itemCount]);
 
-    // 슬라이드용으로 더 많은 데이터 로드 (4개 단위로 여러 슬라이드)
     useEffect(() => {
         async function fetchGallery() {
             try {
@@ -396,23 +388,6 @@ export default function GallerySection() {
         }
         fetchGallery();
     }, []);
-
-    const goNext = useCallback(() => {
-        if (!hasMultipleSlides) return;
-        setCurrentSlideIndex((i) => (i + 1) % slideCount);
-    }, [hasMultipleSlides, slideCount]);
-
-    const goPrev = useCallback(() => {
-        if (!hasMultipleSlides) return;
-        setCurrentSlideIndex((i) => (i - 1 + slideCount) % slideCount);
-    }, [hasMultipleSlides, slideCount]);
-
-    // 무한루프 자동 재생
-    useEffect(() => {
-        if (!hasMultipleSlides) return;
-        const timer = setInterval(goNext, SLIDES_AUTO_PLAY_MS);
-        return () => clearInterval(timer);
-    }, [hasMultipleSlides, goNext]);
 
     const isEmpty = !loading && items.length === 0;
 
@@ -494,31 +469,9 @@ export default function GallerySection() {
                     </motion.div>
                 </div>
 
-                {/* 1x4 고정·중앙 배치, 무한루프 슬라이드 */}
+                {/* 1x4 뷰포트, 한 장씩 왼쪽으로 흐르는 연속 마키 */}
                 <div className="w-full overflow-hidden flex justify-center pb-8 pt-4">
                     <div className="w-full max-w-[1340px] relative px-4 xl:px-0 flex flex-col items-center">
-                        {/* 이전/다음 버튼 - 섹션 오른쪽 상단 */}
-                        {hasMultipleSlides && (
-                            <div className="absolute top-0 right-4 xl:right-0 z-10 flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    aria-label="이전 슬라이드"
-                                    onClick={goPrev}
-                                    className="w-10 h-10 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-colors"
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label="다음 슬라이드"
-                                    onClick={goNext}
-                                    className="w-10 h-10 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-colors"
-                                >
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            </div>
-                        )}
-
                         {loading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-[1280px] mx-auto justify-items-center">
                                 {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -540,33 +493,26 @@ export default function GallerySection() {
                             </div>
                         ) : (
                             <div className="w-full max-w-[1280px] mx-auto overflow-hidden min-h-[380px]">
-                                {/* 트랙 방식: 슬라이드를 가로로 나열 후 translateX로만 이동 → 겹침 없음 */}
+                                {/* 한 장씩 자연스럽게 왼쪽으로 흐르는 연속 스크롤 (한 사이클 후 리셋으로 무한) */}
                                 <motion.div
-                                    className="flex"
-                                    style={{ width: `${slideCount * 100}%` }}
-                                    animate={{ x: `${-(currentSlideIndex * (100 / slideCount))}%` }}
+                                    key={marqueeKey}
+                                    className="flex gap-5"
+                                    style={{ width: displayItems.length * CARD_SLOT_PX }}
+                                    initial={{ x: 0 }}
+                                    animate={{ x: -(itemCount * CARD_SLOT_PX) }}
                                     transition={{
-                                        duration: 1.1,
-                                        ease: [0.32, 0.72, 0, 1],
+                                        duration: MARQUEE_CYCLE_SEC,
+                                        ease: 'linear',
                                     }}
+                                    onAnimationComplete={() => setMarqueeKey((k) => k + 1)}
                                 >
-                                    {slides.map((slide, slideIdx) => (
-                                        <div
-                                            key={slideIdx}
-                                            className="flex-shrink-0 flex justify-center"
-                                            style={{ width: `${100 / slideCount}%` }}
-                                        >
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full">
-                                                {slide.map((item, i) => (
-                                                    <GalleryCard
-                                                        key={`${slideIdx}-${item.id}-${i}`}
-                                                        item={item}
-                                                        onClick={setSelectedItem}
-                                                        className="w-72 md:w-80 flex-shrink-0"
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
+                                    {displayItems.map((item, i) => (
+                                        <GalleryCard
+                                            key={`${i}-${item.id}`}
+                                            item={item}
+                                            onClick={setSelectedItem}
+                                            className="w-72 md:w-80 flex-shrink-0"
+                                        />
                                     ))}
                                 </motion.div>
                             </div>
