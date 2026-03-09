@@ -59,7 +59,33 @@ DNS에 **A 레코드**가 있으면 Cloudflare가 그 IP로 접속을 시도해 
 
 ---
 
-## 5. 요약 체크리스트
+## 5. ERR_CONNECTION_TIMED_OUT / "연결할 수 없음" 해결
+
+브라우저에서 **응답 시간 초과**가 나면, 도메인이 **Worker가 아닌 다른 IP**로 가고 있거나 **Custom Domain이 Worker에 안 붙어 있을** 가능성이 큽니다.
+
+### 5-1. Cloudflare DNS 확인 (wow3dp.co.kr Zone)
+
+1. **웹사이트** → **wow3dp.co.kr** → **DNS** → **레코드**
+2. **A 레코드**가 **115.68.229.23** 등 **예전 서버 IP**를 가리키고 있으면 → **삭제**하세요.  
+   (이 IP로 가면 Worker가 아니라 그 서버로 가서, 응답 없으면 타임아웃이 납니다.)
+3. **Custom Domain**을 Worker에 붙이면 Cloudflare가 필요한 레코드를 만들어 줍니다.  
+   **A 레코드를 지운 뒤**에도 **Worker 쪽 설정**이 있어야 합니다.
+
+### 5-2. Worker에 Custom Domain이 붙어 있는지 확인
+
+1. **Workers & Pages** → **wow3d-all-print** → **설정** → **도메인 및 경로**
+2. **Custom Domain**에 **wow3dp.co.kr**, **www.wow3dp.co.kr** 이 **둘 다** 있는지 확인
+3. 없으면 **+ Add** → **Custom Domain** → 위 두 개 입력 후 저장
+
+### 5-3. workers.dev로 먼저 확인
+
+- **https://wow3d-all-print.jayseo36.workers.dev** 로 접속해 보세요.
+- 여기서는 열리는데 wow3dp.co.kr만 안 되면 → **도메인/DNS 또는 Custom Domain 연결** 문제입니다.
+- workers.dev도 안 되면 → 배포/Worker 자체 문제일 수 있습니다.
+
+---
+
+## 6. 요약 체크리스트
 
 - [ ] wow3dp.co.kr 도메인이 Cloudflare에 사이트(Zone)로 추가됨
 - [ ] 도메인 등록처에서 네임서버를 Cloudflare로 변경함
@@ -67,3 +93,4 @@ DNS에 **A 레코드**가 있으면 Cloudflare가 그 IP로 접속을 시도해 
 - [ ] (선택) `NEXT_PUBLIC_APP_URL` = `https://wow3dp.co.kr` 설정
 - [ ] 브라우저에서 https://wow3dp.co.kr 접속 확인
 - [ ] 522 발생 시: DNS에서 A 레코드(115.68.229.23) 삭제 후 재확인
+- [ ] **연결 시간 초과** 시: DNS에 예전 IP용 A 레코드 없애기 + Worker **도메인 및 경로**에 wow3dp.co.kr, www 추가 확인
