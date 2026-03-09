@@ -183,25 +183,27 @@ export async function requireAdminAuth(
         return errorResponse('유효하지 않은 토큰입니다', 401);
     }
 
-    // DB에서 사용자 정보 조회 (store_id, role)
     try {
-        const userInfo = await db.prepare('SELECT role, store_id FROM users WHERE id = ?')
-            .bind(user.userId)
-            .first() as { role?: string; store_id?: number } | null;
-
+        let userInfo: { role?: string; store_id?: number } | null = null;
+        try {
+            userInfo = await db.prepare('SELECT role, store_id FROM users WHERE id = ?')
+                .bind(user.userId)
+                .first() as { role?: string; store_id?: number } | null;
+        } catch {
+            userInfo = await db.prepare('SELECT role FROM users WHERE id = ?')
+                .bind(user.userId)
+                .first() as { role?: string; store_id?: number } | null;
+        }
         if (!userInfo) {
             return errorResponse('사용자 정보를 찾을 수 없습니다', 403);
         }
-
-        // 관리자 권한 체크 (선택: admin 또는 super_admin만 허용)
         if (userInfo.role !== 'admin' && userInfo.role !== 'super_admin') {
             return errorResponse('관리자 권한이 필요합니다', 403);
         }
-
         return {
             userId: user.userId,
             email: user.email,
-            storeId: userInfo.store_id ?? 1, // 기본값 1 (마이그레이션 안 된 경우 대비)
+            storeId: userInfo.store_id ?? 1,
             role: userInfo.role ?? 'user'
         };
     } catch (e) {
