@@ -58,7 +58,8 @@ export async function POST(
             'UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
         ).bind(sentAt, numId, storeId).run();
 
-        const resendKey = process.env.RESEND_API_KEY || (env as Record<string, string>).RESEND_API_KEY;
+        const envVars = env as unknown as Record<string, string | undefined>;
+        const resendKey = process.env.RESEND_API_KEY || envVars.RESEND_API_KEY;
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) || (typeof req.url === 'string' ? new URL(req.url).origin : '');
         const estimateUrl = `${baseUrl}/print/estimate/${numId}`;
 
@@ -71,7 +72,7 @@ export async function POST(
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        from: process.env.RESEND_FROM || (env as Record<string, string>).RESEND_FROM || '견적서 <onboarding@resend.dev>',
+                        from: process.env.RESEND_FROM || envVars.RESEND_FROM || '견적서 <onboarding@resend.dev>',
                         to: [toEmail],
                         subject: `[${fullOrder.order_number}] 견적서가 준비되었습니다`,
                         html: `

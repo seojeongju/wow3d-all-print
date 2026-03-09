@@ -216,7 +216,8 @@ function OrderListInner() {
     /** 수정 견적 총액 입력 후 검토 완료(저장) */
     const handleSaveExpertQuote = async () => {
         if (!detailOrderId || !detailData?.order || !detailData?.items?.length) return;
-        const amount = Math.round(Number(String(expertTotalInput).replace(/[^0-9]/g, '')) || 0;
+        const cleaned = String(expertTotalInput).replace(/[^0-9]/g, '');
+        const amount = Math.round(Number(cleaned) || 0);
         if (amount <= 0) {
             toast({ title: '수정 견적 총액을 입력해 주세요.', variant: 'destructive' });
             return;
