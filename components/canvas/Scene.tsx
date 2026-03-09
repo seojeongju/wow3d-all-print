@@ -1,0 +1,541 @@
+'use client'
+
+import { Canvas, useThree } from '@react-three/fiber'
+import { OrbitControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
+import { Suspense, useEffect, useState, useRef, createContext, useContext } from 'react'
+import { useFileStore } from '@/store/useFileStore'
+import * as THREE from 'three'
+import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries } from 'three-stdlib'
+import { analyzeGeometry } from '@/lib/geometry'
+import { loadStepAsBufferGeometry } from '@/lib/stepLoader'
+import { Button } from '@/components/ui/button'
+import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MousePointer2, Touchpad, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+// 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
+const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPreset: (v: string | null) => void }>({ viewPreset: null, setViewPreset: () => { } })
+
+// 로딩 컴포넌트
+function LoadingSpinner() {
+    return (
+        <Html center>
+            <div className="flex flex-col items-center gap-3 bg-background/90 backdrop-blur-sm px-6 py-4 rounded-lg border border-border shadow-lg">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <div className="text-sm font-medium">모델 로딩 중...</div>
+            </div>
+        </Html>
+    )
+}
+
+// 측정 도구 컴포넌트
+function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
+    if (!boundingBox) return null
+
+    const size = new THREE.Vector3()
+    boundingBox.getSize(size)
+
+    return (
+        <Html position={[0, 0, 0]}>
+            <div className="bg-background/95 backdrop-blur-sm px-4 py-3 rounded-lg border border-border shadow-lg text-xs space-y-1 min-w-[180px]">
+                <div className="font-semibold text-primary mb-2">📏 치수 측정</div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">X (가로):</span>
+                    <span className="font-mono font-medium">{size.x.toFixed(2)} mm</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Y (세로):</span>
+                    <span className="font-mono font-medium">{size.y.toFixed(2)} mm</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Z (높이):</span>
+                    <span className="font-mono font-medium">{size.z.toFixed(2)} mm</span>
+                </div>
+            </div>
+        </Html>
+    )
+}
+
+type ModelType = 'stl' | 'obj' | '3mf' | 'ply' | 'step'
+
+function collectGeometriesFromGroup(group: THREE.Group): THREE.BufferGeometry[] {
+    const out: THREE.BufferGeometry[] = []
+    group.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+            const g = (child as THREE.Mesh).geometry
+            if (g && g.attributes?.position) out.push(g)
+        }
+    })
+    return out
+}
+
+// 3D 모델 컴포넌트
+function Model({
+    url,
+    type,
+    color,
+    showMeasurements
+}: {
+    url: string;
+    type: ModelType;
+    color: string;
+    showMeasurements: boolean;
+}) {
+    const { setAnalysis } = useFileStore()
+    const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null)
+    const bounds = useBounds()
+    const mountedRef = useRef(true)
+
+    useEffect(() => {
+        mountedRef.current = true
+        return () => {
+            mountedRef.current = false
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!url) return
+
+        const loadModel = async () => {
+            setIsLoading(true)
+            setError(null)
+
+            try {
+                const response = await fetch(url)
+                const arrayBuffer = await response.arrayBuffer()
+
+                let geo: THREE.BufferGeometry | null = null
+
+                if (type === 'stl') {
+                    const loader = new STLLoader()
+                    geo = loader.parse(arrayBuffer)
+                } else if (type === 'obj') {
+                    const loader = new OBJLoader()
+                    const text = new TextDecoder().decode(arrayBuffer)
+                    const object = loader.parse(text)
+
+                    const geometries: THREE.BufferGeometry[] = []
+                    object.traverse((child) => {
+                        if ((child as THREE.Mesh).isMesh) {
+                            const g = (child as THREE.Mesh).geometry
+                            if (g) geometries.push(g)
+                        }
+                    })
+
+                    if (geometries.length > 0) {
+                        // 모든 메쉬를 하나로 병합하여 전체 분석 수행
+                        geo = geometries.length === 1 ? geometries[0] : (mergeBufferGeometries(geometries) ?? geometries[0])
+                    }
+                } else if (type === '3mf') {
+                    const loader = new ThreeMFLoader()
+                    const group = loader.parse(arrayBuffer)
+                    const arr = collectGeometriesFromGroup(group)
+                    if (arr.length === 1) geo = arr[0]
+                    else if (arr.length > 1) geo = mergeBufferGeometries(arr) ?? arr[0]
+                } else if (type === 'ply') {
+                    const loader = new PLYLoader()
+                    geo = loader.parse(arrayBuffer)
+                } else if (type === 'step') {
+                    geo = await loadStepAsBufferGeometry(arrayBuffer)
+                }
+
+                if (geo) {
+                    geo.center()
+                    geo.computeVertexNormals()
+
+                    geo.computeBoundingBox()
+                    const bbox = geo.boundingBox
+                    if (bbox) setBoundingBox(bbox)
+
+                    // 클린업: 이전 geometry가 있다면 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
+                    setGeometry(prev => {
+                        if (prev) {
+                            try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
+                        }
+                        return geo
+                    })
+
+                    try {
+                        const analysis = analyzeGeometry(geo)
+                        setAnalysis(analysis)
+                        console.log('✅ Geometry loaded and analyzed:', analysis)
+                    } catch (e) {
+                        console.error('❌ Analysis failed:', e)
+                    }
+
+                    setTimeout(() => {
+                        bounds.refresh().clip().fit()
+                    }, 100)
+                }
+
+                setIsLoading(false)
+            } catch (e) {
+                console.error('❌ Model loading failed:', e)
+                setError(e instanceof Error ? e.message : 'Failed to load model')
+                setIsLoading(false)
+            }
+        }
+
+        loadModel()
+
+        // 컴포넌트 언마운트 시 geometry 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
+        return () => {
+            setGeometry(prev => {
+                if (prev) {
+                    try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
+                }
+                return null
+            })
+        }
+    }, [url, type, setAnalysis]) // bounds 를 의존성에서 제거 (불필요한 재실행 방지)
+
+    if (isLoading) {
+        return <LoadingSpinner />
+    }
+
+    if (error) {
+        return (
+            <Html center>
+                <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg border border-destructive/20">
+                    ❌ {error}
+                </div>
+            </Html>
+        )
+    }
+
+    if (!geometry) {
+        return null
+    }
+
+    // Bounding Box 사이즈 계산 (Wireframe용)
+    const boxSize: [number, number, number] = boundingBox ? [
+        boundingBox.max.x - boundingBox.min.x,
+        boundingBox.max.y - boundingBox.min.y,
+        boundingBox.max.z - boundingBox.min.z
+    ] : [1, 1, 1];
+
+    return (
+        <group>
+            <mesh geometry={geometry}>
+                <meshStandardMaterial
+                    color={color}
+                    roughness={0.3}
+                    metalness={0.7}
+                    side={THREE.DoubleSide}
+                />
+            </mesh>
+            {showMeasurements && boundingBox && (
+                <>
+                    <mesh>
+                        <boxGeometry args={boxSize} />
+                        <meshBasicMaterial color="#00ff00" wireframe />
+                    </mesh>
+                    <MeasurementTool boundingBox={boundingBox} />
+                </>
+            )}
+        </group>
+    )
+}
+
+// 뷰 프리셋 적용: 전/후/좌/우/홈 (Bounds 내부에서 useBounds 사용)
+function ViewPresetHandler() {
+    const { camera } = useThree()
+    const controls = useThree(s => s.controls) as { update: () => void; target: THREE.Vector3 } | null
+    const bounds = useBounds()
+    const { viewPreset, setViewPreset } = useContext(ViewPresetContext)
+
+    useEffect(() => {
+        if (!viewPreset || !controls) return
+
+        if (viewPreset === 'home') {
+            bounds.refresh().clip().fit()
+            setViewPreset(null)
+            return
+        }
+
+        const target = controls.target
+        const r = Math.max(0.1, camera.position.distanceTo(target))
+
+        // 전(+Z) 후(-Z) 좌(-X) 우(+X)
+        const presets: Record<string, [number, number, number]> = {
+            front: [0, 0, r],   // 전
+            back: [0, 0, -r],   // 후
+            left: [-r, 0, 0],   // 좌
+            right: [r, 0, 0],   // 우
+        }
+        const pos = presets[viewPreset]
+        if (pos) {
+            camera.position.set(target.x + pos[0], target.y + pos[1], target.z + pos[2])
+            controls.update()
+        }
+        setViewPreset(null)
+    }, [viewPreset, controls, camera, bounds, setViewPreset])
+
+    return null
+}
+
+const SUPPORTED_EXT = ['stl', 'obj', '3mf', 'ply', 'step', 'stp'] as const
+
+// 뷰어 컨텐츠 컴포넌트
+function ViewerContent({ color, showMeasurements }: { color: string, showMeasurements: boolean }) {
+    const { file, fileUrl } = useFileStore()
+
+    const fileExtension = file?.name.split('.').pop()?.toLowerCase()
+    const isSupported = fileExtension && SUPPORTED_EXT.includes(fileExtension as any)
+    const modelType: ModelType = (fileExtension === 'stp' ? 'step' : fileExtension) as ModelType
+
+    if (fileUrl && isSupported) {
+        return (
+            <Model
+                url={fileUrl}
+                type={modelType}
+                color={color}
+                showMeasurements={showMeasurements}
+            />
+        )
+    }
+
+    // Default placeholder cube
+    return (
+        <mesh>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color={color} roughness={0.3} metalness={0.7} />
+        </mesh>
+    )
+}
+
+// 메인 Scene 컴포넌트
+type SceneProps = { compact?: boolean }
+export default function Scene({ compact = false }: SceneProps) {
+    const canvasRef = useRef<HTMLDivElement>(null)
+    const { fileUrl } = useFileStore()
+    const [mounted, setMounted] = useState(false)
+    const [modelColor, setModelColor] = useState('#6366f1')
+    const [showMeasurements, setShowMeasurements] = useState(false)
+    const [viewPreset, setViewPreset] = useState<string | null>(null)
+    const [showGuide, setShowGuide] = useState(true)
+    const [colorPanelOpen, setColorPanelOpen] = useState(false)
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowGuide(false), 5000)
+        return () => clearTimeout(timer)
+    }, [])
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    // 스크린샷 함수
+    const takeScreenshot = () => {
+        if (!canvasRef.current) return
+
+        const canvas = canvasRef.current.querySelector('canvas')
+        if (!canvas) return
+
+        canvas.toBlob((blob) => {
+            if (!blob) return
+
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `wow3d-model-${Date.now()}.png`
+            link.click()
+            URL.revokeObjectURL(url)
+        })
+    }
+
+    // 색상 프리셋
+    const colorPresets = [
+        { name: 'Indigo', color: '#6366f1' },
+        { name: 'Red', color: '#ef4444' },
+        { name: 'Green', color: '#10b981' },
+        { name: 'Blue', color: '#3b82f6' },
+        { name: 'Purple', color: '#a855f7' },
+        { name: 'Orange', color: '#f97316' },
+        { name: 'Gray', color: '#6b7280' },
+        { name: 'Gold', color: '#f59e0b' },
+    ]
+
+    if (!mounted) {
+        return (
+            <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                <div className="text-slate-400">Loading 3D Viewer...</div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
+            <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
+                {/* 3D Canvas - R3F 기본 시스템으로 복원 */}
+                <div ref={canvasRef} className="absolute inset-0 z-0">
+                    <Canvas
+                        shadows
+                        dpr={[1, 1.5]}
+                        frameloop="demand"
+                        camera={{ position: [50, 50, 50], fov: 45 }}
+                        gl={{
+                            preserveDrawingBuffer: true,
+                            antialias: true,
+                            powerPreference: 'default',
+                            stencil: false,
+                        }}
+                    >
+                        <Suspense fallback={<LoadingSpinner />}>
+                            {/* Stage+environment="city" 제거: 외부 HDR 로드가 Context Lost 유발 → 수동 조명으로 대체 */}
+                            <ambientLight intensity={0.5} />
+                            <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow shadow-mapSize={1024} />
+                            <directionalLight position={[-10, -5, -10]} intensity={0.4} />
+                            <pointLight position={[0, 20, 0]} intensity={0.6} />
+                            <Bounds fit clip observe margin={1.5}>
+                                <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
+                                <ViewPresetHandler />
+                            </Bounds>
+                            <Grid
+                                renderOrder={-1}
+                                position={[0, -1, 0]}
+                                infiniteGrid
+                                cellSize={0.6}
+                                sectionSize={3}
+                                sectionColor="#4d4d66"
+                                cellColor="#1a1a33"
+                                fadeDistance={100}
+                            />
+                        </Suspense>
+                        <OrbitControls
+                            makeDefault
+                            enableDamping
+                            dampingFactor={0.05}
+                            minDistance={0.1}
+                            maxDistance={1000}
+                            maxPolarAngle={Math.PI / 1.5}
+                            enableRotate={true}
+                            enableZoom={true}
+                            enablePan={true}
+                        />
+                    </Canvas>
+                </div>
+
+                {/* 조작 가이드 - 하단 플로팅 바 형태로 변경 (전체화면 차단 방지) */}
+                <AnimatePresence>
+                    {showGuide && !compact && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
+                        >
+                            <div className="bg-slate-900/90 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 flex items-center gap-6 text-white text-xs shadow-2xl pointer-events-auto">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                    <span>좌클릭: 회전</span>
+                                </div>
+                                <div className="w-px h-4 bg-white/10" />
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                    <span>휠: 확대/축소</span>
+                                </div>
+                                <div className="w-px h-4 bg-white/10" />
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>우클릭: 이동</span>
+                                </div>
+                                <button
+                                    className="ml-4 p-1 hover:bg-white/10 rounded-md transition-colors"
+                                    onClick={() => setShowGuide(false)}
+                                >
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 컨트롤 패널 (compact 모드에서는 숨김) */}
+                {!compact && (
+                    <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                        <Button size="sm" variant="secondary" className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm bg-background/90 rounded-xl" onClick={takeScreenshot}>
+                            <Download className="w-4 h-4" />
+                            <span className="hidden sm:inline">스크린샷</span>
+                        </Button>
+                        <Button size="sm" variant={showMeasurements ? "default" : "secondary"} className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowMeasurements(!showMeasurements)}>
+                            <Ruler className="w-4 h-4" />
+                            <span className="hidden sm:inline">치수측정</span>
+                        </Button>
+                        <Button size="icon" variant="secondary" className="sm:hidden h-10 w-10 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowGuide(true)}>
+                            <HelpCircle className="w-5 h-5" />
+                        </Button>
+                    </div>
+                )}
+
+                {/* 색상 선택 패널 (모바일 대응 피봇) */}
+                <div className={`
+                    absolute bottom-4 right-4 z-20 transition-all duration-300
+                    ${colorPanelOpen ? 'w-[200px]' : 'w-12 h-12 rounded-xl'}
+                    bg-background/95 backdrop-blur-sm border border-border shadow-lg overflow-hidden
+                    ${!colorPanelOpen && 'flex items-center justify-center cursor-pointer hover:bg-background'}
+                `} onClick={() => !colorPanelOpen && setColorPanelOpen(true)}>
+                    {colorPanelOpen ? (
+                        <div className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Palette className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-semibold">모델 색상</span>
+                                </div>
+                                <button onClick={(e) => { e.stopPropagation(); setColorPanelOpen(false); }} className="hover:text-primary p-1">
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {colorPresets.map((preset) => (
+                                    <button
+                                        key={preset.color}
+                                        onClick={(e) => { e.stopPropagation(); setModelColor(preset.color); }}
+                                        className={`
+                                            w-8 h-8 rounded-lg border-2 transition-all hover:scale-110
+                                            ${modelColor === preset.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
+                                        `}
+                                        style={{ backgroundColor: preset.color }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <Palette className="w-5 h-5 text-primary" />
+                    )}
+                </div>
+
+                {/* 상태 표시 (compact에서는 숨김, 하단 스트립과 겹침 방지) */}
+                {!compact && (
+                    <div className="absolute bottom-4 left-4 z-20">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-xs text-slate-400 font-medium">3D Viewer Active</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* 뷰 프리셋: 홈, 전, 후, 좌, 우 */}
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('home')} title="홈">
+                        <Home className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('front')} title="전(앞)">
+                        <ArrowUp className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('back')} title="후(뒤)">
+                        <ArrowDown className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('left')} title="좌">
+                        <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('right')} title="우">
+                        <ArrowRight className="w-4 h-4" />
+                    </Button>
+                </div>
+            </ViewPresetContext.Provider>
+        </div>
+    )
+}

@@ -1,0 +1,312 @@
+'use client'
+
+import Scene from "@/components/canvas/Scene";
+import { Button } from "@/components/ui/button";
+import FileUpload from "@/components/upload/FileUpload";
+import QuotePanel from "@/components/quote/QuotePanel";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, Suspense } from "react";
+import { useFileStore } from "@/store/useFileStore";
+import { useSearchParams } from "next/navigation";
+
+function QuoteContent() {
+    const { file, analysis, reset, setFile } = useFileStore();
+    const [step, setStep] = useState(1); // 1: Upload, 2: Configure
+    const searchParams = useSearchParams();
+    const loadQuoteId = searchParams.get('load_quote_id');
+    const [loadedQuote, setLoadedQuote] = useState<any>(null); // DB quote data
+
+    // Load quote data if ID is present
+    useEffect(() => {
+        if (!loadQuoteId) return;
+
+        const load = async () => {
+            try {
+                // Fetch quote data
+                const res = await fetch(`/api/quotes/${loadQuoteId}`);
+                const json = await res.json();
+
+                if (json.success && json.data) {
+                    const q = json.data;
+                    setLoadedQuote(q);
+
+                    // Fetch and set file if URL exists
+                    if (q.file_url) {
+                        const fileRes = await fetch(q.file_url);
+                        const blob = await fileRes.blob();
+                        const newFile = new File([blob], q.file_name, { type: blob.type });
+                        setFile(newFile);
+                        // setStep(2) will be triggered by the existing useEffect when analysis is complete
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load quote:", error);
+            }
+        };
+
+        load();
+    }, [loadQuoteId, setFile]);
+
+    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
+
+    // 샘플 견적 체험 후 실시간 견적 진입 시: 샘플 파일이면 제거 (업로드부터 다시)
+    useEffect(() => {
+        const checkAndResetSample = () => {
+            const f = useFileStore.getState().file;
+            if (f && SAMPLE_NAMES.includes(f.name)) {
+                useFileStore.getState().reset();
+                setStep(1);
+            }
+        };
+        checkAndResetSample();
+    }, [setStep]);
+
+    // Auto-advance to step 2 when file is uploaded and analyzed (in useEffect to avoid setState during render)
+    useEffect(() => {
+        if (file && analysis && step === 1) setStep(2);
+    }, [file, analysis, step]);
+
+    return (
+        <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-primary/30 overflow-hidden">
+            {/* Ambient Background Elements */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/15 rounded-full blur-[120px] opacity-30" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/15 rounded-full blur-[120px] opacity-30" />
+            </div>
+
+            {/* Premium Header - 슬레이트 톤으로 가독성 확보 */}
+            <header className="border-b border-slate-700/60 backdrop-blur-xl sticky top-0 z-50 bg-slate-900/95">
+                <div className="container mx-auto px-6 h-18 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-all active:scale-95 group">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all">
+                                <Boxes className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-xl tracking-tight text-slate-50">
+                                    Wow3D <span className="text-primary font-light">Pro</span>
+                                </span>
+                                <span className="text-[9px] font-medium text-slate-400 leading-tight mt-0.5">
+                                    AI 실시간 자동견적시스템
+                                </span>
+                            </div>
+                        </Link>
+
+                        <nav className="hidden md:flex items-center gap-1 bg-slate-800/80 p-1 rounded-full border border-slate-600/50">
+                            {[
+                                { id: 1, label: "업로드", active: step >= 1 },
+                                { id: 2, label: "견적 설정", active: step >= 2 },
+                                { id: 3, label: "주문 완료", active: step >= 3 },
+                            ].map((item) => (
+                                <div
+                                    key={item.id}
+                                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${item.id === step
+                                        ? "bg-white text-slate-900 shadow-lg"
+                                        : item.active
+                                            ? "text-slate-300"
+                                            : "text-slate-500"
+                                        }`}
+                                >
+                                    {item.label}
+                                </div>
+                            ))}
+                        </nav>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Link href="/quotes" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all">
+                            <FileText className="w-4 h-4" /> 저장 목록
+                        </Link>
+                        <Link href="/cart" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all">
+                            <ShoppingCart className="w-4 h-4" /> 장바구니
+                        </Link>
+                        <Link href="/">
+                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-slate-600/50">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                나가기
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content Area */}
+            <section className="flex-1 relative">
+                <div className="h-full grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr]">
+
+                    {/* Left Sidebar: Settings Panel - 슬레이트 배경·테두리로 가독성 향상 */}
+                    <div className="bg-slate-900/98 backdrop-blur-sm border-r border-slate-700/50 h-[calc(100vh-4.5rem)] flex flex-col overflow-hidden relative z-10">
+                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 pb-8 space-y-6">
+                            <AnimatePresence mode="wait">
+                                {step === 1 ? (
+                                    // 파일 있음 + 분석 대기
+                                    file && !analysis ? (
+                                        <motion.div
+                                            key="analyzing"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-8 flex flex-col items-center justify-center min-h-[320px]"
+                                        >
+                                            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+                                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                            </div>
+                                            <div className="text-center space-y-2">
+                                                <h1 className="text-2xl font-bold tracking-tight text-slate-100">
+                                                    모델 <span className="text-primary">분석 중</span>
+                                                </h1>
+                                                <p className="text-slate-400 text-sm break-keep">
+                                                    부피·표면적을 계산하고 있습니다.
+                                                    <br />
+                                                    잠시만 기다려 주세요.
+                                                </p>
+                                            </div>
+                                            <div className="w-full p-4 rounded-xl bg-slate-800/80 border border-slate-600/50 flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                                                    <FileBox className="w-5 h-5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-medium text-slate-100 truncate">{file.name}</div>
+                                                    <div className="text-xs text-slate-400">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="upload"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="space-y-6"
+                                        >
+                                            <div className="space-y-2">
+                                                <h1 className="text-3xl font-bold tracking-tight text-slate-50">
+                                                    새로운 프로젝트 <br />
+                                                    <span className="text-primary">시작하기</span>
+                                                </h1>
+                                                <p className="text-slate-400 text-sm">
+                                                    STL, OBJ, 3MF, PLY ,step ,stp 파일을 드래그하여 업로드하세요. <br />
+                                                    자동으로 지오메트리를 분석합니다.
+                                                </p>
+                                            </div>
+                                            <div className="p-1 rounded-3xl bg-slate-800/60 border border-slate-600/50">
+                                                <FileUpload />
+                                            </div>
+
+                                            <div className="pt-8 grid gap-4">
+                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-primary/40 transition-all">
+                                                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h3 className="text-sm font-semibold text-slate-100">초정밀 분석</h3>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">부피, 표면적, 출력 예상 시간을 정밀 계산 엔진이 분석합니다.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-blue-500/40 transition-all">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                                        <Info className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h3 className="text-sm font-semibold text-slate-100">보안 클라우드</h3>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">업로드된 모든 파일은 암호화되어 안전하게 처리됩니다.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )
+                                ) : (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                    >
+                                        <div className="mb-6 flex items-center justify-between">
+                                            <h2 className="text-xl font-bold text-slate-50">견적 세부 설정</h2>
+                                            <button
+                                                onClick={() => { reset(); setStep(1); }}
+                                                className="text-xs text-primary hover:underline font-medium"
+                                            >
+                                                파일 재업로드
+                                            </button>
+                                        </div>
+                                        <QuotePanel initialQuote={loadedQuote} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Sidebar Footer */}
+                        <div className="shrink-0 px-6 py-3 border-t border-slate-700/50 bg-slate-800/60">
+                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                보안 분석 엔진
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column: 3D Visualization - 뷰어는 어두운 배경 유지 */}
+                    <div className="relative flex flex-col bg-slate-950 overflow-hidden">
+                        <div className="flex-1 relative group">
+                            <div className="h-full w-full relative z-0">
+                                <Scene />
+                            </div>
+
+                            {/* Viewer HUD */}
+                            <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
+                                <div className="px-4 py-2 rounded-2xl bg-slate-800/90 backdrop-blur-md border border-slate-600/50 text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                                    3D Viewer Engine V2.0
+                                </div>
+                            </div>
+
+                            {!file && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <div className="w-32 h-32 rounded-full border border-slate-700/50 bg-slate-800/30 flex items-center justify-center animate-pulse">
+                                        <Boxes className="w-10 h-10 text-slate-600" />
+                                    </div>
+                                    <p className="mt-6 text-sm text-slate-500 font-medium italic">파일을 업로드하면 3D 미리보기가 활성화됩니다.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bottom Info Bar */}
+                        <div className="h-16 border-t border-slate-700/50 bg-slate-900/95 backdrop-blur-md flex items-center px-8 relative z-20">
+                            <div className="flex items-center gap-8 text-xs font-bold tracking-widest uppercase text-slate-400">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    30종+ 소재
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                    24시간 내 제작시작
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    ±0.2mm 정밀도
+                                </div>
+                            </div>
+                            <div className="ml-auto text-[14px] text-slate-500">
+                                (주)WOW3D 프로페셔널 엔진
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    );
+}
+
+export default function QuotePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            </div>
+        }>
+            <QuoteContent />
+        </Suspense>
+    )
+}

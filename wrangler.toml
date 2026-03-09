@@ -1,0 +1,34 @@
+# OpenNext for Cloudflare Workers
+# https://opennext.js.org/cloudflare/get-started
+
+name = "wow3d-all-print"
+main = ".open-next/worker.js"
+compatibility_date = "2024-12-30"
+# nodejs_compat_populate_process_env: 대시보드 Variables/Secrets가 process.env에 채워지도록 함
+compatibility_flags = [
+  "nodejs_compat",
+  "nodejs_compat_populate_process_env",
+  "global_fetch_strictly_public",
+]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "wow3d-all-print"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "wow3d-production"
+database_id = "8fc9fb41-4fae-4e6f-af47-6195d825ab8d"
+
+# R2 Storage (3D 파일 저장)
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "wow3d-files"
+
+[vars]
+ENVIRONMENT = "production"
