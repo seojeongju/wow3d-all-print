@@ -181,3 +181,13 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* 모바일: 터치 지연 제거, 탭 하이라이트 제어 */
+@media (hover: none) and (pointer: coarse) {
+  button:not(:disabled),
+  a[href],
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -56,8 +56,11 @@ export default function Header() {
             ${isScrolled
                 ? 'bg-black/70 backdrop-blur-xl border-b border-white/10 py-3'
                 : 'bg-black/30 backdrop-blur-sm py-5'}
-        `}>
-            <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+        `}
+            style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
+        >
+            {/* 상단 바: 모바일에서 오버레이보다 위에 표시되도록 z-[101] */}
+            <div className="relative z-[101] container mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-3 shrink-0">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/25">
@@ -145,26 +148,31 @@ export default function Header() {
                         </Button>
                     </Link>
 
-                    {/* 모바일 메뉴 버튼 - 대비 확보 */}
+                    {/* 모바일 메뉴 버튼: 터치 영역 확보, 300ms 지연 제거 */}
                     <button
+                        type="button"
                         onClick={() => setMobileOpen((o) => !o)}
-                        className="lg:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-800/80 border border-slate-600/60 flex items-center justify-center text-white hover:bg-slate-700"
+                        className="lg:hidden w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl bg-slate-800/80 border border-slate-600/60 flex items-center justify-center text-white hover:bg-slate-700 active:bg-slate-600 touch-manipulation select-none"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
+                        aria-expanded={mobileOpen}
                     >
-                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                     </button>
                 </div>
             </div>
 
-            {/* 모바일 메뉴 패널 - 슬레이트 톤·대비 개선, safe-area, Cart·Auth 포함 */}
+            {/* 모바일 메뉴 패널: 상단 바 아래에만 표시(z-[100]), 터치 스크롤 가능 */}
             <AnimatePresence>
                 {mobileOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 top-0 z-[99] lg:hidden bg-slate-950/95 backdrop-blur-2xl"
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 top-0 z-[100] lg:hidden bg-slate-950/95 backdrop-blur-2xl"
                         onClick={() => setMobileOpen(false)}
+                        aria-hidden="false"
                     >
                         <motion.nav
                             initial="hidden"
@@ -179,8 +187,9 @@ export default function Header() {
                                     }
                                 }
                             }}
-                            className="flex flex-col gap-2.5 max-w-sm mx-auto h-full pt-[max(6rem,calc(6rem+env(safe-area-inset-top,0px)))] pb-10 px-6 overflow-y-auto"
+                            className="flex flex-col gap-2.5 max-w-sm mx-auto h-full pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
                             onClick={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
                         >
                             <div className="mb-4">
                                 <span className="text-[10px] font-bold text-primary/80 uppercase tracking-[0.2em] ml-1">Menu Navigation</span>

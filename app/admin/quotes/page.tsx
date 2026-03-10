@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, Printer, PenLine, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Loader2, Printer, PenLine, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -21,6 +21,7 @@ export default function QuoteList() {
     const [orders, setOrders] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+    const [sendingOrderId, setSendingOrderId] = useState<number | null>(null);
 
     const fetchOrders = async () => {
         try {
@@ -125,6 +126,33 @@ export default function QuoteList() {
     };
 
     const handleEdit = (id: number) => router.push(`/admin/quotes/${id}`);
+
+    const handleSendQuotation = async (orderId: number) => {
+        if (sendingOrderId != null) return;
+        setSendingOrderId(orderId);
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}/send-quotation`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({}),
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast({ title: data.message || '견적서가 발송되었습니다.' });
+                const sentAt = data.sentAt;
+                setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, quotation_sent_at: sentAt } : o));
+            } else {
+                toast({ title: data.error || '발송 실패', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: '발송 중 오류가 발생했습니다.', variant: 'destructive' });
+        } finally {
+            setSendingOrderId(null);
+        }
+    };
 
     if (loading) {
         return <div className="flex justify-center p-12"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
@@ -231,6 +259,9 @@ export default function QuoteList() {
                                                 </td>
                                                 <td className="p-4 text-white/50 text-xs">
                                                     {order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}
+                                                    {order.quotation_sent_at && (
+                                                        <Badge variant="outline" className="ml-1.5 bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] py-0 px-1">발송됨</Badge>
+                                                    )}
                                                 </td>
                                                 <td className="p-4">
                                                     <Badge
@@ -249,7 +280,7 @@ export default function QuoteList() {
                                                     </Badge>
                                                 </td>
                                                 <td className="p-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
+                                                    <div className="flex flex-wrap items-center justify-end gap-2">
                                                         <Button
                                                             variant="outline" size="sm"
                                                             className="border-white/10 text-white hover:bg-white/10 text-xs"
@@ -265,6 +296,19 @@ export default function QuoteList() {
                                                         >
                                                             <Printer className="w-3 h-3 mr-1" />
                                                             견적서 인쇄
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline" size="sm"
+                                                            className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+                                                            onClick={() => handleSendQuotation(order.id)}
+                                                            disabled={sendingOrderId === order.id}
+                                                        >
+                                                            {sendingOrderId === order.id ? (
+                                                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                                            ) : (
+                                                                <Mail className="w-3 h-3 mr-1" />
+                                                            )}
+                                                            이메일 발송
                                                         </Button>
                                                     </div>
                                                 </td>

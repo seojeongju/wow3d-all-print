@@ -25,20 +25,28 @@ export async function POST(
 
     try {
         const order = await env.DB.prepare(
-            'SELECT id, user_id, order_number FROM orders WHERE id = ? AND store_id = ?'
-        ).bind(numId, storeId).first() as { id: number; user_id: number | null; order_number: string } | null;
+            'SELECT id, user_id, order_number, store_id FROM orders WHERE id = ?'
+        ).bind(numId).first() as { id: number; user_id: number | null; order_number: string; store_id: number | null } | null;
 
         if (!order) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+        const orderStoreId = order.store_id;
+        if (orderStoreId != null && orderStoreId !== storeId) {
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
         }
 
         const fullOrder = await env.DB.prepare(`
-            SELECT o.user_id, o.guest_email, o.order_number,
+            SELECT o.user_id, o.guest_email, o.order_number, o.total_amount, o.expert_quote_data,
                    u.email as user_email
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            WHERE o.id = ? AND o.store_id = ?
-        `).bind(numId, storeId).first() as { user_id: number | null; guest_email: string | null; order_number: string; user_email: string | null } | null;
+            WHERE o.id = ?
+        `).bind(numId).first() as {
+            user_id: number | null; guest_email: string | null; order_number: string;
+            total_amount: number | null; expert_quote_data: string | null;
+            user_email: string | null;
+        } | null;
 
         if (!fullOrder) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
@@ -54,17 +62,33 @@ export async function POST(
         const toEmail = (body?.emailOverride && String(body.emailOverride).trim()) || fullOrder.user_email || fullOrder.guest_email || null;
         const sentAt = new Date().toISOString();
 
+        const whereClause = orderStoreId != null ? 'WHERE id = ? AND store_id = ?' : 'WHERE id = ?';
+        const whereBind = orderStoreId != null ? [sentAt, numId, storeId] : [sentAt, numId];
         await env.DB.prepare(
-            'UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
-        ).bind(sentAt, numId, storeId).run();
+            `UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+        ).bind(...whereBind).run();
 
         const envVars = env as unknown as Record<string, string | undefined>;
         const resendKey = process.env.RESEND_API_KEY || envVars.RESEND_API_KEY;
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) || (typeof req.url === 'string' ? new URL(req.url).origin : '');
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || envVars.NEXT_PUBLIC_APP_URL || (typeof req.url === 'string' ? new URL(req.url).origin : '');
         const estimateUrl = `${baseUrl}/print/estimate/${numId}`;
+
+        let totalAmount: number | null = null;
+        if (fullOrder.expert_quote_data) {
+            try {
+                const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
+                totalAmount = expert?.total_amount ?? null;
+            } catch {
+                totalAmount = fullOrder.total_amount;
+            }
+        } else {
+            totalAmount = fullOrder.total_amount;
+        }
+        const amountText = totalAmount != null ? ` (합계: ₩${Number(totalAmount).toLocaleString()})` : '';
 
         if (resendKey && toEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)) {
             try {
+                const fromAddr = process.env.RESEND_FROM || envVars.RESEND_FROM || 'WOW3D 견적서 <onboarding@resend.dev>';
                 const emailRes = await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: {
@@ -72,15 +96,25 @@ export async function POST(
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        from: process.env.RESEND_FROM || envVars.RESEND_FROM || '견적서 <onboarding@resend.dev>',
+                        from: fromAddr,
                         to: [toEmail],
-                        subject: `[${fullOrder.order_number}] 견적서가 준비되었습니다`,
+                        subject: `[${fullOrder.order_number}] WOW3D 견적서가 준비되었습니다`,
                         html: `
-<p>안녕하세요.</p>
-<p>요청하신 견적서가 준비되었습니다.</p>
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>body{font-family:sans-serif;line-height:1.6;color:#333;max-width:560px;margin:0 auto;padding:20px;} a{color:#2563eb;} .box{background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;}</style></head>
+<body>
+<p>안녕하세요, WOW3D입니다.</p>
+<p>요청하신 <strong>견적서</strong>가 준비되었습니다.</p>
+<div class="box">
+  <p style="margin:0 0 8px 0;"><strong>주문번호</strong> ${String(fullOrder.order_number)}</p>
+  ${amountText ? `<p style="margin:0;"><strong>견적 합계</strong> ₩${Number(totalAmount!).toLocaleString()}</p>` : ''}
+</div>
 <p><strong>견적서 보기:</strong> <a href="${estimateUrl}">${estimateUrl}</a></p>
-<p>확인 후 결제 또는 문의 부탁드립니다.</p>
-                        `.trim(),
+<p>위 링크에서 상세 견적 내용을 확인하실 수 있습니다. 확인 후 결제 또는 문의 부탁드립니다.</p>
+<p>감사합니다.<br/>WOW3D</p>
+</body>
+</html>`.trim(),
                     }),
                 });
                 if (!emailRes.ok) {
