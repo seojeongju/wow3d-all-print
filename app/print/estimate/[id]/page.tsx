@@ -95,32 +95,12 @@ export default function EstimatePrintPage() {
             .finally(() => setLoading(false));
     }, [id, isTemp]);
 
-    // 인쇄는 사용자가 버튼을 눌러서 실행 (자동 실행 제거)
-
-    if (loading) return (
-        <div className="flex h-screen items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-        </div>
-    );
-
-    if (error) return (
-        <div className="flex h-screen items-center justify-center flex-col gap-4 text-center p-8">
-            <div className="text-red-500 text-lg font-bold">❌ 인증 오류</div>
-            <div className="text-slate-600 text-sm max-w-sm">{error}</div>
-            <div className="text-slate-400 text-xs mt-2">관리자 페이지 → 견적 관리에서 인쇄 버튼을 통해 열어주세요.</div>
-        </div>
-    );
-
-    if (!data) return null;
-
-    const { order, items: apiItems } = data;
-    const today = new Date();
-    const orderDate = new Date(order.created_at);
-
-    // 수정 견적(expert_quote_data)이 있으면 그걸 사용해 인쇄·이메일 링크 보기 모두 동일한 금액 표시
+    // 훅은 조건부 return 이전에 항상 호출 (React 훅 규칙)
     const displayItems = useMemo(() => {
-        const hasExpert = order.has_expert_quote || order.hasExpertQuote;
-        const rawExpert = order.expert_quote_data ?? order.expertQuoteData;
+        if (!data) return [];
+        const { order, items: apiItems } = data;
+        const hasExpert = order?.has_expert_quote || order?.hasExpertQuote;
+        const rawExpert = order?.expert_quote_data ?? order?.expertQuoteData;
         if (hasExpert && rawExpert) {
             try {
                 const expert = typeof rawExpert === 'string' ? JSON.parse(rawExpert) : rawExpert;
@@ -152,15 +132,12 @@ export default function EstimatePrintPage() {
                 subtotal: unitPrice * qty,
             };
         });
-    }, [order.has_expert_quote, order.hasExpertQuote, order.expert_quote_data, order.expertQuoteData, apiItems]);
+    }, [data]);
 
-    // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
     const totalSupply = displayItems.reduce((acc: number, item: any) =>
         acc + Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
     const totalVat = Math.floor(totalSupply * 0.1);
     const totalAmount = totalSupply + totalVat;
-
-    // 견적서 특이사항 분리 처리
     const footerLines = company.estimate_footer_note
         ? company.estimate_footer_note.split('\n').filter(Boolean)
         : [
@@ -168,6 +145,26 @@ export default function EstimatePrintPage() {
             '제작 사양 변경 시 견적 금액이 변동될 수 있습니다.',
             '본 견적서는 귀사의 발주를 위한 기초 자료로 제공됩니다.',
         ];
+
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex h-screen items-center justify-center flex-col gap-4 text-center p-8">
+            <div className="text-red-500 text-lg font-bold">❌ 인증 오류</div>
+            <div className="text-slate-600 text-sm max-w-sm">{error}</div>
+            <div className="text-slate-400 text-xs mt-2">관리자 페이지 → 견적 관리에서 인쇄 버튼을 통해 열어주세요.</div>
+        </div>
+    );
+
+    if (!data) return null;
+
+    const { order } = data;
+    const today = new Date();
+    const orderDate = new Date(order.created_at);
 
     return (
         <div className="bg-white text-black min-h-screen">

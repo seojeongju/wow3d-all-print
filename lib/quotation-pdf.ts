@@ -18,8 +18,15 @@ export type ItemForPdf = {
   subtotal: number;
 };
 
+/** pdf-lib 표준 폰트(WinAnsi)는 한글 미지원 → ASCII 인쇄 가능 문자만 사용 */
+function toPdfSafeText(s: string, maxLen: number = 80): string {
+  return String(s)
+    .slice(0, maxLen)
+    .replace(/[^\x20-\x7E]/g, '_');
+}
+
 /**
- * 견적서 PDF 생성 (표준 폰트 사용으로 한글은 제한적, 영문/숫자 위주)
+ * 견적서 PDF 생성 (표준 폰트 사용, 한글은 '_'로 대체되어 첨부 오류 방지)
  * Returns Uint8Array for attachment (base64 인코딩은 호출 측에서)
  */
 export async function buildQuotationPdf(
@@ -37,23 +44,23 @@ export async function buildQuotationPdf(
 
   const drawText = (text: string, x: number, yPos: number, size: number = 10, bold = false) => {
     const f = bold ? fontBold : font;
-    const safe = String(text).slice(0, 80);
-    page.drawText(safe, { x, y: yPos, size, font: f, color: rgb(0, 0, 0) });
+    const safe = toPdfSafeText(text, 80);
+    if (safe) page.drawText(safe, { x, y: yPos, size, font: f, color: rgb(0, 0, 0) });
   };
 
   drawText('QUOTATION', margin, y, 20, true);
   y -= 24;
-  drawText(`Order No. ${order.order_number}`, width - margin - 150, y + 4, 10);
+  drawText(`Order No. ${toPdfSafeText(order.order_number, 40)}`, width - margin - 150, y + 4, 10);
   drawText(`Date: ${order.created_at ? new Date(order.created_at).toLocaleDateString('en-CA') : '-'}`, margin, y, 10);
   y -= 20;
 
   drawText('Bill To:', margin, y, 11, true);
   y -= 16;
-  drawText(`Name: ${order.recipient_name || '-'}`, margin, y, 10);
+  drawText(`Name: ${toPdfSafeText(order.recipient_name || '-')}`, margin, y, 10);
   y -= 14;
-  drawText(`Phone: ${order.recipient_phone || '-'}`, margin, y, 10);
+  drawText(`Phone: ${toPdfSafeText(order.recipient_phone || '-')}`, margin, y, 10);
   y -= 14;
-  drawText(`Address: ${(order.shipping_address || '-').slice(0, 60)}`, margin, y, 10);
+  drawText(`Address: ${toPdfSafeText((order.shipping_address || '-').slice(0, 60), 60)}`, margin, y, 10);
   y -= 20;
 
   const colW = [30, 180, 40, 70, 70];
@@ -67,18 +74,18 @@ export async function buildQuotationPdf(
   y -= rowH;
 
   items.forEach((item, idx) => {
-    const fileName = (item.file_name || '-').replace(/[^\x20-\x7E]/g, '_');
-    const spec = item.print_method ? ` ${item.print_method}` : '';
+    const fileName = toPdfSafeText(item.file_name || '-', 30);
+    const spec = toPdfSafeText(item.print_method || '', 8);
     const row = [
       String(idx + 1),
-      `${fileName}${spec}`.slice(0, 35),
+      `${fileName}${spec ? ' ' + spec : ''}`.slice(0, 35),
       String(item.quantity),
       String(Number(item.unit_price).toLocaleString()),
       String(Number(item.subtotal).toLocaleString()),
     ];
     row.forEach((cell, i) => {
       const x = tableLeft + colW.slice(0, i).reduce((a, b) => a + b, 0) + (i >= 2 ? 4 : 0);
-      page.drawText(cell.slice(0, 25), { x, y, size: 9, font, color: rgb(0, 0, 0) });
+      page.drawText(toPdfSafeText(cell, 25), { x, y, size: 9, font, color: rgb(0, 0, 0) });
     });
     y -= rowH;
   });
@@ -91,7 +98,7 @@ export async function buildQuotationPdf(
   drawText(`KRW ${totalAmount.toLocaleString()}`, width - margin - 120, y, 11, true);
   y -= 30;
 
-  drawText(`${companyName}`, margin, y, 10);
+  drawText(toPdfSafeText(companyName, 40), margin, y, 10);
   drawText('Thank you for your business.', margin, y - 14, 9);
 
   return doc.save();
