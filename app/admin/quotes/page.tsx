@@ -40,6 +40,13 @@ export default function QuoteList() {
 
     useEffect(() => { fetchOrders(); }, []);
 
+    // 견적서 수정 페이지에서 돌아올 때 목록 새로고침 (수정견적 금액 반영)
+    useEffect(() => {
+        const onFocus = () => fetchOrders();
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, []);
+
     const filtered = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) return orders;
