@@ -36,11 +36,12 @@ export async function POST(
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
         }
 
-        let fullOrder: {
+        type FullOrderRow = {
             user_id: number | null; guest_email: string | null; order_number: string;
             total_amount: number | null; expert_quote_data?: string | null;
             user_email: string | null;
-        } | null = null;
+        };
+        let fullOrder: FullOrderRow | null = null;
         try {
             fullOrder = await env.DB.prepare(`
                 SELECT o.user_id, o.guest_email, o.order_number, o.total_amount, o.expert_quote_data,
@@ -48,7 +49,7 @@ export async function POST(
                 FROM orders o
                 LEFT JOIN users u ON o.user_id = u.id
                 WHERE o.id = ?
-            `).bind(numId).first() as typeof fullOrder;
+            `).bind(numId).first() as FullOrderRow | null;
         } catch {
             fullOrder = await env.DB.prepare(`
                 SELECT o.user_id, o.guest_email, o.order_number, o.total_amount,
@@ -56,7 +57,7 @@ export async function POST(
                 FROM orders o
                 LEFT JOIN users u ON o.user_id = u.id
                 WHERE o.id = ?
-            `).bind(numId).first() as typeof fullOrder;
+            `).bind(numId).first() as FullOrderRow | null;
         }
 
         if (!fullOrder) {
