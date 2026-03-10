@@ -57,11 +57,14 @@ export default function QuoteList() {
         );
     }, [orders, searchQuery]);
 
-    // 전문가 견적 데이터 파싱
+    // 전문가 견적 데이터 파싱 (snake_case / camelCase 모두 처리)
     const parseExpertQuote = (order: any) => {
-        if (!order.has_expert_quote || !order.expert_quote_data) return null;
+        const hasExpert = order?.has_expert_quote ?? order?.hasExpertQuote;
+        const rawData = order?.expert_quote_data ?? order?.expertQuoteData;
+        if (!hasExpert || !rawData) return null;
         try {
-            return JSON.parse(order.expert_quote_data);
+            const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+            return data && typeof data === 'object' ? data : null;
         } catch {
             return null;
         }
