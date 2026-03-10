@@ -64,6 +64,12 @@ export async function GET(
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
+        const url = req.url ? new URL(req.url) : null;
+        const itemIdsParam = url?.searchParams?.get('itemIds');
+        const selectedItemIds: number[] = itemIdsParam
+            ? itemIdsParam.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isInteger(n))
+            : [];
+
         const toEmail = fullOrder.user_email || fullOrder.guest_email || '';
         const requestOrigin = typeof req.url === 'string' ? new URL(req.url).origin : '';
         const envVars = env as unknown as Record<string, string | undefined>;
@@ -72,33 +78,50 @@ export async function GET(
         const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
         const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}`;
 
+        const orderRow = await env.DB.prepare(
+            'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
+        ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
+
+        type ItemRow = { id?: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
+        let items: ItemRow[] = [];
+        let pdfError: string | undefined;
+        try {
+            const itemRes = await env.DB.prepare(`
+                SELECT oi.id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
+                FROM order_items oi
+                LEFT JOIN quotes q ON oi.quote_id = q.id
+                WHERE oi.order_id = ?
+            `).bind(numId).all() as { results?: ItemRow[] };
+            const allItems = itemRes?.results ?? [];
+            items = selectedItemIds.length > 0
+                ? allItems.filter((row) => row.id != null && selectedItemIds.includes(row.id))
+                : allItems;
+        } catch (err) {
+            pdfError = err instanceof Error ? err.message : String(err);
+        }
+
+        let pdfReady = false;
+
         let totalAmount: number | null = null;
-        if (fullOrder.expert_quote_data) {
-            try {
-                const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
-                totalAmount = expert?.total_amount ?? null;
-            } catch {
+        if (items.length > 0) {
+            const supplyTotal = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
+            totalAmount = supplyTotal + Math.floor(supplyTotal * 0.1);
+        } else if (selectedItemIds.length === 0) {
+            if (fullOrder.expert_quote_data) {
+                try {
+                    const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
+                    totalAmount = expert?.total_amount ?? null;
+                } catch {
+                    totalAmount = fullOrder.total_amount;
+                }
+            } else {
                 totalAmount = fullOrder.total_amount;
             }
-        } else {
-            totalAmount = fullOrder.total_amount;
         }
         const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
         const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';
 
-        let pdfReady = false;
-        let pdfError: string | undefined;
         try {
-            const orderRow = await env.DB.prepare(
-                'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
-            ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
-            const itemRes = await env.DB.prepare(`
-                SELECT oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
-                FROM order_items oi
-                LEFT JOIN quotes q ON oi.quote_id = q.id
-                WHERE oi.order_id = ?
-            `).bind(numId).all() as { results?: { quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null }[] };
-            const items = itemRes?.results ?? [];
             if (orderRow && items.length > 0) {
                 const orderForPdf = {
                     order_number: fullOrder.order_number,

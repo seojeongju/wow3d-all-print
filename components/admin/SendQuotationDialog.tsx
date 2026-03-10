@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
     Dialog,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Paperclip, AlertCircle, FileCode, FileText } from 'lucide-react';
+import { Loader2, Send, Paperclip, AlertCircle, FileCode, FileText, Plus, X } from 'lucide-react';
 
 export type QuotationSendResult = {
     success: boolean;
@@ -27,6 +27,8 @@ export type SendQuotationDialogProps = {
     onOpenChange: (open: boolean) => void;
     token: string | null;
     onSent?: (result: QuotationSendResult) => void;
+    /** 포함할 품목(order_item id). 없으면 전체 */
+    selectedItemIds?: number[];
 };
 
 export function SendQuotationDialog({
@@ -35,6 +37,7 @@ export function SendQuotationDialog({
     onOpenChange,
     token,
     onSent,
+    selectedItemIds,
 }: SendQuotationDialogProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -54,16 +57,20 @@ export function SendQuotationDialog({
     const [text, setText] = useState('');
     const [bodyType, setBodyType] = useState<'html' | 'text'>('html');
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [extraFiles, setExtraFiles] = useState<{ id: string; file: File }[]>([]);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         if (!open || orderId == null) {
             setDraft(null);
             setLoadError(null);
+            setExtraFiles([]);
             return;
         }
         setLoading(true);
         setLoadError(null);
-        fetch(`/api/admin/orders/${orderId}/quotation-email-draft`, {
+        const itemIdsParam = selectedItemIds?.length ? `?itemIds=${selectedItemIds.join(',')}` : '';
+        fetch(`/api/admin/orders/${orderId}/quotation-email-draft${itemIdsParam}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then((res) => {
@@ -81,7 +88,19 @@ export function SendQuotationDialog({
                 setLoadError(e instanceof Error ? e.message : '초안 로드 실패');
             })
             .finally(() => setLoading(false));
-    }, [open, orderId, token]);
+    }, [open, orderId, token, selectedItemIds?.join(',')]);
+
+    const readFileAsBase64 = (file: File): Promise<string> =>
+        new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => {
+                const s = (r.result as string) || '';
+                const base64 = s.includes(',') ? s.split(',')[1] : s;
+                resolve(base64 || '');
+            };
+            r.onerror = () => reject(new Error('파일 읽기 실패'));
+            r.readAsDataURL(file);
+        });
 
     const handleSend = async () => {
         if (orderId == null) return;
@@ -89,6 +108,15 @@ export function SendQuotationDialog({
         if (!trimmedTo) return;
         setSending(true);
         try {
+            let extraAttachments: { filename: string; content: string }[] = [];
+            if (extraFiles.length > 0) {
+                extraAttachments = await Promise.all(
+                    extraFiles.map(async ({ file }) => ({
+                        filename: file.name,
+                        content: await readFileAsBase64(file),
+                    }))
+                );
+            }
             const res = await fetch(`/api/admin/orders/${orderId}/send-quotation`, {
                 method: 'POST',
                 headers: {
@@ -99,6 +127,8 @@ export function SendQuotationDialog({
                     emailOverride: trimmedTo,
                     subject: subject.trim() || undefined,
                     ...(bodyType === 'html' ? { html: html.trim() || undefined } : { text: text.trim() || undefined }),
+                    ...(extraAttachments.length > 0 ? { extraAttachments } : {}),
+                    ...(selectedItemIds?.length ? { itemIds: selectedItemIds } : {}),
                 }),
             });
             const j = await res.json();
@@ -206,6 +236,57 @@ export function SendQuotationDialog({
                                     </div>
                                 </>
                             )}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label className="text-white/80">추가 첨부 파일</Label>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.zip"
+                                onChange={(e) => {
+                                    const list = e.target.files;
+                                    if (!list?.length) return;
+                                    const add: { id: string; file: File }[] = [];
+                                    for (let i = 0; i < list.length; i++) {
+                                        const file = list[i];
+                                        if (file.size > 8 * 1024 * 1024) continue;
+                                        add.push({ id: `${Date.now()}-${i}-${file.name}`, file });
+                                    }
+                                    setExtraFiles((prev) => [...prev, ...add].slice(0, 5));
+                                    e.target.value = '';
+                                }}
+                            />
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-white/20 text-white/80 hover:bg-white/10"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={extraFiles.length >= 5}
+                                >
+                                    <Plus className="w-3.5 h-3.5 mr-1.5" /> 파일 첨부 (최대 5개, 8MB 이하)
+                                </Button>
+                                {extraFiles.length > 0 && (
+                                    <ul className="flex flex-wrap gap-2 mt-1">
+                                        {extraFiles.map(({ id, file }) => (
+                                            <li key={id} className="flex items-center gap-1.5 rounded-md bg-white/10 px-2 py-1 text-xs text-white/90">
+                                                <span className="truncate max-w-[140px]">{file.name}</span>
+                                                <button
+                                                    type="button"
+                                                    className="p-0.5 rounded hover:bg-white/20 text-white/70"
+                                                    onClick={() => setExtraFiles((p) => p.filter((x) => x.id !== id))}
+                                                    aria-label="제거"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ) : null}

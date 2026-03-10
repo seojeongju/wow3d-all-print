@@ -67,7 +67,7 @@ export async function POST(
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        let body: { emailOverride?: string; subject?: string; html?: string; text?: string } = {};
+        let body: { emailOverride?: string; subject?: string; html?: string; text?: string; extraAttachments?: { filename: string; content: string }[]; itemIds?: number[] } = {};
         try {
             body = await req.json();
         } catch {
@@ -78,6 +78,7 @@ export async function POST(
         const customSubject = body?.subject != null && String(body.subject).trim() ? String(body.subject).trim() : null;
         const customHtml = body?.html != null && String(body.html).trim() ? String(body.html).trim() : null;
         const customText = body?.text != null && String(body.text).trim() ? String(body.text).trim() : null;
+        const selectedItemIds = Array.isArray(body?.itemIds) ? body.itemIds.filter((id: unknown) => typeof id === 'number' && Number.isInteger(id)) : [];
         const sentAt = new Date().toISOString();
 
         let quotationRecorded = false;
@@ -100,16 +101,41 @@ export async function POST(
         const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
         const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}`;
 
+        type ItemRow = { id?: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
+        let itemsForPdf: ItemRow[] = [];
+        try {
+            const orderRow = await env.DB.prepare(
+                'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
+            ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
+            const itemRes = await env.DB.prepare(`
+                SELECT oi.id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
+                FROM order_items oi
+                LEFT JOIN quotes q ON oi.quote_id = q.id
+                WHERE oi.order_id = ?
+            `).bind(numId).all() as { results?: ItemRow[] };
+            const allItems = itemRes?.results ?? [];
+            itemsForPdf = selectedItemIds.length > 0
+                ? allItems.filter((row) => row.id != null && selectedItemIds.includes(row.id))
+                : allItems;
+        } catch {
+            // itemsForPdf stays []
+        }
+
         let totalAmount: number | null = null;
-        if (fullOrder.expert_quote_data) {
-            try {
-                const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
-                totalAmount = expert?.total_amount ?? null;
-            } catch {
+        if (itemsForPdf.length > 0) {
+            const supplyTotal = itemsForPdf.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
+            totalAmount = supplyTotal + Math.floor(supplyTotal * 0.1);
+        } else if (selectedItemIds.length === 0) {
+            if (fullOrder.expert_quote_data) {
+                try {
+                    const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
+                    totalAmount = expert?.total_amount ?? null;
+                } catch {
+                    totalAmount = fullOrder.total_amount;
+                }
+            } else {
                 totalAmount = fullOrder.total_amount;
             }
-        } else {
-            totalAmount = fullOrder.total_amount;
         }
         const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
         const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';
@@ -118,19 +144,13 @@ export async function POST(
         if (resendKey && toEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)) {
             try {
                 const fromAddr = process.env.RESEND_FROM || envVars.RESEND_FROM || 'WOW3D 견적서 <onboarding@resend.dev>';
+                const replyToAddr = process.env.RESEND_REPLY_TO || envVars.RESEND_REPLY_TO || 'wow3d16@naver.com';
                 let attachments: { filename: string; content: string }[] = [];
                 try {
                     const orderRow = await env.DB.prepare(
                         'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
                     ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
-                    const itemRes = await env.DB.prepare(`
-                        SELECT oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
-                        FROM order_items oi
-                        LEFT JOIN quotes q ON oi.quote_id = q.id
-                        WHERE oi.order_id = ?
-                    `).bind(numId).all() as { results?: { quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null }[] };
-                    const items = itemRes?.results ?? [];
-                    if (orderRow && items.length > 0) {
+                    if (orderRow && itemsForPdf.length > 0) {
                         const orderForPdf = {
                             order_number: fullOrder.order_number,
                             created_at: orderRow.created_at,
@@ -140,11 +160,19 @@ export async function POST(
                             user_email: fullOrder.user_email,
                             guest_email: fullOrder.guest_email,
                         };
-                        const pdfBytes = await buildQuotationPdf(orderForPdf, items, 'WOW3D');
+                        const pdfBytes = await buildQuotationPdf(orderForPdf, itemsForPdf, 'WOW3D');
                         attachments = [{ filename: `quotation-${fullOrder.order_number}.pdf`, content: uint8ArrayToBase64(pdfBytes) }];
                     }
                 } catch (pdfErr) {
                     console.warn('send-quotation: PDF attachment skipped', pdfErr);
+                }
+                const extra = body.extraAttachments;
+                if (Array.isArray(extra) && extra.length > 0) {
+                    for (const a of extra) {
+                        if (a && typeof a.filename === 'string' && typeof a.content === 'string' && a.filename.trim()) {
+                            attachments.push({ filename: a.filename.trim().slice(0, 200), content: a.content });
+                        }
+                    }
                 }
                 const subject = customSubject ?? buildDefaultSubject(fullOrder.order_number);
                 const hasCustomHtml = customHtml != null;
@@ -166,6 +194,7 @@ export async function POST(
                 const payload: Record<string, unknown> = {
                     from: fromAddr,
                     to: [toEmail],
+                    reply_to: replyToAddr,
                     subject,
                     ...(attachments.length > 0 ? { attachments } : {}),
                 };

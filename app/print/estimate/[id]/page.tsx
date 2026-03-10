@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { correctDisplayAmount } from '@/lib/amount-display';
 
 type CompanyInfo = {
     business_number?: string;
@@ -112,14 +113,51 @@ export default function EstimatePrintPage() {
 
     if (!data) return null;
 
-    const { order, items } = data;
+    const { order, items: apiItems } = data;
     const today = new Date();
     const orderDate = new Date(order.created_at);
 
+    // 수정 견적(expert_quote_data)이 있으면 그걸 사용해 인쇄·이메일 링크 보기 모두 동일한 금액 표시
+    const displayItems = useMemo(() => {
+        const hasExpert = order.has_expert_quote || order.hasExpertQuote;
+        const rawExpert = order.expert_quote_data ?? order.expertQuoteData;
+        if (hasExpert && rawExpert) {
+            try {
+                const expert = typeof rawExpert === 'string' ? JSON.parse(rawExpert) : rawExpert;
+                const list = expert?.items;
+                if (Array.isArray(list) && list.length > 0) {
+                    return list.map((it: any, idx: number) => {
+                        const unitPrice = Math.round(Number(it.unit_price) || 0);
+                        const qty = Math.max(1, Number(it.quantity) || 1);
+                        return {
+                            id: it.id ?? idx,
+                            file_name: it.name ?? it.file_name ?? `품목 ${idx + 1}`,
+                            print_method: it.spec ?? it.print_method ?? '',
+                            material_name: it.material_name ?? '',
+                            quantity: qty,
+                            unit_price: unitPrice,
+                            subtotal: unitPrice * qty,
+                        };
+                    });
+                }
+            } catch (_) {}
+        }
+        return (apiItems || []).map((item: any) => {
+            const raw = Number(item.unit_price || 0);
+            const unitPrice = correctDisplayAmount(raw) ?? Math.round(raw);
+            const qty = Math.max(1, Number(item.quantity) || 1);
+            return {
+                ...item,
+                unit_price: unitPrice,
+                subtotal: unitPrice * qty,
+            };
+        });
+    }, [order.has_expert_quote, order.hasExpertQuote, order.expert_quote_data, order.expertQuoteData, apiItems]);
+
     // 금액 계산: 수량 × 단가 = 공급가액, 공급가액 × 10% = 부가세, 합계 = 공급가액 + 부가세
-    const totalSupply = items.reduce((acc: number, item: any) =>
+    const totalSupply = displayItems.reduce((acc: number, item: any) =>
         acc + Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
-    const totalVat = Math.floor(totalSupply * 0.1); // 소수점 절삭하여 공급가액의 10% 계산
+    const totalVat = Math.floor(totalSupply * 0.1);
     const totalAmount = totalSupply + totalVat;
 
     // 견적서 특이사항 분리 처리
@@ -238,16 +276,16 @@ export default function EstimatePrintPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map((item: any, idx: number) => {
-                                const itemSupply = Math.floor(Number(item.unit_price || 0) * Number(item.quantity || 0));
+                            {displayItems.map((item: any, idx: number) => {
+                                const itemSupply = Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0));
                                 const itemVat = Math.floor(itemSupply * 0.1);
                                 return (
-                                    <tr key={item.id || idx} className="text-center">
+                                    <tr key={item.id ?? idx} className="text-center">
                                         <td className="border border-black p-2">{idx + 1}</td>
                                         <td className="border border-black p-2 text-left">
                                             <div className="font-bold">{item.file_name}</div>
                                             <div className="text-xs text-slate-500">
-                                                {item.print_method ? item.print_method.toUpperCase() : ''}
+                                                {item.print_method ? String(item.print_method).toUpperCase() : ''}
                                                 {item.material_name ? ` / ${item.material_name}` : ''}
                                             </div>
                                         </td>
@@ -258,7 +296,7 @@ export default function EstimatePrintPage() {
                                     </tr>
                                 );
                             })}
-                            {Array.from({ length: Math.max(0, 10 - items.length) }).map((_, i) => (
+                            {Array.from({ length: Math.max(0, 10 - displayItems.length) }).map((_, i) => (
                                 <tr key={`empty-${i}`} className="text-center h-8">
                                     {[...Array(6)].map((_, j) => <td key={j} className="border border-black p-2"></td>)}
                                 </tr>
@@ -268,7 +306,7 @@ export default function EstimatePrintPage() {
                             <tr className="bg-slate-50 font-bold">
                                 <td className="border border-black p-2 text-center" colSpan={2}>합 계</td>
                                 <td className="border border-black p-2 text-center">
-                                    {items.reduce((acc: number, curr: any) => acc + Number(curr.quantity || 0), 0)}
+                                    {displayItems.reduce((acc: number, curr: any) => acc + Number(curr.quantity || 0), 0)}
                                 </td>
                                 <td className="border border-black p-2 text-right">-</td>
                                 <td className="border border-black p-2 text-right">{totalSupply.toLocaleString()}</td>

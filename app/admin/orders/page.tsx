@@ -77,6 +77,8 @@ function OrderListInner() {
     const [expertTotalInput, setExpertTotalInput] = useState('');
     const [savingExpertQuote, setSavingExpertQuote] = useState(false);
     const [showSendQuotationDialog, setShowSendQuotationDialog] = useState(false);
+    /** 견적서 인쇄/이메일 발송 시 포함할 품목(order_item id) — 비어 있으면 전체 */
+    const [selectedDetailItemIds, setSelectedDetailItemIds] = useState<Set<number>>(new Set());
 
     const fetchOrders = async () => {
         try {
@@ -116,6 +118,8 @@ function OrderListInner() {
             .then((j) => {
                 if (j.success && j.data) {
                     setDetailData(j.data);
+                    const items = (j.data.items || []) as { id?: number }[];
+                    setSelectedDetailItemIds(new Set(items.map((it) => it.id).filter((id): id is number => id != null)));
                     setDetailAdminNote(String(j.data.order?.admin_note ?? ''));
                     setDetailStatus(String(j.data.order?.status ?? 'pending'));
                     setShowExpertQuoteForm(false);
@@ -752,16 +756,39 @@ function OrderListInner() {
                                         )}
                                     </div>
                                     <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
+                                        <div className="flex items-center justify-between px-2 py-1.5 bg-white/5 border-b border-white/10 text-xs text-white/60">
+                                            <span>견적서 인쇄·이메일 발송에 포함할 항목을 선택하세요.</span>
+                                            <div className="flex gap-2">
+                                                <button type="button" className="hover:text-white" onClick={() => setSelectedDetailItemIds(new Set((detailData.items as any[]).map((it: any) => it.id)))}>전체 선택</button>
+                                                <button type="button" className="hover:text-white" onClick={() => setSelectedDetailItemIds(new Set())}>전체 해제</button>
+                                            </div>
+                                        </div>
                                         <table className="w-full text-sm">
-                                            <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 text-left text-white/70">파일/방식</th><th className="p-2 text-right text-white/70">수량</th><th className="p-2 text-right text-white/70">단가</th><th className="p-2 text-right text-white/70">소계</th><th className="p-2 text-center text-white/70 w-24">파일</th></tr></thead>
+                                            <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 w-10 text-center text-white/70">포함</th><th className="p-2 text-left text-white/70">파일/방식</th><th className="p-2 text-right text-white/70">수량</th><th className="p-2 text-right text-white/70">단가</th><th className="p-2 text-right text-white/70">소계</th><th className="p-2 text-center text-white/70 w-24">파일</th></tr></thead>
                                             <tbody>
                                                 {detailData.items.map((it: any) => {
                                                     const upRaw = Math.round(Number(it.unit_price || 0));
                                                     const subRaw = Math.round(Number(it.subtotal || 0));
                                                     const unitPrice = correctDisplayAmount(upRaw) ?? upRaw;
                                                     const subtotal = correctDisplayAmount(subRaw) ?? subRaw;
+                                                    const checked = selectedDetailItemIds.has(it.id);
                                                     return (
                                                     <tr key={it.id} className="border-b border-white/5">
+                                                        <td className="p-2 text-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={checked}
+                                                                onChange={() => {
+                                                                    setSelectedDetailItemIds((prev) => {
+                                                                        const next = new Set(prev);
+                                                                        if (next.has(it.id)) next.delete(it.id);
+                                                                        else next.add(it.id);
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                                className="rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
+                                                            />
+                                                        </td>
                                                         <td className="p-2 text-white/90">{it.file_name || '-'} ({it.print_method || '-'})</td>
                                                         <td className="p-2 text-right">{it.quantity}</td>
                                                         <td className="p-2 text-right">₩ {unitPrice.toLocaleString()}</td>
@@ -910,7 +937,37 @@ function OrderListInner() {
                         <Button
                             variant="outline"
                             className="border-white/10 text-white mr-auto hover:bg-white/10"
-                            onClick={() => window.open(`/print/estimate/${detailOrderId}`, '_blank', 'width=900,height=1000')}
+                            onClick={() => {
+                                if (token) localStorage.setItem('admin_print_token', token);
+                                const items = (detailData?.items || []) as any[];
+                                const selectedIds = selectedDetailItemIds;
+                                if (selectedIds.size > 0 && selectedIds.size < items.length) {
+                                    const selected = items.filter((it: any) => selectedIds.has(it.id));
+                                    const order = detailData?.order as any;
+                                    const totalSupply = selected.reduce((acc: number, it: any) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal || 0))) ?? Math.round(Number(it.subtotal || 0))), 0);
+                                    const printData = {
+                                        order: {
+                                            order_number: order?.order_number,
+                                            created_at: order?.created_at,
+                                            recipient_name: order?.recipient_name,
+                                            recipient_phone: order?.recipient_phone,
+                                            user_email: order?.user_email,
+                                            guest_email: order?.guest_email,
+                                            shipping_address: order?.shipping_address,
+                                            total_amount: totalSupply + Math.floor(totalSupply * 0.1),
+                                        },
+                                        items: selected.map((it: any) => {
+                                            const up = correctDisplayAmount(Math.round(Number(it.unit_price || 0))) ?? Math.round(Number(it.unit_price || 0));
+                                            const qty = Number(it.quantity) || 1;
+                                            return { id: it.id, file_name: it.file_name, print_method: it.print_method, material_name: '', quantity: qty, unit_price: up, subtotal: up * qty };
+                                        }),
+                                    };
+                                    localStorage.setItem(`quote_temp_${detailOrderId}`, JSON.stringify(printData));
+                                    window.open(`/print/estimate/${detailOrderId}?temp=true`, '_blank', 'width=900,height=1000');
+                                } else {
+                                    window.open(`/print/estimate/${detailOrderId}`, '_blank', 'width=900,height=1000');
+                                }
+                            }}
                         >
                             <Printer className="w-4 h-4 mr-2" />
                             견적서 인쇄
@@ -937,6 +994,9 @@ function OrderListInner() {
                 onOpenChange={setShowSendQuotationDialog}
                 token={token}
                 onSent={handleQuotationSent}
+                selectedItemIds={selectedDetailItemIds.size > 0 && detailData?.items && selectedDetailItemIds.size < (detailData.items as any[]).length
+                    ? Array.from(selectedDetailItemIds)
+                    : undefined}
             />
 
             {/* 제작중 전환 시 수정견적 금액 확인 다이얼로그 */}
