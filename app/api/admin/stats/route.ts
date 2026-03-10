@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { correctDisplayAmount } from '@/lib/amount-display';
 
 /**
  * GET /api/admin/stats - 대시보드 집계 (총 매출, 신규 주문, 사용자, 매출 추이, 최근 주문, 가동률)
@@ -51,21 +52,45 @@ export async function GET(_req: NextRequest) {
             amount: Number(r.amount ?? 0),
         }));
 
-        // 4) 최근 주문 5건 (id 포함, 상세 링크용)
-        const { results: recentRows } = await env.DB.prepare(`
-            SELECT id, order_number, recipient_name, created_at, total_amount
-            FROM orders
-            ORDER BY created_at DESC
-            LIMIT 5
-        `).all() as { results: { id: number; order_number: string; recipient_name: string; created_at: string; total_amount: number }[] };
+        // 4) 최근 주문 5건 (id, status, 수정 견적 금액 반영)
+        type RecentRow = { id: number; order_number: string; recipient_name: string; created_at: string; total_amount: number; status: string; has_expert_quote?: number; expert_quote_data?: string | null };
+        let recentRows: RecentRow[] = [];
+        try {
+            const r = await env.DB.prepare(`
+                SELECT id, order_number, recipient_name, created_at, total_amount, status, has_expert_quote, expert_quote_data
+                FROM orders
+                ORDER BY created_at DESC
+                LIMIT 5
+            `).all() as { results: RecentRow[] };
+            recentRows = r.results ?? [];
+        } catch {
+            const r = await env.DB.prepare(`
+                SELECT id, order_number, recipient_name, created_at, total_amount, status
+                FROM orders
+                ORDER BY created_at DESC
+                LIMIT 5
+            `).all() as { results: RecentRow[] };
+            recentRows = r.results ?? [];
+        }
 
-        const recentOrders = (recentRows || []).map((r: { id: number; order_number: string; recipient_name: string; created_at: string; total_amount: number }) => ({
-            id: Number(r.id),
-            orderNumber: r.order_number,
-            recipientName: r.recipient_name,
-            createdAt: r.created_at,
-            totalAmount: Number(r.total_amount ?? 0),
-        }));
+        const recentOrders = recentRows.map((r: RecentRow) => {
+            let amount = Number(r.total_amount ?? 0);
+            if (r.has_expert_quote && r.expert_quote_data) {
+                try {
+                    const expert = JSON.parse(r.expert_quote_data) as { total_amount?: number };
+                    if (expert?.total_amount != null) amount = Number(expert.total_amount);
+                } catch { /* ignore */ }
+            }
+            const displayAmount = correctDisplayAmount(amount) ?? Math.round(amount);
+            return {
+                id: Number(r.id),
+                orderNumber: r.order_number,
+                recipientName: r.recipient_name ?? '',
+                createdAt: r.created_at,
+                totalAmount: displayAmount,
+                status: r.status || 'pending',
+            };
+        });
 
         // 5) 이번 달 견적 요청, 미확인 문의
         let quotesThisMonth = 0;

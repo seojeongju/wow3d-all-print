@@ -22,6 +22,18 @@ type RecentOrder = {
     status: string;
 };
 
+const ORDER_STATUS_LABEL: Record<string, string> = {
+    pending: '접수대기',
+    confirmed: '주문확인',
+    production: '제작중',
+    shipping: '배송중',
+    completed: '완료',
+    cancelled: '취소',
+};
+function getOrderStatusLabel(status: string) {
+    return ORDER_STATUS_LABEL[status] || status || '-';
+}
+
 type Stats = {
     totalSales: number;
     salesChangePercent: number;
@@ -303,7 +315,9 @@ export default function AdminDashboard() {
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xs font-black text-white">₩ {Number(o.totalAmount || 0).toLocaleString()}</div>
-                                                <div className="text-[9px] text-emerald-400 font-bold">결제완료</div>
+                                                <div className={`text-[9px] font-bold ${o.status === 'completed' ? 'text-emerald-400' : o.status === 'cancelled' ? 'text-red-400' : o.status === 'pending' ? 'text-amber-400' : 'text-white/60'}`}>
+                                                    {getOrderStatusLabel(o.status)}
+                                                </div>
                                             </div>
                                         </Link>
                                     ))

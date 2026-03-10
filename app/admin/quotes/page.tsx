@@ -24,6 +24,8 @@ export default function QuoteList() {
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
     const [sendQuotationOrderId, setSendQuotationOrderId] = useState<number | null>(null);
+    const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(new Set());
+    const [showMergedSendDialog, setShowMergedSendDialog] = useState(false);
 
     const fetchOrders = async () => {
         try {
@@ -129,6 +131,71 @@ export default function QuoteList() {
 
     const handleEdit = (id: number) => router.push(`/admin/quotes/${id}`);
 
+    const selectedOrders = useMemo(() => {
+        const ids = Array.from(selectedOrderIds);
+        return ids.map((id) => orders.find((o) => o.id === id)).filter(Boolean);
+    }, [orders, selectedOrderIds]);
+
+    const handleMergedPrint = async () => {
+        const ids = Array.from(selectedOrderIds);
+        if (ids.length === 0) {
+            toast({ title: '선택된 견적이 없습니다.', variant: 'destructive' });
+            return;
+        }
+        if (token) localStorage.setItem('admin_print_token', token);
+
+        try {
+            const responses = await Promise.all(
+                ids.map(async (oid) => {
+                    const res = await fetch(`/api/admin/orders/${oid}`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    });
+                    const j = await res.json();
+                    if (!j?.success) throw new Error(j?.error || `주문 ${oid} 조회 실패`);
+                    return j.data;
+                })
+            );
+
+            const baseOrder = responses[0]?.order || {};
+            const mergedItems: any[] = [];
+            for (const d of responses) {
+                const order = d?.order || {};
+                const orderNo = order?.order_number || '';
+                const items = (d?.items || []) as any[];
+                for (const it of items) {
+                    mergedItems.push({
+                        id: `${order?.id ?? ''}-${it?.id ?? ''}`,
+                        file_name: orderNo ? `[${orderNo}] ${it.file_name || '-'}` : (it.file_name || '-'),
+                        print_method: it.print_method || '',
+                        material_name: it.material_name || '',
+                        quantity: Number(it.quantity) || 1,
+                        unit_price: correctDisplayAmount(Math.round(Number(it.unit_price || 0))) ?? Math.round(Number(it.unit_price || 0)),
+                    });
+                }
+            }
+            const totalSupply = mergedItems.reduce((acc, it) => acc + Math.round(Number(it.unit_price || 0)) * Math.round(Number(it.quantity || 0)), 0);
+            const totalVat = Math.floor(totalSupply * 0.1);
+            const totalAmount = totalSupply + totalVat;
+
+            const tempId = `merged-${Date.now()}`;
+            const printData = {
+                order: {
+                    ...baseOrder,
+                    order_number: `MERGED-${ids.length}건`,
+                    total_amount: totalAmount,
+                },
+                items: mergedItems.map((it) => ({
+                    ...it,
+                    subtotal: Math.round(Number(it.unit_price || 0)) * Math.round(Number(it.quantity || 0)),
+                })),
+            };
+            localStorage.setItem(`quote_temp_${tempId}`, JSON.stringify(printData));
+            window.open(`/print/estimate/${tempId}?temp=true`, '_blank', 'width=900,height=1000');
+        } catch (e) {
+            toast({ title: '선택 견적 인쇄 실패', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+        }
+    };
+
     const handleQuotationSent = (orderId: number) => (result: { success: boolean; message?: string; emailSent?: boolean; sentAt?: string }) => {
         if (result.sentAt) {
             setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, quotation_sent_at: result.sentAt } : o));
@@ -162,6 +229,28 @@ export default function QuoteList() {
                         className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30"
                     />
                 </div>
+                <div className="ml-auto flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-white/10 text-white hover:bg-white/10 text-xs"
+                        onClick={handleMergedPrint}
+                        disabled={selectedOrderIds.size === 0}
+                    >
+                        <Printer className="w-3.5 h-3.5 mr-1.5" />
+                        선택 견적 인쇄
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+                        onClick={() => setShowMergedSendDialog(true)}
+                        disabled={selectedOrderIds.size === 0}
+                    >
+                        <Mail className="w-3.5 h-3.5 mr-1.5" />
+                        선택 견적 이메일 발송
+                    </Button>
+                </div>
             </div>
 
             <Card className="bg-white/[0.03] border-white/10 overflow-hidden">
@@ -170,6 +259,23 @@ export default function QuoteList() {
                         <table className="w-full text-sm text-left">
                             <thead>
                                 <tr className="border-b border-white/10 bg-white/[0.02]">
+                                    <th className="p-4 font-medium text-white/60 w-10 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={filtered.length > 0 && filtered.every((o) => selectedOrderIds.has(o.id))}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setSelectedOrderIds((prev) => {
+                                                    const next = new Set(prev);
+                                                    if (checked) filtered.forEach((o) => next.add(o.id));
+                                                    else filtered.forEach((o) => next.delete(o.id));
+                                                    return next;
+                                                });
+                                            }}
+                                            className="rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
+                                            aria-label="전체 선택"
+                                        />
+                                    </th>
                                     <th className="p-4 font-medium text-white/60 w-8"></th>
                                     <th className="p-4 font-medium text-white/60">주문번호</th>
                                     <th className="p-4 font-medium text-white/60">고객명</th>
@@ -186,6 +292,7 @@ export default function QuoteList() {
                                     const expertData = parseExpertQuote(order);
                                     const expertAmount = expertData?.total_amount;
                                     const isExpanded = expandedRows.has(order.id);
+                                    const isSelected = selectedOrderIds.has(order.id);
 
                                     return (
                                         <>
@@ -194,6 +301,22 @@ export default function QuoteList() {
                                                 key={order.id}
                                                 className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${isExpanded ? 'bg-white/[0.03]' : ''}`}
                                             >
+                                                <td className="p-4 text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => {
+                                                            setSelectedOrderIds((prev) => {
+                                                                const next = new Set(prev);
+                                                                if (next.has(order.id)) next.delete(order.id);
+                                                                else next.add(order.id);
+                                                                return next;
+                                                            });
+                                                        }}
+                                                        className="rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
+                                                        aria-label={`${order.order_number} 선택`}
+                                                    />
+                                                </td>
                                                 <td className="p-4 text-center">
                                                     {expertData && (
                                                         <button
@@ -303,7 +426,7 @@ export default function QuoteList() {
                                             {/* 확장 행: 자동견적 vs 수정견적 비교 */}
                                             {expertData && isExpanded && (
                                                 <tr key={`${order.id}-expand`} className="border-b border-white/5 bg-white/[0.015]">
-                                                    <td colSpan={9} className="px-6 py-4">
+                                                    <td colSpan={10} className="px-6 py-4">
                                                         <div className="grid grid-cols-2 gap-4">
                                                             {/* 자동견적 원본 */}
                                                             <div className="space-y-2">
@@ -374,7 +497,7 @@ export default function QuoteList() {
                                 })}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan={9} className="p-12 text-center text-white/40">
+                                        <td colSpan={10} className="p-12 text-center text-white/40">
                                             데이터가 없습니다.
                                         </td>
                                     </tr>
@@ -391,6 +514,20 @@ export default function QuoteList() {
                 onOpenChange={(open) => !open && setSendQuotationOrderId(null)}
                 token={token}
                 onSent={sendQuotationOrderId != null ? handleQuotationSent(sendQuotationOrderId) : undefined}
+            />
+
+            <SendQuotationDialog
+                orderId={null}
+                open={showMergedSendDialog}
+                onOpenChange={setShowMergedSendDialog}
+                token={token}
+                mergeOrderIds={Array.from(selectedOrderIds)}
+                onSent={(r) => {
+                    if (r?.sentAt) {
+                        setOrders((prev) => prev.map((o) => selectedOrderIds.has(o.id) ? { ...o, quotation_sent_at: r.sentAt } : o));
+                    }
+                    toast({ title: r?.message || '선택 견적 이메일 발송 처리되었습니다.' });
+                }}
             />
         </div>
     );

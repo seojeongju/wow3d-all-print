@@ -10,9 +10,23 @@ import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import LandingHeroScene from './LandingHeroScene';
 
-// 금액은 원화(KRW)로만 계산·표시
-type PrintSpecs = { fdm?: { max?: { x?: number; y?: number; z?: number }; layerCosts?: Record<string, number>; hourlyRate?: number; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number }; sla?: unknown; dlp?: unknown };
-type ApiMaterial = { type: string; price_per_gram?: number; density?: number };
+// 금액은 원화(KRW)로만 계산·표시. 자동견적(QuotePanel)과 동일한 공식·roundTo100·minPriceKr 적용
+import { roundTo100 } from '@/lib/amount-display';
+
+type PrintSpecs = {
+    fdm?: {
+        max?: { x?: number; y?: number; z?: number };
+        layerCosts?: Record<string, number>;
+        hourlyRate?: number;
+        fdm_layer_hours_factor?: number;
+        fdm_labor_cost_krw?: number;
+        fdm_support_per_cm2_krw?: number;
+        minPriceKr?: number;
+    };
+    sla?: unknown;
+    dlp?: unknown;
+};
+type ApiMaterial = { type: string; name?: string; price_per_gram?: number; density?: number };
 
 export default function Hero() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -34,6 +48,7 @@ export default function Hero() {
         fetch('/api/materials').then((r) => r.json()).then((d) => Array.isArray(d?.data) && setMaterials(d.data)).catch(() => { });
     }, []);
 
+    // 자동견적(QuotePanel)과 동일한 FDM 공식 + 100원 반올림 + 최소견적 적용
     const heroEstimate = useMemo(() => {
         if (!analysis || !printSpecs?.fdm) return null;
         const spec = printSpecs.fdm;
@@ -46,19 +61,33 @@ export default function Hero() {
         const mat = materials.find((m) => m.type === 'FDM');
         const density = mat?.density ?? 1.24;
         const pricePerGramKr = mat && typeof mat.price_per_gram === 'number' ? mat.price_per_gram : 0;
-        const adjustedDensity = Math.max(density * 0.2, density * 0.2);
+        const infill = 20;
+        const effectiveDensity = density * (infill / 100);
+        const adjustedDensity = Math.max(density * 0.2, effectiveDensity);
         const volumeCm3 = analysis.volume || 0;
+        const surfaceAreaCm2 = analysis.surfaceArea || 0;
         const heightMm = bz;
         const weightGrams = volumeCm3 * adjustedDensity;
         const materialCost = pricePerGramKr * weightGrams;
         const layerHeight = 0.2;
         const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight));
-        const layerHoursFactor = spec.fdm_layer_hours_factor ?? 0.02;
-        const estTimeHours = Math.max(1, numLayers * layerHoursFactor);
+
+        const materialTimeFactor = 0.015;
+        const volumeTime = weightGrams * materialTimeFactor;
+        const baseLayerFactor = spec.fdm_layer_hours_factor ?? 0.02;
+        const layerTimeFactor = baseLayerFactor * 0.08;
+        const movementTime = numLayers * layerTimeFactor;
+        const surfaceTime = surfaceAreaCm2 * 0.0005;
+        const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
+
         const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
         const machineCost = estTimeHours * rateKRW;
         const laborCost = spec.fdm_labor_cost_krw ?? 6500;
-        const total = materialCost + machineCost + laborCost;
+        const supportCost = 0; // 히어로에서는 지지대 미적용(QuotePanel 기본값과 동일)
+        const totalRaw = materialCost + supportCost + machineCost + laborCost;
+        const rounded = roundTo100(totalRaw, 'round');
+        const minPriceKr = spec.minPriceKr;
+        const total = minPriceKr != null && minPriceKr > 0 ? Math.max(rounded, minPriceKr) : rounded;
         return { total, printability: overflow ? 85 : 100, overflow };
     }, [analysis, printSpecs, materials]);
 

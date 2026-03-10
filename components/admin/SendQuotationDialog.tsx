@@ -29,6 +29,8 @@ export type SendQuotationDialogProps = {
     onSent?: (result: QuotationSendResult) => void;
     /** 포함할 품목(order_item id). 없으면 전체 */
     selectedItemIds?: number[];
+    /** 선택된 여러 주문을 합쳐 발송(견적관리 리스트용). 없으면 단일 주문 */
+    mergeOrderIds?: number[];
 };
 
 export function SendQuotationDialog({
@@ -38,6 +40,7 @@ export function SendQuotationDialog({
     token,
     onSent,
     selectedItemIds,
+    mergeOrderIds,
 }: SendQuotationDialogProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -61,7 +64,7 @@ export function SendQuotationDialog({
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
-        if (!open || orderId == null) {
+        if (!open || (orderId == null && !(mergeOrderIds?.length))) {
             setDraft(null);
             setLoadError(null);
             setExtraFiles([]);
@@ -69,8 +72,14 @@ export function SendQuotationDialog({
         }
         setLoading(true);
         setLoadError(null);
-        const itemIdsParam = selectedItemIds?.length ? `?itemIds=${selectedItemIds.join(',')}` : '';
-        fetch(`/api/admin/orders/${orderId}/quotation-email-draft${itemIdsParam}`, {
+        const isMerged = Array.isArray(mergeOrderIds) && mergeOrderIds.length > 0;
+        const itemIdsParam = selectedItemIds?.length ? `itemIds=${selectedItemIds.join(',')}` : '';
+        const orderIdsParam = isMerged ? `orderIds=${mergeOrderIds.join(',')}` : '';
+        const qs = [orderIdsParam, itemIdsParam].filter(Boolean).join('&');
+        const url = isMerged
+            ? `/api/admin/orders/merged/quotation-email-draft${qs ? `?${qs}` : ''}`
+            : `/api/admin/orders/${orderId}/quotation-email-draft${qs ? `?${qs}` : ''}`;
+        fetch(url, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
             .then((res) => {
@@ -88,7 +97,7 @@ export function SendQuotationDialog({
                 setLoadError(e instanceof Error ? e.message : '초안 로드 실패');
             })
             .finally(() => setLoading(false));
-    }, [open, orderId, token, selectedItemIds?.join(',')]);
+    }, [open, orderId, token, selectedItemIds?.join(','), mergeOrderIds?.join(',')]);
 
     const readFileAsBase64 = (file: File): Promise<string> =>
         new Promise((resolve, reject) => {
@@ -103,7 +112,9 @@ export function SendQuotationDialog({
         });
 
     const handleSend = async () => {
-        if (orderId == null) return;
+        const isMerged = Array.isArray(mergeOrderIds) && mergeOrderIds.length > 0;
+        if (!isMerged && orderId == null) return;
+        if (isMerged && (!mergeOrderIds || mergeOrderIds.length === 0)) return;
         const trimmedTo = to.trim();
         if (!trimmedTo) return;
         setSending(true);
@@ -117,7 +128,8 @@ export function SendQuotationDialog({
                     }))
                 );
             }
-            const res = await fetch(`/api/admin/orders/${orderId}/send-quotation`, {
+            const url = isMerged ? `/api/admin/orders/merged/send-quotation` : `/api/admin/orders/${orderId}/send-quotation`;
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -129,6 +141,7 @@ export function SendQuotationDialog({
                     ...(bodyType === 'html' ? { html: html.trim() || undefined } : { text: text.trim() || undefined }),
                     ...(extraAttachments.length > 0 ? { extraAttachments } : {}),
                     ...(selectedItemIds?.length ? { itemIds: selectedItemIds } : {}),
+                    ...(isMerged ? { orderIds: mergeOrderIds } : {}),
                 }),
             });
             const j = await res.json();

@@ -711,25 +711,6 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         </div>
                         <span className={`font-black text-slate-50 ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
                         <span className="text-xs text-slate-400 font-medium ml-1">KRW</span>
-                        {!embedded && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                                {[
-                                    { value: 'none' as const, label: '원단위' },
-                                    { value: 'round' as const, label: '100원 반올림' },
-                                    { value: 'floor' as const, label: '100원 반내림' },
-                                    { value: 'ceil' as const, label: '100원 올림' },
-                                ].map((opt) => (
-                                    <button
-                                        key={opt.value}
-                                        type="button"
-                                        onClick={() => setPriceRoundMode(opt.value)}
-                                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${priceRoundMode === opt.value ? 'bg-primary/30 text-primary border border-primary/50' : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-300'}`}
-                                    >
-                                        {opt.label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
                     </div>
                     <div className="text-right">
                         <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">
