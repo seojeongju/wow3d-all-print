@@ -183,6 +183,8 @@ export default function QuoteList() {
                     ...baseOrder,
                     order_number: `MERGED-${ids.length}건`,
                     total_amount: totalAmount,
+                    has_expert_quote: false,
+                    expert_quote_data: null,
                 },
                 items: mergedItems.map((it) => ({
                     ...it,
