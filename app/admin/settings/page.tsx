@@ -461,7 +461,14 @@ export default function AdminSettings() {
     setSettings((prev) => {
       const i = prev.findIndex((s) => s.key === key)
       if (i >= 0) return prev.map((s) => (s.key === key ? { ...s, value } : s))
-      return [...prev, { key, value, description: key === 'operating_rate' ? '가동률 (%)' : '가동 상세' }]
+      const newItem: PrintSetting = {
+        key,
+        value,
+        category: '',
+        description: key === 'operating_rate' ? '가동률 (%)' : '가동 상세',
+        updatedAt: new Date().toISOString(),
+      }
+      return [...prev, newItem]
     })
   }
 
