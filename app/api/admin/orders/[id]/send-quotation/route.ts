@@ -142,7 +142,12 @@ export async function POST(
                     let hint = '';
                     try {
                         const errJson = JSON.parse(errText) as { message?: string };
-                        if (errJson?.message) hint = ` (${String(errJson.message).slice(0, 80)})`;
+                        const msg = (errJson?.message ?? '').toLowerCase();
+                        if (msg.includes('domain') && (msg.includes('not verified') || msg.includes('unverified'))) {
+                            hint = ' 발신 도메인이 Resend에서 인증되지 않았습니다. Resend 대시보드(https://resend.com/domains)에서 도메인을 추가·인증하거나, 환경 변수 RESEND_FROM을 인증된 주소(예: onboarding@resend.dev)로 설정해 주세요.';
+                        } else if (errJson?.message) {
+                            hint = ` (${String(errJson.message).slice(0, 100)})`;
+                        }
                     } catch {
                         if (emailRes.status === 403 || emailRes.status === 401) hint = ' (API 키 또는 발신 도메인을 확인해 주세요.)';
                     }

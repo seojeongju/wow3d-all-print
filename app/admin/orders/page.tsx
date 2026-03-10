@@ -289,9 +289,16 @@ function OrderListInner() {
             const j = await res.json();
             if (j.success) {
                 const sentAt = j.sentAt;
-                setDetailData((d) => (d ? { ...d, order: { ...d.order, quotation_sent_at: sentAt } } : null));
-                setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, quotation_sent_at: sentAt } : o)));
-                toast({ title: j.message || '견적서 발송 처리되었습니다.' });
+                const isEmailFailed = j.emailSent === false;
+                if (sentAt) {
+                    setDetailData((d) => (d ? { ...d, order: { ...d.order, quotation_sent_at: sentAt } } : null));
+                    setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, quotation_sent_at: sentAt } : o)));
+                }
+                toast({
+                    title: j.message || '견적서 발송 처리되었습니다.',
+                    variant: isEmailFailed ? 'destructive' : 'default',
+                    description: isEmailFailed ? '발신 도메인 인증 또는 RESEND_FROM 설정을 확인해 주세요.' : undefined,
+                });
             } else {
                 toast({ title: j.error || '발송 처리 실패', variant: 'destructive' });
             }

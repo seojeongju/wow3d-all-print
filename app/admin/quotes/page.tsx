@@ -141,9 +141,14 @@ export default function QuoteList() {
             });
             const data = await res.json();
             if (data.success) {
-                toast({ title: data.message || '견적서가 발송되었습니다.' });
+                const isEmailFailed = data.emailSent === false;
+                toast({
+                    title: data.message || '견적서가 발송되었습니다.',
+                    variant: isEmailFailed ? 'destructive' : 'default',
+                    description: isEmailFailed ? '발신 도메인 인증 또는 RESEND_FROM 설정을 확인해 주세요.' : undefined,
+                });
                 const sentAt = data.sentAt;
-                setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, quotation_sent_at: sentAt } : o));
+                if (sentAt) setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, quotation_sent_at: sentAt } : o));
             } else {
                 toast({ title: data.error || '발송 실패', variant: 'destructive' });
             }
