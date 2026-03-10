@@ -26,6 +26,7 @@ export default function QuoteList() {
         try {
             const res = await fetch('/api/admin/orders', {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
+                cache: 'no-store',
             });
             const data = await res.json();
             if (data.success) {
@@ -198,9 +199,23 @@ export default function QuoteList() {
                                                 </td>
                                                 <td className="p-4 text-white/50">{order.item_count || 1}개</td>
                                                 <td className="p-4 text-white/60">
-                                                    <span className={expertData ? 'line-through text-white/30' : 'font-bold text-white'}>
-                                                        ₩ {Math.round(Number(order.total_amount || 0)).toLocaleString()}
-                                                    </span>
+                                                    {(() => {
+                                                        const total = Math.round(Number(order.total_amount || 0));
+                                                        const itemsSum = Math.round(Number(order.items_total ?? order.total_amount ?? 0));
+                                                        const mismatch = order.items_total != null && Math.abs(total - itemsSum) > 1;
+                                                        return (
+                                                            <div className="space-y-0.5">
+                                                                <span className={expertData ? 'line-through text-white/30' : 'font-bold text-white'}>
+                                                                    ₩ {total.toLocaleString()}
+                                                                </span>
+                                                                {mismatch && (
+                                                                    <div className="text-[10px] text-amber-400/90" title="주문 총액과 항목 합계가 다릅니다. 작성/수정에서 확인하세요.">
+                                                                        항목합계 ₩ {itemsSum.toLocaleString()} (불일치)
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="p-4">
                                                     {expertData ? (

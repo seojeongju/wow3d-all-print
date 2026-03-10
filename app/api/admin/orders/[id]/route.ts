@@ -89,10 +89,16 @@ export async function PATCH(
     const { storeId } = auth;
 
     try {
-        // 먼저 해당 주문이 이 스토어 소속인지 확인
-        const check = await env.DB.prepare('SELECT id FROM orders WHERE id = ? AND store_id = ?')
-            .bind(numId, storeId).first();
+        // 해당 주문 존재 여부 확인 (store_id 일치 또는 NULL인 구 주문 포함)
+        const check = await env.DB.prepare('SELECT id, store_id FROM orders WHERE id = ?')
+            .bind(numId).first() as { id: number; store_id: number | null } | null;
         if (!check) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+        const orderStoreId = check.store_id;
+        const allowUpdate = orderStoreId === null || orderStoreId === storeId;
+
+        if (!allowUpdate) {
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
         }
 
@@ -100,24 +106,27 @@ export async function PATCH(
         const status = body?.status && ALLOWED.includes(body.status) ? body.status : null;
         const adminNote = body?.admin_note !== undefined ? String(body.admin_note) : null;
 
+        // store_id가 NULL인 구 주문은 WHERE id = ? 만 사용
+        const whereClause = orderStoreId != null ? 'WHERE id = ? AND store_id = ?' : 'WHERE id = ?';
+        const whereBind = orderStoreId != null ? [numId, storeId] : [numId];
+
         if (status !== null && adminNote !== null) {
             await env.DB.prepare(
-                'UPDATE orders SET status = ?, admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
-            ).bind(status, adminNote, numId, storeId).run();
+                `UPDATE orders SET status = ?, admin_note = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+            ).bind(status, adminNote, ...whereBind).run();
         } else if (status !== null) {
             await env.DB.prepare(
-                'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
-            ).bind(status, numId, storeId).run();
+                `UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+            ).bind(status, ...whereBind).run();
         } else if (adminNote !== null) {
             await env.DB.prepare(
-                'UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
-            ).bind(adminNote, numId, storeId).run();
+                `UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+            ).bind(adminNote, ...whereBind).run();
         } else if (body?.expert_quote_data) {
-            // 전문가 견적 저장
             const expertData = JSON.stringify(body.expert_quote_data);
             await env.DB.prepare(
-                'UPDATE orders SET expert_quote_data = ?, has_expert_quote = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND store_id = ?'
-            ).bind(expertData, numId, storeId).run();
+                `UPDATE orders SET expert_quote_data = ?, has_expert_quote = 1, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+            ).bind(expertData, ...whereBind).run();
         } else {
             return NextResponse.json({ error: 'status, admin_note or expert_quote_data required' }, { status: 400 });
         }

@@ -19,6 +19,7 @@ const FALLBACK_SQL = `
         u.name as user_name,
         u.email as user_email,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+        (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (
             SELECT JSON_GROUP_ARRAY(
                 JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url)
@@ -40,6 +41,7 @@ const FALLBACK_MINIMAL_SQL = `
         o.total_amount, o.status, o.created_at,
         u.name as user_name, u.email as user_email,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+        (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
          FROM order_items oi JOIN quotes q ON oi.quote_id = q.id WHERE oi.order_id = o.id) as items_summary
     FROM orders o
@@ -74,6 +76,7 @@ export async function GET(req: NextRequest) {
                 u.name as user_name,
                 u.email as user_email,
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+                (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
                 (
                     SELECT JSON_GROUP_ARRAY(
                         JSON_OBJECT(
@@ -89,12 +92,18 @@ export async function GET(req: NextRequest) {
                 ) as items_summary
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            WHERE o.store_id = ?
+            WHERE (o.store_id = ? OR o.store_id IS NULL)
             ORDER BY o.created_at DESC
             LIMIT 100
         `).bind(storeId).all();
 
-        return NextResponse.json({ success: true, data: results || [] });
+        const rows = results || [];
+        const data = rows.map((row: Record<string, unknown>) => ({
+            ...row,
+            has_expert_quote: row.has_expert_quote ?? null,
+            expert_quote_data: row.expert_quote_data ?? null,
+        }));
+        return NextResponse.json({ success: true, data });
     } catch (e) {
         console.warn('GET /api/admin/orders full query failed, trying fallback', e);
         try {
