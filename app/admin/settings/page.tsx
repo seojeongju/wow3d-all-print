@@ -507,7 +507,7 @@ export default function AdminSettings() {
                     </div>
                     <div>
                       <Label className="text-[10px] text-white/50 uppercase">기본금액 · 최소 견적 (원)</Label>
-                      <Input type="number" min="0" placeholder="미설정 시 산출금액 그대로" className="mt-1 bg-white/5 border-white/10 text-white" value={f.min_price_krw ?? ''} onChange={(e) => setEquip(t, 'min_price_krw', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)} />
+                      <Input type="number" min="0" placeholder="미설정 시 산출금액 그대로" className="mt-1 bg-white/5 border-white/10 text-white" value={f.min_price_krw ?? ''} onChange={(e) => setEquip(t, 'min_price_krw', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)} />
                       <p className="text-[10px] text-white/40 mt-0.5">자동견적이 이 금액 미만이면 기본금액으로 책정됩니다.</p>
                     </div>
                   </div>
