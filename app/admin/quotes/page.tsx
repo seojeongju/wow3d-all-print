@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 /** DB 주문 금액 단위 → 원화 (주문관리·견적서 수정과 동일) */
 // 금액은 DB/API에서 원화(KRW)로 저장·전달됨
+import { correctDisplayAmount } from '@/lib/amount-display';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -236,17 +237,22 @@ export default function QuoteList() {
                                                 <td className="p-4 text-white/50">{order.item_count || 1}개</td>
                                                 <td className="p-4 text-white/60">
                                                     {(() => {
-                                                        const total = Math.round(Number(order.total_amount || 0));
-                                                        const itemsSum = Math.round(Number(order.items_total ?? order.total_amount ?? 0));
-                                                        const mismatch = order.items_total != null && Math.abs(total - itemsSum) > 1;
+                                                        const totalRaw = Math.round(Number(order.total_amount || 0));
+                                                        const itemsSumRaw = Math.round(Number(order.items_total ?? order.total_amount ?? 0));
+                                                        const total = correctDisplayAmount(totalRaw) ?? totalRaw;
+                                                        const itemsSum = correctDisplayAmount(itemsSumRaw) ?? itemsSumRaw;
+                                                        const mismatch = order.items_total != null && Math.abs(totalRaw - itemsSumRaw) > 1;
+                                                        const isLikely1300x = mismatch && itemsSumRaw > 0 && totalRaw > 0 && Math.abs(totalRaw / itemsSumRaw - 1300) < 50;
                                                         return (
                                                             <div className="space-y-0.5">
                                                                 <span className={expertData ? 'line-through text-white/30' : 'font-bold text-white'}>
                                                                     ₩ {total.toLocaleString()}
+                                                                    {total !== totalRaw && <span className="ml-1 text-[10px] text-white/50">(보정)</span>}
                                                                 </span>
                                                                 {mismatch && (
-                                                                    <div className="text-[10px] text-amber-400/90" title="주문 총액과 항목 합계가 다릅니다. 작성/수정에서 확인하세요.">
+                                                                    <div className="text-[10px] text-amber-400/90" title={isLikely1300x ? '과거 원화 변환 시 1300이 중복 적용된 데이터일 수 있습니다. 항목합계가 올바른 값입니다.' : '주문 총액과 항목 합계가 다릅니다. 작성/수정에서 확인하세요.'}>
                                                                         항목합계 ₩ {itemsSum.toLocaleString()} (불일치)
+                                                                        {isLikely1300x && <span className="block text-white/50 mt-0.5">과거 금액 오류 가능</span>}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -333,7 +339,7 @@ export default function QuoteList() {
                                                                 <div className="bg-white/[0.03] rounded-lg p-3 text-xs space-y-1.5">
                                                                     <div className="flex justify-between text-white/60">
                                                                         <span>총 금액</span>
-                                                                        <span className="line-through text-white/30">₩ {Math.round(Number(order.total_amount || 0)).toLocaleString()}</span>
+                                                                        <span className="line-through text-white/30">₩ {(correctDisplayAmount(Math.round(Number(order.total_amount || 0))) ?? Math.round(Number(order.total_amount || 0))).toLocaleString()}</span>
                                                                     </div>
                                                                     <div className="flex justify-between text-white/40">
                                                                         <span>접수일</span>

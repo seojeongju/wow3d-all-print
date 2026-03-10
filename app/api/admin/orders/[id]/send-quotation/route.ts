@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { buildQuotationPdf, uint8ArrayToBase64 } from '@/lib/quotation-pdf';
 
 /**
  * POST /api/admin/orders/[id]/send-quotation
@@ -88,8 +89,11 @@ export async function POST(
 
         const envVars = env as unknown as Record<string, string | undefined>;
         const resendKey = process.env.RESEND_API_KEY || envVars.RESEND_API_KEY;
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || envVars.NEXT_PUBLIC_APP_URL || (typeof req.url === 'string' ? new URL(req.url).origin : '');
-        const estimateUrl = `${baseUrl}/print/estimate/${numId}`;
+        const requestOrigin = typeof req.url === 'string' ? new URL(req.url).origin : '';
+        const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || envVars.NEXT_PUBLIC_APP_URL || '';
+        const isLocalhost = (u: string) => !u || /^https?:\/\/localhost(:\d+)?(\/|$)/i.test(u);
+        const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
+        const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}`;
 
         let totalAmount: number | null = null;
         if (fullOrder.expert_quote_data) {
@@ -108,6 +112,34 @@ export async function POST(
         if (resendKey && toEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)) {
             try {
                 const fromAddr = process.env.RESEND_FROM || envVars.RESEND_FROM || 'WOW3D 견적서 <onboarding@resend.dev>';
+                let attachments: { filename: string; content: string }[] = [];
+                try {
+                    const orderRow = await env.DB.prepare(
+                        'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
+                    ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
+                    const itemRes = await env.DB.prepare(`
+                        SELECT oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
+                        FROM order_items oi
+                        LEFT JOIN quotes q ON oi.quote_id = q.id
+                        WHERE oi.order_id = ?
+                    `).bind(numId).all() as { results?: { quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null }[] };
+                    const items = itemRes?.results ?? [];
+                    if (orderRow && items.length > 0) {
+                        const orderForPdf = {
+                            order_number: fullOrder.order_number,
+                            created_at: orderRow.created_at,
+                            recipient_name: orderRow.recipient_name,
+                            recipient_phone: orderRow.recipient_phone,
+                            shipping_address: orderRow.shipping_address,
+                            user_email: fullOrder.user_email,
+                            guest_email: fullOrder.guest_email,
+                        };
+                        const pdfBytes = await buildQuotationPdf(orderForPdf, items, 'WOW3D');
+                        attachments = [{ filename: `quotation-${fullOrder.order_number}.pdf`, content: uint8ArrayToBase64(pdfBytes) }];
+                    }
+                } catch (pdfErr) {
+                    console.warn('send-quotation: PDF attachment skipped', pdfErr);
+                }
                 const emailRes = await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: {
@@ -118,6 +150,7 @@ export async function POST(
                         from: fromAddr,
                         to: [toEmail],
                         subject: `[${fullOrder.order_number}] WOW3D 견적서가 준비되었습니다`,
+                        ...(attachments.length > 0 ? { attachments } : {}),
                         html: `
 <!DOCTYPE html>
 <html>
@@ -130,6 +163,7 @@ export async function POST(
   ${amountText ? `<p style="margin:0;"><strong>견적 합계</strong> ₩${Number(totalAmount!).toLocaleString()}</p>` : ''}
 </div>
 <p><strong>견적서 보기:</strong> <a href="${estimateUrl}">${estimateUrl}</a></p>
+${attachments.length > 0 ? '<p>견적서 PDF가 본 메일에도 첨부되어 있습니다.</p>' : ''}
 <p>위 링크에서 상세 견적 내용을 확인하실 수 있습니다. 확인 후 결제 또는 문의 부탁드립니다.</p>
 <p>감사합니다.<br/>WOW3D</p>
 </body>
