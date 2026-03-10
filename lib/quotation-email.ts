@@ -32,3 +32,31 @@ ${withPdfAttachment ? '<p>견적서 PDF가 본 메일에도 첨부되어 있습�
 </body>
 </html>`.trim();
 }
+
+/** 견적서 이메일 기본 본문 (일반 텍스트) */
+export function buildDefaultText(params: {
+    orderNumber: string;
+    estimateUrl: string;
+    amountText?: string;
+    displayAmount?: number | null;
+    withPdfAttachment: boolean;
+}): string {
+    const { orderNumber, estimateUrl, displayAmount, withPdfAttachment } = params;
+    const lines: string[] = [
+        '안녕하세요, WOW3D입니다.',
+        '',
+        '요청하신 견적서가 준비되었습니다.',
+        '',
+        `주문번호: ${orderNumber}`,
+        ...(displayAmount != null ? [`견적 합계: ₩${Number(displayAmount).toLocaleString()}`] : []),
+        '',
+        `견적서 보기: ${estimateUrl}`,
+        ...(withPdfAttachment ? ['', '견적서 PDF가 본 메일에도 첨부되어 있습니다.'] : []),
+        '',
+        '위 링크에서 상세 견적 내용을 확인하실 수 있습니다. 확인 후 결제 또는 문의 부탁드립니다.',
+        '',
+        '감사합니다.',
+        'WOW3D',
+    ];
+    return lines.join('\n');
+}

@@ -45,3 +45,19 @@ export function normalizeAmountBeforeSave(value: number | null | undefined): num
   const corrected = correctDisplayAmount(n);
   return corrected ?? n;
 }
+
+/** 100원 단위 반올림/반내림/반올림(올림). 자동견적 금액 산출 시 사용 */
+export type PriceRoundMode = 'none' | 'round' | 'floor' | 'ceil';
+
+export function roundTo100(value: number | null | undefined, mode: PriceRoundMode): number {
+  if (value == null || !Number.isFinite(Number(value))) return 0;
+  const n = Number(value);
+  if (mode === 'none') return Math.round(n);
+  const unit = 100;
+  switch (mode) {
+    case 'round': return Math.round(n / unit) * unit;
+    case 'floor': return Math.floor(n / unit) * unit;
+    case 'ceil': return Math.ceil(n / unit) * unit;
+    default: return Math.round(n);
+  }
+}

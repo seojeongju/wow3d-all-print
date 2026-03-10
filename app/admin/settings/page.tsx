@@ -26,6 +26,7 @@ type EquipmentRow = {
   layer_heights_json: string | null
   layer_costs_json?: string | null
   is_active: number
+  min_price_krw?: number | null
   fdm_layer_hours_factor?: number | null
   fdm_labor_cost_krw?: number | null
   fdm_support_per_cm2_krw?: number | null
@@ -47,6 +48,7 @@ type EquipForm = {
   hourly_rate: number
   layer_heights_json: string
   layer_costs: Record<string, number>
+  min_price_krw?: number | null
   fdm_layer_hours_factor?: number
   fdm_labor_cost_krw?: number
   fdm_support_per_cm2_krw?: number
@@ -147,6 +149,7 @@ export default function AdminSettings() {
         hourly_rate: baseRate,
         layer_heights_json: arr.join(', '),
         layer_costs,
+        min_price_krw: e?.min_price_krw ?? undefined,
         fdm_layer_hours_factor: e?.fdm_layer_hours_factor ?? 0.02,
         fdm_labor_cost_krw: e?.fdm_labor_cost_krw ?? 6500,
         fdm_support_per_cm2_krw: e?.fdm_support_per_cm2_krw ?? 26,
@@ -203,7 +206,7 @@ export default function AdminSettings() {
   const getDefaultForm = (t: string): EquipForm => {
     const d = EQUIPMENT_DEFAULTS[t]
     const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (t === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
-    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400 }
+    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, min_price_krw: undefined, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400 }
   }
 
   const setEquipLayerCost = (t: string, thickness: string, value: number) => {
@@ -247,6 +250,7 @@ export default function AdminSettings() {
           layer_heights_json: JSON.stringify(arr),
           layer_costs_json: layer_costs,
           is_active: 1,
+          min_price_krw: form.min_price_krw != null && form.min_price_krw > 0 ? form.min_price_krw : null,
           fdm_layer_hours_factor: form.fdm_layer_hours_factor ?? 0.02,
           fdm_labor_cost_krw: form.fdm_labor_cost_krw ?? 6500,
           fdm_support_per_cm2_krw: form.fdm_support_per_cm2_krw ?? 26,
@@ -501,6 +505,13 @@ export default function AdminSettings() {
                       <Label className="text-[10px] text-white/50 uppercase">기본 시간당 비용 (원)</Label>
                       <Input type="number" className="mt-1 bg-white/5 border-white/10 text-white" value={f.hourly_rate} onChange={(e) => setEquip(t, 'hourly_rate', parseFloat(e.target.value) || 0)} />
                     </div>
+                    <div>
+                      <Label className="text-[10px] text-white/50 uppercase">기본금액 · 최소 견적 (원)</Label>
+                      <Input type="number" min="0" placeholder="미설정 시 산출금액 그대로" className="mt-1 bg-white/5 border-white/10 text-white" value={f.min_price_krw ?? ''} onChange={(e) => setEquip(t, 'min_price_krw', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)} />
+                      <p className="text-[10px] text-white/40 mt-0.5">자동견적이 이 금액 미만이면 기본금액으로 책정됩니다.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-[10px] text-white/50 uppercase">레이어 두께 (예: 0.1, 0.2, 0.3)</Label>
                       <Input className="mt-1 bg-white/5 border-white/10 text-white" placeholder="0.1, 0.2, 0.3" value={f.layer_heights_json} onChange={(e) => setEquip(t, 'layer_heights_json', e.target.value)} />

@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildQuotationPdf } from '@/lib/quotation-pdf';
-import { buildDefaultSubject, buildDefaultHtml } from '@/lib/quotation-email';
+import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
 
 /**
  * GET /api/admin/orders/[id]/quotation-email-draft
@@ -126,11 +126,19 @@ export async function GET(
             displayAmount,
             withPdfAttachment: pdfReady,
         });
+        const text = buildDefaultText({
+            orderNumber: fullOrder.order_number,
+            estimateUrl,
+            amountText,
+            displayAmount,
+            withPdfAttachment: pdfReady,
+        });
 
         return NextResponse.json({
             to: toEmail,
             subject,
             html,
+            text,
             pdfReady,
             pdfError: pdfError || undefined,
             order_number: fullOrder.order_number,

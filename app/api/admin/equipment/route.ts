@@ -31,7 +31,10 @@ export async function GET(req: NextRequest) {
 
 // 견적 산출 기준: 타입별 INSERT용 값 (해당 타입만 채움, 나머지 null)
 function calcParamValues(type: string, body: Record<string, unknown>) {
+  const minPrice = body.min_price_krw != null ? Number(body.min_price_krw) : null
+  const minPriceKr = minPrice !== null && Number.isFinite(minPrice) && minPrice >= 0 ? minPrice : null
   return {
+    min_price_krw: minPriceKr,
     fdm_layer_hours_factor: type === 'FDM' ? (Number(body.fdm_layer_hours_factor) || 0.02) : null,
     fdm_labor_cost_krw: type === 'FDM' ? (Number(body.fdm_labor_cost_krw) ?? 6500) : null,
     fdm_support_per_cm2_krw: type === 'FDM' ? (Number(body.fdm_support_per_cm2_krw) ?? 26) : null,
@@ -46,12 +49,12 @@ function calcParamValues(type: string, body: Record<string, unknown>) {
   }
 }
 
-const CALC_COLS = 'fdm_layer_hours_factor, fdm_labor_cost_krw, fdm_support_per_cm2_krw, sla_layer_exposure_sec, sla_labor_cost_krw, sla_consumables_krw, sla_post_process_krw, dlp_layer_exposure_sec, dlp_labor_cost_krw, dlp_consumables_krw, dlp_post_process_krw'
+const CALC_COLS = 'min_price_krw, fdm_layer_hours_factor, fdm_labor_cost_krw, fdm_support_per_cm2_krw, sla_layer_exposure_sec, sla_labor_cost_krw, sla_consumables_krw, sla_post_process_krw, dlp_layer_exposure_sec, dlp_labor_cost_krw, dlp_consumables_krw, dlp_post_process_krw'
 
 const CALC_SET_BY_TYPE: Record<string, string> = {
-  FDM: ', fdm_layer_hours_factor = excluded.fdm_layer_hours_factor, fdm_labor_cost_krw = excluded.fdm_labor_cost_krw, fdm_support_per_cm2_krw = excluded.fdm_support_per_cm2_krw',
-  SLA: ', sla_layer_exposure_sec = excluded.sla_layer_exposure_sec, sla_labor_cost_krw = excluded.sla_labor_cost_krw, sla_consumables_krw = excluded.sla_consumables_krw, sla_post_process_krw = excluded.sla_post_process_krw',
-  DLP: ', dlp_layer_exposure_sec = excluded.dlp_layer_exposure_sec, dlp_labor_cost_krw = excluded.dlp_labor_cost_krw, dlp_consumables_krw = excluded.dlp_consumables_krw, dlp_post_process_krw = excluded.dlp_post_process_krw',
+  FDM: ', min_price_krw = excluded.min_price_krw, fdm_layer_hours_factor = excluded.fdm_layer_hours_factor, fdm_labor_cost_krw = excluded.fdm_labor_cost_krw, fdm_support_per_cm2_krw = excluded.fdm_support_per_cm2_krw',
+  SLA: ', min_price_krw = excluded.min_price_krw, sla_layer_exposure_sec = excluded.sla_layer_exposure_sec, sla_labor_cost_krw = excluded.sla_labor_cost_krw, sla_consumables_krw = excluded.sla_consumables_krw, sla_post_process_krw = excluded.sla_post_process_krw',
+  DLP: ', min_price_krw = excluded.min_price_krw, dlp_layer_exposure_sec = excluded.dlp_layer_exposure_sec, dlp_labor_cost_krw = excluded.dlp_labor_cost_krw, dlp_consumables_krw = excluded.dlp_consumables_krw, dlp_post_process_krw = excluded.dlp_post_process_krw',
 }
 
 /**
@@ -113,22 +116,21 @@ export async function POST(req: NextRequest) {
     const calc = calcParamValues(type, body)
     const calcSet = CALC_SET_BY_TYPE[type] || ''
     const hasLayerCosts = layer_costs_json != null
+    const calcArr = [calc.min_price_krw, calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw]
 
     const sql = hasLayerCosts
       ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
          ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
            is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
       : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
          ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
            is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
-
-    const calcArr = [calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw]
 
     if (hasLayerCosts) {
       await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ...calcArr, storeId).run()
@@ -149,6 +151,12 @@ export async function POST(req: NextRequest) {
     if (msg.includes('no such column') && msg.includes('layer_costs_json')) {
       return NextResponse.json(
         { error: 'layer_costs_json 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment_layer_costs.sql' },
+        { status: 503 }
+      )
+    }
+    if (msg.includes('no such column') && msg.includes('min_price_krw')) {
+      return NextResponse.json(
+        { error: '기본금액(최소견적) 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_min_price.sql' },
         { status: 503 }
       )
     }

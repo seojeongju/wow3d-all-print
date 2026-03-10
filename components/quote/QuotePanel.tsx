@@ -13,6 +13,7 @@ import {
 import Link from 'next/link'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { showToast } from '@/lib/toast-helper'
+import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -74,6 +75,8 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
+    /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
+    const [priceRoundMode, setPriceRoundMode] = useState<PriceRoundMode>('round')
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -229,7 +232,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
         }
     }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials])
 
-    const totalPrice = quoteDetail.total
+    const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+    const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
+    const rawRounded = roundTo100(quoteDetail.total, priceRoundMode)
+    const totalPrice = minPriceKr != null && minPriceKr > 0 ? Math.max(rawRounded, minPriceKr) : rawRounded
     const estimatedTimeHours = quoteDetail.time
 
     const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -705,6 +711,25 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         </div>
                         <span className={`font-black text-slate-50 ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
                         <span className="text-xs text-slate-400 font-medium ml-1">KRW</span>
+                        {!embedded && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                {[
+                                    { value: 'none' as const, label: '원단위' },
+                                    { value: 'round' as const, label: '100원 반올림' },
+                                    { value: 'floor' as const, label: '100원 반내림' },
+                                    { value: 'ceil' as const, label: '100원 올림' },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setPriceRoundMode(opt.value)}
+                                        className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${priceRoundMode === opt.value ? 'bg-primary/30 text-primary border border-primary/50' : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:text-slate-300'}`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div className="text-right">
                         <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">

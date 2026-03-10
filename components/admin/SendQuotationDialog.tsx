@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Paperclip, AlertCircle } from 'lucide-react';
+import { Loader2, Send, Paperclip, AlertCircle, FileCode, FileText } from 'lucide-react';
 
 export type QuotationSendResult = {
     success: boolean;
@@ -43,6 +43,7 @@ export function SendQuotationDialog({
         to: string;
         subject: string;
         html: string;
+        text: string;
         pdfReady: boolean;
         pdfError?: string;
         order_number: string;
@@ -50,6 +51,8 @@ export function SendQuotationDialog({
     const [to, setTo] = useState('');
     const [subject, setSubject] = useState('');
     const [html, setHtml] = useState('');
+    const [text, setText] = useState('');
+    const [bodyType, setBodyType] = useState<'html' | 'text'>('html');
     const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -72,6 +75,7 @@ export function SendQuotationDialog({
                 setTo(data.to ?? '');
                 setSubject(data.subject ?? '');
                 setHtml(data.html ?? '');
+                setText(data.text ?? '');
             })
             .catch((e) => {
                 setLoadError(e instanceof Error ? e.message : '초안 로드 실패');
@@ -94,7 +98,7 @@ export function SendQuotationDialog({
                 body: JSON.stringify({
                     emailOverride: trimmedTo,
                     subject: subject.trim() || undefined,
-                    html: html.trim() || undefined,
+                    ...(bodyType === 'html' ? { html: html.trim() || undefined } : { text: text.trim() || undefined }),
                 }),
             });
             const j = await res.json();
@@ -148,14 +152,42 @@ export function SendQuotationDialog({
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label className="text-white/80">본문 (HTML)</Label>
-                            <textarea
-                                value={html}
-                                onChange={(e) => setHtml(e.target.value)}
-                                rows={12}
-                                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 font-mono"
-                                placeholder="HTML 본문"
-                            />
+                            <div className="flex items-center gap-2">
+                                <Label className="text-white/80">본문</Label>
+                                <div className="flex rounded-md border border-white/10 overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBodyType('html')}
+                                        className={`px-3 py-1.5 text-xs flex items-center gap-1.5 ${bodyType === 'html' ? 'bg-white/15 text-white' : 'bg-white/5 text-white/60 hover:text-white/80'}`}
+                                    >
+                                        <FileCode className="w-3.5 h-3.5" /> HTML
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBodyType('text')}
+                                        className={`px-3 py-1.5 text-xs flex items-center gap-1.5 ${bodyType === 'text' ? 'bg-white/15 text-white' : 'bg-white/5 text-white/60 hover:text-white/80'}`}
+                                    >
+                                        <FileText className="w-3.5 h-3.5" /> 일반 텍스트
+                                    </button>
+                                </div>
+                            </div>
+                            {bodyType === 'html' ? (
+                                <textarea
+                                    value={html}
+                                    onChange={(e) => setHtml(e.target.value)}
+                                    rows={12}
+                                    className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 font-mono"
+                                    placeholder="HTML 본문"
+                                />
+                            ) : (
+                                <textarea
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
+                                    rows={12}
+                                    className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 resize-y"
+                                    placeholder="일반 텍스트 본문"
+                                />
+                            )}
                         </div>
                         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 flex items-center gap-3">
                             {draft.pdfReady ? (

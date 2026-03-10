@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildQuotationPdf, uint8ArrayToBase64 } from '@/lib/quotation-pdf';
-import { buildDefaultSubject, buildDefaultHtml } from '@/lib/quotation-email';
+import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
 
 /**
  * POST /api/admin/orders/[id]/send-quotation
@@ -67,7 +67,7 @@ export async function POST(
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        let body: { emailOverride?: string; subject?: string; html?: string } = {};
+        let body: { emailOverride?: string; subject?: string; html?: string; text?: string } = {};
         try {
             body = await req.json();
         } catch {
@@ -77,6 +77,7 @@ export async function POST(
         const toEmail = (body?.emailOverride && String(body.emailOverride).trim()) || fullOrder.user_email || fullOrder.guest_email || null;
         const customSubject = body?.subject != null && String(body.subject).trim() ? String(body.subject).trim() : null;
         const customHtml = body?.html != null && String(body.html).trim() ? String(body.html).trim() : null;
+        const customText = body?.text != null && String(body.text).trim() ? String(body.text).trim() : null;
         const sentAt = new Date().toISOString();
 
         let quotationRecorded = false;
@@ -146,6 +147,8 @@ export async function POST(
                     console.warn('send-quotation: PDF attachment skipped', pdfErr);
                 }
                 const subject = customSubject ?? buildDefaultSubject(fullOrder.order_number);
+                const hasCustomHtml = customHtml != null;
+                const hasCustomText = customText != null;
                 const html = customHtml ?? buildDefaultHtml({
                     orderNumber: fullOrder.order_number,
                     estimateUrl,
@@ -153,19 +156,34 @@ export async function POST(
                     displayAmount,
                     withPdfAttachment: attachments.length > 0,
                 });
+                const text = customText ?? buildDefaultText({
+                    orderNumber: fullOrder.order_number,
+                    estimateUrl,
+                    amountText: amountText ?? undefined,
+                    displayAmount,
+                    withPdfAttachment: attachments.length > 0,
+                });
+                const payload: Record<string, unknown> = {
+                    from: fromAddr,
+                    to: [toEmail],
+                    subject,
+                    ...(attachments.length > 0 ? { attachments } : {}),
+                };
+                if (hasCustomText && !hasCustomHtml) {
+                    payload.text = customText;
+                } else if (hasCustomHtml && !hasCustomText) {
+                    payload.html = html;
+                } else {
+                    payload.text = text;
+                    payload.html = html;
+                }
                 const emailRes = await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${resendKey}`,
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        from: fromAddr,
-                        to: [toEmail],
-                        subject,
-                        ...(attachments.length > 0 ? { attachments } : {}),
-                        html,
-                    }),
+                    body: JSON.stringify(payload),
                 });
                 if (!emailRes.ok) {
                     const errText = await emailRes.text();

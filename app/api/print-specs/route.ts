@@ -27,6 +27,7 @@ export async function GET() {
       hourly_rate: number
       layer_heights_json: string | null
       layer_costs_json?: string | null
+      min_price_krw?: number | null
       fdm_layer_hours_factor?: number | null
       fdm_labor_cost_krw?: number | null
       fdm_support_per_cm2_krw?: number | null
@@ -39,7 +40,7 @@ export async function GET() {
       dlp_consumables_krw?: number | null
       dlp_post_process_krw?: number | null
     }>
-    type Spec = { max: { x: number; y: number; z: number }; layerHeights: number[]; hourlyRate: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number }
+    type Spec = { max: { x: number; y: number; z: number }; layerHeights: number[]; hourlyRate: number; minPriceKr?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number }
     const defaults: Record<string, Spec> = {
       fdm: { max: { x: 220, y: 220, z: 250 }, layerHeights: [0.1, 0.2, 0.3], hourlyRate: 5000, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26 },
       sla: { max: { x: 145, y: 145, z: 175 }, layerHeights: [0.025, 0.05, 0.1], hourlyRate: 8000, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400 },
@@ -68,10 +69,12 @@ export async function GET() {
           }
         }
       } catch {}
+      const minPriceKr = r.min_price_krw != null && Number.isFinite(Number(r.min_price_krw)) && r.min_price_krw > 0 ? Number(r.min_price_krw) : undefined
       const spec: Spec = {
         max: { x: r.max_x_mm, y: r.max_y_mm, z: r.max_z_mm },
         layerHeights: arr,
         hourlyRate: r.hourly_rate,
+        ...(minPriceKr != null ? { minPriceKr } : {}),
         ...(layerCosts ? { layerCosts } : {}),
         fdm_layer_hours_factor: r.fdm_layer_hours_factor ?? 0.02,
         fdm_labor_cost_krw: r.fdm_labor_cost_krw ?? 6500,
