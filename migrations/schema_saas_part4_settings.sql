@@ -1,5 +1,13 @@
 -- Print Settings 테이블 마이그레이션 (재시도)
 
+-- print_settings 테이블이 없을 수 있으므로 있으면 생성 (구 스키마)
+CREATE TABLE IF NOT EXISTS print_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  description TEXT,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS print_settings_new (
     key TEXT NOT NULL,
     value TEXT,

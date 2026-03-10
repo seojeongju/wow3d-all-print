@@ -1,6 +1,32 @@
 -- Printer Equipment 테이블 마이그레이션
 -- 기존 type PK 제거하고 (store_id, type) 복합키 적용
 
+-- printer_equipment 테이블이 없을 수 있으므로 있으면 생성 (구 스키마 + calc params 포함)
+CREATE TABLE IF NOT EXISTS printer_equipment (
+  type TEXT PRIMARY KEY,
+  name TEXT,
+  max_x_mm REAL NOT NULL DEFAULT 220,
+  max_y_mm REAL NOT NULL DEFAULT 220,
+  max_z_mm REAL NOT NULL DEFAULT 250,
+  hourly_rate REAL NOT NULL DEFAULT 5000,
+  layer_heights_json TEXT,
+  layer_costs_json TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  fdm_layer_hours_factor REAL DEFAULT 0.02,
+  fdm_labor_cost_krw REAL DEFAULT 6500,
+  fdm_support_per_cm2_krw REAL DEFAULT 26,
+  sla_layer_exposure_sec REAL DEFAULT 8,
+  sla_labor_cost_krw REAL DEFAULT 9100,
+  sla_consumables_krw REAL DEFAULT 3900,
+  sla_post_process_krw REAL DEFAULT 10400,
+  dlp_layer_exposure_sec REAL DEFAULT 3,
+  dlp_labor_cost_krw REAL DEFAULT 9100,
+  dlp_consumables_krw REAL DEFAULT 3900,
+  dlp_post_process_krw REAL DEFAULT 10400
+);
+
 CREATE TABLE IF NOT EXISTS printer_equipment_new (
     type TEXT NOT NULL,
     name TEXT,
