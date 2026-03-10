@@ -25,6 +25,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
+import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
 
 /** 금액은 DB에서 원화(KRW)로 저장·표시 */
 
@@ -75,7 +76,7 @@ function OrderListInner() {
     const [showExpertQuoteForm, setShowExpertQuoteForm] = useState(false);
     const [expertTotalInput, setExpertTotalInput] = useState('');
     const [savingExpertQuote, setSavingExpertQuote] = useState(false);
-    const [sendingQuotation, setSendingQuotation] = useState(false);
+    const [showSendQuotationDialog, setShowSendQuotationDialog] = useState(false);
 
     const fetchOrders = async () => {
         try {
@@ -277,37 +278,16 @@ function OrderListInner() {
         }
     };
 
-    /** 견적서 발송: POST send-quotation → quotation_sent_at 갱신 및 이메일 발송 */
-    const handleSendQuotation = async () => {
-        if (!detailOrderId) return;
-        setSendingQuotation(true);
-        try {
-            const res = await fetch(`/api/admin/orders/${detailOrderId}/send-quotation`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                body: JSON.stringify({}),
-            });
-            const j = await res.json();
-            if (j.success) {
-                const sentAt = j.sentAt;
-                const isEmailFailed = j.emailSent === false;
-                if (sentAt) {
-                    setDetailData((d) => (d ? { ...d, order: { ...d.order, quotation_sent_at: sentAt } } : null));
-                    setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, quotation_sent_at: sentAt } : o)));
-                }
-                toast({
-                    title: j.message || '견적서 발송 처리되었습니다.',
-                    variant: isEmailFailed ? 'destructive' : 'default',
-                    description: isEmailFailed ? '발신 도메인 인증 또는 RESEND_FROM 설정을 확인해 주세요.' : undefined,
-                });
-            } else {
-                toast({ title: j.error || '발송 처리 실패', variant: 'destructive' });
-            }
-        } catch {
-            toast({ title: '발송 중 오류가 발생했습니다.', variant: 'destructive' });
-        } finally {
-            setSendingQuotation(false);
+    const handleQuotationSent = (j: { success: boolean; message?: string; emailSent?: boolean; sentAt?: string }) => {
+        if (j.sentAt && detailOrderId) {
+            setDetailData((d) => (d ? { ...d, order: { ...d.order, quotation_sent_at: j.sentAt } } : null));
+            setOrders((prev) => prev.map((o) => (o.id === detailOrderId ? { ...o, quotation_sent_at: j.sentAt } : o)));
         }
+        toast({
+            title: j.message || '견적서 발송 처리되었습니다.',
+            variant: j.emailSent === false ? 'destructive' : 'default',
+            description: j.emailSent === false ? '발신 도메인 인증 또는 RESEND_FROM 설정을 확인해 주세요.' : undefined,
+        });
     };
 
     const handleCsvDownload = () => {
@@ -938,10 +918,9 @@ function OrderListInner() {
                         <Button
                             variant="outline"
                             className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
-                            onClick={handleSendQuotation}
-                            disabled={sendingQuotation}
+                            onClick={() => setShowSendQuotationDialog(true)}
                         >
-                            {sendingQuotation ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                            <Send className="w-4 h-4 mr-2" />
                             견적서 발송
                         </Button>
                         <Button variant="outline" className="border-white/10 text-white" onClick={closeDetail}>닫기</Button>
@@ -951,6 +930,14 @@ function OrderListInner() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <SendQuotationDialog
+                orderId={detailOrderId}
+                open={showSendQuotationDialog}
+                onOpenChange={setShowSendQuotationDialog}
+                token={token}
+                onSent={handleQuotationSent}
+            />
 
             {/* 제작중 전환 시 수정견적 금액 확인 다이얼로그 */}
             <Dialog open={!!confirmProductionDialog} onOpenChange={(o) => !o && setConfirmProductionDialog(null)}>

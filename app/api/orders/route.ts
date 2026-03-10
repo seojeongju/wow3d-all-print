@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, requireAuthOrGuest, generateOrderNumber } from '@/lib/api-utils';
+import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 
 /**
  * GET /api/orders - 주문 목록 조회
@@ -122,9 +123,12 @@ export async function POST(request: NextRequest) {
         }
 
         const orderNumber = generateOrderNumber();
-        const totalAmount = body.cartItems.reduce(
-            (sum: number, item: any) => sum + item.totalPrice * item.quantity,
-            0
+        const totalAmount = normalizeAmountBeforeSave(
+            body.cartItems.reduce((sum: number, item: any) => {
+                const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
+                const qty = Math.max(1, Number(item.quantity) || 1);
+                return sum + unitPrice * qty;
+            }, 0)
         );
 
         const isGuest = auth.isGuest;
@@ -154,18 +158,15 @@ export async function POST(request: NextRequest) {
         if (!orderId) return errorResponse('주문 생성 실패', 500);
 
         for (const item of body.cartItems) {
+            const qty = Math.max(1, Number(item.quantity) || 1);
+            const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
+            const subtotal = unitPrice * qty;
             await env.DB
                 .prepare(`
           INSERT INTO order_items (order_id, quote_id, quantity, unit_price, subtotal)
           VALUES (?, ?, ?, ?, ?)
         `)
-                .bind(
-                    orderId,
-                    item.quoteId,
-                    item.quantity,
-                    item.totalPrice,
-                    item.totalPrice * item.quantity
-                )
+                .bind(orderId, item.quoteId, qty, unitPrice, subtotal)
                 .run();
         }
 

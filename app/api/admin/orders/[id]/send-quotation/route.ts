@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildQuotationPdf, uint8ArrayToBase64 } from '@/lib/quotation-pdf';
+import { buildDefaultSubject, buildDefaultHtml } from '@/lib/quotation-email';
 
 /**
  * POST /api/admin/orders/[id]/send-quotation
  * 견적서 발송: quotation_sent_at 갱신 + (선택) 고객 이메일 발송
- * Body: { emailOverride?: string }
+ * Body: { emailOverride?: string, subject?: string, html?: string }  (관리자 편집 본문 반영)
  * 응답: { success, message, sentAt? }
  */
 export async function POST(
@@ -65,7 +67,7 @@ export async function POST(
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        let body: { emailOverride?: string } = {};
+        let body: { emailOverride?: string; subject?: string; html?: string } = {};
         try {
             body = await req.json();
         } catch {
@@ -73,6 +75,8 @@ export async function POST(
         }
 
         const toEmail = (body?.emailOverride && String(body.emailOverride).trim()) || fullOrder.user_email || fullOrder.guest_email || null;
+        const customSubject = body?.subject != null && String(body.subject).trim() ? String(body.subject).trim() : null;
+        const customHtml = body?.html != null && String(body.html).trim() ? String(body.html).trim() : null;
         const sentAt = new Date().toISOString();
 
         let quotationRecorded = false;
@@ -106,7 +110,8 @@ export async function POST(
         } else {
             totalAmount = fullOrder.total_amount;
         }
-        const amountText = totalAmount != null ? ` (합계: ₩${Number(totalAmount).toLocaleString()})` : '';
+        const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
+        const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';
         let emailSent = false;
 
         if (resendKey && toEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(toEmail)) {
@@ -140,6 +145,14 @@ export async function POST(
                 } catch (pdfErr) {
                     console.warn('send-quotation: PDF attachment skipped', pdfErr);
                 }
+                const subject = customSubject ?? buildDefaultSubject(fullOrder.order_number);
+                const html = customHtml ?? buildDefaultHtml({
+                    orderNumber: fullOrder.order_number,
+                    estimateUrl,
+                    amountText: amountText ?? undefined,
+                    displayAmount,
+                    withPdfAttachment: attachments.length > 0,
+                });
                 const emailRes = await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: {
@@ -149,25 +162,9 @@ export async function POST(
                     body: JSON.stringify({
                         from: fromAddr,
                         to: [toEmail],
-                        subject: `[${fullOrder.order_number}] WOW3D 견적서가 준비되었습니다`,
+                        subject,
                         ...(attachments.length > 0 ? { attachments } : {}),
-                        html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><style>body{font-family:sans-serif;line-height:1.6;color:#333;max-width:560px;margin:0 auto;padding:20px;} a{color:#2563eb;} .box{background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;}</style></head>
-<body>
-<p>안녕하세요, WOW3D입니다.</p>
-<p>요청하신 <strong>견적서</strong>가 준비되었습니다.</p>
-<div class="box">
-  <p style="margin:0 0 8px 0;"><strong>주문번호</strong> ${String(fullOrder.order_number)}</p>
-  ${amountText ? `<p style="margin:0;"><strong>견적 합계</strong> ₩${Number(totalAmount!).toLocaleString()}</p>` : ''}
-</div>
-<p><strong>견적서 보기:</strong> <a href="${estimateUrl}">${estimateUrl}</a></p>
-${attachments.length > 0 ? '<p>견적서 PDF가 본 메일에도 첨부되어 있습니다.</p>' : ''}
-<p>위 링크에서 상세 견적 내용을 확인하실 수 있습니다. 확인 후 결제 또는 문의 부탁드립니다.</p>
-<p>감사합니다.<br/>WOW3D</p>
-</body>
-</html>`.trim(),
+                        html,
                     }),
                 });
                 if (!emailRes.ok) {

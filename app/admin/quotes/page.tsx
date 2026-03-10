@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, Printer, PenLine, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
 
 export default function QuoteList() {
     const { toast } = useToast();
@@ -22,7 +23,7 @@ export default function QuoteList() {
     const [orders, setOrders] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-    const [sendingOrderId, setSendingOrderId] = useState<number | null>(null);
+    const [sendQuotationOrderId, setSendQuotationOrderId] = useState<number | null>(null);
 
     const fetchOrders = async () => {
         try {
@@ -128,36 +129,15 @@ export default function QuoteList() {
 
     const handleEdit = (id: number) => router.push(`/admin/quotes/${id}`);
 
-    const handleSendQuotation = async (orderId: number) => {
-        if (sendingOrderId != null) return;
-        setSendingOrderId(orderId);
-        try {
-            const res = await fetch(`/api/admin/orders/${orderId}/send-quotation`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({}),
-            });
-            const data = await res.json();
-            if (data.success) {
-                const isEmailFailed = data.emailSent === false;
-                toast({
-                    title: data.message || '견적서가 발송되었습니다.',
-                    variant: isEmailFailed ? 'destructive' : 'default',
-                    description: isEmailFailed ? '발신 도메인 인증 또는 RESEND_FROM 설정을 확인해 주세요.' : undefined,
-                });
-                const sentAt = data.sentAt;
-                if (sentAt) setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, quotation_sent_at: sentAt } : o));
-            } else {
-                toast({ title: data.error || '발송 실패', variant: 'destructive' });
-            }
-        } catch {
-            toast({ title: '발송 중 오류가 발생했습니다.', variant: 'destructive' });
-        } finally {
-            setSendingOrderId(null);
+    const handleQuotationSent = (orderId: number) => (result: { success: boolean; message?: string; emailSent?: boolean; sentAt?: string }) => {
+        if (result.sentAt) {
+            setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, quotation_sent_at: result.sentAt } : o));
         }
+        toast({
+            title: result.message || '견적서가 발송되었습니다.',
+            variant: result.emailSent === false ? 'destructive' : 'default',
+            description: result.emailSent === false ? '발신 도메인 인증 또는 RESEND_FROM 설정을 확인해 주세요.' : undefined,
+        });
     };
 
     if (loading) {
@@ -311,14 +291,9 @@ export default function QuoteList() {
                                                         <Button
                                                             variant="outline" size="sm"
                                                             className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
-                                                            onClick={() => handleSendQuotation(order.id)}
-                                                            disabled={sendingOrderId === order.id}
+                                                            onClick={() => setSendQuotationOrderId(order.id)}
                                                         >
-                                                            {sendingOrderId === order.id ? (
-                                                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                                            ) : (
-                                                                <Mail className="w-3 h-3 mr-1" />
-                                                            )}
+                                                            <Mail className="w-3 h-3 mr-1" />
                                                             이메일 발송
                                                         </Button>
                                                     </div>
@@ -409,6 +384,14 @@ export default function QuoteList() {
                     </div>
                 </CardContent>
             </Card>
+
+            <SendQuotationDialog
+                orderId={sendQuotationOrderId}
+                open={sendQuotationOrderId != null}
+                onOpenChange={(open) => !open && setSendQuotationOrderId(null)}
+                token={token}
+                onSent={sendQuotationOrderId != null ? handleQuotationSent(sendQuotationOrderId) : undefined}
+            />
         </div>
     );
 }

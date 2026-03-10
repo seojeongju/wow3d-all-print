@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { jsonResponse, errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
 import type { QuoteData } from '@/lib/types';
+import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 
 /**
  * GET /api/quotes - 견적 목록 조회
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
         const dimensionsX = Number(body.dimensionsX) || 0;
         const dimensionsY = Number(body.dimensionsY) || 0;
         const dimensionsZ = Number(body.dimensionsZ) || 0;
-        const totalPrice = Number(body.totalPrice) || 0;
+        const totalPrice = normalizeAmountBeforeSave(Number(body.totalPrice) || 0);
         const estimatedTimeHours = Number(body.estimatedTimeHours) || 0;
         const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
         const layerThickness = snapSlaLayer(body.layerThickness);

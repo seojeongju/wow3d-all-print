@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 
 const ALLOWED = ['pending', 'confirmed', 'production', 'shipping', 'completed', 'cancelled'];
 
@@ -123,7 +124,16 @@ export async function PATCH(
                 `UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
             ).bind(adminNote, ...whereBind).run();
         } else if (body?.expert_quote_data) {
-            const expertData = JSON.stringify(body.expert_quote_data);
+            const raw = body.expert_quote_data as { items?: Array<{ unit_price?: number; quantity?: number; [k: string]: unknown }>; total_amount?: number; [k: string]: unknown };
+            const items = Array.isArray(raw.items)
+                ? raw.items.map((it: { unit_price?: number; quantity?: number; [k: string]: unknown }) => {
+                    const unitPrice = normalizeAmountBeforeSave(it.unit_price);
+                    const qty = Math.max(1, Number(it.quantity) || 1);
+                    return { ...it, unit_price: unitPrice, subtotal: unitPrice * qty };
+                })
+                : raw.items;
+            const total_amount = normalizeAmountBeforeSave(raw.total_amount);
+            const expertData = JSON.stringify({ ...raw, items, total_amount });
             await env.DB.prepare(
                 `UPDATE orders SET expert_quote_data = ?, has_expert_quote = 1, updated_at = CURRENT_TIMESTAMP ${whereClause}`
             ).bind(expertData, ...whereBind).run();
