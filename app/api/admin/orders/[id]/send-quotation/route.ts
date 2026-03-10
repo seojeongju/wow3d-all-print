@@ -36,17 +36,28 @@ export async function POST(
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
         }
 
-        const fullOrder = await env.DB.prepare(`
-            SELECT o.user_id, o.guest_email, o.order_number, o.total_amount, o.expert_quote_data,
-                   u.email as user_email
-            FROM orders o
-            LEFT JOIN users u ON o.user_id = u.id
-            WHERE o.id = ?
-        `).bind(numId).first() as {
+        let fullOrder: {
             user_id: number | null; guest_email: string | null; order_number: string;
-            total_amount: number | null; expert_quote_data: string | null;
+            total_amount: number | null; expert_quote_data?: string | null;
             user_email: string | null;
-        } | null;
+        } | null = null;
+        try {
+            fullOrder = await env.DB.prepare(`
+                SELECT o.user_id, o.guest_email, o.order_number, o.total_amount, o.expert_quote_data,
+                       u.email as user_email
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.id = ?
+            `).bind(numId).first() as typeof fullOrder;
+        } catch {
+            fullOrder = await env.DB.prepare(`
+                SELECT o.user_id, o.guest_email, o.order_number, o.total_amount,
+                       u.email as user_email
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                WHERE o.id = ?
+            `).bind(numId).first() as typeof fullOrder;
+        }
 
         if (!fullOrder) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
@@ -62,11 +73,17 @@ export async function POST(
         const toEmail = (body?.emailOverride && String(body.emailOverride).trim()) || fullOrder.user_email || fullOrder.guest_email || null;
         const sentAt = new Date().toISOString();
 
-        const whereClause = orderStoreId != null ? 'WHERE id = ? AND store_id = ?' : 'WHERE id = ?';
-        const whereBind = orderStoreId != null ? [sentAt, numId, storeId] : [sentAt, numId];
-        await env.DB.prepare(
-            `UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
-        ).bind(...whereBind).run();
+        let quotationRecorded = false;
+        try {
+            const whereClause = orderStoreId != null ? 'WHERE id = ? AND store_id = ?' : 'WHERE id = ?';
+            const whereBind = orderStoreId != null ? [sentAt, numId, storeId] : [sentAt, numId];
+            await env.DB.prepare(
+                `UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+            ).bind(...whereBind).run();
+            quotationRecorded = true;
+        } catch (updateErr) {
+            console.warn('send-quotation: UPDATE quotation_sent_at failed (column may be missing)', updateErr);
+        }
 
         const envVars = env as unknown as Record<string, string | undefined>;
         const resendKey = process.env.RESEND_API_KEY || envVars.RESEND_API_KEY;
@@ -120,26 +137,32 @@ export async function POST(
                 if (!emailRes.ok) {
                     const errText = await emailRes.text();
                     console.error('Resend API error:', emailRes.status, errText);
+                    const recordMsg = quotationRecorded ? '견적 발송 일시가 기록되었습니다. ' : '견적 발송 일시는 기록되지 않았습니다. ';
                     return NextResponse.json({
                         success: true,
-                        message: '견적 발송 일시가 기록되었습니다. 이메일 발송에 실패했습니다.',
+                        message: recordMsg + '이메일 발송에 실패했습니다.',
                         sentAt,
+                        quotationRecorded,
                     });
                 }
             } catch (e) {
                 console.error('Send quotation email error:', e);
+                const recordMsg = quotationRecorded ? '견적 발송 일시가 기록되었습니다. ' : '견적 발송 일시는 기록되지 않았습니다. ';
                 return NextResponse.json({
                     success: true,
-                    message: '견적 발송 일시가 기록되었습니다. 이메일 발송 중 오류가 발생했습니다.',
+                    message: recordMsg + '이메일 발송 중 오류가 발생했습니다.',
                     sentAt,
+                    quotationRecorded,
                 });
             }
         }
 
+        const recordMsg = quotationRecorded ? (toEmail ? '견적서 발송 일시가 기록되었고, 고객에게 이메일을 발송했습니다.' : '견적 발송 일시가 기록되었습니다.') : (toEmail ? '고객에게 이메일을 발송했습니다. (발송 일시 기록 실패: DB 마이그레이션 필요 가능)' : '발송 일시는 기록되지 않았습니다. (DB 마이그레이션 필요 가능)');
         return NextResponse.json({
             success: true,
-            message: toEmail ? '견적서 발송 일시가 기록되었고, 고객에게 이메일을 발송했습니다.' : '견적 발송 일시가 기록되었습니다.',
+            message: recordMsg,
             sentAt,
+            quotationRecorded,
         });
     } catch (e) {
         console.error('POST /api/admin/orders/[id]/send-quotation', e);
