@@ -2,11 +2,10 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
 
+/** 대시보드용 운영 지표만 유지 (시간당 비용·최소 견적은 장비 설정에서 관리) */
 const DEFAULTS = [
     { key: 'operating_rate', value: '82', description: '가동률 (%)' },
     { key: 'operating_detail', value: '프린터 12/15대 가동중', description: '가동 상세' },
-    { key: 'min_order_amount', value: '5000', description: '최소 주문 금액 (원)' },
-    { key: 'labor_cost_per_hour', value: '8000', description: '인건비 시간당 (원)' },
 ];
 
 export async function GET(req: NextRequest) {

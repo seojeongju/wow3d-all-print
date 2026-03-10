@@ -431,8 +431,38 @@ export default function AdminSettings() {
     }
   }
 
+  /** 가격 정책 탭: 운영 지표(operating_rate, operating_detail)만 저장 */
+  const handleSaveSettingsPricingOnly = async () => {
+    try {
+      const payload = [
+        { key: 'operating_rate', value: settings.find((s) => s.key === 'operating_rate')?.value ?? '82', description: '가동률 (%)' },
+        { key: 'operating_detail', value: settings.find((s) => s.key === 'operating_detail')?.value ?? '프린터 12/15대 가동중', description: '가동 상세' },
+      ]
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        let errMsg = '저장 실패'
+        try { const j = await res.json(); if (j && typeof j.error === 'string') errMsg = j.error } catch { /* */ }
+        throw new Error(errMsg)
+      }
+      showToast.success('운영 지표 저장 완료')
+    } catch (e) {
+      showToast.error('저장 실패', e)
+    }
+  }
+
   const handleSettingChange = (key: string, value: string) => {
-    setSettings((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)))
+    setSettings((prev) => {
+      const i = prev.findIndex((s) => s.key === key)
+      if (i >= 0) return prev.map((s) => (s.key === key ? { ...s, value } : s))
+      return [...prev, { key, value, description: key === 'operating_rate' ? '가동률 (%)' : '가동 상세' }]
+    })
   }
 
   const typeBadge = (t: string) => {
@@ -803,21 +833,30 @@ export default function AdminSettings() {
         <TabsContent value="pricing" className="space-y-4">
           <Card className="bg-white/[0.03] border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">기본 가격 정책</CardTitle>
-              <CardDescription className="text-white/50">최소 주문 금액 등 전역 설정 (장비별 시간당 비용은 장비 설정에서)</CardDescription>
+              <CardTitle className="text-white">운영 지표 (대시보드 표시용)</CardTitle>
+              <CardDescription className="text-white/50">관리자 대시보드에 표시되는 가동률·가동 상세만 설정합니다. 시간당 비용·최소 견적은 장비 설정 탭에서 관리하세요.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {settings.map((s) => (
-                <div key={s.key} className="grid grid-cols-1 md:grid-cols-2 items-center gap-4 py-3 border-b border-white/5 last:border-0">
-                  <div className="font-medium text-sm text-white/90">
-                    {s.description || s.key}
-                    <div className="text-xs text-white/40">{s.key}</div>
+              {['operating_rate', 'operating_detail'].map((key) => {
+                const s = settings.find((x) => x.key === key) || { key, value: key === 'operating_rate' ? '82' : '프린터 12/15대 가동중', description: key === 'operating_rate' ? '가동률 (%)' : '가동 상세' }
+                return (
+                  <div key={s.key} className="grid grid-cols-1 md:grid-cols-2 items-center gap-4 py-3 border-b border-white/5 last:border-0">
+                    <div className="font-medium text-sm text-white/90">
+                      {s.description || s.key}
+                      <div className="text-xs text-white/40">{s.key}</div>
+                    </div>
+                    <Input
+                      type={s.key === 'operating_detail' ? 'text' : 'number'}
+                      value={s.value}
+                      onChange={(e) => handleSettingChange(s.key, e.target.value)}
+                      className="bg-white/5 border-white/10 text-white"
+                      placeholder={s.key === 'operating_detail' ? '예: 프린터 12/15대 가동중' : undefined}
+                    />
                   </div>
-                  <Input type="number" value={s.value} onChange={(e) => handleSettingChange(s.key, e.target.value)} className="bg-white/5 border-white/10 text-white" />
-                </div>
-              ))}
+                )
+              })}
               <div className="flex justify-end pt-4">
-                <Button onClick={handleSaveSettings} className="bg-primary hover:bg-primary/90">
+                <Button onClick={() => handleSaveSettingsPricingOnly()} className="bg-primary hover:bg-primary/90">
                   <Save className="w-4 h-4 mr-2" /> 변경사항 저장
                 </Button>
               </div>
