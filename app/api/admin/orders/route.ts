@@ -2,6 +2,25 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
 
+/** quotation_sent_at 없을 때: 수정견적만 조회 (같은 WHERE) */
+const MAIN_EXPERT_ONLY_SQL = `
+    SELECT 
+        o.id, o.user_id, o.order_number, o.recipient_name, o.guest_email,
+        o.total_amount, o.status, o.created_at,
+        o.has_expert_quote,
+        o.expert_quote_data,
+        u.name as user_name, u.email as user_email,
+        (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
+        (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
+        (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
+         FROM order_items oi JOIN quotes q ON oi.quote_id = q.id WHERE oi.order_id = o.id) as items_summary
+    FROM orders o
+    LEFT JOIN users u ON o.user_id = u.id
+    WHERE (o.store_id = ? OR o.store_id IS NULL)
+    ORDER BY o.created_at DESC
+    LIMIT 100
+`;
+
 /** has_expert_quote / expert_quote_data 컬럼이 없을 때 사용 (동일 WHERE, 수정견적 필드 제외) */
 const MAIN_SAFE_SQL = `
     SELECT 
@@ -118,13 +137,20 @@ export async function GET(req: NextRequest) {
         const data = rows.map((row: Record<string, unknown>) => normalizeOrderRow(row));
         return NextResponse.json({ success: true, data });
     } catch (e) {
-        console.warn('GET /api/admin/orders full query failed, trying safe main', e);
+        console.warn('GET /api/admin/orders full query failed, trying expert-only', e);
         try {
-            const { results } = await env.DB.prepare(MAIN_SAFE_SQL).bind(storeId).all();
+            const { results } = await env.DB.prepare(MAIN_EXPERT_ONLY_SQL).bind(storeId).all();
             const rows = results || [];
-            const data = rows.map((row: Record<string, unknown>) => ({ ...normalizeOrderRow(row), has_expert_quote: null, expert_quote_data: null }));
+            const data = rows.map((row: Record<string, unknown>) => ({ ...normalizeOrderRow(row), quotation_sent_at: null }));
             return NextResponse.json({ success: true, data });
-        } catch (safeErr) {
+        } catch (expertErr) {
+            console.warn('GET /api/admin/orders expert-only failed, trying safe main', expertErr);
+            try {
+                const { results } = await env.DB.prepare(MAIN_SAFE_SQL).bind(storeId).all();
+                const rows = results || [];
+                const data = rows.map((row: Record<string, unknown>) => ({ ...normalizeOrderRow(row), has_expert_quote: null, expert_quote_data: null }));
+                return NextResponse.json({ success: true, data });
+            } catch (safeErr) {
             console.warn('GET /api/admin/orders safe main failed, trying fallback', safeErr);
             try {
                 const { results } = await env.DB.prepare(FALLBACK_SQL).all();
@@ -146,6 +172,7 @@ export async function GET(req: NextRequest) {
                     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
                 }
             }
+        }
         }
     }
 }

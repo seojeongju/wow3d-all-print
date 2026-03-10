@@ -139,10 +139,14 @@ export default function QuoteEditPage() {
                 setHasExpertQuote(true);
                 toast({ title: '전문가 견적이 저장되었습니다.' });
             } else {
-                toast({ title: '저장 실패', variant: 'destructive' });
+                toast({
+                    title: '저장 실패',
+                    description: json?.error || '다시 시도해 주세요.',
+                    variant: 'destructive',
+                });
             }
         } catch {
-            toast({ title: '오류 발생', variant: 'destructive' });
+            toast({ title: '오류 발생', description: '네트워크 또는 서버 오류일 수 있습니다.', variant: 'destructive' });
         } finally {
             setSaving(false);
         }

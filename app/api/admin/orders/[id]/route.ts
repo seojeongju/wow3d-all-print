@@ -132,8 +132,15 @@ export async function PATCH(
         }
 
         return NextResponse.json({ success: true });
-    } catch (e) {
+    } catch (e: unknown) {
         console.error('PATCH /api/admin/orders/[id]', e);
-        return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+        const msg = e && typeof e === 'object' && 'message' in e ? String((e as { message: string }).message) : '';
+        if (/no such column|has_expert_quote|expert_quote_data/i.test(msg)) {
+            return NextResponse.json({
+                success: false,
+                error: '수정견적 저장에 필요한 DB 컬럼이 없습니다. migrations/schema_orders_expert_quote.sql 마이그레이션을 실행하세요.',
+            }, { status: 500 });
+        }
+        return NextResponse.json({ success: false, error: 'Failed to update order' }, { status: 500 });
     }
 }
