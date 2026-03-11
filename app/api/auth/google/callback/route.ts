@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=server` } });
     }
 
-    const envVars = (getCloudflareContext().env || {}) as Record<string, string | undefined>;
+    const envVars = (getCloudflareContext().env || {}) as unknown as Record<string, string | undefined>;
     const clientId = process.env.GOOGLE_CLIENT_ID || envVars.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET || envVars.GOOGLE_CLIENT_SECRET;
     if (!clientId || !clientSecret) {

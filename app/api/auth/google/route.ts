@@ -9,7 +9,7 @@ const SCOPES = ['openid', 'email', 'profile'].join(' ');
  * 쿼리: return (선택) - 로그인 후 돌아갈 URL
  */
 export async function GET(request: NextRequest) {
-    const envVars = (getCloudflareContext().env || {}) as Record<string, string | undefined>;
+    const envVars = (getCloudflareContext().env || {}) as unknown as Record<string, string | undefined>;
     const clientId = process.env.GOOGLE_CLIENT_ID || envVars.GOOGLE_CLIENT_ID;
     if (!clientId) {
         return new Response(
