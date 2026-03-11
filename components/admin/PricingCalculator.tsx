@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calculator, TrendingUp, AlertCircle, Info } from 'lucide-react'
+import { Calculator, TrendingUp, AlertCircle, Info, Target } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 type CalcParams = {
@@ -217,6 +217,16 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
     const currentCalc = method === 'fdm' ? fdmCalc : method === 'sla' ? slaCalc : dlpCalc
 
+    // FDM 대비 비율 목표: DLP ≈ 3.5배, SLA ≈ 6배 (계수 조정 가이드용)
+    const TARGET_DLP_RATIO = 3.5
+    const TARGET_SLA_RATIO = 6
+    const fdmTotal = fdmCalc?.total ?? 0
+    const slaTotal = slaCalc?.total ?? 0
+    const dlpTotal = dlpCalc?.total ?? 0
+    const dlpRatio = fdmTotal > 0 ? dlpTotal / fdmTotal : 0
+    const slaRatio = fdmTotal > 0 ? slaTotal / fdmTotal : 0
+    const hasRatioData = fdmCalc && slaCalc && dlpCalc && fdmTotal > 0
+
     return (
         <Card className="bg-white/[0.03] border-white/10">
             <CardHeader>
@@ -235,6 +245,39 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                         장비 설정 탭에서 값을 변경하면 이 계산기에 실시간으로 반영됩니다.
                     </p>
                 </div>
+
+                {/* FDM 대비 SLA/DLP 견적 비율 확인 (목표: DLP ≈ 3.5배, SLA ≈ 6배) */}
+                {hasRatioData && (
+                    <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-3">
+                        <div className="flex items-center gap-2 text-amber-200">
+                            <Target className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-semibold text-sm">견적 비율 확인 (FDM 기준)</span>
+                        </div>
+                        <p className="text-white/70 text-xs">
+                            동일 모델에서 SLA ≈ 6배, DLP ≈ 3.5배가 나오도록 시간당 비용·인건비·소모품 등을 조정하세요.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-white/50">FDM</span>
+                                <span className="font-mono text-white">₩{Math.round(fdmTotal).toLocaleString()}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-white/50">DLP (목표 3.5×)</span>
+                                <span className="font-mono text-white">₩{Math.round(dlpTotal).toLocaleString()}</span>
+                                <span className={dlpRatio >= TARGET_DLP_RATIO * 0.9 && dlpRatio <= TARGET_DLP_RATIO * 1.1 ? 'text-emerald-400 text-xs' : 'text-amber-400 text-xs'}>
+                                    실제 {dlpRatio.toFixed(2)}×
+                                </span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-white/50">SLA (목표 6×)</span>
+                                <span className="font-mono text-white">₩{Math.round(slaTotal).toLocaleString()}</span>
+                                <span className={slaRatio >= TARGET_SLA_RATIO * 0.9 && slaRatio <= TARGET_SLA_RATIO * 1.1 ? 'text-emerald-400 text-xs' : 'text-amber-400 text-xs'}>
+                                    실제 {slaRatio.toFixed(2)}×
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* 모델 파라미터 입력 */}
                 <div className="space-y-4">
