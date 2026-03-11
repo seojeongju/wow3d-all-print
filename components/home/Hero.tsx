@@ -72,16 +72,17 @@ export default function Hero() {
         const layerHeight = 0.2;
         const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight));
 
-        const materialTimeFactor = 0.015;
-        const volumeTime = weightGrams * materialTimeFactor;
+        // 서브리니어: 크기 커져도 견적이 과하게 뛰지 않도록 (QuotePanel과 동일)
+        const volumeTime = Math.pow(weightGrams + 1, 0.9) * 0.0236;
         const baseLayerFactor = spec.fdm_layer_hours_factor ?? 0.02;
         const layerTimeFactor = baseLayerFactor * 0.08;
         const movementTime = numLayers * layerTimeFactor;
-        const surfaceTime = surfaceAreaCm2 * 0.0005;
+        const surfaceTime = Math.pow(surfaceAreaCm2 + 1, 0.85) * 0.001;
         const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
         const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
-        const machineCost = estTimeHours * rateKRW;
+        const effectiveRate = estTimeHours > 5 ? rateKRW * 0.9 : rateKRW;
+        const machineCost = estTimeHours * effectiveRate;
         const laborCost = spec.fdm_labor_cost_krw ?? 6500;
         const supportCost = 0; // 히어로에서는 지지대 미적용(QuotePanel 기본값과 동일)
         const totalRaw = materialCost + supportCost + machineCost + laborCost;

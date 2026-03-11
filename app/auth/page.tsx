@@ -18,7 +18,7 @@ function AuthContent() {
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('return') || undefined
     const tokenFromUrl = searchParams.get('token')
-    const returnPath = searchParams.get('return') || '/cart'
+    const returnPath = searchParams.get('return') || '/'
     const authError = searchParams.get('error')
 
     // Google 콜백 후 token이 URL에 있으면 로그인 처리
@@ -98,7 +98,7 @@ function AuthContent() {
 
             showToast.success('로그인 성공', `${result.data.user.name}님, 다시 만나서 반갑습니다.`)
 
-            const target = returnTo || (result.data.user?.role === 'admin' ? '/admin' : '/cart')
+            const target = returnTo || (result.data.user?.role === 'admin' ? '/admin' : '/')
             router.push(target)
         } catch (error) {
             showToast.error('로그인 실패', error instanceof Error ? error.message : '이메일 또는 비밀번호를 확인해 주세요.')
@@ -136,7 +136,7 @@ function AuthContent() {
 
             showToast.success('회원가입 완료', '계정이 생성되었습니다. 로그인된 상태로 이동합니다.')
 
-            router.push(returnTo || '/cart')
+            router.push(returnTo || '/')
         } catch (error) {
             showToast.error('회원가입 실패', error instanceof Error ? error.message : '입력 내용을 확인해 주세요.')
         } finally {

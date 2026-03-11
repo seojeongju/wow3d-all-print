@@ -98,15 +98,13 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.fdm_layer_height))
 
-        // [개선된 알고리즘] 부피, 표면적, 높이를 모두 고려한 시간 산출
-        // [추가] 레이어 높이 보정: 0.2mm 기준, 얇아지면 시간 증가 (Speed Modifier)
+        // [개선된 알고리즘] 부피 서브리니어 + 표면적·높이 반영 (QuotePanel과 동일)
+        // 레이어 높이 보정: 0.2mm 기준, 얇아지면 시간 증가 (Speed Modifier)
         const speedModifier = 0.2 / params.fdm_layer_height;
-
-        const materialTimeFactor = 0.015 * speedModifier; // 보정 적용
-        const volumeTime = weightGrams * materialTimeFactor;
+        const volumeTime = Math.pow(weightGrams + 1, 0.9) * 0.0236 * speedModifier;
         const layerTimeFactor = (ep.fdm_layer_hours_factor ?? 0.02) * 0.08;
         const movementTime = numLayers * layerTimeFactor;
-        const surfaceTime = params.surfaceAreaCm2 * 0.0005 * speedModifier; // 보정 적용
+        const surfaceTime = Math.pow(params.surfaceAreaCm2 + 1, 0.85) * 0.001 * speedModifier;
 
         const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
@@ -118,7 +116,8 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const machineRate = ep.layer_costs[String(params.fdm_layer_height)]
             ?? ep.hourly_rate
-        const machineCost = estTimeHours * machineRate
+        const effectiveRate = estTimeHours > 5 ? machineRate * 0.9 : machineRate
+        const machineCost = estTimeHours * effectiveRate
 
         const total = materialCost + supportCost + machineCost + laborCost
 
@@ -144,8 +143,9 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.sla_layer_height))
         // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
-        const mechanicDelay = 8.5;
-        const estTimeHours = (numLayers * (ep.sla_layer_exposure_sec + mechanicDelay)) / 3600
+        const mechanicDelay = 8.5
+        const rawEstTimeHours = (numLayers * (ep.sla_layer_exposure_sec + mechanicDelay)) / 3600
+        const estTimeHours = Math.max(0.5, Math.pow(rawEstTimeHours + 0.1, 0.9) * 0.953)
 
         const consumablesCost = ep.sla_consumables_krw
         const postProcessCost = params.sla_post_processing
@@ -157,7 +157,8 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const machineRate = ep.layer_costs[String(params.sla_layer_height)]
             ?? ep.hourly_rate
-        const machineCost = estTimeHours * machineRate
+        const effectiveRate = estTimeHours > 5 ? machineRate * 0.9 : machineRate
+        const machineCost = estTimeHours * effectiveRate
 
         const total = resinCost + otherCost + machineCost + laborCost
 
@@ -183,8 +184,9 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const numLayers = Math.max(1, Math.ceil(params.heightMm / params.dlp_layer_height))
         // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
-        const mechanicDelay = 8.5;
-        const estTimeHours = (numLayers * (ep.dlp_layer_exposure_sec + mechanicDelay)) / 3600
+        const mechanicDelay = 8.5
+        const rawEstTimeHours = (numLayers * (ep.dlp_layer_exposure_sec + mechanicDelay)) / 3600
+        const estTimeHours = Math.max(0.5, Math.pow(rawEstTimeHours + 0.1, 0.9) * 0.953)
 
         const consumablesCost = ep.dlp_consumables_krw
         const postProcessCost = params.dlp_post_processing
@@ -196,7 +198,8 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const machineRate = ep.layer_costs[String(params.dlp_layer_height)]
             ?? ep.hourly_rate
-        const machineCost = estTimeHours * machineRate
+        const effectiveRate = estTimeHours > 5 ? machineRate * 0.9 : machineRate
+        const machineCost = estTimeHours * effectiveRate
 
         const total = resinCost + otherCost + machineCost + laborCost
 

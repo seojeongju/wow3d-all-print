@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4) 프론트로 리다이렉트 (token 전달)
-    const returnTo = state ? decodeURIComponent(state) : '/cart';
+    const returnTo = state ? decodeURIComponent(state) : '/';
     const target = `${authPage}?google=1&token=${encodeURIComponent(token)}&return=${encodeURIComponent(returnTo)}`;
     return new Response(null, { status: 302, headers: { Location: target } });
 }

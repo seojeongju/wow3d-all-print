@@ -171,29 +171,28 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             // 기존 단순 높이 비례 방식은 컵과 같이 속이 빈 모델의 특성을 반영하지 못함
             // 개선: (부피 × 부피계수) + (높이 × 레이어계수)로 형상의 복잡도와 크기를 모두 반영
 
-            // 1. 부피에 따른 기본 출력 시간 (cm³ 당 약 3~6분 소요 가정, 인필 반영)
-            // adjustedDensity는 density * (infill/100)와 최소밀도 보정이 적용된 값
-            // 즉, 재료 소모량(g)에 비례하여 시간 산출 (대략 10g당 1시간)
-            const materialTimeFactor = 0.015; // 1g 출력에 약 0.9분 (재튜닝)
-            const volumeTime = weightGrams * materialTimeFactor;
+            // 1. 부피에 따른 기본 출력 시간 (서브리니어: 크기 커져도 견적이 과하게 뛰지 않도록)
+            // (weight+1)^0.9 × 0.0236 → 100g 근처는 기존과 비슷, 대형은 완만하게 증가
+            const volumeTime = Math.pow(weightGrams + 1, 0.9) * 0.0236;
 
             // 2. 레이어 변경 및 Z축 이동 시간 (레이어당 0.002시간 = 7.2초)
             const baseLayerFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.02;
             const layerTimeFactor = baseLayerFactor * 0.08; // 0.015 -> 0.08 (약 5배 상향)
             const movementTime = numLayers * layerTimeFactor;
 
-            // 3. 표면적에 따른 외벽 출력 시간 보정 (cm² 당 0.001시간으로 하향 조정)
-            const surfaceTime = surfaceAreaCm2 * 0.0005;
+            // 3. 표면적 시간 서브리니어 (대형에서 견적 완만하게)
+            const surfaceTime = Math.pow(surfaceAreaCm2 + 1, 0.85) * 0.001;
 
             const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
-            // 비용 계산
+            // 비용 계산 (5시간 초과 시 장비비 10% 볼륨 디스카운트)
             const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
             const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
             const supportCost = supportEnabled ? supportPerCm2Kr * supportTargetArea : 0
             const laborKr = (spec as any)?.fdm_labor_cost_krw ?? 6500
             const laborCost = laborKr
-            const machineCost = estTimeHours * rateKRW
+            const effectiveRate = estTimeHours > 5 ? rateKRW * 0.9 : rateKRW
+            const machineCost = estTimeHours * effectiveRate
             return {
                 total: materialCost + supportCost + machineCost + laborCost,
                 time: estTimeHours,
@@ -210,15 +209,18 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const resinCost = pricePerMlKr * volumeML
             const numLayers = Math.max(1, Math.ceil(heightMm / slaLayerHeight))
             const layerExp = printMethod === 'dlp' ? ((spec as any)?.dlp_layer_exposure_sec ?? 3) : ((spec as any)?.sla_layer_exposure_sec ?? 8)
-            const mechanicDelay = 8.5;
-            const estTimeHours = (numLayers * (layerExp + mechanicDelay)) / 3600
+            const mechanicDelay = 8.5
+            const rawEstTimeHours = (numLayers * (layerExp + mechanicDelay)) / 3600
+            // 서브리니어: 크기 커져도 견적이 과하게 뛰지 않도록 (FDM과 동일 방향)
+            const estTimeHours = Math.max(0.5, Math.pow(rawEstTimeHours + 0.1, 0.9) * 0.953)
             const consKr = printMethod === 'dlp' ? ((spec as any)?.dlp_consumables_krw ?? 3900) : ((spec as any)?.sla_consumables_krw ?? 3900)
             const postKr = printMethod === 'dlp' ? ((spec as any)?.dlp_post_process_krw ?? 10400) : ((spec as any)?.sla_post_process_krw ?? 10400)
             const consumablesCost = consKr
             const postProcessCost = postProcessing ? postKr : 0
             const laborKr = printMethod === 'dlp' ? ((spec as any)?.dlp_labor_cost_krw ?? 9100) : ((spec as any)?.sla_labor_cost_krw ?? 9100)
             const laborCost = laborKr
-            const machineCost = estTimeHours * rateKRW
+            const effectiveRate = estTimeHours > 5 ? rateKRW * 0.9 : rateKRW
+            const machineCost = estTimeHours * effectiveRate
             const otherCost = consumablesCost + postProcessCost
             return {
                 total: resinCost + otherCost + machineCost + laborCost,
