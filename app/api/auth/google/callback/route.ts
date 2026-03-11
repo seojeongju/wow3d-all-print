@@ -88,22 +88,24 @@ export async function GET(request: NextRequest) {
     const name = (googleName || email.split('@')[0] || '사용자').trim();
 
     // 3) DB: google_id로 기존 사용자 찾기, 없으면 email로 찾기, 없으면 신규 생성
-    let userRow: { id: number; email: string; name: string; role?: string; store_id?: number } | null = null;
+    type UserRow = { id: number; email: string; name: string; role?: string; store_id?: number };
+    let userRow: UserRow | null = null;
 
     try {
         userRow = await env.DB.prepare('SELECT id, email, name, role, store_id FROM users WHERE google_id = ?')
             .bind(googleId)
-            .first() as typeof userRow;
+            .first() as UserRow | null;
 
         if (!userRow) {
-            userRow = await env.DB.prepare('SELECT id, email, name, role, store_id FROM users WHERE email = ?')
+            const existingByEmail = await env.DB.prepare('SELECT id, email, name, role, store_id FROM users WHERE email = ?')
                 .bind(email)
-                .first() as typeof userRow;
+                .first() as UserRow | null;
 
-            if (userRow) {
+            if (existingByEmail) {
+                userRow = existingByEmail;
                 // 기존 이메일 가입자에게 google_id 연결
                 await env.DB.prepare('UPDATE users SET google_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-                    .bind(googleId, userRow.id)
+                    .bind(googleId, existingByEmail.id)
                     .run();
             } else {
                 // 신규: Google 전용 회원 생성 (password_hash는 빈 문자열)
@@ -127,6 +129,10 @@ export async function GET(request: NextRequest) {
         }
     } catch (e) {
         console.error('Google callback DB error', e);
+        return new Response(null, { status: 302, headers: { Location: `${authPage}?error=server` } });
+    }
+
+    if (!userRow) {
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=server` } });
     }
 
