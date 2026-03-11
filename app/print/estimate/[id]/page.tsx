@@ -95,6 +95,16 @@ export default function EstimatePrintPage() {
             .finally(() => setLoading(false));
     }, [id, isTemp]);
 
+    // 인쇄/PDF 시 브라우저 제목 통일 (훅 규칙: 조건부 return 이전에 호출)
+    const orderNumber = data?.order?.order_number;
+    useEffect(() => {
+        if (orderNumber) {
+            const prev = document.title;
+            document.title = `견적서 - ${orderNumber}`;
+            return () => { document.title = prev; };
+        }
+    }, [orderNumber]);
+
     // 훅은 조건부 return 이전에 항상 호출 (React 훅 규칙)
     const displayItems = useMemo(() => {
         if (!data) return [];
@@ -165,15 +175,6 @@ export default function EstimatePrintPage() {
     const { order } = data;
     const today = new Date();
     const orderDate = new Date(order.created_at);
-
-    // PDF/인쇄 시 브라우저 헤더에 나오는 제목을 견적서로 통일 (미리보기와 동일한 인상)
-    useEffect(() => {
-        if (order?.order_number) {
-            const prev = document.title;
-            document.title = `견적서 - ${order.order_number}`;
-            return () => { document.title = prev; };
-        }
-    }, [order?.order_number]);
 
     return (
         <div className="bg-white text-black min-h-screen">
