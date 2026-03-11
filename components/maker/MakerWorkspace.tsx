@@ -12,6 +12,7 @@ import { ImageUploader } from '@/components/maker/ImageUploader';
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
+import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 /** 3D → 스케치 전환 시 WebGL을 즉시 언마운트하면 Context Lost 발생. 짧은 지연 후 언마운트로 완화 */
