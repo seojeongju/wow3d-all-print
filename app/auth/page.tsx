@@ -60,6 +60,7 @@ function AuthContent() {
     useEffect(() => {
         if (authError === 'google_cancel') showToast.error('Google 로그인 취소', '다시 시도해 주세요.')
         else if (authError === 'config') showToast.error('로그인 설정 오류', 'Google 로그인이 설정되지 않았습니다.')
+        else if (authError === 'db') showToast.error('데이터베이스 오류', 'Google 로그인용 DB 설정이 필요합니다. 관리자에게 문의하세요.')
         else if (authError === 'server') showToast.error('일시 오류', '잠시 후 다시 시도해 주세요.')
     }, [authError])
 

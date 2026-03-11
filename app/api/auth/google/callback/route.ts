@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
         }
     } catch (e) {
         console.error('Google callback DB error', e);
-        return new Response(null, { status: 302, headers: { Location: `${authPage}?error=server` } });
+        return new Response(null, { status: 302, headers: { Location: `${authPage}?error=db` } });
     }
 
     if (!userRow) {
