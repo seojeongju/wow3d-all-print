@@ -166,24 +166,53 @@ export default function EstimatePrintPage() {
     const today = new Date();
     const orderDate = new Date(order.created_at);
 
+    // PDF/인쇄 시 브라우저 헤더에 나오는 제목을 견적서로 통일 (미리보기와 동일한 인상)
+    useEffect(() => {
+        if (order?.order_number) {
+            const prev = document.title;
+            document.title = `견적서 - ${order.order_number}`;
+            return () => { document.title = prev; };
+        }
+    }, [order?.order_number]);
+
     return (
         <div className="bg-white text-black min-h-screen">
+            {/* 인쇄 시 브라우저 기본 헤더/푸터 영향 최소화 + 레이아웃 유지 */}
+            <style jsx global>{`
+                @page {
+                    size: A4;
+                    margin: 12mm;
+                }
+                @media print {
+                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                    tr { break-inside: avoid; }
+                    .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+                }
+            `}</style>
+
             {/* 인쇄 버튼 바 - 인쇄 시 숨김 */}
             <div className="print:hidden bg-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
                 <span className="text-white text-sm font-medium">견적서 미리보기</span>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => window.close()}
-                        className="px-4 py-1.5 text-sm text-slate-300 hover:text-white border border-slate-600 rounded transition-colors"
-                    >
-                        닫기
-                    </button>
-                    <button
-                        onClick={() => window.print()}
-                        className="px-5 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded font-bold transition-colors"
-                    >
-                        🖨️ 인쇄
-                    </button>
+                <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                    <span className="text-xs text-slate-400 max-w-[240px] sm:max-w-none">
+                        PDF로 저장 시 인쇄 창에서 &apos;헤더 및 푸터&apos; 해제 시 미리보기와 동일하게 저장됩니다.
+                    </span>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => window.close()}
+                            className="px-4 py-1.5 text-sm text-slate-300 hover:text-white border border-slate-600 rounded transition-colors"
+                        >
+                            닫기
+                        </button>
+                        <button
+                            onClick={() => window.print()}
+                            className="px-5 py-1.5 text-sm bg-slate-600 hover:bg-slate-500 text-white rounded font-bold transition-colors"
+                        >
+                            🖨️ 인쇄
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -252,7 +281,7 @@ export default function EstimatePrintPage() {
                     </div>
 
                     {/* 합계 금액 */}
-                    <div className="border-b-2 border-black pb-2 mb-6 flex justify-between items-end">
+                    <div className="print-avoid-break border-b-2 border-black pb-2 mb-6 flex justify-between items-end">
                         <span className="font-bold text-lg">합계금액 (Supply Price Total)</span>
                         <span className="text-2xl font-bold">
                             ₩ {totalAmount.toLocaleString()}
@@ -322,7 +351,7 @@ export default function EstimatePrintPage() {
                     )}
 
                     {/* 특이사항 */}
-                    <div className="mt-6 text-sm space-y-2">
+                    <div className="print-avoid-break mt-6 text-sm space-y-2">
                         <p className="font-bold border-b border-black inline-block mb-2">특이사항</p>
                         <ul className="list-disc list-inside space-y-1 text-slate-700">
                             {footerLines.map((line, i) => <li key={i}>{line}</li>)}

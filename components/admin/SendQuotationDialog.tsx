@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Paperclip, AlertCircle, FileCode, FileText, Plus, X } from 'lucide-react';
+import { Loader2, Send, Paperclip, FileCode, FileText, Plus, X } from 'lucide-react';
 
 export type QuotationSendResult = {
     success: boolean;
@@ -233,22 +233,10 @@ export function SendQuotationDialog({
                             )}
                         </div>
                         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 flex items-center gap-3">
-                            {draft.pdfReady ? (
-                                <>
-                                    <Paperclip className="w-4 h-4 text-emerald-400 shrink-0" />
-                                    <span className="text-sm text-white/80">견적서 PDF가 메일에 첨부됩니다.</span>
-                                </>
-                            ) : (
-                                <>
-                                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                                    <div className="text-sm text-white/70">
-                                        <span>PDF 첨부 불가</span>
-                                        {draft.pdfError && (
-                                            <span className="block text-white/50 mt-0.5">{draft.pdfError}</span>
-                                        )}
-                                    </div>
-                                </>
-                            )}
+                            <Paperclip className="w-4 h-4 text-white/50 shrink-0" />
+                            <span className="text-sm text-white/70">
+                                {draft.pdfError ?? '견적서는 인쇄(저장) 후 아래 파일 첨부로 추가해 주세요.'}
+                            </span>
                         </div>
                         <div className="grid gap-2">
                             <Label className="text-white/80">추가 첨부 파일</Label>

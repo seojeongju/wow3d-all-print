@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
-import { buildQuotationPdf } from '@/lib/quotation-pdf';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
 
 /**
@@ -78,13 +77,8 @@ export async function GET(
         const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
         const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}`;
 
-        const orderRow = await env.DB.prepare(
-            'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
-        ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
-
         type ItemRow = { id?: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
         let items: ItemRow[] = [];
-        let pdfError: string | undefined;
         try {
             const itemRes = await env.DB.prepare(`
                 SELECT oi.id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
@@ -96,11 +90,9 @@ export async function GET(
             items = selectedItemIds.length > 0
                 ? allItems.filter((row) => row.id != null && selectedItemIds.includes(row.id))
                 : allItems;
-        } catch (err) {
-            pdfError = err instanceof Error ? err.message : String(err);
+        } catch {
+            // items stay []
         }
-
-        let pdfReady = false;
 
         let totalAmount: number | null = null;
         if (items.length > 0) {
@@ -121,25 +113,8 @@ export async function GET(
         const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
         const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';
 
-        try {
-            if (orderRow && items.length > 0) {
-                const orderForPdf = {
-                    order_number: fullOrder.order_number,
-                    created_at: orderRow.created_at,
-                    recipient_name: orderRow.recipient_name,
-                    recipient_phone: orderRow.recipient_phone,
-                    shipping_address: orderRow.shipping_address,
-                    user_email: fullOrder.user_email,
-                    guest_email: fullOrder.guest_email,
-                };
-                await buildQuotationPdf(orderForPdf, items, 'WOW3D');
-                pdfReady = true;
-            } else {
-                pdfError = items.length === 0 ? '주문 품목이 없어 PDF를 생성할 수 없습니다.' : '주문 정보가 없습니다.';
-            }
-        } catch (err) {
-            pdfError = err instanceof Error ? err.message : String(err);
-        }
+        const pdfReady = false;
+        const pdfError = '견적서는 인쇄(저장) 후 아래 파일 첨부로 추가해 주세요.';
 
         const subject = buildDefaultSubject(fullOrder.order_number);
         const html = buildDefaultHtml({
@@ -147,14 +122,14 @@ export async function GET(
             estimateUrl,
             amountText,
             displayAmount,
-            withPdfAttachment: pdfReady,
+            withPdfAttachment: false,
         });
         const text = buildDefaultText({
             orderNumber: fullOrder.order_number,
             estimateUrl,
             amountText,
             displayAmount,
-            withPdfAttachment: pdfReady,
+            withPdfAttachment: false,
         });
 
         return NextResponse.json({
@@ -163,7 +138,7 @@ export async function GET(
             html,
             text,
             pdfReady,
-            pdfError: pdfError || undefined,
+            pdfError,
             order_number: fullOrder.order_number,
         });
     } catch (e) {

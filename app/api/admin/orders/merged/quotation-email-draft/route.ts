@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
-import { buildQuotationPdf } from '@/lib/quotation-pdf';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
 
 /**
@@ -85,40 +84,8 @@ export async function GET(req: NextRequest) {
   const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
   const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';
 
-  // PDF 생성 가능 여부 확인
-  let pdfReady = false;
-  let pdfError: string | undefined;
-  try {
-    const base = list[0];
-    const orderForPdf = {
-      order_number: `MERGED-${orderIds.length}`,
-      created_at: base.created_at,
-      recipient_name: base.recipient_name || '',
-      recipient_phone: base.recipient_phone || '',
-      shipping_address: base.shipping_address || '',
-      user_email: base.user_email,
-      guest_email: base.guest_email,
-    };
-    const itemsForPdf = items.map((it, idx) => {
-      const orderNo = list.find((o) => o.id === it.order_id)?.order_number || String(it.order_id);
-      const fileName = it.file_name || `Item ${idx + 1}`;
-      return {
-        file_name: `[${orderNo}] ${fileName}`,
-        print_method: it.print_method,
-        quantity: Number(it.quantity) || 1,
-        unit_price: Math.round(Number(it.unit_price) || 0),
-        subtotal: Math.round(Number(it.subtotal) || 0),
-      };
-    });
-    if (itemsForPdf.length > 0) {
-      await buildQuotationPdf(orderForPdf, itemsForPdf, 'WOW3D');
-      pdfReady = true;
-    } else {
-      pdfError = '주문 품목이 없어 PDF를 생성할 수 없습니다.';
-    }
-  } catch (err) {
-    pdfError = err instanceof Error ? err.message : String(err);
-  }
+  const pdfReady = false;
+  const pdfError = '견적서는 인쇄(저장) 후 아래 파일 첨부로 추가해 주세요.';
 
   const requestOrigin = typeof req.url === 'string' ? new URL(req.url).origin : '';
   const envVars = env as unknown as Record<string, string | undefined>;

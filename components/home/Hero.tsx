@@ -272,7 +272,7 @@ export default function Hero() {
                                 </span>
                             </div>
                             <div className="mt-8 p-4 bg-secondary/50 rounded-xl">
-                                <div className="text-xs text-muted-foreground mb-1">예상 견적가</div>
+                                <div className="text-xs text-muted-foreground mb-1">예상 견적가(FDM)</div>
                                 <div className={`text-2xl font-bold ${!file || !analysis || !heroEstimate ? 'text-muted-foreground' : ''}`}>
                                     {!file ? '업로드 후 확인' : !analysis ? '—' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString()}` : '—'}
                                 </div>

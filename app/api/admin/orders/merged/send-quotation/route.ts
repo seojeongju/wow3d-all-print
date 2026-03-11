@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
-import { buildQuotationPdf, uint8ArrayToBase64 } from '@/lib/quotation-pdf';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
 
 /**
@@ -118,35 +117,6 @@ export async function POST(req: NextRequest) {
       const fromAddr = process.env.RESEND_FROM || envVars.RESEND_FROM || 'WOW3D 견적서 <onboarding@resend.dev>';
       const replyToAddr = process.env.RESEND_REPLY_TO || envVars.RESEND_REPLY_TO || 'wow3d16@naver.com';
       let attachments: { filename: string; content: string }[] = [];
-      try {
-        const base = orders[0];
-        const orderForPdf = {
-          order_number: `MERGED-${orderIds.length}`,
-          created_at: base.created_at,
-          recipient_name: base.recipient_name || '',
-          recipient_phone: base.recipient_phone || '',
-          shipping_address: base.shipping_address || '',
-          user_email: base.user_email,
-          guest_email: base.guest_email,
-        };
-        const itemsForPdf = items.map((it, idx) => {
-          const orderNo = orders.find((o) => o.id === it.order_id)?.order_number || String(it.order_id);
-          const fileName = it.file_name || `Item ${idx + 1}`;
-          return {
-            file_name: `[${orderNo}] ${fileName}`,
-            print_method: it.print_method,
-            quantity: Number(it.quantity) || 1,
-            unit_price: Math.round(Number(it.unit_price) || 0),
-            subtotal: Math.round(Number(it.subtotal) || 0),
-          };
-        });
-        if (itemsForPdf.length > 0) {
-          const pdfBytes = await buildQuotationPdf(orderForPdf, itemsForPdf, 'WOW3D');
-          attachments = [{ filename: `quotation-merged-${orderIds.length}.pdf`, content: uint8ArrayToBase64(pdfBytes) }];
-        }
-      } catch (pdfErr) {
-        console.warn('merged send-quotation: PDF attachment skipped', pdfErr);
-      }
       const extra = body.extraAttachments;
       if (Array.isArray(extra) && extra.length > 0) {
         for (const a of extra) {
