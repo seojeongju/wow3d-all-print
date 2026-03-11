@@ -128,7 +128,8 @@ export async function GET(request: NextRequest) {
             }
         }
     } catch (e) {
-        console.error('Google callback DB error', e);
+        const err = e instanceof Error ? e : new Error(String(e));
+        console.error('Google callback DB error', err.message, err.stack);
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=db` } });
     }
 
