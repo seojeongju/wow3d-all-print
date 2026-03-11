@@ -246,37 +246,35 @@ export default function EstimatePrintPage() {
                         </div>
                     )}
 
-                    {/* 공급자/수요자 정보 */}
-                    <div className="flex flex-col md:flex-row gap-0 border border-black mb-8">
+                    {/* 공급자/수요자 정보 - 한 줄에 배치, 컴팩트 */}
+                    <div className="flex flex-row gap-0 border border-black mb-6">
                         {/* 공급받는자 */}
-                        <div className="w-full md:w-1/2 p-0 border-b md:border-b-0 md:border-r border-black">
-                            <div className="bg-slate-100 p-2 text-center font-bold border-b border-black text-sm">공급받는자</div>
-                            <div className="p-4 space-y-2 text-sm">
-                                <InfoRow label="상호/성명" value={order.recipient_name} />
-                                <InfoRow label="연락처" value={order.recipient_phone} />
-                                <InfoRow label="이메일" value={order.user_email || order.guest_email || '-'} />
-                                <InfoRow label="주소" value={order.shipping_address} />
+                        <div className="flex-1 min-w-0 p-0 border-r border-black">
+                            <div className="bg-slate-100 py-1.5 px-2 text-center font-bold border-b border-black text-xs">공급받는자</div>
+                            <div className="p-2 space-y-1 text-xs">
+                                <InfoRow label="상호/성명" value={order.recipient_name} compact />
+                                <InfoRow label="연락처" value={order.recipient_phone} compact />
+                                <InfoRow label="이메일" value={order.user_email || order.guest_email || '-'} compact />
+                                <InfoRow label="주소" value={order.shipping_address} compact />
                             </div>
                         </div>
 
                         {/* 공급자 */}
-                        <div className="w-full md:w-1/2 p-0">
-                            <div className="bg-slate-100 p-2 text-center font-bold border-b border-black text-sm">공급자</div>
-                            <div className="p-4 space-y-2 text-sm relative">
-                                {company.business_number && <InfoRow label="등록번호" value={company.business_number} />}
-                                <InfoRow label="상호(법인)" value={company.company_name} />
-                                <div className="flex">
-                                    <span className="w-20 font-bold text-slate-500">대표자</span>
-                                    <span>{company.representative}</span>
-                                    <div className="absolute right-4 top-10 opacity-40">
-                                        <span className="border border-red-500 text-red-500 rounded-sm px-1 text-xs select-none">(인)</span>
-                                    </div>
+                        <div className="flex-1 min-w-0 p-0">
+                            <div className="bg-slate-100 py-1.5 px-2 text-center font-bold border-b border-black text-xs">공급자</div>
+                            <div className="p-2 space-y-1 text-xs relative">
+                                {company.business_number && <InfoRow label="등록번호" value={company.business_number} compact />}
+                                <InfoRow label="상호(법인)" value={company.company_name} compact />
+                                <div className="flex min-w-0">
+                                    <span className="w-14 flex-shrink-0 font-bold text-slate-500">대표자</span>
+                                    <span className="min-w-0 truncate">{company.representative}</span>
+                                    <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none ml-1 flex-shrink-0 opacity-40">(인)</span>
                                 </div>
-                                {company.address && <InfoRow label="사업장" value={company.address} />}
+                                {company.address && <InfoRow label="사업장" value={company.address} compact />}
                                 {(company.business_type || company.business_item) && (
-                                    <InfoRow label="업태/종목" value={`${company.business_type || ''} / ${company.business_item || ''}`} />
+                                    <InfoRow label="업태/종목" value={`${company.business_type || ''} / ${company.business_item || ''}`} compact />
                                 )}
-                                {company.phone && <InfoRow label="전화" value={company.phone} />}
+                                {company.phone && <InfoRow label="전화" value={company.phone} compact />}
                             </div>
                         </div>
                     </div>
@@ -371,12 +369,12 @@ export default function EstimatePrintPage() {
     );
 }
 
-function InfoRow({ label, value }: { label: string; value?: string }) {
+function InfoRow({ label, value, compact }: { label: string; value?: string; compact?: boolean }) {
     if (!value) return null;
     return (
-        <div className="flex">
-            <span className="w-20 font-bold text-slate-500 flex-shrink-0">{label}</span>
-            <span className="flex-1">{value}</span>
+        <div className="flex min-w-0">
+            <span className={`font-bold text-slate-500 flex-shrink-0 ${compact ? 'w-14' : 'w-20'}`}>{label}</span>
+            <span className="flex-1 min-w-0 break-words">{value}</span>
         </div>
     );
 }
