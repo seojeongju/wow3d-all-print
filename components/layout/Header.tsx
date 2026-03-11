@@ -162,7 +162,7 @@ export default function Header() {
                 </div>
             </div>
 
-            {/* 모바일 메뉴 패널: 상단 바 아래에만 표시(z-[100]), 터치 스크롤 가능 */}
+            {/* 모바일 메뉴 패널: 불투명 배경으로 뒤 콘텐츠 가림, 터치 스크롤 */}
             <AnimatePresence>
                 {mobileOpen && (
                     <motion.div
@@ -170,7 +170,7 @@ export default function Header() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 top-0 z-[100] lg:hidden bg-slate-950/95 backdrop-blur-2xl"
+                        className="fixed inset-0 top-0 z-[100] lg:hidden bg-slate-950 backdrop-blur-xl"
                         onClick={() => setMobileOpen(false)}
                         aria-hidden="false"
                     >
@@ -187,11 +187,11 @@ export default function Header() {
                                     }
                                 }
                             }}
-                            className="flex flex-col gap-2.5 max-w-sm mx-auto h-full pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
+                            className="flex flex-col gap-2.5 w-full max-w-lg mx-auto h-full pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-5 sm:px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
                             onClick={(e) => e.stopPropagation()}
                             onTouchEnd={(e) => e.stopPropagation()}
                         >
-                            <div className="mb-4">
+                            <div className="mb-3">
                                 <span className="text-[10px] font-bold text-primary/80 uppercase tracking-[0.2em] ml-1">Menu Navigation</span>
                             </div>
 

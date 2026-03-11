@@ -5,7 +5,7 @@ import { useMakerStore } from '@/store/useMakerStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check, ImageIcon } from 'lucide-react';
+import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check, ImageIcon, PanelRightOpen, X } from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
@@ -37,6 +37,7 @@ export function MakerWorkspace() {
     const [convertMode, setConvertMode] = useState<ConvertMode>('detailed');
     const [useRemoveBg, setUseRemoveBg] = useState(false);
     const [removeBgConfigured, setRemoveBgConfigured] = useState<boolean | null>(null);
+    const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
 
     useEffect(() => {
         fetch('/api/maker/remove-bg')
@@ -68,70 +69,74 @@ export function MakerWorkspace() {
     return (
         <>
         <Exporter />
-        <div className="flex flex-col w-full max-w-6xl h-[800px] bg-[#0d0d0d]/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-black/80 ring-1 ring-white/5 mx-auto">
+        <div className="flex flex-col w-full max-w-6xl min-h-[100dvh] md:h-[800px] bg-[#0d0d0d]/80 backdrop-blur-3xl border border-white/10 rounded-none md:rounded-[2rem] overflow-hidden shadow-2xl shadow-black/80 ring-1 ring-white/5 mx-auto">
             {/* Header */}
-            <header className="h-16 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-6 z-20">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+            <header className="h-14 md:h-16 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-3 md:px-6 z-20 shrink-0">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0">
                         <Box className="w-4 h-4 text-primary" />
                     </div>
-                    <span className="font-bold text-white tracking-wide">AI 3D Maker</span>
+                    <span className="font-bold text-white tracking-wide text-sm md:text-base truncate">AI 3D Maker</span>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="h-10">
-                        <TabsList className="grid w-[200px] grid-cols-2 h-10 bg-white/5 border border-white/10 rounded-xl">
-                            <TabsTrigger value="draw" className="text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all">스케치(2D)</TabsTrigger>
-                            <TabsTrigger value="3d" className="text-xs font-semibold data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-lg transition-all">결과물(3D)</TabsTrigger>
+                <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="h-9 md:h-10">
+                        <TabsList className="grid w-[160px] md:w-[200px] grid-cols-2 h-9 md:h-10 bg-white/5 border border-white/10 rounded-lg md:rounded-xl">
+                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md md:rounded-lg transition-all">스케치(2D)</TabsTrigger>
+                            <TabsTrigger value="3d" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-md md:rounded-lg transition-all">결과물(3D)</TabsTrigger>
                         </TabsList>
                     </Tabs>
 
-                    <div className="w-px h-6 bg-white/10 mx-2" />
+                    <div className="w-px h-5 md:h-6 bg-white/10 hidden sm:block" />
 
-                    <Button variant="outline" size="sm" className="h-10 px-4 text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white rounded-xl transition-all" onClick={triggerExport}>
-                        <Download className="w-4 h-4 mr-2" />
-                        STL 저장
+                    <Button variant="outline" size="sm" className="h-9 md:h-10 px-3 md:px-4 text-[10px] md:text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white rounded-lg md:rounded-xl transition-all" onClick={triggerExport}>
+                        <Download className="w-3.5 h-3.5 md:w-4 md:h-4 sm:mr-1.5" />
+                        <span className="hidden sm:inline">STL 저장</span>
                     </Button>
-                    <Button size="sm" className="h-10 px-6 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] rounded-xl transition-all">
+                    {/* 모바일: 설정 패널 열기 */}
+                    <Button variant="outline" size="sm" className="md:hidden h-9 w-9 p-0 rounded-lg border-white/20 text-white/80 hover:bg-white/10" onClick={() => setMobileSettingsOpen(true)} aria-label="설정">
+                        <PanelRightOpen className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" className="hidden sm:flex h-9 md:h-10 px-4 md:px-6 text-[10px] md:text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] rounded-lg md:rounded-xl transition-all">
                         견적 의뢰하기
                     </Button>
                 </div>
             </header>
 
             {/* Main Content */}
-            <div className="flex-1 flex overflow-hidden relative">
+            <div className="flex-1 flex overflow-hidden relative min-h-0">
                 {/* Background Grid Pattern */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] z-0" />
 
-                {/* Left Toolbar */}
-                <aside className="w-20 bg-black/40 border-r border-white/10 flex flex-col items-center py-6 gap-4 z-20 backdrop-blur-xl">
+                {/* Left Toolbar - 모바일에서 축소 */}
+                <aside className="w-14 md:w-20 bg-black/40 border-r border-white/10 flex flex-col items-center py-3 md:py-6 gap-2 md:gap-4 z-20 backdrop-blur-xl shrink-0">
                     <ToolbarButton
                         active={tool === 'pen'}
                         onClick={() => setTool('pen')}
-                        icon={<Pencil className="w-5 h-5" />}
+                        icon={<Pencil className="w-4 h-4 md:w-5 md:h-5" />}
                         label="펜"
                     />
                     <ToolbarButton
                         active={tool === 'eraser'}
                         onClick={() => setTool('eraser')}
-                        icon={<Eraser className="w-5 h-5" />}
+                        icon={<Eraser className="w-4 h-4 md:w-5 md:h-5" />}
                         label="지우개"
                     />
-                    <div className="w-8 h-px bg-white/10 my-2" />
+                    <div className="w-6 md:w-8 h-px bg-white/10 my-1 md:my-2" />
                     <ToolbarButton
                         onClick={undo}
-                        icon={<Undo className="w-5 h-5" />}
-                        label="실행 취소"
+                        icon={<Undo className="w-4 h-4 md:w-5 md:h-5" />}
+                        label="취소"
                     />
                     <ToolbarButton
                         onClick={clearCanvas}
-                        icon={<Trash2 className="w-5 h-5" />}
-                        label="전체 지우기"
+                        icon={<Trash2 className="w-4 h-4 md:w-5 md:h-5" />}
+                        label="지우기"
                         className="hover:text-red-400 hover:bg-red-500/10 text-white/50"
                     />
 
-                    <div className="w-8 h-px bg-white/10 my-2" />
-                    <div className="w-full px-3 flex justify-center">
+                    <div className="w-6 md:w-8 h-px bg-white/10 my-1 md:my-2" />
+                    <div className="w-full px-1.5 md:px-3 flex justify-center">
                         <ImageUploader
                             onSvgConverted={(data) => setPendingSvg(data)}
                             convertMode={convertMode}
@@ -140,13 +145,13 @@ export function MakerWorkspace() {
                     </div>
                 </aside>
 
-                {/* Center Workspace */}
-                <main className="flex-1 relative flex items-center justify-center p-8 z-10 overflow-hidden">
+                {/* Center Workspace - 모바일에서 남는 공간 전부 사용 */}
+                <main className="flex-1 min-w-0 relative flex items-center justify-center p-3 md:p-8 z-10 overflow-hidden">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4 }}
-                        className="relative w-full h-full max-w-4xl max-h-[650px] bg-white/[0.02] border border-white/10 rounded-[1.5rem] overflow-hidden shadow-2xl backdrop-blur-md"
+                        className="relative w-full h-full max-w-4xl max-h-full md:max-h-[650px] bg-white/[0.02] border border-white/10 rounded-xl md:rounded-[1.5rem] overflow-hidden shadow-2xl backdrop-blur-md"
                     >
                         {/* 2D Canvas Layer */}
                         <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === 'draw' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
@@ -165,8 +170,32 @@ export function MakerWorkspace() {
                     </motion.div>
                 </main>
 
-                {/* Right Settings Panel */}
-                <aside className="w-80 bg-black/40 border-l border-white/10 p-6 flex flex-col gap-8 z-20 backdrop-blur-xl shrink-0 overflow-y-auto custom-scrollbar">
+                {/* 모바일: 설정 드로어 백드롭 */}
+                {mobileSettingsOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/60 z-40 md:hidden"
+                        onClick={() => setMobileSettingsOpen(false)}
+                        aria-hidden
+                    />
+                )}
+
+                {/* Right Settings Panel - 데스크톱은 레이아웃, 모바일은 슬라이드 드로어 */}
+                <aside
+                    className={cn(
+                        'flex flex-col gap-8 z-20 backdrop-blur-xl overflow-y-auto custom-scrollbar',
+                        'bg-black/40 border-l border-white/10',
+                        'md:relative md:w-80 md:p-6 md:shrink-0',
+                        'fixed top-0 right-0 bottom-0 w-[min(320px,92vw)] p-6 pt-14 transition-transform duration-300 ease-out md:pt-6',
+                        mobileSettingsOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
+                    )}
+                >
+                    {/* 모바일 전용: 드로어 헤더(닫기) */}
+                    <div className="md:hidden absolute top-0 left-0 right-0 h-14 flex items-center justify-between px-4 border-b border-white/10 bg-black/60 z-10">
+                        <span className="font-bold text-white text-sm">설정</span>
+                        <button type="button" onClick={() => setMobileSettingsOpen(false)} className="p-2 rounded-lg text-white/70 hover:bg-white/10" aria-label="닫기">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
 
                     {/* 1. 이미지 또는 SVG 입력 */}
                     <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 shadow-xl">

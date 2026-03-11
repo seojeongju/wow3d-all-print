@@ -18,6 +18,9 @@ const ACCEPT = {
     'application/vnd.ms-package.3dmanufacturing-3dmodel+xml': ['.3mf'],
 }
 
+// 모바일(iOS 등)에서 파일 선택이 열리도록 확장자 문자열도 사용
+const ACCEPT_STRING = '.stl,.obj,.3mf,.ply,.step,.stp'
+
 export default function FileUpload({ variant = 'default' }: { variant?: FileUploadVariant }) {
     const { file, setFile, reset } = useFileStore()
     const isDark = variant === 'dark'
@@ -62,11 +65,12 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
         )
     }
 
+    const inputProps = getInputProps()
     return (
         <div
             {...getRootProps()}
             className={cn(
-                "border-2 border-dashed rounded-xl p-8 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group",
+                "relative border-2 border-dashed rounded-xl p-8 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group",
                 isDark
                     ? isDragActive
                         ? "border-primary bg-primary/10 scale-[1.02]"
@@ -76,7 +80,25 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
                         : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
             )}
         >
-            <input {...getInputProps()} />
+            {/* 모바일(iOS 등)에서 터치가 input에 직접 전달되도록 전체 덮기 → 파일 선택이 정상 동작 */}
+            <input
+                {...inputProps}
+                accept={ACCEPT_STRING}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 touch-manipulation"
+                style={{
+                    ...inputProps.style,
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0,
+                    WebkitTouchCallout: 'none',
+                }}
+            />
             <div
                 className={cn(
                     "w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200",
