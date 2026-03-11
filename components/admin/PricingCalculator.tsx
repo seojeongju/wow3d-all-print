@@ -101,10 +101,10 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         // [개선된 알고리즘] 부피 서브리니어 + 표면적·높이 반영 (QuotePanel과 동일)
         // 레이어 높이 보정: 0.2mm 기준, 얇아지면 시간 증가 (Speed Modifier)
         const speedModifier = 0.2 / params.fdm_layer_height;
-        const volumeTime = Math.pow(weightGrams + 1, 0.9) * 0.0236 * speedModifier;
+        const volumeTime = Math.pow(weightGrams + 1, 0.85) * 0.0297 * speedModifier;
         const layerTimeFactor = (ep.fdm_layer_hours_factor ?? 0.02) * 0.08;
         const movementTime = numLayers * layerTimeFactor;
-        const surfaceTime = Math.pow(params.surfaceAreaCm2 + 1, 0.85) * 0.001 * speedModifier;
+        const surfaceTime = Math.pow(params.surfaceAreaCm2 + 1, 0.8) * 0.00126 * speedModifier;
 
         const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
@@ -116,7 +116,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const machineRate = ep.layer_costs[String(params.fdm_layer_height)]
             ?? ep.hourly_rate
-        const effectiveRate = estTimeHours > 5 ? machineRate * 0.9 : machineRate
+        const effectiveRate = estTimeHours > 10 ? machineRate * 0.7 : estTimeHours > 5 ? machineRate * 0.8 : machineRate
         const machineCost = estTimeHours * effectiveRate
 
         const total = materialCost + supportCost + machineCost + laborCost
@@ -157,7 +157,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const machineRate = ep.layer_costs[String(params.sla_layer_height)]
             ?? ep.hourly_rate
-        const effectiveRate = estTimeHours > 5 ? machineRate * 0.9 : machineRate
+        const effectiveRate = estTimeHours > 10 ? machineRate * 0.7 : estTimeHours > 5 ? machineRate * 0.8 : machineRate
         const machineCost = estTimeHours * effectiveRate
 
         const total = resinCost + otherCost + machineCost + laborCost
@@ -198,7 +198,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
         const machineRate = ep.layer_costs[String(params.dlp_layer_height)]
             ?? ep.hourly_rate
-        const effectiveRate = estTimeHours > 5 ? machineRate * 0.9 : machineRate
+        const effectiveRate = estTimeHours > 10 ? machineRate * 0.7 : estTimeHours > 5 ? machineRate * 0.8 : machineRate
         const machineCost = estTimeHours * effectiveRate
 
         const total = resinCost + otherCost + machineCost + laborCost

@@ -47,9 +47,9 @@
 
 ## 적용된 변경 (이번 수정)
 
-### FDM
-- **부피 기반 시간** 서브리니어: `volumeTime = (weightGrams + 1)^0.9 × 0.0236`
-- 100g 근처는 기존과 비슷, 대형은 완만하게 증가.
+### FDM (보완)
+- **부피 시간**: `volumeTime = (weightGrams + 1)^0.85 × 0.0297` (지수 0.85로 대형 더 완만, 100g 근처 유지)
+- **표면 시간**: `surfaceTime = (surfaceAreaCm2 + 1)^0.8 × 0.00126` (지수 0.8로 대형 더 완만)
 
 ### SLA / DLP
 - **예상 시간** 서브리니어: `rawEstTimeHours = numLayers × (노출+지연)/3600` 후  
@@ -58,9 +58,7 @@
 
 적용 위치: QuotePanel(/quote), 관리자 PricingCalculator. (Hero는 FDM만 표시)
 
-### 표면적 서브리니어 (추가 적용)
-- **FDM**: `surfaceTime = (surfaceAreaCm2 + 1)^0.85 × 0.001` (기존 선형 대비 대형에서 완만).
 
-### 볼륨 디스카운트 (추가 적용)
-- **FDM / SLA / DLP** 공통: 예상 시간이 **5시간 초과**일 때 장비비 시간당 단가 **10% 할인**  
-  `effectiveRate = estTimeHours > 5 ? rateKRW * 0.9 : rateKRW`
+### 볼륨 디스카운트 (2단계)
+- **FDM / SLA / DLP** 공통: **5h 초과** 시 20% 할인(0.8배), **10h 초과** 시 30% 할인(0.7배)  
+  `effectiveRate = estTimeHours > 10 ? rate * 0.7 : estTimeHours > 5 ? rate * 0.8 : rate`

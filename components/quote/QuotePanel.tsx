@@ -171,27 +171,26 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             // 기존 단순 높이 비례 방식은 컵과 같이 속이 빈 모델의 특성을 반영하지 못함
             // 개선: (부피 × 부피계수) + (높이 × 레이어계수)로 형상의 복잡도와 크기를 모두 반영
 
-            // 1. 부피에 따른 기본 출력 시간 (서브리니어: 크기 커져도 견적이 과하게 뛰지 않도록)
-            // (weight+1)^0.9 × 0.0236 → 100g 근처는 기존과 비슷, 대형은 완만하게 증가
-            const volumeTime = Math.pow(weightGrams + 1, 0.9) * 0.0236;
+            // 1. 부피 시간 서브리니어 (지수 0.85: 대형도 견적 완만) 100g 근처 유지용 계수 0.0297
+            const volumeTime = Math.pow(weightGrams + 1, 0.85) * 0.0297;
 
             // 2. 레이어 변경 및 Z축 이동 시간 (레이어당 0.002시간 = 7.2초)
             const baseLayerFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.02;
             const layerTimeFactor = baseLayerFactor * 0.08; // 0.015 -> 0.08 (약 5배 상향)
             const movementTime = numLayers * layerTimeFactor;
 
-            // 3. 표면적 시간 서브리니어 (대형에서 견적 완만하게)
-            const surfaceTime = Math.pow(surfaceAreaCm2 + 1, 0.85) * 0.001;
+            // 3. 표면적 시간 서브리니어 (지수 0.8: 대형에서 더 완만)
+            const surfaceTime = Math.pow(surfaceAreaCm2 + 1, 0.8) * 0.00126;
 
             const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
-            // 비용 계산 (5시간 초과 시 장비비 10% 볼륨 디스카운트)
+            // 비용 계산 (볼륨 디스카운트: 5h+ 10%, 10h+ 15%)
             const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
             const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
             const supportCost = supportEnabled ? supportPerCm2Kr * supportTargetArea : 0
             const laborKr = (spec as any)?.fdm_labor_cost_krw ?? 6500
             const laborCost = laborKr
-            const effectiveRate = estTimeHours > 5 ? rateKRW * 0.9 : rateKRW
+            const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
             const machineCost = estTimeHours * effectiveRate
             return {
                 total: materialCost + supportCost + machineCost + laborCost,
@@ -219,7 +218,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const postProcessCost = postProcessing ? postKr : 0
             const laborKr = printMethod === 'dlp' ? ((spec as any)?.dlp_labor_cost_krw ?? 9100) : ((spec as any)?.sla_labor_cost_krw ?? 9100)
             const laborCost = laborKr
-            const effectiveRate = estTimeHours > 5 ? rateKRW * 0.9 : rateKRW
+            const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
             const machineCost = estTimeHours * effectiveRate
             const otherCost = consumablesCost + postProcessCost
             return {
