@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 
-        // 사용자 정보 조회
+        // 사용자 정보 조회 (role, store_id 포함 - 로그인 응답과 동일한 형태)
         const user = await env.DB
-            .prepare('SELECT id, email, name, phone, created_at FROM users WHERE id = ?')
+            .prepare('SELECT id, email, name, phone, role, store_id, created_at, updated_at FROM users WHERE id = ?')
             .bind(auth.userId)
             .first();
 

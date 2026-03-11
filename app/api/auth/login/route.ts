@@ -51,8 +51,12 @@ export async function POST(request: NextRequest) {
         }
 
         const passwordHash = (raw?.password_hash ?? raw?.passwordHash) as string | undefined;
+        const googleId = raw?.google_id ?? (raw as any)?.google_id;
         if (!raw || !passwordHash) {
             return errorResponse('이메일 또는 비밀번호가 올바르지 않습니다', 401);
+        }
+        if (passwordHash === '' || googleId) {
+            return errorResponse('Google로 가입한 계정입니다. Google로 로그인해 주세요.', 401);
         }
 
         let isPasswordValid: boolean;
