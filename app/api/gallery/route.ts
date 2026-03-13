@@ -97,10 +97,23 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'R2 BUCKET이 없습니다' }, { status: 503 });
         }
 
-        const result = await env.DB.prepare(
-            `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags, created_by_user_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(admin.storeId, title, description, imageUrl, material, printMethod, tagsRaw, admin.userId).run();
+        let result: { meta: { last_row_id?: number } };
+        try {
+            result = await env.DB.prepare(
+                `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags, created_by_user_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(admin.storeId, title, description, imageUrl, material, printMethod, tagsRaw, admin.userId).run() as { meta: { last_row_id?: number } };
+        } catch (colErr: unknown) {
+            const msg = String(colErr instanceof Error ? colErr.message : colErr);
+            if (msg.includes('created_by_user_id') || msg.includes('no such column')) {
+                result = await env.DB.prepare(
+                    `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`
+                ).bind(admin.storeId, title, description, imageUrl, material, printMethod, tagsRaw).run() as { meta: { last_row_id?: number } };
+            } else {
+                throw colErr;
+            }
+        }
 
         const newId = (result.meta as any)?.last_row_id;
         return NextResponse.json({ success: true, data: { id: newId, imageUrl } }, { status: 201 });
