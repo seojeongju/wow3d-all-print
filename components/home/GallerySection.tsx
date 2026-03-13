@@ -31,17 +31,62 @@ function MethodIcon({ method }: { method?: string }) {
     return <Layers className="w-3 h-3" />;
 }
 
+// 이미지 없음 플레이스홀더 (실제 파일 요청 없이 사용)
+const PLACEHOLDER_DATA_URI = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%231e1e2e"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%234d4d66" font-size="14" font-family="sans-serif">이미지 없음</text></svg>';
+
 // ─────────────────────────────────────────────────────
 // 이미지 URL 변환 (R2 key → API 엔드포인트)
 // ─────────────────────────────────────────────────────
 function resolveImageUrl(url: string): string {
-    if (!url) return '/placeholder-3d.jpg';
+    if (!url || typeof url !== 'string' || !url.trim()) return PLACEHOLDER_DATA_URI;
+    // placeholder 또는 존재하지 않는 정적 경로는 요청하지 않음
+    if (url === '/placeholder-3d.jpg' || url.endsWith('placeholder-3d.jpg')) return PLACEHOLDER_DATA_URI;
     if (url.startsWith('http') || url.startsWith('/')) return url;
     // gallery/xxx.jpg → /api/gallery/image/xxx.jpg
     if (url.startsWith('gallery/')) {
         return `/api/gallery/image/${url.replace(/^gallery\//, '')}`;
     }
     return `/api/files/${url}`;
+}
+
+// ─────────────────────────────────────────────────────
+// 이미지 + 로드 실패 시 1회 재시도 (간헐적 미표시 완화)
+// ─────────────────────────────────────────────────────
+function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
+    const resolved = resolveImageUrl(imageUrl);
+    const [src, setSrc] = useState(resolved);
+    const [retried, setRetried] = useState(false);
+
+    const handleError = useCallback(() => {
+        if (retried) {
+            setSrc(PLACEHOLDER_DATA_URI);
+            return;
+        }
+        if (src.startsWith('/api/')) {
+            setRetried(true);
+            setTimeout(() => setSrc((s) => s + (s.includes('?') ? '&' : '?') + 'r=' + Date.now()), 400);
+        } else {
+            setSrc(PLACEHOLDER_DATA_URI);
+        }
+    }, [retried, src]);
+
+    // image_url이 바뀌면 초기화
+    useEffect(() => {
+        const next = resolveImageUrl(imageUrl);
+        setSrc(next);
+        setRetried(false);
+    }, [imageUrl]);
+
+    return (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+            src={src}
+            alt={alt}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            loading="lazy"
+            onError={handleError}
+        />
+    );
 }
 
 // ─────────────────────────────────────────────────────
@@ -71,16 +116,7 @@ function GalleryCard({
             <div className="relative bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-full flex flex-col">
                 {/* 이미지 영역 */}
                 <div className="relative aspect-square overflow-hidden bg-slate-800">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                        src={resolveImageUrl(item.image_url)}
-                        alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        loading="lazy"
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%231e1e2e"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%234d4d66" font-size="14" font-family="sans-serif">이미지 없음</text></svg>';
-                        }}
-                    />
+                    <GalleryCardImage imageUrl={item.image_url} alt={item.title} />
 
                     {/* 호버 오버레이 */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

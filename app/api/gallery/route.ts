@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await env.DB.prepare(
-            `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`
-        ).bind(admin.storeId, title, description, imageUrl, material, printMethod, tagsRaw).run();
+            `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags, created_by_user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(admin.storeId, title, description, imageUrl, material, printMethod, tagsRaw, admin.userId).run();
 
         const newId = (result.meta as any)?.last_row_id;
         return NextResponse.json({ success: true, data: { id: newId, imageUrl } }, { status: 201 });
