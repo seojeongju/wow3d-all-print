@@ -42,7 +42,7 @@ export default function CTA() {
                     >
                         <Link href="/quote">
                             <Button size="lg" className="h-16 px-10 text-xl rounded-full shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all duration-300">
-                                무료 견적 받기 <ArrowRight className="ml-2" />
+                                3D 프린팅 무료 견적 받기 <ArrowRight className="ml-2" />
                             </Button>
                         </Link>
                     </motion.div>

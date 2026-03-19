@@ -1,0 +1,116 @@
+﻿
+?뚢?????????????????????????????????OpenNext ??Cloudflare build ???붴???????????????????????????????
+node.exe : WARN OpenNext is not fully compatible with Window
+s.
+위치 줄:1 문자:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nod
+ejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARN OpenNext  
+   i...e with Windows.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARN For optimal performance, it is recommended to use Windo
+ws Subsystem for Linux (WSL).
+WARN While OpenNext may function on Windows, it could encoun
+ter unpredictable failures during runtime.
+App directory: D:\Program_DEV\wow3d-all-print-main
+Next.js version : 15.1.6
+@opennextjs/cloudflare version: 1.15.1
+@opennextjs/aws version: 3.9.12
+
+?뚢?????????????????????????????????????OpenNext ??Building Next.js app ???붴???????????????????????????????????
+
+> wow3d_all_print@0.1.0 build
+> next build
+
+   ??Next.js 15.1.6
+
+   Creating an optimized production build ...
+ ??Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+Failed to compile.
+
+.next/types/app/api/admin/qna/[id]/route.ts:244:7
+Type error: Type '{ __tag__: "DELETE"; __param_position__: "
+second"; __param_type__: { params: { id: string; }; }; }' do
+es not satisfy the constraint 'ParamCheck<RouteContext>'.
+  The types of '__param_type__.params' are incompatible betw
+een these types.
+    Type '{ id: string; }' is missing the following properti
+es from type 'Promise<any>': then, catch, finally, [Symbol.t
+oStringTag]
+
+[0m [90m 242 |[39m     [33mDiff[39m[33m<[39m[0m
+[0m [90m 243 |[39m       [33mParamCheck[39m[33m<[39m
+[33mRouteContext[39m[33m>[39m[33m,[39m[0m
+[0m[31m[1m>[22m[39m[90m 244 |[39m       {[0m
+[0m [90m     |[39m       [31m[1m^[22m[39m[0m
+[0m [90m 245 |[39m         __tag__[33m:[39m [32m'DELET
+E'[39m[0m
+[0m [90m 246 |[39m         __param_position__[33m:[39m 
+[32m'second'[39m[0m
+[0m [90m 247 |[39m         __param_type__[33m:[39m [33
+mSecondArg[39m[33m<[39m[33mMaybeField[39m[33m<[39m[3
+3mTEntry[39m[33m,[39m [32m'DELETE'[39m[33m>>[39m[0m
+Static worker exited with code: 1 and signal: null
+opennextjs-cloudflare build
+
+Build an OpenNext Cloudflare worker
+
+?듭뀡:
+      --help                        ?꾩?留??쒖떆                
+         [遺덈━??
+      --version                     踰꾩쟾 ?쒖떆                 
+          [遺덈━??
+  -c, --config                      Path to Wrangler configu
+ration file [臾몄옄??
+      --configPath                  Path to Wrangler configu
+ration file
+                                                           [
+deprecated] [臾몄옄??
+  -e, --env                         Wrangler environment to 
+use for operations
+                                                            
+            [臾몄옄??
+  -s, --skipNextBuild, --skipBuild  Skip building the Next.j
+s app
+                                                        [遺덈━
+?? [湲곕낯媛? false]
+      --noMinify                    Disable worker minificat
+ion
+                                                        [遺덈━
+?? [湲곕낯媛? false]
+      --skipWranglerConfigCheck     Skip checking for a Wran
+gler config
+                                                        [遺덈━
+?? [湲곕낯媛? false]
+      --openNextConfigPath          Path to the OpenNext con
+figuration file
+                                                            
+            [臾몄옄??
+
+Error: Command failed: npm run build
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at Object.execSync (node:child_process:997:15)
+    at buildNextjsApp (file:///D:/Program_DEV/wow3d-all-prin
+t-main/node_modules/@opennextjs/aws/dist/build/buildNextApp.
+js:15:8)
+    at build (file:///D:/Program_DEV/wow3d-all-print-main/no
+de_modules/@opennextjs/cloudflare/dist/cli/build/build.js:48
+:9)
+    at async buildCommand (file:///D:/Program_DEV/wow3d-all-
+print-main/node_modules/@opennextjs/cloudflare/dist/cli/comm
+ands/build.js:21:5) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 16136,
+  stdout: null,
+  stderr: null
+}
+

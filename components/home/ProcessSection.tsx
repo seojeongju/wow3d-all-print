@@ -57,9 +57,9 @@ export default function ProcessSection() {
                             파일에서 <br />
                             <span className="text-primary">제품이 되기까지</span>
                         </h2>
-                        <p className="text-xl text-muted-foreground mb-8 break-keep">
-                            복잡한 과정은 저희가 해결했습니다. <br className="hidden lg:block" />
-                            단 3단계로 아이디어를 실현하세요.
+                        <p className="text-xl text-muted-foreground mb-8 break-keep leading-relaxed italic">
+                            <span className="text-foreground/80 font-bold">FDM 출력</span>은 강도와 경제성에 적합하고, <span className="text-foreground/80 font-bold">SLA 출력과 DLP 출력</span>은 고정밀 3D프린팅이 필요한 작업에 적합합니다.<br />
+                            PLA, ABS, PETG, TPU, 나일론, 레진 등 다양한 소재 선택이 가능합니다.
                         </p>
                         <div className="h-2 w-full bg-secondary rounded-full overflow-hidden hidden lg:block">
                             <motion.div

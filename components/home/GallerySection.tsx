@@ -358,7 +358,7 @@ function FullGalleryModal({ onClose, onImageClick }: { onClose: () => void, onIm
                                     disabled={loadingMore}
                                     className="bg-white/5 border-white/20 text-white hover:bg-white/10 w-full max-w-xs rounded-full h-12"
                                 >
-                                    {loadingMore ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" /> : '더 많이 보기'}
+                                    {loadingMore ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" /> : '출력 이미지 더 불러오기'}
                                 </Button>
                             </div>
                         )}
@@ -482,7 +482,7 @@ export default function GallerySection() {
                                 onClick={() => setIsFullGalleryOpen(true)}
                             >
                                 <Grid3X3 className="w-4 h-4 text-primary" />
-                                <span className="font-semibold">더보기</span>
+                                <span className="font-semibold">전체 갤러리 보기</span>
                             </Button>
                         </motion.div>
                     </div>
@@ -500,7 +500,7 @@ export default function GallerySection() {
                             onClick={() => setIsFullGalleryOpen(true)}
                         >
                             <Grid3X3 className="w-4 h-4 text-primary" />
-                            <span className="font-semibold">전체 출력물 보기</span>
+                            <span className="font-semibold">전체 출력 이미지 보기</span>
                         </Button>
                     </motion.div>
                 </div>
@@ -568,7 +568,7 @@ export default function GallerySection() {
                             size="lg"
                             className="rounded-full h-12 px-8 bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.5)]"
                         >
-                            내 모델 견적 받기
+                            AI 실시간 자동견적 받기
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     </Link>

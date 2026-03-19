@@ -140,20 +140,18 @@ export default function Hero() {
                     </motion.div>
 
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance">
-                        당신의 <br />
+                        3D 프린팅 출력 서비스와 <br />
                         <span className="text-primary relative inline-block">
-                            상상력을
+                            AI 실시간 자동견적
                             <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
                         </span>
-                        <br />
-                        현실로 만듭니다.
                     </h1>
 
                     <p className="text-xl text-muted-foreground/90 mb-8 max-w-lg leading-relaxed break-keep">
-                        <span className="text-foreground/90">3D 프린팅 출력 서비스</span>, 3D 프린팅 자동 견적으로 10초 만에 견적 확인.<br />
-                        3D 프린터 출력부터 시제품·양산까지, WOW3D가 함께합니다.
+                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-foreground/90 font-bold">3D 프린팅 자동견적</span>을 즉시 확인하세요.<br />
+                        3D 프린터 출력부터 시제품 제작, 소량·대량 생산까지 와우쓰리디가 빠르고 정확하게 지원합니다.
                     </p>
 
                     <div className="flex flex-wrap gap-4">

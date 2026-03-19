@@ -19,11 +19,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "3D 프린팅 출력·자동 견적 | WOW3D - 3D 프린터 출력 서비스",
+    default: "3D 프린팅 출력·자동견적 | 시제품 제작 전문 와우쓰리디 WOW3D",
     template: "%s | WOW3D",
   },
   description:
-    "3D 프린팅 출력, 3D 프린팅 자동 견적, 3D 프린터 출력 서비스. STL·OBJ 업로드만으로 10초 실시간 견적. 시제품·프로토타입·소량양산. FDM·SLA·DLP.",
+    "3D 프린팅 출력 서비스와 AI 실시간 자동견적. STL·OBJ·3MF 파일 업로드만으로 즉시 확인 가능. 3D 프린터 출력부터 시제품 제작, 소량·대량 생산까지 와우쓰리디가 빠르고 정확하게 지원합니다.",
   keywords: [
     "3D 프린팅 출력",
     "3D 프린팅 자동 견적",
@@ -31,26 +31,28 @@ export const metadata: Metadata = {
     "3D 프린팅 출력 서비스",
     "3D 프린팅 견적",
     "시제품 제작",
-    "프로토타입",
-    "STL 견적",
+    "프로토타입 제작",
+    "3D 모델 분석",
     "산업용 3D 프린팅",
-    "와우3D",
+    "와우쓰리디",
     "WOW3D",
+    "3D 프린팅 업체",
+    "3D 프린팅 제작",
   ],
   openGraph: {
     type: "website",
     locale: "ko_KR",
     url: SITE_URL,
     siteName: "WOW3D",
-    title: "3D 프린팅 출력·자동 견적 | WOW3D - 3D 프린터 출력 서비스",
+    title: "3D 프린팅 출력·자동견적 | 시제품 제작 전문 와우쓰리디 WOW3D",
     description:
-      "3D 프린팅 출력, 3D 프린팅 자동 견적, 3D 프린터 출력 서비스. 10초 실시간 견적, 시제품·양산.",
+      "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입·소량양산. 와우쓰리디가 당신의 상상을 현실로 만듭니다.",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "WOW3D 3D 프린팅 견적" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "3D 프린팅 출력·자동 견적 | WOW3D",
-    description: "3D 프린팅 출력, 3D 프린터 출력 서비스. 10초 실시간 자동 견적. 시제품·양산.",
+    title: "3D 프린팅 출력·자동견적 | WOW3D",
+    description: "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문.",
   },
   robots: {
     index: true,
@@ -93,7 +95,7 @@ export default function RootLayout({
               "@type": "LocalBusiness",
               name: "WOW3D",
               description:
-                "3D 프린팅 출력, 3D 프린팅 자동 견적, 3D 프린터 출력, 3D 프린팅 출력 서비스. STL·OBJ 업로드로 10초 실시간 견적. 시제품·프로토타입·소량양산.",
+                "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 3D 프린터 출력, 시제품 제작, 프로토타입 제작, 소량·대량 양산 전문 업체 와우쓰리디입니다.",
               url: SITE_URL,
               image: `${SITE_URL}/og-image.png`,
             }),

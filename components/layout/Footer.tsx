@@ -38,8 +38,8 @@ export default function Footer() {
                         </Link>
 
                         <p className="text-sm text-white/40 leading-relaxed font-medium max-w-sm">
-                            와우3D는 산업용 적층 제조 솔루션의 선두주자입니다.
-                            초정밀 분석 엔진과 전국의 제작 센터를 통해 아이디어를 가장 빠르고 완벽하게 현실로 구현합니다.
+                            와우쓰리디 WOW3D는 AI 기반 3D 프린팅 자동견적 시스템과 산업용 제작 인프라를 바탕으로
+                            3D 프린터 출력, 시제품 제작, 소량 양산 서비스를 제공합니다.
                         </p>
 
                         <div className="flex items-center gap-4">

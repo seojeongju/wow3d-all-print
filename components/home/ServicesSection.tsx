@@ -63,8 +63,8 @@ const services = [
     {
         icon: Users,
         title: '맞춤 타깃',
-        description: '산업 R&D, 교육·졸업작품, 스타트업·개인 제작까지. 용도와 예산에 맞는 플랜을 제안합니다.',
-        items: ['산업·R&D', '교육·졸업작품', '스타트업·개인'],
+        description: '산업용 시제품 제작, 스타트업 목업 제작, 졸업작품 3D프린팅, 개인 맞춤 제작까지. 예산과 용도에 따라 최적의 3D프린팅 제작 방식을 안내합니다.',
+        items: ['산업·시제품 제작', '스타트업·목업 제작', '졸업작품 3D프린팅'],
         className: 'md:col-span-1 bg-card border-border',
         iconColor: 'text-violet-500',
     },
@@ -80,9 +80,10 @@ export default function ServicesSection() {
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all">서비스</h2>
-                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto break-keep">
-                        시제품·양산, 다양한 출력 방식과 소재, 후가공까지. 목적에 맞는 3D 프린팅 솔루션을 제공합니다.
+                    <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all">서비스 안내</h2>
+                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto break-keep italic">
+                        와우쓰리디는 <span className="text-foreground/80 font-bold">3D프린팅 출력대행, 시제품 제작, 프로토타입 제작</span>, 후가공 서비스를 제공하는 3D프린팅 전문 업체입니다.
+                        FDM, SLA, DLP 공정과 다양한 소재를 기반으로 목적에 맞는 제작 솔루션을 제안합니다.
                     </p>
                 </motion.div>
 
@@ -147,7 +148,7 @@ export default function ServicesSection() {
                 >
                     <Link href="/quote">
                         <Button size="lg" className="rounded-full h-12 px-8">
-                            견적 요청하기
+                            3D 프린팅 견적 요청하기
                         </Button>
                     </Link>
                 </motion.div>
