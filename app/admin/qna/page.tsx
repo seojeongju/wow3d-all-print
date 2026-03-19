@@ -79,8 +79,10 @@ export default function AdminQnAPage() {
   }
 
   useEffect(() => {
-    fetchQnas()
-  }, [])
+    if (token) {
+      fetchQnas()
+    }
+  }, [token])
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
