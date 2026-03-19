@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Plus, Minus, Search, Loader2, MessageSquare, HelpCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Minus, Search, Loader2, MessageSquare, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Header from '@/components/layout/Header'
@@ -17,6 +17,7 @@ interface QnA {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
+  all: '전체',
   general: '일반',
   quote: '견적·제작',
   tech: '기술·파일',
@@ -24,10 +25,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: '기타',
 }
 
+const ITEMS_PER_PAGE = 6;
+
 export default function QnAPage() {
   const [qnas, setQnas] = useState<QnA[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
   const [openId, setOpenId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -36,7 +41,12 @@ export default function QnAPage() {
         const res = await fetch('/api/qna')
         const data = await res.json()
         if (data.success) {
-          setQnas(data.data)
+          // display_order로 정렬 (없으면 id 역순)
+          const sorted = data.data.sort((a: any, b: any) => {
+            if (a.display_order !== b.display_order) return (a.display_order || 0) - (b.display_order || 0);
+            return b.id - a.id;
+          });
+          setQnas(sorted)
         }
       } catch (e) {
         console.error('Failed to fetch QnA', e)
@@ -47,11 +57,31 @@ export default function QnAPage() {
     fetchQnas()
   }, [])
 
-  const filteredQnas = qnas.filter(
-    (q) =>
-      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.answer.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // 검색어나 카테고리 변경 시 페이지 초기화
+  useEffect(() => {
+    setCurrentPage(1)
+    setOpenId(null)
+  }, [searchQuery, selectedCategory])
+
+  const filteredQnas = useMemo(() => {
+    return qnas.filter((q) => {
+      const matchesSearch = q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           q.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || q.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [qnas, searchQuery, selectedCategory]);
+
+  // 페이지네이션 로직
+  const totalPages = Math.ceil(filteredQnas.length / ITEMS_PER_PAGE);
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredQnas.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredQnas, currentPage]);
+
+  const categories = Object.keys(CATEGORY_LABELS).filter(c => 
+    c === 'all' || qnas.some(q => q.category === c)
+  );
 
   return (
     <main className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
@@ -72,26 +102,50 @@ export default function QnAPage() {
               <p className="text-white/40 text-sm md:text-base text-balance leading-relaxed">WOW3D 이용에 대해 궁금한 점을 확인해 보세요.</p>
             </div>
 
-            <div className="relative group max-w-2xl mx-auto w-full">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-primary transition-colors" />
-              <Input
-                type="text"
-                placeholder="궁금한 내용을 검색해 보세요"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-16 pl-14 pr-6 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary text-lg font-medium transition-all placeholder:text-white/10"
-              />
+            {/* 필터 및 검색 영역 */}
+            <div className="space-y-6">
+                <div className="relative group max-w-2xl mx-auto w-full">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-primary transition-colors" />
+                    <Input
+                        type="text"
+                        placeholder="궁금한 내용을 검색해 보세요"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-16 pl-14 pr-6 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary text-lg font-medium transition-all placeholder:text-white/10"
+                    />
+                </div>
+
+                {/* 카테고리 필터 */}
+                <div className="flex flex-wrap justify-center gap-2">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat}
+                            onClick={() => setSelectedCategory(cat)}
+                            className={`px-5 py-2 rounded-full text-xs font-bold transition-all border ${
+                                selectedCategory === cat 
+                                ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
+                                : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
+                            }`}
+                        >
+                            {CATEGORY_LABELS[cat]}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="space-y-4">
+            {/* QnA 목록 */}
+            <div className="space-y-4 min-h-[400px]">
               {loading ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="w-10 h-10 animate-spin text-primary/40" />
                 </div>
-              ) : filteredQnas.length > 0 ? (
-                filteredQnas.map((q) => (
-                  <div
+              ) : currentItems.length > 0 ? (
+                currentItems.map((q) => (
+                  <motion.div
+                    layout
                     key={q.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     className={`border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 ${
                       openId === q.id ? 'bg-white/[0.05] border-white/30 shadow-2xl' : 'bg-white/[0.02] hover:bg-white/[0.04]'
                     }`}
@@ -126,15 +180,52 @@ export default function QnAPage() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </motion.div>
                 ))
               ) : (
                 <div className="text-center py-20 space-y-4">
                   <p className="text-white/20 text-lg font-bold">검색 결과가 없습니다.</p>
-                  <Button variant="outline" onClick={() => setSearchQuery('')} className="border-white/10 text-white/60 hover:text-white rounded-full px-8">검색 초기화</Button>
+                  <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }} className="border-white/10 text-white/60 hover:text-white rounded-full px-8">전체 보기</Button>
                 </div>
               )}
             </div>
+
+            {/* 페이지네이션 */}
+            {!loading && totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 pt-8">
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/40 disabled:opacity-30 hover:bg-white/10 transition-all"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    
+                    <div className="flex gap-1">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                            <button
+                                key={i + 1}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all border ${
+                                    currentPage === i + 1
+                                    ? 'bg-primary border-primary text-white'
+                                    : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
+                                }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/40 disabled:opacity-30 hover:bg-white/10 transition-all"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
+            )}
 
             <div className="mt-20 p-8 rounded-3xl bg-gradient-to-br from-white/[0.03] via-white/[0.01] to-transparent border border-white/10 text-center space-y-6">
               <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto text-primary">
