@@ -139,7 +139,7 @@ export default function Hero() {
                         <span className="text-xs font-semibold tracking-wider text-muted-foreground">차세대 3D 프린팅 서비스</span>
                     </motion.div>
 
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance">
                         3D 프린팅 출력 서비스와 <br />
                         <span className="text-primary relative inline-block">
                             AI 실시간 자동견적
