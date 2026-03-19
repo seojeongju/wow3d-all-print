@@ -72,7 +72,7 @@ export default function AdminQnAPage() {
       }
     } catch (e) {
       console.error('Failed to fetch QnAs', e)
-      showToast.error('목록 조회 실패', 'Q&A 목록을 가져오지 못했습니다.')
+      showToast.error('목록 조회 실패', 'FAQ 목록을 가져오지 못했습니다.')
     } finally {
       setLoading(false)
     }
@@ -183,7 +183,7 @@ export default function AdminQnAPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Q&A 관리</h1>
+          <h1 className="text-2xl font-bold text-white uppercase tracking-tight">FAQ 관리</h1>
           <p className="text-white/40 text-sm mt-1">자주 묻는 질문(FAQ) 항목을 관리하고 노출 순서를 설정합니다.</p>
         </div>
         <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-primary/20">
@@ -255,7 +255,7 @@ export default function AdminQnAPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-32 text-center text-white/10 font-bold uppercase tracking-widest">등록된 Q&A가 없습니다.</td>
+                    <td colSpan={6} className="p-32 text-center text-white/10 font-bold uppercase tracking-widest">등록된 FAQ가 없습니다.</td>
                   </tr>
                 )}
               </tbody>
@@ -321,7 +321,7 @@ export default function AdminQnAPage() {
             <div className="flex items-center justify-between p-5 rounded-2xl bg-white/[0.03] border border-white/10 transition-colors hover:bg-white/5">
               <div className="space-y-1">
                 <Label className="text-sm font-bold text-white/90">공개 여부</Label>
-                <p className="text-[10px] text-white/30 uppercase tracking-widest">Publish to USER Q&A Page</p>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest">Publish to USER FAQ Page</p>
               </div>
               <Switch
                 checked={formData.is_published}
