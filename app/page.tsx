@@ -9,6 +9,7 @@ import BentoFeatures from "@/components/home/BentoFeatures";
 import ModelUploadSection from "@/components/home/ModelUploadSection";
 import ProcessSection from "@/components/home/ProcessSection";
 import CTA from "@/components/home/CTA";
+import HomeFAQ from "@/components/home/HomeFAQ";
 import dynamic from "next/dynamic";
 
 const MakerWorkspace = dynamic(
@@ -56,6 +57,9 @@ export default function HomePage() {
       <ServicesSection />
       <BentoFeatures />
       <ProcessSection />
+      
+      <HomeFAQ />
+
       <CTA />
 
       <Footer />
