@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const { env } = getCloudflareContext();
     if (!env?.DB) return Response.json({ error: 'DB not available' }, { status: 503 });
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (updates.length === 0) return Response.json({ error: 'No fields to update' }, { status: 400 });
 
     const query = `UPDATE qna SET ${updates.join(', ')} WHERE id = ? AND store_id = ?`;
-    values.push(params.id, storeId);
+    values.push(id, storeId);
 
     const { success } = await env.DB.prepare(query).bind(...values).run();
 
@@ -40,7 +41,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const { env } = getCloudflareContext();
     if (!env?.DB) return Response.json({ error: 'DB not available' }, { status: 503 });
@@ -51,7 +53,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     const { success } = await env.DB.prepare(
       `DELETE FROM qna WHERE id = ? AND store_id = ?`
-    ).bind(params.id, storeId).run();
+    ).bind(id, storeId).run();
 
     return Response.json({ success: true });
   } catch (e) {
