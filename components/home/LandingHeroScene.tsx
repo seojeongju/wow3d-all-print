@@ -15,11 +15,11 @@ function RotatingModel() {
             <mesh castShadow receiveShadow>
                 <torusKnotGeometry args={[1, 0.35, 128, 32]} />
                 <meshStandardMaterial
-                    color="#6366f1"
-                    roughness={0.2}
-                    metalness={0.8}
-                    emissive="#1a1a33"
-                    emissiveIntensity={0.2}
+                    color="#818cf8"
+                    roughness={0.1}
+                    metalness={0.9}
+                    emissive="#4f46e5"
+                    emissiveIntensity={0.5}
                 />
             </mesh>
         </Float>
@@ -45,9 +45,9 @@ export default function LandingHeroScene() {
                 <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={40} />
                 <Suspense fallback={null}>
                     {/* Stage environment="city" 제거: GPU Context Lost 방지 및 메모리 최소화 */}
-                    <ambientLight intensity={0.5} />
-                    <directionalLight position={[10, 10, 10]} intensity={1.5} castShadow shadow-mapSize={512} />
-                    <directionalLight position={[-10, -5, -10]} intensity={0.5} />
+                    <ambientLight intensity={0.8} />
+                    <directionalLight position={[10, 10, 10]} intensity={2.5} castShadow shadow-mapSize={512} />
+                    <directionalLight position={[-10, -5, -10]} intensity={1.0} />
 
                     <RotatingModel />
 
