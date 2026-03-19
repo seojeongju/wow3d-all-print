@@ -15,7 +15,7 @@ const NAV_ITEMS = [
     { label: '공정', href: '/#process' },
     { label: '제품소개', href: '/hardware/3d-printer' },
     { label: '주문조회', href: '/my-account' },
-    { label: 'Q&A', href: '/qna' },
+    { label: 'FAQ', href: '/qna' },
     { label: '문의하기', href: '/contact' },
     { label: '대리점 모집', href: '/partnership' },
 ];
@@ -208,7 +208,7 @@ export default function Header() {
                                             {item.label === '기능' && <Zap className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
                                             {item.label === '공정' && <Layers className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
                                             {item.label === '주문조회' && <Search className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
-                                            {item.label === 'Q&A' && <HelpCircle className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
+                                            {item.label === 'FAQ' && <HelpCircle className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
                                             {item.label === '문의하기' && <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-primary" />}
                                         </div>
                                         <span className="group-hover:translate-x-1 transition-transform">{item.label}</span>
