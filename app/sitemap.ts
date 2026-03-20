@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
+const BASE_URL = "https://wow3dp.co.kr";
 
 /** 검색엔진에 노출할 공개 페이지 (우선순위·변경주기 포함) */
 const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily" | "weekly" | "monthly" }[] = [
