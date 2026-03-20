@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
+import TrafficTracker from "@/components/analytics/TrafficTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,6 +104,9 @@ export default function RootLayout({
           }}
         />
         <ClearCartWhenGuest />
+        <Suspense fallback={null}>
+          <TrafficTracker />
+        </Suspense>
         {children}
         <Toaster />
       </body>

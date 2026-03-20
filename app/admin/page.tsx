@@ -13,6 +13,16 @@ type SalesTrend = {
     amount: number;
 };
 
+type TrafficSource = {
+    source: string;
+    count: number;
+};
+
+type DailyVisitor = {
+    date: string;
+    count: number;
+};
+
 type RecentOrder = {
     id: number;
     orderNumber: string;
@@ -47,6 +57,8 @@ type Stats = {
     operatingDetail: string;
     salesTrend: SalesTrend[];
     recentOrders: RecentOrder[];
+    trafficSources: TrafficSource[];
+    dailyVisitors: DailyVisitor[];
 };
 
 export default function AdminDashboard() {
@@ -92,9 +104,13 @@ export default function AdminDashboard() {
         operatingDetail: '프린터 12/15대 가동중',
         salesTrend: [],
         recentOrders: [],
+        trafficSources: [],
+        dailyVisitors: [],
     };
 
     const maxTrend = Math.max(1, ...s.salesTrend.map((t) => t.amount));
+    const maxVisitors = Math.max(1, ...s.dailyVisitors.map((v) => v.count));
+    const totalTrafficCount = s.trafficSources.reduce((acc, curr) => acc + curr.count, 0);
 
     return (
         <div className="space-y-8 pb-12">
@@ -331,6 +347,95 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
                 </div>
+            </div>
+
+            {/* Traffic Tracking Section */}
+            <div className="grid gap-6 lg:grid-cols-12">
+                {/* Traffic Source Pie-like Chart */}
+                <Card className="lg:col-span-5 bg-[#0f0f0f] border-white/5">
+                    <CardHeader>
+                        <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                             유입 경로 분석
+                            <span className="text-[10px] font-medium text-white/40 bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-widest ml-2">Last 30 Days</span>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[320px] flex flex-col justify-center">
+                        {s.trafficSources.length > 0 ? (
+                            <div className="space-y-5">
+                                {s.trafficSources.slice(0, 5).map((ts, idx) => {
+                                    const percent = totalTrafficCount > 0 ? Math.round((ts.count / totalTrafficCount) * 100) : 0;
+                                    const colors = ['bg-primary', 'bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500'];
+                                    return (
+                                        <div key={ts.source} className="space-y-1.5">
+                                            <div className="flex justify-between text-xs font-bold">
+                                                <span className="text-white/60 flex items-center gap-2 capitalize">
+                                                    <span className={`w-2 h-2 rounded-full ${colors[idx % colors.length]}`} />
+                                                    {ts.source}
+                                                </span>
+                                                <span className="text-white">{percent}% <span className="text-white/30 font-medium ml-1">({ts.count.toLocaleString()})</span></span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-1000`} 
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-white/20 gap-3 h-full border border-dashed border-white/5 rounded-2xl">
+                                <Users className="w-8 h-8 opacity-20" />
+                                <span className="text-sm">유입 경로를 추적하고 있습니다...</span>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Daily Visitors Line Chart (Simplified) */}
+                <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-lg font-bold text-white">일별 방문자 추이</CardTitle>
+                            <p className="text-xs text-white/40 mt-1">최근 14일간의 고유 방문자 세션 수</p>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-10">
+                        {s.dailyVisitors.length > 0 ? (
+                            <div className="h-[220px] flex items-end gap-2 relative">
+                                {/* Grid lines */}
+                                <div className="absolute inset-x-0 top-0 h-full flex flex-col justify-between pointer-events-none opacity-20">
+                                    {[0, 1, 2, 3].map((l) => (
+                                        <div key={l} className="w-full h-px bg-white/10" />
+                                    ))}
+                                </div>
+                                {s.dailyVisitors.map((v) => (
+                                    <div key={v.date} className="flex-1 flex flex-col items-center justify-end h-full group/vbar">
+                                        <div className="relative w-full flex flex-col items-center justify-end h-full">
+                                            {/* Tooltip */}
+                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-white text-black text-[9px] font-bold opacity-0 group-hover/vbar:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none">
+                                                {v.count} 명
+                                            </div>
+                                            <div 
+                                                className="w-full max-w-[8px] rounded-t-full bg-primary/40 group-hover/vbar:bg-primary transition-all duration-300"
+                                                style={{ height: `${(v.count / maxVisitors) * 160}px` }}
+                                            />
+                                        </div>
+                                        <span className="text-[8px] font-medium text-white/20 mt-3 group-hover/vbar:text-white transition-colors">
+                                            {v.date.split('-')[2]}일
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="h-[220px] flex flex-col items-center justify-center text-white/20 gap-3 border border-dashed border-white/5 rounded-2xl">
+                                <Activity className="w-8 h-8 opacity-20" />
+                                <span className="text-sm">방문자 데이터를 분석중입니다...</span>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

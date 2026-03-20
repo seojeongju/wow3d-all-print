@@ -113,6 +113,35 @@ export async function GET(_req: NextRequest) {
             if (opRate?.value) operatingRate = parseFloat(opRate.value);
             if (opDetail?.value) operatingDetail = opDetail.value;
         } catch { /* print_settings 없을 수 있음 */ }
+ 
+        // 7) 유입 경로 통계 (최근 30일)
+        let trafficSources: { source: string; count: number }[] = [];
+        try {
+            const { results: sourceRows } = await env.DB.prepare(`
+                SELECT source, COUNT(*) as count
+                FROM traffic_logs
+                WHERE created_at >= date('now', '-30 days')
+                GROUP BY source
+                ORDER BY count DESC
+            `).all() as { results: { source: string; count: number }[] };
+            trafficSources = sourceRows || [];
+        } catch { /* traffic_logs 없을 수 있음 */ }
+
+        // 8) 일별 유입 추이 (최근 14일)
+        let dailyVisitors: { date: string; count: number }[] = [];
+        try {
+            const { results: visitorRows } = await env.DB.prepare(`
+                SELECT date(created_at) as d, COUNT(DISTINCT session_id) as count
+                FROM traffic_logs
+                WHERE created_at >= date('now', '-14 days')
+                GROUP BY d
+                ORDER BY d ASC
+            `).all() as { results: { d: string; count: number }[] };
+            dailyVisitors = (visitorRows || []).map(r => ({
+                date: r.d,
+                count: Number(r.count ?? 0)
+            }));
+        } catch { /* traffic_logs 없을 수 있음 */ }
 
         return NextResponse.json({
             success: true,
@@ -129,6 +158,8 @@ export async function GET(_req: NextRequest) {
                 operatingDetail,
                 salesTrend,
                 recentOrders,
+                trafficSources,
+                dailyVisitors,
             },
         });
     } catch (e) {
