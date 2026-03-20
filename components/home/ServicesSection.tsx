@@ -82,7 +82,7 @@ export default function ServicesSection() {
                 >
                     <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all">서비스 안내</h2>
                     <p className="text-muted-foreground text-lg max-w-2xl mx-auto break-keep italic">
-                        와우쓰리디는 <span className="text-foreground/80 font-bold">3D프린팅 출력대행, 시제품 제작, 프로토타입 제작</span>, 후가공 서비스를 제공하는 3D프린팅 전문 업체입니다.
+                        와우쓰리디는 <span className="text-foreground/80 font-bold">3D프린팅출력, 3D프린터출력, 시제품제작, 3D프린팅출력대행, 3D프린터출력대행</span> 서비스를 제공하는 3D프린팅 전문 업체입니다.
                         FDM, SLA, DLP 공정과 다양한 소재를 기반으로 목적에 맞는 제작 솔루션을 제안합니다.
                     </p>
                 </motion.div>
