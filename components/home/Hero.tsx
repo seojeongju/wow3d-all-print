@@ -140,6 +140,7 @@ export default function Hero() {
                     </motion.div>
 
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance">
+                        <span className="text-primary block text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
                         3D프린팅 출력 및 <br />
                         <span className="text-primary relative inline-block">
                              시제품제작 대행 서비스
