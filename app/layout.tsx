@@ -117,8 +117,10 @@ export default function RootLayout({
                   "availableLanguage": "Korean",
                 },
                 "sameAs": [
-                  "https://blog.naver.com/wow3d16",
-                  "https://www.instagram.com/wow3d_official",
+                  "https://www.band.us/@3dcookiehd",
+                  "https://blog.naver.com/3dcookiehd",
+                  "https://www.instagram.com/3dcookie_hd/",
+                  "https://ko-kr.facebook.com/3dfabcafe/"
                 ],
               },
               {

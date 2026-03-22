@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link'
-import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Github, Twitter, Instagram, ChevronDown } from 'lucide-react'
+import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function Footer() {
@@ -42,11 +42,16 @@ export default function Footer() {
                             3D 프린터 출력, 시제품 제작, 소량 양산 서비스를 제공합니다.
                         </p>
 
-                        <div className="flex items-center gap-4">
-                            {[Github, Twitter, Instagram].map((Icon, i) => (
-                                <button key={i} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 transition-all">
+                        <div className="flex flex-wrap items-center gap-4">
+                            {[
+                                { name: '네이버 블로그', url: 'https://blog.naver.com/3dcookiehd', icon: BookOpen },
+                                { name: '네이버 밴드', url: 'https://www.band.us/@3dcookiehd', icon: Users },
+                                { name: '인스타그램', url: 'https://www.instagram.com/3dcookie_hd/', icon: Instagram },
+                                { name: '페이스북', url: 'https://ko-kr.facebook.com/3dfabcafe/', icon: Facebook },
+                            ].map(({ name, url, icon: Icon }, i) => (
+                                <a key={i} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} title={name} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 transition-all hover:-translate-y-1">
                                     <Icon className="w-4 h-4" />
-                                </button>
+                                </a>
                             ))}
                         </div>
                     </div>
