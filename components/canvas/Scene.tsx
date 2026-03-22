@@ -413,6 +413,7 @@ export default function Scene({ compact = false }: SceneProps) {
                             maxPolarAngle={Math.PI / 1.5}
                             enableRotate={true}
                             enableZoom={true}
+                            zoomSpeed={0.4}
                             enablePan={true}
                         />
                     </Canvas>
