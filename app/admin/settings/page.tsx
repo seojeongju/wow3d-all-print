@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Save, Trash2, Loader2, Printer, Pencil, Calculator, Zap, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Save, Trash2, Loader2, Printer, Pencil, Calculator, Zap, ArrowUp, ArrowDown, Store } from 'lucide-react'
 import { Material, PrintSetting } from '@/lib/types'
 import { showToast } from '@/lib/toast-helper'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
@@ -73,6 +73,7 @@ export default function AdminSettings() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [settings, setSettings] = useState<PrintSetting[]>([])
   const [equipment, setEquipment] = useState<EquipmentRow[]>([])
+  const [storeConfigs, setStoreConfigs] = useState<{ setting_key: string, setting_value: string }[]>([])
   const { token } = useAuthStore()
 
   const [isAddingMaterial, setIsAddingMaterial] = useState(false)
@@ -93,7 +94,7 @@ export default function AdminSettings() {
   const [editForm, setEditForm] = useState<Partial<Material>>({})
 
   // URL에서 초기 탭 상태 가져오기
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'equipment')
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'store')
 
   const [savingEquip, setSavingEquip] = useState<string | null>(null)
   const [equipForms, setEquipForms] = useState<Record<string, EquipForm>>({})
@@ -170,14 +171,16 @@ export default function AdminSettings() {
     try {
       setLoading(true)
       const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
-      const [matRes, setRes, eqRes] = await Promise.all([
+      const [matRes, setRes, eqRes, storeRes] = await Promise.all([
         fetch('/api/admin/materials', { headers: authHeaders }),
         fetch('/api/admin/settings', { headers: authHeaders }),
         fetch('/api/admin/equipment', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
+        fetch('/api/settings', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
       ])
       const matData = await matRes.json()
       const setData = await setRes.json()
       const eqData = await eqRes.json()
+      const storeData = await storeRes.json()
 
       if (matData.success) {
         setMaterials(
@@ -196,11 +199,38 @@ export default function AdminSettings() {
       }
       if (setData.success) setSettings(setData.data || [])
       if (eqData.success) setEquipment(eqData.data || [])
+      if (storeData.success) setStoreConfigs(storeData.data || [])
     } catch (e) {
       showToast.error('데이터 로딩 실패', e)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSaveStoreConfigs = async () => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ settings: storeConfigs }),
+      })
+      if (!res.ok) throw new Error('저장 실패')
+      showToast.success('상점 설정 저장 완료')
+      fetchData()
+    } catch (e) {
+      showToast.error('저장 실패', e)
+    }
+  }
+
+  const handleStoreConfigChange = (key: string, value: string) => {
+    setStoreConfigs(prev => {
+      const exists = prev.find(s => s.setting_key === key);
+      if (exists) return prev.map(s => s.setting_key === key ? { ...s, setting_value: value } : s);
+      return [...prev, { setting_key: key, setting_value: value }];
+    });
   }
 
   const getDefaultForm = (t: string): EquipForm => {
@@ -496,12 +526,53 @@ export default function AdminSettings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="bg-white/5 border border-white/10 p-1">
+          <TabsTrigger value="store" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-2">
+            <Store className="w-4 h-4" /> 기본 설정
+          </TabsTrigger>
           <TabsTrigger value="equipment" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-2">
             <Printer className="w-4 h-4" /> 장비 설정
           </TabsTrigger>
           <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-white">소재</TabsTrigger>
           <TabsTrigger value="pricing" className="data-[state=active]:bg-primary data-[state=active]:text-white">가격 정책</TabsTrigger>
         </TabsList>
+
+        {/* 상점 기본 설정 */}
+        <TabsContent value="store" className="space-y-4">
+          <Card className="bg-white/[0.03] border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white">상점 기본 설정 (배송비 등)</CardTitle>
+              <CardDescription className="text-white/50">사용자에게 노출되는 기본 배송비 및 무료 배송 기준 등을 설정합니다.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] text-white/50 uppercase">기본 배송비 (원)</Label>
+                  <Input 
+                    type="number" 
+                    value={storeConfigs.find(s => s.setting_key === 'shipping_base_fee')?.setting_value || ''} 
+                    onChange={e => handleStoreConfigChange('shipping_base_fee', e.target.value)} 
+                    className="bg-white/5 border-white/10 text-white" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] text-white/50 uppercase">무료 배송 기준액 (원)</Label>
+                  <Input 
+                    type="number" 
+                    value={storeConfigs.find(s => s.setting_key === 'shipping_free_threshold')?.setting_value || ''} 
+                    onChange={e => handleStoreConfigChange('shipping_free_threshold', e.target.value)} 
+                    className="bg-white/5 border-white/10 text-white" 
+                  />
+                  <p className="text-[10px] text-white/40 mt-1">결제 예상 금액이 이 기준을 넘으면 배송비가 무료가 됩니다.</p>
+                </div>
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button onClick={handleSaveStoreConfigs} className="bg-primary hover:bg-primary/90">
+                  <Save className="w-4 h-4 mr-2" /> 설정 저장
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* 장비 설정: FDM, SLA, DLP */}
         <TabsContent value="equipment" className="space-y-6">

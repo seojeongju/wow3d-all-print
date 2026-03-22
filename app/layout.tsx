@@ -21,7 +21,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "(주)와우쓰리디 | 3D프린팅 출력·시제품제작 전문 WOW3D 자동견적",
+    default: "(주)와우쓰리디 - 3D프린팅 출력 및 시제품 제작 | 실시간 AI 자동견적",
     template: "%s | (주)와우쓰리디 WOW3D",
   },
   description:
