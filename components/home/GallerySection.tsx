@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2 } from 'lucide-react';
+import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -171,32 +171,51 @@ function GalleryCard({
 // ─────────────────────────────────────────────────────
 // 제품 상세 보기 모달 (Detail View)
 // ─────────────────────────────────────────────────────
-function DetailViewModal({ item, onClose }: { item: GalleryItem; onClose: () => void }) {
+function DetailViewModal({
+    item,
+    onClose,
+    onPrev,
+    onNext,
+    currentIndex,
+    totalCount
+}: {
+    item: GalleryItem;
+    onClose: () => void;
+    onPrev?: () => void;
+    onNext?: () => void;
+    currentIndex?: number;
+    totalCount?: number;
+}) {
     const tags: string[] = (() => {
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
 
     useEffect(() => {
-        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowLeft' && onPrev) onPrev();
+            if (e.key === 'ArrowRight' && onNext) onNext();
+        };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [onClose]);
+    }, [onClose, onPrev, onNext]);
 
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+                className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
                 onClick={onClose}
             >
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                    key={item.id}
+                    initial={{ scale: 0.9, opacity: 0, x: 20 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
+                    exit={{ scale: 0.9, opacity: 0, x: -20 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="relative max-w-4xl w-full bg-slate-900 border border-white/15 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[400px]"
+                    className="relative max-w-5xl w-full bg-slate-900 border border-white/15 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* 닫기 버튼 */}
@@ -208,70 +227,97 @@ function DetailViewModal({ item, onClose }: { item: GalleryItem; onClose: () => 
                     </button>
 
                     {/* 좌측: 이미지 영역 */}
-                    <div className="md:w-1/2 bg-slate-800 relative group overflow-hidden flex items-center justify-center min-h-[300px]">
+                    <div className="md:w-3/5 bg-slate-950 relative group overflow-hidden flex items-center justify-center min-h-[300px] md:min-h-[500px]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={resolveImageUrl(item.image_url)}
                             alt={item.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+
+                        {/* 내비게이션 화살표 */}
+                        {onPrev && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onPrev(); }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                        )}
+                        {onNext && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onNext(); }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+                        )}
+
+                        {/* 카운터 */}
+                        {typeof currentIndex === 'number' && totalCount && (
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/60 text-[10px] font-bold tracking-widest">
+                                {currentIndex + 1} / {totalCount}
+                            </div>
+                        )}
                     </div>
 
                     {/* 우측: 상세 정보 영역 */}
-                    <div className="md:w-1/2 p-8 md:p-10 flex flex-col justify-center">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold mb-4 uppercase tracking-tighter">
-                            Case Study
-                        </div>
-                        
-                        <h3 className="text-white text-3xl font-bold mb-4 leading-tight">{item.title}</h3>
-                        
-                        <div className="space-y-6">
-                            {/* 핵심 스펙 */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase mb-1">
-                                        <MethodIcon method={item.print_method} />
-                                        Print Method
-                                    </div>
-                                    <div className="text-white text-sm font-semibold">{item.print_method?.toUpperCase() || 'Standard'}</div>
-                                </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase mb-1">
-                                        <Box className="w-3 h-3" />
-                                        Material
-                                    </div>
-                                    <div className="text-white text-sm font-semibold">{item.material || 'Generic'}</div>
-                                </div>
+                    <div className="md:w-2/5 p-8 md:p-10 flex flex-col">
+                        <div className="flex-1">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold mb-4 uppercase tracking-tighter">
+                                Case Study
                             </div>
-
-                            {/* 설명 */}
-                            {item.description && (
-                                <div className="space-y-2">
-                                    <div className="text-white/40 text-[10px] font-bold uppercase">Description</div>
-                                    <p className="text-white/80 text-base leading-relaxed break-keep font-medium">
-                                        {item.description}
-                                    </p>
+                            
+                            <h3 className="text-white text-3xl font-bold mb-6 leading-tight">{item.title}</h3>
+                            
+                            <div className="space-y-6">
+                                {/* 핵심 스펙 */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                        <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase mb-1 whitespace-nowrap">
+                                            <MethodIcon method={item.print_method} />
+                                            Print Method
+                                        </div>
+                                        <div className="text-white text-sm font-semibold truncate">{item.print_method?.toUpperCase() || 'Standard'}</div>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                        <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase mb-1 whitespace-nowrap">
+                                            <Box className="w-3 h-3" />
+                                            Material
+                                        </div>
+                                        <div className="text-white text-sm font-semibold truncate">{item.material || 'Generic'}</div>
+                                    </div>
                                 </div>
-                            )}
 
-                            {/* 태그 */}
-                            {tags.length > 0 && (
-                                <div className="flex gap-2 flex-wrap pt-2">
-                                    {tags.map((tag, i) => (
-                                        <span key={i} className="text-xs text-white/60 bg-white/[0.06] border border-white/10 px-3 py-1 rounded-full">
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
+                                {/* 설명 */}
+                                {item.description && (
+                                    <div className="space-y-2">
+                                        <div className="text-white/40 text-[10px] font-bold uppercase">Description</div>
+                                        <p className="text-white/80 text-base leading-relaxed break-keep font-medium line-clamp-[8]">
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* 태그 */}
+                                {tags.length > 0 && (
+                                    <div className="flex gap-2 flex-wrap pt-2">
+                                        {tags.map((tag, i) => (
+                                            <span key={i} className="text-xs text-white/60 bg-white/[0.06] border border-white/10 px-3 py-1 rounded-full">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* 하단 버튼 */}
                         <div className="mt-8 pt-8 border-t border-white/10">
                             <Link href="/quote" onClick={onClose}>
                                 <Button className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold gap-2">
-                                    유사 사제품 견적 문의하기
+                                    유사 시제품 견적 문의하기
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
                             </Link>
@@ -460,7 +506,22 @@ export default function GallerySection() {
         <>
             {/* 제품 상세 보기 모달 */}
             {selectedItem && (
-                <DetailViewModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+                <DetailViewModal 
+                    item={selectedItem} 
+                    onClose={() => setSelectedItem(null)}
+                    onPrev={() => {
+                        const idx = items.findIndex(i => i.id === selectedItem.id);
+                        if (idx > 0) setSelectedItem(items[idx - 1]);
+                        else setSelectedItem(items[items.length - 1]);
+                    }}
+                    onNext={() => {
+                        const idx = items.findIndex(i => i.id === selectedItem.id);
+                        if (idx < items.length - 1) setSelectedItem(items[idx + 1]);
+                        else setSelectedItem(items[0]);
+                    }}
+                    currentIndex={items.findIndex(i => i.id === selectedItem.id)}
+                    totalCount={items.length}
+                />
             )}
 
             {/* 전체 갤러리 모달 */}
@@ -487,13 +548,14 @@ export default function GallerySection() {
                 <div className="absolute right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
                 <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px]" />
 
-                <div className="container mx-auto px-4 mb-10">
+                <div className="container mx-auto px-4 mb-10 relative z-20">
                     {/* 헤더 */}
                     <div className="flex items-end justify-between max-w-[1400px] mx-auto w-full">
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
+                            viewport={{ once: true, amount: 0.1 }}
+                            className="relative z-30"
                         >
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-4 uppercase tracking-widest">
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
