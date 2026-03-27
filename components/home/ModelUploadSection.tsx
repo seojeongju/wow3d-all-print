@@ -18,10 +18,19 @@ export default function ModelUploadSection() {
     };
 
     return (
-        <section id="upload" className="py-24 md:py-32 bg-[#0d1117] relative overflow-hidden">
+        <section id="upload" className="py-24 md:py-32 relative overflow-hidden">
+            {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            {/* 틸/블루 은은한 포인트 오버레이 */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
+
             {/* 그리드 배경 */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:24px_24px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-[140px] -z-10" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
+            
+            {/* 배경 글로우 포인트들 */}
+            <div className="absolute left-0 top-1/4 w-[500px] h-[500px] rounded-full bg-teal-500/20 blur-[130px]" />
+            <div className="absolute right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
+            <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px]" />
 
             <div className="container mx-auto px-4 relative z-10">
                 <motion.div

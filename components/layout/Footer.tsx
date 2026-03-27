@@ -11,9 +11,19 @@ export default function Footer() {
         setMounted(true)
     }, [])
     return (
-        <footer className="bg-[#0a0e17] border-t border-white/5 pt-24 pb-12 relative overflow-hidden">
-            {/* Ambient Background Blur */}
-            <div className="absolute bottom-0 left-1/4 w-[40%] h-[40%] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <footer className="relative overflow-hidden pt-24 pb-12 border-t border-white/5">
+            {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            {/* 틸/블루 은은한 포인트 오버레이 */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
+
+            {/* 그리드 배경 */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
+
+            {/* 배경 글로우 포인트들 */}
+            <div className="absolute left-0 bottom-0 w-[500px] h-[500px] rounded-full bg-teal-500/20 blur-[130px]" />
+            <div className="absolute right-0 top-0 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px]" />
 
             <div className="container mx-auto px-6 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
