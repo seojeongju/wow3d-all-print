@@ -250,64 +250,70 @@ export default function Hero() {
 
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute left-10 bottom-20 w-[280px] h-[420px] bg-card rounded-[30px] shadow-2xl border border-border p-6 z-20"
+                        className="absolute left-10 bottom-20 w-[280px] h-[480px] rounded-[2.5rem] border border-white/15 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/40 z-20 p-8 flex flex-col ring-1 ring-white/10"
                     >
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500' : analysis ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'}`}>
-                                {file && !analysis ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
+                                {file && !analysis ? <Loader2 className="w-7 h-7 animate-spin" /> : <Sparkles className="w-7 h-7" />}
                             </div>
                             <div>
-                                <div className="font-bold text-slate-900">AI 견적 분석</div>
-                                <div className="text-xs text-slate-500 font-medium">
-                                    {!file ? '업로드 대기' : !analysis ? '분석 중' : '분석 완료'}
+                                <div className="font-black text-white text-lg tracking-tight">AI 견적 분석</div>
+                                <div className="text-[11px] text-white/40 font-black uppercase tracking-widest mt-1">
+                                    {!file ? 'WAITING...' : !analysis ? 'ANALYZING...' : 'COMPLETED'}
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-3">
-                            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                <motion.div
-                                    className={`h-full rounded-full ${file && !analysis ? 'bg-amber-500/80 animate-pulse' : 'bg-green-500'}`}
-                                    initial={false}
-                                    animate={{
-                                        width: !file ? '0%' : !analysis ? '50%' : `${heroEstimate?.printability ?? 100}%`,
-                                    }}
-                                    transition={{ duration: 0.5 }}
-                                />
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-white/70 font-medium">출력 가능성</span>
-                                <span className={`font-bold ${heroEstimate?.overflow ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                    {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? '크기 초과' : `${heroEstimate?.printability ?? 100}%`}
-                                </span>
-                            </div>
-                            <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
-                                <div className="text-xs text-white/60 mb-1 font-medium">예상 견적가(FDM)</div>
-                                <div className={`text-2xl font-bold ${!file || !analysis || !heroEstimate ? 'text-white/40' : 'text-white'}`}>
-                                    {!file ? '업로드 후 확인' : !analysis ? '—' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString()}` : '—'}
+                        <div className="space-y-6 flex-1">
+                            <div className="space-y-3">
+                                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className={`h-full rounded-full ${file && !analysis ? 'bg-amber-500/80 animate-pulse' : 'bg-teal-400'}`}
+                                        initial={false}
+                                        animate={{
+                                            width: !file ? '0%' : !analysis ? '50%' : `${heroEstimate?.printability ?? 100}%`,
+                                        }}
+                                        transition={{ duration: 0.5 }}
+                                    />
+                                </div>
+                                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                                    <span className="text-white/30">PRINTABILITY</span>
+                                    <span className={heroEstimate?.overflow ? 'text-amber-400' : 'text-teal-400'}>
+                                        {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? 'SIZE EXCEEDED' : `${heroEstimate?.printability ?? 100}%`}
+                                    </span>
                                 </div>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-4 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handleTrySample}
-                                disabled={isLoadingSample}
-                            >
-                                {isLoadingSample ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    '샘플 견적 체험'
-                                )}
-                            </Button>
-                            <Link href="/quote" className="block mt-3" onClick={clearSampleIfPresent}>
+                            
+                            <div className="p-5 bg-white/[0.03] rounded-2xl border border-white/5 backdrop-blur-sm">
+                                <div className="text-[10px] text-white/20 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
+                                <div className={`text-2xl font-black ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
+                                    {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 pt-2">
                                 <Button
+                                    variant="outline"
                                     size="sm"
-                                    className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.5)] hover:from-primary hover:to-primary/95 ring-2 ring-primary/30 transition-all"
+                                    className="w-full h-11 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest transition-all"
+                                    onClick={handleTrySample}
+                                    disabled={isLoadingSample}
                                 >
-                                    <Zap className="w-4 h-4 mr-2 fill-current" />
-                                    AI실시간 자동견적하기
+                                    {isLoadingSample ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        '샘플 견적 체험'
+                                    )}
                                 </Button>
-                            </Link>
+                                <Link href="/quote" className="block" onClick={clearSampleIfPresent}>
+                                    <Button
+                                        size="sm"
+                                        className="w-full h-12 rounded-xl bg-teal-500 text-slate-950 font-black text-[10px] uppercase tracking-widest hover:bg-teal-400 shadow-lg shadow-teal-500/20 active:scale-95 transition-all"
+                                    >
+                                        <Zap className="w-4 h-4 mr-2 fill-current" />
+                                        실시간 자동견적 시작
+                                    </Button>
+                                </Link>
+                            </div>
                         </div>
                     </motion.div>
                 </div>

@@ -66,7 +66,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     const [fdmMaterial, setFdmMaterial] = useState('')
     const [infill, setInfill] = useState(20)
     const [layerHeight, setLayerHeight] = useState(0.2) // mm
-    const [supportEnabled, setSupportEnabled] = useState(false)
+    const [supportEnabled, setSupportEnabled] = useState(true)
 
     // SLA/DLP Options (resinType = 소재 이름)
     const [resinType, setResinType] = useState('')
