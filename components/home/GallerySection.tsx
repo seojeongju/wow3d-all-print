@@ -169,9 +169,9 @@ function GalleryCard({
 }
 
 // ─────────────────────────────────────────────────────
-// 라이트박스 모달 (이미지 자세히 보기)
+// 제품 상세 보기 모달 (Detail View)
 // ─────────────────────────────────────────────────────
-function LightboxModal({ item, onClose }: { item: GalleryItem; onClose: () => void }) {
+function DetailViewModal({ item, onClose }: { item: GalleryItem; onClose: () => void }) {
     const tags: string[] = (() => {
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
@@ -192,61 +192,90 @@ function LightboxModal({ item, onClose }: { item: GalleryItem; onClose: () => vo
                 onClick={onClose}
             >
                 <motion.div
-                    initial={{ scale: 0.85, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.85, opacity: 0 }}
+                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="relative max-w-2xl w-full bg-slate-900 border border-white/15 rounded-3xl overflow-hidden shadow-2xl"
+                    className="relative max-w-4xl w-full bg-slate-900 border border-white/15 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[400px]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* 닫기 버튼 */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+                        className="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/80 hover:text-white hover:scale-110 transition-all"
                     >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                     </button>
 
-                    {/* 이미지 */}
-                    <div className="aspect-[4/3] bg-slate-800 overflow-hidden">
+                    {/* 좌측: 이미지 영역 */}
+                    <div className="md:w-1/2 bg-slate-800 relative group overflow-hidden flex items-center justify-center min-h-[300px]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={resolveImageUrl(item.image_url)}
                             alt={item.title}
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-cover"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
                     </div>
 
-                    {/* 정보 */}
-                    <div className="p-6 space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-white text-xl font-bold">{item.title}</h3>
-                            <div className="flex gap-2 shrink-0">
-                                {item.print_method && (
-                                    <span className="flex items-center gap-1 text-[11px] text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full font-semibold">
-                                        <MethodIcon method={item.print_method} />
-                                        {item.print_method.toUpperCase()}
-                                    </span>
-                                )}
-                                {item.material && (
-                                    <span className="text-[11px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full font-semibold">
-                                        {item.material}
-                                    </span>
-                                )}
-                            </div>
+                    {/* 우측: 상세 정보 영역 */}
+                    <div className="md:w-1/2 p-8 md:p-10 flex flex-col justify-center">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold mb-4 uppercase tracking-tighter">
+                            Case Study
                         </div>
-                        {item.description && (
-                            <p className="text-white/60 text-sm leading-relaxed break-keep">{item.description}</p>
-                        )}
-                        {tags.length > 0 && (
-                            <div className="flex gap-2 flex-wrap pt-1">
-                                {tags.map((tag, i) => (
-                                    <span key={i} className="text-xs text-white/40 bg-white/[0.06] border border-white/10 px-3 py-1 rounded-full">
-                                        #{tag}
-                                    </span>
-                                ))}
+                        
+                        <h3 className="text-white text-3xl font-bold mb-4 leading-tight">{item.title}</h3>
+                        
+                        <div className="space-y-6">
+                            {/* 핵심 스펙 */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase mb-1">
+                                        <MethodIcon method={item.print_method} />
+                                        Print Method
+                                    </div>
+                                    <div className="text-white text-sm font-semibold">{item.print_method?.toUpperCase() || 'Standard'}</div>
+                                </div>
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase mb-1">
+                                        <Box className="w-3 h-3" />
+                                        Material
+                                    </div>
+                                    <div className="text-white text-sm font-semibold">{item.material || 'Generic'}</div>
+                                </div>
                             </div>
-                        )}
+
+                            {/* 설명 */}
+                            {item.description && (
+                                <div className="space-y-2">
+                                    <div className="text-white/40 text-[10px] font-bold uppercase">Description</div>
+                                    <p className="text-white/80 text-base leading-relaxed break-keep font-medium">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* 태그 */}
+                            {tags.length > 0 && (
+                                <div className="flex gap-2 flex-wrap pt-2">
+                                    {tags.map((tag, i) => (
+                                        <span key={i} className="text-xs text-white/60 bg-white/[0.06] border border-white/10 px-3 py-1 rounded-full">
+                                            #{tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 하단 버튼 */}
+                        <div className="mt-8 pt-8 border-t border-white/10">
+                            <Link href="/quote" onClick={onClose}>
+                                <Button className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold gap-2">
+                                    유사 사제품 견적 문의하기
+                                    <ArrowRight className="w-4 h-4" />
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </motion.div>
             </motion.div>
@@ -429,9 +458,9 @@ export default function GallerySection() {
 
     return (
         <>
-            {/* 개별 이미지 라이트박스 */}
+            {/* 제품 상세 보기 모달 */}
             {selectedItem && (
-                <LightboxModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+                <DetailViewModal item={selectedItem} onClose={() => setSelectedItem(null)} />
             )}
 
             {/* 전체 갤러리 모달 */}
@@ -468,10 +497,10 @@ export default function GallerySection() {
                         >
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-4 uppercase tracking-widest">
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                출력물 갤러리
+                                PORTFOLIO
                             </div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                                WOW3D의 <span className="text-primary">실제 출력 결과물</span>
+                            <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+                                시제품제작<span className="text-teal-400">갤러리</span>
                             </h2>
                             <p className="text-white/70 text-sm mt-2 max-w-md break-keep leading-relaxed font-medium">
                                 다양한 소재와 출력 방식으로 제작된 실제 출력물들을 확인하세요.
