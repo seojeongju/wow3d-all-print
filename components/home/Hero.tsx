@@ -113,12 +113,21 @@ export default function Hero() {
     };
 
     return (
-        <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-[#0d1117]">
+        <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+            {/* 그라데이션 배경 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0d1117] via-[#0a1628] to-[#0d2137]" />
+            {/* 틸 포인트 그라데이션 오버레이 */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-teal-950/40 via-transparent to-indigo-950/30" />
+
             {/* Background Elements */}
             <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-teal-500/15 opacity-60 blur-[120px]" />
-                <div className="absolute right-0 bottom-0 -z-10 h-[500px] w-[500px] rounded-full bg-indigo-500/10 opacity-40 blur-[140px]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
+                {/* 좌상단 틸 글로우 */}
+                <div className="absolute left-0 top-1/4 w-[500px] h-[500px] rounded-full bg-teal-500/20 blur-[130px]" />
+                {/* 우하단 인디고 글로우 */}
+                <div className="absolute right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
+                {/* 중앙 상단 퍼플 포인트 */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px]" />
             </div>
 
             <div className="container mx-auto px-4 z-10 grid lg:grid-cols-2 gap-12 items-center">
