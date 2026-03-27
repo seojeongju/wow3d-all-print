@@ -47,18 +47,30 @@ export default function ProcessSection() {
     });
 
     return (
-        <section id="process" ref={containerRef} className="py-24 bg-background relative">
-            <div className="container mx-auto px-4">
+        <section id="process" ref={containerRef} className="py-24 relative overflow-hidden">
+            {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            {/* 틸/블루 은은한 포인트 오버레이 */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
+
+            {/* 그리드 배경 */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
+            
+            {/* 배경 글로우 포인트들 */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-[130px]" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px]" />
+
+            <div className="container mx-auto px-4 relative z-10">
                 <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
 
                     {/* Sticky Left Side */}
                     <div className="lg:w-1/3 lg:h-[calc(100vh-100px)] lg:sticky lg:top-24 flex flex-col justify-center mb-12 lg:mb-0">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-6 word-keep-all">
+                        <h2 className="text-4xl md:text-5xl font-bold mb-6 word-keep-all text-white">
                             파일에서 <br />
-                            <span className="text-primary">제품이 되기까지</span>
+                            <span className="text-teal-400">제품이 되기까지</span>
                         </h2>
-                        <p className="text-xl text-muted-foreground mb-8 break-keep leading-relaxed italic">
-                            <span className="text-foreground/80 font-bold">FDM 출력</span>은 강도와 경제성에 적합하고, <span className="text-foreground/80 font-bold">SLA 출력과 DLP 출력</span>은 고정밀 3D프린팅이 필요한 작업에 적합합니다.<br />
+                        <p className="text-xl text-white/70 mb-8 break-keep leading-relaxed italic font-medium">
+                            <span className="text-white font-bold">FDM 출력</span>은 강도와 경제성에 적합하고, <span className="text-white font-bold">SLA 출력과 DLP 출력</span>은 고정밀 3D프린팅이 필요한 작업에 적합합니다.<br />
                             PLA, ABS, PETG, TPU, 나일론, 레진 등 다양한 소재 선택이 가능합니다.
                         </p>
                         <div className="h-2 w-full bg-secondary rounded-full overflow-hidden hidden lg:block">
@@ -89,16 +101,16 @@ export default function ProcessSection() {
                                     )}
                                 </div>
                                 <div className="pt-2">
-                                    <span className="text-6xl font-black text-muted/30 -ml-4 block mb-2">{step.id}</span>
-                                    <h3 className="text-3xl font-bold mb-4">{step.title}</h3>
-                                    <p className="text-xl text-muted-foreground/90 leading-relaxed max-w-xl break-keep mb-4">
+                                    <span className="text-6xl font-black text-white/10 -ml-4 block mb-2">{step.id}</span>
+                                    <h3 className="text-3xl font-bold mb-4 text-white">{step.title}</h3>
+                                    <p className="text-xl text-white/70 leading-relaxed max-w-xl break-keep mb-4 font-medium">
                                         {step.description}
                                     </p>
                                     {step.details && step.details.length > 0 && (
-                                        <ul className="space-y-2 text-sm text-muted-foreground">
+                                        <ul className="space-y-2 text-sm text-white/60 font-medium">
                                             {step.details.map((d, j) => (
                                                 <li key={j} className="flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500/60 shrink-0" />
                                                     {d}
                                                 </li>
                                             ))}

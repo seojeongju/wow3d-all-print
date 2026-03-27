@@ -159,7 +159,7 @@ export default function Hero() {
                         </span>
                     </h1>
 
-                    <p className="text-xl text-white/60 mb-8 max-w-lg leading-relaxed break-keep">
+                    <p className="text-xl text-white/70 mb-8 max-w-lg leading-relaxed break-keep font-medium">
                         STL·OBJ·3MF 파일 업로드만으로 <span className="text-white font-bold">3D프린팅 자동견적</span>을 즉시 확인하세요.<br />
                         3D프린터 출력대행부터 시제품제작, 소량·대량 생산까지 (주)와우쓰리디가 빠르고 정확하게 지원합니다.
                     </p>
@@ -179,7 +179,7 @@ export default function Hero() {
                         </Link>
                     </div>
 
-                    <div className="mt-12 flex items-center gap-8 text-white/50">
+                    <div className="mt-12 flex items-center gap-8 text-white/70">
                         <div className="flex -space-x-4">
                             {[1, 2, 3, 4].map((i) => (
                                 <div key={i} className="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center text-xs font-bold overflow-hidden">
@@ -242,7 +242,7 @@ export default function Hero() {
                                     암호화 업로드
                                 </span>
                             </div>
-                            <p className="mt-3 text-[10px] text-white/50">
+                            <p className="mt-3 text-[10px] text-white/70 font-medium">
                                 파일을 업로드하면 3D 미리보기와 상세 견적이 활성화됩니다.
                             </p>
                         </div>
@@ -275,14 +275,14 @@ export default function Hero() {
                                 />
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-500 font-medium">출력 가능성</span>
-                                <span className={`font-bold ${heroEstimate?.overflow ? 'text-amber-600' : 'text-green-600'}`}>
+                                <span className="text-white/70 font-medium">출력 가능성</span>
+                                <span className={`font-bold ${heroEstimate?.overflow ? 'text-amber-400' : 'text-emerald-400'}`}>
                                     {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? '크기 초과' : `${heroEstimate?.printability ?? 100}%`}
                                 </span>
                             </div>
-                            <div className="mt-8 p-4 bg-slate-100/50 rounded-xl border border-slate-200/50">
-                                <div className="text-xs text-slate-500 mb-1 font-medium">예상 견적가(FDM)</div>
-                                <div className={`text-2xl font-bold ${!file || !analysis || !heroEstimate ? 'text-slate-400' : 'text-slate-900'}`}>
+                            <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
+                                <div className="text-xs text-white/60 mb-1 font-medium">예상 견적가(FDM)</div>
+                                <div className={`text-2xl font-bold ${!file || !analysis || !heroEstimate ? 'text-white/40' : 'text-white'}`}>
                                     {!file ? '업로드 후 확인' : !analysis ? '—' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString()}` : '—'}
                                 </div>
                             </div>

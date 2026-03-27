@@ -138,7 +138,7 @@ function GalleryCard({
                 <div className="p-5 flex-1 flex flex-col">
                     <h3 className="text-white font-bold text-sm truncate mb-1.5">{item.title}</h3>
                     {item.description && (
-                        <p className="text-white/50 text-xs leading-relaxed line-clamp-2 mb-3 break-keep">
+                        <p className="text-white/70 text-xs leading-relaxed line-clamp-2 mb-3 break-keep">
                             {item.description}
                         </p>
                     )}
@@ -155,7 +155,7 @@ function GalleryCard({
                         {tags.length > 0 && (
                             <div className="flex gap-1 flex-wrap justify-end">
                                 {tags.slice(0, 2).map((tag, i) => (
-                                    <span key={i} className="text-[10px] text-white/40 bg-white/[0.06] px-2 py-0.5 rounded-full">
+                                    <span key={i} className="text-[10px] text-white/60 bg-white/[0.08] px-2 py-0.5 rounded-full">
                                         #{tag}
                                     </span>
                                 ))}
@@ -473,7 +473,7 @@ export default function GallerySection() {
                             <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
                                 WOW3D의 <span className="text-primary">실제 출력 결과물</span>
                             </h2>
-                            <p className="text-white/50 text-sm mt-2 max-w-md break-keep leading-relaxed">
+                            <p className="text-white/70 text-sm mt-2 max-w-md break-keep leading-relaxed font-medium">
                                 다양한 소재와 출력 방식으로 제작된 실제 출력물들을 확인하세요.
                             </p>
                         </motion.div>
