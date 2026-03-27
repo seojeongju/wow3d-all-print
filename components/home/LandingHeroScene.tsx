@@ -15,11 +15,9 @@ function RotatingModel() {
             <mesh castShadow receiveShadow>
                 <torusKnotGeometry args={[1, 0.35, 128, 32]} />
                 <meshStandardMaterial
-                    color="#818cf8"
-                    roughness={0.1}
-                    metalness={0.9}
-                    emissive="#4f46e5"
-                    emissiveIntensity={0.5}
+                    color="#f8fafc"
+                    roughness={0.55}
+                    metalness={0.05}
                 />
             </mesh>
         </Float>

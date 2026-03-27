@@ -114,10 +114,10 @@ export default function Hero() {
 
     return (
         <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-            {/* 그라데이션 배경 */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0d1117] via-[#0a1628] to-[#0d2137]" />
-            {/* 틸 포인트 그라데이션 오버레이 */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-teal-950/40 via-transparent to-indigo-950/30" />
+            {/* 밝은 다크 좌우 그라데이션 배경 */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            {/* 틸/블루 은은한 포인트 오버레이 */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
 
             {/* Background Elements */}
             <div className="absolute inset-0">
