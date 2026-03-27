@@ -36,19 +36,21 @@ function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
 
     return (
         <Html position={[0, 0, 0]}>
-            <div className="bg-background/95 backdrop-blur-sm px-4 py-3 rounded-lg border border-border shadow-lg text-xs space-y-1 min-w-[180px]">
-                <div className="font-semibold text-primary mb-2">📏 치수 측정</div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">X (가로):</span>
-                    <span className="font-mono font-medium">{size.x.toFixed(2)} mm</span>
+            <div className="bg-slate-900/90 backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/10 shadow-2xl text-xs space-y-2 min-w-[200px] text-white">
+                <div className="font-black text-teal-400 mb-3 flex items-center gap-2 uppercase tracking-widest text-[10px]">
+                    <Ruler className="w-3.5 h-3.5" /> 모델 치수 측정
                 </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Y (세로):</span>
-                    <span className="font-mono font-medium">{size.y.toFixed(2)} mm</span>
+                <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
+                    <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">X (Width)</span>
+                    <span className="font-mono font-black text-white">{size.x.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
                 </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Z (높이):</span>
-                    <span className="font-mono font-medium">{size.z.toFixed(2)} mm</span>
+                <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
+                    <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">Y (Depth)</span>
+                    <span className="font-mono font-black text-white">{size.y.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
+                </div>
+                <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
+                    <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">Z (Height)</span>
+                    <span className="font-mono font-black bg-teal-500/20 text-teal-400 px-1.5 rounded">{size.z.toFixed(2)}<span className="text-[10px] text-teal-400/50 ml-0.5 font-sans">mm</span></span>
                 </div>
             </div>
         </Html>
