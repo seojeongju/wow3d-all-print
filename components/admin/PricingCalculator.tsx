@@ -315,10 +315,10 @@ export default function PricingCalculator({ equipmentParams }: Props) {
 
                 {/* 출력 방식별 설정 */}
                 <Tabs value={method} onValueChange={(v) => setMethod(v as typeof method)}>
-                    <TabsList className="bg-white/5 border border-white/10">
-                        <TabsTrigger value="fdm">FDM</TabsTrigger>
-                        <TabsTrigger value="sla">SLA</TabsTrigger>
-                        <TabsTrigger value="dlp">DLP</TabsTrigger>
+                    <TabsList className="bg-white/5 border border-white/10 p-1">
+                        <TabsTrigger value="fdm" className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/50 hover:text-white transition-colors">FDM</TabsTrigger>
+                        <TabsTrigger value="sla" className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/50 hover:text-white transition-colors">SLA</TabsTrigger>
+                        <TabsTrigger value="dlp" className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/50 hover:text-white transition-colors">DLP</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="fdm" className="space-y-4 mt-4">
