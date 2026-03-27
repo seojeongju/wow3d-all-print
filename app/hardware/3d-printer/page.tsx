@@ -187,9 +187,9 @@ const RESINS = [
 ───────────────────────────────────────────────────────────── */
 function SpecRow({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex items-start justify-between py-2.5 border-b border-white/10 last:border-0">
-            <span className="text-xs text-foreground/75 font-semibold shrink-0 w-28">{label}</span>
-            <span className="text-xs text-foreground font-semibold text-right">{value}</span>
+        <div className="flex items-start justify-between py-2.5 border-b border-white/5 last:border-0">
+            <span className="text-[10px] text-white/40 font-black uppercase tracking-widest shrink-0 w-32">{label}</span>
+            <span className="text-[11px] text-white font-bold text-right leading-relaxed">{value}</span>
         </div>
     );
 }
@@ -202,96 +202,87 @@ export default function PrinterProductPage() {
     const active = PRODUCTS.find(p => p.id === activeProduct) ?? PRODUCTS[1];
 
     return (
-        <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
+        <main className="min-h-screen bg-[#020617] text-white selection:bg-teal-500/30 selection:text-teal-400 overflow-x-hidden pt-20">
             <Header />
 
-            {/* ── Hero ─────────────────────────────────────── */}
-            <section className="relative pt-32 pb-24 overflow-hidden">
-                {/* 배경 그라디언트 */}
-                <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/60 via-background/80 to-background pointer-events-none" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(99,102,241,0.18),transparent)] pointer-events-none" />
-                {/* 그리드 패턴 */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-
-                <div className="container mx-auto px-4 relative z-10 text-center">
+            {/* ── 배경 시스템 ───────────────────────────── */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[#020617]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(45,212,191,0.08)_0%,transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.08)_0%,transparent_50%)]" />
+                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:60px_60px]" />
+            </div>
+            <section className="relative pt-24 pb-20 overflow-hidden z-10">
+                <div className="container mx-auto px-4 text-center">
                     {/* 배지 */}
                     <motion.div
-                        initial={{ opacity: 0, y: -10 }}
+                        initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-8"
+                        className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-teal-400/20 bg-teal-400/5 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-10 shadow-xl shadow-teal-400/5"
                     >
-                        <Layers className="w-3.5 h-3.5" />
+                        <Layers className="w-4 h-4" />
                         Professional Grade 3D Printer
                     </motion.div>
 
                     <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="text-5xl md:text-7xl font-black mb-4 tracking-tight"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-6xl md:text-8xl font-black mb-6 tracking-tight leading-none"
                     >
                         P-Pro{' '}
-                        <span className="bg-gradient-to-r from-primary via-indigo-400 to-violet-400 bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-teal-400 via-indigo-400 to-teal-400 bg-clip-text text-transparent">
                             Series
                         </span>
                     </motion.h1>
 
                     <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-lg md:text-xl text-muted-foreground mb-6 break-keep"
-                    >
-                        Technical Specifications &amp; Performance
-                    </motion.p>
-
-                    <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                        className="text-sm text-muted-foreground/70 mb-10"
+                        transition={{ delay: 0.2 }}
+                        className="text-lg md:text-xl text-white/60 font-bold mb-10 break-keep max-w-2xl mx-auto"
                     >
-                        MSLA (Mask Stereolithography) · 405nm Industrial UV · 최대 60 mm/h · 레이어 25–150 μm
+                        최상의 정밀도와 속도를 실현하는 산업용 MSLA 3D 프린터의 기준,<br />
+                        <span className="text-white">P-Pro 시리즈</span>의 압도적인 퍼포먼스를 경험하세요.
                     </motion.p>
 
                     {/* 스펙 배지 행 */}
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="flex flex-wrap justify-center gap-3 mb-12"
+                        transition={{ delay: 0.3 }}
+                        className="flex flex-wrap justify-center gap-4 mb-12"
                     >
                         {[
-                            { label: 'Technology', value: 'MSLA (Mask Stereolithography)' },
-                            { label: 'Wavelength', value: '405 nm Industrial UV' },
+                            { label: 'Technology', value: 'MSLA' },
+                            { label: 'Wavelength', value: '405 nm UV' },
                             { label: 'Max Speed', value: '60 mm/h' },
-                            { label: 'Layer', value: '25 – 150 μm' },
+                            { label: 'Resolution', value: 'Up to 16K' },
                         ].map((b) => (
                             <span
                                 key={b.label}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 bg-white/[0.07] text-sm"
+                                className="flex items-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl text-sm font-bold shadow-2xl"
                             >
-                                <span className="text-primary font-bold text-xs">{b.label}</span>
-                                <span className="text-foreground font-medium">{b.value}</span>
+                                <span className="text-teal-400 text-[10px] font-black uppercase tracking-widest">{b.label}</span>
+                                <span className="text-white/80">{b.value}</span>
                             </span>
                         ))}
                     </motion.div>
 
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.5 }}
-                        className="flex flex-col sm:flex-row justify-center gap-4"
+                        transition={{ delay: 0.4 }}
+                        className="flex flex-col sm:flex-row justify-center gap-5"
                     >
                         <Link href="/contact">
-                            <Button className="h-12 px-8 rounded-xl bg-white text-black hover:bg-white/90 font-bold text-sm gap-2">
-                                <Phone className="w-4 h-4" /> 무료 도입 상담
+                            <Button className="h-16 px-10 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 transition-all hover:scale-105 active:scale-95">
+                                <Phone className="w-5 h-5" /> 무료 도입 상담
                             </Button>
                         </Link>
                         <Link href="/quote">
-                            <Button variant="outline" className="h-12 px-8 rounded-xl font-bold text-sm gap-2 border-white/20 hover:bg-white/5">
-                                견적 바로 받기 <ArrowRight className="w-4 h-4" />
+                            <Button variant="outline" className="h-16 px-10 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest gap-3 transition-all hover:scale-105 active:scale-95">
+                                실시간 견적 <ArrowRight className="w-5 h-5" />
                             </Button>
                         </Link>
                     </motion.div>
@@ -299,29 +290,30 @@ export default function PrinterProductPage() {
             </section>
 
             {/* ── 제품 라인업 ───────────────────────────────── */}
-            <section className="py-20">
+            <section className="relative py-24 z-10">
                 <div className="container mx-auto px-4">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="mb-12"
+                        className="mb-14"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-2 text-foreground">제품 라인업</h2>
-                        <p className="text-sm text-foreground/70">
-                            * 사이즈 정보는 반올림된 수치일 수 있습니다. (W×D×H)
+                        <h2 className="text-4xl md:text-5xl font-black mb-4 text-white uppercase tracking-tight">제품 라인업</h2>
+                        <div className="h-1.5 w-24 bg-teal-400 rounded-full mb-6" />
+                        <p className="text-white/40 text-lg font-bold">
+                            정밀 제작 환경에 최적화된 최신 P-Pro 라인업을 만나보세요.
                         </p>
                     </motion.div>
 
                     {/* 탭 선택 */}
-                    <div className="flex flex-wrap gap-2 mb-10">
+                    <div className="flex flex-wrap gap-3 mb-12">
                         {PRODUCTS.map((p) => (
                             <button
                                 key={p.id}
                                 onClick={() => setActiveProduct(p.id)}
-                                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 border ${activeProduct === p.id
-                                    ? 'bg-primary text-white border-primary shadow-lg shadow-primary/25'
-                                    : 'border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 hover:bg-white/5'
+                                className={`px-8 py-3.5 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all ${activeProduct === p.id
+                                    ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]'
+                                    : 'bg-white/5 text-white/40 border border-white/10 hover:text-white hover:bg-white/10'
                                     }`}
                             >
                                 {p.name}
@@ -339,12 +331,13 @@ export default function PrinterProductPage() {
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.08 }}
                                 onClick={() => setActiveProduct(product.id)}
-                                className={`relative rounded-2xl border p-6 cursor-pointer transition-all duration-300 bg-gradient-to-br ${product.gradient} ${product.border}
+                                className={`relative rounded-[2.5rem] border p-8 cursor-pointer transition-all duration-500 overflow-hidden group
                                     ${activeProduct === product.id
-                                        ? `shadow-2xl ${product.glow} scale-[1.02]`
-                                        : 'hover:scale-[1.01] hover:shadow-lg opacity-80 hover:opacity-100'
+                                        ? 'bg-white/10 border-teal-400/50 shadow-2xl shadow-teal-400/20 scale-[1.02]'
+                                        : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/20'
                                     }`}
                             >
+                                <div className="absolute inset-0 bg-gradient-to-br from-teal-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {/* 추천 배지 */}
                                 {product.highlight && (
                                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/30 whitespace-nowrap">
@@ -352,40 +345,39 @@ export default function PrinterProductPage() {
                                     </span>
                                 )}
 
-                                <div className={`text-[11px] font-black uppercase tracking-widest mb-2 ${product.seriesColor}`}>
+                                <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-3 ${product.seriesColor}`}>
                                     {product.series}
                                 </div>
-                                <h3 className="text-2xl font-black mb-1">{product.name}</h3>
-                                <p className="text-xs text-foreground/75 mb-5 break-keep leading-relaxed">
+                                <h3 className="text-3xl font-black mb-2 text-white">{product.name}</h3>
+                                <p className="text-sm text-white/40 font-bold mb-8 break-keep leading-relaxed">
                                     {product.tagline}
                                 </p>
 
                                 {/* 제품 이미지 추가 - 화이트 디스플레이 케이스 방식 */}
-                                <div className="relative w-full aspect-[4/3] mb-6 bg-white rounded-xl overflow-hidden group/img shadow-[inner_0_2px_4px_rgba(0,0,0,0.05)] border border-white/10">
+                                <div className="relative w-full aspect-[4/3] mb-8 p-4 rounded-3xl bg-black/40 border border-white/5 overflow-hidden group/img shadow-inner">
                                     <Image
                                         src={product.image || ''}
                                         alt={product.name}
                                         fill
-                                        className="object-contain p-2 group-hover/img:scale-105 transition-transform duration-500 brightness-[1.02]"
+                                        className="object-contain p-4 group-hover/img:scale-110 transition-transform duration-700"
                                     />
-                                    {/* 유광 반사 효과 추가 */}
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-black/5 via-transparent to-transparent pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-teal-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
 
                                 {/* 스펙 */}
-                                <div className="space-y-0">
-                                    <SpecRow label="PRINTER SIZE" value={product.printerSize!} />
-                                    <SpecRow label="NET WEIGHT" value={product.weight!} />
-                                    <SpecRow label="BUILD VOLUME" value={product.buildSize} />
+                                <div className="space-y-1">
+                                    <SpecRow label="장비 크기" value={product.printerSize!} />
+                                    <SpecRow label="장비 중량" value={product.weight!} />
+                                    <SpecRow label="출력 사이즈" value={product.buildSize} />
                                 </div>
 
                                 {activeProduct === product.id && (
                                     <motion.div
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
-                                        className="mt-4 pt-4 border-t border-white/10"
+                                        className="mt-6 pt-6 border-t border-white/10"
                                     >
-                                        <p className="text-xs text-foreground/75 leading-relaxed break-keep">
+                                        <p className="text-[13px] text-white/50 font-bold leading-relaxed break-keep">
                                             {product.desc}
                                         </p>
                                     </motion.div>
@@ -397,54 +389,39 @@ export default function PrinterProductPage() {
             </section>
 
             {/* ── 하드웨어 스펙 상세 ─────────────────────── */}
-            <section className="py-20 border-t border-white/5">
+            <section className="relative py-24 z-10">
                 <div className="container mx-auto px-4">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="mb-10"
+                        className="mb-14"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">
+                        <h2 className="text-4xl md:text-5xl font-black mb-4 text-white uppercase tracking-tight">
                             하드웨어 스펙{' '}
-                            <span className="text-indigo-300">— {active.name}</span>
+                            <span className="text-teal-400">— {active.name}</span>
                         </h2>
-                        <p className="text-sm text-foreground/75 mb-8">카드를 클릭하거나 메뉴를 선택해 모델별 상세 스펙을 확인하세요.</p>
-
-                        {/* 스펙 상세 섹션 전용 제품 선택 탭 */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {PRODUCTS.map((p) => (
-                                <button
-                                    key={`spec-tab-${p.id}`}
-                                    onClick={() => setActiveProduct(p.id)}
-                                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all duration-200 border ${activeProduct === p.id
-                                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
-                                        : 'border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 hover:bg-white/5'
-                                        }`}
-                                >
-                                    {p.name}
-                                </button>
-                            ))}
-                        </div>
+                        <div className="h-1 w-24 bg-white/10 rounded-full mb-6" />
+                        <p className="text-white/40 text-lg font-bold">모델별 상세 사양을 확인해 보세요.</p>
                     </motion.div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
                             {
                                 title: '빌드 볼륨', value: active.buildSize, icon: Layers,
-                                color: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/30',
+                                color: 'text-teal-400', bg: 'bg-teal-400/10', border: 'border-teal-400/20',
                             },
                             {
                                 title: '장비 규격', value: active.printerSize || '', icon: Zap,
-                                color: 'text-amber-300', bg: 'bg-amber-500/20', border: 'border-amber-500/30',
+                                color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20',
                             },
                             {
                                 title: '장비 무게', value: active.weight || '', icon: Cpu,
-                                color: 'text-emerald-300', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30',
+                                color: 'text-indigo-400', bg: 'bg-indigo-400/10', border: 'border-indigo-400/20',
                             },
                             {
                                 title: '해상도', value: active.resolution, icon: Thermometer,
-                                color: 'text-rose-300', bg: 'bg-rose-500/20', border: 'border-rose-500/30',
+                                color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/20',
                             },
                         ].map((spec, i) => (
                             <motion.div
@@ -453,15 +430,16 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.07 }}
-                                className={`p-6 rounded-2xl border ${spec.border} bg-gradient-to-br from-white/[0.05] to-transparent`}
+                                className={`p-8 rounded-[2rem] border ${spec.border} bg-white/[0.03] backdrop-blur-xl shadow-2xl relative overflow-hidden group`}
                             >
-                                <div className={`w-11 h-11 rounded-xl ${spec.bg} flex items-center justify-center mb-4 ${spec.color}`}>
-                                    <spec.icon className="w-6 h-6" strokeWidth={2} />
+                                <div className={`absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                                <div className={`w-14 h-14 rounded-2xl ${spec.bg} flex items-center justify-center mb-6 ${spec.color} relative z-10 group-hover:scale-110 transition-transform`}>
+                                    <spec.icon className="w-8 h-8" strokeWidth={2} />
                                 </div>
-                                <div className="text-xs text-foreground/80 font-semibold uppercase tracking-wider mb-1">
+                                <div className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mb-2 relative z-10">
                                     {spec.title}
                                 </div>
-                                <div className="text-base font-bold text-foreground">{spec.value}</div>
+                                <div className="text-xl font-black text-white relative z-10">{spec.value}</div>
                             </motion.div>
                         ))}
                     </div>
@@ -471,26 +449,26 @@ export default function PrinterProductPage() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="mt-8 grid md:grid-cols-2 gap-5"
+                        className="mt-12 grid md:grid-cols-2 gap-8"
                     >
-                        <div className="p-6 rounded-2xl border border-white/15 bg-white/[0.04]">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/90 mb-4 flex items-center gap-2">
-                                <Thermometer className="w-4 h-4 text-rose-300 shrink-0" /> 온도 · 환경
+                        <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-rose-400 mb-8 flex items-center gap-3">
+                                <Thermometer className="w-5 h-5 shrink-0" /> 환경 및 규격
                             </h3>
-                            <div className="space-y-1">
-                                <SpecRow label="장비 규격" value={active.printerSize || ''} />
-                                <SpecRow label="장비 무게" value={active.weight || ''} />
+                            <div className="space-y-4">
+                                <SpecRow label="장비 크기" value={active.printerSize || ''} />
+                                <SpecRow label="장비 중량" value={active.weight || ''} />
                                 <SpecRow label="챔버 가열" value={active.chamber} />
                                 <SpecRow label="공기 정화" value={active.led} />
                             </div>
                         </div>
-                        <div className="p-6 rounded-2xl border border-white/15 bg-white/[0.04]">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground/90 mb-4 flex items-center gap-2">
-                                <Zap className="w-4 h-4 text-amber-300 shrink-0" /> 전원 · 연결
+                        <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-400 mb-8 flex items-center gap-3">
+                                <Zap className="w-5 h-5 shrink-0" /> 전원 및 인터페이스
                             </h3>
-                            <div className="space-y-1">
-                                <SpecRow label="전원" value={active.power} />
-                                <SpecRow label="연결" value="USB 2.0" />
+                            <div className="space-y-4">
+                                <SpecRow label="공급 전원" value={active.power} />
+                                <SpecRow label="연결 방식" value="USB 2.0" />
                                 <SpecRow label="디스플레이" value='5.0" Touch Screen' />
                             </div>
                         </div>
@@ -499,17 +477,16 @@ export default function PrinterProductPage() {
             </section>
 
             {/* ── 핵심 기술 우위 ────────────────────────────── */}
-            <section className="py-20 border-t border-white/5 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(99,102,241,0.06),transparent)] pointer-events-none" />
-                <div className="container mx-auto px-4 relative z-10">
+            <section className="relative py-32 z-10">
+                <div className="container mx-auto px-4">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        className="text-center mb-14"
+                        className="text-center mb-20"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">핵심 기술 우위</h2>
-                        <p className="text-foreground/75 break-keep max-w-xl mx-auto">
+                        <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tight">핵심 기술 우위</h2>
+                        <p className="text-white/40 text-lg font-bold break-keep max-w-2xl mx-auto">
                             와우쓰리디 P-Pro Series만의 독자 기술로 경쟁 제품과 차별화된 출력 품질을 경험하세요.
                         </p>
                     </motion.div>
@@ -522,16 +499,16 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
-                                className={`group p-6 rounded-2xl border ${feat.border} bg-gradient-to-br from-white/[0.05] to-transparent hover:from-white/[0.08] transition-all duration-300 hover:scale-[1.02]`}
+                                className={`group p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] transition-all duration-500 hover:scale-[1.05]`}
                             >
-                                <div className={`w-12 h-12 rounded-2xl ${feat.bg} flex items-center justify-center mb-5 ${feat.color} group-hover:scale-110 transition-transform`}>
-                                    <feat.icon className="w-6 h-6" strokeWidth={2} />
+                                <div className={`w-16 h-16 rounded-[1.5rem] ${feat.bg} flex items-center justify-center mb-8 ${feat.color} group-hover:scale-110 transition-transform shadow-2xl`}>
+                                    <feat.icon className="w-8 h-8" strokeWidth={2} />
                                 </div>
-                                <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${feat.color}`}>
+                                <div className={`text-[10px] font-black uppercase tracking-[0.3em] mb-3 ${feat.color}`}>
                                     {feat.subtitle}
                                 </div>
-                                <h3 className="text-base font-bold text-foreground mb-3 leading-snug">{feat.title}</h3>
-                                <p className="text-xs text-foreground/75 leading-relaxed break-keep">{feat.desc}</p>
+                                <h3 className="text-xl font-black text-white mb-4 leading-tight">{feat.title}</h3>
+                                <p className="text-sm text-white/40 font-bold leading-relaxed break-keep">{feat.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -539,21 +516,21 @@ export default function PrinterProductPage() {
             </section>
 
             {/* ── 호환 레진 소재 ────────────────────────────── */}
-            <section className="py-20 border-t border-white/5">
+            <section className="relative py-32 z-10">
                 <div className="container mx-auto px-4">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="mb-10"
+                        className="mb-14"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-foreground">호환 레진 소재</h2>
-                        <p className="text-foreground/75 text-sm">
-                            405nm UV 광원 기반 — 산업·주얼리·덴탈 응용
+                        <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tight">호환 레진 소재</h2>
+                        <p className="text-white/40 text-lg font-bold">
+                            405nm UV 광원 기반 — 광범위한 산업·의료·주얼리 응용
                         </p>
                     </motion.div>
 
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {RESINS.map((resin, i) => (
                             <motion.div
                                 key={resin.name}
@@ -561,14 +538,14 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.07 }}
-                                className="flex items-start gap-4 p-5 rounded-2xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.06] transition-colors"
+                                className="flex items-start gap-6 p-8 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] transition-all active:scale-95 group"
                             >
-                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black border shrink-0 ${resin.color}`}>
+                                <div className={`px-4 py-2 rounded-xl text-[10px] font-black border group-hover:scale-110 transition-transform ${resin.color}`}>
                                     {resin.category}
-                                </span>
-                                <div>
-                                    <div className="font-bold text-sm text-foreground mb-1">{resin.name}</div>
-                                    <div className="text-xs text-foreground/75 break-keep">{resin.desc}</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="font-black text-lg text-white">{resin.name}</div>
+                                    <div className="text-[13px] text-white/30 font-bold leading-relaxed break-keep">{resin.desc}</div>
                                 </div>
                             </motion.div>
                         ))}
@@ -577,23 +554,23 @@ export default function PrinterProductPage() {
             </section>
 
             {/* ── 제품 인증 현황 ────────────────────────────── */}
-            <section className="py-20 border-t border-white/5">
+            <section className="relative py-32 z-10">
                 <div className="container mx-auto px-4">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-center mb-12"
+                        className="text-center mb-20"
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-                            <span className="text-indigo-300">(주)와우쓰리디</span> 제품인증현황
+                        <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tight">
+                            <span className="text-teal-400">(주)와우쓰리디</span> 인증 및 특허
                         </h2>
-                        <p className="text-foreground/75 break-keep max-w-xl mx-auto text-sm">
-                            품질과 기술력을 입증하는 국가 공인 인증 및 특허를 보유하고 있습니다.
+                        <p className="text-white/40 font-bold break-keep max-w-xl mx-auto text-lg leading-relaxed">
+                            국가 공인 인증과 독자적인 특허 기술로 최상의 품질을 보장합니다.
                         </p>
                     </motion.div>
 
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {CERTIFICATIONS.map((cert, i) => (
                             <motion.div
                                 key={cert.title}
@@ -601,14 +578,14 @@ export default function PrinterProductPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.08 }}
-                                className="p-6 rounded-2xl border border-white/15 bg-white/[0.04] text-center hover:bg-white/[0.06] transition-all hover:scale-[1.02]"
+                                className="p-10 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl text-center hover:bg-white/[0.06] transition-all hover:scale-105 group"
                             >
-                                <div className="text-4xl mb-4" aria-hidden>{cert.icon}</div>
-                                <div className="flex items-center justify-center gap-1.5 mb-3">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" strokeWidth={2} />
-                                    <h3 className="font-bold text-sm text-foreground">{cert.title}</h3>
+                                <div className="text-5xl mb-8 group-hover:scale-125 transition-transform" aria-hidden>{cert.icon}</div>
+                                <div className="flex items-center justify-center gap-2 mb-4">
+                                    <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={3} />
+                                    <h3 className="font-black text-white text-lg">{cert.title}</h3>
                                 </div>
-                                <p className="text-xs text-foreground/80 leading-relaxed break-keep">{cert.desc}</p>
+                                <p className="text-[13px] text-white/30 font-bold leading-relaxed break-keep">{cert.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -616,34 +593,31 @@ export default function PrinterProductPage() {
             </section>
 
             {/* ── CTA ──────────────────────────────────────── */}
-            <section className="py-28 border-t border-white/5 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,rgba(99,102,241,0.12),transparent)] pointer-events-none" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808005_1px,transparent_1px),linear-gradient(to_bottom,#80808005_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-
-                <div className="container mx-auto px-4 text-center relative z-10">
+            <section className="relative py-40 z-10 overflow-hidden">
+                <div className="container mx-auto px-4 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-8">
-                            <FlaskConical className="w-3.5 h-3.5" />
-                            데모 출력 &amp; 무료 도입 상담
+                        <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-teal-400/20 bg-teal-400/5 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-12 shadow-2xl">
+                            <FlaskConical className="w-5 h-5" />
+                            데모 출력 &amp; 도입 상담
                         </div>
 
-                        <h2 className="text-3xl md:text-5xl font-black mb-6 break-keep">
-                            용도에 맞는 P-Pro 모델과<br />
-                            <span className="text-primary">레진을 1:1로 추천</span>해 드립니다.
+                        <h2 className="text-5xl md:text-7xl font-black mb-10 tracking-tight leading-none text-white uppercase">
+                            Your Precision,<br />
+                            <span className="text-teal-400">Our Performance</span>
                         </h2>
-                        <p className="text-foreground/75 mb-10 break-keep max-w-lg mx-auto">
-                            WOW3DHD · (주)와우쓰리디에 문의하세요.<br />
-                            전문 엔지니어가 도입부터 운용까지 함께합니다.
+                        <p className="text-white/40 text-xl font-bold mb-16 break-keep max-w-2xl mx-auto leading-relaxed">
+                            최상의 출력 품질을 위한 정밀 전문가들이 대기하고 있습니다.<br />
+                            산업군에 최적화된 하드웨어와 레진 솔루션을 확인해 보세요.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                        <div className="flex flex-col sm:flex-row justify-center gap-6">
                             <Link href="/contact">
-                                <Button size="lg" className="h-14 px-10 rounded-xl bg-white text-black hover:bg-white/90 font-black text-base gap-2 shadow-2xl">
-                                    <Phone className="w-5 h-5" /> 무료 상담 신청
+                                <Button size="lg" className="h-20 px-12 rounded-[2rem] bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-[0.2em] text-lg gap-3 shadow-[0_20px_50px_rgba(45,212,191,0.3)] transition-all hover:scale-105 active:scale-95">
+                                    <Phone className="w-6 h-6" /> 무료 도입 상담
                                 </Button>
                             </Link>
                             <a
@@ -651,8 +625,8 @@ export default function PrinterProductPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <Button size="lg" variant="outline" className="h-14 px-10 rounded-xl font-bold text-base gap-2 border-white/20 hover:bg-white/5">
-                                    제조사 공식 사이트 <ExternalLink className="w-4 h-4" />
+                                <Button size="lg" variant="outline" className="h-20 px-12 rounded-[2rem] border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-[0.2em] text-lg gap-3 transition-all hover:scale-105 active:scale-95">
+                                    공식 사이트 방문 <ExternalLink className="w-6 h-6" />
                                 </Button>
                             </a>
                         </div>
