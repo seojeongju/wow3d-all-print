@@ -258,7 +258,7 @@ export default function Hero() {
                             </div>
                             <div>
                                 <div className="font-black text-white text-lg tracking-tight">AI 견적 분석</div>
-                                <div className="text-[11px] text-white/40 font-black uppercase tracking-widest mt-1">
+                                <div className="text-[11px] text-white/60 font-black uppercase tracking-widest mt-1">
                                     {!file ? 'WAITING...' : !analysis ? 'ANALYZING...' : 'COMPLETED'}
                                 </div>
                             </div>
@@ -276,15 +276,15 @@ export default function Hero() {
                                     />
                                 </div>
                                 <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                                    <span className="text-white/30">PRINTABILITY</span>
+                                    <span className="text-white/50">PRINTABILITY</span>
                                     <span className={heroEstimate?.overflow ? 'text-amber-400' : 'text-teal-400'}>
                                         {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? 'SIZE EXCEEDED' : `${heroEstimate?.printability ?? 100}%`}
                                     </span>
                                 </div>
                             </div>
                             
-                            <div className="p-5 bg-white/[0.03] rounded-2xl border border-white/5 backdrop-blur-sm">
-                                <div className="text-[10px] text-white/20 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
+                            <div className="p-5 bg-white/[0.04] rounded-2xl border border-white/10 backdrop-blur-sm">
+                                <div className="text-[10px] text-white/40 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
                                 <div className={`text-2xl font-black ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
                                     {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
                                 </div>

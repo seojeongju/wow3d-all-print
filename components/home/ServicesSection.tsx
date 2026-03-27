@@ -93,7 +93,7 @@ export default function ServicesSection() {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all text-white">서비스 안내</h2>
-                    <p className="text-white/70 text-lg max-w-2xl mx-auto break-keep italic font-medium">
+                    <p className="text-white/85 text-lg max-w-2xl mx-auto break-keep italic font-medium">
                         와우쓰리디는 <span className="text-white font-bold">3D프린팅출력, 3D프린터출력, 시제품제작, 3D프린팅출력대행, 3D프린터출력대행</span> 서비스를 제공하는 3D프린팅 전문 업체입니다.
                         FDM, SLA, DLP 공정과 다양한 소재를 기반으로 목적에 맞는 제작 솔루션을 제안합니다.
                     </p>
@@ -120,7 +120,7 @@ export default function ServicesSection() {
                                     <s.icon className="w-6 h-6" />
                                 </div>
                                 <h3 className="text-xl font-bold mb-3 word-keep-all text-white">{s.title}</h3>
-                                <p className="text-white/70 text-sm leading-relaxed mb-4 break-keep font-medium">
+                                <p className="text-white/85 text-sm leading-relaxed mb-4 break-keep font-medium">
                                     {s.description}
                                 </p>
                                 {'methods' in s && s.methods ? (
@@ -128,17 +128,17 @@ export default function ServicesSection() {
                                         {(s.methods as { name: string; icon: React.ComponentType<{ className?: string }>; desc: string }[]).map(
                                             (m, j) => (
                                                 <div key={j} className="flex items-start gap-2 text-sm">
-                                                    <m.icon className="w-4 h-4 mt-0.5 shrink-0 text-white/40" />
+                                                    <m.icon className="w-4 h-4 mt-0.5 shrink-0 text-white/55" />
                                                     <div>
                                                         <span className="font-semibold text-white">{m.name}</span>
-                                                        <span className="text-white/60"> — {m.desc}</span>
+                                                        <span className="text-white/75"> — {m.desc}</span>
                                                     </div>
                                                 </div>
                                             )
                                         )}
                                     </div>
                                 ) : (
-                                    <ul className="space-y-1.5 text-sm text-white/60 font-medium">
+                                    <ul className="space-y-1.5 text-sm text-white/75 font-medium">
                                         {(s.items || []).map((item, j) => (
                                             <li key={j} className="flex items-center gap-2">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-teal-500/60" />

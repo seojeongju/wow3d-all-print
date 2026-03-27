@@ -82,15 +82,15 @@ export function MakerWorkspace() {
 
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-9 md:h-10">
-                        <TabsList className="grid w-[160px] md:w-[200px] grid-cols-2 h-9 md:h-10 bg-white/5 border border-white/10 rounded-lg md:rounded-xl">
-                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md md:rounded-lg transition-all">스케치(2D)</TabsTrigger>
-                            <TabsTrigger value="3d" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-md md:rounded-lg transition-all">결과물(3D)</TabsTrigger>
+                        <TabsList className="grid w-[160px] md:w-[200px] grid-cols-2 h-9 md:h-10 bg-white/5 border border-white/10 rounded-lg md:rounded-xl p-1">
+                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-white/50 hover:text-white rounded-md md:rounded-lg transition-all">스케치(2D)</TabsTrigger>
+                            <TabsTrigger value="3d" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50 hover:text-white rounded-md md:rounded-lg transition-all">결과물(3D)</TabsTrigger>
                         </TabsList>
                     </Tabs>
 
                     <div className="w-px h-5 md:h-6 bg-white/10 hidden sm:block" />
 
-                    <Button variant="outline" size="sm" className="h-9 md:h-10 px-3 md:px-4 text-[10px] md:text-xs font-semibold border-white/20 text-white/80 hover:bg-white/10 hover:text-white rounded-lg md:rounded-xl transition-all" onClick={triggerExport}>
+                    <Button variant="outline" size="sm" className="h-9 md:h-10 px-3 md:px-4 text-[10px] md:text-xs font-semibold bg-white/5 border-white/10 text-white hover:bg-white/15 hover:border-white/30 rounded-lg md:rounded-xl transition-all" onClick={triggerExport}>
                         <Download className="w-3.5 h-3.5 md:w-4 md:h-4 sm:mr-1.5" />
                         <span className="hidden sm:inline">STL 저장</span>
                     </Button>

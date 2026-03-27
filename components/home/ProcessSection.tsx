@@ -69,7 +69,7 @@ export default function ProcessSection() {
                             파일에서 <br />
                             <span className="text-teal-400">제품이 되기까지</span>
                         </h2>
-                        <p className="text-xl text-white/70 mb-8 break-keep leading-relaxed italic font-medium">
+                        <p className="text-xl text-white/85 mb-8 break-keep leading-relaxed italic font-medium">
                             <span className="text-white font-bold">FDM 출력</span>은 강도와 경제성에 적합하고, <span className="text-white font-bold">SLA 출력과 DLP 출력</span>은 고정밀 3D프린팅이 필요한 작업에 적합합니다.<br />
                             PLA, ABS, PETG, TPU, 나일론, 레진 등 다양한 소재 선택이 가능합니다.
                         </p>
@@ -103,11 +103,11 @@ export default function ProcessSection() {
                                 <div className="pt-2">
                                     <span className="text-6xl font-black text-white/10 -ml-4 block mb-2">{step.id}</span>
                                     <h3 className="text-3xl font-bold mb-4 text-white">{step.title}</h3>
-                                    <p className="text-xl text-white/70 leading-relaxed max-w-xl break-keep mb-4 font-medium">
+                                    <p className="text-xl text-white/85 leading-relaxed max-w-xl break-keep mb-4 font-medium">
                                         {step.description}
                                     </p>
                                     {step.details && step.details.length > 0 && (
-                                        <ul className="space-y-2 text-sm text-white/60 font-medium">
+                                        <ul className="space-y-2 text-sm text-white/75 font-medium">
                                             {step.details.map((d, j) => (
                                                 <li key={j} className="flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-teal-500/60 shrink-0" />

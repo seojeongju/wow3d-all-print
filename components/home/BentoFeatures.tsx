@@ -71,7 +71,7 @@ export default function BentoFeatures() {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all text-white">기능</h2>
-                    <p className="text-white/70 text-lg max-w-2xl mx-auto break-keep font-medium">
+                    <p className="text-white/85 text-lg max-w-2xl mx-auto break-keep font-medium">
                         AI 견적, 3D 뷰어, 다중 포맷·소재·정밀도 설정부터 품질·후가공 옵션까지. 플랫폼이 제공하는 역량입니다.
                     </p>
                 </motion.div>
@@ -96,7 +96,7 @@ export default function BentoFeatures() {
                                     <feature.icon className="w-6 h-6" />
                                 </div>
                                 <h3 className="text-xl font-bold mb-3 word-keep-all text-white">{feature.title}</h3>
-                                <p className="text-white/70 leading-relaxed break-keep font-medium">{feature.description}</p>
+                                <p className="text-white/85 leading-relaxed break-keep font-medium">{feature.description}</p>
                             </div>
                         </motion.div>
                     ))}

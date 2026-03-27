@@ -120,7 +120,7 @@ export default function HomeFAQ() {
                         className="text-center pt-8"
                     >
                         <Link href="/qna">
-                            <Button variant="ghost" className="group text-white/50 hover:text-teal-400 hover:bg-white/5 transition-all gap-2">
+                            <Button variant="ghost" className="group text-white/70 hover:text-teal-400 hover:bg-white/5 transition-all gap-2">
                                 전체 FAQ 확인하기
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </Button>

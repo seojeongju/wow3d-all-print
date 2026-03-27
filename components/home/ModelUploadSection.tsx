@@ -42,7 +42,7 @@ export default function ModelUploadSection() {
                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">
                         3D 모델을 업로드하고 <span className="text-teal-400">실시간 견적</span> 받기
                     </h2>
-                    <p className="text-white/80 text-lg max-w-2xl mx-auto font-medium">
+                    <p className="text-white/95 text-lg max-w-2xl mx-auto font-medium">
                         STL, OBJ, 3MF, PLY, STEP, STP 지원 · 회원가입 없이 견적 확인 가능
                     </p>
                 </motion.div>
@@ -65,7 +65,7 @@ export default function ModelUploadSection() {
                                                 <Scene compact />
                                             </div>
                                         </div>
-                                        <p className="mt-2 text-sm text-white/70 font-medium italic">
+                                        <p className="mt-2 text-sm text-white/85 font-medium italic">
                                             샘플 모델을 직접 돌려보고 확대해보세요
                                         </p>
                                     </>
@@ -75,7 +75,7 @@ export default function ModelUploadSection() {
                                             <CheckCircle2 className="w-8 h-8" />
                                         </div>
                                         <p className="text-lg font-semibold text-white mb-2">업로드 완료</p>
-                                        <p className="text-sm text-white/70 mb-6 font-medium">상세 견적과 3D 미리보기를 확인하세요</p>
+                                        <p className="text-sm text-white/85 mb-6 font-medium">상세 견적과 3D 미리보기를 확인하세요</p>
                                         <Link href="/quote" onClick={handleQuoteClick}>
                                             <Button size="lg" className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 shadow-lg shadow-primary/25">
                                                 <Zap className="w-4 h-4" />
@@ -93,7 +93,7 @@ export default function ModelUploadSection() {
                         </div>
                     </div>
 
-                    <p className="text-center text-white/70 text-xs mt-6 font-medium">
+                    <p className="text-center text-white/85 text-xs mt-6 font-medium">
                         최대 100MB · 업로드 파일은 암호화되어 안전하게 처리됩니다
                     </p>
                 </motion.div>

@@ -41,7 +41,7 @@ export default function HomePage() {
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
               모델 파일이 <span className="text-primary">없으신가요?</span>
             </h2>
-            <p className="text-lg text-muted-foreground break-keep leading-relaxed">
+            <p className="text-lg text-foreground/70 break-keep leading-relaxed">
               아이디어를 스케치하거나 레퍼런스 이미지를 업로드하세요.<br />
               WOW3D의 스마트 AI 엔진이 평면을 3D 입체 모델로 즉시 구체화합니다.
             </p>
