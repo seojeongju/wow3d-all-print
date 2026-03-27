@@ -52,8 +52,8 @@ export default function HomeFAQ() {
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest mb-2">
                             <HelpCircle className="w-3 h-3" /> FAQ
                         </div>
-                        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase">자주 묻는 질문</h2>
-                        <p className="text-white/40 text-sm md:text-base text-balance leading-relaxed">
+                        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase text-slate-900">자주 묻는 질문</h2>
+                        <p className="text-slate-500 text-sm md:text-base text-balance leading-relaxed">
                             WOW3D 이용에 대해 가장 많이 궁금해하시는 내용을 정리했습니다.
                         </p>
                     </motion.div>
@@ -66,16 +66,16 @@ export default function HomeFAQ() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
-                                className={`border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 ${
-                                    openId === q.id ? 'bg-white/[0.05] border-white/30 shadow-2xl' : 'bg-white/[0.02] hover:bg-white/[0.04]'
+                                className={`border border-slate-200 rounded-2xl overflow-hidden transition-all duration-300 ${
+                                    openId === q.id ? 'bg-slate-50 border-teal-200 shadow-xl shadow-slate-200/50' : 'bg-white hover:bg-slate-50'
                                 }`}
                             >
                                 <button
                                     onClick={() => setOpenId(openId === q.id ? null : q.id)}
                                     className="w-full px-6 py-5 flex items-center justify-between text-left"
                                 >
-                                    <span className="text-base md:text-lg font-bold text-white/90 leading-snug">{q.question}</span>
-                                    <div className={`p-1.5 rounded-lg transition-all ${openId === q.id ? 'bg-primary text-white rotate-180 shadow-lg shadow-primary/30' : 'bg-white/5 text-white/40'}`}>
+                                    <span className="text-base md:text-lg font-bold text-slate-800 leading-snug">{q.question}</span>
+                                    <div className={`p-1.5 rounded-lg transition-all ${openId === q.id ? 'bg-primary text-white rotate-180 shadow-lg shadow-primary/30' : 'bg-slate-100 text-slate-400'}`}>
                                         {openId === q.id ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                     </div>
                                 </button>
@@ -87,8 +87,8 @@ export default function HomeFAQ() {
                                             exit={{ height: 0, opacity: 0 }}
                                             transition={{ duration: 0.3, ease: 'easeInOut' }}
                                         >
-                                            <div className="px-6 pb-6 pt-2 border-t border-white/5">
-                                                <p className="text-white/60 leading-relaxed whitespace-pre-wrap text-sm md:text-base break-keep">
+                                            <div className="px-6 pb-6 pt-2 border-t border-slate-100">
+                                                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base break-keep">
                                                     {q.answer}
                                                 </p>
                                             </div>
@@ -107,7 +107,7 @@ export default function HomeFAQ() {
                         className="text-center pt-8"
                     >
                         <Link href="/qna">
-                            <Button variant="ghost" className="group text-white/40 hover:text-primary transition-all gap-2">
+                            <Button variant="ghost" className="group text-slate-500 hover:text-primary transition-all gap-2">
                                 전체 FAQ 확인하기
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </Button>

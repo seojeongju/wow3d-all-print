@@ -152,7 +152,7 @@ export default function Hero() {
                         <span className="text-teal-400 block text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
                         3D프린팅 출력 및 <br />
                         <span className="text-teal-400 relative inline-block">
-                             시제품제작 대행 서비스
+                            시제품제작 대행 서비스
                             <svg className="absolute w-full h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
@@ -174,7 +174,7 @@ export default function Hero() {
                         <Link href="/materials">
                             <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-[1.02] transition-all gap-2">
                                 <Palette className="w-5 h-5 shrink-0" />
-                                소재 살펤보기
+                                소재 살펴보기
                             </Button>
                         </Link>
                     </div>
