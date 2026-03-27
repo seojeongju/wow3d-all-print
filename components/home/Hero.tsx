@@ -113,12 +113,12 @@ export default function Hero() {
     };
 
     return (
-        <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+        <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-[#0d1117]">
             {/* Background Elements */}
-            <div className="absolute inset-0 bg-background">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]" />
-                <div className="absolute right-0 bottom-0 -z-10 h-[500px] w-[500px] rounded-full bg-purple-500/20 opacity-20 blur-[120px]" />
+            <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:24px_24px]" />
+                <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-teal-500/15 opacity-60 blur-[120px]" />
+                <div className="absolute right-0 bottom-0 -z-10 h-[500px] w-[500px] rounded-full bg-indigo-500/10 opacity-40 blur-[140px]" />
             </div>
 
             <div className="container mx-auto px-4 z-10 grid lg:grid-cols-2 gap-12 items-center">
@@ -133,53 +133,53 @@ export default function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-secondary mb-6 backdrop-blur-md"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-md"
                     >
-                        <Sparkles className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-semibold tracking-wider text-muted-foreground">차세대 3D 프린팅 서비스</span>
+                        <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                        <span className="text-xs font-semibold tracking-wider text-white/80">차세대 3D 프린팅 서비스</span>
                     </motion.div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance">
-                        <span className="text-primary block text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance text-white">
+                        <span className="text-teal-400 block text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
                         3D프린팅 출력 및 <br />
-                        <span className="text-primary relative inline-block">
+                        <span className="text-teal-400 relative inline-block">
                              시제품제작 대행 서비스
-                            <svg className="absolute w-full h-3 -bottom-1 left-0 text-primary/30" viewBox="0 0 100 10" preserveAspectRatio="none">
+                            <svg className="absolute w-full h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
                         </span>
                     </h1>
 
-                    <p className="text-xl text-muted-foreground/90 mb-8 max-w-lg leading-relaxed break-keep">
-                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-foreground/90 font-bold">3D프린팅 자동견적</span>을 즉시 확인하세요.<br />
+                    <p className="text-xl text-white/60 mb-8 max-w-lg leading-relaxed break-keep">
+                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-white font-bold">3D프린팅 자동견적</span>을 즉시 확인하세요.<br />
                         3D프린터 출력대행부터 시제품제작, 소량·대량 생산까지 와우쓰리디가 빠르고 정확하게 지원합니다.
                     </p>
 
                     <div className="flex flex-wrap gap-4">
                         <Link href="/print-methods">
-                            <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_4px_14px_0_rgb(0,118,255,0.35)] hover:shadow-[0_6px_20px_rgba(0,118,255,0.25)] hover:scale-[1.02] transition-all gap-2">
+                            <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-teal-500 hover:bg-teal-400 text-white shadow-[0_4px_24px_rgba(20,184,166,0.4)] hover:shadow-[0_6px_32px_rgba(20,184,166,0.5)] hover:scale-[1.02] transition-all gap-2">
                                 3D 프린터 출력방식 (FDM, SLA, DLP)
                                 <ArrowRight className="w-5 h-5 shrink-0" />
                             </Button>
                         </Link>
                         <Link href="/materials">
-                            <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-full bg-secondary text-secondary-foreground shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 hover:scale-[1.02] transition-all gap-2">
+                            <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-[1.02] transition-all gap-2">
                                 <Palette className="w-5 h-5 shrink-0" />
-                                소재 살펴보기
+                                소재 살펤보기
                             </Button>
                         </Link>
                     </div>
 
-                    <div className="mt-12 flex items-center gap-8 text-muted-foreground">
+                    <div className="mt-12 flex items-center gap-8 text-white/50">
                         <div className="flex -space-x-4">
                             {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-bold overflow-hidden">
-                                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400" />
+                                <div key={i} className="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center text-xs font-bold overflow-hidden">
+                                    <div className="w-full h-full bg-gradient-to-br from-white/20 to-white/10" />
                                 </div>
                             ))}
                         </div>
                         <div>
-                            <div className="font-bold text-foreground">1,000+</div>
+                            <div className="font-bold text-white">1,000+</div>
                             <div className="text-sm">고객 만족</div>
                         </div>
                     </div>
@@ -189,7 +189,7 @@ export default function Hero() {
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
                     <motion.div
                         style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border-2 border-white/25 bg-[#0d0d0d]/95 backdrop-blur-xl shadow-2xl shadow-black/30 z-10 overflow-hidden flex flex-col ring-1 ring-white/10"
+                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border border-white/15 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/40 z-10 overflow-hidden flex flex-col ring-1 ring-white/10"
                     >
                         {/* 그리드 배경 */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
@@ -204,7 +204,7 @@ export default function Hero() {
                                 {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
                                     <span
                                         key={fmt}
-                                        className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-semibold text-white/80 tracking-wide"
+                                        className="px-2.5 py-1 rounded-lg bg-teal-500/20 border border-teal-400/30 text-[11px] font-semibold text-teal-300 tracking-wide"
                                     >
                                         .{fmt.toLowerCase()}
                                     </span>
@@ -221,15 +221,15 @@ export default function Hero() {
                         <div className="relative px-6 pb-6 pt-2 border-t border-white/5">
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-white/40 font-medium">
                                 <span className="flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-emerald-500/80" />
+                                    <span className="w-1 h-1 rounded-full bg-emerald-400" />
                                     최대 100MB
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-primary/80" />
+                                    <span className="w-1 h-1 rounded-full bg-teal-400" />
                                     실시간 견적
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-blue-500/80" />
+                                    <span className="w-1 h-1 rounded-full bg-blue-400" />
                                     암호화 업로드
                                 </span>
                             </div>

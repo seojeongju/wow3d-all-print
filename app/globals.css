@@ -48,37 +48,40 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  /* 라이트 테마 기본 */
+  --background: oklch(1 0 0);               /* #ffffff 순백색 */
+  --foreground: oklch(0.217 0.032 256.8);   /* #1e293b 진한 차콜(slate-800) */
+  --card: oklch(0.984 0.003 247.9);         /* #f8fafc slate-50 */
+  --card-foreground: oklch(0.217 0.032 256.8);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.217 0.032 256.8);
+  /* Primary: 민트/틸 teal-500 #14b8a6 */
+  --primary: oklch(0.704 0.14 181.4);
+  --primary-foreground: oklch(1 0 0);       /* 흰색 텍스트 */
+  /* Secondary: 연한 틸 배경 teal-50 */
+  --secondary: oklch(0.983 0.019 181.4);
+  --secondary-foreground: oklch(0.388 0.08 181.4); /* teal-700 */
+  --muted: oklch(0.968 0.007 247.9);        /* slate-100 */
+  --muted-foreground: oklch(0.554 0.023 256.4); /* slate-500 */
+  --accent: oklch(0.95 0.03 181.4);         /* teal-100 */
+  --accent-foreground: oklch(0.388 0.08 181.4);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
+  --border: oklch(0.928 0.013 255.5);       /* slate-200 */
+  --input: oklch(0.928 0.013 255.5);
+  --ring: oklch(0.704 0.14 181.4);          /* teal-500 */
+  --chart-1: oklch(0.704 0.14 181.4);       /* teal */
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.984 0.003 247.9);      /* slate-50 */
+  --sidebar-foreground: oklch(0.217 0.032 256.8);
+  --sidebar-primary: oklch(0.704 0.14 181.4);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.03 181.4);
+  --sidebar-accent-foreground: oklch(0.388 0.08 181.4);
+  --sidebar-border: oklch(0.928 0.013 255.5);
+  --sidebar-ring: oklch(0.704 0.14 181.4);
 }
 
 .dark {
@@ -156,17 +159,17 @@
   animation-delay: 4s;
 }
 
-/* Grid Background */
+/* Grid Background - Light theme */
 .bg-grid-white\/\[0\.02\] {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgba(100, 116, 139, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 116, 139, 0.06) 1px, transparent 1px);
 }
 
 /* Custom scrollbar (quote, experience, checkout 등) */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(20, 184, 166, 0.3) transparent;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -175,11 +178,11 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(20, 184, 166, 0.3);
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(20, 184, 166, 0.5);
 }
 
 /* 모바일: 터치 지연 제거, 탭 하이라이트 제어 */

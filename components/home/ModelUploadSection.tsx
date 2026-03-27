@@ -18,10 +18,10 @@ export default function ModelUploadSection() {
     };
 
     return (
-        <section id="upload" className="py-24 md:py-32 bg-[#0a0a0a] relative overflow-hidden">
+        <section id="upload" className="py-24 md:py-32 bg-[#0d1117] relative overflow-hidden">
             {/* 그리드 배경 */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[140px] -z-10" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:24px_24px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-[140px] -z-10" />
 
             <div className="container mx-auto px-4 relative z-10">
                 <motion.div
@@ -31,7 +31,7 @@ export default function ModelUploadSection() {
                     className="text-center mb-12"
                 >
                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-                        3D 모델을 업로드하고 <span className="text-primary">실시간 견적</span> 받기
+                        3D 모델을 업로드하고 <span className="text-teal-400">실시간 견적</span> 받기
                     </h2>
                     <p className="text-white/60 text-lg max-w-2xl mx-auto">
                         STL, OBJ, 3MF, PLY, STEP, STP 지원 · 회원가입 없이 견적 확인 가능
@@ -45,7 +45,7 @@ export default function ModelUploadSection() {
                     transition={{ delay: 0.1 }}
                     className="max-w-5xl mx-auto"
                 >
-                    <div className="rounded-3xl border border-white/10 bg-[#0d0d0d]/95 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/40">
+                    <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/50">
                         <div className="grid md:grid-cols-2 gap-0">
                             {/* 좌: 3D 플레이스홀더 또는 업로드 완료 CTA */}
                             <div className="flex flex-col items-center justify-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/10 min-h-[280px]">
