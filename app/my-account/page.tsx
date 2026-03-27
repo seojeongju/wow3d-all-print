@@ -20,6 +20,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { showToast } from '@/lib/toast-helper';
 import type { Quote, Order } from '@/lib/types';
+import { motion } from 'framer-motion';
+import Header from '@/components/layout/Header';
 import OrderTimeline from '@/components/account/OrderTimeline';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +39,15 @@ import {
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
+
+const statusMap: Record<string, string> = {
+    pending: '결제 대기',
+    confirmed: '주문 확인',
+    production: '제작 중',
+    shipping: '배송 중',
+    completed: '배송 완료',
+    cancelled: '주문 취소',
+};
 
 export default function MyAccountPage() {
     const { user, token, isAuthenticated, logout, updateUser } = useAuthStore();
@@ -246,37 +257,65 @@ export default function MyAccountPage() {
     // derived stats (실제 주문 데이터 기준)
     const activeOrders = orders.filter(o => ['pending', 'confirmed', 'production', 'shipping'].includes(o.status));
     const completedOrders = orders.filter(o => o.status === 'completed');
-    const totalSpentKr = orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+    const totalSpentKr = orders
+        .filter(o => !['pending', 'cancelled'].includes(o.status))
+        .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
 
     return (
-        <div className="min-h-screen bg-muted/20 pb-20">
+        <div className="min-h-screen bg-[#020617] text-white selection:bg-teal-500/30 selection:text-teal-400 overflow-x-hidden pb-20">
+            {/* ── 배경 시스템 ───────────────────────────── */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 bg-[#020617]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(45,212,191,0.08)_0%,transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(99,102,241,0.08)_0%,transparent_50%)]" />
+                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:60px_60px]" />
+            </div>
+
+            <Header />
+
             {/* Header Banner */}
-            <div className="bg-background border-b pt-6 pb-12">
+            <div className="relative pt-32 pb-16 z-10">
                 <div className="container mx-auto px-4 space-y-6">
-                    <div>
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                    >
                         <Link href="/">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-muted-foreground hover:text-foreground px-0 mb-4 h-auto text-xs font-bold uppercase tracking-widest gap-2"
+                                className="text-white/40 hover:text-teal-400 hover:bg-teal-400/10 px-0 mb-6 h-auto text-[11px] font-black uppercase tracking-[0.2em] gap-2 transition-colors"
                             >
                                 <ArrowLeft className="w-3.5 h-3.5" />
-                                홈으로
+                                홈으로 돌아가기
                             </Button>
                         </Link>
-                    </div>
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
-                                안녕하세요, {user?.name}님!
+                    </motion.div>
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-3">
+                                안녕하세요, <span className="bg-gradient-to-r from-teal-400 to-indigo-400 bg-clip-text text-transparent">{user?.name}</span>님!
                             </h1>
-                            <p className="text-muted-foreground">
-                                오늘도 멋진 아이디어를 현실로 만들어보세요.
+                            <p className="text-white/40 text-lg font-bold">
+                                진행 중인 프로젝트와 견적 내역을 확인해보세요.
                             </p>
-                        </div>
-                        <Button variant="outline" onClick={handleLogout} className="gap-2">
-                            <LogOut className="w-4 h-4" /> 로그아웃
-                        </Button>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                        >
+                            <Button 
+                                onClick={handleLogout} 
+                                className="h-12 px-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-rose-500/10 hover:border-rose-500/50 hover:text-rose-400 font-bold gap-2 transition-all"
+                            >
+                                <LogOut className="w-4 h-4" /> 로그아웃
+                            </Button>
+                        </motion.div>
                     </div>
                 </div>
             </div>
@@ -287,257 +326,286 @@ export default function MyAccountPage() {
                         <Loader2 className="w-10 h-10 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="grid gap-8">
+                    <div className="grid gap-12">
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="shadow-lg border-none bg-gradient-to-br from-primary/10 to-background">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">진행 중인 주문</CardTitle>
-                                    <Clock className="h-4 w-4 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{activeOrders.length}건</div>
-                                    <p className="text-xs text-muted-foreground mt-1">배송을 기다리고 있어요</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-sm">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">총 주문 완료</CardTitle>
-                                    <Package className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{completedOrders.length}건</div>
-                                    <p className="text-xs text-muted-foreground mt-1">지금까지 완료된 프로젝트</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-sm">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">총 결제 금액</CardTitle>
-                                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">
-                                        ₩{Math.round(totalSpentKr).toLocaleString('ko-KR')}
+                            {[
+                                { label: '진행 중인 프로젝트', value: `${activeOrders.length}`, unit: '건', desc: '배송을 기다리고 있어요', icon: Clock, color: 'text-teal-400' },
+                                { label: '완료된 프로젝트', value: `${completedOrders.length}`, unit: '건', desc: '완료된 프로젝트 내역', icon: CheckCircle2, color: 'text-indigo-400' },
+                                { label: '누적 이용 금액', value: `₩${Math.round(totalSpentKr).toLocaleString('ko-KR')}`, unit: '', desc: '누적 이용 금액', icon: ShoppingBag, color: 'text-amber-400' },
+                            ].map((stat, i) => (
+                                <motion.div
+                                    key={stat.label}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="relative p-8 rounded-[2.5rem] bg-white/5 backdrop-blur-xl border border-white/10 group hover:border-teal-400/30 transition-all overflow-hidden"
+                                >
+                                    <div className={`absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform ${stat.color}`}>
+                                        <stat.icon className="w-16 h-16" />
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">누적 이용 금액</p>
-                                </CardContent>
-                            </Card>
+                                    <div className="relative z-10">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-4">{stat.label}</div>
+                                        <div className={`text-4xl font-black mb-2 ${stat.color}`}>
+                                            {stat.value}<span className="text-xl ml-1 opacity-50 font-bold">{stat.unit}</span>
+                                        </div>
+                                        <div className="text-xs font-bold text-white/20 uppercase tracking-widest">{stat.desc}</div>
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
 
                         {/* Main Content Tabs */}
-                        <Tabs defaultValue="active-orders" className="space-y-6">
-                            <TabsList className="bg-background border p-1 rounded-xl h-auto flex flex-wrap justify-start gap-2">
-                                <TabsTrigger value="active-orders" className="rounded-lg px-4 py-2">진행 중인 주문</TabsTrigger>
-                                <TabsTrigger value="history" className="rounded-lg px-4 py-2">주문 내역</TabsTrigger>
-                                <TabsTrigger value="quotes" className="rounded-lg px-4 py-2">저장된 견적</TabsTrigger>
-                                <TabsTrigger value="profile" className="rounded-lg px-4 py-2">내 정보</TabsTrigger>
+                        <Tabs defaultValue="active-orders" className="space-y-10">
+                            <TabsList className="bg-white/5 border border-white/10 p-1.5 rounded-[2rem] h-auto flex flex-wrap justify-start gap-1 backdrop-blur-xl">
+                                {[
+                                    { val: 'active-orders', label: '진행 중인 주문' },
+                                    { val: 'history', label: '주문 내역' },
+                                    { val: 'quotes', label: '저장된 견적' },
+                                    { val: 'profile', label: '내 정보' },
+                                ].map((tab) => (
+                                    <TabsTrigger
+                                        key={tab.val}
+                                        value={tab.val}
+                                        className="rounded-[1.5rem] px-8 py-3.5 text-[13px] font-black tracking-widest uppercase transition-all data-[state=active]:bg-teal-400 data-[state=active]:text-slate-950 data-[state=active]:shadow-[0_10px_30px_rgba(45,212,191,0.3)] active:scale-95"
+                                    >
+                                        {tab.label}
+                                    </TabsTrigger>
+                                ))}
                             </TabsList>
 
                             {/* Active Orders Tab */}
-                            <TabsContent value="active-orders" className="space-y-4">
+                            <TabsContent value="active-orders" className="space-y-6">
                                 {activeOrders.length === 0 ? (
-                                    <Card className="py-12 bg-muted/40 border-dashed">
-                                        <CardContent className="flex flex-col items-center justify-center text-center">
-                                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                                                <Package className="w-8 h-8 text-muted-foreground" />
-                                            </div>
-                                            <h3 className="text-lg font-semibold mb-2">진행 중인 주문이 없습니다</h3>
-                                            <p className="text-muted-foreground mb-6">새로운 아이디어를 출력해보세요!</p>
-                                            <Link href="/quote">
-                                                <Button>새 견적 받기</Button>
-                                            </Link>
-                                        </CardContent>
-                                    </Card>
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="py-24 rounded-[3rem] bg-white/[0.02] border border-white/5 border-dashed flex flex-col items-center justify-center text-center px-6"
+                                    >
+                                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                            <Package className="w-10 h-10 text-white/20" />
+                                        </div>
+                                        <h3 className="text-2xl font-black mb-3">진행 중인 주문이 없습니다</h3>
+                                        <p className="text-white/40 font-bold mb-10 break-keep">새로운 아이디어를 출력하고 현실로 만들어보세요!</p>
+                                        <Link href="/quote">
+                                            <Button className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20">
+                                                새 견적 받기
+                                            </Button>
+                                        </Link>
+                                    </motion.div>
                                 ) : (
                                     activeOrders.map(order => (
-                                        <Card key={order.id} className="overflow-hidden">
-                                            <CardHeader className="bg-muted/30 border-b flex flex-row items-center justify-between">
+                                        <motion.div
+                                            key={order.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl group hover:border-teal-400/30 transition-all shadow-2xl"
+                                        >
+                                            <div className="px-8 py-6 bg-white/5 border-b border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                                 <div>
-                                                    <CardTitle className="text-lg">주문번호 {order.orderNumber}</CardTitle>
-                                                    <CardDescription>{new Date(order.createdAt).toLocaleDateString('ko-KR')} 주문</CardDescription>
+                                                    <div className="flex items-center gap-3 mb-1">
+                                                        <h3 className="text-xl font-black">주문 #{order.orderNumber}</h3>
+                                                        <Badge className="bg-teal-400/10 text-teal-400 border-teal-400/20 text-[10px] font-black uppercase tracking-widest">
+                                                            {statusMap[order.status] || order.status}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="text-xs font-bold text-white/40 uppercase tracking-widest">
+                                                        주문일: {new Date(order.createdAt).toLocaleDateString('ko-KR')}
+                                                    </div>
                                                 </div>
-                                                <Badge variant="outline" className="text-base px-3 py-1 bg-background">
+                                                <div className="text-2xl font-black text-white">
                                                     ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
-                                                </Badge>
-                                            </CardHeader>
-                                            <CardContent className="p-6">
+                                                </div>
+                                            </div>
+                                            <div className="p-8">
                                                 <div className="flex flex-col gap-4">
                                                     {order.items?.map(item => (
-                                                        <div key={item.id} className="flex items-center gap-4 p-3 bg-muted/10 rounded-lg border">
-                                                            <div className="w-16 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                                                        <div key={item.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.03] border border-white/5 group/item hover:bg-white/5 transition-colors">
+                                                            <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0 shadow-inner">
                                                                 {item.quote?.fileUrl ? (
                                                                     <ModelThumbnail fileUrl={item.quote.fileUrl} size={100} />
                                                                 ) : (
-                                                                    <Box className="w-full h-full p-4 text-muted-foreground/30" />
+                                                                    <Box className="w-full h-full p-6 text-slate-200" />
                                                                 )}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <div className="text-sm font-medium truncate">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <Badge variant="outline" className="text-[10px] h-4 uppercase">{item.quote?.printMethod}</Badge>
-                                                                    <span className="text-xs text-muted-foreground">{item.quantity}개</span>
+                                                                <div className="text-lg font-black truncate text-white mb-2">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <Badge variant="outline" className="border-white/10 text-white/40 text-[10px] h-5 font-black uppercase tracking-widest">{item.quote?.printMethod}</Badge>
+                                                                    <span className="text-xs font-bold text-white/20">{item.quantity}개 품목</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="text-sm font-bold text-right">
+                                                            <div className="text-lg font-black text-white text-right shrink-0">
                                                                 ₩{Math.round((Number(item.subtotal) || 0)).toLocaleString('ko-KR')}
                                                             </div>
                                                         </div>
                                                     ))}
                                                 </div>
 
-                                                <div className="grid md:grid-cols-2 gap-4 text-sm mt-8 p-4 bg-muted/20 rounded-lg border border-primary/5">
+                                                <div className="grid md:grid-cols-2 gap-6 mt-10 p-6 rounded-3xl bg-white/[0.02] border border-white/5">
                                                     <div>
-                                                        <span className="text-muted-foreground flex items-center gap-1.5 mb-2"><MapPin className="w-3.5 h-3.5" /> 배송지</span>
-                                                        <span className="font-medium">{order.shippingAddress}</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20 flex items-center gap-2 mb-3">
+                                                            <MapPin className="w-3.5 h-3.5" /> 배송 주소
+                                                        </span>
+                                                        <span className="text-sm font-bold text-white/80 leading-relaxed block">{order.shippingAddress}</span>
                                                     </div>
                                                     <div>
-                                                        <span className="text-muted-foreground flex items-center gap-1.5 mb-2"><User className="w-3.5 h-3.5" /> 받는 사람</span>
-                                                        <span className="font-medium">{order.recipientName} ({order.recipientPhone})</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20 flex items-center gap-2 mb-3">
+                                                            <User className="w-3.5 h-3.5" /> 수령인
+                                                        </span>
+                                                        <span className="text-sm font-bold text-white/80 leading-relaxed block">{order.recipientName} ({order.recipientPhone})</span>
                                                     </div>
                                                 </div>
 
                                                 {order.status === 'pending' && (
-                                                    <div className="mt-6 flex gap-3">
+                                                    <div className="mt-8 flex flex-col sm:flex-row gap-4">
                                                         <Button
                                                             variant="outline"
-                                                            className="flex-1 gap-2 border-primary/20 hover:border-primary/50"
+                                                            className="flex-1 h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest gap-2 transition-all"
                                                             onClick={() => setEditingOrder(order)}
                                                         >
                                                             <Edit2 className="w-4 h-4" /> 주문 수정
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
-                                                            className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            className="flex-1 h-14 rounded-2xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-black uppercase tracking-widest gap-2 transition-all"
                                                             onClick={() => handleCancelOrder(order.id)}
                                                         >
                                                             <Trash2 className="w-4 h-4" /> 주문 취소
                                                         </Button>
                                                     </div>
                                                 )}
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </motion.div>
                                     ))
                                 )}
                             </TabsContent>
 
                             {/* History Tab */}
-                            <TabsContent value="history" className="space-y-6">
-                                <div className="flex flex-col md:flex-row gap-4 items-end md:items-center justify-between">
-                                    <div className="flex flex-1 gap-3 w-full">
-                                        <div className="relative flex-1 max-w-sm">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <TabsContent value="history" className="space-y-8">
+                                <div className="flex flex-col lg:flex-row gap-6 items-end lg:items-center justify-between">
+                                    <div className="flex flex-1 gap-4 w-full max-w-2xl">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                                             <Input
                                                 placeholder="주문번호 검색..."
-                                                className="pl-10"
+                                                className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
                                                 value={orderSearch}
                                                 onChange={(e) => setOrderSearch(e.target.value)}
                                             />
                                         </div>
                                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                            <SelectTrigger className="w-[140px]">
-                                                <Filter className="w-4 h-4 mr-2" />
-                                                <SelectValue placeholder="상태 필터" />
+                                            <SelectTrigger className="w-[180px] h-14 bg-white/5 border-white/10 rounded-2xl font-black uppercase tracking-widest text-[11px]">
+                                                <Filter className="w-4 h-4 mr-2 text-teal-400" />
+                                                <SelectValue placeholder="상태" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="bg-[#0f172a] border-white/10 text-white">
                                                 <SelectItem value="all">전체 상태</SelectItem>
-                                                <SelectItem value="pending">대기 중</SelectItem>
-                                                <SelectItem value="confirmed">승인 완료</SelectItem>
+                                                <SelectItem value="pending">결제 대기</SelectItem>
+                                                <SelectItem value="confirmed">주문 확인</SelectItem>
                                                 <SelectItem value="production">제작 중</SelectItem>
                                                 <SelectItem value="shipping">배송 중</SelectItem>
                                                 <SelectItem value="completed">배송 완료</SelectItem>
-                                                <SelectItem value="cancelled">취소됨</SelectItem>
+                                                <SelectItem value="cancelled">주문 취소</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="text-sm text-muted-foreground">
-                                        총 {filteredOrders.length}건의 주문
+                                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/20">
+                                        총 {filteredOrders.length}건 검색 결과
                                     </div>
                                 </div>
 
                                 {filteredOrders.length === 0 ? (
-                                    <Card className="py-20 bg-muted/20 flex flex-col items-center">
-                                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                                            <Search className="w-8 h-8 text-muted-foreground/30" />
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="py-24 rounded-[3rem] bg-white/[0.02] border border-white/5 border-dashed flex flex-col items-center"
+                                    >
+                                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                            <Search className="w-10 h-10 text-white/10" />
                                         </div>
-                                        <p className="text-muted-foreground">검색 결과가 없습니다.</p>
-                                    </Card>
+                                        <p className="text-white/40 font-bold uppercase tracking-widest">검색 결과가 없습니다.</p>
+                                    </motion.div>
                                 ) : (
                                     <div className="grid gap-4">
                                         {filteredOrders.map(order => (
-                                            <Card key={order.id} className="hover:shadow-md transition-shadow duration-200">
-                                                <CardContent className="p-0">
-                                                    <div className="flex flex-col md:flex-row">
-                                                        {/* Order Info Part */}
-                                                        <div className="p-5 flex-1 border-b md:border-b-0 md:border-r">
-                                                            <div className="flex justify-between items-start mb-4">
-                                                                <div>
-                                                                    <div className="text-xs text-muted-foreground mb-1">
-                                                                        {new Date(order.createdAt).toLocaleDateString()}
-                                                                    </div>
-                                                                    <div className="font-mono text-sm font-bold tracking-tight">
-                                                                        {order.orderNumber}
-                                                                    </div>
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="group border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] hover:border-white/20 rounded-[2rem] transition-all overflow-hidden"
+                                            >
+                                                <div className="flex flex-col md:flex-row">
+                                                    {/* Order Info Part */}
+                                                    <div className="p-8 flex-1 border-b md:border-b-0 md:border-r border-white/5">
+                                                        <div className="flex justify-between items-start mb-6">
+                                                            <div>
+                                                                <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">
+                                                                    주문일: {new Date(order.createdAt).toLocaleDateString('ko-KR')}
                                                                 </div>
-                                                                <Badge
-                                                                    variant={order.status === 'completed' ? 'default' : 'secondary'}
-                                                                    className="px-2.5 py-0.5 rounded-full"
-                                                                >
-                                                                    {order.status}
-                                                                </Badge>
+                                                                <div className="font-mono text-lg font-black tracking-tight text-white group-hover:text-teal-400 transition-colors">
+                                                                    {order.orderNumber}
+                                                                </div>
                                                             </div>
-                                                            <div className="flex gap-2 mb-2">
-                                                                {order.items?.slice(0, 3).map((item, idx) => (
-                                                                    <div key={idx} className="w-10 h-10 rounded bg-muted/50 border flex items-center justify-center overflow-hidden">
-                                                                        {item.quote?.fileUrl ? (
-                                                                            <ModelThumbnail fileUrl={item.quote.fileUrl} size={60} />
-                                                                        ) : (
-                                                                            <Box className="w-4 h-4 text-muted-foreground/20" />
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                                {(order.items?.length || 0) > 3 && (
-                                                                    <div className="w-10 h-10 rounded border bg-muted/20 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                                                                        +{(order.items?.length || 0) - 3}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-sm font-medium">
-                                                                {order.items && order.items.length > 0
-                                                                    ? `${order.items[0].quote?.fileName || '상품'} ${order.items.length > 1 ? `외 ${order.items.length - 1}건` : ''}`
-                                                                    : '상품 정보 없음'}
-                                                            </div>
+                                                            <Badge
+                                                                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-none ${
+                                                                    order.status === 'completed'
+                                                                        ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/20'
+                                                                        : 'bg-white/10 text-white/60'
+                                                                }`}
+                                                            >
+                                                                {statusMap[order.status] || order.status}
+                                                            </Badge>
                                                         </div>
-
-                                                        {/* Total & Action Part */}
-                                                        <div className="p-5 w-full md:w-64 bg-muted/5 flex flex-col justify-between gap-4">
-                                                            <div className="text-right">
-                                                                <div className="text-xs text-muted-foreground mb-1 text-left md:text-right">결제 금액</div>
-                                                                <div className="text-xl font-black text-primary text-left md:text-right">
-                                                                    ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
+                                                        <div className="flex gap-3 mb-6">
+                                                            {order.items?.slice(0, 4).map((item, idx) => (
+                                                                <div key={idx} className="w-12 h-12 rounded-xl bg-white border border-white/10 flex items-center justify-center overflow-hidden shadow-sm">
+                                                                    {item.quote?.fileUrl ? (
+                                                                        <ModelThumbnail fileUrl={item.quote.fileUrl} size={60} />
+                                                                    ) : (
+                                                                        <Box className="w-6 h-6 text-slate-200" />
+                                                                    )}
                                                                 </div>
-                                                            </div>
-                                                            <div className="flex gap-2">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    className="flex-1 h-10"
-                                                                    onClick={() => setSelectedOrder(order)}
-                                                                >
-                                                                    상세보기
-                                                                </Button>
-                                                                <Button
-                                                                    variant="secondary"
-                                                                    size="sm"
-                                                                    className="flex-1 h-10 gap-1.5"
-                                                                    onClick={() => handleReOrder(order)}
-                                                                >
-                                                                    <RotateCcw className="w-3.5 h-3.5" /> 재주문
-                                                                </Button>
-                                                            </div>
+                                                            ))}
+                                                            {(order.items?.length || 0) > 4 && (
+                                                                <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-[10px] font-black text-white/40">
+                                                                    +{(order.items?.length || 0) - 4}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-sm font-bold text-white/80">
+                                                            {order.items && order.items.length > 0
+                                                                ? `${order.items[0].quote?.fileName || '상품'} ${order.items.length > 1 ? `외 ${order.items.length - 1}건` : ''}`
+                                                                : '상품 정보 없음'}
                                                         </div>
                                                     </div>
-                                                </CardContent>
-                                            </Card>
+
+                                                    {/* Total & Action Part */}
+                                                    <div className="p-8 w-full md:w-80 bg-white/[0.02] flex flex-col justify-between gap-6">
+                                                        <div className="text-right">
+                                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2 text-left md:text-right">총 주문 금액</div>
+                                                            <div className="text-3xl font-black text-white text-left md:text-right">
+                                                                ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-3">
+                                                            <Button
+                                                                variant="outline"
+                                                                className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest transition-all"
+                                                                onClick={() => setSelectedOrder(order)}
+                                                            >
+                                                                상세 보기
+                                                            </Button>
+                                                            <Button
+                                                                className="flex-1 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 font-black text-[11px] uppercase tracking-widest gap-2 transition-all"
+                                                                onClick={() => handleReOrder(order)}
+                                                            >
+                                                                <RotateCcw className="w-3.5 h-3.5" /> 재주문
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
                                         ))}
                                     </div>
                                 )}
@@ -545,172 +613,198 @@ export default function MyAccountPage() {
 
                             {/* Saved Quotes Tab */}
                             <TabsContent value="quotes">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {quotes.map(quote => (
-                                        <Card key={quote.id} className="overflow-hidden group hover:border-primary/40 transition-colors">
-                                            <div className="h-44 bg-muted/40 relative group-hover:bg-muted/60 transition-colors overflow-hidden">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {quotes.map((quote, i) => (
+                                        <motion.div
+                                            key={quote.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.1 }}
+                                            className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl group hover:border-teal-400/30 transition-all shadow-2xl flex flex-col"
+                                        >
+                                            <div className="h-56 bg-white relative group-hover:scale-105 transition-transform duration-700 overflow-hidden">
                                                 <ModelThumbnail
                                                     fileUrl={quote.fileUrl || ''}
-                                                    className="group-hover:scale-110 transition-transform duration-500"
+                                                    className="w-full h-full object-contain p-4 transition-transform duration-500"
+                                                    size={400}
                                                 />
-                                                <div className="absolute top-2 right-2">
-                                                    <Badge className="bg-white/80 backdrop-blur-sm text-black border-none shadow-sm">
-                                                        {quote.printMethod.toUpperCase()}
+                                                <div className="absolute top-4 right-4">
+                                                    <Badge className="bg-slate-950/80 backdrop-blur-md text-white border-white/10 text-[10px] font-black tracking-widest uppercase px-3 py-1">
+                                                        {quote.printMethod}
                                                     </Badge>
                                                 </div>
                                             </div>
-                                            <CardHeader className="pb-2 p-4">
-                                                <CardTitle className="text-sm font-bold truncate mb-1" title={quote.fileName}>
-                                                    {quote.fileName}
-                                                </CardTitle>
-                                                <CardDescription className="text-[10px] flex items-center justify-between">
-                                                    <span>{new Date(quote.createdAt).toLocaleDateString()}</span>
-                                                    <span>{(quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="px-4 pb-4">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="text-lg font-black text-primary">
+                                            <div className="p-6 flex flex-1 flex-col">
+                                                <div className="mb-6 flex-1">
+                                                    <h3 className="text-lg font-black truncate text-white mb-2" title={quote.fileName}>
+                                                        {quote.fileName}
+                                                    </h3>
+                                                    <div className="flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                                                        <span>{new Date(quote.createdAt).toLocaleDateString('ko-KR')}</span>
+                                                        <span>{(quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between mb-8">
+                                                    <div className="text-2xl font-black text-teal-400">
                                                         ₩{quote.totalPrice.toLocaleString()}
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-3 mt-auto">
                                                     <Button
-                                                        className="flex-1 h-9 rounded-full gap-1.5"
+                                                        className="flex-1 h-12 rounded-xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-lg shadow-teal-400/20 gap-2"
                                                         onClick={() => handleAddToCartFromSaved(quote)}
                                                     >
-                                                        <ShoppingBag className="w-3.5 h-3.5" /> 담기
+                                                        <ShoppingBag className="w-4 h-4" /> 장바구니 담기
                                                     </Button>
                                                     <Button
                                                         size="icon"
                                                         variant="outline"
-                                                        className="h-9 w-9 rounded-full text-destructive hover:bg-destructive/5 hover:border-destructive/30"
+                                                        className="h-12 w-12 rounded-xl border-white/10 bg-white/5 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all"
                                                         onClick={() => handleDeleteQuote(quote.id)}
                                                     >
-                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </Button>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </motion.div>
                                     ))}
                                     {quotes.length === 0 && (
-                                        <div className="col-span-full py-20 text-center bg-muted/10 rounded-xl border border-dashed border-muted-foreground/20">
-                                            <FileText className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                                            <p className="text-muted-foreground">저장된 견적이 없습니다.</p>
+                                        <div className="col-span-full py-24 rounded-[3rem] bg-white/[0.02] border border-white/5 border-dashed flex flex-col items-center justify-center text-center">
+                                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                                <FileText className="w-10 h-10 text-white/10" />
+                                            </div>
+                                            <p className="text-white/40 font-bold uppercase tracking-widest">저장된 견적이 없습니다.</p>
                                         </div>
                                     )}
                                 </div>
                             </TabsContent>
 
                             {/* Profile Tab */}
-                            <TabsContent value="profile">
-                                <div className="grid md:grid-cols-3 gap-8">
+                            <TabsContent value="profile" className="space-y-8">
+                                <div className="grid md:grid-cols-3 gap-10">
                                     {/* Profile Summary Card */}
-                                    <Card className="md:col-span-1 shadow-md border-primary/5">
-                                        <CardHeader className="text-center pb-2">
-                                            <div className="w-24 h-24 bg-primary/10 rounded-full mx-auto flex items-center justify-center text-primary mb-4 border-4 border-primary/5 shadow-inner">
-                                                <User className="w-12 h-12" />
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="md:col-span-1 p-8 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center"
+                                    >
+                                        <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
+                                            <User className="w-16 h-16" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-white mb-2">{user?.name}님</h3>
+                                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-10">
+                                            <Mail className="w-3 h-3" /> {user?.email}
+                                        </div>
+
+                                        <div className="w-full space-y-4 pt-10 border-t border-white/10">
+                                            <div className="flex justify-between items-center group/info">
+                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">총 주문 횟수</span>
+                                                <span className="text-lg font-black text-white">{orders.length}</span>
                                             </div>
-                                            <CardTitle className="text-xl">{user?.name}님</CardTitle>
-                                            <CardDescription className="flex items-center justify-center gap-1">
-                                                <Mail className="w-3 h-3" /> {user?.email}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4 pt-4 border-t mt-4">
-                                            <div className="flex justify-between text-sm py-1">
-                                                <span className="text-muted-foreground flex items-center gap-2"><Package className="w-4 h-4" /> 총 주문</span>
-                                                <span className="font-bold">{orders.length}건</span>
+                                            <div className="flex justify-between items-center group/info">
+                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">저장된 견적</span>
+                                                <span className="text-lg font-black text-white">{quotes.length}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm py-1">
-                                                <span className="text-muted-foreground flex items-center gap-2"><FileText className="w-4 h-4" /> 저장한 견적</span>
-                                                <span className="font-bold">{quotes.length}건</span>
+                                            <div className="flex justify-between items-center group/info">
+                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">최근 로그인</span>
+                                                <span className="text-sm font-black text-white/60">{new Date().toLocaleDateString('ko-KR')}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm py-1">
-                                                <span className="text-muted-foreground flex items-center gap-2"><Clock className="w-4 h-4" /> 마지막 로그인</span>
-                                                <span className="font-bold italic text-[11px]">{new Date().toLocaleDateString()}</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                    </motion.div>
 
                                     {/* Detailed Form Card */}
-                                    <Card className="md:col-span-2 shadow-md border-primary/5">
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="md:col-span-2 p-10 rounded-[3rem] bg-white/[0.03] border border-white/5"
+                                    >
+                                        <div className="flex flex-row items-center justify-between mb-12">
                                             <div>
-                                                <CardTitle>회원 정보 관리</CardTitle>
-                                                <CardDescription>연락처 등 기본 정보를 변경할 수 있습니다.</CardDescription>
+                                                <h3 className="text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">회원 정보</h3>
+                                                <p className="text-xs font-bold text-white/40 mt-4 uppercase tracking-widest">사용자 이름, 휴대폰 번호 등 개인 정보를 관리합니다.</p>
                                             </div>
                                             {!isEditingProfile && (
-                                                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditingProfile(true)}>
-                                                    <Edit2 className="w-4 h-4" /> 정보 수정
+                                                <Button
+                                                    variant="outline"
+                                                    className="h-12 px-6 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest gap-2 transition-all"
+                                                    onClick={() => setIsEditingProfile(true)}
+                                                >
+                                                    <Edit2 className="w-4 h-4" /> 프로필 수정
                                                 </Button>
                                             )}
-                                        </CardHeader>
-                                        <CardContent>
-                                            <form onSubmit={handleUpdateProfile} className="space-y-6">
-                                                <div className="grid gap-6">
-                                                    <div className="grid gap-2">
-                                                        <Label htmlFor="name" className="text-sm font-bold text-muted-foreground uppercase tracking-wider">이름</Label>
-                                                        {isEditingProfile ? (
-                                                            <Input
-                                                                id="name"
-                                                                value={profileForm.name}
-                                                                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                                                                className="h-11"
-                                                                required
-                                                            />
-                                                        ) : (
-                                                            <div className="h-11 flex items-center px-4 bg-muted/40 rounded-lg font-medium border border-transparent">
-                                                                {user?.name}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="grid gap-2">
-                                                        <Label htmlFor="phone" className="text-sm font-bold text-muted-foreground uppercase tracking-wider">휴대폰 번호</Label>
-                                                        {isEditingProfile ? (
-                                                            <Input
-                                                                id="phone"
-                                                                placeholder="010-0000-0000"
-                                                                value={profileForm.phone}
-                                                                onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                                                                className="h-11"
-                                                            />
-                                                        ) : (
-                                                            <div className="h-11 flex items-center px-4 bg-muted/40 rounded-lg font-medium border border-transparent">
-                                                                <Phone className="w-4 h-4 mr-2 text-primary/40" />
-                                                                {user?.phone || '등록된 번호가 없습니다.'}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="grid gap-2 opacity-60">
-                                                        <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">이메일 계정 (수정 불가)</Label>
-                                                        <div className="h-11 flex items-center px-4 bg-muted/20 rounded-lg border border-dashed">
-                                                            <Mail className="w-4 h-4 mr-2 text-muted-foreground/40" />
-                                                            {user?.email}
+                                        </div>
+
+                                        <form onSubmit={handleUpdateProfile} className="space-y-10">
+                                            <div className="grid gap-10">
+                                                <div className="grid gap-4">
+                                                    <Label htmlFor="name" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">사용자 이름</Label>
+                                                    {isEditingProfile ? (
+                                                        <Input
+                                                            id="name"
+                                                            value={profileForm.name}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
+                                                            required
+                                                        />
+                                                    ) : (
+                                                        <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white text-lg">
+                                                            {user?.name}
                                                         </div>
-                                                    </div>
+                                                    )}
                                                 </div>
 
-                                                {isEditingProfile && (
-                                                    <div className="flex justify-end gap-3 pt-4 border-t animate-in fade-in slide-in-from-top-2 duration-300">
-                                                        <Button
-                                                            variant="ghost"
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setIsEditingProfile(false);
-                                                                if (user) setProfileForm({ name: user.name, phone: user.phone || '' });
-                                                            }}
-                                                        >
-                                                            취소
-                                                        </Button>
-                                                        <Button type="submit" className="gap-2 px-6" disabled={isUpdating}>
-                                                            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                                                            변경사항 저장
-                                                        </Button>
+                                                <div className="grid gap-4">
+                                                    <Label htmlFor="phone" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">휴대폰 번호</Label>
+                                                    {isEditingProfile ? (
+                                                        <Input
+                                                            id="phone"
+                                                            placeholder="010-0000-0000"
+                                                            value={profileForm.phone}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
+                                                        />
+                                                    ) : (
+                                                        <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white/60 text-lg gap-3">
+                                                            <Phone className="w-5 h-5 text-teal-400/40" />
+                                                            {user?.phone || '등록된 번호가 없습니다.'}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid gap-4 opacity-40">
+                                                    <Label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">이메일 계정 (고정)</Label>
+                                                    <div className="h-14 flex items-center px-6 bg-transparent border border-white/5 border-dashed rounded-2xl font-bold text-white/50 gap-3">
+                                                        <Mail className="w-5 h-5 text-white/10" />
+                                                        {user?.email}
                                                     </div>
-                                                )}
-                                            </form>
-                                        </CardContent>
-                                    </Card>
+                                                </div>
+                                            </div>
+
+                                            {isEditingProfile && (
+                                                <div className="flex justify-end gap-4 pt-10 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-500">
+                                                    <Button
+                                                        variant="ghost"
+                                                        type="button"
+                                                        className="h-14 px-8 rounded-2xl text-white/40 font-black uppercase tracking-widest hover:bg-white/5"
+                                                        onClick={() => {
+                                                            setIsEditingProfile(false);
+                                                            if (user) setProfileForm({ name: user.name, phone: user.phone || '' });
+                                                        }}
+                                                    >
+                                                        취소
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20 gap-3"
+                                                        disabled={isUpdating}
+                                                    >
+                                                        {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                                                        변경 사항 저장
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </form>
+                                    </motion.div>
                                 </div>
                             </TabsContent>
                         </Tabs>
@@ -719,91 +813,86 @@ export default function MyAccountPage() {
             </div>
 
             <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>주문 상세 정보</DialogTitle>
-                        <DialogDescription>
-                            주문번호: <span className="font-mono text-primary">{selectedOrder?.orderNumber}</span>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 shadow-2xl">
+                    <DialogHeader className="p-10 pb-0">
+                        <DialogTitle className="text-2xl font-black underline decoration-teal-400 decoration-4 underline-offset-8">주문 상세 정보</DialogTitle>
+                        <DialogDescription className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] pt-6">
+                            주문 번호: <span className="font-mono text-teal-400 ml-2">{selectedOrder?.orderNumber}</span>
                         </DialogDescription>
                     </DialogHeader>
 
                     {selectedOrder && (
-                        <div className="space-y-6">
+                        <div className="p-10 space-y-12">
                             {/* 주문 상태 및 날짜 */}
-                            <div className="flex flex-wrap gap-4 p-4 bg-muted/30 rounded-lg justify-between items-center">
+                            <div className="flex flex-wrap gap-8 p-8 bg-white/[0.03] border border-white/5 rounded-3xl justify-between items-center shadow-inner">
                                 <div>
-                                    <span className="text-xs text-muted-foreground block mb-1">주문 일자</span>
-                                    <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString('ko-KR')}</span>
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block mb-2">주문 날짜</span>
+                                    <span className="text-sm font-black text-white/80">{new Date(selectedOrder.createdAt).toLocaleString('ko-KR')}</span>
                                 </div>
                                 <div>
-                                    <span className="text-xs text-muted-foreground block mb-1">주문 상태</span>
-                                    <Badge>{selectedOrder.status}</Badge>
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block mb-2">주문 상태</span>
+                                    <Badge className="bg-teal-400 text-slate-950 px-5 py-2 rounded-full font-black text-[10px] uppercase tracking-widest border-none shadow-lg shadow-teal-400/20">
+                                        {statusMap[selectedOrder.status] || selectedOrder.status}
+                                    </Badge>
                                 </div>
                             </div>
 
                             {/* 배송 정보 */}
-                            <div>
-                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                    <Package className="w-4 h-4" /> 배송 정보
+                            <div className="space-y-6">
+                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-3">
+                                    <MapPin className="w-4 h-4 text-teal-400/40" /> 배송 정보
                                 </h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm p-4 border rounded-lg">
+                                <div className="grid md:grid-cols-2 gap-10 p-8 border border-white/5 bg-white/[0.01] rounded-[2.5rem]">
                                     <div>
-                                        <span className="text-muted-foreground block mb-1">받는 분</span>
-                                        <span className="font-medium">{selectedOrder.recipientName}</span>
+                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">수령인</span>
+                                        <span className="text-base font-black text-white/80">{selectedOrder.recipientName}</span>
                                     </div>
                                     <div>
-                                        <span className="text-muted-foreground block mb-1">연락처</span>
-                                        <span className="font-medium">{selectedOrder.recipientPhone}</span>
+                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">연락처</span>
+                                        <span className="text-base font-black text-white/80">{selectedOrder.recipientPhone}</span>
                                     </div>
-                                    <div className="col-span-2">
-                                        <span className="text-muted-foreground block mb-1">주소</span>
-                                        <span className="font-medium">{selectedOrder.shippingAddress} {selectedOrder.shippingPostalCode && `(${selectedOrder.shippingPostalCode})`}</span>
+                                    <div className="md:col-span-2">
+                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">주소</span>
+                                        <span className="text-sm font-bold text-white/60 leading-relaxed italic">{selectedOrder.shippingAddress} {selectedOrder.shippingPostalCode && `(${selectedOrder.shippingPostalCode})`}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* 주문 상품 목록 */}
-                            <div>
-                                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                    <FileText className="w-4 h-4" /> 주문 상품
+                            <div className="space-y-6">
+                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-3">
+                                    <Package className="w-4 h-4 text-teal-400/40" /> 주문 품목
                                 </h4>
-                                <div className="border rounded-lg overflow-hidden">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                                            <tr>
-                                                <th className="p-3 text-left font-medium">상품 정보</th>
-                                                <th className="p-3 text-center font-medium w-20">수량</th>
-                                                <th className="p-3 text-right font-medium w-32">가격</th>
+                                <div className="border border-white/10 rounded-[2.5rem] overflow-hidden bg-white/[0.02]">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b border-white/10 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] bg-white/[0.02]">
+                                                <th className="p-8 text-left">품목</th>
+                                                <th className="p-8 text-center w-24">수량</th>
+                                                <th className="p-8 text-right w-40">소계</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y">
+                                        <tbody className="divide-y divide-white/5">
                                             {selectedOrder.items?.map((item) => (
-                                                <tr key={item.id}>
-                                                    <td className="p-3">
-                                                        <div className="font-medium">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
-                                                        <div className="text-xs text-muted-foreground mt-0.5">
-                                                            {item.quote?.printMethod && <Badge variant="outline" className="text-[10px] h-5 mr-1">{item.quote.printMethod.toUpperCase()}</Badge>}
-                                                            {item.quote?.fileSize && <span className="ml-1">{(item.quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
+                                                <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group/row">
+                                                    <td className="p-8">
+                                                        <div className="text-base font-black text-white mb-2 group-hover/row:text-teal-400 transition-colors">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
+                                                        <div className="flex items-center gap-3">
+                                                            {item.quote?.printMethod && <Badge variant="outline" className="text-[9px] h-5 px-2 font-black uppercase border-white/10 text-white/30 group-hover/row:border-teal-400/30 group-hover/row:text-teal-400/60 transition-colors">{item.quote.printMethod}</Badge>}
+                                                            {item.quote?.fileSize && <span className="text-[10px] font-black text-white/10 group-hover/row:text-white/30 transition-colors">{(item.quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
                                                         </div>
                                                     </td>
-                                                    <td className="p-3 text-center">{item.quantity}</td>
-                                                    <td className="p-3 text-right font-medium">
+                                                    <td className="p-8 text-center text-sm font-black text-white/40">{item.quantity}</td>
+                                                    <td className="p-8 text-right text-lg font-black text-white">
                                                         ₩{Math.round((Number(item.subtotal) || 0)).toLocaleString('ko-KR')}
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {!selectedOrder.items?.length && (
-                                                <tr>
-                                                    <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                                                        상세 품목 정보가 없습니다.
-                                                    </td>
-                                                </tr>
-                                            )}
                                         </tbody>
-                                        <tfoot className="bg-muted/30 font-medium">
+                                        <tfoot className="bg-white/[0.04] border-t border-white/10">
                                             <tr>
-                                                <td colSpan={2} className="p-3 text-right">총 결제 금액</td>
-                                                <td className="p-3 text-right text-base text-primary">
+                                                <td colSpan={2} className="p-8 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">최종합계</td>
+                                                <td className="p-8 text-right text-3xl font-black text-teal-400">
                                                     ₩{Math.round((Number(selectedOrder.totalAmount) || 0) ).toLocaleString('ko-KR')}
                                                 </td>
                                             </tr>
@@ -813,10 +902,10 @@ export default function MyAccountPage() {
                             </div>
 
                             {selectedOrder.customerNote && (
-                                <div>
-                                    <h4 className="text-sm font-semibold mb-2">배송 메세지</h4>
-                                    <div className="p-3 bg-muted/30 rounded-md text-sm text-muted-foreground">
-                                        {selectedOrder.customerNote}
+                                <div className="space-y-6">
+                                    <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">배송 메시지</h4>
+                                    <div className="p-8 bg-white/[0.03] border border-white/5 rounded-3xl text-sm font-bold text-white/40 leading-relaxed italic">
+                                        "{selectedOrder.customerNote}"
                                     </div>
                                 </div>
                             )}
@@ -826,91 +915,96 @@ export default function MyAccountPage() {
             </Dialog>
             {/* Order Edit Dialog */}
             <Dialog open={!!editingOrder} onOpenChange={(open) => !open && setEditingOrder(null)}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>주문 수정</DialogTitle>
-                        <DialogDescription>
-                            진행 중인 주문의 배송 정보 및 수량을 수정합니다.
+                <DialogContent className="max-w-lg bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 shadow-2xl overflow-hidden">
+                    <DialogHeader className="p-10 pb-0">
+                        <DialogTitle className="text-2xl font-black underline decoration-teal-400 decoration-4 underline-offset-8">주문 수정</DialogTitle>
+                        <DialogDescription className="text-sm font-bold text-white/40 uppercase tracking-widest pt-4">
+                            배송 정보 및 품목 수량을 수정합니다.
                         </DialogDescription>
                     </DialogHeader>
 
                     {editingOrder && (
-                        <form onSubmit={handleUpdateOrder} className="space-y-6">
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="recipientName">받는 사람</Label>
+                        <form onSubmit={handleUpdateOrder} className="p-10 pt-8 space-y-10">
+                            <div className="space-y-8">
+                                <div className="grid gap-4">
+                                    <Label htmlFor="recipientName" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">수령인 이름</Label>
                                     <Input
                                         id="recipientName"
                                         value={editingOrder.recipientName}
                                         onChange={(e) => setEditingOrder({ ...editingOrder, recipientName: e.target.value })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
                                         required
                                     />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="recipientPhone">연락처</Label>
+                                <div className="grid gap-4">
+                                    <Label htmlFor="recipientPhone" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">연락처</Label>
                                     <Input
                                         id="recipientPhone"
                                         value={editingOrder.recipientPhone}
                                         onChange={(e) => setEditingOrder({ ...editingOrder, recipientPhone: e.target.value })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
                                         required
                                     />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="shippingAddress">주소</Label>
+                                <div className="grid gap-4">
+                                    <Label htmlFor="shippingAddress" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">배송 주소</Label>
                                     <Input
                                         id="shippingAddress"
                                         value={editingOrder.shippingAddress}
                                         onChange={(e) => setEditingOrder({ ...editingOrder, shippingAddress: e.target.value })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
                                         required
                                     />
                                 </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="customerNote">배송 메시지</Label>
+                                <div className="grid gap-4">
+                                    <Label htmlFor="customerNote" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">배송 메시지</Label>
                                     <Input
                                         id="customerNote"
+                                        placeholder="배송 시 요청사항을 입력하세요..."
                                         value={editingOrder.customerNote || ''}
                                         onChange={(e) => setEditingOrder({ ...editingOrder, customerNote: e.target.value })}
+                                        className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
                                     />
                                 </div>
 
-                                <div className="pt-4 border-t">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block">품목 수량 수정</Label>
-                                    <div className="space-y-3">
+                                <div className="pt-10 border-t border-white/10">
+                                    <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-6 block">품목 수량 조절</Label>
+                                    <div className="space-y-4">
                                         {editingOrder.items?.map((item, idx) => (
-                                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                            <div key={item.id} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="text-sm font-medium truncate">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
-                                                    <div className="text-xs text-muted-foreground">단가: ₩{(item.unitPrice).toLocaleString()}</div>
+                                                    <div className="text-sm font-black text-white mb-1 truncate">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
+                                                    <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">단가: ₩{(item.unitPrice).toLocaleString()}</div>
                                                 </div>
-                                                <div className="flex items-center gap-2 ml-4">
+                                                <div className="flex items-center gap-4 ml-8">
                                                     <Button
                                                         type="button"
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8"
+                                                        className="h-10 w-10 rounded-xl hover:bg-white/10 text-white/40 hover:text-white"
                                                         onClick={() => {
                                                             const newItems = [...(editingOrder.items || [])];
                                                             if (newItems[idx].quantity > 1) {
-                                                                newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - 1 };
-                                                                setEditingOrder({ ...editingOrder, items: newItems });
+                                                                 newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - 1 };
+                                                                 setEditingOrder({ ...editingOrder, items: newItems });
                                                             }
                                                         }}
                                                     >
-                                                        <Minus className="w-3 h-3" />
+                                                        <Minus className="w-4 h-4" />
                                                     </Button>
-                                                    <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
+                                                    <span className="w-8 text-center text-lg font-black text-teal-400">{item.quantity}</span>
                                                     <Button
                                                         type="button"
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8"
+                                                        className="h-10 w-10 rounded-xl hover:bg-white/10 text-white/40 hover:text-white"
                                                         onClick={() => {
                                                             const newItems = [...(editingOrder.items || [])];
                                                             newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity + 1 };
                                                             setEditingOrder({ ...editingOrder, items: newItems });
                                                         }}
                                                     >
-                                                        <Plus className="w-3 h-3" />
+                                                        <Plus className="w-4 h-4" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -919,10 +1013,21 @@ export default function MyAccountPage() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-4">
-                                <Button type="button" variant="ghost" onClick={() => setEditingOrder(null)}>취소</Button>
-                                <Button type="submit" disabled={isUpdating} className="gap-2">
-                                    {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                            <div className="flex justify-end gap-4 pt-10 border-t border-white/10">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="h-14 px-8 rounded-2xl text-white/40 font-black uppercase tracking-widest hover:bg-white/5"
+                                    onClick={() => setEditingOrder(null)}
+                                >
+                                    취소
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isUpdating}
+                                    className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20 gap-3"
+                                >
+                                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
                                     변경 사항 저장
                                 </Button>
                             </div>
