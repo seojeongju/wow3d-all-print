@@ -43,23 +43,25 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
         return (
             <div
                 className={cn(
-                    "w-full p-4 border rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-bottom-2",
+                    "w-full p-5 border rounded-[2rem] flex items-center justify-between animate-in fade-in slide-in-from-bottom-3 duration-500 shadow-2xl",
                     isDark
-                        ? "bg-white/5 border-white/10"
+                        ? "bg-white/5 backdrop-blur-xl border-white/10"
                         : "bg-muted/50 border-border"
                 )}
             >
-                <div className="flex items-center gap-3">
-                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isDark ? "bg-primary/20 text-primary" : "bg-primary/20 text-primary")}>
-                        <FileBox className="w-5 h-5" />
+                <div className="flex items-center gap-4">
+                    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center relative group-hover:scale-110 transition-transform", 
+                        isDark ? "bg-teal-400/10 text-teal-400 border border-teal-400/20" : "bg-primary/20 text-primary")}>
+                        <FileBox className="w-6 h-6" />
+                        {isDark && <div className="absolute inset-0 bg-teal-400/20 blur-lg rounded-2xl animate-pulse" />}
                     </div>
-                    <div className="flex flex-col">
-                        <span className={cn("text-sm font-medium truncate max-w-[200px]", isDark ? "text-white" : "text-foreground")}>{file.name}</span>
-                        <span className={cn("text-xs", isDark ? "text-white/50" : "text-muted-foreground")}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                    <div className="flex flex-col gap-0.5">
+                        <span className={cn("text-sm font-black truncate max-w-[180px] sm:max-w-[240px]", isDark ? "text-white" : "text-foreground")}>{file.name}</span>
+                        <span className={cn("text-[10px] font-black tracking-widest uppercase", isDark ? "text-white/30" : "text-muted-foreground")}>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
                     </div>
                 </div>
-                <button onClick={reset} className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors">
-                    <X className="w-5 h-5" />
+                <button onClick={reset} className="p-2.5 hover:bg-red-500/10 hover:text-red-400 text-white/20 rounded-xl transition-all active:scale-90 group">
+                    <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                 </button>
             </div>
         )
@@ -70,17 +72,19 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
         <div
             {...getRootProps()}
             className={cn(
-                "relative border-2 border-dashed rounded-xl p-8 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center text-center group",
+                "relative border-2 border-dashed rounded-[2.5rem] p-10 sm:p-14 transition-all duration-500 cursor-pointer flex flex-col items-center justify-center text-center group overflow-hidden",
                 isDark
                     ? isDragActive
-                        ? "border-primary bg-primary/10 scale-[1.02]"
-                        : "border-white/20 hover:border-primary/50 hover:bg-white/[0.03]"
+                        ? "border-teal-400 bg-teal-400/10 scale-[1.01] shadow-[0_0_50px_rgba(20,184,166,0.15)]"
+                        : "border-white/10 hover:border-teal-400/40 hover:bg-white/[0.02] bg-white/[0.01]"
                     : isDragActive
-                        ? "border-primary bg-primary/5 scale-[1.02]"
+                        ? "border-primary bg-primary/5 scale-[1.01]"
                         : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
             )}
         >
-            {/* 모바일(iOS 등)에서 터치가 input에 직접 전달되도록 전체 덮기 → 파일 선택이 정상 동작 */}
+            {/* Background Glow Effect */}
+            {isDark && <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(20,184,166,0.05),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />}
+
             <input
                 {...inputProps}
                 accept={ACCEPT_STRING}
@@ -101,18 +105,19 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
             />
             <div
                 className={cn(
-                    "w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200",
-                    isDark ? "bg-white/10" : "bg-muted"
+                    "w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-500 relative",
+                    isDark ? "bg-white/5 border border-white/10 group-hover:border-teal-400/30 group-hover:shadow-[0_0_30px_rgba(20,184,166,0.1)]" : "bg-muted"
                 )}
             >
-                <Upload className={cn("w-8 h-8 transition-colors", isDark ? "text-white/70 group-hover:text-primary" : "text-muted-foreground group-hover:text-primary", isDragActive && "text-primary")} />
+                <Upload className={cn("w-9 h-9 transition-all duration-500 relative z-10", isDark ? "text-white/30 group-hover:text-teal-400" : "text-muted-foreground group-hover:text-primary", isDragActive && "text-teal-400")} />
+                {isDark && <div className="absolute inset-0 bg-teal-400/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />}
             </div>
-            <h3 className={cn("text-lg font-semibold mb-1", isDark ? "text-white" : "text-foreground")}>3D 모델 업로드</h3>
-            <p className={cn("text-sm mb-4 max-w-xs", isDark ? "text-white/60" : "text-muted-foreground")}>
-                STL, OBJ, 3MF, PLY, STEP, STP 파일을 드래그하거나 클릭하여 업로드하세요
+            <h3 className={cn("text-xl font-black mb-2 tracking-tight transition-colors duration-500", isDark ? "text-white/90 group-hover:text-white" : "text-foreground")}>3D 모델 업로드</h3>
+            <p className={cn("text-sm mb-6 max-w-xs font-bold leading-relaxed transition-colors duration-500", isDark ? "text-white/40 group-hover:text-white/60" : "text-muted-foreground")}>
+                STL, OBJ, 3MF, STEP 파일을 <br />드래그하거나 <span className="text-teal-400">클릭하여</span> 업로드하세요
             </p>
-            <div className={cn("text-xs px-3 py-1 rounded-full", isDark ? "bg-white/10 text-white/50" : "bg-muted text-muted-foreground/60")}>
-                최대 크기: 100MB
+            <div className={cn("text-[10px] px-4 py-1.5 rounded-full font-black tracking-widest uppercase transition-all duration-500", isDark ? "bg-white/5 text-white/30 border border-white/5 group-hover:border-teal-400/20 group-hover:text-teal-400/60" : "bg-muted text-muted-foreground/60")}>
+                MAX CAPACITY: 100MB
             </div>
         </div>
     )

@@ -69,32 +69,40 @@ function QuoteContent() {
     }, [file, analysis, step]);
 
     return (
-        <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-primary/30 overflow-hidden">
-            {/* Ambient Background Elements */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/15 rounded-full blur-[120px] opacity-30" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/15 rounded-full blur-[120px] opacity-30" />
-            </div>
+        <main className="min-h-screen relative text-slate-100 flex flex-col selection:bg-teal-500/30 overflow-hidden">
+            {/* 프리미엄 배경 시스템 (Hero와 동일) */}
+            <div className="fixed inset-0 z-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            
+            {/* 틸/블루 은은한 포인트 오버레이 */}
+            <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.06),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.06),transparent_50%)]" />
 
-            {/* Premium Header - 슬레이트 톤으로 가독성 확보 */}
-            <header className="border-b border-slate-700/60 backdrop-blur-xl sticky top-0 z-50 bg-slate-900/95">
-                <div className="container mx-auto px-6 h-18 flex items-center justify-between">
+            {/* 그리드 배경 */}
+            <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px]" />
+
+            {/* 배경 글로우 포인트들 */}
+            <div className="fixed left-0 top-1/4 w-[500px] h-[500px] rounded-full bg-teal-500/15 blur-[130px] z-0 pointer-events-none" />
+            <div className="fixed right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px] z-0 pointer-events-none" />
+            <div className="fixed left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px] z-0 pointer-events-none" />
+
+            {/* Premium Header - 고대비 텍스트 및 유리 질감 */}
+            <header className="relative z-50 border-b border-white/10 bg-black/40 backdrop-blur-md shadow-2xl">
+                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-all active:scale-95 group">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all">
-                                <Boxes className="w-5 h-5 text-white" />
+                        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-all active:scale-95 group">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-teal-500/20 group-hover:shadow-teal-500/40 transition-all">
+                                <Boxes className="w-6 h-6 text-white" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-bold text-xl tracking-tight text-slate-50">
-                                    Wow3D <span className="text-primary font-light">Pro</span>
+                                <span className="font-bold text-xl tracking-tight text-white">
+                                    Wow3D <span className="text-teal-400 font-light">Pro</span>
                                 </span>
-                                <span className="text-[9px] font-medium text-slate-400 leading-tight mt-0.5">
-                                    AI 실시간 자동견적시스템
+                                <span className="text-[10px] font-black text-white/50 leading-tight mt-0.5 uppercase tracking-[0.2em]">
+                                    AI Auto Quoting System
                                 </span>
                             </div>
                         </Link>
 
-                        <nav className="hidden md:flex items-center gap-1 bg-slate-800/80 p-1 rounded-full border border-slate-600/50">
+                        <nav className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
                             {[
                                 { id: 1, label: "업로드", active: step >= 1 },
                                 { id: 2, label: "견적 설정", active: step >= 2 },
@@ -102,11 +110,11 @@ function QuoteContent() {
                             ].map((item) => (
                                 <div
                                     key={item.id}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${item.id === step
-                                        ? "bg-white text-slate-900 shadow-lg"
+                                    className={`px-6 py-2 rounded-full text-xs font-black transition-all ${item.id === step
+                                        ? "bg-white text-slate-950 shadow-xl"
                                         : item.active
-                                            ? "text-slate-300"
-                                            : "text-slate-500"
+                                            ? "text-white/80 hover:bg-white/5 cursor-pointer"
+                                            : "text-white/30"
                                         }`}
                                 >
                                     {item.label}
@@ -115,15 +123,15 @@ function QuoteContent() {
                         </nav>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Link href="/quotes" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all">
+                    <div className="flex items-center gap-3">
+                        <Link href="/quotes" className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all">
                             <FileText className="w-4 h-4" /> 저장 목록
                         </Link>
-                        <Link href="/cart" className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all">
+                        <Link href="/cart" className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all">
                             <ShoppingCart className="w-4 h-4" /> 장바구니
                         </Link>
                         <Link href="/">
-                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 border border-slate-600/50">
+                            <Button variant="outline" size="sm" className="rounded-xl bg-white/5 border-white/15 text-white/70 hover:text-white hover:bg-white/10 px-5 font-bold transition-all">
                                 <ArrowLeft className="w-4 h-4 mr-2" />
                                 나가기
                             </Button>
@@ -133,85 +141,87 @@ function QuoteContent() {
             </header>
 
             {/* Main Content Area */}
-            <section className="flex-1 relative">
+            <section className="flex-1 relative z-10">
                 <div className="h-full grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr]">
 
-                    {/* Left Sidebar: Settings Panel - 슬레이트 배경·테두리로 가독성 향상 */}
-                    <div className="bg-slate-900/98 backdrop-blur-sm border-r border-slate-700/50 h-[calc(100vh-4.5rem)] flex flex-col overflow-hidden relative z-10">
-                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 pb-8 space-y-6">
+                    {/* Left Sidebar: Settings Panel - 유리 질감 디자인 */}
+                    <div className="bg-black/20 backdrop-blur-[20px] border-r border-white/10 h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
+                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-8 pb-10 space-y-8">
                             <AnimatePresence mode="wait">
                                 {step === 1 ? (
                                     // 파일 있음 + 분석 대기
                                     file && !analysis ? (
                                         <motion.div
                                             key="analyzing"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            className="space-y-8 flex flex-col items-center justify-center min-h-[320px]"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            className="space-y-8 flex flex-col items-center justify-center min-h-[400px]"
                                         >
-                                            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-                                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                            <div className="w-24 h-24 rounded-[2.5rem] bg-teal-400/10 border border-teal-400/20 flex items-center justify-center relative group">
+                                                <Loader2 className="w-12 h-12 text-teal-400 animate-spin" />
+                                                <div className="absolute inset-0 rounded-[2.5rem] bg-teal-400/20 blur-2xl animate-pulse group-hover:blur-3xl transition-all" />
                                             </div>
-                                            <div className="text-center space-y-2">
-                                                <h1 className="text-2xl font-bold tracking-tight text-slate-100">
-                                                    모델 <span className="text-primary">분석 중</span>
+                                            <div className="text-center space-y-3">
+                                                <h1 className="text-3xl font-black tracking-tight text-white leading-tight">
+                                                    모델 <span className="text-teal-400">정밀 분석 중</span>
                                                 </h1>
-                                                <p className="text-slate-400 text-sm break-keep">
-                                                    부피·표면적을 계산하고 있습니다.
+                                                <p className="text-white/60 text-sm break-keep font-bold leading-relaxed">
+                                                    부피·표면적·출력 시간을 계산하고 있습니다.
                                                     <br />
-                                                    잠시만 기다려 주세요.
+                                                    최적의 견적을 산출하기 위해 잠시만 기다려 주세요.
                                                 </p>
                                             </div>
-                                            <div className="w-full p-4 rounded-xl bg-slate-800/80 border border-slate-600/50 flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                                                    <FileBox className="w-5 h-5" />
+                                            <div className="w-full p-5 rounded-3xl bg-white/5 border border-white/10 flex items-center gap-4 shadow-xl">
+                                                <div className="w-14 h-14 rounded-2xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-center text-teal-400 shrink-0">
+                                                    <FileBox className="w-7 h-7" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="text-sm font-medium text-slate-100 truncate">{file.name}</div>
-                                                    <div className="text-xs text-slate-400">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
+                                                    <div className="text-sm font-black text-white truncate">{file.name}</div>
+                                                    <div className="text-[11px] font-black text-white/40 tracking-[0.1em] uppercase mt-0.5">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
                                                 </div>
                                             </div>
                                         </motion.div>
                                     ) : (
                                         <motion.div
                                             key="upload"
-                                            initial={{ opacity: 0, x: -20 }}
+                                            initial={{ opacity: 0, x: -30 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            className="space-y-6"
+                                            exit={{ opacity: 0, x: -30 }}
+                                            className="space-y-10"
                                         >
-                                            <div className="space-y-2">
-                                                <h1 className="text-3xl font-bold tracking-tight text-slate-50">
+                                            <div className="space-y-4">
+                                                <h1 className="text-4xl font-black tracking-tight text-white leading-[1.15]">
                                                     새로운 프로젝트 <br />
-                                                    <span className="text-primary">시작하기</span>
+                                                    <span className="text-teal-400">시작하기</span>
                                                 </h1>
-                                                <p className="text-slate-400 text-sm">
-                                                    STL, OBJ, 3MF, PLY ,step ,stp 파일을 드래그하여 업로드하세요. <br />
-                                                    자동으로 지오메트리를 분석합니다.
+                                                <p className="text-white/70 text-[15px] font-bold leading-relaxed break-keep">
+                                                    STL, STEP, OBJ 등 3D 파일을 업로드하세요. <br />
+                                                    지능형 분석 엔진이 실시간으로 비용을 산출합니다.
                                                 </p>
                                             </div>
-                                            <div className="p-1 rounded-3xl bg-slate-800/60 border border-slate-600/50">
-                                                <FileUpload />
+                                            <div className="p-1 rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden shadow-2xl relative group">
+                                                <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                                <FileUpload variant="dark" />
                                             </div>
 
-                                            <div className="pt-8 grid gap-4">
-                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-primary/40 transition-all">
-                                                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                                        <CheckCircle2 className="w-5 h-5" />
+                                            <div className="pt-2 grid gap-4">
+                                                <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 group hover:border-teal-400/40 transition-all hover:bg-teal-400/5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+                                                        <CheckCircle2 className="w-7 h-7" />
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        <h3 className="text-sm font-semibold text-slate-100">초정밀 분석</h3>
-                                                        <p className="text-xs text-slate-400 leading-relaxed">부피, 표면적, 출력 예상 시간을 정밀 계산 엔진이 분석합니다.</p>
+                                                    <div className="space-y-1.5 pt-1">
+                                                        <h3 className="text-[15px] font-black text-white">정밀 견적 분석</h3>
+                                                        <p className="text-[13px] text-white/50 leading-relaxed font-bold">부피, 표면적, 예상 소요 시간을 99% 정확도로 분석합니다.</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/70 border border-slate-600/40 group hover:border-blue-500/40 transition-all">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                                                        <Info className="w-5 h-5" />
+                                                <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 group hover:border-indigo-500/40 transition-all hover:bg-indigo-500/5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                                                        <Info className="w-7 h-7" />
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        <h3 className="text-sm font-semibold text-slate-100">보안 클라우드</h3>
-                                                        <p className="text-xs text-slate-400 leading-relaxed">업로드된 모든 파일은 암호화되어 안전하게 처리됩니다.</p>
+                                                    <div className="space-y-1.5 pt-1">
+                                                        <h3 className="text-[15px] font-black text-white">강력한 파일 보호</h3>
+                                                        <p className="text-[13px] text-white/50 leading-relaxed font-bold">업로드된 자산은 AES-256 암호화되어 안전하게 처리됩니다.</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -219,76 +229,88 @@ function QuoteContent() {
                                     )
                                 ) : (
                                     <motion.div
-                                        initial={{ opacity: 0, x: 20 }}
+                                        initial={{ opacity: 0, x: 30 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
+                                        exit={{ opacity: 0, x: 30 }}
+                                        className="space-y-8"
                                     >
-                                        <div className="mb-6 flex items-center justify-between">
-                                            <h2 className="text-xl font-bold text-slate-50">견적 세부 설정</h2>
+                                        <div className="flex items-center justify-between px-1">
+                                            <h2 className="text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
                                             <button
                                                 onClick={() => { reset(); setStep(1); }}
-                                                className="text-xs text-primary hover:underline font-medium"
+                                                className="text-[13px] text-teal-400 hover:text-teal-300 font-black tracking-tight hover:underline transition-all flex items-center gap-1.5"
                                             >
-                                                파일 재업로드
+                                                파일 교체
                                             </button>
                                         </div>
-                                        <QuotePanel initialQuote={loadedQuote} />
+                                        <div className="relative">
+                                            <QuotePanel initialQuote={loadedQuote} />
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
 
                         {/* Sidebar Footer */}
-                        <div className="shrink-0 px-6 py-3 border-t border-slate-700/50 bg-slate-800/60">
-                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                                보안 분석 엔진
+                        <div className="shrink-0 px-8 py-6 border-t border-white/10 bg-black/40 backdrop-blur-md">
+                            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-white/40 font-black">
+                                <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_15px_rgba(20,184,166,0.6)]" />
+                                <span className="text-white/30">SYSTEM STATUS:</span>
+                                <span className="text-teal-400/80">V3.5 MASTER ACTIVE</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column: 3D Visualization - 뷰어는 어두운 배경 유지 */}
-                    <div className="relative flex flex-col bg-slate-950 overflow-hidden">
+                    {/* Right Column: 3D Visualization - 더욱 투명하고 세련된 뷰어 환경 */}
+                    <div className="relative flex flex-col bg-slate-950/20 backdrop-blur-[2px] overflow-hidden">
                         <div className="flex-1 relative group">
                             <div className="h-full w-full relative z-0">
-                                <Scene />
+                                <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><Loader2 className="w-12 h-12 text-teal-400/30 animate-spin" /></div>}>
+                                    <Scene />
+                                </Suspense>
                             </div>
 
                             {/* Viewer HUD */}
-                            <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
-                                <div className="px-4 py-2 rounded-2xl bg-slate-800/90 backdrop-blur-md border border-slate-600/50 text-[10px] font-bold tracking-widest uppercase text-slate-400">
-                                    3D Viewer Engine V2.0
+                            <div className="absolute top-10 right-10 flex flex-col gap-4 z-20">
+                                <div className="px-6 py-3 rounded-[1.25rem] bg-black/60 backdrop-blur-md border border-white/10 text-[11px] font-black tracking-[0.25em] uppercase text-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                                    3D Viewer Engine V3.5
                                 </div>
                             </div>
 
                             {!file && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <div className="w-32 h-32 rounded-full border border-slate-700/50 bg-slate-800/30 flex items-center justify-center animate-pulse">
-                                        <Boxes className="w-10 h-10 text-slate-600" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                                    <div className="w-40 h-40 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
+                                        <Boxes className="w-12 h-12 text-white/10" />
+                                        <div className="absolute inset-0 rounded-full border border-teal-400/20 scale-150 blur-xl" />
                                     </div>
-                                    <p className="mt-6 text-sm text-slate-500 font-medium italic">파일을 업로드하면 3D 미리보기가 활성화됩니다.</p>
+                                    <div className="mt-10 text-center space-y-2">
+                                        <p className="text-white/30 text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
+                                        <p className="text-white/20 text-sm font-medium italic">파일을 업로드하면 고해상도 3D 미리보기가 활성화됩니다.</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
-                        {/* Bottom Info Bar */}
-                        <div className="h-16 border-t border-slate-700/50 bg-slate-900/95 backdrop-blur-md flex items-center px-8 relative z-20">
-                            <div className="flex items-center gap-8 text-xs font-bold tracking-widest uppercase text-slate-400">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    30종+ 소재
+                        {/* Bottom Info Bar - 고대비 정보 레이아웃 */}
+                        <div className="h-24 border-t border-white/10 bg-black/60 backdrop-blur-xl flex items-center px-12 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+                            <div className="flex items-center gap-12 text-[12px] font-black tracking-[0.25em] uppercase text-white/50">
+                                <div className="flex items-center gap-4 group transition-all hover:text-white/90 cursor-default">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.5)]" />
+                                    30종+ 고성능 소재
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    24시간 내 제작시작
+                                <div className="flex items-center gap-4 group transition-all hover:text-white/90 cursor-default">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.5)]" />
+                                    실시간 지능형 견적
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    ±0.2mm 정밀도
+                                <div className="flex items-center gap-4 group transition-all hover:text-white/90 cursor-default">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                                    ±0.1mm 정밀 제작
                                 </div>
                             </div>
-                            <div className="ml-auto text-[14px] text-slate-500">
-                                (주)WOW3D 프로페셔널 엔진
+                            <div className="ml-auto text-right">
+                                <div className="text-[14px] font-black text-white/20 tracking-[0.1em] uppercase">WOW3D MASTER Pro</div>
+                                <div className="text-[10px] font-bold text-teal-400/40 tracking-[0.3em] uppercase mt-1">Industrial Intelligence</div>
                             </div>
                         </div>
                     </div>

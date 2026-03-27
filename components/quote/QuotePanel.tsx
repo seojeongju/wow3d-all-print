@@ -113,7 +113,16 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     useEffect(() => {
         if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
     }, [materials, resinType, printMethod])
-    const MAT_COLORS: Record<string, string> = { PLA: 'text-emerald-400', ABS: 'text-amber-400', PETG: 'text-blue-400', TPU: 'text-pink-400', Standard: 'text-sky-400', Tough: 'text-amber-400', Clear: 'text-cyan-400', Flexible: 'text-lime-400' }
+    const MAT_COLORS: Record<string, string> = { 
+        PLA: 'text-teal-400', 
+        ABS: 'text-amber-400', 
+        PETG: 'text-indigo-400', 
+        TPU: 'text-pink-400', 
+        Standard: 'text-teal-400', 
+        Tough: 'text-amber-400', 
+        Clear: 'text-cyan-400', 
+        Flexible: 'text-lime-400' 
+    }
 
     const volumeCm3 = analysis?.volume || 0
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
@@ -442,29 +451,29 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
     return (
         <div className={`space-y-6 ${embedded ? 'pb-6' : 'pb-4'}`}>
-            {/* Quick Stats Grid - 카드·라벨 대비 개선 */}
-            <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-600/40 flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                        <Box className="w-3 h-3 text-slate-500" /> 부피
+            {/* Quick Stats Grid - 프리미엄 카드 디자인 */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-2 group hover:bg-white/10 transition-all shadow-xl">
+                    <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">
+                        <Box className="w-3.5 h-3.5 text-teal-400/60" /> 부피
                     </div>
-                    <span className="text-lg font-bold font-mono tracking-tight text-slate-50">{volumeCm3.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">cm³</span></span>
+                    <span className="text-2xl font-black font-mono tracking-tighter text-white">{volumeCm3.toFixed(1)} <span className="text-xs font-bold text-white/30 ml-0.5">cm³</span></span>
                 </div>
-                <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-600/40 flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                        <Layers className="w-3 h-3 text-slate-500" /> 표면적
+                <div className="p-5 rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-2 group hover:bg-white/10 transition-all shadow-xl">
+                    <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">
+                        <Layers className="w-3.5 h-3.5 text-indigo-400/60" /> 표면적
                     </div>
-                    <span className="text-lg font-bold font-mono tracking-tight text-slate-50">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">cm²</span></span>
+                    <span className="text-2xl font-black font-mono tracking-tighter text-white">{surfaceAreaCm2.toFixed(1)} <span className="text-xs font-bold text-white/30 ml-0.5">cm²</span></span>
                 </div>
             </div>
 
             {/* Print Method Selection */}
             <div className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
-                    <Printer className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">출력 방식 선택</span>
+                    <Printer className="w-4 h-4 text-teal-400" />
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">출력 방식 선택</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                     {[
                         { id: 'fdm', icon: Printer, label: 'FDM' },
                         { id: 'sla', icon: Droplets, label: 'SLA' },
@@ -473,15 +482,18 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <button
                             key={method.id}
                             onClick={() => setPrintMethod(method.id as PrintMethod)}
-                            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${printMethod === method.id
-                                ? 'bg-primary border-primary shadow-lg shadow-primary/20'
-                                : 'bg-slate-800/70 border-slate-600/40 hover:border-slate-500 text-slate-300'
+                            className={`flex flex-col items-center gap-3 p-5 rounded-[2rem] border transition-all relative group overflow-hidden ${printMethod === method.id
+                                ? 'bg-white text-slate-950 border-white shadow-2xl shadow-white/5 scale-[1.02]'
+                                : 'bg-white/5 border-white/10 hover:bg-white/10 text-white/60 hover:text-white'
                                 }`}
                         >
-                            <method.icon className={`w-6 h-6 ${printMethod === method.id ? 'text-white' : 'text-slate-400'}`} />
-                            <span className={`text-[10px] font-black tracking-tighter ${printMethod === method.id ? 'text-white' : 'text-slate-400'}`}>
+                            <method.icon className={`w-7 h-7 relative z-10 transition-transform group-hover:scale-110 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`} />
+                            <span className={`text-[12px] font-black tracking-tight relative z-10 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`}>
                                 {method.label}
                             </span>
+                            {printMethod === method.id && (
+                                <div className="absolute inset-0 bg-white/10 blur-xl animate-pulse pointer-events-none" />
+                            )}
                         </button>
                     ))}
                 </div>
@@ -499,7 +511,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 </div>
             )}
 
-            <Separator className="bg-slate-600/40" />
+            <Separator className="bg-white/10" />
 
             <AnimatePresence mode="wait">
                 <motion.div
@@ -512,31 +524,33 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                     {/* Dynamic Material Section */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 px-1">
-                            <Box className="w-4 h-4 text-primary" />
-                            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">소재 설정</span>
+                            <Box className="w-4 h-4 text-teal-400" />
+                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">소재 설정</span>
                         </div>
 
-                        <div className="grid gap-2">
+                        <div className="grid gap-3">
                             {(printMethod === 'fdm' ? fdmMaterials : resinMaterials).length === 0 ? (
-                                <p className="text-xs text-slate-400 py-2">소재가 없습니다. 관리자 설정 → 소재에서 추가하세요.</p>
+                                <p className="text-[13px] text-white/40 py-4 font-bold italic">소재가 없습니다. 관리자 설정 → 소재에서 추가하세요.</p>
                             ) : (
                                 (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => (
                                     <button
                                         key={m.id}
                                         onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
-                                        className={`flex items-start gap-4 p-4 rounded-2xl border text-left transition-all ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
-                                            ? 'bg-primary/15 border-primary/60 ring-1 ring-primary/30'
-                                            : 'bg-slate-800/60 border-slate-600/40 hover:bg-slate-700/50 hover:border-slate-500/50'
+                                        className={`flex items-start gap-5 p-5 rounded-3xl border text-left transition-all group relative overflow-hidden ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
+                                            ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                                             }`}
                                     >
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className={`text-sm font-bold text-slate-100 ${MAT_COLORS[m.name] || ''}`}>{m.name}</span>
+                                        <div className="flex-1 relative z-10">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <span className={`text-[15px] font-black tracking-tight ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name ? 'text-teal-400' : 'text-white/80'} ${MAT_COLORS[m.name] || ''}`}>{m.name}</span>
                                                 {(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name && (
-                                                    <ChevronRight className="w-4 h-4 text-primary" />
+                                                    <div className="w-5 h-5 rounded-full bg-teal-400 flex items-center justify-center">
+                                                        <ChevronRight className="w-3.5 h-3.5 text-slate-950 stroke-[3]" />
+                                                    </div>
                                                 )}
                                             </div>
-                                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                            <p className="text-[12px] text-white/40 font-bold leading-relaxed">
                                                 {printMethod === 'fdm' ? `g당 ₩${(m.price_per_gram || 0).toLocaleString()} · 밀도 ${m.density}` : (m.price_per_ml != null && m.price_per_ml > 0) ? `mL당 ₩${m.price_per_ml.toLocaleString()}` : 'mL당 가격 미설정 (관리자에서 설정)'}
                                             </p>
                                         </div>
@@ -548,31 +562,33 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
                     {/* Sliders & Switches */}
                     {printMethod === 'fdm' ? (
-                        <div className="space-y-6 pt-2">
+                        <div className="space-y-8 pt-2">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Infill Density</label>
-                                    <span className="font-mono text-sm text-primary font-bold">{infill}%</span>
+                                    <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">Infill Density</label>
+                                    <span className="font-mono text-[15px] text-teal-400 font-black">{infill}%</span>
                                 </div>
-                                <input
-                                    type="range"
-                                    min="10" max="100" step="10"
-                                    value={infill}
-                                    onChange={(e) => setInfill(Number(e.target.value))}
-                                    className="w-full h-1.5 bg-slate-600/50 rounded-full appearance-none cursor-pointer accent-primary"
-                                />
+                                <div className="px-1">
+                                    <input
+                                        type="range"
+                                        min="10" max="100" step="10"
+                                        value={infill}
+                                        onChange={(e) => setInfill(Number(e.target.value))}
+                                        className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-teal-400"
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block px-1">레이어 두께</label>
+                                <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.1, 0.2, 0.3].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setLayerHeight(h)}
-                                            className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${layerHeight === h
-                                                ? 'bg-primary text-white border-primary'
-                                                : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
+                                            className={`py-3 rounded-2xl border text-[13px] font-black transition-all ${layerHeight === h
+                                                ? 'bg-white text-slate-950 border-white shadow-xl shadow-white/5'
+                                                : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
                                                 }`}
                                         >
                                             {h}mm
@@ -580,38 +596,38 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-3">
                                 <div className="flex items-center justify-between px-1">
-                                    <div className="flex flex-col gap-0.5">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">지지 구조</label>
-                                        {needsSupport && <span className="text-[9px] text-amber-500 font-medium">⚠️ 오버행 감지됨</span>}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">지지 구조 (Support)</label>
+                                        {needsSupport && <span className="text-[10px] text-amber-500 font-black flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> 오버행 감지됨</span>}
                                     </div>
                                     <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
-                                        className={`relative w-11 h-6 rounded-full border transition-colors ${supportEnabled ? 'bg-primary border-primary' : 'bg-slate-700 border-slate-600'}`}>
-                                        <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${supportEnabled ? 'left-6' : 'left-1'}`} />
+                                        className={`relative w-12 h-6.5 rounded-full border-2 transition-all ${supportEnabled ? 'bg-teal-400 border-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)]' : 'bg-white/5 border-white/20'}`}>
+                                        <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full transition-all ${supportEnabled ? 'left-6 bg-slate-950' : 'left-0.5 bg-white/40'}`} />
                                     </button>
                                 </div>
                                 {needsSupport && !supportEnabled && (
-                                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                                        <p className="text-[10px] text-amber-200/90 leading-relaxed">
-                                            모델에 45도 이상 기울어진 오버행이 있습니다. 정상적인 출력을 위해 <b>지지 구조를 활성화</b>하는 것이 좋습니다.
+                                    <div className="p-4 rounded-2.5xl bg-amber-500/10 border border-amber-500/20">
+                                        <p className="text-[11px] text-amber-200/90 leading-relaxed font-bold break-keep">
+                                            모델에 45도 이상 기울어진 오버행이 있습니다. 정상적인 출력을 위해 <span className="text-amber-400">지지 구조 활성화</span>를 권장합니다.
                                         </p>
                                     </div>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-6 pt-4">
+                        <div className="space-y-8 pt-4">
                             <div className="space-y-4">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block px-1">레이어 두께</label>
+                                <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.025, 0.05, 0.1].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setSlaLayerHeight(h)}
-                                            className={`py-2.5 rounded-xl border text-[11px] font-bold transition-all ${slaLayerHeight === h
-                                                ? 'bg-primary text-white border-primary'
-                                                : 'bg-slate-800/60 border-slate-600/50 text-slate-400 hover:border-slate-500 hover:text-slate-300'
+                                            className={`py-3 rounded-2xl border text-[13px] font-black transition-all ${slaLayerHeight === h
+                                                ? 'bg-white text-slate-950 border-white shadow-xl shadow-white/5'
+                                                : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
                                                 }`}
                                         >
                                             {h}mm
@@ -620,10 +636,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                                 </div>
                             </div>
                             <div className="flex items-center justify-between px-1">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">후가공</label>
+                                <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">후가공 (Post-processing)</label>
                                 <button type="button" role="switch" aria-checked={postProcessing} onClick={() => setPostProcessing((p) => !p)}
-                                    className={`relative w-11 h-6 rounded-full border transition-colors ${postProcessing ? 'bg-primary border-primary' : 'bg-slate-700 border-slate-600'}`}>
-                                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${postProcessing ? 'left-6' : 'left-1'}`} />
+                                    className={`relative w-12 h-6.5 rounded-full border-2 transition-all ${postProcessing ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/20'}`}>
+                                    <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full transition-all ${postProcessing ? 'left-6 bg-slate-950' : 'left-0.5 bg-white/40'}`} />
                                 </button>
                             </div>
                         </div>
@@ -633,10 +649,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
             {/* 상세보기 모달 - 슬레이트 톤으로 가독성 */}
             <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-                <DialogContent className="max-w-md sm:max-w-lg bg-slate-900 border-slate-600/60 text-slate-100">
+                <DialogContent className="max-w-md sm:max-w-lg bg-[#111827] border-white/10 text-white shadow-2xl backdrop-blur-2xl">
                     <DialogHeader>
-                        <DialogTitle className="text-slate-50 flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-primary" /> 견적 상세
+                        <DialogTitle className="text-white flex items-center gap-3 text-xl font-black">
+                            <FileText className="w-6 h-6 text-teal-400" /> <span className="tracking-tight">견적 산출 상세</span>
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 pt-2">
@@ -703,42 +719,50 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 </DialogContent>
             </Dialog>
 
-            {/* Price & Actions - 카드·라벨 가독성 */}
-            <div className={`${embedded ? 'p-4' : 'p-5'} rounded-2xl bg-slate-800/80 border border-slate-600/40 space-y-4`}>
-                <div className="flex items-center justify-between gap-4">
+            {/* Price & Actions - 프리미엄 액션 보드 */}
+            <div className={`${embedded ? 'p-6' : 'p-8'} rounded-[2.5rem] bg-white/5 border border-white/10 space-y-8 relative overflow-hidden shadow-2xl`}>
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                
+                <div className="flex items-center justify-between gap-6">
                     <div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">
-                            <Wallet className="w-3 h-3" /> 예상 견적
+                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-[0.25em] mb-2">
+                            <Wallet className="w-3.5 h-3.5" /> 실시간 예상 견적
                         </div>
-                        <span className={`font-black text-slate-50 ${embedded ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
-                        <span className="text-xs text-slate-400 font-medium ml-1">KRW</span>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className={`font-black text-white tracking-tighter ${embedded ? 'text-3xl' : 'text-3xl sm:text-4xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
+                            <span className="text-sm font-black text-white/30 uppercase tracking-widest">KRW</span>
+                        </div>
                     </div>
                     <div className="text-right">
-                        <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">
-                            <Clock className="w-3 h-3" /> 예상 소요
+                        <div className="flex items-center justify-end gap-2 text-[11px] font-black text-white/40 uppercase tracking-[0.25em] mb-2">
+                            <Clock className="w-3.5 h-3.5" /> 제작 예상 기간
                         </div>
-                        <span className="text-sm font-bold text-emerald-400">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'h'))}</span>
+                        <span className="text-[17px] font-black text-teal-400 tracking-tight">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'H'))}</span>
                     </div>
                 </div>
-                <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] text-primary hover:text-primary/90 font-medium">
-                    <FileText className="w-3.5 h-3.5" /> 상세보기
-                </button>
-                <div className={`grid gap-2 ${embedded ? 'grid-cols-2' : 'grid-cols-[1fr_1.5fr] sm:grid-cols-[1fr_2fr]'}`}>
-                    <Button disabled={!analysis || isSaving} variant="ghost" size={embedded ? 'sm' : 'lg'} className={`rounded-xl border border-slate-600/50 hover:bg-slate-700/50 text-slate-200 text-xs font-bold ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl'}`} onClick={handleSaveQuote}>
-                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    </Button>
-                    <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold flex items-center justify-center gap-2 ${embedded ? 'h-11' : 'h-12 sm:h-14 rounded-2xl font-black uppercase tracking-widest'}`} onClick={handleAddToCart}>
-                        <ShoppingCart className={embedded ? 'w-4 h-4' : 'w-5 h-5'} /> 장바구니에 담기
-                    </Button>
+
+                <div className="space-y-4">
+                    <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[12px] text-teal-400 hover:text-teal-300 font-black tracking-tight transition-all active:scale-95">
+                        <FileText className="w-4 h-4" /> 산출 내역 상세 보기
+                    </button>
+                    
+                    <div className={`grid gap-3 ${embedded ? 'grid-cols-2' : 'grid-cols-[1fr_2fr]'}`}>
+                        <Button disabled={!analysis || isSaving} variant="ghost" size={embedded ? 'sm' : 'lg'} className={`rounded-2xl border border-white/10 hover:bg-white/10 text-white transition-all active:scale-95 ${embedded ? 'h-12' : 'h-14 sm:h-16'}`} onClick={handleSaveQuote}>
+                            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        </Button>
+                        <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-2xl bg-white text-slate-950 hover:bg-white/90 transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.1)] ${embedded ? 'h-12 text-sm font-black' : 'h-14 sm:h-16 text-[15px] font-black uppercase tracking-widest'}`} onClick={handleAddToCart}>
+                            <ShoppingCart className={embedded ? 'w-4 h-4 text-slate-950' : 'w-5 h-5 text-slate-950'} /> 장바구니에 담기
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <Link href="/quotes" className="text-[11px] text-slate-400 hover:text-primary font-medium flex items-center gap-1.5"><List className="w-3.5 h-3.5" /> 저장 목록</Link>
-                    <span className="text-slate-600">|</span>
-                    <Link href="/cart" className="text-[11px] text-slate-400 hover:text-primary font-medium flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5" /> 장바구니로 이동</Link>
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <Link href="/quotes" className="text-[12px] text-white/40 hover:text-teal-400 font-bold flex items-center gap-2 transition-colors"><List className="w-4 h-4" /> 나의 견적 보관함</Link>
+                    <span className="text-white/10 font-thin">|</span>
+                    <Link href="/cart" className="text-[12px] text-white/40 hover:text-teal-400 font-bold flex items-center gap-2 transition-colors"><ArrowRight className="w-4 h-4" /> 장바구니로 바로가기</Link>
                 </div>
                 {!embedded && (
-                    <div className="flex items-center justify-center gap-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-widest pt-1">
-                        <ShieldCheck className="w-3 h-3 text-emerald-500/60" /> WOW3D 보안 인증
+                    <div className="flex items-center justify-center gap-2 text-[10px] text-white/20 font-black uppercase tracking-[0.3em] pt-4">
+                        <ShieldCheck className="w-3.5 h-3.5 text-teal-400/50 shadow-[0_0_10px_rgba(20,184,166,0.3)]" /> WOW3D Industrial Security
                     </div>
                 )}
             </div>
