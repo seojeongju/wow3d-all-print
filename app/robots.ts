@@ -8,17 +8,17 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/", "/auth", "/checkout", "/order-complete", "/my-account"],
+        disallow: ["/admin/", "/api/", "/checkout", "/order-complete", "/my-account"],
       },
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: ["/admin/", "/api/", "/auth", "/checkout", "/order-complete", "/my-account"],
+        disallow: ["/admin/", "/api/", "/checkout", "/order-complete", "/my-account"],
       },
       {
         userAgent: "Yeti", // 네이버 봇
         allow: "/",
-        disallow: ["/admin/", "/api/", "/auth", "/checkout", "/order-complete", "/my-account"],
+        disallow: ["/admin/", "/api/", "/checkout", "/order-complete", "/my-account"],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
