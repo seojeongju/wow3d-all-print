@@ -247,7 +247,7 @@ export default function CartPage() {
                             <ShoppingCart className="w-14 h-14 text-teal-400/60 relative z-10" />
                         </motion.div>
                         <div className="space-y-4">
-                            <h2 className="text-4xl font-black text-white tracking-tight uppercase">Cart is Empty</h2>
+                            <h2 className="text-4xl font-black text-white tracking-tight uppercase">장바구니가 비어있습니다</h2>
                             <p className="text-white/40 text-lg font-bold leading-relaxed break-keep">
                                 아직 담긴 모델이나 저장된 견적이 없습니다.<br />
                                 지금 바로 견적을 내고 최상의 출력을 경험하세요.
@@ -286,7 +286,7 @@ export default function CartPage() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                         <div className="space-y-4">
                             <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-2">
-                                <ShoppingCart className="w-4 h-4" /> Order Management
+                                <ShoppingCart className="w-4 h-4" /> 주문 관리
                             </div>
                             <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white uppercase">장바구니</h1>
                             <p className="text-white/40 text-lg font-bold">
@@ -325,21 +325,21 @@ export default function CartPage() {
                                 className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'cart' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
                             >
                                 <ShoppingCart className="w-5 h-5" />
-                                Cart ({items.length})
+                                장바구니 ({items.length})
                             </button>
                             <button
                                 onClick={() => setActiveTab('saved')}
                                 className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'saved' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
                             >
                                 <FileText className="w-5 h-5" />
-                                Saved ({savedQuotes.length})
+                                저장 목록 ({savedQuotes.length})
                             </button>
                             <button
                                 onClick={() => setActiveTab('orders')}
                                 className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'orders' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
                             >
                                 <Package className="w-5 h-5" />
-                                Orders ({orders.length})
+                                주문 내역 ({orders.length})
                             </button>
                         </div>
 
@@ -353,10 +353,10 @@ export default function CartPage() {
                                             onClick={toggleSelectAll}
                                             className="text-[11px] font-black uppercase tracking-widest text-teal-400/60 hover:text-teal-400 transition-colors"
                                         >
-                                            {selectedIds.size >= items.length ? 'DESELECT ALL' : 'SELECT ALL'}
+                                            {selectedIds.size >= items.length ? '전체 해제' : '전체 선택'}
                                         </button>
                                         <span className="text-white/10">|</span>
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-white/30">{selectedIds.size} ITEMS SELECTED</span>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-white/30">{selectedIds.size}개 품목 선택됨</span>
                                     </div>
                                     <AnimatePresence mode="popLayout">
                                         {items.length > 0 ? (
@@ -403,9 +403,9 @@ export default function CartPage() {
                                                                 <div className="flex items-start justify-between gap-4">
                                                                     <div className="space-y-1 min-w-0">
                                                                         <h3 className="text-xl font-bold text-white truncate group-hover:text-teal-400 transition-colors">
-                                                                            {item.quote?.fileName || (item.quote as any)?.file_name || '3D Model Configuration'}
+                                                                            {item.quote?.fileName || (item.quote as any)?.file_name || '3D 모델 구성'}
                                                                         </h3>
-                                                                        <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">Detailed specification</p>
+                                                                        <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">상세 견적 정보</p>
                                                                     </div>
                                                                     <button onClick={() => handleRemoveItem(item.id)} className="p-3 rounded-xl bg-white/5 text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all active:scale-90">
                                                                         <Trash2 className="w-5 h-5" />
@@ -413,19 +413,19 @@ export default function CartPage() {
                                                                 </div>
                                                                 <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Method</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">작업 방식</dt>
                                                                         <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.printMethod?.toUpperCase()}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Material</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">소재</dt>
                                                                         <dd className="text-sm font-bold text-white/80 mt-1 truncate">{item.quote?.fdmMaterial || item.quote?.resinType || 'Standard'}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Volume</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">부피</dt>
                                                                         <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.volumeCm3?.toFixed(1)} cm³</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Unit Price</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">단가</dt>
                                                                         <dd className="text-sm font-black text-teal-400 mt-1">₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}</dd>
                                                                     </div>
                                                                 </div>
@@ -437,7 +437,7 @@ export default function CartPage() {
                                                                     <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/40 active:scale-90 transition-all"><Plus className="w-4 h-4" /></button>
                                                                 </div>
                                                                 <div className="text-right">
-                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Subtotal</p>
+                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">소계</p>
                                                                     <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
                                                                 </div>
                                                             </div>
@@ -450,7 +450,7 @@ export default function CartPage() {
                                                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                                                     <ShoppingCart className="w-8 h-8 text-white/20" />
                                                 </div>
-                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">Your cart is empty.</p>
+                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">장바구니가 비어있습니다.</p>
                                             </div>
                                         )}
                                     </AnimatePresence>
@@ -476,7 +476,7 @@ export default function CartPage() {
                                                     <div className="flex-1 min-w-0 space-y-3">
                                                         <div className="space-y-1">
                                                             <h3 className="text-xl font-bold text-white truncate">{row.file_name}</h3>
-                                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Created at {new Date(row.created_at).toLocaleDateString()}</p>
+                                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">생성일 {new Date(row.created_at).toLocaleDateString()}</p>
                                                         </div>
                                                         <div className="flex flex-wrap gap-4">
                                                             <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.print_method?.toUpperCase()}</div>
@@ -490,8 +490,8 @@ export default function CartPage() {
                                                             disabled={addingId === row.id || inCart(row.id)}
                                                             className={`flex-1 md:flex-none h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-sm gap-2 transition-all shadow-xl ${inCart(row.id) ? 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed' : 'bg-teal-400 text-slate-950 hover:bg-teal-300 hover:scale-105 shadow-teal-400/20'}`}
                                                         >
-                                                            {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? 'In Cart' : (
-                                                                <>Add <Plus className="w-5 h-5" /></>
+                                                            {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? '장바구니 담김' : (
+                                                                <>담기 <Plus className="w-5 h-5" /></>
                                                             )}
                                                         </Button>
                                                         <Button
@@ -507,7 +507,7 @@ export default function CartPage() {
                                             ))
                                         ) : (
                                             <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">No saved quotes found.</p>
+                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">저장된 견적이 없습니다.</p>
                                             </div>
                                         )}
                                     </AnimatePresence>
@@ -519,11 +519,11 @@ export default function CartPage() {
                                             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-8">
                                                 <Package className="w-10 h-10 text-white/20" />
                                             </div>
-                                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-3">Authentication Required</h3>
+                                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-3">로그인이 필요합니다</h3>
                                             <p className="text-white/40 font-bold mb-10 max-w-xs mx-auto text-lg leading-relaxed">로그인 후 주문 내역을 실시간으로 확인하실 수 있습니다.</p>
                                             <Link href="/auth?return=/cart">
                                                 <Button className="h-16 px-10 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest shadow-xl shadow-teal-400/20 gap-3 text-lg">
-                                                    <LogIn className="w-6 h-6" /> User Login
+                                                    <LogIn className="w-6 h-6" /> 사용자 로그인
                                                 </Button>
                                             </Link>
                                         </div>
@@ -547,22 +547,22 @@ export default function CartPage() {
                                                         </div>
                                                         <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Order Date</span>
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">주문 날짜</span>
                                                                 <span className="text-sm font-bold text-white/60">{new Date(order.createdAt).toLocaleDateString()}</span>
                                                             </div>
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Status</span>
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">진행 상태</span>
                                                                 <span className="text-sm font-black text-teal-400 uppercase">{order.status}</span>
                                                             </div>
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Amount</span>
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">결제 금액</span>
                                                                 <span className="text-sm font-black text-white">₩{Math.round((order.totalAmount || 0)).toLocaleString()}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <Link href="/my-account" className="shrink-0 w-full md:w-auto">
                                                         <Button variant="outline" className="w-full md:w-auto h-14 px-8 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs gap-2 transition-all">
-                                                            View Details <ChevronRight className="w-4 h-4" />
+                                                            상세보기 <ChevronRight className="w-4 h-4" />
                                                         </Button>
                                                     </Link>
                                                 </motion.div>
@@ -570,10 +570,10 @@ export default function CartPage() {
                                         </AnimatePresence>
                                     ) : (
                                         <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                                            <p className="text-white/30 font-bold text-lg uppercase tracking-widest mb-6">No order history.</p>
+                                            <p className="text-white/30 font-bold text-lg uppercase tracking-widest mb-6">주문 내역이 없습니다.</p>
                                             <Link href="/quote">
                                                 <Button variant="outline" className="h-12 px-6 rounded-xl border-white/10 text-white/40 hover:text-white uppercase font-black tracking-widest text-[11px]">
-                                                    Get a new quote
+                                                    새 견적 받기
                                                 </Button>
                                             </Link>
                                         </div>
@@ -592,28 +592,28 @@ export default function CartPage() {
                             
                             <div className="space-y-4 relative z-10">
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em]">Step 01</span>
-                                <h2 className="text-3xl font-black text-white tracking-tight uppercase">Order Summary</h2>
+                                <h2 className="text-3xl font-black text-white tracking-tight uppercase">주문 요약</h2>
                                 <p className="text-white/30 text-sm font-bold leading-relaxed break-keep">품목 리스트를 확인하셨다면 아래 결제 단계로 진행해 주세요.</p>
                             </div>
 
                             <div className="space-y-6 relative z-10">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-white/30 font-black uppercase tracking-widest">Total Items</span>
+                                    <span className="text-white/30 font-black uppercase tracking-widest">총 품목 수</span>
                                     <span className="font-black text-white text-lg">{selectedCount}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-white/30 font-black uppercase tracking-widest">Shipping Fee</span>
-                                    <span className="font-black text-teal-400 text-xs">CALCULATED AT CHECKOUT</span>
+                                    <span className="text-white/30 font-black uppercase tracking-widest">배송비</span>
+                                    <span className="font-black text-teal-400 text-xs">결제 시 산정</span>
                                 </div>
                                 <Separator className="bg-white/5" />
                                 <div className="space-y-1 text-right">
-                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">Estimated Total</p>
+                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">예상 합계</p>
                                     <p className="text-5xl font-black tracking-tighter text-white">₩{Math.round(selectedTotal).toLocaleString()}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4 pt-4 relative z-10">
-                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">Step 02: Checkout</span>
+                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">Step 02: 결제하기</span>
                                 {selectedCount === 0 && (
                                     <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[11px] font-black uppercase tracking-widest text-center">
                                         주문할 항목을 선택해 주세요
@@ -627,24 +627,24 @@ export default function CartPage() {
                                             disabled={selectedCount === 0}
                                             className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-2 shadow-xl shadow-teal-400/20 transition-all active:scale-95 disabled:opacity-20"
                                         >
-                                            Proceed to Checkout <ChevronRight className="w-5 h-5" />
+                                            주문 및 결제하기 <ChevronRight className="w-5 h-5" />
                                         </Button>
                                     </Link>
                                 ) : (
                                     <div className="space-y-4">
                                         <Link href="/auth?return=/cart" className="block">
                                             <Button size="lg" className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 ring-4 ring-teal-400/20 transition-all">
-                                                <LogIn className="w-6 h-6" /> User Login
+                                                <LogIn className="w-6 h-6" /> 사용자 로그인
                                             </Button>
                                         </Link>
                                         <div className="flex items-center gap-4 py-2">
                                             <Separator className="bg-white/5 flex-1" />
-                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Guest Check</span>
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">비회원 주문</span>
                                             <Separator className="bg-white/5 flex-1" />
                                         </div>
                                         <Link href={selectedCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'} className={selectedCount === 0 ? 'pointer-events-none' : ''}>
                                             <Button variant="outline" disabled={selectedCount === 0} className="w-full h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-black uppercase tracking-widest text-[11px] disabled:opacity-20 transition-all">
-                                                Guest Checkout <ChevronRight className="w-4 h-4" />
+                                                비회원 주문하기 <ChevronRight className="w-4 h-4" />
                                             </Button>
                                         </Link>
                                     </div>
@@ -659,7 +659,7 @@ export default function CartPage() {
                                 <div className="flex items-start gap-4 px-2">
                                     <ShieldCheck className="w-6 h-6 text-teal-400/40 shrink-0" />
                                     <div className="text-[10px] text-white/20 font-bold leading-relaxed uppercase tracking-widest">
-                                        <span className="font-black text-white/40">Secure Transaction</span><br />
+                                        <span className="font-black text-white/40">안전한 거래</span><br />
                                         견적은 소재 단가 기준이며, 배송비는 결제 단계에서 산정됩니다.
                                     </div>
                                 </div>
