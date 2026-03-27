@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
+import Footer from '@/components/layout/Footer'
 import ModelThumbnail from '@/components/ModelThumbnail'
 import type { Quote, Order } from '@/lib/types'
 
@@ -226,417 +227,448 @@ export default function CartPage() {
     const maybeHasOrders = isAuthenticated && isLoadingOrders
     if (items.length === 0 && savedQuotes.length === 0 && !isLoadingSaved && !hasOrders && !maybeHasOrders) {
         return (
-            <div className="min-h-screen bg-[#050505] text-white">
+            <main className="min-h-screen bg-[#020617] text-white flex flex-col font-sans overflow-hidden">
                 <Header />
-                <div className="pt-24 flex items-center justify-center p-6">
-                    <div className="max-w-md w-full text-center space-y-8">
+                {/* Premium Background System */}
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1e293b_0%,#020617_100%)]" />
+                    <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:40px_40px] opacity-[0.05] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+                    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-teal-400/5 rounded-full blur-[120px] animate-pulse" />
+                </div>
+
+                <div className="flex-1 flex items-center justify-center p-6 relative z-10">
+                    <div className="max-w-md w-full text-center space-y-10">
                         <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="w-24 h-24 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto"
+                            className="w-32 h-32 rounded-[2.5rem] bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto backdrop-blur-3xl shadow-2xl relative group"
                         >
-                            <ShoppingCart className="w-10 h-10 text-white/30" />
+                            <div className="absolute inset-0 bg-teal-400/20 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <ShoppingCart className="w-14 h-14 text-teal-400/60 relative z-10" />
                         </motion.div>
-                        <div className="space-y-3">
-                            <h2 className="text-2xl font-bold text-white">장바구니가 비어있습니다</h2>
-                            <p className="text-white/50 text-sm leading-relaxed">
+                        <div className="space-y-4">
+                            <h2 className="text-4xl font-black text-white tracking-tight uppercase">Cart is Empty</h2>
+                            <p className="text-white/40 text-lg font-bold leading-relaxed break-keep">
                                 아직 담긴 모델이나 저장된 견적이 없습니다.<br />
                                 지금 바로 견적을 내고 최상의 출력을 경험하세요.
                             </p>
                         </div>
-                        <Link href="/quote" className="inline-block">
-                            <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-black hover:bg-white/90 gap-2 font-bold transition-transform hover:scale-105">
-                                견적 시작하기 <ArrowRight className="w-4 h-4" />
-                            </Button>
-                        </Link>
-                        <div className="block pt-4">
-                            <Link href="/" className="text-xs text-white/40 hover:text-white/60">홈으로</Link>
+                        <div className="flex flex-col gap-4">
+                            <Link href="/quote" className="block">
+                                <Button size="lg" className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 gap-3 font-black uppercase tracking-widest transition-all shadow-[0_20px_50px_rgba(45,212,191,0.2)]">
+                                    견적 시작하기 <ArrowRight className="w-6 h-6" />
+                                </Button>
+                            </Link>
+                            <Link href="/" className="text-xs font-black text-white/20 hover:text-white uppercase tracking-[0.3em] transition-colors py-4">홈으로 돌아가기</Link>
                         </div>
                     </div>
                 </div>
-            </div>
+                <Footer />
+            </main>
         )
     }
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
+        <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-teal-500/30 overflow-x-hidden relative font-sans">
             <Header />
 
-            {/* Page title bar – Header(홈/nav)는 위에 고정 */}
-            <div className="pt-24 border-b border-white/10 bg-black/30">
-                <div className="container mx-auto px-4 sm:px-6 max-w-7xl py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">장바구니</h1>
-                        <p className="mt-1 text-sm text-white/50">
-                            총 <span className="font-semibold text-white/80">{getTotalItems()}</span>개 품목
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            onClick={handleDeleteSelected}
-                            disabled={selectedIds.size === 0 || isClearing}
-                            className="text-white/50 hover:text-red-400 hover:bg-red-400/10 rounded-xl px-4 py-2 text-sm font-medium gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" /> 선택 삭제
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            onClick={handleClearCart}
-                            disabled={isClearing}
-                            className="text-white/50 hover:text-red-400 hover:bg-red-400/10 rounded-xl px-4 py-2 text-sm font-medium gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" /> 전체 비우기
-                        </Button>
+            {/* Premium Background System */}
+            <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1e293b_0%,#020617_100%)]" />
+                <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:40px_40px] opacity-[0.05] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-teal-400/5 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-indigo-500/5 rounded-full blur-[140px] animate-pulse" />
+            </div>
+
+            {/* Page title bar */}
+            <div className="pt-40 pb-12 relative z-10 border-b border-white/5 bg-white/[0.02] backdrop-blur-xl">
+                <div className="container mx-auto px-6 max-w-7xl">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                        <div className="space-y-4">
+                            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-2">
+                                <ShoppingCart className="w-4 h-4" /> Order Management
+                            </div>
+                            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white uppercase">장바구니</h1>
+                            <p className="text-white/40 text-lg font-bold">
+                                총 <span className="text-teal-400">{getTotalItems()}</span>개의 정밀 부품이 결제를 대기 중입니다.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                onClick={handleDeleteSelected}
+                                disabled={selectedIds.size === 0 || isClearing}
+                                className="h-14 px-6 rounded-2xl bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 border border-white/10 font-bold gap-2 transition-all"
+                            >
+                                <Trash2 className="w-4 h-4" /> 선택 삭제
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={handleClearCart}
+                                disabled={isClearing}
+                                className="h-14 px-6 rounded-2xl bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 border border-white/10 font-bold gap-2 transition-all"
+                            >
+                                <Trash2 className="w-4 h-4" /> 전체 비우기
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 max-w-7xl">
-                {/* Tab Switcher */}
-                <div className="flex items-center p-1 bg-white/[0.04] border border-white/10 rounded-2xl w-fit mb-8">
-                    <button
-                        onClick={() => setActiveTab('cart')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'cart' ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/50 hover:text-white'}`}
-                    >
-                        <ShoppingCart className="w-4 h-4" />
-                        장바구니 ({items.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('saved')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'saved' ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/50 hover:text-white'}`}
-                    >
-                        <FileText className="w-4 h-4" />
-                        저장 목록 ({savedQuotes.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('orders')}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-white text-black shadow-lg shadow-white/5' : 'text-white/50 hover:text-white'}`}
-                    >
-                        <Package className="w-4 h-4" />
-                        주문조회 ({orders.length})
-                    </button>
-                </div>
+            <div className="container mx-auto px-6 py-16 max-w-7xl relative z-10 flex-1">
+                <div className="grid lg:grid-cols-[1fr_400px] gap-12 items-start">
+                    <div className="space-y-10">
+                        {/* Tab Switcher */}
+                        <div className="flex items-center p-2 bg-white/[0.03] border border-white/10 rounded-3xl w-fit backdrop-blur-3xl shadow-2xl">
+                            <button
+                                onClick={() => setActiveTab('cart')}
+                                className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'cart' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
+                            >
+                                <ShoppingCart className="w-5 h-5" />
+                                Cart ({items.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('saved')}
+                                className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'saved' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
+                            >
+                                <FileText className="w-5 h-5" />
+                                Saved ({savedQuotes.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('orders')}
+                                className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'orders' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
+                            >
+                                <Package className="w-5 h-5" />
+                                Orders ({orders.length})
+                            </button>
+                        </div>
 
-                <div className="grid lg:grid-cols-[1fr_360px] gap-8 lg:gap-12">
-
-                    {/* Left Column: Items List OR Saved Quotes List */}
-                    <div className="space-y-5">
-                        {activeTab === 'cart' ? (
-                            <>
-                                <div className="flex items-center gap-2 pb-2">
-                                    <button
-                                        type="button"
-                                        onClick={toggleSelectAll}
-                                        className="text-xs font-medium text-white/50 hover:text-white"
-                                    >
-                                        {selectedIds.size >= items.length ? '선택 해제' : '전체 선택'}
-                                    </button>
-                                    <span className="text-white/30">|</span>
-                                    <span className="text-xs text-white/50">{selectedIds.size}개 선택</span>
-                                </div>
-                                <AnimatePresence mode="popLayout">
-                                    {items.length > 0 ? (
-                                        items.map((item) => (
-                                            <motion.div
-                                                key={item.id}
-                                                layout
-                                                initial={{ opacity: 0, y: 16 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, x: -40 }}
-                                                className={`p-5 sm:p-6 rounded-2xl border transition-all group ${selectedIds.has(item.id) ? 'bg-white/[0.04] border-white/10 hover:border-white/15' : 'bg-white/[0.02] border-white/5 opacity-75'}`}
-                                            >
-                                                <div className="flex flex-col sm:flex-row gap-6">
-                                                    <label className="flex items-start gap-3 sm:items-center cursor-pointer shrink-0">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedIds.has(item.id)}
-                                                            onChange={() => toggleSelect(item.id)}
-                                                            className="w-5 h-5 rounded border-white/30 bg-white/5 text-primary focus:ring-primary"
-                                                        />
-                                                    </label>
-                                                    <div className="w-full sm:w-28 h-28 rounded-xl bg-gradient-to-br from-white/[0.06] to-transparent border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">
-                                                        {item.quote?.thumbnailDataUrl ? (
-                                                            <img src={item.quote.thumbnailDataUrl} alt="" className="w-full h-full object-contain" />
-                                                        ) : item.quote?.fileUrl ? (
-                                                            <ModelThumbnail
-                                                                fileUrl={item.quote.fileUrl}
-                                                                fileName={item.quote?.fileName || (item.quote as any)?.file_name}
-                                                                onThumbnailReady={(url) => setQuoteThumbnail(item.id, url)}
-                                                                size={256}
-                                                                className="w-full h-full"
+                        {/* Left Column: Items List OR Saved Quotes List */}
+                        <div className="space-y-6">
+                            {activeTab === 'cart' ? (
+                                <>
+                                    <div className="flex items-center gap-4 px-2">
+                                        <button
+                                            type="button"
+                                            onClick={toggleSelectAll}
+                                            className="text-[11px] font-black uppercase tracking-widest text-teal-400/60 hover:text-teal-400 transition-colors"
+                                        >
+                                            {selectedIds.size >= items.length ? 'DESELECT ALL' : 'SELECT ALL'}
+                                        </button>
+                                        <span className="text-white/10">|</span>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-white/30">{selectedIds.size} ITEMS SELECTED</span>
+                                    </div>
+                                    <AnimatePresence mode="popLayout">
+                                        {items.length > 0 ? (
+                                            items.map((item) => (
+                                                <motion.div
+                                                    key={item.id}
+                                                    layout
+                                                    initial={{ opacity: 0, y: 30 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className={`p-8 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 group relative overflow-hidden ${selectedIds.has(item.id) ? 'bg-white/[0.05] border-teal-400/30' : 'bg-white/[0.02] border-white/5 opacity-60'}`}
+                                                >
+                                                    {selectedIds.has(item.id) && (
+                                                        <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/5 blur-3xl rounded-full -mr-16 -mt-16" />
+                                                    )}
+                                                    <div className="flex flex-col sm:flex-row gap-8 relative z-10">
+                                                        <label className="flex items-start pt-4 cursor-pointer shrink-0">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedIds.has(item.id)}
+                                                                onChange={() => toggleSelect(item.id)}
+                                                                className="w-6 h-6 rounded-lg border-white/10 bg-white/5 text-teal-400 focus:ring-teal-400/50 transition-all checked:bg-teal-400"
                                                             />
+                                                        </label>
+                                                        <div className="w-full sm:w-40 h-40 rounded-3xl bg-slate-900/50 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden relative group-hover:scale-105 transition-transform duration-500">
+                                                            {item.quote?.thumbnailDataUrl ? (
+                                                                <img src={item.quote.thumbnailDataUrl} alt="" className="w-full h-full object-contain" />
+                                                            ) : item.quote?.fileUrl ? (
+                                                                <ModelThumbnail
+                                                                    fileUrl={item.quote.fileUrl}
+                                                                    fileName={item.quote?.fileName || (item.quote as any)?.file_name}
+                                                                    onThumbnailReady={(url) => setQuoteThumbnail(item.id, url)}
+                                                                    size={256}
+                                                                    className="w-full h-full"
+                                                                />
+                                                            ) : (
+                                                                <Box className="w-12 h-12 text-white/20" />
+                                                            )}
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </div>
+
+                                                        <div className="flex-1 min-w-0 flex flex-col justify-between gap-6">
+                                                            <div>
+                                                                <div className="flex items-start justify-between gap-4">
+                                                                    <div className="space-y-1 min-w-0">
+                                                                        <h3 className="text-xl font-bold text-white truncate group-hover:text-teal-400 transition-colors">
+                                                                            {item.quote?.fileName || (item.quote as any)?.file_name || '3D Model Configuration'}
+                                                                        </h3>
+                                                                        <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">Detailed specification</p>
+                                                                    </div>
+                                                                    <button onClick={() => handleRemoveItem(item.id)} className="p-3 rounded-xl bg-white/5 text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all active:scale-90">
+                                                                        <Trash2 className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+                                                                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+                                                                    <div>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Method</dt>
+                                                                        <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.printMethod?.toUpperCase()}</dd>
+                                                                    </div>
+                                                                    <div>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Material</dt>
+                                                                        <dd className="text-sm font-bold text-white/80 mt-1 truncate">{item.quote?.fdmMaterial || item.quote?.resinType || 'Standard'}</dd>
+                                                                    </div>
+                                                                    <div>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Volume</dt>
+                                                                        <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.volumeCm3?.toFixed(1)} cm³</dd>
+                                                                    </div>
+                                                                    <div>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Unit Price</dt>
+                                                                        <dd className="text-sm font-black text-teal-400 mt-1">₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}</dd>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center justify-between pt-6 border-t border-white/5">
+                                                                <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-2xl p-1.5 px-3">
+                                                                    <button onClick={() => handleQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/40 active:scale-90 disabled:opacity-20 transition-all"><Minus className="w-4 h-4" /></button>
+                                                                    <span className="w-10 text-center font-black text-white text-lg">{item.quantity}</span>
+                                                                    <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/40 active:scale-90 transition-all"><Plus className="w-4 h-4" /></button>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Subtotal</p>
+                                                                    <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        ) : (
+                                            <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
+                                                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                    <ShoppingCart className="w-8 h-8 text-white/20" />
+                                                </div>
+                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">Your cart is empty.</p>
+                                            </div>
+                                        )}
+                                    </AnimatePresence>
+                                </>
+                            ) : activeTab === 'saved' ? (
+                                <div className="space-y-6">
+                                    <AnimatePresence mode="popLayout">
+                                        {savedQuotes.length > 0 ? (
+                                            savedQuotes.map((row) => (
+                                                <motion.div
+                                                    key={row.id}
+                                                    initial={{ opacity: 0, scale: 0.98 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    className="p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-teal-400/20 transition-all flex flex-col md:flex-row gap-8 items-center group relative overflow-hidden backdrop-blur-3xl"
+                                                >
+                                                    <div className="w-28 h-28 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-2xl">
+                                                        {row.file_url ? (
+                                                            <ModelThumbnail fileUrl={row.file_url} fileName={row.file_name} size={128} className="w-full h-full group-hover:scale-110 transition-transform duration-500" />
                                                         ) : (
                                                             <Box className="w-10 h-10 text-white/20" />
                                                         )}
                                                     </div>
-
-                                                    <div className="flex-1 min-w-0 flex flex-col justify-between gap-4">
-                                                        <div>
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <h3 className="font-semibold text-white truncate">
-                                                                    {item.quote?.fileName || (item.quote as any)?.file_name || '3D 모델'}
-                                                                </h3>
-                                                                <button onClick={() => handleRemoveItem(item.id)} className="p-2 text-white/40 hover:text-red-400">
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                            <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                                                <div>
-                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">방식</dt>
-                                                                    <dd className="text-sm font-medium mt-0.5">{item.quote?.printMethod?.toUpperCase()}</dd>
-                                                                </div>
-                                                                <div>
-                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">소재</dt>
-                                                                    <dd className="text-sm font-medium mt-0.5 truncate">{item.quote?.fdmMaterial || item.quote?.resinType || '미지정'}</dd>
-                                                                </div>
-                                                                <div>
-                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">부피</dt>
-                                                                    <dd className="text-sm font-medium mt-0.5">{item.quote?.volumeCm3?.toFixed(1)}cm³</dd>
-                                                                </div>
-                                                                <div>
-                                                                    <dt className="text-[10px] text-white/40 font-bold uppercase tracking-widest">예상가</dt>
-                                                                    <dd className="text-sm font-bold text-primary mt-0.5">₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}</dd>
-                                                                </div>
-                                                            </dl>
+                                                    <div className="flex-1 min-w-0 space-y-3">
+                                                        <div className="space-y-1">
+                                                            <h3 className="text-xl font-bold text-white truncate">{row.file_name}</h3>
+                                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Created at {new Date(row.created_at).toLocaleDateString()}</p>
                                                         </div>
-                                                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                                            <div className="flex items-center gap-1 bg-black/30 rounded-lg p-0.5 border border-white/5">
-                                                                <button onClick={() => handleQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1} className="w-8 h-8 flex items-center justify-center text-white/40 disabled:opacity-20"><Minus className="w-3 h-3" /></button>
-                                                                <span className="w-8 text-center text-xs font-bold">{item.quantity}</span>
-                                                                <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-white/40"><Plus className="w-3 h-3" /></button>
-                                                            </div>
-                                                            <span className="text-lg font-black tracking-tight">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
+                                                        <div className="flex flex-wrap gap-4">
+                                                            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.print_method?.toUpperCase()}</div>
+                                                            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.volume_cm3?.toFixed(1)}cm³</div>
+                                                            <div className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[11px] font-black text-teal-400 uppercase tracking-widest">₩{Math.round(row.total_price).toLocaleString()}</div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </motion.div>
-                                        ))
-                                    ) : (
-                                        <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                            <p className="text-white/30 text-sm">장바구니에 담긴 항목이 없습니다.</p>
-                                        </div>
-                                    )}
-                                </AnimatePresence>
-                            </>
-                        ) : activeTab === 'saved' ? (
-                            /* Saved Quotes Tab Content */
-                            <div className="space-y-4">
-                                <AnimatePresence mode="popLayout">
-                                    {savedQuotes.length > 0 ? (
-                                        savedQuotes.map((row) => (
-                                            <motion.div
-                                                key={row.id}
-                                                initial={{ opacity: 0, scale: 0.98 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all flex flex-col sm:flex-row gap-5 items-center"
-                                            >
-                                                <div className="w-20 h-20 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                    {row.file_url ? (
-                                                        <ModelThumbnail fileUrl={row.file_url} fileName={row.file_name} size={128} className="w-full h-full" />
-                                                    ) : (
-                                                        <Box className="w-8 h-8 text-white/20" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-bold text-white truncate">{row.file_name}</h3>
-                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                                                        <span className="text-xs text-white/40">{row.print_method?.toUpperCase()}</span>
-                                                        <span className="text-xs text-white/40">{row.volume_cm3?.toFixed(1)}cm³</span>
-                                                        <span className="text-xs font-bold text-white/70">₩{Math.round(row.total_price).toLocaleString()}</span>
+                                                    <div className="flex gap-4 w-full md:w-auto">
+                                                        <Button
+                                                            onClick={() => handleAddToCartFromSaved(row)}
+                                                            disabled={addingId === row.id || inCart(row.id)}
+                                                            className={`flex-1 md:flex-none h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-sm gap-2 transition-all shadow-xl ${inCart(row.id) ? 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed' : 'bg-teal-400 text-slate-950 hover:bg-teal-300 hover:scale-105 shadow-teal-400/20'}`}
+                                                        >
+                                                            {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? 'In Cart' : (
+                                                                <>Add <Plus className="w-5 h-5" /></>
+                                                            )}
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleDeleteSavedQuote(row.id)}
+                                                            className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 text-white/30 hover:text-red-400 hover:bg-red-400/10 active:scale-90 transition-all"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </Button>
                                                     </div>
-                                                </div>
-                                                <div className="flex gap-2 w-full sm:w-auto">
-                                                    <Button
-                                                        onClick={() => handleAddToCartFromSaved(row)}
-                                                        disabled={addingId === row.id || inCart(row.id)}
-                                                        className={`flex-1 sm:flex-none h-11 px-6 rounded-xl font-bold gap-2 ${inCart(row.id) ? 'bg-white/10 text-white/40 border border-white/5' : 'bg-primary text-primary-foreground hover:scale-105'}`}
-                                                    >
-                                                        {addingId === row.id ? <Loader2 className="w-4 h-4 animate-spin" /> : inCart(row.id) ? '장바구니 담김' : (
-                                                            <>담기 <Plus className="w-4 h-4" /></>
-                                                        )}
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDeleteSavedQuote(row.id)}
-                                                        className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/5 text-white/30 hover:text-red-400 hover:bg-red-400/10"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </motion.div>
-                                        ))
-                                    ) : (
-                                        <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                            <p className="text-white/30 text-sm">저장된 견적이 없습니다.</p>
-                                        </div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        ) : (
-                            /* 주문조회 Tab Content */
-                            <div className="space-y-4">
-                                {!isAuthenticated ? (
-                                    <div className="py-16 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                        <Package className="w-12 h-12 text-white/20 mx-auto mb-4" />
-                                        <p className="text-white/70 font-medium mb-1">로그인 후 주문 내역을 확인하세요</p>
-                                        <p className="text-white/40 text-sm mb-6">회원으로 로그인하면 주문조회가 가능합니다.</p>
-                                        <Link href="/auth?return=/cart">
-                                            <Button className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
-                                                <LogIn className="w-4 h-4" /> 로그인
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                ) : isLoadingOrders ? (
-                                    <div className="py-20 flex items-center justify-center">
-                                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                                    </div>
-                                ) : orders.length > 0 ? (
-                                    <AnimatePresence mode="popLayout">
-                                        {orders.map((order) => (
-                                            <motion.div
-                                                key={order.id}
-                                                initial={{ opacity: 0, scale: 0.98 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all flex flex-col sm:flex-row gap-5 items-center justify-between"
-                                            >
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-bold text-white font-mono">{order.orderNumber}</h3>
-                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-white/50">
-                                                        <span>{new Date(order.createdAt).toLocaleDateString('ko-KR')}</span>
-                                                        <span className="capitalize">{order.status}</span>
-                                                        <span className="font-bold text-primary">₩{Math.round((order.totalAmount || 0)).toLocaleString()}</span>
-                                                    </div>
-                                                </div>
-                                                <Link href="/my-account" className="shrink-0">
-                                                    <Button variant="outline" size="sm" className="rounded-xl border-white/15 hover:bg-white/10 gap-1.5">
-                                                        상세보기 <ChevronRight className="w-4 h-4" />
-                                                    </Button>
-                                                </Link>
-                                            </motion.div>
-                                        ))}
+                                                </motion.div>
+                                            ))
+                                        ) : (
+                                            <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
+                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">No saved quotes found.</p>
+                                            </div>
+                                        )}
                                     </AnimatePresence>
-                                ) : (
-                                    <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                        <p className="text-white/30 text-sm">주문 내역이 없습니다.</p>
-                                        <Link href="/quote" className="inline-block mt-3">
-                                            <Button variant="outline" size="sm" className="rounded-xl border-white/15 text-white/60 hover:text-white">
-                                                견적 받기
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {!isAuthenticated ? (
+                                        <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01] flex flex-col items-center">
+                                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-8">
+                                                <Package className="w-10 h-10 text-white/20" />
+                                            </div>
+                                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-3">Authentication Required</h3>
+                                            <p className="text-white/40 font-bold mb-10 max-w-xs mx-auto text-lg leading-relaxed">로그인 후 주문 내역을 실시간으로 확인하실 수 있습니다.</p>
+                                            <Link href="/auth?return=/cart">
+                                                <Button className="h-16 px-10 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest shadow-xl shadow-teal-400/20 gap-3 text-lg">
+                                                    <LogIn className="w-6 h-6" /> User Login
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    ) : isLoadingOrders ? (
+                                        <div className="py-32 flex items-center justify-center">
+                                            <Loader2 className="w-12 h-12 text-teal-400 animate-spin" />
+                                        </div>
+                                    ) : orders.length > 0 ? (
+                                        <AnimatePresence mode="popLayout">
+                                            {orders.map((order) => (
+                                                <motion.div
+                                                    key={order.id}
+                                                    initial={{ opacity: 0, scale: 0.98 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    className="p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/5 hover:border-teal-400/20 transition-all flex flex-col md:flex-row gap-8 items-center justify-between backdrop-blur-3xl"
+                                                >
+                                                    <div className="flex-1 min-w-0 space-y-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <Package className="w-5 h-5 text-teal-400" />
+                                                            <h3 className="text-xl font-black text-white font-mono tracking-wider">{order.orderNumber}</h3>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Order Date</span>
+                                                                <span className="text-sm font-bold text-white/60">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Status</span>
+                                                                <span className="text-sm font-black text-teal-400 uppercase">{order.status}</span>
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Amount</span>
+                                                                <span className="text-sm font-black text-white">₩{Math.round((order.totalAmount || 0)).toLocaleString()}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <Link href="/my-account" className="shrink-0 w-full md:w-auto">
+                                                        <Button variant="outline" className="w-full md:w-auto h-14 px-8 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs gap-2 transition-all">
+                                                            View Details <ChevronRight className="w-4 h-4" />
+                                                        </Button>
+                                                    </Link>
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    ) : (
+                                        <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
+                                            <p className="text-white/30 font-bold text-lg uppercase tracking-widest mb-6">No order history.</p>
+                                            <Link href="/quote">
+                                                <Button variant="outline" className="h-12 px-6 rounded-xl border-white/10 text-white/40 hover:text-white uppercase font-black tracking-widest text-[11px]">
+                                                    Get a new quote
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Summary Sidebar */}
-                    <div className="lg:pt-0">
-                        <div className="sticky top-24 p-6 sm:p-7 rounded-2xl bg-white/[0.04] border border-white/10 space-y-6">
-                            <div>
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">1단계</span>
-                                <h2 className="text-lg font-bold text-white">장바구니 확인</h2>
-                                <p className="text-xs text-white/50 mt-0.5">저장 목록·장바구니를 확인하셨다면, 아래 2단계로 주문을 진행하세요.</p>
+                    <div className="relative">
+                        <div className="sticky top-32 p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 space-y-10 backdrop-blur-3xl shadow-2xl overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                                <ShieldCheck className="w-32 h-32 text-teal-400" />
+                            </div>
+                            
+                            <div className="space-y-4 relative z-10">
+                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em]">Step 01</span>
+                                <h2 className="text-3xl font-black text-white tracking-tight uppercase">Order Summary</h2>
+                                <p className="text-white/30 text-sm font-bold leading-relaxed break-keep">품목 리스트를 확인하셨다면 아래 결제 단계로 진행해 주세요.</p>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-white/50">선택 품목</span>
-                                    <span className="font-semibold text-white">{selectedCount}개</span>
+                            <div className="space-y-6 relative z-10">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-white/30 font-black uppercase tracking-widest">Total Items</span>
+                                    <span className="font-black text-white text-lg">{selectedCount}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-white/50">배송비</span>
-                                    <span className="font-medium text-emerald-400/90 text-xs sm:text-sm">결제 시 산정</span>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-white/30 font-black uppercase tracking-widest">Shipping Fee</span>
+                                    <span className="font-black text-teal-400 text-xs">CALCULATED AT CHECKOUT</span>
                                 </div>
-                                <Separator className="bg-white/10" />
-                                <div className="flex justify-between items-baseline">
-                                    <span className="text-sm font-medium text-white/70">총 결제 금액</span>
-                                    <span className="text-2xl font-bold text-primary">₩{Math.round(selectedTotal).toLocaleString()}</span>
+                                <Separator className="bg-white/5" />
+                                <div className="space-y-1 text-right">
+                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">Estimated Total</p>
+                                    <p className="text-5xl font-black tracking-tighter text-white">₩{Math.round(selectedTotal).toLocaleString()}</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-3 pt-2">
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block">2단계: 주문하기</span>
-                                {selectedCount === 0 && <p className="text-xs text-amber-400/90">주문할 항목을 선택하세요.</p>}
-                                {isAuthenticated ? (
-                                    selectedCount > 0 ? (
-                                        <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className="block">
-                                            <Button size="lg" className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 font-bold gap-2">
-                                                회원 주문 · 결제하기 <ChevronRight className="w-4 h-4" />
-                                            </Button>
-                                        </Link>
-                                    ) : (
-                                        <Button size="lg" className="w-full h-14 rounded-xl bg-primary/50 font-bold gap-2 cursor-not-allowed" disabled>
-                                            회원 주문 · 결제하기 <ChevronRight className="w-4 h-4" />
-                                        </Button>
-                                    )
-                                ) : (
-                                    <div className="space-y-3">
-                                        <p className="text-xs text-white/50">로그인 후 회원 주문을 진행하시거나, 비회원으로 주문하세요.</p>
-                                        <Link href="/auth?return=/cart" className="block">
-                                            <Button size="lg" className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 font-bold gap-2 shadow-lg shadow-primary/25 ring-2 ring-primary/40">
-                                                <LogIn className="w-5 h-5" />
-                                                회원(로그인) 후 주문 <ChevronRight className="w-4 h-4" />
-                                            </Button>
-                                        </Link>
-                                        <p className="text-[10px] text-primary/80 -mt-1">주문 내역·회원 혜택 이용</p>
-                                        {selectedCount > 0 ? (
-                                            <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className="block">
-                                                <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 text-sm font-medium gap-2">
-                                                    비회원 주문 <ChevronRight className="w-4 h-4" />
-                                                </Button>
-                                            </Link>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/10 text-white/40 font-medium gap-2 cursor-not-allowed" disabled>
-                                                    비회원 주문 <ChevronRight className="w-4 h-4" />
-                                                </Button>
-                                                {activeTab === 'saved' && savedQuotes.length > 0 && (
-                                                    <p className="text-[10px] text-primary/70 text-center animate-pulse">상단의 '담기' 버튼을 눌러 장바구니로 옮겨주세요</p>
-                                                )}
-                                            </div>
-                                        )}
+                            <div className="space-y-4 pt-4 relative z-10">
+                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">Step 02: Checkout</span>
+                                {selectedCount === 0 && (
+                                    <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[11px] font-black uppercase tracking-widest text-center">
+                                        주문할 항목을 선택해 주세요
                                     </div>
                                 )}
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Link href="/quotes">
-                                        <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 gap-1.5 text-sm font-medium">
-                                            저장 목록
+                                
+                                {isAuthenticated ? (
+                                    <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className={selectedCount === 0 ? 'pointer-events-none' : ''}>
+                                        <Button 
+                                            size="lg" 
+                                            disabled={selectedCount === 0}
+                                            className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-2 shadow-xl shadow-teal-400/20 transition-all active:scale-95 disabled:opacity-20"
+                                        >
+                                            Proceed to Checkout <ChevronRight className="w-5 h-5" />
                                         </Button>
                                     </Link>
-                                    <Link href="/quote">
-                                        <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 gap-1.5 text-sm font-medium">
-                                            견적 더 받기
-                                        </Button>
-                                    </Link>
-                                    <Link href="/" className="col-span-2">
-                                        <Button variant="outline" size="sm" className="w-full h-11 rounded-xl border-white/15 hover:bg-white/10 gap-1.5 text-sm font-medium">
-                                            <Home className="w-4 h-4" /> 홈
-                                        </Button>
-                                    </Link>
-                                </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <Link href="/auth?return=/cart" className="block">
+                                            <Button size="lg" className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 ring-4 ring-teal-400/20 transition-all">
+                                                <LogIn className="w-6 h-6" /> User Login
+                                            </Button>
+                                        </Link>
+                                        <div className="flex items-center gap-4 py-2">
+                                            <Separator className="bg-white/5 flex-1" />
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Guest Check</span>
+                                            <Separator className="bg-white/5 flex-1" />
+                                        </div>
+                                        <Link href={selectedCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'} className={selectedCount === 0 ? 'pointer-events-none' : ''}>
+                                            <Button variant="outline" disabled={selectedCount === 0} className="w-full h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-black uppercase tracking-widest text-[11px] disabled:opacity-20 transition-all">
+                                                Guest Checkout <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="pt-4 border-t border-white/5 space-y-3">
-                                <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary/90 leading-relaxed font-medium">
-                                    <span className="font-bold block mb-0.5">※ 안내사항</span>
-                                    자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출후 견적서 발송됩니다.
+                            <div className="pt-10 space-y-6 relative z-10 border-t border-white/5">
+                                <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-white/5 text-[11px] text-white/40 leading-relaxed font-bold">
+                                    <span className="font-black text-teal-400 block mb-2 uppercase tracking-widest">※ Guide</span>
+                                    자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출 후 최종 견적서가 발송됩니다.
                                 </div>
-                                <div className="flex items-start gap-2">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-500/70 shrink-0 mt-0.5" />
-                                    <div className="text-xs text-white/45 leading-relaxed">
-                                        <span className="font-medium text-white/60">안전한 주문</span><br />
-                                        견적은 현재 소재 단가 기준이며, 배송비는 결제 단계에서 산정됩니다.
+                                <div className="flex items-start gap-4 px-2">
+                                    <ShieldCheck className="w-6 h-6 text-teal-400/40 shrink-0" />
+                                    <div className="text-[10px] text-white/20 font-bold leading-relaxed uppercase tracking-widest">
+                                        <span className="font-black text-white/40">Secure Transaction</span><br />
+                                        견적은 소재 단가 기준이며, 배송비는 결제 단계에서 산정됩니다.
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
-        </div>
+            <Footer />
+        </main>
     )
 }

@@ -97,123 +97,104 @@ const RESIN_MATERIALS = [
 
 export default function MaterialsPage() {
     return (
-        <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
+        <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-teal-500/30 overflow-hidden relative font-sans">
             <Header />
 
+            {/* Premium Background System */}
+            <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1e293b_0%,#020617_100%)]" />
+                <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:40px_40px] opacity-[0.05] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-teal-500/5 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-indigo-500/5 rounded-full blur-[140px] animate-pulse" />
+            </div>
+
             {/* Hero */}
-            <section className="pt-32 pb-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="container mx-auto px-4 relative z-10">
+            <section className="pt-40 pb-20 relative z-10">
+                <div className="container mx-auto px-6 relative">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center max-w-3xl mx-auto"
+                        className="text-center max-w-4xl mx-auto space-y-6"
                     >
-                        <h1 className="text-4xl md:text-6xl font-bold mb-6 word-keep-all">
-                            소재 <span className="text-primary">살펴보기</span>
+                        <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-[11px] font-black uppercase tracking-[0.3em] text-teal-400 mb-2">
+                            Material Intelligence
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] shadow-text">
+                            소재 <span className="text-teal-400">살펴보기</span>
                         </h1>
-                        <p className="text-xl text-muted-foreground break-keep">
-                            각 소재의 특징·적용 분야를 확인하고, 출력방식(FDM, SLA, DLP)별로 사용 가능한 소재를 선택하세요.
+                        <p className="text-lg md:text-xl font-bold text-white/40 leading-relaxed break-keep max-w-2xl mx-auto">
+                            각 소재의 기계적 성질과 최적의 활용 분야를 확인하고, 출력 방식에 맞는 완벽한 솔루션을 선택하세요.
                         </p>
-                        <Link href="/materials/safety" className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors">
-                            <Shield className="w-4 h-4" />
-                            소재 안전 정보
-                        </Link>
+                        <div className="flex justify-center pt-2">
+                            <Link href="/materials/safety" className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white/40 uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all">
+                                <Shield className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform" />
+                                Material Safety Data
+                            </Link>
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
             {/* 출력방식별 사용 가능한 소재 요약 */}
-            <section className="py-12 pb-16">
-                <div className="container mx-auto px-4 max-w-5xl">
+            <section className="py-20 relative z-10">
+                <div className="container mx-auto px-6">
                     <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="text-2xl font-bold mb-8 flex items-center gap-3"
+                        className="text-2xl font-black text-white/90 mb-12 flex items-center gap-4 px-2"
                     >
-                        <Layers className="w-7 h-7 text-primary" />
-                        출력방식별 사용 가능한 소재
+                        <Layers className="w-8 h-8 text-teal-400" />
+                        출력방식별 핵심 소재
                     </motion.h2>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="p-6 rounded-2xl border bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-500/20"
-                        >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
-                                    <Printer className="w-5 h-5" />
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {[
+                            { title: 'FDM', desc: '고강도 실용 부품', color: 'teal', icon: <Printer className="w-5 h-5" />, items: ['PLA', 'ABS', 'PETG', 'TPU'] },
+                            { title: 'SLA', desc: '초정밀 매끄러운 표면', color: 'indigo', icon: <Droplets className="w-5 h-5" />, items: ['Standard', 'Tough', 'Clear', 'Flexible'] },
+                            { title: 'DLP', desc: '복잡한 디테일 구현', color: 'purple', icon: <Zap className="w-5 h-5" />, items: ['Standard', 'Tough', 'Clear', 'Flexible'] }
+                        ].map((m, idx) => (
+                            <motion.div
+                                key={m.title}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all group backdrop-blur-xl relative overflow-hidden"
+                            >
+                                <div className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${m.color === 'teal' ? 'from-teal-400' : m.color === 'indigo' ? 'from-indigo-400' : 'from-purple-400'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className={`w-12 h-12 rounded-2xl bg-${m.color}-400/10 border border-${m.color}-400/20 flex items-center justify-center text-${m.color}-400 group-hover:scale-110 transition-transform`}>
+                                        {m.icon}
+                                    </div>
+                                    <div>
+                                        <span className="text-xl font-black text-white">{m.title}</span>
+                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-0.5">{m.desc}</p>
+                                    </div>
                                 </div>
-                                <span className="font-bold">FDM</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3">필라멘트 적층 방식</p>
-                            <div className="flex flex-wrap gap-2">
-                                {['PLA', 'ABS', 'PETG', 'TPU'].map((m) => (
-                                    <span key={m} className="px-2.5 py-1 rounded-lg bg-background/80 text-sm font-medium">
-                                        {m}
-                                    </span>
-                                ))}
-                            </div>
-                        </motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="p-6 rounded-2xl border bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-blue-500/20"
-                        >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-500">
-                                    <Droplets className="w-5 h-5" />
+                                <div className="flex flex-wrap gap-2">
+                                    {m.items.map((item) => (
+                                        <span key={item} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 text-[11px] font-bold text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+                                            {item}
+                                        </span>
+                                    ))}
                                 </div>
-                                <span className="font-bold">SLA</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3">광조형 레진</p>
-                            <div className="flex flex-wrap gap-2">
-                                {['Standard', 'Tough', 'Clear', 'Flexible'].map((m) => (
-                                    <span key={m} className="px-2.5 py-1 rounded-lg bg-background/80 text-sm font-medium">
-                                        {m}
-                                    </span>
-                                ))}
-                            </div>
-                        </motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="p-6 rounded-2xl border bg-gradient-to-br from-purple-500/10 to-violet-500/5 border-purple-500/20"
-                        >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-500">
-                                    <Zap className="w-5 h-5" />
-                                </div>
-                                <span className="font-bold">DLP</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3">디지털 광조형 레진</p>
-                            <div className="flex flex-wrap gap-2">
-                                {['Standard', 'Tough', 'Clear', 'Flexible'].map((m) => (
-                                    <span key={m} className="px-2.5 py-1 rounded-lg bg-background/80 text-sm font-medium">
-                                        {m}
-                                    </span>
-                                ))}
-                            </div>
-                        </motion.div>
+                            </motion.div>
+                        ))}
                     </div>
                 </div>
             </section>
 
             {/* FDM 소재 상세 */}
-            <section className="py-12 pb-24">
-                <div className="container mx-auto px-4 max-w-5xl">
+            <section className="py-20 relative z-10">
+                <div className="container mx-auto px-6">
                     <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="text-2xl font-bold mb-8 flex items-center gap-3"
+                        className="text-2xl font-black text-white/90 mb-12 flex items-center gap-4 px-2"
                     >
-                        <Printer className="w-7 h-7 text-amber-500" />
-                        FDM 소재
+                        <div className="w-2 h-8 bg-teal-400 rounded-full" />
+                        FDM Materials
                     </motion.h2>
                     <div className="space-y-8">
                         {FDM_MATERIALS.map((m, i) => (
@@ -222,40 +203,43 @@ export default function MaterialsPage() {
                                 initial={{ opacity: 0, y: 24 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: i * 0.06 }}
-                                className={`p-8 rounded-3xl border bg-gradient-to-br ${m.color}`}
+                                transition={{ delay: i * 0.05 }}
+                                className="p-8 md:p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all backdrop-blur-3xl relative group overflow-hidden"
                             >
-                                <div className="flex flex-wrap items-center gap-3 mb-6">
-                                    <div className={`w-12 h-12 rounded-2xl bg-background/80 flex items-center justify-center ${m.accent}`}>
-                                        <Box className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold">{m.name}</h3>
-                                        <p className="text-sm text-muted-foreground">{m.nameKo}</p>
-                                    </div>
-                                    <span className="ml-auto px-3 py-1 rounded-full bg-amber-500/20 text-amber-500 text-xs font-bold">
-                                        FDM
-                                    </span>
+                                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                                    <Box className="w-32 h-32 text-white" />
                                 </div>
-                                <div className="grid md:grid-cols-2 gap-8">
+                                <div className="flex flex-wrap items-center gap-5 mb-10">
+                                    <div className="w-16 h-16 rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
+                                        <Box className="w-8 h-8 text-teal-400" />
+                                    </div>
                                     <div>
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">특징</h4>
-                                        <ul className="space-y-2 text-sm">
+                                        <h3 className="text-2xl font-black text-white tracking-tight">{m.name}</h3>
+                                        <p className="text-[13px] font-bold text-white/30 tracking-tight">{m.nameKo}</p>
+                                    </div>
+                                    <div className="ml-auto px-5 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[10px] font-black uppercase tracking-widest">
+                                        FDM Logic
+                                    </div>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-12 relative z-10">
+                                    <div className="space-y-4">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">Mechanical Propertis</h4>
+                                        <ul className="space-y-3">
                                             {m.features.map((f) => (
-                                                <li key={f} className="flex items-start gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />
-                                                    {f}
+                                                <li key={f} className="flex items-start gap-3 group/item">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400/40 mt-1.5 group-hover/item:scale-125 transition-transform" />
+                                                    <span className="text-[14px] font-bold text-white/50 group-hover/item:text-white/80 transition-colors leading-relaxed">{f}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
-                                    <div>
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">적용</h4>
-                                        <ul className="space-y-2 text-sm">
+                                    <div className="space-y-4">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">Practical Applications</h4>
+                                        <ul className="space-y-3">
                                             {m.applications.map((a) => (
-                                                <li key={a} className="flex items-start gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />
-                                                    {a}
+                                                <li key={a} className="flex items-start gap-3 group/item">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-white/20 mt-1.5 group-hover/item:bg-teal-400/60 transition-colors" />
+                                                    <span className="text-[14px] font-bold text-white/50 group-hover/item:text-white/80 transition-colors leading-relaxed">{a}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -268,16 +252,16 @@ export default function MaterialsPage() {
             </section>
 
             {/* 레진 소재 상세 (SLA·DLP) */}
-            <section className="py-12 pb-24">
-                <div className="container mx-auto px-4 max-w-5xl">
+            <section className="py-20 relative z-10">
+                <div className="container mx-auto px-6">
                     <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="text-2xl font-bold mb-8 flex items-center gap-3"
+                        className="text-2xl font-black text-white/90 mb-12 flex items-center gap-4 px-2"
                     >
-                        <Droplets className="w-7 h-7 text-blue-500" />
-                        레진 소재 (SLA · DLP)
+                        <div className="w-2 h-8 bg-indigo-500 rounded-full" />
+                        Resin Materials (SLA · DLP)
                     </motion.h2>
                     <div className="space-y-8">
                         {RESIN_MATERIALS.map((m, i) => (
@@ -286,41 +270,44 @@ export default function MaterialsPage() {
                                 initial={{ opacity: 0, y: 24 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: i * 0.06 }}
-                                className={`p-8 rounded-3xl border bg-gradient-to-br ${m.color}`}
+                                transition={{ delay: i * 0.05 }}
+                                className="p-8 md:p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all backdrop-blur-3xl relative group overflow-hidden"
                             >
-                                <div className="flex flex-wrap items-center gap-3 mb-6">
-                                    <div className={`w-12 h-12 rounded-2xl bg-background/80 flex items-center justify-center ${m.accent}`}>
-                                        <Box className="w-6 h-6" />
+                                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                                    <Droplets className="w-32 h-32 text-white" />
+                                </div>
+                                <div className="flex flex-wrap items-center gap-5 mb-10">
+                                    <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-center shadow-2xl">
+                                        <Droplets className="w-8 h-8 text-indigo-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold">{m.name}</h3>
-                                        <p className="text-sm text-muted-foreground">{m.nameKo}</p>
+                                        <h3 className="text-2xl font-black text-white tracking-tight">{m.name}</h3>
+                                        <p className="text-[13px] font-bold text-white/30 tracking-tight">{m.nameKo}</p>
                                     </div>
                                     <div className="ml-auto flex gap-2">
-                                        <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold">SLA</span>
-                                        <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold">DLP</span>
+                                        <span className="px-5 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest">SLA</span>
+                                        <span className="px-5 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-widest">DLP</span>
                                     </div>
                                 </div>
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <div>
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">특징</h4>
-                                        <ul className="space-y-2 text-sm">
+                                <div className="grid md:grid-cols-2 gap-12 relative z-10">
+                                    <div className="space-y-4">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">Mechanical Propertis</h4>
+                                        <ul className="space-y-3">
                                             {m.features.map((f) => (
-                                                <li key={f} className="flex items-start gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />
-                                                    {f}
+                                                <li key={f} className="flex items-start gap-3 group/item">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/40 mt-1.5 group-hover/item:scale-125 transition-transform" />
+                                                    <span className="text-[14px] font-bold text-white/50 group-hover/item:text-white/80 transition-colors leading-relaxed">{f}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
-                                    <div>
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">적용</h4>
-                                        <ul className="space-y-2 text-sm">
+                                    <div className="space-y-4">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">Practical Applications</h4>
+                                        <ul className="space-y-3">
                                             {m.applications.map((a) => (
-                                                <li key={a} className="flex items-start gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />
-                                                    {a}
+                                                <li key={a} className="flex items-start gap-3 group/item">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-white/20 mt-1.5 group-hover/item:bg-indigo-400/60 transition-colors" />
+                                                    <span className="text-[14px] font-bold text-white/50 group-hover/item:text-white/80 transition-colors leading-relaxed">{a}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -333,16 +320,30 @@ export default function MaterialsPage() {
             </section>
 
             {/* CTA */}
-            <section className="py-24 border-t border-border">
-                <div className="container mx-auto px-4 text-center">
-                    <p className="text-muted-foreground mb-6 break-keep">
-                        소재를 선택했다면, 파일을 업로드하고 견적을 받아보세요.
-                    </p>
-                    <Link href="/quote">
-                        <Button size="lg" className="h-14 px-10 text-lg rounded-full gap-2">
-                            견적 받기 <ArrowRight className="w-5 h-5" />
-                        </Button>
-                    </Link>
+            <section className="py-32 relative z-10">
+                <div className="container mx-auto px-6 text-center">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        className="max-w-4xl mx-auto p-12 md:p-20 rounded-[4rem] bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 backdrop-blur-3xl space-y-8 relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-teal-400/5 blur-3xl rounded-full opacity-30 pointer-events-none" />
+                        <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                            최적의 소재를 찾으셨나요?<br />
+                            <span className="text-teal-400">지능형 견적</span>을 시작하세요.
+                        </h2>
+                        <p className="text-lg font-bold text-white/40 max-w-xl mx-auto break-keep">
+                            복잡한 계산 없이 파일을 업로드하는 것만으로 즉시 정밀한 견적을 산출합니다.
+                        </p>
+                        <div className="pt-4">
+                            <Link href="/quote">
+                                <Button size="lg" className="h-16 px-12 text-lg rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 gap-3 shadow-[0_0_30px_rgba(45,212,191,0.3)] transition-all active:scale-95">
+                                    견적 시작하기 <ArrowRight className="w-6 h-6" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
