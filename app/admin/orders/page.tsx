@@ -476,7 +476,7 @@ function OrderListInner() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">주문 관리</h1>
-                <p className="text-white/50 text-sm mt-1">접수된 주문을 확인하고 상태를 변경할 수 있습니다.</p>
+                <p className="text-white/70 text-sm mt-1">접수된 주문을 확인하고 상태를 변경할 수 있습니다.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
@@ -484,26 +484,26 @@ function OrderListInner() {
                     <button
                         type="button"
                         onClick={() => setScopeFilter('all')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
                     >
                         전체
                     </button>
                     <button
                         type="button"
                         onClick={() => setScopeFilter('mine')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/20 text-primary' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/20 text-primary' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
                     >
                         내 주문
                     </button>
                 </div>
                 <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
                     <Input
                         type="search"
                         placeholder="주문번호, 고객명 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                        className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45"
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -530,16 +530,16 @@ function OrderListInner() {
                         <table className="w-full text-sm text-left">
                             <thead>
                                 <tr className="border-b border-white/10">
-                                    <th className="p-4 font-medium text-white/70">주문번호</th>
-                                    <th className="p-4 font-medium text-white/70">고객명</th>
-                                    <th className="p-4 font-medium text-white/70">연락</th>
-                                    <th className="p-4 font-medium text-white/70">주문 내역(파일다운)</th>
-                                    <th className="p-4 font-medium text-white/70">금액</th>
-                                    <th className="p-4 font-medium text-white/70">견적 발송</th>
-                                    <th className="p-4 font-medium text-white/70">상태</th>
-                                    <th className="p-4 font-medium text-white/70">날짜</th>
-                                    <th className="p-4 font-medium text-right text-white/70">상태 변경</th>
-                                    <th className="p-4 font-medium text-white/70 w-12">상세</th>
+                                    <th className="p-4 font-medium text-white/95">주문번호</th>
+                                    <th className="p-4 font-medium text-white/95">고객명</th>
+                                    <th className="p-4 font-medium text-white/95">연락</th>
+                                    <th className="p-4 font-medium text-white/95">주문 내역(파일다운)</th>
+                                    <th className="p-4 font-medium text-white/95">금액</th>
+                                    <th className="p-4 font-medium text-white/95">견적 발송</th>
+                                    <th className="p-4 font-medium text-white/95">상태</th>
+                                    <th className="p-4 font-medium text-white/95">날짜</th>
+                                    <th className="p-4 font-medium text-right text-white/95">상태 변경</th>
+                                    <th className="p-4 font-medium text-white/95 w-12">상세</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -547,15 +547,15 @@ function OrderListInner() {
                                     <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                         <td className="p-4 font-medium text-white">{order.order_number}</td>
                                         <td className="p-4 text-white/90">{order.recipient_name}</td>
-                                        <td className="p-4 text-white/70">
+                                        <td className="p-4 text-white/75">
                                             {order.user_id ? (order.user_email || '-') : (
                                                 <>
                                                     <span className="text-amber-400/90">비회원</span>
-                                                    {order.guest_email && <span className="block text-[11px] text-white/50 truncate max-w-[140px]">{order.guest_email}</span>}
+                                                    {order.guest_email && <span className="block text-[11px] text-white/60 truncate max-w-[140px]">{order.guest_email}</span>}
                                                 </>
                                             )}
                                         </td>
-                                        <td className="p-4 text-white/50">
+                                        <td className="p-4 text-white/70">
                                             <div className="flex items-center gap-2">
                                                 <span>{order.item_count || 1}개 품목</span>
                                                 {(() => {
@@ -620,7 +620,7 @@ function OrderListInner() {
                                             )}
                                         </td>
                                         <td className="p-4">{getStatusBadge(order.status)}</td>
-                                        <td className="p-4 text-white/50">{order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}</td>
+                                        <td className="p-4 text-white/70">{order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}</td>
                                         <td className="p-4 text-right">
                                             <Select
                                                 value={order.status}

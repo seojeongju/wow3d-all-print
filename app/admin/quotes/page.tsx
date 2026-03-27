@@ -217,7 +217,7 @@ export default function QuoteList() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">견적 관리</h1>
-                <p className="text-white/50 text-sm mt-1">접수된 견적 요청(주문) 목록을 확인하고 견적서를 발행합니다.</p>
+                <p className="text-white/70 text-sm mt-1">접수된 견적 요청(주문) 목록을 확인하고 견적서를 발행합니다.</p>
             </div>
 
             <div className="flex items-center gap-4">
@@ -228,7 +228,7 @@ export default function QuoteList() {
                         placeholder="주문번호, 고객명 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                        className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45"
                     />
                 </div>
                 <div className="ml-auto flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function QuoteList() {
                         <table className="w-full text-sm text-left">
                             <thead>
                                 <tr className="border-b border-white/10 bg-white/[0.02]">
-                                    <th className="p-4 font-medium text-white/60 w-10 text-center">
+                                    <th className="p-4 font-medium text-white/95 w-10 text-center">
                                         <input
                                             type="checkbox"
                                             checked={filtered.length > 0 && filtered.every((o) => selectedOrderIds.has(o.id))}
@@ -278,15 +278,15 @@ export default function QuoteList() {
                                             aria-label="전체 선택"
                                         />
                                     </th>
-                                    <th className="p-4 font-medium text-white/60 w-8"></th>
-                                    <th className="p-4 font-medium text-white/60">주문번호</th>
-                                    <th className="p-4 font-medium text-white/60">고객명</th>
-                                    <th className="p-4 font-medium text-white/60">품목수</th>
-                                    <th className="p-4 font-medium text-white/60">자동견적 금액</th>
-                                    <th className="p-4 font-medium text-white/60">수정견적 금액</th>
-                                    <th className="p-4 font-medium text-white/60">접수일</th>
-                                    <th className="p-4 font-medium text-white/60">현재 상태</th>
-                                    <th className="p-4 font-medium text-right text-white/60">관리</th>
+                                    <th className="p-4 font-medium text-white/95 w-8"></th>
+                                    <th className="p-4 font-medium text-white/95">주문번호</th>
+                                    <th className="p-4 font-medium text-white/95">고객명</th>
+                                    <th className="p-4 font-medium text-white/95">품목수</th>
+                                    <th className="p-4 font-medium text-white/95">자동견적 금액</th>
+                                    <th className="p-4 font-medium text-white/95">수정견적 금액</th>
+                                    <th className="p-4 font-medium text-white/95">접수일</th>
+                                    <th className="p-4 font-medium text-white/95">현재 상태</th>
+                                    <th className="p-4 font-medium text-right text-white/95">관리</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -335,12 +335,12 @@ export default function QuoteList() {
                                                         <Badge className="ml-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] py-0 px-1.5">수정견적</Badge>
                                                     )}
                                                 </td>
-                                                <td className="p-4 text-white/90">
+                                                <td className="p-4 text-white/95">
                                                     {order.recipient_name}
-                                                    <span className="block text-xs text-white/40">{order.user_email || order.guest_email}</span>
+                                                    <span className="block text-xs text-white/60">{order.user_email || order.guest_email}</span>
                                                 </td>
-                                                <td className="p-4 text-white/50">{order.item_count || 1}개</td>
-                                                <td className="p-4 text-white/60">
+                                                <td className="p-4 text-white/70">{order.item_count || 1}개</td>
+                                                <td className="p-4 text-white/75">
                                                     {(() => {
                                                         const totalRaw = Math.round(Number(order.total_amount || 0));
                                                         const itemsSumRaw = Math.round(Number(order.items_total ?? order.total_amount ?? 0));
@@ -373,7 +373,7 @@ export default function QuoteList() {
                                                         <span className="text-white/20 text-xs">-</span>
                                                     )}
                                                 </td>
-                                                <td className="p-4 text-white/50 text-xs">
+                                                <td className="p-4 text-white/70 text-xs">
                                                     {order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}
                                                     {order.quotation_sent_at && (
                                                         <Badge variant="outline" className="ml-1.5 bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] py-0 px-1">발송됨</Badge>

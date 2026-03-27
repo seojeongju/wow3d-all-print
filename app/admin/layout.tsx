@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                                         item.match(pathname)
                                             ? 'bg-primary/20 text-primary border border-primary/30'
-                                            : 'text-white/50 hover:bg-white/5 hover:text-white border border-transparent'
+                                            : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'
                                     )}
                                 >
                                     <item.icon className="w-4 h-4" />
@@ -97,7 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                                                 item.match(pathname)
                                                     ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
-                                                    : 'text-white/50 hover:bg-white/5 hover:text-white border border-transparent'
+                                                    : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'
                                             )}
                                         >
                                             <item.icon className="w-4 h-4" />
@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <div className="my-3 mx-3 h-px bg-white/10" />
                             <Link
                                 href="/"
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/5 hover:text-white border border-transparent transition-all"
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/75 hover:bg-white/5 hover:text-white border border-transparent transition-all"
                             >
                                 <Home className="w-4 h-4" />
                                 메인페이지

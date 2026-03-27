@@ -29,12 +29,12 @@ export default function AdminHeader() {
 
                 {/* 데스크톱: 기존 가로 메뉴 */}
                 <div className="hidden md:flex items-center gap-3">
-                    <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 border border-white/5 transition-colors">
+                    <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/75 hover:text-white hover:bg-white/5 border border-white/5 transition-colors">
                         <Home className="w-3.5 h-3.5" />
                         메인
                     </Link>
                     <Link href="/cart">
-                        <button className="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:border-white/20 transition-colors" title="장바구니">
+                        <button className="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-white/75 hover:text-white hover:border-white/20 transition-colors" title="장바구니">
                             <ShoppingCart className="w-4 h-4" />
                         </button>
                     </Link>
@@ -44,12 +44,12 @@ export default function AdminHeader() {
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-bold text-white leading-none">{user?.name || '관리자'}</span>
-                            <span className="text-[10px] text-white/40 uppercase tracking-wider">관리자</span>
+                            <span className="text-[10px] text-white/60 uppercase tracking-wider">관리자</span>
                         </div>
                     </div>
                     <button
                         onClick={logout}
-                        className="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-white/40 hover:text-red-400 hover:border-red-400/30 transition-colors"
+                        className="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-white/60 hover:text-red-400 hover:border-red-400/30 transition-colors"
                         title="로그아웃"
                     >
                         <LogOut className="w-4 h-4" />
