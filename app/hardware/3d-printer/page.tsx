@@ -188,8 +188,8 @@ const RESINS = [
 function SpecRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-start justify-between py-2.5 border-b border-white/5 last:border-0">
-            <span className="text-[10px] text-white/40 font-black uppercase tracking-widest shrink-0 w-32">{label}</span>
-            <span className="text-[11px] text-white font-bold text-right leading-relaxed">{value}</span>
+            <span className="text-xs text-white/40 font-black uppercase tracking-widest shrink-0 w-32">{label}</span>
+            <span className="text-sm text-white font-bold text-right leading-relaxed">{value}</span>
         </div>
     );
 }
@@ -219,7 +219,7 @@ export default function PrinterProductPage() {
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-teal-400/20 bg-teal-400/5 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-10 shadow-xl shadow-teal-400/5"
+                        className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-teal-400/20 bg-teal-400/5 text-teal-400 text-xs font-black uppercase tracking-[0.3em] mb-10 shadow-xl shadow-teal-400/5"
                     >
                         <Layers className="w-4 h-4" />
                         Professional Grade 3D Printer
@@ -263,7 +263,7 @@ export default function PrinterProductPage() {
                                 key={b.label}
                                 className="flex items-center gap-3 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl text-sm font-bold shadow-2xl"
                             >
-                                <span className="text-teal-400 text-[10px] font-black uppercase tracking-widest">{b.label}</span>
+                                <span className="text-teal-400 text-xs font-black uppercase tracking-widest">{b.label}</span>
                                 <span className="text-white/80">{b.value}</span>
                             </span>
                         ))}
@@ -311,7 +311,7 @@ export default function PrinterProductPage() {
                             <button
                                 key={p.id}
                                 onClick={() => setActiveProduct(p.id)}
-                                className={`px-8 py-3.5 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all ${activeProduct === p.id
+                                className={`px-8 py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${activeProduct === p.id
                                     ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]'
                                     : 'bg-white/5 text-white/40 border border-white/10 hover:text-white hover:bg-white/10'
                                     }`}
@@ -340,12 +340,12 @@ export default function PrinterProductPage() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-teal-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {/* 추천 배지 */}
                                 {product.highlight && (
-                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/30 whitespace-nowrap">
+                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/30 whitespace-nowrap">
                                         <Star className="w-3 h-3 fill-white" /> 베스트셀러
                                     </span>
                                 )}
 
-                                <div className={`text-[10px] font-black uppercase tracking-[0.2em] mb-3 ${product.seriesColor}`}>
+                                <div className={`text-xs font-black uppercase tracking-[0.2em] mb-3 ${product.seriesColor}`}>
                                     {product.series}
                                 </div>
                                 <h3 className="text-3xl font-black mb-2 text-white">{product.name}</h3>
@@ -376,7 +376,7 @@ export default function PrinterProductPage() {
                                         animate={{ opacity: 1, height: 'auto' }}
                                         className="mt-6 pt-6 border-t border-white/10"
                                     >
-                                        <p className="text-[13px] text-white/50 font-bold leading-relaxed break-keep">
+                                        <p className="text-sm text-white/50 font-bold leading-relaxed break-keep">
                                             {product.desc}
                                         </p>
                                     </motion.div>
@@ -435,7 +435,7 @@ export default function PrinterProductPage() {
                                 <div className={`w-14 h-14 rounded-2xl ${spec.bg} flex items-center justify-center mb-6 ${spec.color} relative z-10 group-hover:scale-110 transition-transform`}>
                                     <spec.icon className="w-8 h-8" strokeWidth={2} />
                                 </div>
-                                <div className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mb-2 relative z-10">
+                                <div className="text-xs text-white/20 font-black uppercase tracking-[0.2em] mb-2 relative z-10">
                                     {spec.title}
                                 </div>
                                 <div className="text-xl font-black text-white relative z-10">{spec.value}</div>
@@ -451,7 +451,7 @@ export default function PrinterProductPage() {
                         className="mt-12 grid md:grid-cols-2 gap-8"
                     >
                         <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-rose-400 mb-8 flex items-center gap-3">
+                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-rose-400 mb-8 flex items-center gap-3">
                                 <Thermometer className="w-5 h-5 shrink-0" /> 환경 및 규격
                             </h3>
                             <div className="space-y-4">
@@ -462,7 +462,7 @@ export default function PrinterProductPage() {
                             </div>
                         </div>
                         <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-400 mb-8 flex items-center gap-3">
+                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-amber-400 mb-8 flex items-center gap-3">
                                 <Zap className="w-5 h-5 shrink-0" /> 전원 및 인터페이스
                             </h3>
                             <div className="space-y-4">
@@ -503,7 +503,7 @@ export default function PrinterProductPage() {
                                 <div className={`w-16 h-16 rounded-[1.5rem] ${feat.bg} flex items-center justify-center mb-8 ${feat.color} group-hover:scale-110 transition-transform shadow-2xl`}>
                                     <feat.icon className="w-8 h-8" strokeWidth={2} />
                                 </div>
-                                <div className={`text-[10px] font-black uppercase tracking-[0.3em] mb-3 ${feat.color}`}>
+                                <div className={`text-xs font-black uppercase tracking-[0.3em] mb-3 ${feat.color}`}>
                                     {feat.subtitle}
                                 </div>
                                 <h3 className="text-xl font-black text-white mb-4 leading-tight">{feat.title}</h3>
@@ -539,12 +539,12 @@ export default function PrinterProductPage() {
                                 transition={{ delay: i * 0.07 }}
                                 className="flex items-start gap-6 p-8 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-xl hover:bg-white/[0.06] transition-all active:scale-95 group"
                             >
-                                <div className={`px-4 py-2 rounded-xl text-[10px] font-black border group-hover:scale-110 transition-transform ${resin.color}`}>
+                                <div className={`px-4 py-2 rounded-xl text-xs font-black border group-hover:scale-110 transition-transform ${resin.color}`}>
                                     {resin.category}
                                 </div>
                                 <div className="space-y-1">
                                     <div className="font-black text-lg text-white">{resin.name}</div>
-                                    <div className="text-[13px] text-white/30 font-bold leading-relaxed break-keep">{resin.desc}</div>
+                                    <div className="text-sm text-white/30 font-bold leading-relaxed break-keep">{resin.desc}</div>
                                 </div>
                             </motion.div>
                         ))}
@@ -584,7 +584,7 @@ export default function PrinterProductPage() {
                                     <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={3} />
                                     <h3 className="font-black text-white text-lg">{cert.title}</h3>
                                 </div>
-                                <p className="text-[13px] text-white/30 font-bold leading-relaxed break-keep">{cert.desc}</p>
+                                <p className="text-sm text-white/30 font-bold leading-relaxed break-keep">{cert.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -599,7 +599,7 @@ export default function PrinterProductPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                     >
-                        <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-teal-400/20 bg-teal-400/5 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-12 shadow-2xl">
+                        <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-teal-400/20 bg-teal-400/5 text-teal-400 text-xs font-black uppercase tracking-[0.3em] mb-12 shadow-2xl">
                             <FlaskConical className="w-5 h-5" />
                             데모 출력 &amp; 도입 상담
                         </div>
