@@ -354,14 +354,13 @@ export default function PrinterProductPage() {
                                 </p>
 
                                 {/* 제품 이미지 추가 - 화이트 디스플레이 케이스 방식 */}
-                                <div className="relative w-full aspect-[4/3] mb-8 p-4 rounded-3xl bg-black/40 border border-white/5 overflow-hidden group/img shadow-inner">
+                                <div className="relative w-full aspect-[4/3] mb-8 rounded-2xl bg-white overflow-hidden group/img">
                                     <Image
                                         src={product.image || ''}
                                         alt={product.name}
                                         fill
-                                        className="object-contain p-4 group-hover/img:scale-110 transition-transform duration-700"
+                                        className="object-contain p-6 group-hover/img:scale-110 transition-transform duration-700"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-teal-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
 
                                 {/* 스펙 */}
