@@ -221,8 +221,8 @@ function Model({
             <mesh geometry={geometry}>
                 <meshStandardMaterial
                     color={color}
-                    roughness={0.3}
-                    metalness={0.7}
+                    roughness={0.55}
+                    metalness={0.05}
                     side={THREE.DoubleSide}
                 />
             </mesh>
@@ -312,7 +312,7 @@ export default function Scene({ compact = false }: SceneProps) {
     const canvasRef = useRef<HTMLDivElement>(null)
     const { fileUrl } = useFileStore()
     const [mounted, setMounted] = useState(false)
-    const [modelColor, setModelColor] = useState('#6366f1')
+    const [modelColor, setModelColor] = useState('#f8fafc')
     const [showMeasurements, setShowMeasurements] = useState(false)
     const [viewPreset, setViewPreset] = useState<string | null>(null)
     const [showGuide, setShowGuide] = useState(true)
@@ -348,13 +348,13 @@ export default function Scene({ compact = false }: SceneProps) {
 
     // 색상 프리셋
     const colorPresets = [
+        { name: 'White', color: '#f8fafc' },
         { name: 'Indigo', color: '#6366f1' },
         { name: 'Red', color: '#ef4444' },
         { name: 'Green', color: '#10b981' },
         { name: 'Blue', color: '#3b82f6' },
         { name: 'Purple', color: '#a855f7' },
         { name: 'Orange', color: '#f97316' },
-        { name: 'Gray', color: '#6b7280' },
         { name: 'Gold', color: '#f59e0b' },
     ]
 
