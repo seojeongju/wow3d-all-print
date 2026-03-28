@@ -9,7 +9,7 @@ import Link from 'next/link';
 // ─────────────────────────────────────────────────────
 // 타입 정의
 // ─────────────────────────────────────────────────────
-interface GalleryItem {
+export interface GalleryItem {
     id: number;
     title: string;
     description?: string;
@@ -37,7 +37,7 @@ const PLACEHOLDER_DATA_URI = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.
 // ─────────────────────────────────────────────────────
 // 이미지 URL 변환 (R2 key → API 엔드포인트)
 // ─────────────────────────────────────────────────────
-function resolveImageUrl(url: string): string {
+export function resolveImageUrl(url: string): string {
     if (!url || typeof url !== 'string' || !url.trim()) return PLACEHOLDER_DATA_URI;
     // placeholder 또는 존재하지 않는 정적 경로는 요청하지 않음
     if (url === '/placeholder-3d.jpg' || url.endsWith('placeholder-3d.jpg')) return PLACEHOLDER_DATA_URI;
@@ -92,7 +92,7 @@ function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) 
 // ─────────────────────────────────────────────────────
 // 개별 카드 컴포넌트
 // ─────────────────────────────────────────────────────
-function GalleryCard({
+export function GalleryCard({
     item,
     onClick,
     className
@@ -171,7 +171,7 @@ function GalleryCard({
 // ─────────────────────────────────────────────────────
 // 제품 상세 보기 모달 (Detail View)
 // ─────────────────────────────────────────────────────
-function DetailViewModal({
+export function DetailViewModal({
     item,
     onClose,
     onPrev,
@@ -327,120 +327,7 @@ function DetailViewModal({
     );
 }
 
-// ─────────────────────────────────────────────────────
-// 전체 갤러리 모달창 (더보기 클릭 시 노출)
-// ─────────────────────────────────────────────────────
-function FullGalleryModal({ onClose, onImageClick }: { onClose: () => void, onImageClick: (item: GalleryItem) => void }) {
-    const [items, setItems] = useState<GalleryItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [page, setPage] = useState(1);
-    const [hasNext, setHasNext] = useState(false);
-
-    useEffect(() => {
-        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, [onClose]);
-
-    // 모달창이 열렸을 때 부모 스크롤 고정
-    useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, []);
-
-    const fetchGallery = async (p: number) => {
-        try {
-            const res = await fetch(`/api/gallery?page=${p}&limit=12`);
-            if (res.ok) {
-                const json = await res.json();
-                if (json.success) {
-                    setItems(prev => p === 1 ? json.data.items : [...prev, ...json.data.items]);
-                    setHasNext(json.data.pagination.hasNext);
-                }
-            }
-        } finally {
-            setLoading(false);
-            setLoadingMore(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchGallery(1);
-    }, []);
-
-    const handleLoadMore = () => {
-        if (loadingMore || !hasNext) return;
-        setLoadingMore(true);
-        const next = page + 1;
-        setPage(next);
-        fetchGallery(next);
-    };
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[150] bg-slate-950 flex flex-col"
-        >
-            <div className="flex items-center justify-between p-6 border-b border-white/10 bg-slate-950/80 backdrop-blur-md sticky top-0 z-[160] shadow-xl">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                    <Grid3X3 className="w-7 h-7 text-primary" />
-                    전체 출력물 갤러리
-                </h2>
-                <button
-                    onClick={onClose}
-                    className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                    <X className="w-6 h-6" />
-                </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center h-40 gap-4">
-                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                        <p className="text-white/50 text-sm">출력물을 불러오는 중입니다...</p>
-                    </div>
-                ) : items.length === 0 ? (
-                    <div className="text-center text-white/50 py-20 bg-white/5 rounded-3xl max-w-2xl mx-auto border border-white/10">
-                        <Box className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                        <p>아직 등록된 출력물이 없습니다.</p>
-                    </div>
-                ) : (
-                    <div className="max-w-[1600px] mx-auto">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {items.map((item) => (
-                                <GalleryCard
-                                    key={item.id}
-                                    item={item}
-                                    onClick={onImageClick}
-                                    className="group relative w-full cursor-pointer"
-                                />
-                            ))}
-                        </div>
-
-                        {hasNext && (
-                            <div className="flex justify-center mt-12 mb-8">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    onClick={handleLoadMore}
-                                    disabled={loadingMore}
-                                    className="bg-white/5 border-white/20 text-white hover:bg-white/10 w-full max-w-xs rounded-full h-12"
-                                >
-                                    {loadingMore ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" /> : '출력 이미지 더 불러오기'}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        </motion.div>
-    );
-}
+// 전체 갤러리 모달은 독립된 /gallery 라우트로 이전됨
 
 // ─────────────────────────────────────────────────────
 // 스켈레톤 카드
@@ -470,7 +357,6 @@ export default function GallerySection() {
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState<number | null>(null);
-    const [isFullGalleryOpen, setIsFullGalleryOpen] = useState(false);
     
     // 현재 선택된 아이템을 ID로 추적 (더욱 안전함)
     const selectedItem = useMemo(() => 
@@ -528,15 +414,7 @@ export default function GallerySection() {
                 )}
             </AnimatePresence>
 
-            {/* 전체 갤러리 모달 */}
-            <AnimatePresence>
-                {isFullGalleryOpen && (
-                    <FullGalleryModal
-                        onClose={() => setIsFullGalleryOpen(false)}
-                        onImageClick={(item) => setSelectedId(item.id)}
-                    />
-                )}
-            </AnimatePresence>
+            {/* 전체화면 갤러리 모달 제거됨 (Link로 우회) */}
 
             <section className="py-20 relative overflow-hidden">
                 {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
@@ -580,14 +458,15 @@ export default function GallerySection() {
                             viewport={{ once: true }}
                             className="hidden sm:block"
                         >
-                            <Button
-                                variant="outline"
-                                className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white transition-all h-10 px-5"
-                                onClick={() => setIsFullGalleryOpen(true)}
-                            >
-                                <Grid3X3 className="w-4 h-4 text-primary" />
-                                <span className="font-semibold">전체 갤러리 보기</span>
-                            </Button>
+                            <Link href="/gallery">
+                                <Button
+                                    variant="outline"
+                                    className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white transition-all h-10 px-5"
+                                >
+                                    <Grid3X3 className="w-4 h-4 text-primary" />
+                                    <span className="font-semibold">전체 갤러리 보기</span>
+                                </Button>
+                            </Link>
                         </motion.div>
                     </div>
 
@@ -598,14 +477,15 @@ export default function GallerySection() {
                         viewport={{ once: true }}
                         className="mt-6 sm:hidden"
                     >
-                        <Button
-                            variant="outline"
-                            className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white w-full h-12"
-                            onClick={() => setIsFullGalleryOpen(true)}
-                        >
-                            <Grid3X3 className="w-4 h-4 text-primary" />
-                            <span className="font-semibold">전체 출력 이미지 보기</span>
-                        </Button>
+                        <Link href="/gallery">
+                            <Button
+                                variant="outline"
+                                className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white w-full h-12"
+                            >
+                                <Grid3X3 className="w-4 h-4 text-primary" />
+                                <span className="font-semibold">전체 출력 이미지 보기</span>
+                            </Button>
+                        </Link>
                     </motion.div>
                 </div>
 
