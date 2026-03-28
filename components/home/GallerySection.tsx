@@ -53,9 +53,14 @@ export function resolveImageUrl(url: string): string {
 // 이미지 + 로드 실패 시 1회 재시도 (간헐적 미표시 완화)
 // ─────────────────────────────────────────────────────
 function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
-    const resolved = resolveImageUrl(imageUrl);
-    const [src, setSrc] = useState(resolved);
+    const [src, setSrc] = useState(resolveImageUrl(imageUrl));
     const [retried, setRetried] = useState(false);
+
+    // prop 변화 시 상태 동기화 추가 (버그 수정 핵심)
+    useEffect(() => {
+        setSrc(resolveImageUrl(imageUrl));
+        setRetried(false);
+    }, [imageUrl]);
 
     const handleError = useCallback(() => {
         if (retried) {
