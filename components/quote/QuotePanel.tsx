@@ -565,7 +565,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <div className="space-y-8 pt-2">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">Infill Density</label>
+                                    <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">인필(채움) 밀도 (Infill)</label>
                                     <span className="font-mono text-[15px] text-teal-400 font-black">{infill}%</span>
                                 </div>
                                 <div className="px-1">
@@ -667,7 +667,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                                 <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
                                 {printMethod === 'fdm' ? (
                                     <>
-                                        <div className="text-slate-400">Infill</div>
+                                        <div className="text-slate-400">인필(채움)</div>
                                         <div className="font-medium text-slate-100">{infill}%</div>
                                         <div className="text-slate-400">지지 구조</div>
                                         <div className="font-medium text-slate-100">{supportEnabled ? '사용' : '미사용'}</div>

@@ -89,7 +89,7 @@ export default function ExperiencePage() {
                                             </div>
                                             <div className="text-center space-y-2">
                                                 <h2 className="text-xl font-black text-white tracking-tight">샘플 모델 <span className="text-teal-400">로드 중</span></h2>
-                                                <p className="text-sm font-bold text-white/30 tracking-widest uppercase">Preparing your experience...</p>
+                                                <p className="text-sm font-bold text-white/30 tracking-widest uppercase">체험을 준비 중입니다...</p>
                                             </div>
                                         </motion.div>
                                     ) : file && !analysis ? (
@@ -106,7 +106,7 @@ export default function ExperiencePage() {
                                             </div>
                                             <div className="text-center space-y-2">
                                                 <h2 className="text-xl font-black text-white tracking-tight">모델 <span className="text-indigo-400">정밀 분석 중</span></h2>
-                                                <p className="text-sm font-bold text-white/30 tracking-widest uppercase">Calculating geometry data...</p>
+                                                <p className="text-sm font-bold text-white/30 tracking-widest uppercase">기하학 데이터 계산 중...</p>
                                             </div>
                                             <div className="w-full p-5 rounded-3xl bg-white/5 border border-white/10 flex items-center gap-4 shadow-2xl backdrop-blur-md">
                                                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
@@ -123,7 +123,7 @@ export default function ExperiencePage() {
                                                 onClick={goBackToSelect}
                                                 className="text-[11px] font-black text-white/30 hover:text-white/60 tracking-[0.2em] uppercase transition-colors"
                                             >
-                                                [ Cancel Analysis ]
+                                                [ 분석 취소 ]
                                             </button>
                                         </motion.div>
                                     ) : loadError ? (
@@ -139,7 +139,7 @@ export default function ExperiencePage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <p className="text-[15px] text-white font-black tracking-tight">{loadError}</p>
-                                                <p className="text-[11px] font-bold text-white/30 leading-relaxed uppercase tracking-widest px-4">An error occurred while loading the sample. Please try again.</p>
+                                                <p className="text-[11px] font-bold text-white/30 leading-relaxed uppercase tracking-widest px-4">샘플을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.</p>
                                             </div>
                                             <div className="flex flex-col w-full gap-3 px-4">
                                                 <Button onClick={() => loadSample(SAMPLES[0].path)} variant="outline" className="h-12 rounded-2xl border-white/10 text-white font-black hover:bg-white/5">
@@ -161,14 +161,14 @@ export default function ExperiencePage() {
                                             <div className="space-y-4">
                                                 <div className="flex items-center gap-2.5 px-1">
                                                     <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-                                                    <span className="text-[11px] font-black uppercase tracking-[0.3em] text-teal-400/80">Premium Experience</span>
+                                                    <span className="text-[11px] font-black uppercase tracking-[0.3em] text-teal-400/80">프리미엄 체험</span>
                                                 </div>
                                                 <h1 className="text-4xl font-black text-white tracking-tight leading-[1.1]">체험할 모델<br /><span className="text-teal-400">선택하기</span></h1>
                                                 <p className="text-[14px] font-bold text-white/40 leading-relaxed break-keep">준비된 샘플 모델을 선택하거나, 본인의 3D 파일을 업로드하여 Wow3D의 지능형 견적을 즉시 체험해보세요.</p>
                                             </div>
 
                                             <div className="space-y-5">
-                                                <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.25em] px-1">Selected Samples</span>
+                                                <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.25em] px-1">엄선된 샘플 모델</span>
                                                 <div className="grid gap-3">
                                                     {SAMPLES.map((s) => (
                                                         <button
@@ -194,7 +194,7 @@ export default function ExperiencePage() {
 
                                             <div className="flex items-center gap-4 py-2">
                                                 <div className="flex-1 h-px bg-white/5" />
-                                                <span className="text-[10px] text-white/20 font-black uppercase tracking-widest">or Upload Custom</span>
+                                                <span className="text-[10px] text-white/20 font-black uppercase tracking-widest">또는 직접 파일 업로드</span>
                                                 <div className="flex-1 h-px bg-white/5" />
                                             </div>
 
@@ -222,11 +222,11 @@ export default function ExperiencePage() {
                                                     onClick={goBackToSelect}
                                                     className="text-[11px] font-black text-white/30 hover:text-white/60 tracking-widest uppercase transition-colors"
                                                 >
-                                                    [ Change Model ]
+                                                    [ 모델 변경 ]
                                                 </button>
                                                 <span className="text-white/10">|</span>
                                                 <Link href="/quote" onClick={goBackToSelect} className="text-[11px] font-black text-teal-400/80 hover:text-teal-400 tracking-widest uppercase">
-                                                    Full Quote
+                                                    본격 견적
                                                 </Link>
                                             </div>
                                         </div>
@@ -262,7 +262,7 @@ export default function ExperiencePage() {
                             <div className="flex items-center gap-3 text-[11px] font-black text-teal-400 uppercase tracking-[0.3em]">
                                 <div className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
                                 <div className="w-2 h-2 rounded-full bg-teal-400 absolute opacity-50" />
-                                Sample Experience Active
+                                샘플 체험 모드 활성
                             </div>
                         </div>
                     </div>
@@ -275,12 +275,12 @@ export default function ExperiencePage() {
                                 <Scene compact />
                             </div>
 
-                            <div className="absolute top-8 left-8 flex flex-wrap items-center gap-3 z-20">
+                             <div className="absolute top-8 left-8 flex flex-wrap items-center gap-3 z-20">
                                 <div className="px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 backdrop-blur-md text-[11px] font-black uppercase tracking-widest text-teal-400 shadow-[0_0_20px_rgba(45,212,191,0.15)]">
-                                    Sample Experience
+                                    프리미엄 샘플 체험
                                 </div>
                                 <div className="px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-[11px] font-black text-white/40 uppercase tracking-widest">
-                                    3D Analysis Engine
+                                    AI 분석 엔진 가동 중
                                 </div>
                             </div>
 
@@ -296,13 +296,13 @@ export default function ExperiencePage() {
 
                         <div className="h-16 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm flex items-center px-8 gap-8">
                             <div className="flex items-center gap-3 text-[11px] font-black text-white/30 uppercase tracking-[0.15em]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]" /> 100+ Materials
+                                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]" /> 100종 이상의 소재
                             </div>
                             <div className="flex items-center gap-3 text-[11px] font-black text-white/30 uppercase tracking-[0.15em]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" /> 24h Production
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" /> 24시간 내 제작
                             </div>
                             <div className="flex items-center gap-3 text-[11px] font-black text-white/30 uppercase tracking-[0.15em]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" /> ±0.1mm Precision
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" /> ±0.1mm 정밀도 보장
                             </div>
                             <div className="ml-auto text-[11px] font-black text-white/10 uppercase tracking-widest">
                                 Powered by Wow3D Logic

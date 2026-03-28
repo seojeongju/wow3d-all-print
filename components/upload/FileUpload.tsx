@@ -117,7 +117,7 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
                 STL, OBJ, 3MF, STEP 파일을 <br />드래그하거나 <span className="text-teal-400">클릭하여</span> 업로드하세요
             </p>
             <div className={cn("text-[10px] px-4 py-1.5 rounded-full font-black tracking-widest uppercase transition-all duration-500", isDark ? "bg-white/5 text-white/30 border border-white/5 group-hover:border-teal-400/20 group-hover:text-teal-400/60" : "bg-muted text-muted-foreground/60")}>
-                MAX CAPACITY: 100MB
+                최대 업로드 용량: 100MB
             </div>
         </div>
     )

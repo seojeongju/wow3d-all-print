@@ -513,30 +513,36 @@ export default function Scene({ compact = false }: SceneProps) {
                 {/* 상태 표시 (compact에서는 숨김, 하단 스트립과 겹침 방지) */}
                 {!compact && (
                     <div className="absolute bottom-4 left-4 z-20">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-white/50">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-xs text-slate-400 font-medium">3D Viewer Active</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">3D 뷰어 활성 상태</span>
                         </div>
                     </div>
                 )}
 
-                {/* 뷰 프리셋: 홈, 전, 후, 좌, 우 */}
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
-                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('home')} title="홈">
-                        <Home className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('front')} title="전(앞)">
-                        <ArrowUp className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('back')} title="후(뒤)">
-                        <ArrowDown className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('left')} title="좌">
-                        <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary" className="h-9 w-9 shadow-lg backdrop-blur-sm bg-background/90" onClick={() => setViewPreset('right')} title="우">
-                        <ArrowRight className="w-4 h-4" />
-                    </Button>
+                {/* 뷰 프리셋: 홈, 전, 후, 좌, 우 - 우측 레이아웃 최적화 */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 items-end">
+                    {[
+                        { id: 'home', label: '홈', icon: Home },
+                        { id: 'front', label: '전면', icon: ArrowUp },
+                        { id: 'back', label: '후면', icon: ArrowDown },
+                        { id: 'left', label: '측면L', icon: ArrowLeft },
+                        { id: 'right', label: '측면R', icon: ArrowRight },
+                    ].map((btn) => (
+                        <div key={btn.id} className="flex items-center gap-3 group">
+                            <span className="text-[10px] font-black text-white/30 group-hover:text-teal-400 transition-colors uppercase tracking-widest opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                                {btn.label}
+                            </span>
+                            <Button 
+                                size="icon" 
+                                variant="secondary" 
+                                className="h-10 w-10 shadow-2xl backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/20 hover:border-teal-400/50 rounded-2xl transition-all group-active:scale-95" 
+                                onClick={() => setViewPreset(btn.id)}
+                            >
+                                <btn.icon className="w-5 h-5 text-white/60 group-hover:text-white" />
+                            </Button>
+                        </div>
+                    ))}
                 </div>
             </ViewPresetContext.Provider>
         </div>
