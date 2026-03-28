@@ -78,17 +78,18 @@ export default function GalleryPage() {
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
             <div className="container mx-auto px-4 relative z-10">
+                {/* 홈으로 가기 상단 영역 */}
+                <div className="mb-8">
+                    <Link href="/">
+                        <button className="group flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-primary/20 hover:border-primary/30 hover:text-white transition-all shadow-lg hover:shadow-primary/10">
+                            <Home className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                            <span className="text-sm font-bold tracking-tight">홈 화면으로 돌아가기</span>
+                        </button>
+                    </Link>
+                </div>
+
                 {/* 헤더 타이틀 */}
-                <div className="text-center mb-16 relative">
-                    {/* 홈으로 가기 버튼 */}
-                    <div className="absolute left-0 top-0">
-                        <Link href="/">
-                            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all text-sm font-medium">
-                                <Home className="w-4 h-4" />
-                                <span>홈으로</span>
-                            </button>
-                        </Link>
-                    </div>
+                <div className="text-center mb-16">
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
