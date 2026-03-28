@@ -9,6 +9,7 @@ export async function GET(
     try {
         const { path } = await params;
         const r2Key = 'gallery/' + path.join('/');
+        console.log('R2 Key Requested:', r2Key);
 
         const { env } = getCloudflareContext();
         if (!env?.BUCKET) {
