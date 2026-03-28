@@ -10,12 +10,11 @@ const ITEMS_PER_PAGE = 15;
 export default function GalleryPage() {
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedId, setSelectedId] = useState<number | null>(null);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // 현재 선택된 아이템을 매 렌더링 시마다 찾음 (상태 동기화 오류 방지)
-    const selectedItem = selectedId ? items.find(i => i.id === selectedId) : null;
+    // 현재 선택된 아이템 (객체 참조 방식)
+    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
 
     const fetchGallery = async (p: number) => {
         setLoading(true);
@@ -127,8 +126,8 @@ export default function GalleryPage() {
                                 >
                                     <GalleryCard
                                         item={item}
-                                        onClick={() => {
-                                            setSelectedId(item.id);
+                                        onClick={(clicked) => {
+                                            setSelectedItem(clicked);
                                         }}
                                         className="group relative w-full cursor-pointer"
                                     />
@@ -166,15 +165,16 @@ export default function GalleryPage() {
             <AnimatePresence>
                 {selectedItem && (
                     <DetailViewModal 
+                        key={`full-modal-${selectedItem.id}`}
                         item={selectedItem} 
-                        onClose={() => setSelectedId(null)}
+                        onClose={() => setSelectedItem(null)}
                         onPrev={() => {
-                            const idx = items.findIndex(i => i.id === selectedId);
-                            if (idx > 0) setSelectedId(items[idx - 1].id);
+                            const idx = items.findIndex(i => i.id === selectedItem.id);
+                            if (idx > 0) setSelectedItem(items[idx - 1]);
                         }}
                         onNext={() => {
-                            const idx = items.findIndex(i => i.id === selectedId);
-                            if (idx >= 0 && idx < items.length - 1) setSelectedId(items[idx + 1].id);
+                            const idx = items.findIndex(i => i.id === selectedItem.id);
+                            if (idx >= 0 && idx < items.length - 1) setSelectedItem(items[idx + 1]);
                         }}
                     />
                 )}
