@@ -16,29 +16,63 @@ export async function GET(request: NextRequest) {
         const url = new URL(request.url);
         const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
         const limit = Math.min(20, Math.max(4, parseInt(url.searchParams.get('limit') || '8')));
-        const storeId = parseInt(url.searchParams.get('store_id') || '1');
         const offset = (page - 1) * limit;
 
-        // 테이블이 없을 경우를 대비하여 안전 처리
         let items: any[] = [];
         let total = 0;
+
         try {
-            const [rows, countRow] = await Promise.all([
-                env.DB.prepare(
-                    `SELECT id, title, description, image_url, material, print_method, tags, created_at
-                     FROM gallery_items
-                     WHERE store_id = ? AND is_visible = 1
-                     ORDER BY sort_order DESC, created_at DESC
-                     LIMIT ? OFFSET ?`
-                ).bind(storeId, limit, offset).all(),
-                env.DB.prepare(
-                    `SELECT COUNT(*) as cnt FROM gallery_items WHERE store_id = ? AND is_visible = 1`
-                ).bind(storeId).first<{ cnt: number }>(),
-            ]);
-            items = (rows.results as any[]) ?? [];
-            total = countRow?.cnt ?? 0;
-        } catch {
-            // 테이블 미생성 상태 → 빈 배열 반환
+            // 원본 서버에서 200건 가져오기 
+            const sourceUrl = 'https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=200';
+            const res = await fetch(sourceUrl);
+            const rawData = await res.json();
+            const posts = rawData.data || [];
+
+            // 프론트엔드 GalleryItem 규격에 맞춰 파싱 및 맵핑
+            const parsedItems = posts.map((post: any) => {
+                let img = (post.images && post.images.length) ? post.images[0] : (post.thumbnail_url || '');
+                if (!img && post.content) {
+                    const m = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+                    if (m) img = m[1];
+                }
+                
+                // 원본 서버 절대 경로로 교정
+                if (img && img.startsWith('/')) {
+                    img = 'https://3dcookiehd.pages.dev' + img;
+                }
+
+                // 출력 방식(FDM, SLA 등) 자동 판단
+                let method = null;
+                const searchStr = ((post.title || '') + ' ' + (post.content || '')).toUpperCase();
+                if (searchStr.includes('FDM')) method = 'FDM';
+                else if (searchStr.includes('SLA')) method = 'SLA';
+                else if (searchStr.includes('DLP')) method = 'DLP';
+                else if (searchStr.includes('MSLA')) method = 'DLP';
+
+                // 순수 텍스트 설명 추출
+                let desc = '';
+                if (post.content) {
+                    desc = post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 150);
+                }
+
+                return {
+                    id: post.id,
+                    title: post.title || '무제',
+                    description: desc,
+                    image_url: img || '', 
+                    material: null,
+                    print_method: method,
+                    tags: '[]',
+                    created_at: post.created_at
+                };
+            }).filter((item: any) => item.image_url); // 이미지가 존재하는 글만 유효함
+
+            // 메모리 페이징 처리
+            total = parsedItems.length;
+            items = parsedItems.slice(offset, offset + limit);
+
+        } catch (err) {
+            console.error('Remote fetch error:', err);
         }
 
         return NextResponse.json({
