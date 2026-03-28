@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -362,9 +363,9 @@ const CARD_SLOT_PX = 340; // 카드 너비 + 간격 (한 장 기준)
 const MARQUEE_CYCLE_SEC = 45; // 한 사이클(전체 한 바퀴) 초
 
 export default function GallerySection() {
+    const router = useRouter();
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
 
     const itemCount = items.length;
     // 끊김 없이 한 장씩 흐르도록 아이템 2벌 연결
@@ -394,29 +395,6 @@ export default function GallerySection() {
 
     return (
         <>
-            {/* 제품 상세 보기 모달 */}
-            <AnimatePresence>
-                {selectedItem && (
-                    <DetailViewModal 
-                        key={`modal-${selectedItem.id}`}
-                        item={selectedItem} 
-                        onClose={() => setSelectedItem(null)}
-                        onPrev={() => {
-                            const idx = items.findIndex(i => i.id === selectedItem.id);
-                            if (idx > 0) setSelectedItem(items[idx - 1]);
-                            else if (items.length > 0) setSelectedItem(items[items.length - 1]);
-                        }}
-                        onNext={() => {
-                            const idx = items.findIndex(i => i.id === selectedItem.id);
-                            if (idx >= 0 && idx < items.length - 1) setSelectedItem(items[idx + 1]);
-                            else if (items.length > 0) setSelectedItem(items[0]);
-                        }}
-                        currentIndex={items.findIndex(i => i.id === selectedItem.id)}
-                        totalCount={items.length}
-                    />
-                )}
-            </AnimatePresence>
-
             {/* 전체화면 갤러리 모달 제거됨 (Link로 우회) */}
 
             <section className="py-20 relative overflow-hidden">
@@ -526,8 +504,9 @@ export default function GallerySection() {
                                         <GalleryCard
                                             key={`marquee-${i}-${item.id}`}
                                             item={item}
-                                            onClick={(clickedItem) => {
-                                                setSelectedItem(clickedItem);
+                                            onClick={() => {
+                                                // 모달 대신 전체 갤러리 페이지로 이동
+                                                router.push('/gallery');
                                             }}
                                             className="w-72 md:w-80 flex-shrink-0"
                                         />
