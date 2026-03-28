@@ -108,7 +108,9 @@ export function GalleryCard({
     return (
         <div
             className={className || "group relative flex-shrink-0 w-72 md:w-80 cursor-pointer"}
-            onClick={() => onClick && onClick(item)}
+            onClick={() => {
+                if (onClick) onClick(item);
+            }}
         >
             {/* 카드 글로우 */}
             <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/30 via-transparent to-violet-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
@@ -358,10 +360,8 @@ export default function GallerySection() {
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState<number | null>(null);
     
-    // 현재 선택된 아이템을 ID로 추적 (더욱 안전함)
-    const selectedItem = useMemo(() => 
-        selectedId ? items.find(i => i.id === selectedId) : null
-    , [items, selectedId]);
+    // 현재 선택된 아이템을 매 렌더링 시마다 찾음 (캐시 미일치로 인한 오작동 원천 차단)
+    const selectedItem = selectedId ? items.find(i => i.id === selectedId) : null;
 
     const itemCount = items.length;
     // 끊김 없이 한 장씩 흐르도록 아이템 2벌 연결
@@ -521,9 +521,11 @@ export default function GallerySection() {
                                 >
                                     {displayItems.map((item, i) => (
                                         <GalleryCard
-                                            key={`${i}-${item.id}`}
+                                            key={`idx-${i}-id-${item.id}`}
                                             item={item}
-                                            onClick={(clickedItem) => setSelectedId(clickedItem.id)}
+                                            onClick={() => {
+                                                setSelectedId(item.id);
+                                            }}
                                             className="w-72 md:w-80 flex-shrink-0"
                                         />
                                     ))}

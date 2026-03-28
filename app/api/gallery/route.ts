@@ -22,9 +22,9 @@ export async function GET(request: NextRequest) {
         let total = 0;
 
         try {
-            // 원본 서버에서 200건 가져오기 
+            // 원본 서버에서 200건 가져오기 (강력한 캐시 동기화 무효화)
             const sourceUrl = 'https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=200';
-            const res = await fetch(sourceUrl);
+            const res = await fetch(sourceUrl, { cache: 'no-store', next: { revalidate: 0 } });
             const rawData = await res.json();
             const posts = rawData.data || [];
 
