@@ -18,7 +18,8 @@ export async function GET(
 
         const object = await env.BUCKET.get(r2Key);
         if (!object) {
-            return NextResponse.json({ error: '이미지를 찾을 수 없습니다' }, { status: 404 });
+            // 404 콘솔 오류 방지: R2에 실제 이미지가 없는 경우 기본 이미지(OG image)로 우회합니다.
+            return NextResponse.redirect(new URL('/og-image.png', _request.url));
         }
 
         const headers = new Headers();
