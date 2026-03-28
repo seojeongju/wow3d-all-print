@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid3X3, Loader2, Box, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Grid3X3, Loader2, Box, ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import Link from 'next/link';
+import Header from "@/components/layout/Header";
 import { GalleryItem, GalleryCard, DetailViewModal } from '@/components/home/GallerySection';
 
 const ITEMS_PER_PAGE = 15;
@@ -70,13 +72,24 @@ export default function GalleryPage() {
 
     return (
         <main className="min-h-screen bg-[#0b0f19] pt-28 pb-20 relative overflow-hidden">
+            <Header />
             {/* 배경 효과 */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.15),transparent_50%)] pointer-events-none" />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
             <div className="container mx-auto px-4 relative z-10">
                 {/* 헤더 타이틀 */}
-                <div className="text-center mb-16">
+                <div className="text-center mb-16 relative">
+                    {/* 홈으로 가기 버튼 */}
+                    <div className="absolute left-0 top-0">
+                        <Link href="/">
+                            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all text-sm font-medium">
+                                <Home className="w-4 h-4" />
+                                <span>홈으로</span>
+                            </button>
+                        </Link>
+                    </div>
+
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
