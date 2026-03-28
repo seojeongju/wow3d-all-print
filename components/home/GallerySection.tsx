@@ -469,12 +469,15 @@ const MARQUEE_CYCLE_SEC = 45; // 한 사이클(전체 한 바퀴) 초
 export default function GallerySection() {
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
     const [isFullGalleryOpen, setIsFullGalleryOpen] = useState(false);
-    const [marqueeKey, setMarqueeKey] = useState(0);
+    
+    // 현재 선택된 아이템을 ID로 추적 (더욱 안전함)
+    const selectedItem = useMemo(() => 
+        selectedId ? items.find(i => i.id === selectedId) : null
+    , [items, selectedId]);
 
     const itemCount = items.length;
-    const hasItems = itemCount > 0;
     // 끊김 없이 한 장씩 흐르도록 아이템 2벌 연결
     const displayItems = useMemo(() => (itemCount > 0 ? [...items, ...items] : []), [items, itemCount]);
 
@@ -508,18 +511,18 @@ export default function GallerySection() {
                     <DetailViewModal 
                         key={selectedItem.id}
                         item={selectedItem} 
-                        onClose={() => setSelectedItem(null)}
+                        onClose={() => setSelectedId(null)}
                         onPrev={() => {
-                            const idx = items.findIndex(i => i.id === selectedItem.id);
-                            if (idx > 0) setSelectedItem(items[idx - 1]);
-                            else setSelectedItem(items[items.length - 1]);
+                            const idx = items.findIndex(i => i.id === selectedId);
+                            if (idx > 0) setSelectedId(items[idx - 1].id);
+                            else if (items.length > 0) setSelectedId(items[items.length - 1].id);
                         }}
                         onNext={() => {
-                            const idx = items.findIndex(i => i.id === selectedItem.id);
-                            if (idx < items.length - 1) setSelectedItem(items[idx + 1]);
-                            else setSelectedItem(items[0]);
+                            const idx = items.findIndex(i => i.id === selectedId);
+                            if (idx >= 0 && idx < items.length - 1) setSelectedId(items[idx + 1].id);
+                            else if (items.length > 0) setSelectedId(items[0].id);
                         }}
-                        currentIndex={items.findIndex(i => i.id === selectedItem.id)}
+                        currentIndex={items.findIndex(i => i.id === selectedId)}
                         totalCount={items.length}
                     />
                 )}
@@ -530,7 +533,7 @@ export default function GallerySection() {
                 {isFullGalleryOpen && (
                     <FullGalleryModal
                         onClose={() => setIsFullGalleryOpen(false)}
-                        onImageClick={setSelectedItem}
+                        onImageClick={(item) => setSelectedId(item.id)}
                     />
                 )}
             </AnimatePresence>
@@ -640,7 +643,7 @@ export default function GallerySection() {
                                         <GalleryCard
                                             key={`${i}-${item.id}`}
                                             item={item}
-                                            onClick={setSelectedItem}
+                                            onClick={(clickedItem) => setSelectedId(clickedItem.id)}
                                             className="w-72 md:w-80 flex-shrink-0"
                                         />
                                     ))}
