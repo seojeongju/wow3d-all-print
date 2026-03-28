@@ -208,16 +208,14 @@ function DetailViewModal({
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
             onClick={onClose}
         >
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={item.id}
-                    initial={{ scale: 0.9, opacity: 0, x: 20 }}
-                    animate={{ scale: 1, opacity: 1, x: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, x: -20 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="relative max-w-5xl w-full bg-slate-900 border border-white/15 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]"
-                    onClick={(e) => e.stopPropagation()}
-                >
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0, x: 20 }}
+                animate={{ scale: 1, opacity: 1, x: 0 }}
+                exit={{ scale: 0.9, opacity: 0, x: -20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="relative max-w-5xl w-full bg-slate-900 border border-white/15 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]"
+                onClick={(e) => e.stopPropagation()}
+            >
                     {/* 닫기 버튼 */}
                     <button
                         onClick={onClose}
@@ -230,6 +228,7 @@ function DetailViewModal({
                     <div className="md:w-3/5 bg-slate-950 relative group overflow-hidden flex items-center justify-center min-h-[300px] md:min-h-[500px]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
+                            key={item.image_url}
                             src={resolveImageUrl(item.image_url)}
                             alt={item.title}
                             className="w-full h-full object-contain"
@@ -324,7 +323,6 @@ function DetailViewModal({
                         </div>
                     </div>
                 </motion.div>
-            </AnimatePresence>
         </motion.div>
     );
 }
@@ -508,6 +506,7 @@ export default function GallerySection() {
             <AnimatePresence>
                 {selectedItem && (
                     <DetailViewModal 
+                        key={selectedItem.id}
                         item={selectedItem} 
                         onClose={() => setSelectedItem(null)}
                         onPrev={() => {
