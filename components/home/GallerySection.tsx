@@ -201,14 +201,14 @@ function DetailViewModal({
     }, [onClose, onPrev, onNext]);
 
     return (
-        <AnimatePresence mode="wait">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
-                onClick={onClose}
-            >
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
+            onClick={onClose}
+        >
+            <AnimatePresence mode="wait">
                 <motion.div
                     key={item.id}
                     initial={{ scale: 0.9, opacity: 0, x: 20 }}
@@ -324,8 +324,8 @@ function DetailViewModal({
                         </div>
                     </div>
                 </motion.div>
-            </motion.div>
-        </AnimatePresence>
+            </AnimatePresence>
+        </motion.div>
     );
 }
 
@@ -505,24 +505,26 @@ export default function GallerySection() {
     return (
         <>
             {/* 제품 상세 보기 모달 */}
-            {selectedItem && (
-                <DetailViewModal 
-                    item={selectedItem} 
-                    onClose={() => setSelectedItem(null)}
-                    onPrev={() => {
-                        const idx = items.findIndex(i => i.id === selectedItem.id);
-                        if (idx > 0) setSelectedItem(items[idx - 1]);
-                        else setSelectedItem(items[items.length - 1]);
-                    }}
-                    onNext={() => {
-                        const idx = items.findIndex(i => i.id === selectedItem.id);
-                        if (idx < items.length - 1) setSelectedItem(items[idx + 1]);
-                        else setSelectedItem(items[0]);
-                    }}
-                    currentIndex={items.findIndex(i => i.id === selectedItem.id)}
-                    totalCount={items.length}
-                />
-            )}
+            <AnimatePresence>
+                {selectedItem && (
+                    <DetailViewModal 
+                        item={selectedItem} 
+                        onClose={() => setSelectedItem(null)}
+                        onPrev={() => {
+                            const idx = items.findIndex(i => i.id === selectedItem.id);
+                            if (idx > 0) setSelectedItem(items[idx - 1]);
+                            else setSelectedItem(items[items.length - 1]);
+                        }}
+                        onNext={() => {
+                            const idx = items.findIndex(i => i.id === selectedItem.id);
+                            if (idx < items.length - 1) setSelectedItem(items[idx + 1]);
+                            else setSelectedItem(items[0]);
+                        }}
+                        currentIndex={items.findIndex(i => i.id === selectedItem.id)}
+                        totalCount={items.length}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* 전체 갤러리 모달 */}
             <AnimatePresence>
@@ -605,7 +607,7 @@ export default function GallerySection() {
                     </motion.div>
                 </div>
 
-                {/* 1x4 뷰포트, 한 장씩 왼쪽으로 흐르는 연속 마키 */}
+                {/* 1x4 뷰포트, 한 장씩 왼쪽으로 흐르는 연속 마키 (CSS 기반으로 호버 시 일시정지 가능) */}
                 <div className="w-full overflow-hidden flex justify-center pb-8 pt-4">
                     <div className="w-full max-w-[1340px] relative px-4 xl:px-0 flex flex-col items-center">
                         {loading ? (
@@ -629,18 +631,11 @@ export default function GallerySection() {
                             </div>
                         ) : (
                             <div className="w-full max-w-[1280px] mx-auto overflow-hidden min-h-[380px]">
-                                {/* 한 장씩 자연스럽게 왼쪽으로 흐르는 연속 스크롤 (한 사이클 후 리셋으로 무한) */}
-                                <motion.div
-                                    key={marqueeKey}
-                                    className="flex gap-5"
-                                    style={{ width: displayItems.length * CARD_SLOT_PX }}
-                                    initial={{ x: 0 }}
-                                    animate={{ x: -(itemCount * CARD_SLOT_PX) }}
-                                    transition={{
-                                        duration: MARQUEE_CYCLE_SEC,
-                                        ease: 'linear',
-                                    }}
-                                    onAnimationComplete={() => setMarqueeKey((k) => k + 1)}
+                                <div 
+                                    className="flex gap-5 animate-marquee"
+                                    style={{ 
+                                        '--marquee-duration': `${Math.max(20, items.length * 5)}s` 
+                                    } as React.CSSProperties}
                                 >
                                     {displayItems.map((item, i) => (
                                         <GalleryCard
@@ -650,7 +645,7 @@ export default function GallerySection() {
                                             className="w-72 md:w-80 flex-shrink-0"
                                         />
                                     ))}
-                                </motion.div>
+                                </div>
                             </div>
                         )}
                     </div>
