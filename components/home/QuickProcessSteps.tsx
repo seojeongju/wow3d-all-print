@@ -1,14 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { 
-  FileSearch, 
-  UploadCloud, 
-  CheckCircle2, 
-  PenTool, 
-  PhoneCall, 
-  Mail, 
-  Reply, 
+import {
+  FileSearch,
+  UploadCloud,
+  CheckCircle2,
+  PenTool,
+  PhoneCall,
+  Mail,
+  Reply,
   CreditCard,
   ArrowRight
 } from 'lucide-react';
@@ -109,7 +109,7 @@ export default function QuickProcessSteps() {
               와우 3D <span className="text-primary italic">3D 프린팅 견적</span> 요청 프로세스
             </h2>
             <p className="text-lg text-foreground/60 max-w-2xl mx-auto break-keep leading-relaxed">
-              상황에 맞는 최적의 경로로 빠르게 견적을 받아보세요.<br className="hidden md:block" /> 
+              상황에 맞는 최적의 경로로 빠르게 견적을 받아보세요.<br className="hidden md:block" />
               전문 설계 서비스부터 자동 실시간 견적까지 지원합니다.
             </p>
           </motion.div>

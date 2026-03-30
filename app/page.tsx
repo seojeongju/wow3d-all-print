@@ -43,7 +43,7 @@ export default function HomePage() {
         <div className="container relative mx-auto px-4 z-10">
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-              모델 파일이 <span className="text-primary">없으신가요?</span>
+              모델 파일이 <span className="text-primary">없으신가요?(DEMO)</span>
             </h2>
             <p className="text-lg text-foreground/70 break-keep leading-relaxed">
               아이디어를 스케치하거나 레퍼런스 이미지를 업로드하세요.<br />
@@ -61,7 +61,7 @@ export default function HomePage() {
       <ServicesSection />
       <BentoFeatures />
       <ProcessSection />
-      
+
       <HomeFAQ />
 
       <CTA />
