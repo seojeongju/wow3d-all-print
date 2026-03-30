@@ -115,7 +115,7 @@ export default function QuickProcessSteps() {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-20">
           {processPaths.map((path, idx) => (
             <motion.div
               key={idx}
@@ -123,26 +123,26 @@ export default function QuickProcessSteps() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className={`relative overflow-hidden group p-8 rounded-3xl border ${path.borderColor} bg-gradient-to-br ${path.color} backdrop-blur-sm transition-all hover:shadow-2xl hover:shadow-primary/10`}
+              className={`relative overflow-hidden group p-10 rounded-[2.5rem] border-2 ${path.borderColor} bg-gradient-to-br ${path.color} backdrop-blur-md transition-all hover:shadow-3xl hover:shadow-primary/20 hover:-translate-y-2`}
             >
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2 break-keep">{path.title}</h3>
-                <p className="text-sm text-foreground/60">{path.description}</p>
+              <div className="mb-12">
+                <h3 className="text-3xl font-extrabold mb-3 break-keep tracking-tight text-foreground">{path.title}</h3>
+                <p className="text-base font-medium text-foreground/70 leading-relaxed">{path.description}</p>
               </div>
 
-              <div className="space-y-6 relative">
+              <div className="space-y-10 relative">
                 {path.steps.map((step, sIdx) => (
-                  <div key={sIdx} className="relative flex items-center gap-4 group/step">
-                    <div className="relative z-10 w-12 h-12 rounded-xl bg-background/80 shadow-inner flex items-center justify-center border border-white/10 shrink-0">
-                      <step.icon className="w-6 h-6 text-primary group-hover/step:scale-110 transition-transform" />
+                  <div key={sIdx} className="relative flex items-start gap-6 group/step">
+                    <div className="relative z-10 w-16 h-16 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-center border border-primary/10 shrink-0 transition-transform group-hover/step:scale-110">
+                      <step.icon className="w-8 h-8 text-primary" />
                     </div>
-                    <div>
-                      <span className="text-[10px] font-black text-primary/40 tracking-wider mb-0.5 block">{step.label}</span>
-                      <p className="text-sm font-semibold break-keep leading-snug">{step.text}</p>
+                    <div className="pt-1">
+                      <span className="text-xs font-black text-primary tracking-widest mb-1.5 block uppercase">{step.label}</span>
+                      <p className="text-lg font-bold break-keep leading-tight text-foreground/90">{step.text}</p>
                     </div>
                     {/* 연결 선 (마지막 단계 제외) */}
                     {sIdx < path.steps.length - 1 && (
-                      <div className="absolute left-6 top-12 w-px h-6 bg-gradient-to-b from-primary/30 to-transparent" />
+                      <div className="absolute left-8 top-16 w-0.5 h-10 bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
                     )}
                   </div>
                 ))}
@@ -157,17 +157,17 @@ export default function QuickProcessSteps() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="max-w-4xl mx-auto p-6 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col md:flex-row items-center justify-center gap-6 shadow-lg backdrop-blur-md"
+          className="max-w-5xl mx-auto p-8 rounded-3xl bg-primary/15 border-2 border-primary/20 flex flex-col md:flex-row items-center justify-center gap-8 shadow-2xl backdrop-blur-xl"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-              <CreditCard className="w-5 h-5" />
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
+              <CreditCard className="w-7 h-7" />
             </div>
-            <span className="text-xl font-bold">최종 단계: 결제 및 출력 진행</span>
+            <span className="text-2xl font-black tracking-tight">최종 단계: 결제 및 출력 진행</span>
           </div>
-          <ArrowRight className="hidden md:block w-6 h-6 text-primary/50 animate-pulse" />
-          <p className="text-sm text-foreground/70 text-center md:text-left">
-            모든 견적 확정 후 즉시 산업용 프린터로 정밀 제작이 시작됩니다.
+          <ArrowRight className="hidden md:block w-8 h-8 text-primary animate-pulse" />
+          <p className="text-lg font-medium text-foreground/80 text-center md:text-left break-keep max-w-sm leading-snug">
+            견적 확정 후 즉시 산업용 프린터로 정밀 제작이 시작됩니다.
           </p>
         </motion.div>
       </div>
