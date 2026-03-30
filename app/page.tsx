@@ -7,6 +7,7 @@ import Marquee from "@/components/home/Marquee";
 import ServicesSection from "@/components/home/ServicesSection";
 import BentoFeatures from "@/components/home/BentoFeatures";
 import ModelUploadSection from "@/components/home/ModelUploadSection";
+import QuickProcessSteps from "@/components/home/QuickProcessSteps";
 import ProcessSection from "@/components/home/ProcessSection";
 import CTA from "@/components/home/CTA";
 import HomeFAQ from "@/components/home/HomeFAQ";
@@ -30,6 +31,9 @@ export default function HomePage() {
       <Hero />
       <Marquee />
       <ModelUploadSection />
+
+      {/* 3D Printing Quote Process Section */}
+      <QuickProcessSteps />
 
       {/* 2D to 3D AI Maker Section */}
       <section className="py-24 relative overflow-hidden">
