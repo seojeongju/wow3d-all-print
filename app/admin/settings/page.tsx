@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PricingCalculator from '@/components/admin/PricingCalculator'
 import PricingPresets from '@/components/admin/PricingPresets'
 import { useAuthStore } from '@/store/useAuthStore'
+import { getAdminAuthHeaders } from '@/lib/admin-auth-headers'
 
 type EquipmentRow = {
   type: string
@@ -74,8 +75,6 @@ export default function AdminSettings() {
   const [settings, setSettings] = useState<PrintSetting[]>([])
   const [equipment, setEquipment] = useState<EquipmentRow[]>([])
   const [storeConfigs, setStoreConfigs] = useState<{ setting_key: string, setting_value: string }[]>([])
-  const { token } = useAuthStore()
-
   const [isAddingMaterial, setIsAddingMaterial] = useState(false)
   const [newMaterial, setNewMaterial] = useState<Partial<Material>>({
     name: '',
@@ -108,9 +107,58 @@ export default function AdminSettings() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  useEffect(() => {
-    fetchData()
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const authHeaders = getAdminAuthHeaders()
+      const [matRes, setRes, eqRes, storeRes] = await Promise.all([
+        fetch('/api/admin/materials', { headers: authHeaders }),
+        fetch('/api/admin/settings', { headers: authHeaders }),
+        fetch('/api/admin/equipment', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
+        fetch('/api/settings', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
+      ])
+      const matData = await matRes.json()
+      const setData = await setRes.json()
+      const eqData = await eqRes.json()
+      const storeData = await storeRes.json()
+
+      if (matData.success) {
+        setMaterials(
+          (matData.data || []).map((m: any) => ({
+            id: m.id,
+            name: m.name,
+            type: m.type,
+            pricePerGram: m.price_per_gram,
+            pricePerMl: m.price_per_ml != null ? m.price_per_ml : undefined,
+            density: m.density,
+            colors: JSON.parse(m.colors || '[]'),
+            isActive: m.is_active,
+            description: m.description,
+          }))
+        )
+      }
+      if (setData.success) setSettings(setData.data || [])
+      if (eqData.success) setEquipment(eqData.data || [])
+      if (storeData.success) setStoreConfigs(storeData.data || [])
+    } catch (e) {
+      showToast.error('데이터 로딩 실패', e)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = () => {
+      if (!cancelled) void fetchData()
+    }
+    const unsub = useAuthStore.persist.onFinishHydration(run)
+    if (useAuthStore.persist.hasHydrated()) run()
+    return () => {
+      cancelled = true
+      unsub()
+    }
+  }, [fetchData])
 
   useEffect(() => {
     const next: Record<string, EquipForm> = {}
@@ -167,53 +215,13 @@ export default function AdminSettings() {
     setEquipForms(next)
   }, [equipment])
 
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
-      const [matRes, setRes, eqRes, storeRes] = await Promise.all([
-        fetch('/api/admin/materials', { headers: authHeaders }),
-        fetch('/api/admin/settings', { headers: authHeaders }),
-        fetch('/api/admin/equipment', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
-        fetch('/api/settings', { headers: authHeaders }).catch(() => ({ json: () => ({ success: false, data: [] }) })),
-      ])
-      const matData = await matRes.json()
-      const setData = await setRes.json()
-      const eqData = await eqRes.json()
-      const storeData = await storeRes.json()
-
-      if (matData.success) {
-        setMaterials(
-          (matData.data || []).map((m: any) => ({
-            id: m.id,
-            name: m.name,
-            type: m.type,
-            pricePerGram: m.price_per_gram,
-            pricePerMl: m.price_per_ml != null ? m.price_per_ml : undefined,
-            density: m.density,
-            colors: JSON.parse(m.colors || '[]'),
-            isActive: m.is_active,
-            description: m.description,
-          }))
-        )
-      }
-      if (setData.success) setSettings(setData.data || [])
-      if (eqData.success) setEquipment(eqData.data || [])
-      if (storeData.success) setStoreConfigs(storeData.data || [])
-    } catch (e) {
-      showToast.error('데이터 로딩 실패', e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSaveStoreConfigs = async () => {
     try {
       const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify({ settings: storeConfigs }),
       })
@@ -250,6 +258,10 @@ export default function AdminSettings() {
   const handleSaveEquipment = async (type: string) => {
     const form = equipForms[type]
     if (!form) return
+    if (!useAuthStore.getState().token?.trim()) {
+      showToast.error('저장 실패', new Error('인증 정보가 없습니다. 다시 로그인해 주세요.'))
+      return
+    }
     setSavingEquip(type)
     try {
       const layerArr = String(form.layer_heights_json || '')
@@ -268,7 +280,7 @@ export default function AdminSettings() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify({
           type,
@@ -323,7 +335,7 @@ export default function AdminSettings() {
     try {
       await fetch(`/api/admin/materials?id=${id}`, {
         method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: getAdminAuthHeaders(),
       })
       setMaterials((m) => m.filter((x) => x.id !== id))
       showToast.success('소재 삭제 완료')
@@ -352,7 +364,7 @@ export default function AdminSettings() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify({ orderedIds: newMaterials.map(m => m.id) })
       })
@@ -382,7 +394,7 @@ export default function AdminSettings() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify(body),
       })
@@ -423,7 +435,7 @@ export default function AdminSettings() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify(patchBody),
       })
@@ -446,7 +458,7 @@ export default function AdminSettings() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify(settings),
       })
@@ -472,7 +484,7 @@ export default function AdminSettings() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getAdminAuthHeaders(),
         },
         body: JSON.stringify(payload),
       })

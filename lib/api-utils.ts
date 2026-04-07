@@ -71,16 +71,37 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return passwordHash === hash;
 }
 
+/** UTF-8 JSON → Base64URL (이메일 등 유니코드 안전, URL 쿼리와도 호환) */
+function jsonToBase64Url(obj: unknown): string {
+    const json = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
+    const b64 = btoa(binary);
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** Base64 또는 Base64URL 조각 → UTF-8 문자열 */
+function base64UrlToUtf8(segment: string): string {
+    let b64 = segment.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4;
+    if (pad) b64 += '='.repeat(4 - pad);
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+}
+
 /**
  * JWT 토큰 생성 (간단한 구현)
  */
 export async function generateToken(userId: number, email: string): Promise<string> {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({
+    const header = jsonToBase64Url({ alg: 'HS256', typ: 'JWT' });
+    const payload = jsonToBase64Url({
         userId,
         email,
         exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7일
-    }));
+    });
     const signature = await hashPassword(`${header}.${payload}`);
     return `${header}.${payload}.${signature}`;
 }
@@ -90,23 +111,33 @@ export async function generateToken(userId: number, email: string): Promise<stri
  */
 export async function verifyToken(token: string): Promise<{ userId: number; email: string } | null> {
     try {
-        const [header, payload, signature] = token.split('.');
+        const trimmed = token.trim();
+        const [header, payload, signature] = trimmed.split('.');
+        if (!header || !payload || !signature) return null;
+
         const expectedSignature = await hashPassword(`${header}.${payload}`);
 
         if (signature !== expectedSignature) {
             return null;
         }
 
-        const decodedPayload = JSON.parse(atob(payload));
+        const decodedPayload = JSON.parse(base64UrlToUtf8(payload)) as {
+            userId?: number;
+            email?: string;
+            exp?: number;
+        };
 
-        if (decodedPayload.exp < Date.now()) {
+        if (typeof decodedPayload.exp !== 'number' || decodedPayload.exp < Date.now()) {
             return null;
         }
 
-        return {
-            userId: decodedPayload.userId,
-            email: decodedPayload.email,
-        };
+        const userId = decodedPayload.userId;
+        const email = decodedPayload.email;
+        if (typeof userId !== 'number' || typeof email !== 'string') {
+            return null;
+        }
+
+        return { userId, email };
     } catch {
         return null;
     }
@@ -116,11 +147,12 @@ export async function verifyToken(token: string): Promise<{ userId: number; emai
  * Authorization 헤더에서 토큰 추출
  */
 export function extractToken(request: Request): string | null {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const authHeader = request.headers.get('Authorization')?.trim();
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
         return null;
     }
-    return authHeader.substring(7);
+    const raw = authHeader.slice(7).trim();
+    return raw || null;
 }
 
 /**
