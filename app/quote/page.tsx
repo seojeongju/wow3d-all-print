@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/upload/FileUpload";
 import QuotePanel from "@/components/quote/QuotePanel";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, Suspense } from "react";
 import { useFileStore } from "@/store/useFileStore";
@@ -243,8 +243,9 @@ function QuoteContent() {
                                             <h2 className="text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
                                             <button
                                                 onClick={() => { reset(); setStep(1); }}
-                                                className="text-[13px] text-teal-400 hover:text-teal-300 font-black tracking-tight hover:underline transition-all flex items-center gap-1.5"
+                                                className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
                                             >
+                                                <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
                                                 파일 교체
                                             </button>
                                         </div>
