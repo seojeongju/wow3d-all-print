@@ -15,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ success: true, data: [] })
     }
     const { results } = await env.DB.prepare(
-      'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type, name'
+      'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type ASC, sort_order ASC, name ASC'
     ).all()
     const rows = (results || []) as Array<{ id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }>
     return NextResponse.json(
