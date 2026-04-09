@@ -201,10 +201,13 @@ function QuoteContent() {
                                                     <span className="text-teal-400">시작하기</span>
                                                 </h1>
                                                 <p className="text-white/70 text-[15px] font-bold leading-relaxed break-keep">
-                                                    우측 3D 뷰어 화면 중앙에 <br />
-                                                    STL, STEP, OBJ 등 3D 파일을 마우스로 끌어다 놓으세요. <br />
+                                                    STL, STEP, OBJ 등 3D 파일을 업로드하세요. <br />
                                                     지능형 분석 엔진이 실시간으로 비용을 산출합니다.
                                                 </p>
+                                            </div>
+                                            <div className="p-1 rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden shadow-2xl relative group">
+                                                <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                                <FileUpload variant="dark" />
                                             </div>
 
                                             <div className="pt-2 grid gap-4">
@@ -281,13 +284,14 @@ function QuoteContent() {
                             </div>
 
                             {!file && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-10 p-8 pointer-events-auto">
-                                    <div className="w-full max-w-xl p-1 rounded-[3rem] bg-slate-900 border border-white/10 overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] relative group">
-                                        <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                                        <FileUpload variant="dark" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                                    <div className="w-40 h-40 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
+                                        <Boxes className="w-12 h-12 text-white/10" />
+                                        <div className="absolute inset-0 rounded-full border border-teal-400/20 scale-150 blur-xl" />
                                     </div>
-                                    <div className="mt-8 text-center space-y-2 pointer-events-none">
-                                        <p className="text-white/40 text-sm font-medium italic">파일을 업로드하면 고해상도 3D 미리보기가 활성화됩니다.</p>
+                                    <div className="mt-10 text-center space-y-2">
+                                        <p className="text-white/30 text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
+                                        <p className="text-white/20 text-sm font-medium italic">파일을 업로드하면 고해상도 3D 미리보기가 활성화됩니다.</p>
                                     </div>
                                 </div>
                             )}
