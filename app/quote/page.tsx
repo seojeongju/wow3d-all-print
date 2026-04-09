@@ -68,6 +68,11 @@ function QuoteContent() {
         if (file && analysis && step === 1) setStep(2);
     }, [file, analysis, step]);
 
+    // Go back to step 1 if the file is removed
+    useEffect(() => {
+        if (!file && step !== 1) setStep(1);
+    }, [file, step]);
+
     return (
         <main className="min-h-screen relative text-slate-100 flex flex-col selection:bg-teal-500/30 overflow-hidden">
             {/* 프리미엄 배경 시스템 (Hero와 동일) */}
@@ -196,13 +201,10 @@ function QuoteContent() {
                                                     <span className="text-teal-400">시작하기</span>
                                                 </h1>
                                                 <p className="text-white/70 text-[15px] font-bold leading-relaxed break-keep">
-                                                    STL, STEP, OBJ 등 3D 파일을 업로드하세요. <br />
+                                                    우측 3D 뷰어 화면 중앙에 <br />
+                                                    STL, STEP, OBJ 등 3D 파일을 마우스로 끌어다 놓으세요. <br />
                                                     지능형 분석 엔진이 실시간으로 비용을 산출합니다.
                                                 </p>
-                                            </div>
-                                            <div className="p-1 rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden shadow-2xl relative group">
-                                                <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                                                <FileUpload variant="dark" />
                                             </div>
 
                                             <div className="pt-2 grid gap-4">
@@ -271,7 +273,7 @@ function QuoteContent() {
                             </div>
 
                             {/* Viewer HUD */}
-                            <div className="absolute top-10 right-10 flex flex-col gap-4 z-20">
+                            <div className="absolute top-10 left-10 flex flex-col gap-4 z-20 pointer-events-none">
                                 <div className="px-6 py-3 rounded-[1.25rem] bg-black/60 backdrop-blur-md border border-white/10 text-[11px] font-black tracking-[0.25em] uppercase text-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                                     3D Viewer Engine V3.5
@@ -279,14 +281,13 @@ function QuoteContent() {
                             </div>
 
                             {!file && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                    <div className="w-40 h-40 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
-                                        <Boxes className="w-12 h-12 text-white/10" />
-                                        <div className="absolute inset-0 rounded-full border border-teal-400/20 scale-150 blur-xl" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-10 p-8 pointer-events-auto">
+                                    <div className="w-full max-w-xl p-1 rounded-[3rem] bg-slate-900 border border-white/10 overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] relative group">
+                                        <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                        <FileUpload variant="dark" />
                                     </div>
-                                    <div className="mt-10 text-center space-y-2">
-                                        <p className="text-white/30 text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
-                                        <p className="text-white/20 text-sm font-medium italic">파일을 업로드하면 고해상도 3D 미리보기가 활성화됩니다.</p>
+                                    <div className="mt-8 text-center space-y-2 pointer-events-none">
+                                        <p className="text-white/40 text-sm font-medium italic">파일을 업로드하면 고해상도 3D 미리보기가 활성화됩니다.</p>
                                     </div>
                                 </div>
                             )}

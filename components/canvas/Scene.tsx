@@ -9,7 +9,7 @@ import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries }
 import { analyzeGeometry } from '@/lib/geometry'
 import { loadStepAsBufferGeometry } from '@/lib/stepLoader'
 import { Button } from '@/components/ui/button'
-import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MousePointer2, Touchpad, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react'
+import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MousePointer2, Touchpad, HelpCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
@@ -312,7 +312,7 @@ function ViewerContent({ color, showMeasurements }: { color: string, showMeasure
 type SceneProps = { compact?: boolean }
 export default function Scene({ compact = false }: SceneProps) {
     const canvasRef = useRef<HTMLDivElement>(null)
-    const { fileUrl } = useFileStore()
+    const { fileUrl, reset } = useFileStore()
     const [mounted, setMounted] = useState(false)
     const [modelColor, setModelColor] = useState('#f8fafc')
     const [showMeasurements, setShowMeasurements] = useState(false)
@@ -467,6 +467,12 @@ export default function Scene({ compact = false }: SceneProps) {
                             <Ruler className="w-4 h-4" />
                             <span className="hidden sm:inline">치수측정</span>
                         </Button>
+                        {fileUrl && (
+                            <Button size="sm" variant="destructive" className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm rounded-xl bg-red-500/80 hover:bg-red-500 text-white border-transparent" onClick={() => reset()}>
+                                <Trash2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">모델 삭제</span>
+                            </Button>
+                        )}
                         <Button size="icon" variant="secondary" className="sm:hidden h-10 w-10 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowGuide(true)}>
                             <HelpCircle className="w-5 h-5" />
                         </Button>
