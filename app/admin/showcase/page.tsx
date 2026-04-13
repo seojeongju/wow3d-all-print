@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { SHOWCASE_SLUGS, type ShowcaseSlug } from '@/lib/showcase';
-import { Loader2, Trash2, Plus, ImageIcon, Video, Pencil } from 'lucide-react';
+import { Loader2, Trash2, Plus, ImageIcon, Video, Pencil, X } from 'lucide-react';
 
 const SLUG_LABEL: Record<ShowcaseSlug, string> = {
     industrial: '산업용 부품',
@@ -71,6 +71,8 @@ export default function AdminShowcasePage() {
     const [exTitle, setExTitle] = useState('');
     const [exDesc, setExDesc] = useState('');
     const [exFeatures, setExFeatures] = useState('');
+    const [exSort, setExSort] = useState(0);
+    const [exVisible, setExVisible] = useState(true);
     const [savingEx, setSavingEx] = useState(false);
     const [pendingFiles, setPendingFiles] = useState<{ file: File; kind: 'image' | 'video'; preview: string }[]>([]);
 
