@@ -33,28 +33,28 @@ const PRODUCT_CATEGORIES = [
         title: "산업용 부품 & 지그(Jig)",
         desc: "최종 생산 라인에 즉시 투입 가능한 고강도 엔지니어링 플라스틱 부품 제조",
         icon: <Settings className="w-8 h-8" />,
-        image: "https://images.unsplash.com/photo-1581093588401-fbb48a10bc04?auto=format&fit=crop&q=80&w=800",
+        image: "/images/expert/industrial.png",
         features: ["기능성 검증", "생산 공정 최적화", "경량화 설계"]
     },
     {
         title: "의료 & 덴탈 솔루션",
         desc: "CT/MRI 데이터를 기반으로 한 안면 모델링 및 맞춤형 수술 가이드 제작",
         icon: <ShieldCheck className="w-8 h-8" />,
-        image: "https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?auto=format&fit=crop&q=80&w=800",
+        image: "/images/expert/medical.png",
         features: ["생체 적합 소재", "1:1 맞춤 제작", "고정밀 출력"]
     },
     {
         title: "아트 & 캐릭터 피규어",
         desc: "복잡한 디테일의 예술 작품 및 게임/애니메이션 캐릭터 풀컬러/고해상도 구현",
         icon: <Palette className="w-8 h-8" />,
-        image: "https://images.unsplash.com/photo-1628155232283-c000c82869fb?auto=format&fit=crop&q=80&w=800",
+        image: "/images/expert/art.png",
         features: ["정밀 디테일", "후가공 전문성", "풀컬러 지원"]
     },
     {
         title: "건축 & 목업(Mock-up)",
         desc: "분양 단지 모형 및 신제품 출시 전 디자인 검토를 위한 화이트 데스크 목업",
         icon: <Building2 className="w-8 h-8" />,
-        image: "https://images.unsplash.com/photo-1503387762-592dea58f230?auto=format&fit=crop&q=80&w=800",
+        image: "/images/expert/architecture.png",
         features: ["대형 출력 지원", "정밀 스케일", "재질감 구현"]
     }
 ]
