@@ -234,20 +234,20 @@ export default function Header() {
                                     <Link
                                         href={item.href}
                                         onClick={() => setMobileOpen(false)}
-                                        className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 active:scale-[0.98] transition-all flex items-center group"
+                                        className="px-6 py-4.5 min-h-[60px] rounded-2xl text-[17px] font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 active:scale-[0.98] transition-all flex items-center group mb-1.5"
                                     >
-                                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-teal-100 transition-colors">
-                                            {item.label === '서비스' && <Boxes className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '기능' && <Zap className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '공정' && <Layers className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '제품소개' && <Printer className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '제품개발 및 문의' && <Sparkles className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '주문조회' && <Search className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === 'FAQ' && <HelpCircle className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '문의하기' && <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-teal-500" />}
+                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mr-4 group-hover:bg-teal-100 transition-colors">
+                                            {item.label === '서비스' && <Boxes className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === '기능' && <Zap className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === '공정' && <Layers className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === '제품소개' && <Printer className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === '주문조회' && <Search className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === 'FAQ' && <HelpCircle className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                            {item.label === '문의하기' && <MessageSquare className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
                                         </div>
                                         <span className="group-hover:translate-x-1 transition-transform">{item.label}</span>
-                                        <ChevronRight className="w-4 h-4 ml-auto text-slate-300 group-hover:text-teal-400 transition-colors" />
+                                        <ChevronRight className="w-5 h-5 ml-auto text-slate-300 group-hover:text-teal-400 transition-colors" />
                                     </Link>
                                 </motion.div>
                             ))}

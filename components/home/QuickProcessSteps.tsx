@@ -121,7 +121,7 @@ export default function QuickProcessSteps() {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-10 mb-20">
           {processPaths.map((path, idx) => (
             <motion.div
               key={idx}
@@ -129,26 +129,26 @@ export default function QuickProcessSteps() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className={`relative overflow-hidden group p-10 rounded-[2.5rem] border-2 ${path.borderColor} bg-gradient-to-br ${path.color} backdrop-blur-md transition-all hover:shadow-3xl hover:shadow-primary/20 hover:-translate-y-2`}
+              className={`relative overflow-hidden group p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] border-2 ${path.borderColor} bg-gradient-to-br ${path.color} backdrop-blur-md transition-all hover:shadow-3xl hover:shadow-primary/20 lg:hover:-translate-y-2`}
             >
-              <div className="mb-12">
-                <h3 className="text-3xl font-extrabold mb-3 break-keep tracking-tight text-foreground">{path.title}</h3>
-                <p className="text-base font-medium text-foreground/70 leading-relaxed">{path.description}</p>
+              <div className="mb-8 sm:mb-12">
+                <h3 className="text-2xl sm:text-3xl font-extrabold mb-3 break-keep tracking-tight text-foreground">{path.title}</h3>
+                <p className="text-sm sm:text-base font-medium text-foreground/70 leading-relaxed">{path.description}</p>
               </div>
 
-              <div className="space-y-10 relative">
+              <div className="space-y-6 sm:space-y-10 relative">
                 {path.steps.map((step, sIdx) => (
-                  <div key={sIdx} className="relative flex items-start gap-6 group/step">
-                    <div className="relative z-10 w-16 h-16 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-center border border-black/10 shrink-0 transition-transform group-hover/step:scale-110">
-                      <step.icon className={`w-8 h-8 ${path.stepIconClass}`} />
+                  <div key={sIdx} className="relative flex items-start gap-4 sm:gap-6 group/step">
+                    <div className="relative z-10 w-12 h-12 sm:w-16 h-16 rounded-xl sm:rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-center border border-black/10 shrink-0 transition-transform group-hover/step:scale-110">
+                      <step.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${path.stepIconClass}`} />
                     </div>
-                    <div className="pt-1">
-                      <span className={`text-xs font-black tracking-widest mb-1.5 block uppercase ${path.stepLabelClass}`}>{step.label}</span>
-                      <p className="text-lg font-bold break-keep leading-tight text-foreground/90">{step.text}</p>
+                    <div className="pt-0.5 sm:pt-1">
+                      <span className={`text-[10px] sm:text-xs font-black tracking-widest mb-1 block uppercase ${path.stepLabelClass}`}>{step.label}</span>
+                      <p className="text-base sm:text-lg font-bold break-keep leading-tight text-foreground/90">{step.text}</p>
                     </div>
                     {/* 연결 선 (마지막 단계 제외) */}
                     {sIdx < path.steps.length - 1 && (
-                      <div className="absolute left-8 top-16 w-0.5 h-10 bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
+                      <div className="absolute left-6 sm:left-8 top-12 sm:top-16 w-0.5 h-6 sm:h-10 bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
                     )}
                   </div>
                 ))}

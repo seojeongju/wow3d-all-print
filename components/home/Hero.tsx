@@ -145,51 +145,67 @@ export default function Hero() {
                         className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-md"
                     >
                         <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-                        <span className="text-xs font-semibold tracking-wider text-white/80">차세대 3D 프린팅 서비스</span>
+                        <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-white/80 uppercase">Next-Gen 3D Printing</span>
                     </motion.div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance text-white">
-                        <span className="text-teal-400 block text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance text-white">
+                        <span className="text-teal-400 block text-base sm:text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
                         3D프린팅 출력 및 <br />
                         <span className="text-teal-400 relative inline-block">
                             시제품제작 대행 서비스
-                            <svg className="absolute w-full h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
+                            <svg className="absolute w-full h-2 sm:h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
                         </span>
                     </h1>
 
-                    <p className="text-xl text-white/70 mb-8 max-w-lg leading-relaxed break-keep font-medium">
-                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-white font-bold">3D프린팅 자동견적</span>을 즉시 확인하세요.<br />
-                        3D프린터 출력대행부터 시제품제작, 소량·대량 생산까지 (주)와우쓰리디가 빠르고 정확하게 지원합니다.
+                    <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 max-w-lg leading-relaxed break-keep font-medium">
+                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-white font-bold text-teal-400">실시간 자동견적</span>을 즉시 확인하세요.<br className="hidden sm:block" />
+                        3D프린팅 출력대행부터 시제품제작까지 (주)와우쓰리디가 함께합니다.
                     </p>
 
-                    <div className="flex flex-wrap gap-4">
-                        <Link href="/print-methods">
-                            <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-teal-500 hover:bg-teal-400 text-white shadow-[0_4px_24px_rgba(20,184,166,0.4)] hover:shadow-[0_6px_32px_rgba(20,184,166,0.5)] hover:scale-[1.02] transition-all gap-2">
-                                3D 프린터 출력방식 (FDM, SLA, DLP)
+                    {/* 모바일 전용 AI 견적 정보 카드 (Hidden on Desktop) */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="lg:hidden flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm mb-8"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                            <Zap className="w-5 h-5 fill-current" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="text-[11px] font-black text-teal-400 uppercase tracking-widest leading-none mb-1">AI Intelligence</div>
+                            <div className="text-sm font-bold text-white tracking-tight leading-tight uppercase">99% 정확도 실시간 자동 견적</div>
+                        </div>
+                    </motion.div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 mb-12">
+                        <Link href="/print-methods" className="w-full sm:w-auto">
+                            <Button size="lg" className="w-full h-14 px-6 sm:px-8 text-[15px] sm:text-lg rounded-full bg-teal-500 hover:bg-teal-400 text-white shadow-[0_4px_24px_rgba(20,184,166,0.3)] hover:scale-[1.02] transition-all gap-2 font-bold">
+                                3D 프린터 출력방식
                                 <ArrowRight className="w-5 h-5 shrink-0" />
                             </Button>
                         </Link>
-                        <Link href="/materials">
-                            <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/15 border-white/30 text-white hover:bg-white/25 hover:scale-[1.02] transition-all gap-2">
+                        <Link href="/materials" className="w-full sm:w-auto">
+                            <Button size="lg" variant="outline" className="w-full h-14 px-6 sm:px-8 text-[15px] sm:text-lg rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-[1.02] transition-all gap-2 font-bold">
                                 <Palette className="w-5 h-5 shrink-0" />
                                 소재 살펴보기
                             </Button>
                         </Link>
                     </div>
 
-                    <div className="mt-12 flex items-center gap-8 text-white/70">
+                    <div className="flex items-center gap-6 text-white/50">
                         <div className="flex -space-x-4">
                             {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center text-xs font-bold overflow-hidden">
+                                <div key={i} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-[#111827] bg-white/10 flex items-center justify-center text-xs font-bold overflow-hidden">
                                     <div className="w-full h-full bg-gradient-to-br from-white/20 to-white/10" />
                                 </div>
                             ))}
                         </div>
-                        <div>
-                            <div className="font-bold text-white">1,000+</div>
-                            <div className="text-sm">고객 만족</div>
+                        <div className="flex flex-col text-left">
+                            <div className="font-bold text-sm sm:text-base text-white leading-tight">1,000+ Verified Customers</div>
+                            <div className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-teal-500/80 mt-0.5">최적의 출력 파트너</div>
                         </div>
                     </div>
                 </motion.div>

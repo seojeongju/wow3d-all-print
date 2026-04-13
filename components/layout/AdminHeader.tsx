@@ -88,51 +88,69 @@ export default function AdminHeader() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 top-0 z-[51] md:hidden bg-black/80 backdrop-blur-sm"
+                        className="fixed inset-0 top-0 z-[51] md:hidden bg-black/80 backdrop-blur-md"
                         onClick={() => setMobileOpen(false)}
                     >
                         <motion.nav
                             initial={{ x: '100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
-                            transition={{ type: 'tween', duration: 0.2 }}
-                            className="absolute right-0 top-0 bottom-0 w-[min(280px,85vw)] bg-[#0a0a0a] border-l border-white/10 shadow-2xl flex flex-col pt-20 px-4 pb-8 gap-2"
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="absolute right-0 top-0 bottom-0 w-[min(300px,85vw)] bg-[#0a0a0a] border-l border-white/10 shadow-2xl flex flex-col pt-20 px-5 pb-10 gap-2"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/10 mb-2">
-                                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-                                    <User className="w-5 h-5" />
+                            <div className="flex items-center gap-4 px-4 py-5 rounded-2xl bg-white/[0.03] border border-white/10 mb-6 group">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-indigo-600/20 flex items-center justify-center text-primary shadow-inner">
+                                    <User className="w-6 h-6" />
                                 </div>
-                                <div>
-                                    <p className="font-bold text-white">{user?.name || '관리자'}</p>
-                                    <p className="text-[10px] text-white/50 uppercase">관리자</p>
+                                <div className="flex flex-col">
+                                    <p className="font-black text-white text-base tracking-tight">{user?.name || '관리자'}</p>
+                                    <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mt-0.5">Administrator</p>
                                 </div>
                             </div>
-                            <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors min-h-[48px]">
-                                <Home className="w-5 h-5 text-white/60" />
-                                메인
-                            </Link>
-                            <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors min-h-[48px]">
-                                <Boxes className="w-5 h-5 text-white/60" />
-                                관리 홈
-                            </Link>
-                            <Link href="/cart" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors min-h-[48px]">
-                                <ShoppingCart className="w-5 h-5 text-white/60" />
-                                장바구니
-                            </Link>
-                            <Link href="/quote" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors min-h-[48px]">
-                                <Zap className="w-5 h-5 text-white/60" />
-                                견적 받기
-                            </Link>
+
+                            <div className="space-y-1">
+                                <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all min-h-[56px] font-bold text-sm">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                        <Home className="w-4.5 h-4.5" />
+                                    </div>
+                                    메인 서비스
+                                </Link>
+                                <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all min-h-[56px] font-bold text-sm">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                        <Boxes className="w-4.5 h-4.5" />
+                                    </div>
+                                    관리자 대시보드
+                                </Link>
+                                <Link href="/cart" onClick={() => setMobileOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all min-h-[56px] font-bold text-sm">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                        <ShoppingCart className="w-4.5 h-4.5" />
+                                    </div>
+                                    장바구니 확인
+                                </Link>
+                                <Link href="/quote" onClick={() => setMobileOpen(false)} className="flex items-center gap-4 px-4 py-4 rounded-xl text-teal-400 hover:bg-teal-400/10 transition-all min-h-[56px] font-bold text-sm">
+                                    <div className="w-8 h-8 rounded-lg bg-teal-400/10 flex items-center justify-center">
+                                        <Zap className="w-4.5 h-4.5" />
+                                    </div>
+                                    실시간 자동견적
+                                </Link>
+                            </div>
+
                             <div className="flex-1" />
+                            
                             <button
                                 type="button"
                                 onClick={() => { logout(); setMobileOpen(false); }}
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 border border-red-500/20 transition-colors min-h-[48px] w-full text-left"
+                                className="flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:bg-red-500/10 border border-red-500/10 transition-all min-h-[60px] w-full text-left font-black text-sm group"
                             >
-                                <LogOut className="w-5 h-5" />
-                                로그아웃
+                                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
+                                    <LogOut className="w-5 h-5" />
+                                </div>
+                                시스템 로그아웃
                             </button>
+                            <p className="text-center text-[9px] text-white/20 font-black uppercase tracking-[0.2em] mt-4">
+                                WOW3D PRO Security System Active
+                            </p>
                         </motion.nav>
                     </motion.div>
                 )}

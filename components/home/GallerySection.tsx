@@ -399,7 +399,7 @@ export default function GallerySection() {
         <>
             {/* 전체화면 갤러리 모달 제거됨 (Link로 우회) */}
 
-            <section className="py-20 relative overflow-hidden">
+            <section className="py-16 sm:py-20 relative overflow-hidden">
                 {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
                 {/* 틸/블루 은은한 포인트 오버레이 */}
@@ -409,28 +409,27 @@ export default function GallerySection() {
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
 
                 {/* 배경 글로우 포인트들 */}
-                <div className="absolute left-0 top-1/4 w-[500px] h-[500px] rounded-full bg-teal-500/20 blur-[130px]" />
-                <div className="absolute right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
-                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px]" />
+                <div className="absolute left-0 top-1/4 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full bg-teal-500/10 sm:bg-teal-500/20 blur-[80px] sm:blur-[130px]" />
+                <div className="absolute right-0 bottom-0 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-indigo-600/10 sm:bg-indigo-600/15 blur-[100px] sm:blur-[150px]" />
 
-                <div className="container mx-auto px-4 mb-10 relative z-20">
+                <div className="container mx-auto px-6 mb-8 sm:mb-10 relative z-20">
                     {/* 헤더 */}
-                    <div className="flex items-end justify-between max-w-[1400px] mx-auto w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between max-w-[1400px] mx-auto w-full gap-6">
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.1 }}
                             className="relative z-30"
                         >
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-4 uppercase tracking-widest">
+                            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] sm:text-xs font-semibold mb-3 sm:mb-4 uppercase tracking-[0.15em] sm:tracking-widest">
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                                 PORTFOLIO
                             </div>
-                            <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+                            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white leading-tight">
                                 시제품제작<span className="text-teal-400">갤러리</span>
                             </h2>
-                            <p className="text-white/70 text-sm mt-2 max-w-md break-keep leading-relaxed font-medium">
-                                다양한 소재와 출력 방식으로 제작된 실제 출력물들을 확인하세요.
+                            <p className="text-white/60 sm:text-white/70 text-xs sm:text-sm mt-3 max-w-md break-keep leading-relaxed font-medium">
+                                전담 전문가들이 다양한 소재와 출력 방식으로 제작한 고품질 실제 출력물들을 확인하세요.
                             </p>
                         </motion.div>
 
@@ -453,7 +452,7 @@ export default function GallerySection() {
                         </motion.div>
                     </div>
 
-                    {/* 모바일 화면용 더보기 버튼 (헤더 아래 정렬) */}
+                    {/* 모바일 화면용 더보기 버튼 */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
@@ -463,43 +462,43 @@ export default function GallerySection() {
                         <Link href="/gallery">
                             <Button
                                 variant="outline"
-                                className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-white w-full h-12"
+                                className="gap-2 rounded-full border-white/10 bg-white/5 active:bg-white/10 text-white w-full h-11 text-xs font-bold"
                             >
                                 <Grid3X3 className="w-4 h-4 text-primary" />
-                                <span className="font-semibold">전체 출력 이미지 보기</span>
+                                전체 출력 포트폴리오 보기
                             </Button>
                         </Link>
                     </motion.div>
                 </div>
 
-                {/* 1x4 뷰포트, 한 장씩 왼쪽으로 흐르는 연속 마키 (CSS 기반으로 호버 시 일시정지 가능) */}
+                {/* 마키 컨테이너 */}
                 <div className="w-full overflow-hidden flex justify-center pb-8 pt-4">
-                    <div className="w-full max-w-[1340px] relative px-4 xl:px-0 flex flex-col items-center">
+                    <div className="w-full relative px-4 xl:px-0 flex flex-col items-center">
                         {loading ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-[1280px] mx-auto justify-items-center">
-                                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                            <div className="flex gap-4 sm:gap-5 w-full overflow-hidden px-4 justify-center">
+                                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} className="w-64 sm:w-80 flex-shrink-0" />)}
                             </div>
                         ) : isEmpty ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-[1280px] mx-auto justify-items-center">
+                            <div className="flex gap-4 sm:gap-5 w-full overflow-hidden px-4 justify-center">
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="w-72 md:w-80 h-[380px]">
+                                    <div key={i} className="w-64 sm:w-80 h-[340px] sm:h-[380px] flex-shrink-0">
                                         <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col">
                                             <div className="flex-1 bg-slate-800/60 flex flex-col items-center justify-center gap-3">
-                                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                                    <Box className="w-8 h-8 text-primary/40" />
+                                                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                    <Box className="w-7 h-7 text-primary/40" />
                                                 </div>
-                                                <p className="text-white/20 text-xs">출력물 준비 중</p>
+                                                <p className="text-white/20 text-[11px] font-bold">포트폴리오 준비 중</p>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="w-full max-w-[1280px] mx-auto overflow-hidden min-h-[380px]">
+                            <div className="w-full overflow-hidden min-h-[340px] sm:min-h-[380px]">
                                 <div 
-                                    className="flex gap-5 animate-marquee"
+                                    className="flex gap-4 sm:gap-5 animate-marquee"
                                     style={{ 
-                                        '--marquee-duration': `${Math.max(20, items.length * 5)}s` 
+                                        '--marquee-duration': `${Math.max(25, items.length * 6)}s` 
                                     } as React.CSSProperties}
                                 >
                                     {displayItems.map((item, i) => (
@@ -507,10 +506,9 @@ export default function GallerySection() {
                                             key={`marquee-${i}-${item.id}`}
                                             item={item}
                                             onClick={() => {
-                                                // 모달 대신 전체 갤러리 페이지로 이동
                                                 router.push('/gallery');
                                             }}
-                                            className="w-72 md:w-80 flex-shrink-0"
+                                            className="w-64 sm:w-80 flex-shrink-0 active:scale-[0.98] transition-transform"
                                         />
                                     ))}
                                 </div>
@@ -524,12 +522,12 @@ export default function GallerySection() {
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="container mx-auto px-4 mt-6 flex justify-center"
+                    className="container mx-auto px-6 mt-4 sm:mt-6 flex justify-center"
                 >
                     <Button
                         asChild
                         size="lg"
-                        className="rounded-full h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.5)]"
+                        className="rounded-full h-11 sm:h-12 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-[13px] sm:text-base text-primary-foreground shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] font-bold"
                     >
                         <Link href="/quote">
                             AI 실시간 자동견적 받기
