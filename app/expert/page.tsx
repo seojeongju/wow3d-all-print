@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Sparkles, 
@@ -27,37 +28,32 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { showToast } from '@/lib/toast-helper'
+import { SHOWCASE_DEFAULTS, type ShowcaseSlug } from '@/lib/showcase'
 
-const PRODUCT_CATEGORIES = [
-    {
-        title: "산업용 부품 & 지그(Jig)",
-        desc: "최종 생산 라인에 즉시 투입 가능한 고강도 엔지니어링 플라스틱 부품 제조",
-        icon: <Settings className="w-8 h-8" />,
-        image: "/images/expert/industrial.png",
-        features: ["기능성 검증", "생산 공정 최적화", "경량화 설계"]
-    },
-    {
-        title: "의료 & 덴탈 솔루션",
-        desc: "CT/MRI 데이터를 기반으로 한 안면 모델링 및 맞춤형 수술 가이드 제작",
-        icon: <ShieldCheck className="w-8 h-8" />,
-        image: "/images/expert/medical.png",
-        features: ["생체 적합 소재", "1:1 맞춤 제작", "고정밀 출력"]
-    },
-    {
-        title: "아트 & 캐릭터 피규어",
-        desc: "복잡한 디테일의 예술 작품 및 게임/애니메이션 캐릭터 풀컬러/고해상도 구현",
-        icon: <Palette className="w-8 h-8" />,
-        image: "/images/expert/art.png",
-        features: ["정밀 디테일", "후가공 전문성", "풀컬러 지원"]
-    },
-    {
-        title: "건축 & 목업(Mock-up)",
-        desc: "분양 단지 모형 및 신제품 출시 전 디자인 검토를 위한 화이트 데스크 목업",
-        icon: <Building2 className="w-8 h-8" />,
-        image: "/images/expert/architecture.png",
-        features: ["대형 출력 지원", "정밀 스케일", "재질감 구현"]
-    }
-]
+const SHOWCASE_ICONS: Record<ShowcaseSlug, React.ReactNode> = {
+    industrial: <Settings className="w-8 h-8" />,
+    medical: <ShieldCheck className="w-8 h-8" />,
+    art: <Palette className="w-8 h-8" />,
+    architecture: <Building2 className="w-8 h-8" />,
+}
+
+type ShowcaseCard = {
+    slug: ShowcaseSlug
+    title: string
+    desc: string
+    image: string
+    features: string[]
+}
+
+function buildFallbackShowcaseCards(): ShowcaseCard[] {
+    return SHOWCASE_DEFAULTS.map((d) => ({
+        slug: d.slug,
+        title: d.defaultTitle,
+        desc: d.defaultDescription,
+        image: d.fallbackImage,
+        features: d.defaultFeatures,
+    }))
+}
 
 const PROCESS_STEPS = [
     { title: "상담 및 기획", desc: "제품의 용도와 요구사항을 정밀 분석합니다." },
@@ -67,6 +63,35 @@ const PROCESS_STEPS = [
 ]
 
 export default function ExpertServicePage() {
+    const [showcaseCards, setShowcaseCards] = useState<ShowcaseCard[]>(buildFallbackShowcaseCards)
+
+    useEffect(() => {
+        fetch('/api/showcase/categories')
+            .then((r) => r.json())
+            .then((j) => {
+                if (j?.success && Array.isArray(j.data?.items)) {
+                    setShowcaseCards(
+                        j.data.items.map(
+                            (it: {
+                                slug: string
+                                title: string
+                                description: string
+                                features: string[]
+                                cardImageUrl: string
+                            }) => ({
+                                slug: it.slug as ShowcaseSlug,
+                                title: it.title,
+                                desc: it.description,
+                                image: it.cardImageUrl,
+                                features: it.features,
+                            })
+                        )
+                    )
+                }
+            })
+            .catch(() => {})
+    }, [])
+
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [file, setFile] = useState<File | null>(null)
     const [formData, setFormData] = useState({
@@ -169,46 +194,59 @@ export default function ExpertServicePage() {
                     <div className="text-center space-y-6">
                         <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">3D프린터 활용 제품 <span className="text-teal-400">쇼케이스</span></h2>
                         <div className="w-32 h-1.5 bg-teal-400 mx-auto rounded-full" />
+                        <p className="text-sm text-white/40 font-bold max-w-lg mx-auto break-keep">
+                            카드를 클릭하면 분야별 제작 예시·샘플 페이지로 이동합니다.
+                        </p>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {PRODUCT_CATEGORIES.map((cat, idx) => (
-                            <motion.div 
-                                key={idx}
-                                initial={{ opacity: 0, y: 40 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                viewport={{ once: true }}
-                                className="group relative rounded-[3rem] bg-white/[0.03] border border-white/10 p-3 overflow-hidden hover:bg-white/[0.08] hover:border-teal-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-teal-400/10 hover:-translate-y-3"
+                        {showcaseCards.map((cat, idx) => (
+                            <Link
+                                key={cat.slug}
+                                href={`/expert/showcase/${cat.slug}`}
+                                className="block rounded-[3rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617]"
                             >
-                                <div className="relative h-72 rounded-[2.5rem] overflow-hidden mb-8">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
-                                    <img 
-                                        src={cat.image} 
-                                        alt={cat.title} 
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = '/placeholder-3d.svg';
-                                        }}
-                                    />
-                                    <div className="absolute bottom-8 left-8 z-20 text-white">
-                                        <div className="w-14 h-14 rounded-2xl bg-teal-400/20 backdrop-blur-xl border border-teal-400/40 flex items-center justify-center mb-4 group-hover:bg-teal-400 group-hover:text-slate-950 transition-all duration-500">
-                                            {cat.icon}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 40 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    viewport={{ once: true }}
+                                    className="group relative rounded-[3rem] bg-white/[0.03] border border-white/10 p-3 overflow-hidden hover:bg-white/[0.08] hover:border-teal-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-teal-400/10 hover:-translate-y-3 cursor-pointer h-full"
+                                >
+                                    <div className="relative h-72 rounded-[2.5rem] overflow-hidden mb-8">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                                        <img
+                                            src={cat.image}
+                                            alt={cat.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = '/placeholder-3d.svg';
+                                            }}
+                                        />
+                                        <div className="absolute bottom-8 left-8 z-20 text-white">
+                                            <div className="w-14 h-14 rounded-2xl bg-teal-400/20 backdrop-blur-xl border border-teal-400/40 flex items-center justify-center mb-4 group-hover:bg-teal-400 group-hover:text-slate-950 transition-all duration-500">
+                                                {SHOWCASE_ICONS[cat.slug]}
+                                            </div>
+                                            <h3 className="text-2xl font-black tracking-tight group-hover:text-teal-400 transition-colors">
+                                                {cat.title}
+                                            </h3>
                                         </div>
-                                        <h3 className="text-2xl font-black tracking-tight group-hover:text-teal-400 transition-colors">{cat.title}</h3>
                                     </div>
-                                </div>
-                                <div className="px-8 pb-8 space-y-6">
-                                    <p className="text-sm font-bold text-white/50 leading-[1.8] min-h-[60px] break-keep">{cat.desc}</p>
-                                    <ul className="space-y-3">
-                                        {cat.features.map((f, i) => (
-                                            <li key={i} className="flex items-center gap-3 text-[13px] font-black text-teal-400/70 group-hover:text-teal-400 transition-colors tracking-tight">
-                                                <CheckCircle2 className="w-4 h-4 shadow-sm" /> {f}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </motion.div>
+                                    <div className="px-8 pb-8 space-y-6">
+                                        <p className="text-sm font-bold text-white/50 leading-[1.8] min-h-[60px] break-keep">{cat.desc}</p>
+                                        <ul className="space-y-3">
+                                            {cat.features.map((f, i) => (
+                                                <li
+                                                    key={i}
+                                                    className="flex items-center gap-3 text-[13px] font-black text-teal-400/70 group-hover:text-teal-400 transition-colors tracking-tight"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4 shadow-sm" /> {f}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </motion.div>
+                            </Link>
                         ))}
                     </div>
                 </div>

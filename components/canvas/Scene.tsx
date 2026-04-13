@@ -526,8 +526,8 @@ export default function Scene({ compact = false }: SceneProps) {
                     </div>
                 )}
 
-                {/* 뷰 프리셋: 홈, 전, 후, 좌, 우 - 우측 레이아웃 최적화 */}
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 items-end">
+                {/* 뷰 프리셋: 우측 고정 교육 메뉴(EducationQuickMenu) 폭만큼 안쪽으로 배치해 겹침 방지 */}
+                <div className="absolute right-[6.75rem] sm:right-32 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 items-end max-[380px]:right-14">
                     {[
                         { id: 'home', label: '홈', icon: Home },
                         { id: 'front', label: '전면', icon: ArrowUp },

@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User, Users, FileText, Store, CreditCard, Building2, Image as ImageIcon, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User, Users, FileText, Store, CreditCard, Building2, Image as ImageIcon, HelpCircle, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -64,6 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
         { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p.startsWith('/admin/quotes') },
         { title: '출력 갤러리', href: '/admin/gallery', icon: ImageIcon, match: (p: string) => p.startsWith('/admin/gallery') },
+        { title: '쇼케이스', href: '/admin/showcase', icon: Sparkles, match: (p: string) => p.startsWith('/admin/showcase') },
         { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
         { title: 'FAQ 관리', href: '/admin/qna', icon: HelpCircle, match: (p: string) => p.startsWith('/admin/qna') },
         { title: '설정 & 소재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
