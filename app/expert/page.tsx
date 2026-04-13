@@ -148,7 +148,7 @@ export default function ExpertServicePage() {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-5xl md:text-8xl font-black tracking-tight leading-[0.9] text-white"
+                        className="text-5xl md:text-8xl font-black tracking-tight leading-[1.1] text-white"
                     >
                         상상을 현실로,<br /><span className="text-teal-400">제품개발 전문가</span>
                     </motion.h1>
@@ -156,7 +156,7 @@ export default function ExpertServicePage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="text-white/40 text-xl font-bold max-w-2xl mx-auto break-keep"
+                        className="text-white/40 text-xl font-bold max-w-2xl mx-auto break-keep leading-relaxed"
                     >
                         아이디어 설계부터 최종 양산까지, 와우쓰리디의 숙련된 엔지니어가 최적의 솔루션을 제공합니다.
                     </motion.p>
@@ -164,8 +164,8 @@ export default function ExpertServicePage() {
             </section>
 
             {/* Product Category Showcase */}
-            <section className="relative py-24 px-6 z-10">
-                <div className="container mx-auto max-w-7xl space-y-16">
+            <section className="relative py-32 px-6 z-10">
+                <div className="container mx-auto max-w-7xl space-y-20">
                     <div className="text-center space-y-4">
                         <h2 className="text-3xl md:text-5xl font-black text-white">3D프린터 활용 제품 <span className="text-teal-400">쇼케이스</span></h2>
                         <div className="w-20 h-1.5 bg-teal-400 mx-auto rounded-full" />
@@ -179,23 +179,23 @@ export default function ExpertServicePage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.1 }}
                                 viewport={{ once: true }}
-                                className="group relative rounded-[2.5rem] bg-white/[0.03] border border-white/10 p-2 overflow-hidden hover:bg-white/[0.06] hover:border-teal-400/30 transition-all duration-500"
+                                className="group relative rounded-[2.5rem] bg-white/[0.03] border border-white/10 p-2 overflow-hidden hover:bg-white/[0.08] hover:border-teal-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-teal-400/10 hover:-translate-y-2"
                             >
                                 <div className="relative h-60 rounded-[2rem] overflow-hidden mb-6">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10" />
                                     <img src={cat.image} alt={cat.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                     <div className="absolute bottom-6 left-6 z-20 text-white">
-                                        <div className="w-12 h-12 rounded-2xl bg-teal-400/20 backdrop-blur-xl border border-teal-400/30 flex items-center justify-center mb-3">
+                                        <div className="w-12 h-12 rounded-2xl bg-teal-400/20 backdrop-blur-xl border border-teal-400/40 flex items-center justify-center mb-3 group-hover:bg-teal-400 group-hover:text-slate-950 transition-all duration-500">
                                             {cat.icon}
                                         </div>
-                                        <h3 className="text-xl font-black">{cat.title}</h3>
+                                        <h3 className="text-xl font-black tracking-tight group-hover:text-teal-400 transition-colors">{cat.title}</h3>
                                     </div>
                                 </div>
                                 <div className="px-6 pb-6 space-y-4">
                                     <p className="text-sm font-bold text-white/50 leading-relaxed min-h-[48px]">{cat.desc}</p>
                                     <ul className="space-y-2">
                                         {cat.features.map((f, i) => (
-                                            <li key={i} className="flex items-center gap-2 text-[12px] font-black text-teal-400">
+                                            <li key={i} className="flex items-center gap-2 text-[12px] font-black text-teal-400/70 group-hover:text-teal-400 transition-colors">
                                                 <CheckCircle2 className="w-4 h-4" /> {f}
                                             </li>
                                         ))}
@@ -208,12 +208,12 @@ export default function ExpertServicePage() {
             </section>
 
             {/* Process Section */}
-            <section className="relative py-24 px-6 z-10 bg-white/[0.02]">
+            <section className="relative py-32 px-6 z-10 bg-white/[0.02]">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        <div className="space-y-8">
+                    <div className="grid lg:grid-cols-2 gap-20 items-center">
+                        <div className="space-y-10">
                             <h2 className="text-4xl md:text-6xl font-black text-white leading-tight">빠르고 정확한<br /><span className="text-teal-400">원스톱 프로세스</span></h2>
-                            <p className="text-white/40 text-lg font-bold">복잡한 절차를 획기적으로 줄였습니다. 도면 한 장으로 시작하는 가장 빠른 제품 출시.</p>
+                            <p className="text-white/40 text-lg font-bold leading-relaxed">복잡한 절차를 획기적으로 줄였습니다. 도면 한 장으로 시작하는 가장 빠른 제품 출시.</p>
                             <div className="space-y-6">
                                 {PROCESS_STEPS.map((step, idx) => (
                                     <div key={idx} className="flex gap-6 group">
@@ -258,7 +258,7 @@ export default function ExpertServicePage() {
                                         placeholder="홍길동"
                                         value={formData.name}
                                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:ring-teal-400 px-6 font-bold text-lg"
+                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:border-teal-400/50 focus:ring-teal-400/20 px-6 font-bold text-lg transition-all"
                                         required
                                     />
                                 </div>
@@ -271,7 +271,7 @@ export default function ExpertServicePage() {
                                         placeholder="email@example.com"
                                         value={formData.email}
                                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:ring-teal-400 px-6 font-bold text-lg"
+                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:border-teal-400/50 focus:ring-teal-400/20 px-6 font-bold text-lg transition-all"
                                         required
                                     />
                                 </div>
@@ -286,7 +286,7 @@ export default function ExpertServicePage() {
                                         placeholder="010-0000-0000"
                                         value={formData.phone}
                                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:ring-teal-400 px-6 font-bold text-lg"
+                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:border-teal-400/50 focus:ring-teal-400/20 px-6 font-bold text-lg transition-all"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -297,7 +297,7 @@ export default function ExpertServicePage() {
                                         placeholder="와우쓰리디"
                                         value={formData.company}
                                         onChange={(e) => setFormData({...formData, company: e.target.value})}
-                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:ring-teal-400 px-6 font-bold text-lg"
+                                        className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:border-teal-400/50 focus:ring-teal-400/20 px-6 font-bold text-lg transition-all"
                                     />
                                 </div>
                             </div>
