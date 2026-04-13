@@ -57,11 +57,17 @@ export default function AdminUsersPage() {
             const res = await fetch(url, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
+
+            if (res.status === 401) {
+                showToast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+                return;
+            }
+
             const data = await res.json();
             if (data.success) {
                 setUsers(Array.isArray(data.data) ? data.data : []);
             } else {
-                showToast.error('사용자 목록 조회 실패', data);
+                showToast.error('사용자 목록 조회 실패', data.error || data);
             }
         } catch (e) {
             console.error('Failed to fetch users', e);

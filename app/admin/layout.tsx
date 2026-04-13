@@ -11,17 +11,43 @@ import { useAuthStore } from '@/store/useAuthStore';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { isAuthenticated, user } = useAuthStore();
+    const { isAuthenticated, user, token, logout } = useAuthStore();
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            router.replace('/auth');
-            return;
-        }
-        if (user && user.role !== 'admin' && user.role !== 'super_admin') {
-            router.replace('/');
-        }
-    }, [isAuthenticated, user, router]);
+        const checkAuth = async () => {
+            if (!isAuthenticated || !token) {
+                router.replace('/auth');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (res.status === 401) {
+                    // 토큰 만료 또는 유효하지 않음
+                    logout();
+                    router.replace('/auth?expired=true');
+                    return;
+                }
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.data) {
+                        const role = data.data.role;
+                        if (role !== 'admin' && role !== 'super_admin') {
+                            router.replace('/');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Auth check failed:', err);
+            }
+        };
+
+        checkAuth();
+    }, [isAuthenticated, token, router, logout]);
 
     if (!isAuthenticated || (user && user.role !== 'admin' && user.role !== 'super_admin')) {
         return (

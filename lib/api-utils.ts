@@ -118,6 +118,7 @@ export async function verifyToken(token: string): Promise<{ userId: number; emai
         const expectedSignature = await hashPassword(`${header}.${payload}`);
 
         if (signature !== expectedSignature) {
+            console.error('verifyToken: Signature mismatch');
             return null;
         }
 
@@ -128,17 +129,20 @@ export async function verifyToken(token: string): Promise<{ userId: number; emai
         };
 
         if (typeof decodedPayload.exp !== 'number' || decodedPayload.exp < Date.now()) {
+            console.error('verifyToken: Token expired', { exp: decodedPayload.exp, now: Date.now() });
             return null;
         }
 
         const userId = decodedPayload.userId;
         const email = decodedPayload.email;
-        if (typeof userId !== 'number' || typeof email !== 'string') {
+        if (userId === undefined || typeof email !== 'string') {
+            console.error('verifyToken: Invalid payload structure');
             return null;
         }
 
-        return { userId, email };
-    } catch {
+        return { userId: Number(userId), email };
+    } catch (e) {
+        console.error('verifyToken: Unexpected error', e);
         return null;
     }
 }
@@ -227,9 +231,11 @@ export async function requireAdminAuth(
                 .first() as { role?: string; store_id?: number } | null;
         }
         if (!userInfo) {
+            console.error(`requireAdminAuth: User not found in DB (ID: ${user.userId})`);
             return errorResponse('사용자 정보를 찾을 수 없습니다', 403);
         }
         if (userInfo.role !== 'admin' && userInfo.role !== 'super_admin') {
+            console.error(`requireAdminAuth: Insufficient role (ID: ${user.userId}, Role: ${userInfo.role})`);
             return errorResponse('관리자 권한이 필요합니다', 403);
         }
         return {
