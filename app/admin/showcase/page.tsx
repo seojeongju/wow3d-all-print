@@ -71,9 +71,8 @@ export default function AdminShowcasePage() {
     const [exTitle, setExTitle] = useState('');
     const [exDesc, setExDesc] = useState('');
     const [exFeatures, setExFeatures] = useState('');
-    const [exSort, setExSort] = useState(0);
-    const [exVisible, setExVisible] = useState(true);
     const [savingEx, setSavingEx] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState<{ file: File; kind: 'image' | 'video'; preview: string }[]>([]);
 
     const [mediaByExample, setMediaByExample] = useState<Record<number, MediaRow[]>>({});
 
@@ -240,6 +239,7 @@ export default function AdminShowcasePage() {
         setExFeatures('');
         setExSort(examples.length);
         setExVisible(true);
+        setPendingFiles([]);
         setExampleDialog(true);
     };
 
@@ -250,7 +250,9 @@ export default function AdminShowcasePage() {
         setExFeatures(ex.features.join('\n'));
         setExSort(ex.sort_order);
         setExVisible(ex.is_visible);
+        setPendingFiles([]);
         setExampleDialog(true);
+        loadMedia(ex.id);
     };
 
     const saveExample = async () => {
@@ -261,7 +263,10 @@ export default function AdminShowcasePage() {
         setSavingEx(true);
         try {
             const features = exFeatures.split('\n').map((s) => s.trim()).filter(Boolean);
+            let targetId: number;
+
             if (editExample) {
+                targetId = editExample.id;
                 const res = await fetch(`/api/admin/showcase/examples/${editExample.id}`, {
                     method: 'PUT',
                     headers: { ...authHeader, 'Content-Type': 'application/json' },
@@ -289,9 +294,19 @@ export default function AdminShowcasePage() {
                 });
                 const j = await res.json();
                 if (!res.ok) throw new Error(j.error || '추가 실패');
+                targetId = j.data.id;
             }
+
+            // 신규 추가/수정 시 선택된 펜딩 파일들 업로드
+            if (pendingFiles.length > 0) {
+                for (const p of pendingFiles) {
+                    await uploadExampleMedia(targetId, p.kind, p.file);
+                }
+            }
+
             toast({ title: '저장됨' });
             setExampleDialog(false);
+            setPendingFiles([]);
             loadExamples(activeSlug);
         } catch (e) {
             toast({
@@ -486,18 +501,19 @@ export default function AdminShowcasePage() {
                                                 key={ex.id}
                                                 className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-3"
                                             >
-                                                <div className="flex justify-between gap-2 flex-wrap">
-                                                    <div>
-                                                        <div className="font-bold text-white">{ex.title}</div>
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <div className="flex-1">
+                                                        <div className="font-bold text-white text-base">{ex.title}</div>
+                                                        <p className="text-xs text-white/50 line-clamp-1 mt-0.5">{ex.description}</p>
                                                         {!ex.is_visible && (
-                                                            <span className="text-xs text-amber-400">비공개</span>
+                                                            <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-500 rounded font-bold uppercase tracking-wider">비공개</span>
                                                         )}
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex gap-1">
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
-                                                            className="text-white/70"
+                                                            className="h-8 w-8 p-0 text-white/40 hover:text-white"
                                                             onClick={() => openEditExample(ex)}
                                                         >
                                                             <Pencil className="w-4 h-4" />
@@ -505,72 +521,32 @@ export default function AdminShowcasePage() {
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
-                                                            className="text-destructive"
+                                                            className="h-8 w-8 p-0 text-destructive/40 hover:text-destructive"
                                                             onClick={() => deleteExample(ex.id)}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </Button>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    <label className="cursor-pointer text-xs">
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            className="hidden"
-                                                            onChange={(e) => {
-                                                                const f = e.target.files?.[0];
-                                                                e.target.value = '';
-                                                                if (f) uploadExampleMedia(ex.id, 'image', f);
-                                                            }}
-                                                        />
-                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/15">
-                                                            <ImageIcon className="w-3 h-3" /> 이미지
-                                                        </span>
-                                                    </label>
-                                                    <label className="cursor-pointer text-xs">
-                                                        <input
-                                                            type="file"
-                                                            accept="video/mp4,video/webm,video/quicktime"
-                                                            className="hidden"
-                                                            onChange={(e) => {
-                                                                const f = e.target.files?.[0];
-                                                                e.target.value = '';
-                                                                if (f) uploadExampleMedia(ex.id, 'video', f);
-                                                            }}
-                                                        />
-                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 hover:bg-white/15">
-                                                            <Video className="w-3 h-3" /> 영상
-                                                        </span>
-                                                    </label>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="h-7 text-xs border-white/20"
-                                                        type="button"
-                                                        onClick={() => loadMedia(ex.id)}
-                                                    >
-                                                        미디어 새로고침
-                                                    </Button>
-                                                </div>
+                                                
                                                 {mediaByExample[ex.id] && mediaByExample[ex.id].length > 0 && (
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="flex flex-wrap gap-1.5 mt-2">
                                                         {mediaByExample[ex.id].map((m) => (
-                                                            <div key={m.id} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-white/10">
+                                                            <div key={m.id} className="relative w-12 h-12 rounded-md overflow-hidden border border-white/5 bg-white/5">
                                                                 {m.kind === 'video' ? (
-                                                                    <video src={m.url} className="w-full h-full object-cover" muted />
+                                                                    <div className="w-full h-full flex items-center justify-center">
+                                                                        <Video className="w-3 h-3 text-white/30" />
+                                                                    </div>
                                                                 ) : (
                                                                     <img src={m.url} alt="" className="w-full h-full object-cover" />
                                                                 )}
-                                                                <button
-                                                                    type="button"
-                                                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs"
-                                                                    onClick={() => deleteMedia(m.id, ex.id)}
-                                                                >
-                                                                    삭제
-                                                                </button>
                                                             </div>
                                                         ))}
+                                                        {mediaByExample[ex.id].length > 0 && (
+                                                            <div className="w-12 h-12 rounded-md border border-dashed border-white/10 flex items-center justify-center text-[10px] text-white/20">
+                                                                +{mediaByExample[ex.id].length}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </li>
@@ -636,6 +612,94 @@ export default function AdminShowcasePage() {
                                 <Label htmlFor="vis" className="text-zinc-300 cursor-pointer">
                                     공개
                                 </Label>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-2">
+                            <Label className="text-zinc-300">미디어 첨부 (이미지/영상)</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {/* 기존 미디어 표시 (수정 모드일 때) */}
+                                {editExample && mediaByExample[editExample.id]?.map((m) => (
+                                    <div key={m.id} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-white/10 bg-white/5">
+                                        {m.kind === 'video' ? (
+                                            <video src={m.url} className="w-full h-full object-cover" muted />
+                                        ) : (
+                                            <img src={m.url} alt="" className="w-full h-full object-cover" />
+                                        )}
+                                        <button
+                                            type="button"
+                                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold"
+                                            onClick={() => deleteMedia(m.id, editExample.id)}
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
+                                ))}
+
+                                {/* 새로 선택된 파일 표시 */}
+                                {pendingFiles.map((p, idx) => (
+                                    <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-primary/30 bg-primary/5">
+                                        {p.kind === 'video' ? (
+                                            <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                                                <Video className="w-5 h-5 text-primary/50" />
+                                            </div>
+                                        ) : (
+                                            <img src={p.preview} alt="" className="w-full h-full object-cover" />
+                                        )}
+                                        <button
+                                            type="button"
+                                            className="absolute top-0 right-0 p-1 bg-black/60 text-white opacity-0 group-hover:opacity-100"
+                                            onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/40 overflow-hidden">
+                                            <div className="h-full bg-primary animate-pulse" style={{ width: '100%' }} />
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* 추가 버튼 */}
+                                <div className="flex gap-2">
+                                    <label className="w-16 h-16 rounded-lg border-2 border-dashed border-white/10 hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files || []);
+                                                files.forEach(f => {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => {
+                                                        setPendingFiles(prev => [...prev, { file: f, kind: 'image', preview: ev.target?.result as string }]);
+                                                    };
+                                                    reader.readAsDataURL(f);
+                                                });
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <ImageIcon className="w-5 h-5 text-white/20 group-hover:text-primary transition-colors" />
+                                        <span className="text-[8px] text-white/20 mt-1 font-bold">IMAGE</span>
+                                    </label>
+                                    <label className="w-16 h-16 rounded-lg border-2 border-dashed border-white/10 hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="video/mp4,video/webm,video/quicktime"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files || []);
+                                                files.forEach(f => {
+                                                    setPendingFiles(prev => [...prev, { file: f, kind: 'video', preview: '' }]);
+                                                });
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <Video className="w-5 h-5 text-white/20 group-hover:text-primary transition-colors" />
+                                        <span className="text-[8px] text-white/20 mt-1 font-bold">VIDEO</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
