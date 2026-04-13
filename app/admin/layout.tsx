@@ -21,28 +21,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             }
 
             try {
+                // me API를 통해 토큰 유효성 동적 확인
                 const res = await fetch('/api/auth/me', {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    cache: 'no-store'
                 });
 
-                if (res.status === 401) {
-                    // 토큰 만료 또는 유효하지 않음
+                const data = await res.json();
+
+                if (res.status === 401 || (data && data.error === '유효하지 않은 토큰입니다')) {
+                    console.warn('AdminLayout: Session expired or invalid');
                     logout();
-                    router.replace('/auth?expired=true');
+                    window.location.href = '/auth?expired=true';
                     return;
                 }
 
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.success && data.data) {
-                        const role = data.data.role;
-                        if (role !== 'admin' && role !== 'super_admin') {
-                            router.replace('/');
-                        }
+                if (data.success && data.data) {
+                    const role = data.data.role;
+                    if (role !== 'admin' && role !== 'super_admin') {
+                        router.replace('/');
                     }
                 }
             } catch (err) {
-                console.error('Auth check failed:', err);
+                console.error('AdminLayout: Auth check failed', err);
             }
         };
 

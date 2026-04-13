@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { correctDisplayAmount } from '@/lib/amount-display';
+import { requireAdminAuth } from '@/lib/api-utils';
 
 /**
  * GET /api/admin/stats - 대시보드 집계 (총 매출, 신규 주문, 사용자, 매출 추이, 최근 주문, 가동률)
@@ -12,6 +12,10 @@ export async function GET(_req: NextRequest) {
     }
 
     try {
+        // 관리자 인증 확인
+        const auth = await requireAdminAuth(_req, env.DB);
+        if (auth instanceof Response) return auth;
+
         // 1) 매출·주문 집계 (이번 달, 지난 달, 신규 주문 수, 대기 건수)
         const agg = await env.DB.prepare(`
             SELECT 

@@ -119,7 +119,7 @@ export async function verifyToken(token: string): Promise<{ userId: number; emai
 
         if (signature !== expectedSignature) {
             console.error('verifyToken: Signature mismatch');
-            return null;
+            return { error: 'signature_mismatch' };
         }
 
         const decodedPayload = JSON.parse(base64UrlToUtf8(payload)) as {
@@ -130,20 +130,20 @@ export async function verifyToken(token: string): Promise<{ userId: number; emai
 
         if (typeof decodedPayload.exp !== 'number' || decodedPayload.exp < Date.now()) {
             console.error('verifyToken: Token expired', { exp: decodedPayload.exp, now: Date.now() });
-            return null;
+            return { error: 'token_expired' };
         }
 
         const userId = decodedPayload.userId;
         const email = decodedPayload.email;
         if (userId === undefined || typeof email !== 'string') {
             console.error('verifyToken: Invalid payload structure');
-            return null;
+            return { error: 'invalid_payload' };
         }
 
         return { userId: Number(userId), email };
     } catch (e) {
         console.error('verifyToken: Unexpected error', e);
-        return null;
+        return { error: 'unexpected_error' };
     }
 }
 
@@ -171,11 +171,15 @@ export async function requireAuth(request: Request): Promise<{ userId: number; e
 
     const user = await verifyToken(token);
 
+    if (user && 'error' in user) {
+        return jsonResponse({ error: '유효하지 않은 토큰입니다', reason: user.error }, 401);
+    }
+
     if (!user) {
         return errorResponse('유효하지 않은 토큰입니다', 401);
     }
 
-    return user;
+    return user as { userId: number; email: string };
 }
 
 /**
@@ -191,8 +195,11 @@ export async function requireAuthOrGuest(request: Request): Promise<
     const token = extractToken(request);
     if (token) {
         const user = await verifyToken(token);
-        if (user) return { userId: user.userId, email: user.email, isGuest: false };
-        return errorResponse('유효하지 않은 토큰입니다', 401);
+        if (user && !('error' in user)) return { userId: user.userId, email: user.email, isGuest: false };
+        return jsonResponse({ 
+            error: '유효하지 않은 토큰입니다', 
+            reason: user && 'error' in user ? user.error : 'unknown' 
+        }, 401);
     }
     const sessionId = request.headers.get('X-Session-ID');
     if (sessionId && sessionId.trim()) {
@@ -215,19 +222,23 @@ export async function requireAdminAuth(
     }
 
     const user = await verifyToken(token);
+    if (user && 'error' in user) {
+        return jsonResponse({ error: '유효하지 않은 토큰입니다', reason: user.error }, 401);
+    }
     if (!user) {
         return errorResponse('유효하지 않은 토큰입니다', 401);
     }
+    const verifiedUser = user as { userId: number; email: string };
 
     try {
         let userInfo: { role?: string; store_id?: number } | null = null;
         try {
             userInfo = await db.prepare('SELECT role, store_id FROM users WHERE id = ?')
-                .bind(user.userId)
+                .bind(verifiedUser.userId)
                 .first() as { role?: string; store_id?: number } | null;
         } catch {
             userInfo = await db.prepare('SELECT role FROM users WHERE id = ?')
-                .bind(user.userId)
+                .bind(verifiedUser.userId)
                 .first() as { role?: string; store_id?: number } | null;
         }
         if (!userInfo) {
@@ -239,8 +250,8 @@ export async function requireAdminAuth(
             return errorResponse('관리자 권한이 필요합니다', 403);
         }
         return {
-            userId: user.userId,
-            email: user.email,
+            userId: verifiedUser.userId,
+            email: verifiedUser.email,
             storeId: userInfo.store_id ?? 1,
             role: userInfo.role ?? 'user'
         };
