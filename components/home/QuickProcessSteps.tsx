@@ -5,7 +5,6 @@ import {
   FileSearch,
   UploadCloud,
   CheckCircle2,
-  PenTool,
   PhoneCall,
   Mail,
   Reply,
@@ -35,7 +34,10 @@ const processPaths = [
       }
     ],
     color: "from-teal-500/20 to-emerald-500/20",
-    borderColor: "border-teal-500/30"
+    borderColor: "border-teal-500/30",
+    /** 흰 아이콘 박스 위 대비 — 다크 모드에서 text-primary는 밝아져 묻힘 */
+    stepIconClass: "text-teal-700 dark:text-teal-600",
+    stepLabelClass: "text-teal-800 dark:text-teal-300",
   },
   {
     title: "2. 3D 모델링이 없는 경우",
@@ -63,7 +65,9 @@ const processPaths = [
       }
     ],
     color: "from-indigo-500/20 to-blue-500/20",
-    borderColor: "border-indigo-500/30"
+    borderColor: "border-indigo-500/30",
+    stepIconClass: "text-indigo-700 dark:text-indigo-500",
+    stepLabelClass: "text-indigo-900 dark:text-indigo-300",
   },
   {
     title: "3. 직접 이메일 견적 요청",
@@ -86,7 +90,9 @@ const processPaths = [
       }
     ],
     color: "from-purple-500/20 to-pink-500/20",
-    borderColor: "border-purple-500/30"
+    borderColor: "border-purple-500/30",
+    stepIconClass: "text-purple-700 dark:text-purple-400",
+    stepLabelClass: "text-purple-900 dark:text-purple-300",
   }
 ];
 
@@ -133,11 +139,11 @@ export default function QuickProcessSteps() {
               <div className="space-y-10 relative">
                 {path.steps.map((step, sIdx) => (
                   <div key={sIdx} className="relative flex items-start gap-6 group/step">
-                    <div className="relative z-10 w-16 h-16 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-center border border-primary/10 shrink-0 transition-transform group-hover/step:scale-110">
-                      <step.icon className="w-8 h-8 text-primary" />
+                    <div className="relative z-10 w-16 h-16 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex items-center justify-center border border-black/10 shrink-0 transition-transform group-hover/step:scale-110">
+                      <step.icon className={`w-8 h-8 ${path.stepIconClass}`} />
                     </div>
                     <div className="pt-1">
-                      <span className="text-xs font-black text-primary tracking-widest mb-1.5 block uppercase">{step.label}</span>
+                      <span className={`text-xs font-black tracking-widest mb-1.5 block uppercase ${path.stepLabelClass}`}>{step.label}</span>
                       <p className="text-lg font-bold break-keep leading-tight text-foreground/90">{step.text}</p>
                     </div>
                     {/* 연결 선 (마지막 단계 제외) */}

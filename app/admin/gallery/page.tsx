@@ -212,7 +212,7 @@ export default function AdminGalleryPage() {
                     <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">출력 갤러리 관리</h1>
                     <p className="text-white/50 text-sm mt-1">메인 페이지 갤러리 섹션에 표시될 출력물을 관리합니다.</p>
                 </div>
-                <Button onClick={openAddModal} className="gap-2 bg-primary text-white hover:bg-primary/90">
+                <Button onClick={openAddModal} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
                     <Plus className="w-4 h-4" /> 갤러리 업로드
                 </Button>
             </div>
@@ -321,34 +321,34 @@ export default function AdminGalleryPage() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label className="text-white/70">제목 (필수)</Label>
-                            <Input placeholder="예: 정밀 기어 부품" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Label className="text-zinc-300">제목 (필수)</Label>
+                            <Input placeholder="예: 정밀 기어 부품" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label className="text-white/70">간단한 설명 (선택)</Label>
-                            <Input placeholder="산업용 기어 파츠 시제품입니다." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Label className="text-zinc-300">간단한 설명 (선택)</Label>
+                            <Input placeholder="산업용 기어 파츠 시제품입니다." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label className="text-white/70">출력 방식 (선택)</Label>
-                                <Input placeholder="예: SLA, FDM" value={formData.print_method} onChange={e => setFormData({ ...formData, print_method: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                                <Label className="text-zinc-300">출력 방식 (선택)</Label>
+                                <Input placeholder="예: SLA, FDM" value={formData.print_method} onChange={e => setFormData({ ...formData, print_method: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-white/70">사용 소재 (선택)</Label>
-                                <Input placeholder="예: Tough ABS, PLA" value={formData.material} onChange={e => setFormData({ ...formData, material: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                                <Label className="text-zinc-300">사용 소재 (선택)</Label>
+                                <Input placeholder="예: Tough ABS, PLA" value={formData.material} onChange={e => setFormData({ ...formData, material: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
                             </div>
                         </div>
 
                         <div className="grid gap-2">
-                            <Label className="text-white/70">태그 (선택)</Label>
-                            <Input placeholder="쉼표(,)로 구분 (예: 시제품,산업용,부품)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="bg-white/5 border-white/10 text-white" />
+                            <Label className="text-zinc-300">태그 (선택)</Label>
+                            <Input placeholder="쉼표(,)로 구분 (예: 시제품,산업용,부품)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" className="border-white/10 text-white bg-transparent hover:bg-white/10" onClick={() => setIsAddOpen(false)}>취소</Button>
-                        <Button className="bg-primary hover:bg-primary/90 text-white" onClick={handleAddOrEditSubmit} disabled={isSaving}>
+                        <Button variant="outline" className="border-white/20 text-zinc-200 bg-transparent hover:bg-white/10" onClick={() => setIsAddOpen(false)}>취소</Button>
+                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleAddOrEditSubmit} disabled={isSaving}>
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} 업로드 및 저장
                         </Button>
                     </DialogFooter>

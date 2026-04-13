@@ -538,14 +538,14 @@ export default function AdminSettings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="bg-white/5 border border-white/10 p-1 h-auto flex-wrap sm:flex-nowrap">
-          <TabsTrigger value="store" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-2 text-white/50 hover:text-white transition-colors">
+          <TabsTrigger value="store" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 text-white/50 hover:text-white transition-colors">
             <Store className="w-4 h-4" /> 기본 설정
           </TabsTrigger>
-          <TabsTrigger value="equipment" className="data-[state=active]:bg-primary data-[state=active]:text-white gap-2 text-white/50 hover:text-white transition-colors">
+          <TabsTrigger value="equipment" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 text-white/50 hover:text-white transition-colors">
             <Printer className="w-4 h-4" /> 장비 설정
           </TabsTrigger>
-          <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/50 hover:text-white transition-colors">소재</TabsTrigger>
-          <TabsTrigger value="pricing" className="data-[state=active]:bg-primary data-[state=active]:text-white text-white/50 hover:text-white transition-colors">가격 정책</TabsTrigger>
+          <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-white/50 hover:text-white transition-colors">소재</TabsTrigger>
+          <TabsTrigger value="pricing" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-white/50 hover:text-white transition-colors">가격 정책</TabsTrigger>
         </TabsList>
 
         {/* 상점 기본 설정 */}
@@ -578,7 +578,7 @@ export default function AdminSettings() {
                 </div>
               </div>
               <div className="flex justify-end pt-4">
-                <Button onClick={handleSaveStoreConfigs} className="bg-primary hover:bg-primary/90">
+                <Button onClick={handleSaveStoreConfigs} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   <Save className="w-4 h-4 mr-2" /> 설정 저장
                 </Button>
               </div>
@@ -946,7 +946,7 @@ export default function AdminSettings() {
                 )
               })}
               <div className="flex justify-end pt-4">
-                <Button onClick={() => handleSaveSettingsPricingOnly()} className="bg-primary hover:bg-primary/90">
+                <Button onClick={() => handleSaveSettingsPricingOnly()} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   <Save className="w-4 h-4 mr-2" /> 변경사항 저장
                 </Button>
               </div>

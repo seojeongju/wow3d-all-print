@@ -350,7 +350,7 @@ function CheckoutContent() {
                                                     <Button
                                                         type="button"
                                                         onClick={handleAddressSearch}
-                                                        className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold whitespace-nowrap flex items-center gap-2"
+                                                        className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold whitespace-nowrap flex items-center gap-2"
                                                     >
                                                         <Search className="w-4 h-4" />
                                                         주소 찾기

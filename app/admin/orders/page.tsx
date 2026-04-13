@@ -484,14 +484,14 @@ function OrderListInner() {
                     <button
                         type="button"
                         onClick={() => setScopeFilter('all')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/30 text-primary-200 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         전체
                     </button>
                     <button
                         type="button"
                         onClick={() => setScopeFilter('mine')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/30 text-primary-200 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         내 주문
                     </button>
@@ -573,7 +573,7 @@ function OrderListInner() {
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
-                                                                className="h-7 px-2.5 text-xs font-semibold border-primary/50 text-white bg-primary/20 hover:bg-primary transition-all shadow-[0_0_10px_rgba(99,102,241,0.15)] group"
+                                                                className="h-7 px-2.5 text-xs font-semibold border-primary/50 text-zinc-100 bg-primary/20 hover:bg-primary hover:text-primary-foreground transition-all shadow-[0_0_10px_rgba(99,102,241,0.15)] group"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleBulkDownload(order.id, items);

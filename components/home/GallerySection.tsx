@@ -325,12 +325,12 @@ export function DetailViewModal({
 
                         {/* 하단 버튼 */}
                         <div className="mt-8 pt-8 border-t border-white/10">
-                            <Link href="/quote" onClick={onClose}>
-                                <Button className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold gap-2">
+                            <Button asChild className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2">
+                                <Link href="/quote" onClick={onClose}>
                                     유사 시제품 견적 문의하기
                                     <ArrowRight className="w-4 h-4" />
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                         </div>
                     </div>
                 </motion.div>
@@ -526,15 +526,16 @@ export default function GallerySection() {
                     viewport={{ once: true }}
                     className="container mx-auto px-4 mt-6 flex justify-center"
                 >
-                    <Link href="/quote">
-                        <Button
-                            size="lg"
-                            className="rounded-full h-12 px-8 bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.5)]"
-                        >
+                    <Button
+                        asChild
+                        size="lg"
+                        className="rounded-full h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.5)]"
+                    >
+                        <Link href="/quote">
                             AI 실시간 자동견적 받기
                             <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </motion.div>
             </section>
         </>

@@ -143,7 +143,7 @@ function OrderCompleteContent() {
                                         { title: "검수 및 배송", desc: "출력물을 검수·경화 후 배송지로 발송합니다.", icon: "04" },
                                     ].map((step, idx) => (
                                         <div key={idx} className="flex gap-6 group">
-                                            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/5 flex items-center justify-center text-[10px] font-black group-hover:bg-primary group-hover:text-white transition-all">
+                                            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/5 flex items-center justify-center text-[10px] font-black group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                                                 {step.icon}
                                             </div>
                                             <div className="space-y-1">

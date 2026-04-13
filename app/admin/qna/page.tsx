@@ -188,7 +188,7 @@ export default function AdminQnAPage() {
           <h1 className="text-2xl font-bold text-white uppercase tracking-tight">FAQ 관리</h1>
           <p className="text-white/40 text-sm mt-1">자주 묻는 질문(FAQ) 항목을 관리하고 노출 순서를 설정합니다.</p>
         </div>
-        <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 text-white gap-2 h-11 px-6 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-primary/20">
+        <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 h-11 px-6 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-primary/20">
           <Plus className="w-4 h-4" /> 질문 추가
         </Button>
       </div>

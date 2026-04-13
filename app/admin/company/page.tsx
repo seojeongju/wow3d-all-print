@@ -136,7 +136,7 @@ export default function CompanyInfoPage() {
                 <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className={saved ? 'bg-emerald-600 hover:bg-emerald-600 text-white' : 'bg-primary hover:bg-primary/90 text-black font-bold'}
+                    className={saved ? 'bg-emerald-600 hover:bg-emerald-600 text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground font-bold'}
                 >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> :
                         saved ? <CheckCircle2 className="w-4 h-4 mr-2" /> :
@@ -412,7 +412,7 @@ export default function CompanyInfoPage() {
                     onClick={handleSave}
                     disabled={saving}
                     size="lg"
-                    className={saved ? 'bg-emerald-600 hover:bg-emerald-600 text-white' : 'bg-primary hover:bg-primary/90 text-black font-bold'}
+                    className={saved ? 'bg-emerald-600 hover:bg-emerald-600 text-white' : 'bg-primary hover:bg-primary/90 text-primary-foreground font-bold'}
                 >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> :
                         saved ? <CheckCircle2 className="w-4 h-4 mr-2" /> :

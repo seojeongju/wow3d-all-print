@@ -340,7 +340,7 @@ export default function PrinterProductPage() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-teal-400/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {/* 추천 배지 */}
                                 {product.highlight && (
-                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/30 whitespace-nowrap">
+                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/30 whitespace-nowrap">
                                         <Star className="w-3 h-3 fill-white" /> 베스트셀러
                                     </span>
                                 )}

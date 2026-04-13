@@ -125,7 +125,7 @@ export default function Header() {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         exit={{ scale: 0 }}
-                                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-white text-[11px] font-bold rounded-full"
+                                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-bold rounded-full"
                                     >
                                         {cartItemCount > 99 ? '99+' : cartItemCount}
                                     </motion.span>

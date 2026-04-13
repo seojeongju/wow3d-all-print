@@ -216,7 +216,7 @@ export default function QuoteEditPage() {
                         {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
                         수정견적 저장
                     </Button>
-                    <Button onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-black font-bold text-sm">
+                    <Button onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm">
                         <Printer className="w-3.5 h-3.5 mr-1.5" />
                         견적서 인쇄
                     </Button>

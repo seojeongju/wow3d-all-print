@@ -59,7 +59,7 @@ export default function GalleryPage() {
                     onClick={() => setPage(i)}
                     className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all ${
                         page === i 
-                        ? 'bg-primary text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
+                        ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
                         : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                 >
