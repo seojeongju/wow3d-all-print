@@ -12,7 +12,7 @@ export default function EducationQuickMenu() {
     const [isHovered, setIsHovered] = useState(false);
 
     return (
-        {/* 세로 중앙(top-1/2)이면 3D 뷰어 뷰 프리셋 열과 겹침 → 헤더 아래 우측에 고정 */}
+        /* 세로 중앙 배치 시 3D 뷰어 뷰 프리셋 열과 겹침 → 헤더 아래 우측 고정 */
         <div className="fixed right-0 top-24 sm:top-28 z-[90] flex items-center pointer-events-none">
             <motion.a
                 href="https://3dcookiehd.co.kr/"
