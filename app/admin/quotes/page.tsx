@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 /** DB 주문 금액 단위 → 원화 (주문관리·견적서 수정과 동일) */
 // 금액은 DB/API에서 원화(KRW)로 저장·전달됨
@@ -233,23 +233,21 @@ export default function QuoteList() {
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                     <Button
-                        variant="outline"
                         size="sm"
-                        className="border-white/10 text-white hover:bg-white/10 text-xs"
+                        className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-xs h-9 px-4 rounded-xl transition-all"
                         onClick={handleMergedPrint}
                         disabled={selectedOrderIds.size === 0}
                     >
-                        <Printer className="w-3.5 h-3.5 mr-1.5" />
+                        <Printer className="w-4 h-4 mr-2" />
                         선택 견적 인쇄
                     </Button>
                     <Button
-                        variant="outline"
                         size="sm"
-                        className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+                        className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 text-xs h-9 px-4 rounded-xl transition-all"
                         onClick={() => setShowMergedSendDialog(true)}
                         disabled={selectedOrderIds.size === 0}
                     >
-                        <Mail className="w-3.5 h-3.5 mr-1.5" />
+                        <Mail className="w-4 h-4 mr-2" />
                         선택 견적 이메일 발송
                     </Button>
                 </div>
@@ -297,10 +295,9 @@ export default function QuoteList() {
                                     const isSelected = selectedOrderIds.has(order.id);
 
                                     return (
-                                        <>
+                                        <React.Fragment key={order.id}>
                                             {/* 메인 행 */}
                                             <tr
-                                                key={order.id}
                                                 className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${isExpanded ? 'bg-white/[0.03]' : ''}`}
                                             >
                                                 <td className="p-4 text-center">
@@ -398,27 +395,27 @@ export default function QuoteList() {
                                                 <td className="p-4 text-right">
                                                     <div className="flex flex-wrap items-center justify-end gap-2">
                                                         <Button
-                                                            variant="outline" size="sm"
-                                                            className="border-white/10 text-white hover:bg-white/10 text-xs"
+                                                            size="sm"
+                                                            className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-xs font-bold h-8 px-3 rounded-lg transition-all"
                                                             onClick={() => handleEdit(order.id)}
                                                         >
-                                                            <PenLine className="w-3 h-3 mr-1" />
+                                                            <PenLine className="w-3.5 h-3.5 mr-1.5" />
                                                             작성/수정
                                                         </Button>
                                                         <Button
-                                                            variant="secondary" size="sm"
-                                                            className="bg-primary/20 text-primary hover:bg-primary/30 border-primary/20 text-xs"
+                                                            size="sm"
+                                                            className="bg-teal-500/20 border border-teal-500/30 text-teal-300 hover:bg-teal-500/30 text-xs font-bold h-8 px-3 rounded-lg transition-all"
                                                             onClick={() => handlePrint(order.id, expertData || undefined)}
                                                         >
-                                                            <Printer className="w-3 h-3 mr-1" />
+                                                            <Printer className="w-3.5 h-3.5 mr-1.5" />
                                                             견적서 인쇄
                                                         </Button>
                                                         <Button
-                                                            variant="outline" size="sm"
-                                                            className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs"
+                                                            size="sm"
+                                                            className="bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 text-xs font-bold h-8 px-3 rounded-lg transition-all"
                                                             onClick={() => setSendQuotationOrderId(order.id)}
                                                         >
-                                                            <Mail className="w-3 h-3 mr-1" />
+                                                            <Mail className="w-3.5 h-3.5 mr-1.5" />
                                                             이메일 발송
                                                         </Button>
                                                     </div>
@@ -427,7 +424,7 @@ export default function QuoteList() {
 
                                             {/* 확장 행: 자동견적 vs 수정견적 비교 */}
                                             {expertData && isExpanded && (
-                                                <tr key={`${order.id}-expand`} className="border-b border-white/5 bg-white/[0.015]">
+                                                <tr className="border-b border-white/5 bg-white/[0.015]">
                                                     <td colSpan={10} className="px-6 py-4">
                                                         <div className="grid grid-cols-2 gap-4">
                                                             {/* 자동견적 원본 */}
@@ -447,17 +444,17 @@ export default function QuoteList() {
                                                                     </div>
                                                                     <div className="pt-2 flex justify-end">
                                                                         <Button
-                                                                            variant="ghost" size="sm"
-                                                                            className="text-white/30 hover:text-white text-xs h-6 px-2"
+                                                                            size="sm"
+                                                                            className="bg-white/10 border border-white/20 text-white/70 hover:text-white hover:bg-white/20 text-xs h-7 px-2.5 rounded-lg transition-all"
                                                                             onClick={() => handlePrint(order.id)}
                                                                         >
-                                                                            <Printer className="w-3 h-3 mr-1" /> 원본 출력
+                                                                            <Printer className="w-3.5 h-3.5 mr-1.5" /> 원본 출력
                                                                         </Button>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
-                                                            {/* 수정견적 */}
+                                                            {/* 전문가 수정견적 */}
                                                             <div className="space-y-2">
                                                                 <div className="flex items-center gap-2 mb-3">
                                                                     <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">전문가 수정견적</span>
@@ -481,11 +478,11 @@ export default function QuoteList() {
                                                                     </div>
                                                                     <div className="pt-2 flex justify-end">
                                                                         <Button
-                                                                            variant="ghost" size="sm"
-                                                                            className="text-emerald-400 hover:text-emerald-300 text-xs h-6 px-2"
+                                                                            size="sm"
+                                                                            className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30 hover:text-emerald-200 text-xs h-7 px-2.5 rounded-lg transition-all font-bold"
                                                                             onClick={() => handlePrint(order.id, expertData)}
                                                                         >
-                                                                            <Printer className="w-3 h-3 mr-1" /> 수정견적 출력
+                                                                            <Printer className="w-3.5 h-3.5 mr-1.5" /> 수정견적 출력
                                                                         </Button>
                                                                     </div>
                                                                 </div>
@@ -494,7 +491,7 @@ export default function QuoteList() {
                                                     </td>
                                                 </tr>
                                             )}
-                                        </>
+                                        </React.Fragment>
                                     );
                                 })}
                                 {filtered.length === 0 && (

@@ -41,7 +41,9 @@ const PLACEHOLDER_DATA_URI = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.
 export function resolveImageUrl(url: string): string {
     if (!url || typeof url !== 'string' || !url.trim()) return PLACEHOLDER_DATA_URI;
     // placeholder 또는 존재하지 않는 정적 경로는 요청하지 않음
-    if (url === '/placeholder-3d.jpg' || url.endsWith('placeholder-3d.jpg')) return PLACEHOLDER_DATA_URI;
+    if (url === '/placeholder-3d.jpg' || url.endsWith('placeholder-3d.jpg') || url.includes('placeholder')) {
+        return '/placeholder-3d.svg';
+    }
     if (url.startsWith('http') || url.startsWith('/')) return url;
     // gallery/xxx.jpg → /api/gallery/image/xxx.jpg
     if (url.startsWith('gallery/')) {

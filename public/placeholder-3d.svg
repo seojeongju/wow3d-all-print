@@ -1,0 +1,25 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#020617"/>
+  <defs>
+    <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#020617;stop-opacity:1" />
+    </radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#grad1)"/>
+  <rect width="800" height="600" fill="url(#grid)"/>
+  <g transform="translate(400, 300) scale(1.5)">
+    <!-- 3D Cube/Mesh Silhouette -->
+    <path d="M0 -60 L52 -30 V30 L0 60 L-52 30 V-30 Z" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-opacity="0.3">
+      <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" />
+    </path>
+    <path d="M0 -60 V0 M0 60 V0 M0 0 L52 -30 M0 0 L-52 30 M52 30 L0 0 M-52 -30 L0 0" stroke="#2dd4bf" stroke-width="1" stroke-opacity="0.2" />
+    <!-- Center Icon -->
+    <circle cx="0" cy="0" r="15" fill="#2dd4bf" fill-opacity="0.1" />
+    <path d="M-5 -5 L5 5 M-5 5 L5 -5" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" />
+  </g>
+  <text x="50%" y="500" text-anchor="middle" fill="#2dd4bf" fill-opacity="0.4" font-family="sans-serif" font-weight="900" font-size="14" letter-spacing="0.4em" style="text-transform: uppercase;">3D Model Visualization</text>
+</svg>

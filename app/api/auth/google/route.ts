@@ -20,8 +20,17 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const returnTo = url.searchParams.get('return') || '';
-    const origin = url.origin;
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    
+    // REDIRECT_URI 결정 로직: 
+    // 1. 환경 변수에 설정된 명시적 URI (가장 확실함)
+    // 2. 요청 헤더 기반의 동적 URI
+    let redirectUri = envVars.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+    
+    if (!redirectUri) {
+        const host = request.headers.get('host') || url.host;
+        const proto = request.headers.get('x-forwarded-proto') || (url.protocol.replace(':', '')) || 'https';
+        redirectUri = `${proto}://${host}/api/auth/google/callback`;
+    }
 
     const params = new URLSearchParams({
         client_id: clientId,

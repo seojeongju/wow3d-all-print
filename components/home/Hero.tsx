@@ -172,7 +172,7 @@ export default function Hero() {
                             </Button>
                         </Link>
                         <Link href="/materials">
-                            <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-[1.02] transition-all gap-2">
+                            <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/15 border-white/30 text-white hover:bg-white/25 hover:scale-[1.02] transition-all gap-2">
                                 <Palette className="w-5 h-5 shrink-0" />
                                 소재 살펴보기
                             </Button>
@@ -198,7 +198,7 @@ export default function Hero() {
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
                     <motion.div
                         style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border border-white/15 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/40 z-10 overflow-hidden flex flex-col ring-1 ring-white/10"
+                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border border-white/25 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/40 z-10 overflow-hidden flex flex-col ring-1 ring-white/10"
                     >
                         {/* 그리드 배경 */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
@@ -250,7 +250,7 @@ export default function Hero() {
 
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute left-10 bottom-20 w-[280px] h-[480px] rounded-[2.5rem] border border-white/15 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/40 z-20 p-8 flex flex-col ring-1 ring-white/10"
+                        className="absolute left-10 bottom-20 w-[280px] h-[480px] rounded-[2.5rem] border border-white/25 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/40 z-20 p-8 flex flex-col ring-1 ring-white/10"
                     >
                         <div className="flex items-center gap-4 mb-8">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
@@ -283,7 +283,7 @@ export default function Hero() {
                                 </div>
                             </div>
                             
-                            <div className="p-5 bg-white/[0.04] rounded-2xl border border-white/10 backdrop-blur-sm">
+                            <div className="p-5 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
                                 <div className="text-[10px] text-white/40 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
                                 <div className={`text-2xl font-black ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
                                     {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
@@ -294,7 +294,7 @@ export default function Hero() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full h-11 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[10px] uppercase tracking-widest transition-all"
+                                    className="w-full h-11 rounded-xl border-white/25 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all"
                                     onClick={handleTrySample}
                                     disabled={isLoadingSample}
                                 >

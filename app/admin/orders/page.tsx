@@ -484,14 +484,14 @@ function OrderListInner() {
                     <button
                         type="button"
                         onClick={() => setScopeFilter('all')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/30 text-primary-200 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         전체
                     </button>
                     <button
                         type="button"
                         onClick={() => setScopeFilter('mine')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/20 text-primary' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/30 text-primary-200 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         내 주문
                     </button>
@@ -519,7 +519,7 @@ function OrderListInner() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="border-white/10 text-white/70 hover:bg-white/5" onClick={handleCsvDownload}>
+                <Button variant="outline" size="sm" className="border-white/20 text-white/90 hover:bg-white/10" onClick={handleCsvDownload}>
                     <Download className="w-4 h-4 mr-2" /> CSV 다운로드
                 </Button>
             </div>
@@ -573,7 +573,7 @@ function OrderListInner() {
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
-                                                                className="h-7 px-2.5 text-[11px] font-semibold border-primary/50 text-primary hover:bg-primary hover:text-white transition-all shadow-[0_0_10px_rgba(99,102,241,0.15)] group"
+                                                                className="h-7 px-2.5 text-xs font-semibold border-primary/50 text-white bg-primary/20 hover:bg-primary transition-all shadow-[0_0_10px_rgba(99,102,241,0.15)] group"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     handleBulkDownload(order.id, items);
@@ -627,7 +627,7 @@ function OrderListInner() {
                                                 onValueChange={(v) => handleStatusChange(order.id, v)}
                                                 disabled={updatingId === order.id}
                                             >
-                                                <SelectTrigger className="w-[130px] h-8 bg-white/5 border-white/10 text-white text-xs">
+                                                <SelectTrigger className="w-[130px] h-8 bg-white/10 border-white/20 text-white text-xs">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>

@@ -140,7 +140,7 @@ export default function Header() {
                                 <button className={`flex items-center gap-2.5 pl-2 pr-3.5 py-2 rounded-xl transition-all ${
                                     isPastHero
                                         ? 'bg-slate-100 border border-slate-200 hover:bg-teal-50 hover:border-teal-200'
-                                        : 'bg-white/10 border border-white/15 hover:bg-white/20'
+                                        : 'bg-white/15 border border-white/25 hover:bg-white/25'
                                 }`}>
                                     <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
                                         <User className="w-4 h-4" />
@@ -164,7 +164,7 @@ export default function Header() {
                             <Button variant="ghost" className={`text-[13px] font-semibold rounded-xl px-4 h-10 border transition-colors ${
                                 isPastHero
                                     ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50 border-slate-200'
-                                    : 'text-white/90 hover:text-white hover:bg-white/15 border-white/20'
+                                    : 'text-white/90 hover:text-white hover:bg-white/20 border-white/30'
                             }`}>
                                 로그인
                             </Button>
@@ -185,7 +185,7 @@ export default function Header() {
                         className={`lg:hidden w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center touch-manipulation select-none transition-colors ${
                             isPastHero
                                 ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-teal-50 hover:text-teal-600'
-                                : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
+                                : 'bg-white/15 border border-white/30 text-white hover:bg-white/25'
                         }`}
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}

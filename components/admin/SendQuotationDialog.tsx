@@ -182,7 +182,7 @@ export function SendQuotationDialog({
                                 value={to}
                                 onChange={(e) => setTo(e.target.value)}
                                 placeholder="customer@example.com"
-                                className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                                className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
                             />
                         </div>
                         <div className="grid gap-2">
@@ -191,7 +191,7 @@ export function SendQuotationDialog({
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
                                 placeholder="견적서 제목"
-                                className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                                className="bg-white/10 border-white/20 text-white placeholder:text-white/40"
                             />
                         </div>
                         <div className="grid gap-2">
@@ -201,14 +201,14 @@ export function SendQuotationDialog({
                                     <button
                                         type="button"
                                         onClick={() => setBodyType('html')}
-                                        className={`px-3 py-1.5 text-xs flex items-center gap-1.5 ${bodyType === 'html' ? 'bg-white/15 text-white' : 'bg-white/5 text-white/60 hover:text-white/80'}`}
+                                        className={`px-3 py-1.5 text-xs flex items-center gap-1.5 ${bodyType === 'html' ? 'bg-white/25 text-white font-bold' : 'bg-white/10 text-white/60 hover:text-white/80'}`}
                                     >
                                         <FileCode className="w-3.5 h-3.5" /> HTML
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setBodyType('text')}
-                                        className={`px-3 py-1.5 text-xs flex items-center gap-1.5 ${bodyType === 'text' ? 'bg-white/15 text-white' : 'bg-white/5 text-white/60 hover:text-white/80'}`}
+                                        className={`px-3 py-1.5 text-xs flex items-center gap-1.5 ${bodyType === 'text' ? 'bg-white/25 text-white font-bold' : 'bg-white/10 text-white/60 hover:text-white/80'}`}
                                     >
                                         <FileText className="w-3.5 h-3.5" /> 일반 텍스트
                                     </button>
@@ -219,7 +219,7 @@ export function SendQuotationDialog({
                                     value={html}
                                     onChange={(e) => setHtml(e.target.value)}
                                     rows={12}
-                                    className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 font-mono"
+                                    className="w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 font-mono"
                                     placeholder="HTML 본문"
                                 />
                             ) : (
@@ -227,7 +227,7 @@ export function SendQuotationDialog({
                                     value={text}
                                     onChange={(e) => setText(e.target.value)}
                                     rows={12}
-                                    className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 resize-y"
+                                    className="w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 resize-y"
                                     placeholder="일반 텍스트 본문"
                                 />
                             )}
@@ -295,7 +295,7 @@ export function SendQuotationDialog({
                     <DialogFooter className="gap-2 sm:gap-0 pt-4">
                         <Button
                             variant="outline"
-                            className="border-white/10 text-white"
+                            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                             onClick={() => onOpenChange(false)}
                             disabled={sending}
                         >

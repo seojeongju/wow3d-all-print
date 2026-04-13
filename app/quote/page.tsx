@@ -107,7 +107,7 @@ function QuoteContent() {
                             </div>
                         </Link>
 
-                        <nav className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
+                        <nav className="hidden md:flex items-center gap-1 bg-white/10 p-1 rounded-full border border-white/20">
                             {[
                                 { id: 1, label: "업로드", active: step >= 1 },
                                 { id: 2, label: "견적 설정", active: step >= 2 },
@@ -136,7 +136,7 @@ function QuoteContent() {
                             <ShoppingCart className="w-4 h-4" /> 장바구니
                         </Link>
                         <Link href="/">
-                            <Button variant="outline" size="sm" className="rounded-xl bg-white/5 border-white/15 text-white/70 hover:text-white hover:bg-white/10 px-5 font-bold transition-all">
+                            <Button variant="outline" size="sm" className="rounded-xl bg-white/10 border-white/25 text-white hover:bg-white/20 px-5 font-bold transition-all">
                                 <ArrowLeft className="w-4 h-4 mr-2" />
                                 나가기
                             </Button>
@@ -163,9 +163,9 @@ function QuoteContent() {
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             className="space-y-8 flex flex-col items-center justify-center min-h-[400px]"
                                         >
-                                            <div className="w-24 h-24 rounded-[2.5rem] bg-teal-400/10 border border-teal-400/20 flex items-center justify-center relative group">
+                                            <div className="w-24 h-24 rounded-[2.5rem] bg-teal-400/20 border border-teal-400/30 flex items-center justify-center relative group">
                                                 <Loader2 className="w-12 h-12 text-teal-400 animate-spin" />
-                                                <div className="absolute inset-0 rounded-[2.5rem] bg-teal-400/20 blur-2xl animate-pulse group-hover:blur-3xl transition-all" />
+                                                <div className="absolute inset-0 rounded-[2.5rem] bg-teal-400/25 blur-2xl animate-pulse group-hover:blur-3xl transition-all" />
                                             </div>
                                             <div className="text-center space-y-3">
                                                 <h1 className="text-3xl font-black tracking-tight text-white leading-tight">
@@ -177,13 +177,13 @@ function QuoteContent() {
                                                     최적의 견적을 산출하기 위해 잠시만 기다려 주세요.
                                                 </p>
                                             </div>
-                                            <div className="w-full p-5 rounded-3xl bg-white/5 border border-white/10 flex items-center gap-4 shadow-xl">
-                                                <div className="w-14 h-14 rounded-2xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-center text-teal-400 shrink-0">
+                                            <div className="w-full p-5 rounded-3xl bg-white/10 border border-white/20 flex items-center gap-4 shadow-xl">
+                                                <div className="w-14 h-14 rounded-2xl bg-teal-400/20 border border-teal-400/30 flex items-center justify-center text-teal-400 shrink-0">
                                                     <FileBox className="w-7 h-7" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-black text-white truncate">{file.name}</div>
-                                                    <div className="text-[11px] font-black text-white/40 tracking-[0.1em] uppercase mt-0.5">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
+                                                    <div className="text-xs font-black text-white/40 tracking-[0.1em] uppercase mt-0.5">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -205,14 +205,14 @@ function QuoteContent() {
                                                     지능형 분석 엔진이 실시간으로 비용을 산출합니다.
                                                 </p>
                                             </div>
-                                            <div className="p-1 rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden shadow-2xl relative group">
+                                            <div className="p-1 rounded-[3rem] bg-white/10 border border-white/20 overflow-hidden shadow-2xl relative group">
                                                 <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                                                 <FileUpload variant="dark" />
                                             </div>
 
                                             <div className="pt-2 grid gap-4">
-                                                <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 group hover:border-teal-400/40 transition-all hover:bg-teal-400/5">
-                                                    <div className="w-14 h-14 rounded-2xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+                                                <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-white/10 border border-white/20 group hover:border-teal-400/40 transition-all hover:bg-teal-400/5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-teal-400/20 border border-teal-400/30 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
                                                         <CheckCircle2 className="w-7 h-7" />
                                                     </div>
                                                     <div className="space-y-1.5 pt-1">
@@ -220,8 +220,8 @@ function QuoteContent() {
                                                         <p className="text-[13px] text-white/50 leading-relaxed font-bold">부피, 표면적, 예상 소요 시간을 99% 정확도로 분석합니다.</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 group hover:border-indigo-500/40 transition-all hover:bg-indigo-500/5">
-                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                                                <div className="flex items-start gap-5 p-6 rounded-[2rem] bg-white/10 border border-white/20 group hover:border-indigo-500/40 transition-all hover:bg-indigo-500/5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
                                                         <Info className="w-7 h-7" />
                                                     </div>
                                                     <div className="space-y-1.5 pt-1">
@@ -243,7 +243,7 @@ function QuoteContent() {
                                             <h2 className="text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
                                             <button
                                                 onClick={() => { reset(); setStep(1); }}
-                                                className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
+                                                className="px-3 py-1.5 rounded-lg bg-teal-400/20 border border-teal-400/30 text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
                                             >
                                                 <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
                                                 파일 교체

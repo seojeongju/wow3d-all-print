@@ -45,7 +45,13 @@ export async function GET(request: NextRequest) {
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=config` } });
     }
 
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    // REDIRECT_URI 결정 로직 (시작 API와 반드시 일치해야 함)
+    let redirectUri = envVars.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+    if (!redirectUri) {
+        const host = request.headers.get('host') || url.host;
+        const proto = request.headers.get('x-forwarded-proto') || (url.protocol.replace(':', '')) || 'https';
+        redirectUri = `${proto}://${host}/api/auth/google/callback`;
+    }
 
     // 1) code → access_token
     const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
