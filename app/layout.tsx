@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
+import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -159,6 +160,7 @@ export default function RootLayout({
         </Suspense>
         {children}
         <Toaster />
+        <EducationQuickMenu />
       </body>
     </html>
   );
