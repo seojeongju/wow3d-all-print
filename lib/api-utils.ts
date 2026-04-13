@@ -109,7 +109,7 @@ export async function generateToken(userId: number, email: string): Promise<stri
 /**
  * JWT 토큰 검증
  */
-export async function verifyToken(token: string): Promise<{ userId: number; email: string } | null> {
+export async function verifyToken(token: string): Promise<{ userId: number; email: string } | { error: string } | null> {
     try {
         const trimmed = token.trim();
         const [header, payload, signature] = trimmed.split('.');
