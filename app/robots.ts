@@ -8,17 +8,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/", "/checkout", "/order-complete", "/my-account"],
-      },
-      {
-        userAgent: "Googlebot",
-        allow: "/",
-        disallow: ["/admin/", "/api/", "/checkout", "/order-complete", "/my-account"],
-      },
-      {
-        userAgent: "Yeti", // 네이버 봇
-        allow: "/",
-        disallow: ["/admin/", "/api/", "/checkout", "/order-complete", "/my-account"],
+        disallow: [
+          "/admin/",
+          "/api/",
+          "/checkout",
+          "/order-complete",
+          "/my-account",
+          "/auth", // 이제 사이트맵에서 빠졌으므로 robots에서도 명시적으로 막아 수집 방지
+        ],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
