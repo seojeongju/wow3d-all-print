@@ -487,8 +487,14 @@ export default function Scene({ compact = false }: SceneProps) {
                     </div>
                 )}
 
-                {/* 뷰 프리셋: 우측 고정 교육 메뉴(EducationQuickMenu) 폭만큼 안쪽으로 배치해 겹침 방지 */}
-                <div className="absolute right-[6.75rem] sm:right-32 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 items-end max-[380px]:right-14">
+                {/* 뷰 프리셋: 상단 컨트롤 열 아래 빈 영역에 고정 (뷰어 높이가 낮아도 세로 중앙과 겹치지 않음). compact는 상단 메뉴 없음 → 세로 중앙 */}
+                <div
+                    className={
+                        compact
+                            ? 'absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-2 items-end sm:right-4'
+                            : 'absolute right-3 top-52 z-20 flex flex-col gap-2 items-end sm:top-44 sm:right-4'
+                    }
+                >
                     {[
                         { id: 'home', label: '홈', icon: Home },
                         { id: 'front', label: '전면', icon: ArrowUp },
