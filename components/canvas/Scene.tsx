@@ -322,15 +322,15 @@ export default function Scene({ compact = false }: SceneProps) {
     }
 
     return (
-        <div className="w-full h-full min-h-[500px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
+        <div className="w-full h-full min-h-[400px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
-                {/* 3D Canvas - R3F 기본 시스템으로 복원 */}
-                <div ref={canvasRef} className="absolute inset-0 z-0">
+                {/* 3D Canvas — demand 모드는 초기 프레임이 안 그려지는 환경이 있어 always 사용 */}
+                <div ref={canvasRef} className="absolute inset-0 z-0 h-full min-h-[400px]">
                     <Canvas
                         key={fileUrl || 'no-file'}
                         shadows
                         dpr={[1, 1.5]}
-                        frameloop="demand"
+                        frameloop="always"
                         camera={{ position: [50, 50, 50], fov: 45 }}
                         gl={{
                             preserveDrawingBuffer: true,
@@ -338,7 +338,8 @@ export default function Scene({ compact = false }: SceneProps) {
                             powerPreference: 'default',
                             stencil: false,
                         }}
-                        onCreated={({ gl }) => {
+                        onCreated={({ gl, invalidate }) => {
+                            invalidate()
                             const el = gl.domElement
                             el.addEventListener('webglcontextlost', (e) => {
                                 e.preventDefault()

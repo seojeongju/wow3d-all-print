@@ -150,13 +150,9 @@ function QuoteContent() {
                 </div>
             </header>
 
-            {/* Main Content Area */}
-            <section className="flex-1 relative z-10">
-                <div className="h-full grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr]">
-
-            {/* Main Content Area */}
-            <section className="flex-1 relative z-10 flex flex-col">
-                <div className="flex-1 grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr] overflow-hidden">
+            {/* 본문: 중첩 section/div 제거 + min-height로 뷰어 열 높이 보장 */}
+            <section className="flex-1 relative z-10 flex min-h-0 flex-col">
+                <div className="flex-1 min-h-0 grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr] overflow-hidden min-h-[calc(100dvh-5rem)]">
 
                     {/* Left Sidebar: Settings Panel */}
                     <div className={`
@@ -286,8 +282,8 @@ function QuoteContent() {
                         ${activeTab === 'viewer' ? 'flex flex-1' : 'hidden lg:flex'}
                         lg:h-[calc(100vh-5rem)]
                     `}>
-                        <div className="flex-1 relative group">
-                            <div className="h-full w-full relative z-0">
+                        <div className="flex-1 relative group min-h-[min(60dvh,560px)]">
+                            <div className="absolute inset-0 z-0">
                                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><Loader2 className="w-12 h-12 text-teal-400/30 animate-spin" /></div>}>
                                     <Scene />
                                 </Suspense>
@@ -355,8 +351,6 @@ function QuoteContent() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
                 </div>
             </section>
         </main>
