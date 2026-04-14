@@ -5,9 +5,8 @@ import { OrbitControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef, createContext, useContext } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
-import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries } from 'three-stdlib'
-import { analyzeGeometry } from '@/lib/geometry'
-import { loadStepAsBufferGeometry } from '@/lib/stepLoader'
+import { parseModelArrayBuffer } from '@/lib/parseModelGeometry'
+import { useCpuModelAnalysis } from '@/hooks/useCpuModelAnalysis'
 import { Button } from '@/components/ui/button'
 import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MousePointer2, Touchpad, HelpCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -59,21 +58,10 @@ function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
 
 type ModelType = 'stl' | 'obj' | '3mf' | 'ply' | 'step'
 
-function collectGeometriesFromGroup(group: THREE.Group): THREE.BufferGeometry[] {
-    const out: THREE.BufferGeometry[] = []
-    group.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-            const g = (child as THREE.Mesh).geometry
-            if (g && g.attributes?.position) out.push(g)
-        }
-    })
-    return out
-}
-
 // 3D 모델 컴포넌트
 function Model({
     url,
-    type,
+    type: _modelType,
     color,
     showMeasurements
 }: {
@@ -82,12 +70,14 @@ function Model({
     color: string;
     showMeasurements: boolean;
 }) {
-    const { setAnalysis } = useFileStore()
+    const fileRecord = useFileStore((s) => s.file)
     const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null)
     const bounds = useBounds()
+    const boundsRef = useRef(bounds)
+    boundsRef.current = bounds
     const mountedRef = useRef(true)
 
     useEffect(() => {
@@ -105,72 +95,34 @@ function Model({
             setError(null)
 
             try {
-                const response = await fetch(url)
-                const arrayBuffer = await response.arrayBuffer()
+                const arrayBuffer = fileRecord
+                    ? await fileRecord.arrayBuffer()
+                    : await (await fetch(url)).arrayBuffer()
 
-                let geo: THREE.BufferGeometry | null = null
+                const name = fileRecord?.name || 'model.stl'
+                const geo = await parseModelArrayBuffer(name, arrayBuffer)
 
-                if (type === 'stl') {
-                    const loader = new STLLoader()
-                    geo = loader.parse(arrayBuffer)
-                } else if (type === 'obj') {
-                    const loader = new OBJLoader()
-                    const text = new TextDecoder().decode(arrayBuffer)
-                    const object = loader.parse(text)
-
-                    const geometries: THREE.BufferGeometry[] = []
-                    object.traverse((child) => {
-                        if ((child as THREE.Mesh).isMesh) {
-                            const g = (child as THREE.Mesh).geometry
-                            if (g) geometries.push(g)
-                        }
-                    })
-
-                    if (geometries.length > 0) {
-                        // 모든 메쉬를 하나로 병합하여 전체 분석 수행
-                        geo = geometries.length === 1 ? geometries[0] : (mergeBufferGeometries(geometries) ?? geometries[0])
-                    }
-                } else if (type === '3mf') {
-                    const loader = new ThreeMFLoader()
-                    const group = loader.parse(arrayBuffer)
-                    const arr = collectGeometriesFromGroup(group)
-                    if (arr.length === 1) geo = arr[0]
-                    else if (arr.length > 1) geo = mergeBufferGeometries(arr) ?? arr[0]
-                } else if (type === 'ply') {
-                    const loader = new PLYLoader()
-                    geo = loader.parse(arrayBuffer)
-                } else if (type === 'step') {
-                    geo = await loadStepAsBufferGeometry(arrayBuffer)
+                if (!geo) {
+                    setError('모델을 해석할 수 없습니다. 지원 형식(STL, OBJ, 3MF, PLY, STEP)인지 확인해 주세요.')
+                    setIsLoading(false)
+                    return
                 }
 
-                if (geo) {
-                    geo.center()
-                    geo.computeVertexNormals()
+                geo.computeBoundingBox()
+                const bbox = geo.boundingBox
+                if (bbox) setBoundingBox(bbox)
 
-                    geo.computeBoundingBox()
-                    const bbox = geo.boundingBox
-                    if (bbox) setBoundingBox(bbox)
-
-                    // 클린업: 이전 geometry가 있다면 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
-                    setGeometry(prev => {
-                        if (prev) {
-                            try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
-                        }
-                        return geo
-                    })
-
-                    try {
-                        const analysis = analyzeGeometry(geo)
-                        setAnalysis(analysis)
-                        console.log('✅ Geometry loaded and analyzed:', analysis)
-                    } catch (e) {
-                        console.error('❌ Analysis failed:', e)
+                // 클린업: 이전 geometry가 있다면 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
+                setGeometry(prev => {
+                    if (prev) {
+                        try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
                     }
+                    return geo
+                })
 
-                    setTimeout(() => {
-                        bounds.refresh().clip().fit()
-                    }, 100)
-                }
+                setTimeout(() => {
+                    boundsRef.current.refresh().clip().fit()
+                }, 100)
 
                 setIsLoading(false)
             } catch (e) {
@@ -191,7 +143,7 @@ function Model({
                 return null
             })
         }
-    }, [url, type, setAnalysis]) // bounds 를 의존성에서 제거 (불필요한 재실행 방지)
+    }, [url, fileRecord])
 
     if (isLoading) {
         return <LoadingSpinner />
@@ -311,6 +263,7 @@ function ViewerContent({ color, showMeasurements }: { color: string, showMeasure
 // 메인 Scene 컴포넌트
 type SceneProps = { compact?: boolean }
 export default function Scene({ compact = false }: SceneProps) {
+    useCpuModelAnalysis()
     const canvasRef = useRef<HTMLDivElement>(null)
     const { fileUrl, reset } = useFileStore()
     const [mounted, setMounted] = useState(false)
@@ -374,6 +327,7 @@ export default function Scene({ compact = false }: SceneProps) {
                 {/* 3D Canvas - R3F 기본 시스템으로 복원 */}
                 <div ref={canvasRef} className="absolute inset-0 z-0">
                     <Canvas
+                        key={fileUrl || 'no-file'}
                         shadows
                         dpr={[1, 1.5]}
                         frameloop="demand"
@@ -383,6 +337,12 @@ export default function Scene({ compact = false }: SceneProps) {
                             antialias: true,
                             powerPreference: 'default',
                             stencil: false,
+                        }}
+                        onCreated={({ gl }) => {
+                            const el = gl.domElement
+                            el.addEventListener('webglcontextlost', (e) => {
+                                e.preventDefault()
+                            })
                         }}
                     >
                         <Suspense fallback={<LoadingSpinner />}>
