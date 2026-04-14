@@ -53,7 +53,10 @@ export const metadata: Metadata = {
     title: "3D프린팅 출력·자동견적 | 시제품제작 전문 (주)와우쓰리디 WOW3D",
     description:
       "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입·소량양산. (주)와우쓰리디가 당신의 상상을 현실로 만듭니다.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "와우쓰리디 WOW3D 3D 프린팅 견적" }],
+    images: [
+      { url: "/thumbnail.png", width: 600, height: 600, alt: "(주)와우쓰리디 WOW3D 3D프린팅 견적" },
+      { url: "/og-image.png", width: 1200, height: 630, alt: "와우쓰리디 WOW3D 3D프린팅 서비스" }
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -109,7 +112,7 @@ export default function RootLayout({
                 "@type": "Organization",
                 "name": "(주)와우쓰리디",
                 "url": SITE_URL,
-                "logo": `${SITE_URL}/og-image.png`,
+                "logo": `${SITE_URL}/thumbnail.png`,
                 "contactPoint": {
                   "@type": "ContactPoint",
                   "telephone": "02-3144-3137",
@@ -130,7 +133,7 @@ export default function RootLayout({
                 "name": "(주)와우쓰리디 (WOW3D)",
                 "description": "(주)와우쓰리디는 AI 기반 3D프린팅 자동견적 시스템과 시제품제작 대행 전문 업체입니다.",
                 "url": SITE_URL,
-                "image": `${SITE_URL}/og-image.png`,
+                "image": `${SITE_URL}/thumbnail.png`,
                 "address": {
                   "@type": "PostalAddress",
                   "streetAddress": "독막로 93 상수빌딩 4층",
