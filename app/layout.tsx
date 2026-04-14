@@ -22,11 +22,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "(주)와우쓰리디 - 3D프린팅 출력 및 시제품 제작 | 실시간 AI 자동견적",
+    default: "(주)와우쓰리디 - 3D프린팅 출력 및 시제품 제작 | 실시간 자동견적",
     template: "%s | (주)와우쓰리디 WOW3D",
   },
   description:
-    "3D프린터 출력 및 시제품제작 대행 전문 (주)와우쓰리디. AI 자동견적으로 실시간 가격 확인. STL 파일 업로드만으로 즉시 주문 가능한 3D프린팅 출력대행 서비스.",
+    "3D프린팅 출력 및 시제품제작 전문 와우쓰리디. AI 자동견적으로 실시간 가격 확인 및 STL 파일 업로드 주문 서비스.",
   keywords: [
     "와우쓰리디",
     "WOW3D",
