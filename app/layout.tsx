@@ -154,22 +154,23 @@ export default function RootLayout({
                 },
                 "description": "3D프린터 출력, 시제품 제작, 프로토타입 제작, 3D프린팅 출력대행 서비스",
                 "areaServed": "KR"
-                {
-                  "@context": "https://schema.org",
-                  "@type": "WebPage",
-                  "name": "3D프린팅 출력·자동견적 | 시제품제작 전문 (주)와우쓰리디",
-                  "description": "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문 (주)와우쓰리디.",
-                  "url": SITE_URL,
-                  "primaryImageOfPage": {
-                    "@type": "ImageObject",
-                    "url": `${SITE_URL}/thumbnail.png`,
-                    "width": "600",
-                    "height": "600"
-                  }
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "WebPage",
+                "name": "3D프린팅 출력·자동견적 | 시제품제작 전문 (주)와우쓰리디",
+                "description": "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문 (주)와우쓰리디.",
+                "url": SITE_URL,
+                "primaryImageOfPage": {
+                  "@type": "ImageObject",
+                  "url": `${SITE_URL}/thumbnail.png`,
+                  "width": "600",
+                  "height": "600"
                 }
-              ]),
-            }}
-          />
+              }
+            ]),
+          }}
+        />
         <ClearCartWhenGuest />
         <Suspense fallback={null}>
           <TrafficTracker />
