@@ -464,7 +464,10 @@ function CartPageContent() {
                                                                     </div>
                                                                     <div>
                                                                         <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">단가</dt>
-                                                                        <dd className="text-sm font-black text-teal-400 mt-1">₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}</dd>
+                                                                        <dd className="text-sm font-black text-teal-400 mt-1">
+                                                                            ₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}
+                                                                            <span className="text-[8px] ml-1 opacity-60 font-bold">(VAT 포함)</span>
+                                                                        </dd>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -475,7 +478,7 @@ function CartPageContent() {
                                                                     <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/40 active:scale-90 transition-all"><Plus className="w-4 h-4" /></button>
                                                                 </div>
                                                                 <div className="text-right">
-                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">소계</p>
+                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">소계 (VAT 포함)</p>
                                                                     <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
                                                                 </div>
                                                             </div>
@@ -519,7 +522,10 @@ function CartPageContent() {
                                                         <div className="flex flex-wrap gap-4">
                                                             <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.print_method?.toUpperCase()}</div>
                                                             <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.volume_cm3?.toFixed(1)}cm³</div>
-                                                            <div className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[11px] font-black text-teal-400 uppercase tracking-widest">₩{Math.round(row.total_price).toLocaleString()}</div>
+                                                            <div className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[11px] font-black text-teal-400 uppercase tracking-widest">
+                                                                ₩{Math.round(row.total_price).toLocaleString()}
+                                                                <span className="text-[8px] ml-1.5 opacity-60 font-black">VAT 포함</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-4 w-full md:w-auto">
@@ -652,7 +658,7 @@ function CartPageContent() {
                                 </div>
                                 <Separator className="bg-white/5" />
                                 <div className="space-y-1 text-right">
-                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">예상 합계 (배송비 포함)</p>
+                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">최종 합계 (배송비 및 VAT 포함)</p>
                                     <p className="text-5xl font-black tracking-tighter text-white">₩{Math.round(finalTotal).toLocaleString()}</p>
                                 </div>
                             </div>

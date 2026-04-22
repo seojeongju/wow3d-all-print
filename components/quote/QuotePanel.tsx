@@ -244,7 +244,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
-    const rawRounded = roundTo100(quoteDetail.total, priceRoundMode)
+    const rawRounded = roundTo100(quoteDetail.total * 1.1, priceRoundMode)
     const totalPrice = minPriceKr != null && minPriceKr > 0 ? Math.max(rawRounded, minPriceKr) : rawRounded
     const estimatedTimeHours = quoteDetail.time
 
@@ -703,16 +703,21 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                             </div>
                         </section>
                         <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">비용 구분</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">비용 구분 (공급가액)</h4>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between"><span className="text-slate-400">재료비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.material).toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span className="text-slate-400">장비(인쇄)비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine).toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span className="text-slate-400">기타</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other).toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span className="text-slate-400">인건비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor).toLocaleString()}</span></div>
-                                <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50 font-bold">
-                                    <span className="text-slate-100">총 견적</span>
+                                <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50">
+                                    <span className="text-slate-400">부가세 (VAT 10%)</span>
+                                    <span className="font-mono text-slate-300">₩{Math.round(quoteDetail.total * 0.1).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 font-bold text-lg">
+                                    <span className="text-slate-100">최종 견적합계</span>
                                     <span className="text-primary">₩{Math.round(totalPrice).toLocaleString()}</span>
                                 </div>
+                                <p className="text-[10px] text-slate-500 text-right">※ 부가세가 포함된 최종 금액입니다.</p>
                             </div>
                         </section>
                     </div>
@@ -731,6 +736,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <div className="flex items-baseline gap-1 sm:gap-1.5">
                             <span className={`font-black text-white tracking-tighter ${embedded ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-4xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
                             <span className="text-[10px] sm:text-sm font-black text-white/30 uppercase tracking-widest">KRW</span>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-teal-400/80 ml-1">(VAT 포함)</span>
                         </div>
                     </div>
                     <div className="text-right">

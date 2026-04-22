@@ -415,6 +415,7 @@ export default function MyAccountPage() {
                                                 </div>
                                                 <div className="text-2xl font-black text-white">
                                                     ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
+                                                    <span className="text-[10px] ml-2 text-white/30 font-bold">(VAT 포함)</span>
                                                 </div>
                                             </div>
                                             <div className="p-8">
@@ -587,6 +588,7 @@ export default function MyAccountPage() {
                                                             <div className="text-3xl font-black text-white text-left md:text-right">
                                                                 ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
                                                             </div>
+                                                            <div className="text-[9px] font-black text-white/20 uppercase tracking-widest text-left md:text-right mt-1">(VAT 포함 금액)</div>
                                                         </div>
                                                         <div className="flex gap-3">
                                                             <Button
@@ -647,6 +649,7 @@ export default function MyAccountPage() {
                                                 <div className="flex items-center justify-between mb-8">
                                                     <div className="text-2xl font-black text-teal-400">
                                                         ₩{quote.totalPrice.toLocaleString()}
+                                                        <span className="text-[10px] ml-2 opacity-50 font-bold">(VAT 포함)</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-3 mt-auto">

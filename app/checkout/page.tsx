@@ -174,7 +174,7 @@ function CheckoutContent() {
             const body: Record<string, unknown> = {
                 recipientName: formData.recipientName,
                 recipientPhone: formData.recipientPhone,
-                shippingAddress: formData.shippingAddress,
+                shippingAddress: `${formData.shippingAddress} ${detailAddress}`.trim(),
                 shippingPostalCode: formData.shippingPostalCode || undefined,
                 customerNote: finalNote,
                 cartItems: orderItems.map((item) => ({
@@ -382,13 +382,7 @@ function CheckoutContent() {
                                                     id="detailAddress"
                                                     name="detailAddress"
                                                     value={detailAddress}
-                                                    onChange={(e) => {
-                                                        setDetailAddress(e.target.value)
-                                                        const fullAddress = formData.shippingAddress
-                                                            ? `${formData.shippingAddress} ${e.target.value}`.trim()
-                                                            : e.target.value
-                                                        setFormData(prev => ({ ...prev, shippingAddress: fullAddress }))
-                                                    }}
+                                                    onChange={(e) => setDetailAddress(e.target.value)}
                                                     className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
                                                     placeholder="동/호수, 상세주소를 입력하세요"
                                                 />
