@@ -180,19 +180,31 @@ export default function Hero() {
                         </div>
                     </motion.div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                        <Link href="/print-methods" className="w-full sm:w-auto">
-                            <Button size="lg" className="w-full h-14 px-6 sm:px-8 text-[15px] sm:text-lg rounded-full bg-teal-500 hover:bg-teal-400 text-white shadow-[0_4px_24px_rgba(20,184,166,0.3)] hover:scale-[1.02] transition-all gap-2 font-bold">
-                                3D 프린터 출력방식
-                                <ArrowRight className="w-5 h-5 shrink-0" />
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-12">
+                        <Link href="/quote" className="w-full sm:w-auto order-first sm:order-none">
+                            <Button size="lg" className="w-full h-16 px-10 text-[16px] sm:text-xl rounded-2xl bg-gradient-to-r from-teal-400 to-emerald-500 text-slate-950 shadow-[0_10px_40px_rgba(45,212,191,0.4)] hover:scale-[1.05] transition-all gap-3 font-black uppercase tracking-tight relative overflow-hidden group">
+                                <motion.div 
+                                    className="absolute inset-0 bg-white/30"
+                                    animate={{ x: ['-100%', '200%'] }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                />
+                                <Zap className="w-6 h-6 fill-current relative z-10" />
+                                <span className="relative z-10">실시간 자동견적 시작</span>
+                                <ArrowRight className="w-6 h-6 shrink-0 relative z-10" />
                             </Button>
                         </Link>
-                        <Link href="/materials" className="w-full sm:w-auto">
-                            <Button size="lg" variant="outline" className="w-full h-14 px-6 sm:px-8 text-[15px] sm:text-lg rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:scale-[1.02] transition-all gap-2 font-bold">
-                                <Palette className="w-5 h-5 shrink-0" />
-                                소재 살펴보기
-                            </Button>
-                        </Link>
+                        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                            <Link href="/print-methods" className="flex-1">
+                                <Button size="lg" variant="outline" className="w-full h-14 px-6 text-sm rounded-xl bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all gap-2 font-bold">
+                                    출력방식
+                                </Button>
+                            </Link>
+                            <Link href="/materials" className="flex-1">
+                                <Button size="lg" variant="outline" className="w-full h-14 px-6 text-sm rounded-xl bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all gap-2 font-bold">
+                                    소재보기
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-6 text-white/50">
@@ -323,10 +335,15 @@ export default function Hero() {
                                 <Link href="/quote" className="block" onClick={clearSampleIfPresent}>
                                     <Button
                                         size="sm"
-                                        className="w-full h-12 rounded-xl bg-teal-500 text-slate-950 font-black text-[10px] uppercase tracking-widest hover:bg-teal-400 shadow-lg shadow-teal-500/20 active:scale-95 transition-all"
+                                        className="w-full h-14 rounded-xl bg-teal-400 text-slate-950 font-black text-[11px] uppercase tracking-widest hover:bg-teal-300 shadow-[0_0_30px_rgba(45,212,191,0.4)] active:scale-95 transition-all relative overflow-hidden group"
                                     >
-                                        <Zap className="w-4 h-4 mr-2 fill-current" />
-                                        실시간 자동견적 시작
+                                        <motion.div 
+                                            className="absolute inset-0 bg-white/20"
+                                            animate={{ x: ['-100%', '200%'] }}
+                                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                        />
+                                        <Zap className="w-4 h-4 mr-2 fill-current relative z-10" />
+                                        <span className="relative z-10">실시간 자동견적 시작</span>
                                     </Button>
                                 </Link>
                             </div>

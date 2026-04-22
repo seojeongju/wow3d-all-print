@@ -244,8 +244,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
-    const rawRounded = roundTo100(quoteDetail.total * 1.1, priceRoundMode)
-    const totalPrice = minPriceKr != null && minPriceKr > 0 ? Math.max(rawRounded, minPriceKr) : rawRounded
+    
+    // 기본 금액(공급가)과 산출 금액 중 큰 것을 선택한 후 부가세 적용
+    const baseAmount = minPriceKr != null && minPriceKr > 0 ? Math.max(quoteDetail.total, minPriceKr) : quoteDetail.total
+    const totalPrice = roundTo100(baseAmount * 1.1, priceRoundMode)
     const estimatedTimeHours = quoteDetail.time
 
     const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -733,10 +735,12 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <div className="flex items-center gap-2 text-[9.5px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5 sm:mb-2">
                             <Wallet className="w-3.5 h-3.5" /> 실시간 예상 견적
                         </div>
-                        <div className="flex items-baseline gap-1 sm:gap-1.5">
+                        <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1">
                             <span className={`font-black text-white tracking-tighter ${embedded ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-4xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
-                            <span className="text-[10px] sm:text-sm font-black text-white/30 uppercase tracking-widest">KRW</span>
-                            <span className="text-[9px] sm:text-[10px] font-bold text-teal-400/80 ml-1">(VAT 포함)</span>
+                            <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="text-[10px] sm:text-sm font-black text-white/30 uppercase tracking-widest">KRW</span>
+                                <span className="text-[10px] sm:text-[11px] font-bold text-teal-400/90 bg-teal-400/10 px-2 py-0.5 rounded-md border border-teal-400/20">(VAT 포함)</span>
+                            </div>
                         </div>
                     </div>
                     <div className="text-right">
