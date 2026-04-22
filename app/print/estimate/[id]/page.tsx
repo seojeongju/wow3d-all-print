@@ -266,15 +266,15 @@ export default function EstimatePrintPage() {
                             <div className="bg-slate-100 py-1.5 px-2 text-center font-bold border-b border-black text-xs">공급자</div>
                             <div className="p-2 space-y-1 text-xs relative">
                                 {company.business_number && <InfoRow label="등록번호" value={company.business_number} compact />}
-                                <div className="flex min-w-0 gap-4">
-                                    <div className="flex flex-1 min-w-0 items-center">
-                                        <span className="w-14 flex-shrink-0 font-bold text-slate-500">상호(법인)</span>
-                                        <span className="min-w-0 truncate font-bold text-sm">{company.company_name}</span>
+                                <div className="flex min-w-0 gap-2">
+                                    <div className="flex items-center shrink-0">
+                                        <span className="w-[4.5rem] flex-shrink-0 font-bold text-slate-500 whitespace-nowrap">상호(법인)</span>
+                                        <span className="font-bold text-sm whitespace-nowrap">{company.company_name}</span>
                                     </div>
-                                    <div className="flex flex-1 min-w-0 items-center">
-                                        <span className="w-11 flex-shrink-0 font-bold text-slate-500">대표자</span>
+                                    <div className="flex items-center ml-4">
+                                        <span className="w-11 flex-shrink-0 font-bold text-slate-500 whitespace-nowrap">대표자</span>
                                         <div className="flex items-center gap-1">
-                                            <span className="min-w-0 truncate font-bold text-sm">{company.representative}</span>
+                                            <span className="font-bold text-sm whitespace-nowrap">{company.representative}</span>
                                             <div className="relative flex items-center justify-center ml-1">
                                                 <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none flex-shrink-0 opacity-40 font-bold">(인)</span>
                                                 {company.seal_url && (
