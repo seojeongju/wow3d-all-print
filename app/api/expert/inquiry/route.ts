@@ -1,16 +1,11 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
+import { sendEmail, escapeHtml } from '@/lib/mail-utils';
 
 const CONTACT_TO_EMAIL = 'wow3d16@naver.com';
 
-function escapeHtml(s: string): string {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+
 
 const MESSAGE_MIN = 10;
 const MESSAGE_MAX = 10000; // 전문가 문의는 더 길 수 있음
@@ -106,21 +101,14 @@ export async function POST(request: NextRequest) {
           </div>
         `;
 
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: fromAddr,
-            to: [CONTACT_TO_EMAIL],
-            reply_to: email,
-            subject: `[전문가문의] ${company ? `(${company}) ` : ''}${name}님의 문의`,
-            text: textBody,
-            html: htmlBody,
-          }),
-        });
+        await sendEmail({
+          from: fromAddr,
+          to: CONTACT_TO_EMAIL,
+          reply_to: email,
+          subject: `[전문가문의] ${company ? `(${company}) ` : ''}${name}님의 문의`,
+          text: textBody,
+          html: htmlBody,
+        }, env);
       } catch (emailErr) {
         console.warn('이메일 발송 실패 (문의는 저장됨):', emailErr);
       }

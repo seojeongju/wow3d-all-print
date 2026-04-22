@@ -65,6 +65,7 @@ export default function CartPage() {
     const [isLoadingSaved, setIsLoadingSaved] = useState(false)
     const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>('cart')
     const [addingId, setAddingId] = useState<number | null>(null)
+    const [storeSettings, setStoreSettings] = useState<{ baseFee: number, freeThreshold: number }>({ baseFee: 3000, freeThreshold: 50000 })
 
     // 주문조회
     const [orders, setOrders] = useState<Order[]>([])
@@ -139,9 +140,35 @@ export default function CartPage() {
         fetchOrders()
     }, [isAuthenticated, token, user?.id])
 
+    // 배송비 및 설정 정보 불러오기
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/settings')
+                if (!res.ok) return
+                const json = await res.json()
+                if (json.success && Array.isArray(json.data)) {
+                    let baseFee = 3000, freeThreshold = 50000
+                    json.data.forEach((s: any) => {
+                        if (s.setting_key === 'shipping_base_fee') baseFee = Number(s.setting_value) || 3000
+                        if (s.setting_key === 'shipping_free_threshold') freeThreshold = Number(s.setting_value) || 50000
+                    })
+                    setStoreSettings({ baseFee, freeThreshold })
+                }
+            } catch (e) {
+                console.error('Failed to load store settings', e)
+            }
+        }
+        fetchSettings()
+    }, [])
+
     const selectedItems = items.filter((i) => selectedIds.has(i.id))
     const selectedTotal = getTotalPriceForItems(selectedItems)
     const selectedCount = selectedItems.reduce((s, i) => s + i.quantity, 0)
+    
+    // 배송비 계산
+    const shippingFee = selectedCount > 0 ? (selectedTotal >= storeSettings.freeThreshold ? 0 : storeSettings.baseFee) : 0;
+    const finalTotal = selectedTotal + shippingFee;
 
     const handleQuantityChange = (itemId: number, newQuantity: number) => {
         if (newQuantity < 1) return
@@ -603,12 +630,19 @@ export default function CartPage() {
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-white/30 font-black uppercase tracking-widest">배송비</span>
-                                    <span className="font-black text-teal-400 text-xs">결제 시 산정</span>
+                                    <div className="text-right">
+                                        <span className={`font-black uppercase tracking-widest ${shippingFee === 0 && selectedCount > 0 ? 'text-teal-400' : 'text-white'}`}>
+                                            {selectedCount === 0 ? '-' : shippingFee === 0 ? '무료' : `₩${shippingFee.toLocaleString()}`}
+                                        </span>
+                                        {selectedCount > 0 && shippingFee > 0 && (
+                                            <span className="block text-[9px] text-white/20 mt-0.5">5만원 미만 부과</span>
+                                        )}
+                                    </div>
                                 </div>
                                 <Separator className="bg-white/5" />
                                 <div className="space-y-1 text-right">
-                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">예상 합계</p>
-                                    <p className="text-5xl font-black tracking-tighter text-white">₩{Math.round(selectedTotal).toLocaleString()}</p>
+                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">예상 합계 (배송비 포함)</p>
+                                    <p className="text-5xl font-black tracking-tighter text-white">₩{Math.round(finalTotal).toLocaleString()}</p>
                                 </div>
                             </div>
 

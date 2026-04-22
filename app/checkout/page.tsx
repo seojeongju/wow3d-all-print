@@ -464,9 +464,12 @@ function CheckoutContent() {
                                         <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
                                             <span>기본 배송비</span>
                                             {shippingFee === 0 ? (
-                                                <span className="text-emerald-400">무료 혜택 ({(storeSettings.freeThreshold / 10000)}만원↑)</span>
+                                                <span className="text-emerald-400 font-black">5만원 ↑ 무료배송 혜택</span>
                                             ) : (
-                                                <span className="text-white">₩{shippingFee.toLocaleString()}</span>
+                                                <div className="text-right">
+                                                    <span className="text-white block">₩{shippingFee.toLocaleString()}</span>
+                                                    <span className="text-[9px] text-white/10 mt-0.5 block italic">(5만원 이상 무료배송)</span>
+                                                </div>
                                             )}
                                         </div>
                                         <div className="flex justify-between items-baseline pt-4 border-t border-white/5 mt-4">

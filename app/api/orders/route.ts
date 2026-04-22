@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, requireAuthOrGuest, generateOrderNumber } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
+import { sendEmail, escapeHtml } from '@/lib/mail-utils';
 
 /**
  * GET /api/orders - 주문 목록 조회
@@ -186,6 +187,75 @@ export async function POST(request: NextRequest) {
         }
 
         await env.DB.prepare('INSERT INTO shipments (order_id) VALUES (?)').bind(orderId).run();
+
+        // 8. 관리자에게 알림 메일을 전송 (비동기)
+        (async () => {
+            try {
+                const adminEmail = (env as any).ADMIN_EMAIL || 'wow3d16@naver.com';
+                const orderDate = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+                
+                const htmlBody = `
+                    <div style="font-family: 'Pretendard', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border: 1px solid #f0f0f0; border-radius: 24px;">
+                        <div style="margin-bottom: 32px;">
+                            <span style="display: inline-block; padding: 6px 12px; background-color: #2dd4bf; color: #ffffff; font-size: 11px; font-weight: 800; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">New Order</span>
+                            <h2 style="margin: 16px 0 8px 0; font-size: 24px; font-weight: 900; color: #111111;">새로운 주문이 접수되었습니다</h2>
+                            <p style="margin: 0; font-size: 14px; color: #666666;">${orderDate} 접수</p>
+                        </div>
+
+                        <div style="padding: 24px; background-color: #f8fafc; border-radius: 16px; margin-bottom: 24px;">
+                            <div style="margin-bottom: 16px;">
+                                <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">주문 정보</span>
+                                <div style="font-size: 16px; font-weight: 700; color: #111111;">${orderNumber}</div>
+                            </div>
+                            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">주문자</span>
+                                    <div style="font-size: 14px; font-weight: 600; color: #111111;">${escapeHtml(body.recipientName)}</div>
+                                </div>
+                                <div>
+                                    <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">연락처</span>
+                                    <div style="font-size: 14px; font-weight: 600; color: #111111;">${escapeHtml(body.recipientPhone)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 32px;">
+                            <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">배송지 정보</span>
+                            <div style="font-size: 14px; color: #334155; line-height: 1.6;">
+                                [${body.shippingPostalCode || '-'}] ${escapeHtml(body.shippingAddress)}
+                            </div>
+                        </div>
+
+                        <div style="padding-top: 24px; border-top: 1px solid #f1f5f9;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 14px; font-weight: 700; color: #111111;">총 결제 예정 금액</span>
+                                <span style="font-size: 20px; font-weight: 900; color: #2dd4bf;">₩${totalAmount.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 40px; text-align: center;">
+                            <a href="https://wow3dp.co.kr/admin/orders" style="display: inline-block; padding: 14px 28px; background-color: #111111; color: #ffffff; font-size: 13px; font-weight: 800; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">주문 상세 확인하기</a>
+                        </div>
+
+                        <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9; text-align: center;">
+                            <p style="margin: 0; font-size: 11px; color: #94a3b8; font-weight: 500;">본 메일은 WOW3D 시스템에서 자동으로 발송되었습니다.</p>
+                        </div>
+                    </div>
+                `;
+
+                const textBody = `[새 주문 알림]\n주문번호: ${orderNumber}\n주문자: ${body.recipientName}\n연락처: ${body.recipientPhone}\n금액: ₩${totalAmount.toLocaleString()}\n상세 확인: https://wow3dp.co.kr/admin/orders`;
+
+                await sendEmail({
+                    to: adminEmail,
+                    subject: `[신규주문] ${body.recipientName}님의 주문 (${orderNumber})`,
+                    text: textBody,
+                    html: htmlBody,
+                    reply_to: isGuest ? body.guestEmail : undefined
+                }, env);
+            } catch (err) {
+                console.warn('관리자 알림 메일 발송 실패:', err);
+            }
+        })();
 
         return successResponse(
             { orderId, orderNumber, totalAmount, isGuest },
