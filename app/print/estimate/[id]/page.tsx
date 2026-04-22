@@ -266,18 +266,26 @@ export default function EstimatePrintPage() {
                             <div className="bg-slate-100 py-1.5 px-2 text-center font-bold border-b border-black text-xs">공급자</div>
                             <div className="p-2 space-y-1 text-xs relative">
                                 {company.business_number && <InfoRow label="등록번호" value={company.business_number} compact />}
-                                <InfoRow label="상호(법인)" value={company.company_name} compact />
+                                <div className="flex min-w-0">
+                                    <span className="w-14 flex-shrink-0 font-bold text-slate-500">상호(법인)</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="min-w-0 truncate font-bold text-sm">{company.company_name}</span>
+                                        <div className="relative flex items-center justify-center">
+                                            <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none flex-shrink-0 opacity-40 font-bold">(인)</span>
+                                            {company.seal_url && (
+                                                <img 
+                                                    src={company.seal_url} 
+                                                    alt="seal" 
+                                                    className="absolute w-12 h-12 min-w-[3rem] object-contain rotate-[-5deg] print:opacity-100" 
+                                                    style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-5deg)', maxWidth: 'none' }}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="flex min-w-0">
                                     <span className="w-14 flex-shrink-0 font-bold text-slate-500">대표자</span>
                                     <span className="min-w-0 truncate font-bold text-sm">{company.representative}</span>
-                                    <div className="relative flex items-center justify-center ml-1">
-                                        <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none flex-shrink-0 opacity-40 font-bold">(인)</span>
-                                        {company.seal_url && (
-                                            <img 
-                                                src={company.seal_url} 
-                                                alt="seal" 
-                                                className="absolute w-10 h-10 min-w-[2.5rem] object-contain rotate-[-5deg] print:opacity-100" 
-                                                style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-5deg)' }}
                                             />
                                         )}
                                     </div>
