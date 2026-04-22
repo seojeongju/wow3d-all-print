@@ -275,17 +275,17 @@ function CheckoutContent() {
                                             
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2.5">
-                                                    <Label htmlFor="ordererName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">이름</Label>
+                                                    <Label htmlFor="ordererName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">이름 <span className="text-red-500">*</span></Label>
                                                     <Input id="ordererName" name="ordererName" value={formData.ordererName} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="홍길동" required readOnly={isAuthenticated && !!user?.name} />
                                                 </div>
                                                 <div className="space-y-2.5">
-                                                    <Label htmlFor="ordererPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">연락처</Label>
+                                                    <Label htmlFor="ordererPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">연락처 <span className="text-red-500">*</span></Label>
                                                     <Input id="ordererPhone" name="ordererPhone" value={formData.ordererPhone} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="010-0000-0000" required readOnly={isAuthenticated && !!user?.phone} />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2.5">
-                                                <Label htmlFor="ordererEmail" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5"><Mail className="w-3 h-3" /> 이메일 {isAuthenticated ? '' : '(주문/결제 안내용 필수)'}</Label>
+                                                <Label htmlFor="ordererEmail" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5"><Mail className="w-3 h-3" /> 이메일 <span className="text-red-500">*</span> {isAuthenticated ? '' : '(주문/결제 안내용 필수)'}</Label>
                                                 <Input id="ordererEmail" name="ordererEmail" type="email" value={formData.ordererEmail} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="order@example.com" required={!isAuthenticated} readOnly={isAuthenticated && !!user?.email} />
                                             </div>
                                             
@@ -324,18 +324,18 @@ function CheckoutContent() {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2.5">
-                                                    <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">받는 사람</Label>
+                                                    <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">받는 사람 <span className="text-red-500">*</span></Label>
                                                     <Input id="recipientName" name="recipientName" value={formData.recipientName} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="홍길동" required />
                                                 </div>
                                                 <div className="space-y-2.5">
-                                                    <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">연락처</Label>
+                                                    <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">연락처 <span className="text-red-500">*</span></Label>
                                                     <Input id="recipientPhone" name="recipientPhone" type="tel" value={formData.recipientPhone} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="010-0000-0000" required />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    우편번호
+                                                    우편번호 <span className="text-red-500">*</span>
                                                 </Label>
                                                 <div className="flex gap-2">
                                                     <Input
@@ -360,7 +360,7 @@ function CheckoutContent() {
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <MapPin className="w-3 h-3" /> 배송 주소
+                                                    <MapPin className="w-3 h-3" /> 배송 주소 <span className="text-red-500">*</span>
                                                 </Label>
                                                 <Input
                                                     id="shippingAddress"
