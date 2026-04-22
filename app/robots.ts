@@ -14,7 +14,6 @@ export default function robots(): MetadataRoute.Robots {
           "/checkout",
           "/order-complete",
           "/my-account",
-          "/auth", // 이제 사이트맵에서 빠졌으므로 robots에서도 명시적으로 막아 수집 방지
         ],
       },
     ],
