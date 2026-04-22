@@ -125,12 +125,22 @@ export async function POST(request: NextRequest) {
 
         const orderNumber = generateOrderNumber();
         const totalAmount = normalizeAmountBeforeSave(
-            body.cartItems.reduce((sum: number, item: any) => {
-                const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
-                const qty = Math.max(1, Number(item.quantity) || 1);
-                return sum + unitPrice * qty;
             }, 0)
         );
+
+        // [추가] 사전 검증: 모든 quoteId가 유효한지 확인
+        const itemIds = body.cartItems.map((i: any) => i.quoteId);
+        const checkQuotes = await env.DB.prepare(
+            `SELECT id FROM quotes WHERE id IN (${itemIds.map(() => '?').join(',')})`
+        ).bind(...itemIds).all();
+        
+        const existingQuoteIds = new Set((checkQuotes.results || []).map((q: any) => q.id));
+        const missingIds = itemIds.filter((id: number) => !existingQuoteIds.has(id));
+        
+        if (missingIds.length > 0) {
+            console.error('존재하지 않는 견적 참조 시도:', missingIds);
+            return errorResponse(`일부 견적 정보(${missingIds.join(', ')})가 소실되어 주문을 진행할 수 없습니다. 다시 견적을 내주세요.`, 400);
+        }
 
         const isGuest = auth.isGuest;
         const orderResult = await env.DB
@@ -155,38 +165,56 @@ export async function POST(request: NextRequest) {
             )
             .run();
 
-        const orderId = orderResult.meta.last_row_id;
-        if (!orderId) return errorResponse('주문 생성 실패', 500);
+        const orderId = orderResult.meta?.last_row_id || orderResult.meta?.lastRowId;
+        if (!orderId) {
+            console.error('주문 생성 후 ID 추출 실패:', orderResult);
+            return errorResponse('주문 생성 실패 (ID 생성 오류)', 500);
+        }
 
+        const statements = [];
+
+        // 1. 주문 항목 삽입
         for (const item of body.cartItems) {
             const qty = Math.max(1, Number(item.quantity) || 1);
             const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
             const subtotal = unitPrice * qty;
-            await env.DB
-                .prepare(`
-          INSERT INTO order_items (order_id, quote_id, quantity, unit_price, subtotal)
-          VALUES (?, ?, ?, ?, ?)
-        `)
-                .bind(orderId, item.quoteId, qty, unitPrice, subtotal)
-                .run();
+            statements.push(
+                env.DB.prepare(`
+                    INSERT INTO order_items (order_id, quote_id, quantity, unit_price, subtotal)
+                    VALUES (?, ?, ?, ?, ?)
+                `).bind(orderId, item.quoteId, qty, unitPrice, subtotal)
+            );
         }
 
-        // 주문한 quote_id만 장바구니에서 삭제 (선택 주문 지원)
+        // 2. 장바구니 삭제
         const quoteIds = [...new Set((body.cartItems as { quoteId: number }[]).map((x) => x.quoteId))];
         if (quoteIds.length > 0) {
             const placeholders = quoteIds.map(() => '?').join(',');
             if (isGuest) {
-                await env.DB.prepare(`DELETE FROM cart WHERE session_id = ? AND quote_id IN (${placeholders})`)
-                    .bind(auth.sessionId, ...quoteIds)
-                    .run();
+                statements.push(
+                    env.DB.prepare(`DELETE FROM cart WHERE session_id = ? AND quote_id IN (${placeholders})`)
+                        .bind(auth.sessionId, ...quoteIds)
+                );
             } else {
-                await env.DB.prepare(`DELETE FROM cart WHERE user_id = ? AND quote_id IN (${placeholders})`)
-                    .bind(auth.userId, ...quoteIds)
-                    .run();
+                statements.push(
+                    env.DB.prepare(`DELETE FROM cart WHERE user_id = ? AND quote_id IN (${placeholders})`)
+                        .bind(auth.userId, ...quoteIds)
+                );
             }
         }
 
-        await env.DB.prepare('INSERT INTO shipments (order_id) VALUES (?)').bind(orderId).run();
+        // 3. 배송 정보 초기화
+        statements.push(
+            env.DB.prepare('INSERT INTO shipments (order_id) VALUES (?)').bind(orderId)
+        );
+
+        // 배치 실행
+        const batchResults = await env.DB.batch(statements);
+        const failedStep = batchResults.findIndex(r => !r.success);
+        if (failedStep !== -1) {
+            console.error('주문 처리 단계 실패:', batchResults[failedStep]);
+            throw new Error(`상세 주문 처리 중 오류 발생 (단계: ${failedStep})`);
+        }
 
         // 8. 관리자에게 알림 메일을 전송 (비동기)
         (async () => {
