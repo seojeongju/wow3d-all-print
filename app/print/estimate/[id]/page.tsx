@@ -286,9 +286,6 @@ export default function EstimatePrintPage() {
                                 <div className="flex min-w-0">
                                     <span className="w-14 flex-shrink-0 font-bold text-slate-500">대표자</span>
                                     <span className="min-w-0 truncate font-bold text-sm">{company.representative}</span>
-                                            />
-                                        )}
-                                    </div>
                                 </div>
                                 {company.address && <InfoRow label="사업장" value={company.address} compact />}
                                 {(company.business_type || company.business_item) && (
