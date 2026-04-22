@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         const fields = [
             'business_number', 'company_name', 'representative',
             'business_type', 'business_item', 'address', 'phone',
-            'fax', 'email', 'website', 'logo_url',
+            'fax', 'email', 'website', 'logo_url', 'seal_url',
             'estimate_header_note', 'estimate_footer_note', 'estimate_valid_days',
             'bank_name', 'bank_account', 'bank_holder',
         ];
@@ -52,21 +52,44 @@ export async function POST(req: NextRequest) {
             'SELECT id FROM company_info WHERE store_id = ?'
         ).bind(storeId).first();
 
-        if (existing) {
-            // UPDATE
-            const setClauses = fields.map(f => `${f} = ?`).join(', ');
-            const values = fields.map(f => body[f] ?? null);
-            await env.DB.prepare(
-                `UPDATE company_info SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE store_id = ?`
-            ).bind(...values, storeId).run();
-        } else {
-            // INSERT
-            const cols = ['store_id', ...fields].join(', ');
-            const placeholders = ['?', ...fields.map(() => '?')].join(', ');
-            const values = [storeId, ...fields.map(f => body[f] ?? null)];
-            await env.DB.prepare(
-                `INSERT INTO company_info (${cols}) VALUES (${placeholders})`
-            ).bind(...values).run();
+        try {
+            if (existing) {
+                // UPDATE
+                const setClauses = fields.map(f => `${f} = ?`).join(', ');
+                const values = fields.map(f => body[f] ?? null);
+                await env.DB.prepare(
+                    `UPDATE company_info SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE store_id = ?`
+                ).bind(...values, storeId).run();
+            } else {
+                // INSERT
+                const cols = ['store_id', ...fields].join(', ');
+                const placeholders = ['?', ...fields.map(() => '?')].join(', ');
+                const values = [storeId, ...fields.map(f => body[f] ?? null)];
+                await env.DB.prepare(
+                    `INSERT INTO company_info (${cols}) VALUES (${placeholders})`
+                ).bind(...values).run();
+            }
+        } catch (dbErr: any) {
+            // seal_url 컬럼이 아직 DB에 추가되지 않았을 경우 (마이그레이션 지연 등)
+            if (dbErr.message?.includes('no such column: seal_url')) {
+                const legacyFields = fields.filter(f => f !== 'seal_url');
+                if (existing) {
+                    const setClauses = legacyFields.map(f => `${f} = ?`).join(', ');
+                    const values = legacyFields.map(f => body[f] ?? null);
+                    await env.DB.prepare(
+                        `UPDATE company_info SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE store_id = ?`
+                    ).bind(...values, storeId).run();
+                } else {
+                    const cols = ['store_id', ...legacyFields].join(', ');
+                    const placeholders = ['?', ...legacyFields.map(() => '?')].join(', ');
+                    const values = [storeId, ...legacyFields.map(f => body[f] ?? null)];
+                    await env.DB.prepare(
+                        `INSERT INTO company_info (${cols}) VALUES (${placeholders})`
+                    ).bind(...values).run();
+                }
+            } else {
+                throw dbErr;
+            }
         }
 
         return NextResponse.json({ success: true });

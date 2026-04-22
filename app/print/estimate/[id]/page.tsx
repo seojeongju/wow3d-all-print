@@ -22,6 +22,7 @@ type CompanyInfo = {
     bank_name?: string;
     bank_account?: string;
     bank_holder?: string;
+    seal_url?: string;
 };
 
 // 기본 회사 정보 (DB 로드 실패 시 폴백)
@@ -32,6 +33,7 @@ const DEFAULT_COMPANY: CompanyInfo = {
     business_item: '3D프린팅',
     address: '서울시 금천구 가산디지털1로 1, 101호',
     estimate_valid_days: 14,
+    seal_url: '',
 };
 
 export default function EstimatePrintPage() {
@@ -267,8 +269,18 @@ export default function EstimatePrintPage() {
                                 <InfoRow label="상호(법인)" value={company.company_name} compact />
                                 <div className="flex min-w-0">
                                     <span className="w-14 flex-shrink-0 font-bold text-slate-500">대표자</span>
-                                    <span className="min-w-0 truncate">{company.representative}</span>
-                                    <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none ml-1 flex-shrink-0 opacity-40">(인)</span>
+                                    <span className="min-w-0 truncate font-bold text-sm">{company.representative}</span>
+                                    <div className="relative flex items-center justify-center ml-1">
+                                        <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none flex-shrink-0 opacity-40 font-bold">(인)</span>
+                                        {company.seal_url && (
+                                            <img 
+                                                src={company.seal_url} 
+                                                alt="seal" 
+                                                className="absolute w-10 h-10 min-w-[2.5rem] object-contain rotate-[-5deg] print:opacity-100" 
+                                                style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-5deg)' }}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                                 {company.address && <InfoRow label="사업장" value={company.address} compact />}
                                 {(company.business_type || company.business_item) && (

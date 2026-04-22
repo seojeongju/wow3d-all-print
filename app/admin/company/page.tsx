@@ -31,6 +31,7 @@ type CompanyInfo = {
     bank_name: string;
     bank_account: string;
     bank_holder: string;
+    seal_url: string;
 };
 
 const EMPTY: CompanyInfo = {
@@ -39,6 +40,7 @@ const EMPTY: CompanyInfo = {
     fax: '', email: '', website: '', logo_url: '',
     estimate_header_note: '', estimate_footer_note: '',
     estimate_valid_days: 14, bank_name: '', bank_account: '', bank_holder: '',
+    seal_url: '',
 };
 
 export default function CompanyInfoPage() {
@@ -49,8 +51,10 @@ export default function CompanyInfoPage() {
     const [saved, setSaved] = useState(false);
     const [info, setInfo] = useState<CompanyInfo>(EMPTY);
     const [logoPreview, setLogoPreview] = useState<string>('');
-    const [logoUploading, setLogoUploading] = useState(false);
+    const [sealPreview, setSealPreview] = useState<string>('');
+    const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const sealInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const load = async () => {
@@ -62,6 +66,7 @@ export default function CompanyInfoPage() {
                 if (json.success && json.data) {
                     setInfo({ ...EMPTY, ...json.data });
                     if (json.data.logo_url) setLogoPreview(json.data.logo_url);
+                    if (json.data.seal_url) setSealPreview(json.data.seal_url);
                 }
             } catch (e) {
                 console.error(e);
@@ -102,16 +107,40 @@ export default function CompanyInfoPage() {
         }
     };
 
-    // 로고 파일 선택 → base64 preview (R2 업로드는 별도 구현 또는 URL 직접 입력)
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 파일 업로드 통합 핸들러
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'seal') => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            setLogoPreview(ev.target?.result as string);
-            setSaved(false);
-        };
-        reader.readAsDataURL(file);
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', type);
+
+        try {
+            const res = await fetch('/api/admin/upload', {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (type === 'logo') {
+                    setLogoPreview(json.data.url);
+                    set('logo_url', json.data.url);
+                } else {
+                    setSealPreview(json.data.url);
+                    set('seal_url', json.data.url);
+                }
+                toast({ title: '이미지가 업로드되었습니다.' });
+            } else {
+                toast({ title: '업로드 실패', description: json.error, variant: 'destructive' });
+            }
+        } catch (err) {
+            toast({ title: '네트워크 오류', variant: 'destructive' });
+        } finally {
+            setUploading(false);
+        }
     };
 
     if (loading) return (
@@ -161,6 +190,9 @@ export default function CompanyInfoPage() {
                     </TabsTrigger>
                     <TabsTrigger value="logo" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
                         <ImageIcon className="w-3.5 h-3.5 mr-2" />로고
+                    </TabsTrigger>
+                    <TabsTrigger value="seal" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-2" />법인 도장
                     </TabsTrigger>
                 </TabsList>
 
@@ -346,12 +378,13 @@ export default function CompanyInfoPage() {
                                                 className="border-white/10 text-white hover:bg-white/10"
                                                 onClick={() => fileInputRef.current?.click()}
                                             >
-                                                <Upload className="w-4 h-4 mr-2" />
+                                                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
                                                 파일 선택
                                             </Button>
                                             {logoPreview && (
                                                 <Button
                                                     variant="ghost"
+                                                    disabled={uploading}
                                                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                                     onClick={() => { setLogoPreview(''); set('logo_url', ''); }}
                                                 >
@@ -364,7 +397,7 @@ export default function CompanyInfoPage() {
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
-                                            onChange={handleLogoChange}
+                                            onChange={(e) => handleFileUpload(e, 'logo')}
                                         />
                                         <p className="text-xs text-white/30 mt-2">최대 2MB. PNG, JPG, SVG, WEBP 지원</p>
                                     </div>
@@ -401,6 +434,109 @@ export default function CompanyInfoPage() {
                                     </div>
                                 </div>
                             )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* 법인 도장 */}
+                <TabsContent value="seal">
+                    <Card className="bg-white/[0.03] border-white/10">
+                        <CardHeader>
+                            <CardTitle className="text-white text-lg">법인 도장 (인감)</CardTitle>
+                            <CardDescription className="text-white/40">견적서 하단 공급자 서명란에 표시될 도장 이미지를 등록합니다.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-start gap-6">
+                                <div className="w-32 h-32 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                    {sealPreview ? (
+                                        <img src={sealPreview} alt="법인 도장" className="w-20 h-20 object-contain" />
+                                    ) : (
+                                        <div className="text-center text-white/20">
+                                            <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
+                                            <span className="text-[10px]">도장 없음</span>
+                                        </div>
+                                    )}
+                                    {uploading && (
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <div>
+                                        <Label className="text-white/70 text-sm mb-2 block font-bold">도장 파일 업로드</Label>
+                                        <div className="flex gap-3">
+                                            <Button
+                                                variant="outline"
+                                                disabled={uploading}
+                                                className="border-white/10 text-white hover:bg-white/10"
+                                                onClick={() => sealInputRef.current?.click()}
+                                            >
+                                                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                                                도장 이미지 선택
+                                            </Button>
+                                            {sealPreview && (
+                                                <Button
+                                                    variant="ghost"
+                                                    disabled={uploading}
+                                                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                                    onClick={() => { setSealPreview(''); set('seal_url', ''); }}
+                                                >
+                                                    <X className="w-4 h-4 mr-1" />제거
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <input
+                                            ref={sealInputRef}
+                                            type="file"
+                                            accept="image/png"
+                                            className="hidden"
+                                            onChange={(e) => handleFileUpload(e, 'seal')}
+                                        />
+                                        <div className="mt-3 p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+                                            <p className="text-xs text-white/80 font-bold flex items-center gap-2">
+                                                <CheckCircle2 className="w-3 h-3 text-primary" /> 투명 배경 PNG 사용 권장
+                                            </p>
+                                            <p className="text-[11px] text-white/40 leading-relaxed">
+                                                도장 이미지의 배경이 투명해야 견적서의 글자가 가려지지 않고 자연스럽게 표시됩니다. 하얀 배경의 이미지를 사용하면 뒤의 텍스트가 가려질 수 있습니다.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-white/70 text-sm mb-2 block">도장 이미지 URL</Label>
+                                        <Input
+                                            value={info.seal_url}
+                                            onChange={e => { set('seal_url', e.target.value); setSealPreview(e.target.value); }}
+                                            placeholder="https://example.com/seal.png"
+                                            className="bg-white/5 border-white/10 text-white placeholder:text-white/30 font-mono text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 견적서 날인 미리보기 */}
+                            <div className="border border-white/10 rounded-xl overflow-hidden mt-8">
+                                <div className="text-[10px] text-white/40 uppercase tracking-wider px-4 py-2 bg-white/5 border-b border-white/10">
+                                    견적서 날인 미리보기
+                                </div>
+                                <div className="bg-white p-10 flex flex-col items-center justify-center">
+                                    <div className="text-slate-400 text-[10px] mb-8 select-none tracking-widest uppercase">─── 공급자 서명란 예시 ───</div>
+                                    <div className="flex items-center gap-4 text-black text-sm">
+                                        <span className="font-bold text-slate-500">대표자</span>
+                                        <span className="font-bold text-lg">{info.representative || '대표자명'}</span>
+                                        <div className="relative flex items-center justify-center">
+                                            <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] font-bold select-none opacity-40">(인)</span>
+                                            {sealPreview && (
+                                                <img 
+                                                    src={sealPreview} 
+                                                    alt="seal" 
+                                                    className="absolute w-12 h-12 min-w-[3rem] object-contain rotate-[-5deg]" 
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
