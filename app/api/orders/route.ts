@@ -125,6 +125,10 @@ export async function POST(request: NextRequest) {
 
         const orderNumber = generateOrderNumber();
         const totalAmount = normalizeAmountBeforeSave(
+            body.cartItems.reduce((sum: number, item: any) => {
+                const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
+                const qty = Math.max(1, Number(item.quantity) || 1);
+                return sum + unitPrice * qty;
             }, 0)
         );
 
@@ -210,7 +214,7 @@ export async function POST(request: NextRequest) {
 
         // 배치 실행
         const batchResults = await env.DB.batch(statements);
-        const failedStep = batchResults.findIndex(r => !r.success);
+        const failedStep = batchResults.findIndex((r: any) => !r.success);
         if (failedStep !== -1) {
             console.error('주문 처리 단계 실패:', batchResults[failedStep]);
             throw new Error(`상세 주문 처리 중 오류 발생 (단계: ${failedStep})`);

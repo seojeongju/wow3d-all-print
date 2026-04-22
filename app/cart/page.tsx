@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2, Package } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
@@ -55,15 +56,25 @@ function toQuote(r: QuoteRow): Quote {
 }
 
 export default function CartPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#020617] flex items-center justify-center text-white/20 font-black uppercase tracking-widest animate-pulse italic">Loading WOW3D Cart...</div>}>
+            <CartPageContent />
+        </Suspense>
+    )
+}
+
+function CartPageContent() {
     const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems, addToCart } = useCartStore()
     const { isAuthenticated, sessionId, token, user } = useAuthStore()
+    const searchParams = useSearchParams()
+    const tabParam = searchParams.get('tab')
+    const initialTab = tabParam === 'saved' ? 'saved' : tabParam === 'orders' ? 'orders' : 'cart'
+
     const [isClearing, setIsClearing] = useState(false)
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-
-    // 신규 추가: 저장된 견적 관련 상태
     const [savedQuotes, setSavedQuotes] = useState<QuoteRow[]>([])
     const [isLoadingSaved, setIsLoadingSaved] = useState(false)
-    const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>('cart')
+    const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>(initialTab)
     const [addingId, setAddingId] = useState<number | null>(null)
     const [storeSettings, setStoreSettings] = useState<{ baseFee: number, freeThreshold: number }>({ baseFee: 3000, freeThreshold: 50000 })
 
