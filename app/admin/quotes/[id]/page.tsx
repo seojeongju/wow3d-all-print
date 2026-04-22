@@ -108,12 +108,13 @@ export default function QuoteEditPage() {
         setItems(items.filter((_, i) => i !== idx));
     };
 
-    // 금액 계산 (정수 기반)
-    const totalSupply = items.reduce((acc, it) => {
+    // 금액 계산 (이미 부가세가 포함된 단가 기준)
+    const totalAmount = items.reduce((acc, it) => {
         return acc + (Math.round(Number(it.unit_price) || 0) * Math.round(Number(it.quantity) || 0));
     }, 0);
-    const totalVat = Math.floor(totalSupply * 0.1);
-    const totalAmount = totalSupply + totalVat;
+    // 합계금액에서 부가세를 역산 (합계 = 공급가 * 1.1)
+    const totalSupply = Math.round(totalAmount / 1.1);
+    const totalVat = totalAmount - totalSupply;
 
     const handleSaveExpertQuote = async () => {
         if (!id || saving) return;
@@ -236,7 +237,7 @@ export default function QuoteEditPage() {
                             onClick={() => {
                                 const autoTotal = autoItems.reduce((acc, it) => acc + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0);
                                 const printData = {
-                                    order: { ...orderInfo, total_amount: autoTotal + Math.floor(autoTotal * 0.1) },
+                                    order: { ...orderInfo, total_amount: autoTotal },
                                     items: autoItems.map(it => ({
                                         file_name: it.name, print_method: it.spec, material_name: '',
                                         quantity: it.quantity,
@@ -265,7 +266,7 @@ export default function QuoteEditPage() {
                         <div className="border-t border-white/10 pt-2 mt-2 flex justify-between font-medium">
                             <span className="text-white/50">합계 (VAT 포함)</span>
                             <span className={hasExpertQuote ? 'line-through text-white/25' : 'text-white'}>
-                                ₩ {(() => { const s = autoItems.reduce((a, it) => a + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0); return (s + Math.floor(s * 0.1)).toLocaleString(); })()}
+                                ₩ {(() => { const s = autoItems.reduce((a, it) => a + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0); return s.toLocaleString(); })()}
                             </span>
                         </div>
                     </div>

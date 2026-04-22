@@ -146,10 +146,10 @@ export default function EstimatePrintPage() {
         });
     }, [data]);
 
-    const totalSupply = displayItems.reduce((acc: number, item: any) =>
+    const totalAmount = displayItems.reduce((acc: number, item: any) =>
         acc + Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
-    const totalVat = Math.floor(totalSupply * 0.1);
-    const totalAmount = totalSupply + totalVat;
+    const totalSupply = Math.round(totalAmount / 1.1);
+    const totalVat = totalAmount - totalSupply;
     const footerLines = company.estimate_footer_note
         ? company.estimate_footer_note.split('\n').filter(Boolean)
         : [
@@ -319,8 +319,9 @@ export default function EstimatePrintPage() {
                         </thead>
                         <tbody>
                             {displayItems.map((item: any, idx: number) => {
-                                const itemSupply = Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0));
-                                const itemVat = Math.floor(itemSupply * 0.1);
+                                const itemTotal = Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0));
+                                const itemSupply = Math.round(itemTotal / 1.1);
+                                const itemVat = itemTotal - itemSupply;
                                 return (
                                     <tr key={item.id ?? idx} className="text-center">
                                         <td className="border border-black p-2">{idx + 1}</td>
