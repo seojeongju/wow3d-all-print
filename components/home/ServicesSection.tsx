@@ -70,6 +70,7 @@ const services = [
     },
 ];
 
+export default function ServicesSection() {
     return (
         <section id="services" className="py-24 relative overflow-hidden bg-background cyber-grid transition-all duration-500">
             {/* Cyber Glow */}

@@ -48,6 +48,7 @@ const features = [
     }
 ];
 
+export default function BentoFeatures() {
     return (
         <section id="features" className="py-24 relative overflow-hidden bg-background cyber-grid transition-all duration-500">
             {/* Cyber Glow Points */}

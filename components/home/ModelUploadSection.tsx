@@ -87,7 +87,7 @@ export default function ModelUploadSection() {
 
                             {/* Right: Upload Area */}
                             <div className="p-8 md:p-16 flex flex-col justify-center bg-white/40">
-                                <FileUpload variant="light" />
+                                <FileUpload variant="default" />
                             </div>
                         </div>
                     </div>

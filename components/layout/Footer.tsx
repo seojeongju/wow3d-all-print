@@ -10,6 +10,7 @@ export default function Footer() {
     useEffect(() => {
         setMounted(true)
     }, [])
+
     return (
         <footer className="relative overflow-hidden pt-24 pb-12 bg-background border-t border-primary/10 transition-all duration-500">
             {/* Cyber Grid & Glow */}
@@ -115,5 +116,12 @@ export default function Footer() {
                     <div className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em]">
                         {mounted ? `© ${new Date().getFullYear()} WOW3D ALL. (주)와우쓰리디. All rights reserved.` : '© WOW3D ALL.'}
                     </div>
+                    <div className="flex flex-wrap justify-center gap-8 text-[10px] font-black uppercase tracking-widest text-foreground/30">
+                        <Link href="/terms" className="hover:text-primary transition-colors">이용약관</Link>
+                        <Link href="/privacy" className="hover:text-primary transition-colors">개인정보처리방침</Link>
+                    </div>
+                </div>
+            </div>
+        </footer>
     );
 }
