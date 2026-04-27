@@ -11,7 +11,6 @@ export default function Footer() {
         setMounted(true)
     }, [])
     return (
-    return (
         <footer className="relative overflow-hidden pt-24 pb-12 bg-background border-t border-primary/10 transition-all duration-500">
             {/* Cyber Grid & Glow */}
             <div className="absolute inset-0 cyber-grid opacity-50" />
