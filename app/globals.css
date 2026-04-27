@@ -47,75 +47,66 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  /* 라이트 테마 기본 */
-  --background: oklch(1 0 0);               /* #ffffff 순백색 */
-  --foreground: oklch(0.217 0.032 256.8);   /* #1e293b 진한 차콜(slate-800) */
-  --card: oklch(0.984 0.003 247.9);         /* #f8fafc slate-50 */
-  --card-foreground: oklch(0.217 0.032 256.8);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.217 0.032 256.8);
-  /* Primary: 민트/틸 teal-500 #14b8a6 */
-  --primary: oklch(0.704 0.14 181.4);
-  --primary-foreground: oklch(1 0 0);       /* 흰색 텍스트 */
-  /* Secondary: 연한 틸 배경 teal-50 */
-  --secondary: oklch(0.983 0.019 181.4);
-  --secondary-foreground: oklch(0.388 0.08 181.4); /* teal-700 */
-  --muted: oklch(0.968 0.007 247.9);        /* slate-100 */
-  --muted-foreground: oklch(0.554 0.023 256.4); /* slate-500 */
-  --accent: oklch(0.95 0.03 181.4);         /* teal-100 */
-  --accent-foreground: oklch(0.388 0.08 181.4);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.928 0.013 255.5);       /* slate-200 */
-  --input: oklch(0.928 0.013 255.5);
-  --ring: oklch(0.704 0.14 181.4);          /* teal-500 */
-  --chart-1: oklch(0.704 0.14 181.4);       /* teal */
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.9);      /* slate-50 */
-  --sidebar-foreground: oklch(0.217 0.032 256.8);
-  --sidebar-primary: oklch(0.704 0.14 181.4);
+  --radius: 0.75rem;
+  /* White Cyber Theme - Light (Default) */
+  --background: oklch(0.99 0.005 240);       /* 거의 흰색에 가까운 배경 */
+  --foreground: oklch(0.25 0.02 240);       /* 가독성 높은 진한 차콜 */
+  
+  --card: rgba(255, 255, 255, 0.7);          /* 글래스모피즘용 반투명 흰색 */
+  --card-foreground: oklch(0.25 0.02 240);
+  
+  --popover: rgba(255, 255, 255, 0.9);
+  --popover-foreground: oklch(0.25 0.02 240);
+  
+  /* Primary: Cyber Mint #00FFCC */
+  --primary: oklch(0.85 0.18 170);          /* 선명한 사이버 민트 */
+  --primary-foreground: oklch(0.2 0.02 170); /* 민트 배경 위 진한 텍스트 */
+  
+  --secondary: oklch(0.95 0.03 170);         /* 아주 연한 민트색 배경 */
+  --secondary-foreground: oklch(0.4 0.12 170);
+  
+  --muted: oklch(0.96 0.01 240);
+  --muted-foreground: oklch(0.5 0.03 240);
+  
+  --accent: oklch(0.9 0.08 170);             /* 민트 액센트 */
+  --accent-foreground: oklch(0.3 0.15 170);
+  
+  --destructive: oklch(0.6 0.18 25);
+  --destructive-foreground: oklch(0.98 0.01 25);
+  
+  --border: rgba(0, 255, 204, 0.15);         /* 민트색이 살짝 도는 보더 */
+  --input: rgba(0, 255, 204, 0.1);
+  --ring: oklch(0.85 0.18 170);
+  
+  --chart-1: oklch(0.85 0.18 170);
+  --chart-2: oklch(0.7 0.15 200);
+  
+  --sidebar: oklch(0.98 0.005 240);
+  --sidebar-foreground: oklch(0.3 0.02 240);
+  --sidebar-primary: oklch(0.85 0.18 170);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0.03 181.4);
-  --sidebar-accent-foreground: oklch(0.388 0.08 181.4);
-  --sidebar-border: oklch(0.928 0.013 255.5);
-  --sidebar-ring: oklch(0.704 0.14 181.4);
+  --sidebar-accent: oklch(0.93 0.05 170);
+  --sidebar-accent-foreground: oklch(0.3 0.1 170);
+  --sidebar-border: oklch(0.9 0.02 240);
+  --sidebar-ring: oklch(0.85 0.18 170);
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 255, 204, 0.1);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 20%);
-  --input: oklch(1 0 0 / 25%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* 다크 모드에서도 '화이트 사이버' 느낌을 유지하기 위해 톤 조절 (진한 네이비/민트 조합) */
+  --background: oklch(0.12 0.015 240);
+  --foreground: oklch(0.95 0.01 240);
+  --card: rgba(30, 41, 59, 0.6);
+  --card-foreground: oklch(0.95 0.01 240);
+  --primary: oklch(0.85 0.18 170);
+  --primary-foreground: oklch(0.1 0.02 170);
+  --border: rgba(0, 255, 204, 0.2);
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 @layer base {
@@ -124,52 +115,53 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(0, 255, 204, 0.05) 0%, transparent 20%),
+      radial-gradient(circle at 90% 80%, rgba(0, 255, 204, 0.05) 0%, transparent 20%);
+    min-height: 100vh;
   }
 }
 
-/* 커스텀 애니메이션 */
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
+/* Glassmorphism Utility */
+.glass-effect {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
+.glass-card {
+  @apply glass-effect rounded-3xl transition-all duration-300;
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
+.glass-card:hover {
+  border-color: rgba(0, 255, 204, 0.4);
+  box-shadow: 0 12px 40px 0 rgba(0, 255, 204, 0.15);
+  transform: translateY(-2px);
 }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
+/* Cyber Elements */
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 255, 204, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 255, 204, 0.08) 1px, transparent 1px);
 }
 
-/* Grid Background - Light theme */
-.bg-grid-white\/\[0\.02\] {
-  background-image:
-    linear-gradient(to right, rgba(100, 116, 139, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(100, 116, 139, 0.06) 1px, transparent 1px);
+.cyber-glow-mint {
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
 }
 
-/* Custom scrollbar (quote, experience, checkout 등) */
+.text-glow-mint {
+  text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+}
+
+/* Custom Scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(20, 184, 166, 0.3) transparent;
+  scrollbar-color: rgba(0, 255, 204, 0.3) transparent;
 }
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -178,22 +170,23 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(20, 184, 166, 0.3);
+  background: rgba(0, 255, 204, 0.3);
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(20, 184, 166, 0.5);
+  background: rgba(0, 255, 204, 0.6);
 }
 
-/* 모바일: 터치 지연 제거, 탭 하이라이트 제어 */
-@media (hover: none) and (pointer: coarse) {
-  button:not(:disabled),
-  a[href],
-  [role="button"] {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
+/* Framer Motion Helper Animations */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
 
 /* 무한 루프 마키(Marquee) 애니메이션 */
 @keyframes marquee {

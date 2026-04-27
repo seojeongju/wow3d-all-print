@@ -57,53 +57,38 @@ export default function Header() {
     }, [mobileOpen])
 
     return (
-        <header className={`
-            fixed top-0 left-0 right-0 z-[100] transition-all duration-300
-            ${isPastHero
-                ? isScrolled
-                    ? 'bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm py-3'
-                    : 'bg-white/70 backdrop-blur-md py-5'
-                : isScrolled
-                    ? 'bg-[#0d1117]/90 backdrop-blur-xl border-b border-white/10 py-3'
-                    : 'bg-transparent backdrop-blur-sm py-5'}
-        `}
+    return (
+        <header className={cn(
+            "fixed top-0 left-0 right-0 z-[100] transition-all duration-500",
+            isScrolled 
+                ? "bg-white/80 backdrop-blur-xl border-b border-primary/10 shadow-lg py-3" 
+                : "bg-transparent py-6"
+        )}
             style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
         >
-            {/* 상단 바: 모바일에서 오버레이보다 위에 표시되도록 z-[101] */}
-            <div className="relative z-[101] container mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+            <div className="container mx-auto px-4 sm:px-8 flex items-center justify-between gap-6">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-3 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/25">
-                        <Boxes className="w-6 h-6 text-white" />
+                <Link href="/" className="flex items-center gap-3 shrink-0 group">
+                    <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform cyber-glow-mint">
+                        <Boxes className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div className="flex flex-col">
-                        <span className={`font-black text-lg sm:text-xl leading-none transition-colors ${isPastHero ? 'text-slate-800' : 'text-white'}`}>
-                            WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
+                        <span className="font-black text-xl sm:text-2xl leading-none text-foreground tracking-tighter uppercase">
+                            WOW3D<span className="text-primary text-glow-mint ml-0.5">ALL</span>
                         </span>
-                        <span className={`text-[10px] sm:text-[11px] font-bold leading-tight mt-1 transition-colors ${isPastHero ? 'text-slate-600' : 'text-white/80'}`}>
-                            (주)와우쓰리디
-                        </span>
-                        <span className={`text-[9px] sm:text-[10px] font-medium leading-tight mt-0.5 transition-colors ${isPastHero ? 'text-slate-400' : 'text-white/50'}`}>
-                            <span className="text-teal-400 font-semibold">AI</span> 실시간 자동 견적시스템
+                        <span className="text-[10px] font-black leading-tight mt-1 text-foreground/40 uppercase tracking-[0.2em]">
+                            Automated Engineering
                         </span>
                     </div>
                 </Link>
 
-                {/* Desktop Nav - 가독성 중심 */}
-                <nav className={`hidden lg:flex items-center gap-0.5 rounded-2xl p-1.5 transition-all ${
-                    isPastHero
-                        ? 'bg-slate-50/80 border border-slate-200 shadow-sm'
-                        : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
-                }`}>
+                {/* Desktop Nav */}
+                <nav className="hidden lg:flex items-center gap-1 bg-primary/5 border border-primary/10 rounded-2xl p-1.5 backdrop-blur-md">
                     {navItems.map((item) => (
                         <Link
                             key={item.label}
                             href={item.href}
-                            className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
-                                isPastHero
-                                    ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
-                                    : 'text-white/90 hover:text-white hover:bg-white/15'
-                            }`}
+                            className="px-5 py-2.5 rounded-xl text-[12px] font-black uppercase tracking-widest text-foreground/60 hover:text-primary hover:bg-primary/10 transition-all duration-300"
                         >
                             {item.label}
                         </Link>
@@ -111,21 +96,17 @@ export default function Header() {
                 </nav>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div className="flex items-center gap-3 shrink-0">
                     <Link href="/cart">
-                        <button className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
-                            isPastHero
-                                ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-teal-600 hover:bg-teal-50 hover:border-teal-200'
-                                : 'bg-white/10 border border-white/15 text-white/80 hover:text-white hover:bg-white/20'
-                        }`} title="장바구니">
-                            <ShoppingCart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                        <button className="relative w-11 h-11 rounded-2xl flex items-center justify-center bg-white/40 border border-primary/10 text-foreground/60 hover:text-primary hover:bg-primary/5 hover:border-primary/30 transition-all active:scale-90 backdrop-blur-md shadow-sm" title="장바구니">
+                            <ShoppingCart className="w-[18px] h-[18px]" />
                             <AnimatePresence>
                                 {mounted && cartItemCount > 0 && (
                                     <motion.span
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         exit={{ scale: 0 }}
-                                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-bold rounded-full"
+                                        className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-black rounded-full shadow-lg"
                                     >
                                         {cartItemCount > 99 ? '99+' : cartItemCount}
                                     </motion.span>
@@ -137,44 +118,36 @@ export default function Header() {
                     {mounted && isAuthenticated ? (
                         <div className="flex items-center gap-2">
                             <Link href={user?.role === 'admin' ? '/admin' : '/my-account'}>
-                                <button className={`flex items-center gap-2.5 pl-2 pr-3.5 py-2 rounded-xl transition-all ${
-                                    isPastHero
-                                        ? 'bg-slate-100 border border-slate-200 hover:bg-teal-50 hover:border-teal-200'
-                                        : 'bg-white/15 border border-white/25 hover:bg-white/25'
-                                }`}>
-                                    <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
+                                <button className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-2xl bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/30 transition-all backdrop-blur-md">
+                                    <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-primary cyber-glow-mint">
                                         <User className="w-4 h-4" />
                                     </div>
                                     <div className="hidden sm:flex flex-col text-left">
-                                        <span className={`text-xs font-bold leading-tight ${isPastHero ? 'text-slate-700' : 'text-white'}`}>{user?.name}</span>
-                                        <span className={`text-[10px] leading-tight ${isPastHero ? 'text-slate-400' : 'text-white/50'}`}>{user?.role === 'admin' ? '관리자' : '회원'}</span>
+                                        <span className="text-[11px] font-black leading-tight text-foreground uppercase tracking-tight">{user?.name}</span>
+                                        <span className="text-[9px] font-black leading-tight text-primary uppercase tracking-widest">{user?.role === 'admin' ? 'Admin' : 'Maker'}</span>
                                     </div>
                                 </button>
                             </Link>
                             <button
                                 onClick={logout}
-                                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition-all"
+                                className="w-11 h-11 rounded-2xl bg-white/40 border border-red-100 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
                                 title="로그아웃"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <LogOut className="w-[18px] h-[18px]" />
                             </button>
                         </div>
                     ) : (
                         <Link href="/auth">
-                            <Button variant="ghost" className={`text-[13px] font-semibold rounded-xl px-4 h-10 border transition-colors ${
-                                isPastHero
-                                    ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50 border-slate-200'
-                                    : 'text-white/90 hover:text-white hover:bg-white/20 border-white/30'
-                            }`}>
-                                로그인
+                            <Button variant="ghost" className="hidden sm:flex text-[12px] font-black uppercase tracking-widest rounded-2xl px-6 h-11 border border-primary/10 text-foreground/60 hover:text-primary hover:bg-primary/5 hover:border-primary/30 transition-all">
+                                LOGIN
                             </Button>
                         </Link>
                     )}
 
                     <Link href="/quote" className="hidden sm:block" onClick={() => resetFileStore()}>
-                        <Button className="h-10 sm:h-11 px-5 sm:px-6 rounded-xl bg-teal-500 text-white hover:bg-teal-600 font-bold text-[13px] gap-2 shadow-lg shadow-teal-500/25">
-                            <Zap className="w-4 h-4" />
-                            견적 받기
+                        <Button className="h-11 px-8 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-black text-[12px] uppercase tracking-[0.15em] gap-2 shadow-lg shadow-primary/25 transition-all hover:scale-105 active:scale-95">
+                            <Zap className="w-4 h-4 fill-current" />
+                            GET QUOTE
                         </Button>
                     </Link>
 
@@ -182,16 +155,10 @@ export default function Header() {
                     <button
                         type="button"
                         onClick={() => setMobileOpen((o) => !o)}
-                        className={`lg:hidden w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center touch-manipulation select-none transition-colors ${
-                            isPastHero
-                                ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-teal-50 hover:text-teal-600'
-                                : 'bg-white/15 border border-white/30 text-white hover:bg-white/25'
-                        }`}
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                        className="lg:hidden w-11 h-11 rounded-2xl flex items-center justify-center bg-primary/5 border border-primary/10 text-foreground transition-all active:scale-90"
                         aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
-                        aria-expanded={mobileOpen}
                     >
-                        {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
                 </div>
             </div>

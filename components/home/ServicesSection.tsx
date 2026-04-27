@@ -70,36 +70,30 @@ const services = [
     },
 ];
 
-export default function ServicesSection() {
     return (
-        <section id="services" className="py-24 relative overflow-hidden">
-            {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
-            {/* 틸/블루 은은한 포인트 오버레이 */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
+        <section id="services" className="py-24 relative overflow-hidden bg-background cyber-grid transition-all duration-500">
+            {/* Cyber Glow */}
+            <div className="absolute left-[-5%] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[130px] pointer-events-none" />
 
-            {/* 그리드 배경 */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
-            
-            {/* 배경 글로우 포인트들 */}
-            <div className="absolute left-0 bottom-0 w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-[130px]" />
-            <div className="absolute right-0 top-0 w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px]" />
-
-            <div className="container mx-auto px-4 relative z-10">
+            <div className="container mx-auto px-8 relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all text-white">서비스 안내</h2>
-                    <p className="text-white/85 text-lg max-w-2xl mx-auto break-keep italic font-medium">
-                        와우쓰리디는 <span className="text-white font-bold">3D프린팅출력, 3D프린터출력, 시제품제작, 3D프린팅출력대행, 3D프린터출력대행</span> 서비스를 제공하는 3D프린팅 전문 업체입니다.
-                        FDM, SLA, DLP 공정과 다양한 소재를 기반으로 목적에 맞는 제작 솔루션을 제안합니다.
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                        <Package className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-[10px] font-black tracking-widest text-primary uppercase">Service Spectrum</span>
+                    </div>
+                    <h2 className="text-3xl md:text-6xl font-black mb-6 tracking-tighter text-foreground uppercase">제작 서비스 안내</h2>
+                    <p className="text-foreground/60 text-lg max-w-2xl mx-auto break-keep font-bold">
+                        와우쓰리디의 통합 제조 인프라는 <span className="text-primary underline decoration-primary/30 underline-offset-4">FDM, SLA, DLP</span> 등<br />
+                        첨단 적층 제조 공정을 통해 정밀한 품질과 빠른 리드타임을 보장합니다.
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
                     {services.map((s, i) => (
                         <motion.div
                             key={i}
@@ -107,46 +101,31 @@ export default function ServicesSection() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.08 }}
-                            whileHover={{ y: -4 }}
-                            className={`group relative p-8 rounded-3xl border overflow-hidden hover:shadow-xl transition-all duration-300 ${s.className}`}
+                            whileHover={{ y: -8 }}
+                            className={`group relative p-8 glass-card border-primary/10 overflow-hidden transition-all duration-500 ${s.className}`}
                         >
-                            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <s.icon className="w-24 h-24" />
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <s.icon className="w-32 h-32 text-primary" />
                             </div>
                             <div className="relative z-10">
                                 <div
-                                    className={`w-12 h-12 rounded-2xl bg-white/10 shadow-sm flex items-center justify-center mb-5 ${s.iconColor}`}
+                                    className={`w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 cyber-glow-mint`}
                                 >
-                                    <s.icon className="w-6 h-6" />
+                                    <s.icon className="w-7 h-7 text-primary" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-3 word-keep-all text-white">{s.title}</h3>
-                                <p className="text-white/85 text-sm leading-relaxed mb-4 break-keep font-medium">
+                                <h3 className="text-2xl font-black mb-4 tracking-tighter text-foreground uppercase">{s.title}</h3>
+                                <p className="text-foreground/50 text-sm leading-relaxed mb-8 break-keep font-bold">
                                     {s.description}
                                 </p>
-                                {'methods' in s && s.methods ? (
-                                    <div className="space-y-3">
-                                        {(s.methods as { name: string; icon: React.ComponentType<{ className?: string }>; desc: string }[]).map(
-                                            (m, j) => (
-                                                <div key={j} className="flex items-start gap-2 text-sm">
-                                                    <m.icon className="w-4 h-4 mt-0.5 shrink-0 text-white/55" />
-                                                    <div>
-                                                        <span className="font-semibold text-white">{m.name}</span>
-                                                        <span className="text-white/75"> — {m.desc}</span>
-                                                    </div>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                ) : (
-                                    <ul className="space-y-1.5 text-sm text-white/75 font-medium">
-                                        {(s.items || []).map((item, j) => (
-                                            <li key={j} className="flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-teal-500/60" />
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                                
+                                <div className="space-y-3">
+                                    {(s.items || []).map((item, j) => (
+                                        <div key={j} className="flex items-center gap-3">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                            <span className="text-[11px] font-black text-foreground/60 uppercase tracking-tight">{item}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </motion.div>
                     ))}
@@ -156,11 +135,12 @@ export default function ServicesSection() {
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
-                    className="text-center mt-12"
+                    className="text-center mt-20"
                 >
                     <Link href="/quote">
-                        <Button size="lg" className="rounded-full h-12 px-8">
-                            3D 프린팅 견적 요청하기
+                        <Button size="lg" className="h-16 px-12 rounded-2xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/30 transition-all hover:scale-105">
+                            <Zap className="w-5 h-5 fill-current mr-2" />
+                            제작 견적 요청하기
                         </Button>
                     </Link>
                 </motion.div>

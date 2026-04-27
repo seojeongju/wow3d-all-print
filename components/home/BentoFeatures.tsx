@@ -48,35 +48,30 @@ const features = [
     }
 ];
 
-export default function BentoFeatures() {
     return (
-        <section id="features" className="py-24 relative overflow-hidden">
-            {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
-            {/* 틸/블루 은은한 포인트 오버레이 */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
+        <section id="features" className="py-24 relative overflow-hidden bg-background cyber-grid transition-all duration-500">
+            {/* Cyber Glow Points */}
+            <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[130px] pointer-events-none" />
 
-            {/* 그리드 배경 */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
-            
-            {/* 배경 글로우 포인트들 */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-[130px]" />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px]" />
-
-            <div className="container mx-auto px-4 relative z-10">
+            <div className="container mx-auto px-8 relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold mb-4 word-keep-all text-white">기능</h2>
-                    <p className="text-white/85 text-lg max-w-2xl mx-auto break-keep font-medium">
-                        AI 견적, 3D 뷰어, 다중 포맷·소재·정밀도 설정부터 품질·후가공 옵션까지. 플랫폼이 제공하는 역량입니다.
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                        <Zap className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-[10px] font-black tracking-widest text-primary uppercase">Core Technology</span>
+                    </div>
+                    <h2 className="text-3xl md:text-6xl font-black mb-6 tracking-tighter text-foreground uppercase">차별화된 기술력</h2>
+                    <p className="text-foreground/60 text-lg max-w-2xl mx-auto break-keep font-bold">
+                        AI 실시간 분석 엔진과 클라우드 기반 3D 뷰어를 통해<br />
+                        누구나 전문가 수준의 견적과 설계를 경험할 수 있습니다.
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
                     {features.map((feature, i) => (
                         <motion.div
                             key={i}
@@ -84,19 +79,19 @@ export default function BentoFeatures() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.1 }}
-                            whileHover={{ y: -5 }}
-                            className={`group relative p-8 rounded-3xl border border-border overflow-hidden hover:shadow-xl transition-all duration-300 ${feature.className}`}
+                            whileHover={{ y: -8 }}
+                            className={`group relative p-8 glass-card border-primary/10 overflow-hidden transition-all duration-500 ${feature.className}`}
                         >
-                            <div className={`absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500`}>
-                                <feature.icon className="w-32 h-32" />
+                            <div className={`absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500`}>
+                                <feature.icon className="w-32 h-32 text-primary" />
                             </div>
 
                             <div className="relative z-10">
-                                <div className={`w-12 h-12 rounded-2xl bg-background shadow-sm flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform ${feature.iconColor}`}>
-                                    <feature.icon className="w-6 h-6" />
+                                <div className={`w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-8 cyber-glow-mint`}>
+                                    <feature.icon className="w-7 h-7 text-primary" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-3 word-keep-all text-white">{feature.title}</h3>
-                                <p className="text-white/85 leading-relaxed break-keep font-medium">{feature.description}</p>
+                                <h3 className="text-2xl font-black mb-4 tracking-tighter text-foreground uppercase">{feature.title}</h3>
+                                <p className="text-foreground/50 text-sm leading-relaxed break-keep font-bold">{feature.description}</p>
                             </div>
                         </motion.div>
                     ))}

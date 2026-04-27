@@ -453,27 +453,35 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
 
     return (
         <div className={`space-y-6 ${embedded ? 'pb-6' : 'pb-4'}`}>
-            {/* Quick Stats Grid - 프리미엄 카드 디자인 */}
+            {/* Quick Stats Grid - 프리미엄 유리 질감 카드 */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-1.5 sm:gap-2 group hover:bg-white/10 transition-all shadow-xl">
-                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black tracking-[0.15em] sm:tracking-[0.2em] text-white/40 uppercase">
-                        <Box className="w-3.5 h-3.5 text-teal-400/60" /> 부피
+                <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="p-4 sm:p-5 glass-card flex flex-col gap-1.5 sm:gap-2 group"
+                >
+                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black tracking-[0.2em] text-primary/60 uppercase">
+                        <Box className="w-3.5 h-3.5 text-primary" /> 부피
                     </div>
-                    <span className="text-xl sm:text-2xl font-black font-mono tracking-tighter text-white">{volumeCm3.toFixed(1)} <span className="text-[10px] sm:text-xs font-bold text-white/30 ml-0.5">cm³</span></span>
-                </div>
-                <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-1.5 sm:gap-2 group hover:bg-white/10 transition-all shadow-xl">
-                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black tracking-[0.15em] sm:tracking-[0.2em] text-white/40 uppercase">
-                        <Layers className="w-3.5 h-3.5 text-indigo-400/60" /> 표면적
+                    <span className="text-xl sm:text-2xl font-black font-mono tracking-tighter text-foreground">{volumeCm3.toFixed(1)} <span className="text-[10px] sm:text-xs font-bold text-foreground/30 ml-0.5">cm³</span></span>
+                </motion.div>
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="p-4 sm:p-5 glass-card flex flex-col gap-1.5 sm:gap-2 group"
+                >
+                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black tracking-[0.2em] text-primary/60 uppercase">
+                        <Layers className="w-3.5 h-3.5 text-primary" /> 표면적
                     </div>
-                    <span className="text-xl sm:text-2xl font-black font-mono tracking-tighter text-white">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] sm:text-xs font-bold text-white/30 ml-0.5">cm²</span></span>
-                </div>
+                    <span className="text-xl sm:text-2xl font-black font-mono tracking-tighter text-foreground">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] sm:text-xs font-bold text-foreground/30 ml-0.5">cm²</span></span>
+                </motion.div>
             </div>
 
             {/* Print Method Selection */}
             <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2 px-1">
-                    <Printer className="w-3.5 h-3.5 sm:w-4 h-4 text-teal-400" />
-                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/40">출력 방식 선택</span>
+                    <Printer className="w-3.5 h-3.5 sm:w-4 h-4 text-primary" />
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-foreground/50">출력 방식 선택</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
@@ -484,17 +492,17 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <button
                             key={method.id}
                             onClick={() => setPrintMethod(method.id as PrintMethod)}
-                            className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] border transition-all relative group overflow-hidden ${printMethod === method.id
-                                ? 'bg-white text-slate-950 border-white shadow-2xl shadow-white/5 scale-[1.02]'
-                                : 'bg-white/5 border-white/10 hover:bg-white/10 text-white/60 hover:text-white'
+                            className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-3xl border transition-all relative group overflow-hidden ${printMethod === method.id
+                                ? 'bg-primary text-primary-foreground border-primary shadow-[0_0_20px_rgba(0,255,204,0.3)] scale-[1.02]'
+                                : 'bg-white/40 border-primary/10 hover:bg-white/60 text-foreground/60 hover:text-foreground backdrop-blur-sm'
                                 }`}
                         >
-                            <method.icon className={`w-5 h-5 sm:w-7 h-7 relative z-10 transition-transform group-hover:scale-110 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`} />
-                            <span className={`text-[11px] sm:text-[12px] font-black tracking-tight relative z-10 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`}>
+                            <method.icon className={`w-5 h-5 sm:w-7 h-7 relative z-10 transition-transform group-hover:scale-110 ${printMethod === method.id ? 'text-primary-foreground' : 'text-primary/40'}`} />
+                            <span className={`text-[11px] sm:text-[12px] font-black tracking-tight relative z-10 ${printMethod === method.id ? 'text-primary-foreground' : 'text-foreground/40'}`}>
                                 {method.label}
                             </span>
                             {printMethod === method.id && (
-                                <div className="absolute inset-0 bg-white/10 blur-xl animate-pulse pointer-events-none" />
+                                <motion.div layoutId="active-bg" className="absolute inset-0 bg-primary opacity-20 blur-xl pointer-events-none" />
                             )}
                         </button>
                     ))}
@@ -502,18 +510,18 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             </div>
 
             {overflow && (
-                <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 backdrop-blur-md">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm font-bold text-amber-100">최대 출력 크기 초과</p>
-                        <p className="text-xs text-amber-200/90 mt-0.5 leading-relaxed">
-                            이 모델은 선택한 {printMethod.toUpperCase()} 장비의 최대 치수({overflow})를 초과합니다. 크기를 줄이거나 다른 출력 방식을 선택해 주세요.
+                        <p className="text-sm font-bold text-amber-800">최대 출력 크기 초과</p>
+                        <p className="text-xs text-amber-800/80 mt-0.5 leading-relaxed">
+                            이 모델은 선택한 {printMethod.toUpperCase()} 장비의 최대 치수({overflow})를 초과합니다.
                         </p>
                     </div>
                 </div>
             )}
 
-            <Separator className="bg-white/10" />
+            <Separator className="bg-primary/10" />
 
             <AnimatePresence mode="wait">
                 <motion.div
@@ -526,33 +534,33 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                     {/* Dynamic Material Section */}
                     <div className="space-y-3 sm:space-y-4">
                         <div className="flex items-center gap-2 px-1">
-                            <Box className="w-3.5 h-3.5 sm:w-4 h-4 text-teal-400" />
-                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/40">소재 설정</span>
+                            <Box className="w-3.5 h-3.5 sm:w-4 h-4 text-primary" />
+                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-foreground/50">소재 설정</span>
                         </div>
 
                         <div className="grid gap-2 sm:gap-3">
                             {(printMethod === 'fdm' ? fdmMaterials : resinMaterials).length === 0 ? (
-                                <p className="text-[13px] text-white/40 py-4 font-bold italic">소재가 없습니다. 관리자 설정 → 소재에서 추가하세요.</p>
+                                <p className="text-[13px] text-foreground/40 py-4 font-bold italic">소재가 없습니다.</p>
                             ) : (
                                 (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => (
                                     <button
                                         key={m.id}
                                         onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
-                                        className={`flex items-start gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border text-left transition-all group relative overflow-hidden ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
-                                            ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                        className={`flex items-start gap-4 sm:gap-5 p-4 sm:p-5 rounded-3xl border text-left transition-all group relative overflow-hidden ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
+                                            ? 'bg-primary/10 border-primary/40 ring-1 ring-primary/20'
+                                            : 'bg-white/40 border-primary/5 hover:bg-white/60 hover:border-primary/20 backdrop-blur-sm'
                                             }`}
                                     >
                                         <div className="flex-1 relative z-10">
                                             <div className="flex items-center justify-between mb-1">
-                                                <span className={`text-sm sm:text-[15px] font-black tracking-tight ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name ? 'text-teal-400' : 'text-white/80'} ${MAT_COLORS[m.name] || ''}`}>{m.name}</span>
+                                                <span className={`text-sm sm:text-[15px] font-black tracking-tight ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name ? 'text-primary' : 'text-foreground/80'}`}>{m.name}</span>
                                                 {(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name && (
-                                                    <div className="w-4.5 h-4.5 sm:w-5 h-5 rounded-full bg-teal-400 flex items-center justify-center">
-                                                        <ChevronRight className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-950 stroke-[3]" />
+                                                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-[0_0_10px_rgba(0,255,204,0.4)]">
+                                                        <ChevronRight className="w-3.5 h-3.5 text-primary-foreground stroke-[3]" />
                                                     </div>
                                                 )}
                                             </div>
-                                            <p className="text-[11px] sm:text-[12px] text-white/40 font-bold leading-relaxed">
+                                            <p className="text-[11px] sm:text-[12px] text-foreground/40 font-bold leading-relaxed">
                                                 {printMethod === 'fdm' ? `g당 ₩${(m.price_per_gram || 0).toLocaleString()} · 밀도 ${m.density}` : (m.price_per_ml != null && m.price_per_ml > 0) ? `mL당 ₩${m.price_per_ml.toLocaleString()}` : 'mL당 가격 미설정'}
                                             </p>
                                         </div>
@@ -567,8 +575,8 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <div className="space-y-7 sm:space-y-8 pt-1">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">인필(채움) 밀도 (Infill)</label>
-                                    <span className="font-mono text-sm sm:text-[15px] text-teal-400 font-black">{infill}%</span>
+                                    <label className="text-[10px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">인필(채움) 밀도 (Infill)</label>
+                                    <span className="font-mono text-sm sm:text-[15px] text-primary font-black text-glow-mint">{infill}%</span>
                                 </div>
                                 <div className="px-1">
                                     <input
@@ -576,21 +584,21 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                                         min="10" max="100" step="10"
                                         value={infill}
                                         onChange={(e) => setInfill(Number(e.target.value))}
-                                        className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-teal-400"
+                                        className="w-full h-2 bg-primary/10 rounded-full appearance-none cursor-pointer accent-primary"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em] block px-1">레이어 두께</label>
+                                <label className="text-[10px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em] block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.1, 0.2, 0.3].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setLayerHeight(h)}
-                                            className={`py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border text-xs sm:text-[13px] font-black transition-all ${layerHeight === h
-                                                ? 'bg-white text-slate-950 border-white shadow-xl shadow-white/5'
-                                                : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
+                                            className={`py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-[13px] font-black transition-all ${layerHeight === h
+                                                ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20'
+                                                : 'bg-white/40 border-primary/5 text-foreground/40 hover:border-primary/30 hover:text-foreground backdrop-blur-sm'
                                                 }`}
                                         >
                                             {h}mm
@@ -601,35 +609,28 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center justify-between px-1">
                                     <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">지지 구조 (Support)</label>
-                                        {needsSupport && <span className="text-[9px] sm:text-[10px] text-amber-500 font-black flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> 오버행 감지됨</span>}
+                                        <label className="text-[10px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">지지 구조 (Support)</label>
+                                        {needsSupport && <span className="text-[9px] sm:text-[10px] text-amber-600 font-black flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> 오버행 감지됨</span>}
                                     </div>
                                     <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
-                                        className={`relative w-11 sm:w-12 h-6 sm:h-6.5 rounded-full border-2 transition-all ${supportEnabled ? 'bg-teal-400 border-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)]' : 'bg-white/5 border-white/20'}`}>
-                                        <span className={`absolute top-0.5 h-4 sm:h-4.5 w-4 sm:w-4.5 rounded-full transition-all ${supportEnabled ? 'left-5.5 sm:left-6 bg-slate-950' : 'left-0.5 bg-white/40'}`} />
+                                        className={`relative w-11 sm:w-12 h-6 sm:h-6.5 rounded-full border-2 transition-all ${supportEnabled ? 'bg-primary border-primary shadow-[0_0_15px_rgba(0,255,204,0.3)]' : 'bg-foreground/5 border-foreground/10'}`}>
+                                        <span className={`absolute top-0.5 h-4 sm:h-4.5 w-4 sm:w-4.5 rounded-full transition-all ${supportEnabled ? 'left-5.5 sm:left-6 bg-primary-foreground' : 'left-0.5 bg-foreground/40'}`} />
                                     </button>
                                 </div>
-                                {needsSupport && !supportEnabled && (
-                                    <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                                        <p className="text-[10.5px] sm:text-[11px] text-amber-200/90 leading-relaxed font-bold break-keep">
-                                            모델에 45도 이상 기울어진 오버행이 있습니다. 정상적인 출력을 위해 <span className="text-amber-400">지지 구조 활성화</span>를 권장합니다.
-                                        </p>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-7 sm:space-y-8 pt-1">
                             <div className="space-y-4">
-                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em] block px-1">레이어 두께</label>
+                                <label className="text-[10px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em] block px-1">레이어 두께</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.025, 0.05, 0.1].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setSlaLayerHeight(h)}
-                                            className={`py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border text-xs sm:text-[13px] font-black transition-all ${slaLayerHeight === h
-                                                ? 'bg-white text-slate-950 border-white shadow-xl shadow-white/5'
-                                                : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
+                                            className={`py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-[13px] font-black transition-all ${slaLayerHeight === h
+                                                ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20'
+                                                : 'bg-white/40 border-primary/5 text-foreground/40 hover:border-primary/30 hover:text-foreground backdrop-blur-sm'
                                                 }`}
                                         >
                                             {h}mm
@@ -638,10 +639,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                                 </div>
                             </div>
                             <div className="flex items-center justify-between px-1">
-                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">후가공 (Post-processing)</label>
+                                <label className="text-[10px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">후가공 (Post-processing)</label>
                                 <button type="button" role="switch" aria-checked={postProcessing} onClick={() => setPostProcessing((p) => !p)}
-                                    className={`relative w-11 sm:w-12 h-6 sm:h-6.5 rounded-full border-2 transition-all ${postProcessing ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/20'}`}>
-                                    <span className={`absolute top-0.5 h-4 sm:h-4.5 w-4 sm:w-4.5 rounded-full transition-all ${postProcessing ? 'left-5.5 sm:left-6 bg-slate-950' : 'left-0.5 bg-white/40'}`} />
+                                    className={`relative w-11 sm:w-12 h-6 sm:h-6.5 rounded-full border-2 transition-all ${postProcessing ? 'bg-primary border-primary shadow-[0_0_15px_rgba(0,255,204,0.3)]' : 'bg-foreground/5 border-foreground/10'}`}>
+                                    <span className={`absolute top-0.5 h-4 sm:h-4.5 w-4 sm:w-4.5 rounded-full transition-all ${postProcessing ? 'left-5.5 sm:left-6 bg-primary-foreground' : 'left-0.5 bg-foreground/40'}`} />
                                 </button>
                             </div>
                         </div>
@@ -649,137 +650,81 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 </motion.div>
             </AnimatePresence>
 
-            {/* 상세보기 모달 - 슬레이트 톤으로 가독성 */}
+            {/* 상세보기 모달 */}
             <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-                <DialogContent className="max-w-md sm:max-w-lg bg-[#111827] border-white/10 text-white shadow-2xl backdrop-blur-2xl">
+                <DialogContent className="max-w-md sm:max-w-lg glass-effect border-primary/20 text-foreground shadow-2xl backdrop-blur-2xl rounded-3xl">
                     <DialogHeader>
-                        <DialogTitle className="text-white flex items-center gap-3 text-xl font-black">
-                            <FileText className="w-6 h-6 text-teal-400" /> <span className="tracking-tight">견적 산출 상세</span>
+                        <DialogTitle className="text-foreground flex items-center gap-3 text-xl font-black">
+                            <FileText className="w-6 h-6 text-primary" /> <span className="tracking-tight">견적 산출 상세</span>
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 pt-2">
                         <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">입력 설정</h4>
+                            <h4 className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest mb-3">산출 결과</h4>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-slate-400">출력 방식</div>
-                                <div className="font-medium text-slate-100">{printMethod.toUpperCase()}</div>
-                                <div className="text-slate-400">소재</div>
-                                <div className="font-medium text-slate-100">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
-                                <div className="text-slate-400">레이어 두께</div>
-                                <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
-                                {printMethod === 'fdm' ? (
-                                    <>
-                                        <div className="text-slate-400">인필(채움)</div>
-                                        <div className="font-medium text-slate-100">{infill}%</div>
-                                        <div className="text-slate-400">지지 구조</div>
-                                        <div className="font-medium text-slate-100">{supportEnabled ? '사용' : '미사용'}</div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="text-slate-400">후가공</div>
-                                        <div className="font-medium text-slate-100">{postProcessing ? '적용' : '미적용'}</div>
-                                    </>
-                                )}
-                            </div>
-                        </section>
-                        <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">모델 정보</h4>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-slate-400">부피</div>
-                                <div className="font-mono text-slate-100">{volumeCm3.toFixed(1)} cm³</div>
-                                <div className="text-slate-400">표면적</div>
-                                <div className="font-mono text-slate-100">{surfaceAreaCm2.toFixed(1)} cm²</div>
-                                <div className="text-slate-400">치수 (X×Y×Z)</div>
-                                <div className="font-mono text-slate-100">{bx.toFixed(1)} × {by.toFixed(1)} × {bz.toFixed(1)} mm</div>
-                            </div>
-                        </section>
-                        <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">산출 결과</h4>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-slate-400">소요 시간</div>
-                                <div className="font-bold text-emerald-400">{quoteDetail.time.toFixed(2)} h</div>
-                                <div className="text-slate-400">소재 소요량</div>
-                                <div className="font-mono font-medium text-slate-100">{quoteDetail.materialAmount.toFixed(1)} {quoteDetail.materialUnit}</div>
-                                <div className="text-slate-400">출력 레이어 수</div>
-                                <div className="font-mono font-bold text-slate-100">{quoteDetail.numLayers.toLocaleString()} layers</div>
-                            </div>
-                        </section>
-                        <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">비용 구분 (공급가액)</h4>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span className="text-slate-400">재료비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.material).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">장비(인쇄)비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">기타</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">인건비</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor).toLocaleString()}</span></div>
-                                <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50">
-                                    <span className="text-slate-400">부가세 (VAT 10%)</span>
-                                    <span className="font-mono text-slate-300">₩{Math.round(quoteDetail.total * 0.1).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between pt-2 font-bold text-lg">
-                                    <span className="text-slate-100">최종 견적합계</span>
-                                    <span className="text-primary">₩{Math.round(totalPrice).toLocaleString()}</span>
-                                </div>
-                                <p className="text-[10px] text-slate-500 text-right">※ 부가세가 포함된 최종 금액입니다.</p>
+                                <div className="text-foreground/60">소요 시간</div>
+                                <div className="font-bold text-primary">{quoteDetail.time.toFixed(2)} h</div>
+                                <div className="text-foreground/60">최종 견적합계</div>
+                                <div className="font-black text-primary text-lg">₩{Math.round(totalPrice).toLocaleString()}</div>
                             </div>
                         </section>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Price & Actions - 프리미엄 액션 보드 */}
-            <div className={`${embedded ? 'p-5 sm:p-6' : 'p-6 sm:p-8'} rounded-[2rem] sm:rounded-[2.5rem] bg-white/5 border border-white/10 space-y-6 sm:space-y-8 relative overflow-hidden shadow-2xl mt-4`}>
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            {/* Price & Actions - 프리미엄 유리 질감 액션 보드 */}
+            <motion.div 
+                layout
+                className={`${embedded ? 'p-5 sm:p-6' : 'p-6 sm:p-8'} glass-card space-y-6 sm:space-y-8 relative overflow-hidden mt-4`}
+            >
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                 
                 <div className="flex items-center justify-between gap-4 sm:gap-6">
                     <div>
-                        <div className="flex items-center gap-2 text-[9.5px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5 sm:mb-2">
-                            <Wallet className="w-3.5 h-3.5" /> 실시간 예상 견적
+                        <div className="flex items-center gap-2 text-[9.5px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.25em] mb-1.5 sm:mb-2">
+                            <Wallet className="w-3.5 h-3.5 text-primary" /> 실시간 예상 견적
                         </div>
                         <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1">
-                            <span className={`font-black text-white tracking-tighter ${embedded ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-4xl'}`}>₩{Math.round(totalPrice).toLocaleString()}</span>
+                            <motion.span 
+                                key={totalPrice}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className={`font-black text-foreground tracking-tighter ${embedded ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-4xl'} text-glow-mint`}
+                            >
+                                ₩{Math.round(totalPrice).toLocaleString()}
+                            </motion.span>
                             <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-[10px] sm:text-sm font-black text-white/30 uppercase tracking-widest">KRW</span>
-                                <span className="text-[10px] sm:text-[11px] font-bold text-teal-400/90 bg-teal-400/10 px-2 py-0.5 rounded-md border border-teal-400/20">(VAT 포함)</span>
+                                <span className="text-[10px] sm:text-sm font-black text-foreground/30 uppercase tracking-widest">KRW</span>
+                                <span className="text-[10px] sm:text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">(VAT 포함)</span>
                             </div>
                         </div>
                     </div>
                     <div className="text-right">
-                        <div className="flex items-center justify-end gap-2 text-[9.5px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5 sm:mb-2">
-                            <Clock className="w-3.5 h-3.5" /> 제작 예상 기간
+                        <div className="flex items-center justify-end gap-2 text-[9.5px] sm:text-[11px] font-black text-foreground/40 uppercase tracking-[0.25em] mb-1.5 sm:mb-2">
+                            <Clock className="w-3.5 h-3.5 text-primary" /> 제작 예상 기간
                         </div>
-                        <span className="text-[15px] sm:text-[17px] font-black text-teal-400 tracking-tight">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'H'))}</span>
+                        <span className="text-[15px] sm:text-[17px] font-black text-primary tracking-tight">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'H'))}</span>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] sm:text-[12px] text-teal-400 hover:text-teal-300 font-black tracking-tight transition-all active:scale-95 px-1">
+                    <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] sm:text-[12px] text-primary hover:text-primary/70 font-black tracking-tight transition-all active:scale-95 px-1">
                         <FileText className="w-3.5 h-3.5 sm:w-4 h-4" /> 산출 내역 상세 보기
                     </button>
                     
                     <div className={`grid gap-3 ${embedded ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-[1fr_2fr]'}`}>
                         {!embedded && (
-                            <Button disabled={!analysis || isSaving} variant="ghost" size="lg" className="rounded-xl sm:rounded-2xl border border-white/10 hover:bg-white/10 text-white transition-all active:scale-95 h-12 sm:h-16" onClick={handleSaveQuote}>
+                            <Button disabled={!analysis || isSaving} variant="ghost" size="lg" className="rounded-2xl border border-primary/20 hover:bg-primary/10 text-foreground transition-all active:scale-95 h-12 sm:h-16" onClick={handleSaveQuote}>
                                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                             </Button>
                         )}
-                        <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl sm:rounded-2xl bg-white text-slate-950 hover:bg-white/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.1)] h-12 sm:h-16 ${embedded ? 'text-[13px] font-black' : 'text-sm sm:text-[15px] font-black uppercase tracking-widest'} ${embedded ? 'col-span-1' : 'col-span-1'}`} onClick={handleAddToCart}>
-                            <ShoppingCart className="w-4.5 h-4.5 sm:w-5 h-5 text-slate-950" /> 장바구니에 담기
+                        <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(0,255,204,0.2)] h-12 sm:h-16 ${embedded ? 'text-[13px] font-black' : 'text-sm sm:text-[15px] font-black uppercase tracking-widest'} ${embedded ? 'col-span-1' : 'col-span-1'}`} onClick={handleAddToCart}>
+                            <ShoppingCart className="w-4.5 h-4.5 sm:w-5 h-5" /> 장바구니에 담기
                         </Button>
                     </div>
                 </div>
-                {!embedded && (
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 pt-1 border-t border-white/5 mt-2">
-                        <Link href="/quotes" className="text-[11px] text-white/30 hover:text-teal-400 font-bold flex items-center gap-1.5 transition-colors"><List className="w-3.5 h-3.5" /> 견적 보관함</Link>
-                        <span className="hidden sm:inline text-white/10 font-thin">|</span>
-                        <Link href="/cart" className="text-[11px] text-white/30 hover:text-teal-400 font-bold flex items-center gap-1.5 transition-colors"><ArrowRight className="w-3.5 h-3.5" /> 장바구니 이동</Link>
-                    </div>
-                )}
-                {!embedded && (
-                    <div className="flex items-center justify-center gap-2 text-[9px] text-white/20 font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] pt-2">
-                        <ShieldCheck className="w-3 h-3 sm:w-3.5 h-3.5 text-teal-400/50 shadow-[0_0_10px_rgba(20,184,166,0.2)]" /> WOW3D Security
-                    </div>
-                )}
-            </div>
+            </motion.div>
         </div>
     )
 }
+
