@@ -113,6 +113,44 @@ export default function QuoteAnalyticsPage() {
         return <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">업로드 후 이탈</Badge>;
     };
 
+    const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+    const handleDownload = async (item: QuoteAnalytics) => {
+        if (!item.file_url) return;
+        setDownloadingId(item.id);
+        
+        try {
+            const res = await fetch(`/api/files/${item.file_url}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || '파일 다운로드에 실패했습니다.');
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = item.file_name || 'download';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            toast({ title: '다운로드 완료', description: `${item.file_name} 파일을 다운로드했습니다.` });
+        } catch (e: any) {
+            toast({ 
+                title: '다운로드 실패', 
+                description: e.message, 
+                variant: 'destructive' 
+            });
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
     if (loading && data.length === 0) {
         return <div className="flex justify-center p-24"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
     }
@@ -247,10 +285,15 @@ export default function QuoteAnalyticsPage() {
                                                     size="sm" 
                                                     variant="ghost" 
                                                     className="h-8 w-8 p-0 hover:bg-white/10"
-                                                    onClick={() => window.open(`/api/files/${item.file_url}`, '_blank')}
+                                                    onClick={() => handleDownload(item)}
+                                                    disabled={downloadingId === item.id}
                                                     title="파일 다운로드"
                                                 >
-                                                    <Download className="w-4 h-4 text-white/60" />
+                                                    {downloadingId === item.id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                                    ) : (
+                                                        <Download className="w-4 h-4 text-white/60" />
+                                                    )}
                                                 </Button>
                                             )}
                                             {item.order_number && (
@@ -268,6 +311,7 @@ export default function QuoteAnalyticsPage() {
                                     </td>
                                 </tr>
                             ))}
+
                             {filteredData.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="p-24 text-center">
