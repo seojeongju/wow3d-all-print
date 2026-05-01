@@ -13,7 +13,18 @@ export async function GET(req: NextRequest) {
       `SELECT * FROM qna WHERE is_published = 1 ORDER BY display_order ASC, created_at DESC`
     ).all();
 
-    return Response.json({ success: true, data: results || [] });
+    // 중복 제거 (동일한 질문 내용 기준)
+    const uniqueResults: any[] = [];
+    const seenQuestions = new Set<string>();
+
+    for (const item of results || []) {
+      if (!seenQuestions.has(item.question)) {
+        seenQuestions.add(item.question);
+        uniqueResults.push(item);
+      }
+    }
+
+    return Response.json({ success: true, data: uniqueResults });
   } catch (e) {
     console.error('GET /api/qna', e);
     return Response.json({ error: 'Failed to fetch Q&A' }, { status: 500 });
