@@ -58,18 +58,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    const navItems = [
-        { title: '대시보드', href: '/admin', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
-        { title: '내 정보', href: '/admin/profile', icon: User, match: (p: string) => p.startsWith('/admin/profile') },
-        { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
-        { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p === '/admin/quotes' || p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics') },
-        { title: '견적 유입 분석', href: '/admin/quotes/analytics', icon: BarChart3, match: (p: string) => p.startsWith('/admin/quotes/analytics') },
-        { title: '출력 갤러리', href: '/admin/gallery', icon: ImageIcon, match: (p: string) => p.startsWith('/admin/gallery') },
-        { title: '쇼케이스', href: '/admin/showcase', icon: Sparkles, match: (p: string) => p.startsWith('/admin/showcase') },
-        { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
-        { title: 'FAQ 관리', href: '/admin/qna', icon: HelpCircle, match: (p: string) => p.startsWith('/admin/qna') },
-        { title: '설정 & 소재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
+    const navGroups = [
+        {
+            groupName: '메인',
+            items: [
+                { title: '대시보드', href: '/admin', icon: LayoutDashboard, match: (p: string) => p === '/admin' },
+            ],
+        },
+        {
+            groupName: '스토어 업무',
+            items: [
+                { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
+                { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p === '/admin/quotes' || p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics') },
+                { title: '견적 유입 분석', href: '/admin/quotes/analytics', icon: BarChart3, match: (p: string) => p.startsWith('/admin/quotes/analytics') },
+                { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
+            ],
+        },
+        {
+            groupName: '콘텐츠 관리',
+            items: [
+                { title: '출력 갤러리', href: '/admin/gallery', icon: ImageIcon, match: (p: string) => p.startsWith('/admin/gallery') },
+                { title: '쇼케이스', href: '/admin/showcase', icon: Sparkles, match: (p: string) => p.startsWith('/admin/showcase') },
+                { title: 'FAQ 관리', href: '/admin/qna', icon: HelpCircle, match: (p: string) => p.startsWith('/admin/qna') },
+            ],
+        },
+        {
+            groupName: '시스템 / 설정',
+            items: [
+                { title: '설정 & 소재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
+                { title: '내 정보', href: '/admin/profile', icon: User, match: (p: string) => p.startsWith('/admin/profile') },
+            ],
+        },
     ];
+
 
     const isSuperAdmin = user?.store_id === 1 || user?.role === 'super_admin';
     const platformNavItems = [
@@ -95,29 +116,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </div>
                         </div>
                     </div>
-                    <div className="px-3 py-4">
-                        <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3 px-3">스토어 메뉴</div>
-                        <nav className="space-y-1">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-                                        item.match(pathname)
-                                            ? 'bg-primary/20 text-primary border border-primary/30'
-                                            : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'
-                                    )}
-                                >
-                                    <item.icon className="w-4 h-4" />
-                                    {item.title}
-                                </Link>
-                            ))}
+                    <div className="px-3 py-4 space-y-6">
+                        {navGroups.map((group, gIdx) => (
+                            <div key={gIdx}>
+                                <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 px-3">{group.groupName}</div>
+                                <nav className="space-y-1">
+                                    {group.items.map((item) => (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={cn(
+                                                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                                                item.match(pathname)
+                                                    ? 'bg-primary/20 text-primary border border-primary/30'
+                                                    : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'
+                                            )}
+                                        >
+                                            <item.icon className="w-4 h-4" />
+                                            {item.title}
+                                        </Link>
+                                    ))}
+                                </nav>
+                            </div>
+                        ))}
 
-                            {isSuperAdmin && platformNavItems.length > 0 && (
-                                <>
-                                    <div className="my-4 mx-3 h-px bg-white/10" />
-                                    <div className="text-[10px] font-bold text-yellow-500/50 uppercase tracking-widest mb-3 px-3">플랫폼 관리 (Super)</div>
+                        {isSuperAdmin && platformNavItems.length > 0 && (
+                            <div>
+                                <div className="my-4 mx-3 h-px bg-white/10" />
+                                <div className="text-[10px] font-bold text-yellow-500/50 uppercase tracking-widest mb-2 px-3">플랫폼 관리 (Super)</div>
+                                <nav className="space-y-1">
                                     {platformNavItems.map((item) => (
                                         <Link
                                             key={item.href}
@@ -133,18 +160,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                             {item.title}
                                         </Link>
                                     ))}
-                                </>
-                            )}
+                                </nav>
+                            </div>
+                        )}
 
+                        <div>
                             <div className="my-3 mx-3 h-px bg-white/10" />
-                            <Link
-                                href="/"
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/75 hover:bg-white/5 hover:text-white border border-transparent transition-all"
-                            >
-                                <Home className="w-4 h-4" />
-                                메인페이지
-                            </Link>
-                        </nav>
+                            <nav className="space-y-1">
+                                <Link
+                                    href="/"
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/75 hover:bg-white/5 hover:text-white border border-transparent transition-all"
+                                >
+                                    <Home className="w-4 h-4" />
+                                    메인페이지
+                                </Link>
+                            </nav>
+                        </div>
                     </div>
                 </aside>
 
