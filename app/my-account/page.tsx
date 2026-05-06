@@ -43,6 +43,8 @@ import {
 const statusMap: Record<string, string> = {
     pending: '결제 대기',
     confirmed: '주문 확인',
+    quote_sent: '견적 발송',
+    payment_confirmed: '결제 확인',
     production: '제작 중',
     shipping: '배송 중',
     completed: '배송 완료',
@@ -82,6 +84,21 @@ export default function MyAccountPage() {
         if (user) {
             setProfileForm({ name: user.name, phone: user.phone || '' });
         }
+
+        // 30초마다 주문 상태 자동 갱신 (관리자 변경사항 실시간 반영)
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch('/api/orders', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setOrders(data.data || []);
+                }
+            } catch { /* 네트워크 오류 시 조용히 실패 */ }
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, [isAuthenticated, user?.role]);
 
     const loadData = async () => {
