@@ -71,23 +71,22 @@ export async function GET(request: NextRequest) {
                 const rawData = await res.json();
                 const posts = rawData.data || [];
 
-                const remoteItems = posts.map((post: any) => {
+                const remoteItems = posts
+                    // 절대 경로(http) 이미지가 하나도 없는 항목은 사전 제외
+                    .filter((post: any) => {
+                        return post.images && post.images.some((i: string) => i && i.startsWith('http'));
+                    })
+                    .map((post: any) => {
                     // images 배열에서 절대 경로(http)를 우선 선택
                     let img = '';
                     if (post.images && post.images.length > 0) {
                         const absImg = post.images.find((i: string) => i && i.startsWith('http'));
-                        img = absImg || post.images[0] || '';
+                        img = absImg || '';
                     }
                     if (!img) img = post.thumbnail_url || '';
-                    if (!img && post.content) {
-                        const m = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-                        if (m) img = m[1];
-                    }
                     
-                    // 외부 서버 이미지 경로 교정 (절대 경로 보장)
-                    if (img && !img.startsWith('http')) {
-                        img = 'https://3dcookiehd.pages.dev/' + img.replace(/^\//, '');
-                    }
+                    // 절대 경로가 확보된 경우에만 진행 (상대경로 도메인 교정 불필요)
+                    if (!img || !img.startsWith('http')) return null;
 
                     // 출력 방식 자동 판단 (기존 로직 복구)
                     let method = null;
@@ -121,13 +120,13 @@ export async function GET(request: NextRequest) {
                         id: `remote_${post.id}`,
                         title: title,
                         description: desc,
-                        image_url: img || '', 
+                        image_url: img, 
                         material: null,
                         print_method: method,
                         tags: '[]',
                         created_at: post.created_at
                     };
-                }).filter((item: any) => item.image_url);
+                }).filter((item: any) => item !== null && item.image_url);
 
                 const existingIds = new Set(items.map(it => String(it.id)));
                 for (const rItem of remoteItems) {
