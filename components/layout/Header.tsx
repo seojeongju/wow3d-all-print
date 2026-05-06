@@ -59,13 +59,15 @@ export default function Header() {
     return (
         <header className={`
             fixed top-0 left-0 right-0 z-[100] transition-all duration-300
-            ${isPastHero
-                ? isScrolled
-                    ? 'bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm py-3'
-                    : 'bg-white/70 backdrop-blur-md py-5'
-                : isScrolled
-                    ? 'bg-[#0d1117]/90 backdrop-blur-xl border-b border-white/10 py-3'
-                    : 'bg-[#0d1117]/10 lg:bg-transparent backdrop-blur-md py-5'}
+            ${mobileOpen 
+                ? 'bg-[#0d1117] py-5'
+                : isPastHero
+                    ? isScrolled
+                        ? 'bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm py-3'
+                        : 'bg-white/70 backdrop-blur-md py-5'
+                    : isScrolled
+                        ? 'bg-[#0d1117]/90 backdrop-blur-xl border-b border-white/10 py-3'
+                        : 'bg-[#0d1117]/10 lg:bg-transparent backdrop-blur-md py-5'}
         `}
             style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
         >
@@ -221,12 +223,12 @@ export default function Header() {
                                     }
                                 }
                             }}
-                            className="flex flex-col gap-2.5 w-full max-w-lg mx-auto h-full pt-[max(7rem,calc(7rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-5 sm:px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
+                            className="flex flex-col gap-2.5 w-full max-w-lg mx-auto h-full pt-[max(10rem,calc(10rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-5 sm:px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
                             onClick={(e) => e.stopPropagation()}
                             onTouchEnd={(e) => e.stopPropagation()}
                         >
                             {/* 상단 여백 확보용 스페이서 */}
-                            <div className="h-8 sm:h-10 shrink-0" />
+                            <div className="h-10 sm:h-12 shrink-0" />
                             
                             <div className="mb-4">
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] ml-1 opacity-80">Menu Navigation</span>
