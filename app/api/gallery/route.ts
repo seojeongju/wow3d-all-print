@@ -57,19 +57,16 @@ export async function GET(request: NextRequest) {
         try {
             // 원격 API는 최대 30개씩 반환하므로 여러 페이지 조회
             const remotePageLimit = 30;
-            const remotePagesToFetch = 5; // 최대 150개 시도
-            const allPosts: any[] = [];
+            const remotePagesToFetch = 5; // 최대 5페이지 병렬 호출
 
-            for (let rPage = 1; rPage <= remotePagesToFetch; rPage++) {
-                const sourceUrl = `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remotePageLimit}&page=${rPage}`;
-                const res = await fetch(sourceUrl, { cache: 'no-store' });
-                const rawData = await res.json();
-                const posts: any[] = rawData.data || [];
-                if (posts.length === 0) break; // 더 이상 데이터 없으면 중단
-                allPosts.push(...posts);
-                // API 총 페이지 수 초과하면 중단
-                if (rawData.pagination && rPage >= rawData.pagination.totalPages) break;
-            }
+            // 순차 호출 대신 병렬 호출로 Edge 타임아웃 방지
+            const pageUrls = Array.from({ length: remotePagesToFetch }, (_, i) =>
+                `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remotePageLimit}&page=${i + 1}`
+            );
+            const pageResponses = await Promise.all(
+                pageUrls.map(u => fetch(u, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })))
+            );
+            const allPosts: any[] = pageResponses.flatMap(r => r.data || []);
 
             remoteItems = allPosts
                 .filter((post: any) =>
