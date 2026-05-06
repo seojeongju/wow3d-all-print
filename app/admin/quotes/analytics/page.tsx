@@ -264,7 +264,12 @@ export default function QuoteAnalyticsPage() {
                                     <td className="p-4">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2">
-                                                <p className="text-white font-medium">{item.user_name || '비회원'}</p>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="text-white font-medium">{item.user_name || '비회원'}</p>
+                                                    {(item.user_role === 'admin' || item.user_role === 'super_admin') && (
+                                                        <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1">관리자</Badge>
+                                                    )}
+                                                </div>
                                                 {item.user_email && <p className="text-[10px] text-white/40">{item.user_email}</p>}
                                             </div>
                                             <div className="flex items-center gap-1.5">

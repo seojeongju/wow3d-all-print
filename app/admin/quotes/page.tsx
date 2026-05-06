@@ -346,7 +346,12 @@ export default function QuoteList() {
                                                     )}
                                                 </td>
                                                 <td className="p-4 text-white/95">
-                                                    {order.recipient_name}
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>{order.recipient_name}</span>
+                                                        {(order.user_role === 'admin' || order.user_role === 'super_admin') && (
+                                                            <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1">관리자</Badge>
+                                                        )}
+                                                    </div>
                                                     <span className="block text-xs text-white/60">{order.user_email || order.guest_email}</span>
                                                 </td>
                                                 <td className="p-4 text-white/70">{order.item_count || 1}개</td>

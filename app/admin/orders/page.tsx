@@ -428,7 +428,14 @@ function OrderListInner() {
                                 {filtered.map((order) => (
                                     <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                         <td className="p-4 font-medium text-white">{order.order_number}</td>
-                                        <td className="p-4 text-white/90">{order.recipient_name}</td>
+                                        <td className="p-4 text-white/90">
+                                            <div className="flex items-center gap-1.5">
+                                                <span>{order.recipient_name}</span>
+                                                {(order.user_role === 'admin' || order.user_role === 'super_admin') && (
+                                                    <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1">관리자</Badge>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="p-4 text-white/75">
                                             {order.user_id ? (order.user_email || '-') : (
                                                 <>

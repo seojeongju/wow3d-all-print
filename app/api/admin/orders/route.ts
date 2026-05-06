@@ -9,7 +9,7 @@ const MAIN_EXPERT_ONLY_SQL = `
         o.total_amount, o.status, o.created_at,
         o.has_expert_quote,
         o.expert_quote_data,
-        u.name as user_name, u.email as user_email,
+        u.name as user_name, u.email as user_email, u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
@@ -18,7 +18,7 @@ const MAIN_EXPERT_ONLY_SQL = `
     LEFT JOIN users u ON o.user_id = u.id
     WHERE (o.store_id = ? OR o.store_id IS NULL)
     ORDER BY o.created_at DESC
-    LIMIT 100
+    LIMIT 500
 `;
 
 /** has_expert_quote / expert_quote_data 컬럼이 없을 때 사용 (동일 WHERE, 수정견적 필드 제외) */
@@ -26,7 +26,7 @@ const MAIN_SAFE_SQL = `
     SELECT 
         o.id, o.user_id, o.order_number, o.recipient_name, o.guest_email,
         o.total_amount, o.status, o.created_at,
-        u.name as user_name, u.email as user_email,
+        u.name as user_name, u.email as user_email, u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
@@ -35,7 +35,7 @@ const MAIN_SAFE_SQL = `
     LEFT JOIN users u ON o.user_id = u.id
     WHERE (o.store_id = ? OR o.store_id IS NULL)
     ORDER BY o.created_at DESC
-    LIMIT 100
+    LIMIT 500
 `;
 
 /** store_id 조건 실패 시 사용하는 폴백 (수정견적 표시를 위해 has_expert_quote, expert_quote_data 포함) */
@@ -54,6 +54,7 @@ const FALLBACK_SQL = `
         o.quotation_sent_at,
         u.name as user_name,
         u.email as user_email,
+        u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (
@@ -67,7 +68,7 @@ const FALLBACK_SQL = `
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.id
     ORDER BY o.created_at DESC
-    LIMIT 100
+    LIMIT 500
 `;
 
 /** expert_quote 컬럼이 없는 구 DB용 최소 폴백 */
@@ -75,7 +76,7 @@ const FALLBACK_MINIMAL_SQL = `
     SELECT 
         o.id, o.user_id, o.order_number, o.recipient_name, o.guest_email,
         o.total_amount, o.status, o.created_at,
-        u.name as user_name, u.email as user_email,
+        u.name as user_name, u.email as user_email, u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
@@ -83,7 +84,7 @@ const FALLBACK_MINIMAL_SQL = `
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.id
     ORDER BY o.created_at DESC
-    LIMIT 100
+    LIMIT 500
 `;
 
 export async function GET(req: NextRequest) {
@@ -111,6 +112,7 @@ export async function GET(req: NextRequest) {
                 o.quotation_sent_at,
                 u.name as user_name,
                 u.email as user_email,
+                u.role as user_role,
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
                 (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
                 (
@@ -130,7 +132,7 @@ export async function GET(req: NextRequest) {
             LEFT JOIN users u ON o.user_id = u.id
             WHERE (o.store_id = ? OR o.store_id IS NULL)
             ORDER BY o.created_at DESC
-            LIMIT 100
+            LIMIT 500
         `).bind(storeId).all();
 
         const rows = results || [];

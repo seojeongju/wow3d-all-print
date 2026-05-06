@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
             SELECT 
                 q.id, q.user_id, q.session_id, q.file_name, q.file_size, q.file_url,
                 q.volume_cm3, q.total_price, q.print_method, q.created_at, q.updated_at,
-                u.name as user_name, u.email as user_email,
+                u.name as user_name, u.email as user_email, u.role as user_role,
                 (SELECT o.order_number FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.quote_id = q.id LIMIT 1) as order_number,
                 (SELECT o.status FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.quote_id = q.id LIMIT 1) as order_status,
                 (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) as is_in_cart,
