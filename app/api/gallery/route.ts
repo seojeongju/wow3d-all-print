@@ -59,24 +59,22 @@ export async function GET(request: NextRequest) {
             console.error('Local DB gallery fetch error:', dbErr);
         }
 
-        let items = localItems;
-        let total = localTotal;
+        // 2. 원격 데이터를 항상 가져와서 합산 (최신순 정렬을 위해)
+        let remoteItems: any[] = [];
+        try {
+            // 원격에서 충분한 양을 가져옴 (페이지 전체를 커버하도록)
+            const remoteLimit = Math.max(limit * 5, 50);
+            const sourceUrl = `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remoteLimit}`;
+            const res = await fetch(sourceUrl, { cache: 'no-store' });
+            const rawData = await res.json();
+            const posts = rawData.data || [];
 
-        // 2. 로컬 데이터가 적을 경우 원격 데이터 보충
-        if (items.length < limit) {
-            try {
-                const remoteLimit = limit * 2;
-                const sourceUrl = `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remoteLimit}`;
-                const res = await fetch(sourceUrl, { cache: 'no-store' });
-                const rawData = await res.json();
-                const posts = rawData.data || [];
-
-                const remoteItems = posts
-                    // 절대 경로(http) 이미지가 하나도 없는 항목은 사전 제외
-                    .filter((post: any) => {
-                        return post.images && post.images.some((i: string) => i && i.startsWith('http'));
-                    })
-                    .map((post: any) => {
+            remoteItems = posts
+                // 절대 경로(http) 이미지가 하나도 없는 항목은 사전 제외
+                .filter((post: any) => {
+                    return post.images && post.images.some((i: string) => i && i.startsWith('http'));
+                })
+                .map((post: any) => {
                     // images 배열에서 절대 경로(http)를 우선 선택
                     let img = '';
                     if (post.images && post.images.length > 0) {
@@ -84,11 +82,9 @@ export async function GET(request: NextRequest) {
                         img = absImg || '';
                     }
                     if (!img) img = post.thumbnail_url || '';
-                    
-                    // 절대 경로가 확보된 경우에만 진행 (상대경로 도메인 교정 불필요)
                     if (!img || !img.startsWith('http')) return null;
 
-                    // 출력 방식 자동 판단 (기존 로직 복구)
+                    // 출력 방식 자동 판단
                     let method = null;
                     const searchStr = ((post.title || '') + ' ' + (post.content || '')).toUpperCase();
                     if (searchStr.includes('FDM')) method = 'FDM';
@@ -96,7 +92,7 @@ export async function GET(request: NextRequest) {
                     else if (searchStr.includes('DLP')) method = 'DLP';
                     else if (searchStr.includes('MSLA')) method = 'DLP';
 
-                    // 제목 및 설명 추출 (HTML 태그 제거 및 정제)
+                    // HTML 태그/엔티티 제거
                     const cleanText = (text: string) => {
                         if (!text) return '';
                         let cleaned = text
@@ -113,31 +109,39 @@ export async function GET(request: NextRequest) {
                         return cleaned;
                     };
 
-                    const title = cleanText(post.title || '무제');
-                    const desc = cleanText(post.content || '').substring(0, 150);
-
                     return {
                         id: `remote_${post.id}`,
-                        title: title,
-                        description: desc,
-                        image_url: img, 
+                        title: cleanText(post.title || '무제'),
+                        description: cleanText(post.content || '').substring(0, 150),
+                        image_url: img,
                         material: null,
                         print_method: method,
                         tags: '[]',
                         created_at: post.created_at
                     };
-                }).filter((item: any) => item !== null && item.image_url);
-
-                const existingIds = new Set(items.map(it => String(it.id)));
-                for (const rItem of remoteItems) {
-                    if (items.length >= limit) break;
-                    if (!existingIds.has(String(rItem.id))) items.push(rItem);
-                }
-                total = Math.max(total, items.length);
-            } catch (err) {
-                console.error('Remote fetch error:', err);
-            }
+                })
+                .filter((item: any) => item !== null && item.image_url);
+        } catch (err) {
+            console.error('Remote fetch error:', err);
         }
+
+        // 3. 로컬 + 원격 합산 후 중복 제거 (로컬 우선)
+        const localIds = new Set(localItems.map(it => String(it.id)));
+        const merged = [
+            ...localItems,
+            ...remoteItems.filter((r: any) => !localIds.has(String(r.id)))
+        ];
+
+        // 4. created_at 기준 최신순 정렬
+        merged.sort((a, b) => {
+            const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return tb - ta;
+        });
+
+        // 5. 전체 개수 기준 페이지네이션 적용
+        const total = merged.length;
+        const items = merged.slice(offset, offset + limit);
 
         return NextResponse.json({
             success: true,
