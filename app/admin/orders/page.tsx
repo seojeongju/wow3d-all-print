@@ -194,11 +194,21 @@ function OrderListInner() {
         }
         const q = searchQuery.trim().toLowerCase();
         if (q) {
-            list = list.filter(
-                (o) =>
-                    (o.order_number || '').toLowerCase().includes(q) ||
-                    (o.recipient_name || '').toLowerCase().includes(q)
-            );
+            list = list.filter((o) => {
+                // 주문번호, 수령인 이름, 이메일 검색
+                if ((o.order_number || '').toLowerCase().includes(q)) return true;
+                if ((o.recipient_name || '').toLowerCase().includes(q)) return true;
+                if ((o.user_email || '').toLowerCase().includes(q)) return true;
+                if ((o.guest_email || '').toLowerCase().includes(q)) return true;
+                // 파일명 검색 (items_summary JSON에서 추출)
+                try {
+                    const items = typeof o.items_summary === 'string'
+                        ? JSON.parse(o.items_summary)
+                        : (Array.isArray(o.items_summary) ? o.items_summary : []);
+                    if (items.some((it: any) => (it.file_name || '').toLowerCase().includes(q))) return true;
+                } catch { }
+                return false;
+            });
         }
         if (statusFilter && statusFilter !== 'all') {
             list = list.filter((o) => o.status === statusFilter);
