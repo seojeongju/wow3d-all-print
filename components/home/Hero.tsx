@@ -224,147 +224,158 @@ export default function Hero() {
 
                 {/* Right Visual - 3D 지원 정보 카드 + 플레이스홀더 */}
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
+                    {/* Card 1: 3D Model Support */}
                     <motion.div
-                        style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        animate={{ 
-                            y: [0, -10, 0],
-                        }}
-                        transition={{ 
-                            duration: 6, 
-                            repeat: Infinity, 
-                            ease: "easeInOut" 
-                        }}
-                        className="absolute right-0 xl:-right-4 top-10 w-[320px] lg:w-[350px] xl:w-[380px] min-h-[440px] lg:min-h-[480px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 overflow-hidden flex flex-col ring-1 ring-white/5"
+                        style={{ y: y1 }}
+                        className="absolute right-0 xl:-right-4 top-10 z-10"
                     >
-                        {/* 그리드 배경 */}
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
+                        <motion.div
+                            style={{ rotateX: 5, rotateY: -5 }}
+                            animate={{ 
+                                y: [0, -10, 0],
+                            }}
+                            transition={{ 
+                                duration: 6, 
+                                repeat: Infinity, 
+                                ease: "easeInOut" 
+                            }}
+                            className="w-[320px] lg:w-[350px] xl:w-[380px] min-h-[440px] lg:min-h-[480px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col ring-1 ring-white/5"
+                        >
+                            {/* 그리드 배경 */}
+                            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
 
-                        {/* 상단: 타이틀 + 지원 형식 텍스트 */}
-                        <div className="relative p-8 pb-6 border-b border-white/5">
-                            <h3 className="text-xl font-black text-white tracking-tight mb-2">3D 모델 지원</h3>
-                            <p className="text-[13px] font-bold text-white/60 leading-relaxed break-keep">
-                                STL, OBJ, 3MF, PLY, STEP, STP를 업로드하면 AI가 부피·표면적을 분석해 실시간 견적을 제공합니다.
-                            </p>
-                            <div className="mt-5 flex flex-wrap gap-2">
-                                {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
-                                    <span
-                                        key={fmt}
-                                        className="px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-400/20 text-[11px] font-black text-teal-400 tracking-widest uppercase"
-                                    >
-                                        .{fmt.toLowerCase()}
+                            {/* 상단: 타이틀 + 지원 형식 텍스트 */}
+                            <div className="relative p-8 pb-6 border-b border-white/5">
+                                <h3 className="text-xl font-black text-white tracking-tight mb-2">3D 모델 지원</h3>
+                                <p className="text-[13px] font-bold text-white/60 leading-relaxed break-keep">
+                                    STL, OBJ, 3MF, PLY, STEP, STP를 업로드하면 AI가 부피·표면적을 분석해 실시간 견적을 제공합니다.
+                                </p>
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
+                                        <span
+                                            key={fmt}
+                                            className="px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-400/20 text-[11px] font-black text-teal-400 tracking-widest uppercase"
+                                        >
+                                            .{fmt.toLowerCase()}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 중앙: 3D 플레이스홀더 (인터랙티브 3D 뷰어) */}
+                            <div className="relative flex-1 w-full min-h-[300px]">
+                                <LandingHeroScene />
+                            </div>
+
+                            {/* 하단: 부가 정보 텍스트 */}
+                            <div className="relative px-6 pb-6 pt-2 border-t border-white/5">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-white/60 font-medium">
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                        최대 100MB
                                     </span>
-                                ))}
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="w-1 h-1 rounded-full bg-teal-400" />
+                                        실시간 견적
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="w-1 h-1 rounded-full bg-blue-400" />
+                                        암호화 업로드
+                                    </span>
+                                </div>
+                                <p className="mt-3 text-[10px] text-white/70 font-medium">
+                                    파일을 업로드하면 3D 미리보기와 상세 견적이 활성화됩니다.
+                                </p>
                             </div>
-                        </div>
-
-                        {/* 중앙: 3D 플레이스홀더 (인터랙티브 3D 뷰어) */}
-                        <div className="relative flex-1 w-full min-h-[300px]">
-                            <LandingHeroScene />
-                        </div>
-
-                        {/* 하단: 부가 정보 텍스트 */}
-                        <div className="relative px-6 pb-6 pt-2 border-t border-white/5">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-white/60 font-medium">
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                                    최대 100MB
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-teal-400" />
-                                    실시간 견적
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-blue-400" />
-                                    암호화 업로드
-                                </span>
-                            </div>
-                            <p className="mt-3 text-[10px] text-white/70 font-medium">
-                                파일을 업로드하면 3D 미리보기와 상세 견적이 활성화됩니다.
-                            </p>
-                        </div>
+                        </motion.div>
                     </motion.div>
 
+                    {/* Card 2: AI Quote Analysis */}
                     <motion.div
                         style={{ y: y2 }}
-                        animate={{ 
-                            y: [0, 10, 0],
-                        }}
-                        transition={{ 
-                            duration: 5, 
-                            repeat: Infinity, 
-                            ease: "easeInOut",
-                            delay: 0.5
-                        }}
-                        className="absolute -left-12 lg:-left-16 xl:left-0 bottom-10 lg:bottom-16 w-[240px] lg:w-[260px] xl:w-[280px] min-h-[420px] lg:min-h-[460px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 p-6 lg:p-8 flex flex-col ring-1 ring-white/5"
+                        className="absolute -left-12 lg:-left-16 xl:left-0 bottom-10 lg:bottom-16 z-20"
                     >
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
-                                {file && !analysis ? <Loader2 className="w-7 h-7 animate-spin" /> : <Sparkles className="w-7 h-7" />}
-                            </div>
-                            <div>
-                                <div className="font-black text-white text-lg tracking-tight">AI 견적 분석</div>
-                                <div className="text-[11px] text-white/60 font-black uppercase tracking-widest mt-1">
-                                    {!file ? 'WAITING...' : !analysis ? 'ANALYZING...' : 'COMPLETED'}
+                        <motion.div
+                            animate={{ 
+                                y: [0, 10, 0],
+                            }}
+                            transition={{ 
+                                duration: 5, 
+                                repeat: Infinity, 
+                                ease: "easeInOut",
+                                delay: 0.5
+                            }}
+                            className="w-[240px] lg:w-[260px] xl:w-[280px] min-h-[420px] lg:min-h-[460px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6 lg:p-8 flex flex-col ring-1 ring-white/5"
+                        >
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
+                                    {file && !analysis ? <Loader2 className="w-7 h-7 animate-spin" /> : <Sparkles className="w-7 h-7" />}
+                                </div>
+                                <div>
+                                    <div className="font-black text-white text-lg tracking-tight">AI 견적 분석</div>
+                                    <div className="text-[11px] text-white/60 font-black uppercase tracking-widest mt-1">
+                                        {!file ? 'WAITING...' : !analysis ? 'ANALYZING...' : 'COMPLETED'}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="space-y-6 flex-1">
-                            <div className="space-y-3">
-                                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <motion.div
-                                        className={`h-full rounded-full ${file && !analysis ? 'bg-amber-500/80 animate-pulse' : 'bg-teal-400'}`}
-                                        initial={false}
-                                        animate={{
-                                            width: !file ? '0%' : !analysis ? '50%' : `${heroEstimate?.printability ?? 100}%`,
-                                        }}
-                                        transition={{ duration: 0.5 }}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
-                                    <span className="text-white/50">PRINTABILITY</span>
-                                    <span className={heroEstimate?.overflow ? 'text-amber-400' : 'text-teal-400'}>
-                                        {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? 'SIZE EXCEEDED' : `${heroEstimate?.printability ?? 100}%`}
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div className="p-5 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
-                                <div className="text-[10px] text-white/40 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
-                                <div className={`text-2xl font-black ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
-                                    {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 pt-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full h-11 rounded-xl border-white/25 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all"
-                                    onClick={handleTrySample}
-                                    disabled={isLoadingSample}
-                                >
-                                    {isLoadingSample ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        '샘플 견적 체험'
-                                    )}
-                                </Button>
-                                <Link href="/quote" className="block" onClick={clearSampleIfPresent}>
-                                    <Button
-                                        size="sm"
-                                        className="w-full h-14 rounded-xl bg-teal-400 text-slate-950 font-black text-[11px] uppercase tracking-widest hover:bg-teal-300 shadow-[0_0_30px_rgba(45,212,191,0.4)] active:scale-95 transition-all relative overflow-hidden group"
-                                    >
-                                        <motion.div 
-                                            className="absolute inset-0 bg-white/20"
-                                            animate={{ x: ['-100%', '200%'] }}
-                                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                            <div className="space-y-6 flex-1">
+                                <div className="space-y-3">
+                                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                                        <motion.div
+                                            className={`h-full rounded-full ${file && !analysis ? 'bg-amber-500/80 animate-pulse' : 'bg-teal-400'}`}
+                                            initial={false}
+                                            animate={{
+                                                width: !file ? '0%' : !analysis ? '50%' : `${heroEstimate?.printability ?? 100}%`,
+                                            }}
+                                            transition={{ duration: 0.5 }}
                                         />
-                                        <Zap className="w-4 h-4 mr-2 fill-current relative z-10" />
-                                        <span className="relative z-10">실시간 자동견적 시작</span>
+                                    </div>
+                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
+                                        <span className="text-white/50">PRINTABILITY</span>
+                                        <span className={heroEstimate?.overflow ? 'text-amber-400' : 'text-teal-400'}>
+                                            {!file ? '—' : !analysis ? '—' : heroEstimate?.overflow ? 'SIZE EXCEEDED' : `${heroEstimate?.printability ?? 100}%`}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div className="p-5 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
+                                    <div className="text-[10px] text-white/40 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
+                                    <div className={`text-2xl font-black ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
+                                        {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 pt-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full h-11 rounded-xl border-white/25 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all"
+                                        onClick={handleTrySample}
+                                        disabled={isLoadingSample}
+                                    >
+                                        {isLoadingSample ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            '샘플 견적 체험'
+                                        )}
                                     </Button>
-                                </Link>
+                                    <Link href="/quote" className="block" onClick={clearSampleIfPresent}>
+                                        <Button
+                                            size="sm"
+                                            className="w-full h-14 rounded-xl bg-teal-400 text-slate-950 font-black text-[11px] uppercase tracking-widest hover:bg-teal-300 shadow-[0_0_30px_rgba(45,212,191,0.4)] active:scale-95 transition-all relative overflow-hidden group"
+                                        >
+                                            <motion.div 
+                                                className="absolute inset-0 bg-white/20"
+                                                animate={{ x: ['-100%', '200%'] }}
+                                                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                            />
+                                            <Zap className="w-4 h-4 mr-2 fill-current relative z-10" />
+                                            <span className="relative z-10">실시간 자동견적 시작</span>
+                                        </Button>
+                                    </Link>
+                                </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </motion.div>
                 </div>
             </div>
