@@ -99,6 +99,8 @@ export default function QuoteList() {
     const statusLabel: Record<string, string> = {
         pending: '접수대기',
         confirmed: '주문확인',
+        quote_sent: '견적발송',
+        payment_confirmed: '결제확인',
         production: '제작중',
         shipping: '배송중',
         completed: '완료',
@@ -397,6 +399,14 @@ export default function QuoteList() {
                                                                 ? 'bg-red-500/20 text-red-400 border-red-500/30'
                                                                 : order.status === 'pending'
                                                                 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                                : order.status === 'quote_sent'
+                                                                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                                                                : order.status === 'payment_confirmed'
+                                                                ? 'bg-teal-500/20 text-teal-400 border-teal-500/30'
+                                                                : order.status === 'production'
+                                                                ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                                                                : order.status === 'shipping'
+                                                                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
                                                                 : 'bg-white/10 text-white/80 border-white/20'
                                                         }`}
                                                     >

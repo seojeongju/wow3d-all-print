@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 
-const ALLOWED = ['pending', 'confirmed', 'production', 'quote_sent', 'shipping', 'completed', 'cancelled'];
+const ALLOWED = ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'completed', 'cancelled'];
 
 /**
  * GET /api/admin/orders/[id] - 주문 상세 (항목, 배송, 관리자메모)
