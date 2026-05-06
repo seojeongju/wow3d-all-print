@@ -391,26 +391,26 @@ export default function Scene({ compact = false }: SceneProps) {
                             exit={{ opacity: 0, y: 10 }}
                             className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
                         >
-                            <div className="bg-slate-900/90 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/10 flex items-center gap-6 text-white text-xs shadow-2xl pointer-events-auto">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                    <span>좌클릭: 회전</span>
+                            <div className="bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6 py-3 sm:py-4 rounded-2xl border border-white/10 flex items-center gap-3 sm:gap-6 text-white text-[10px] sm:text-xs shadow-2xl pointer-events-auto">
+                                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-primary animate-pulse" />
+                                    <span className="whitespace-nowrap">좌클릭: 회전</span>
                                 </div>
-                                <div className="w-px h-4 bg-white/10" />
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                    <span>휠: 확대/축소</span>
+                                <div className="w-px h-3 sm:h-4 bg-white/10 shrink-0" />
+                                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 animate-pulse" />
+                                    <span className="whitespace-nowrap">휠: 확대/축소</span>
                                 </div>
-                                <div className="w-px h-4 bg-white/10" />
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span>우클릭: 이동</span>
+                                <div className="w-px h-3 sm:h-4 bg-white/10 shrink-0" />
+                                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="whitespace-nowrap">우클릭: 이동</span>
                                 </div>
                                 <button
-                                    className="ml-4 p-1 hover:bg-white/10 rounded-md transition-colors"
+                                    className="ml-2 sm:ml-4 p-1 hover:bg-white/10 rounded-md transition-colors shrink-0"
                                     onClick={() => setShowGuide(false)}
                                 >
-                                    <ChevronDown className="w-4 h-4" />
+                                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                                 </button>
                             </div>
                         </motion.div>
