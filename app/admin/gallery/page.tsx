@@ -35,6 +35,13 @@ export default function AdminGalleryPage() {
     const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<GalleryItem[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    // 필터 State
+    const [search, setSearch] = useState('');
+    const [filterMethod, setFilterMethod] = useState('all');
+    const [filterMaterial, setFilterMaterial] = useState('all');
 
     // 모달 State
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -54,26 +61,43 @@ export default function AdminGalleryPage() {
         image: null as File | null
     });
 
-    const fetchGallery = async () => {
+    const fetchGallery = async (p = 1) => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/gallery?limit=50', {
+            const params = new URLSearchParams({
+                page: p.toString(),
+                limit: '50',
+                search: search,
+                print_method: filterMethod === 'all' ? '' : filterMethod,
+                material: filterMaterial === 'all' ? '' : filterMaterial
+            });
+
+            const res = await fetch(`/api/admin/gallery?${params.toString()}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
             const data = await res.json();
             if (data.success) {
                 setItems(data.data.items || []);
+                setTotalPages(data.data.pagination?.totalPages || 1);
+            } else {
+                toast({ title: '데이터 로드 실패', description: data.error || '목록을 가져오지 못했습니다.', variant: 'destructive' });
             }
         } catch (e) {
             console.error('Failed to fetch gallery', e);
+            toast({ title: '오류 발생', description: '서버와 통신 중 문제가 발생했습니다.', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
     };
 
+    // 검색어 디바운스 처리
     useEffect(() => {
-        fetchGallery();
-    }, []);
+        const timer = setTimeout(() => {
+            fetchGallery(1);
+            setPage(1);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search, filterMethod, filterMaterial]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -157,7 +181,7 @@ export default function AdminGalleryPage() {
             if (json.success) {
                 toast({ title: `갤러리 정보가 ${editId ? '수정' : '추가'}되었습니다.` });
                 setIsAddOpen(false);
-                fetchGallery();
+                fetchGallery(page);
             } else {
                 toast({ title: json.error || '저장 실패', variant: 'destructive' });
             }
@@ -215,6 +239,47 @@ export default function AdminGalleryPage() {
                 <Button onClick={openAddModal} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
                     <Plus className="w-4 h-4" /> 갤러리 업로드
                 </Button>
+            </div>
+
+            {/* 필터 섹션 */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
+                <div className="col-span-1 md:col-span-2">
+                    <Input 
+                        placeholder="제목 또는 설명 검색..." 
+                        value={search} 
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="bg-black/20 border-white/10 text-white"
+                    />
+                </div>
+                <div>
+                    <select 
+                        value={filterMethod} 
+                        onChange={(e) => setFilterMethod(e.target.value)}
+                        className="w-full h-10 px-3 rounded-md bg-black/20 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                        <option value="all">모든 출력 방식</option>
+                        <option value="FDM">FDM</option>
+                        <option value="SLA">SLA</option>
+                        <option value="DLP">DLP</option>
+                    </select>
+                </div>
+                <div>
+                    <select 
+                        value={filterMaterial} 
+                        onChange={(e) => setFilterMaterial(e.target.value)}
+                        className="w-full h-10 px-3 rounded-md bg-black/20 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                        <option value="all">모든 소재</option>
+                        <option value="PLA">PLA</option>
+                        <option value="ABS">ABS</option>
+                        <option value="PETG">PETG</option>
+                        <option value="TPU">TPU (유연성)</option>
+                        <option value="Nylon">Nylon</option>
+                        <option value="Resin">Resin (일반)</option>
+                        <option value="Tough Resin">Tough Resin</option>
+                        <option value="Clear Resin">Clear Resin</option>
+                    </select>
+                </div>
             </div>
 
             <Card className="bg-white/[0.03] border-white/10 overflow-hidden">

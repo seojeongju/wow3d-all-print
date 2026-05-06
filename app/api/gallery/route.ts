@@ -15,64 +15,91 @@ export async function GET(request: NextRequest) {
 
         const url = new URL(request.url);
         const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
-        const limit = Math.min(20, Math.max(4, parseInt(url.searchParams.get('limit') || '8')));
+        const limit = Math.min(50, Math.max(4, parseInt(url.searchParams.get('limit') || '8')));
+        const storeId = parseInt(url.searchParams.get('store_id') || '1');
         const offset = (page - 1) * limit;
 
-        let items: any[] = [];
-        let total = 0;
-
+        // 1. 로컬 DB에서 아이템 조회
+        let localItems: any[] = [];
+        let localTotal = 0;
         try {
-            // 원본 서버에서 200건 가져오기 (강력한 캐시 동기화 무효화)
-            const sourceUrl = 'https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=200';
-            const res = await fetch(sourceUrl, { cache: 'no-store', next: { revalidate: 0 } });
-            const rawData = await res.json();
-            const posts = rawData.data || [];
+            const rows = await env.DB.prepare(
+                `SELECT * FROM gallery_items 
+                 WHERE store_id = ? AND is_visible = 1
+                 ORDER BY sort_order DESC, created_at DESC
+                 LIMIT ? OFFSET ?`
+            ).bind(storeId, limit, offset).all();
+            
+            localItems = (rows.results as any[]) || [];
+            
+            const countRow = await env.DB.prepare(
+                `SELECT COUNT(*) as cnt FROM gallery_items WHERE store_id = ? AND is_visible = 1`
+            ).bind(storeId).first<{ cnt: number }>();
+            localTotal = countRow?.cnt || 0;
+        } catch (dbErr) {
+            console.error('Local DB gallery fetch error:', dbErr);
+        }
 
-            // 프론트엔드 GalleryItem 규격에 맞춰 파싱 및 맵핑
-            const parsedItems = posts.map((post: any) => {
-                let img = (post.images && post.images.length) ? post.images[0] : (post.thumbnail_url || '');
-                if (!img && post.content) {
-                    const m = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-                    if (m) img = m[1];
+        let items = localItems;
+        let total = localTotal;
+
+        // 2. 로컬 데이터가 적거나 없는 경우 원본 서버에서 가져와서 보충 (Legacy 데이터)
+        if (items.length < limit) {
+            try {
+                const remoteLimit = limit * 2;
+                const sourceUrl = `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remoteLimit}`;
+                const res = await fetch(sourceUrl, { cache: 'no-store', next: { revalidate: 0 } });
+                const rawData = await res.json();
+                const posts = rawData.data || [];
+
+                const remoteItems = posts.map((post: any) => {
+                    let img = (post.images && post.images.length) ? post.images[0] : (post.thumbnail_url || '');
+                    if (!img && post.content) {
+                        const m = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+                        if (m) img = m[1];
+                    }
+                    
+                    if (img && img.startsWith('/')) {
+                        img = 'https://3dcookiehd.pages.dev' + img;
+                    }
+
+                    let method = null;
+                    const searchStr = ((post.title || '') + ' ' + (post.content || '')).toUpperCase();
+                    if (searchStr.includes('FDM')) method = 'FDM';
+                    else if (searchStr.includes('SLA')) method = 'SLA';
+                    else if (searchStr.includes('DLP')) method = 'DLP';
+
+                    let desc = '';
+                    if (post.content) {
+                        desc = post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 150);
+                    }
+
+                    return {
+                        id: `remote_${post.id}`,
+                        title: post.title || '무제',
+                        description: desc,
+                        image_url: img || '', 
+                        material: null,
+                        print_method: method,
+                        tags: '[]',
+                        created_at: post.created_at
+                    };
+                }).filter((item: any) => item.image_url);
+
+                // 중복 방지 및 병합 (간단하게 로컬 뒤에 원격 추가)
+                const existingIds = new Set(items.map(it => String(it.id)));
+                for (const rItem of remoteItems) {
+                    if (items.length >= limit) break;
+                    if (!existingIds.has(String(rItem.id))) {
+                        items.push(rItem);
+                    }
                 }
                 
-                // 원본 서버 절대 경로로 교정
-                if (img && img.startsWith('/')) {
-                    img = 'https://3dcookiehd.pages.dev' + img;
-                }
-
-                // 출력 방식(FDM, SLA 등) 자동 판단
-                let method = null;
-                const searchStr = ((post.title || '') + ' ' + (post.content || '')).toUpperCase();
-                if (searchStr.includes('FDM')) method = 'FDM';
-                else if (searchStr.includes('SLA')) method = 'SLA';
-                else if (searchStr.includes('DLP')) method = 'DLP';
-                else if (searchStr.includes('MSLA')) method = 'DLP';
-
-                // 순수 텍스트 설명 추출
-                let desc = '';
-                if (post.content) {
-                    desc = post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 150);
-                }
-
-                return {
-                    id: post.id,
-                    title: post.title || '무제',
-                    description: desc,
-                    image_url: img || '', 
-                    material: null,
-                    print_method: method,
-                    tags: '[]',
-                    created_at: post.created_at
-                };
-            }).filter((item: any) => item.image_url); // 이미지가 존재하는 글만 유효함
-
-            // 메모리 페이징 처리
-            total = parsedItems.length;
-            items = parsedItems.slice(offset, offset + limit);
-
-        } catch (err) {
-            console.error('Remote fetch error:', err);
+                // 전체 개수는 정확히 알기 어려우므로 로컬 개수에 원격 개수를 대략 합산
+                total = localTotal + remoteItems.length;
+            } catch (err) {
+                console.error('Remote fetch error:', err);
+            }
         }
 
         return NextResponse.json({
