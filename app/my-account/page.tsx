@@ -1,5 +1,6 @@
 'use client';
 
+import { correctDisplayAmount } from '@/lib/amount-display';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,6 +40,85 @@ import {
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
+
+/** 개별 주문의 확정 금액 반환 (수정견적 우선, 없으면 자동견적) */
+function getOrderFinalAmount(order: Order): number {
+    try {
+        const o = order as any;
+        if (o.expertQuoteData) {
+            const d = typeof o.expertQuoteData === 'string' ? JSON.parse(o.expertQuoteData) : o.expertQuoteData;
+            const ea = Number(d?.total_amount || 0);
+            if (ea > 0) return ea;
+        }
+    } catch { }
+    const raw = Math.round(Number(order.totalAmount) || 0);
+    return correctDisplayAmount(raw) ?? raw;
+}
+
+/** 상태별 스타일 */
+function getStatusStyle(status: string): { bg: string; text: string; border: string; dot: string } {
+    switch (status) {
+        case 'pending':           return { bg: 'bg-amber-500/10',    text: 'text-amber-400',   border: 'border-amber-500/30',  dot: 'bg-amber-400' };
+        case 'confirmed':         return { bg: 'bg-blue-500/10',     text: 'text-blue-400',    border: 'border-blue-500/30',   dot: 'bg-blue-400' };
+        case 'quote_sent':        return { bg: 'bg-emerald-500/10',  text: 'text-emerald-400', border: 'border-emerald-500/30',dot: 'bg-emerald-400' };
+        case 'payment_confirmed': return { bg: 'bg-teal-500/10',     text: 'text-teal-400',    border: 'border-teal-500/30',   dot: 'bg-teal-400' };
+        case 'production':        return { bg: 'bg-purple-500/10',   text: 'text-purple-400',  border: 'border-purple-500/30', dot: 'bg-purple-400' };
+        case 'shipping':          return { bg: 'bg-indigo-500/10',   text: 'text-indigo-400',  border: 'border-indigo-500/30', dot: 'bg-indigo-400' };
+        case 'completed':         return { bg: 'bg-teal-400/10',     text: 'text-teal-400',    border: 'border-teal-400/30',   dot: 'bg-teal-400' };
+        case 'cancelled':         return { bg: 'bg-red-500/10',      text: 'text-red-400',     border: 'border-red-500/30',    dot: 'bg-red-400' };
+        default:                  return { bg: 'bg-white/5',          text: 'text-white/40',    border: 'border-white/10',      dot: 'bg-white/20' };
+    }
+}
+
+/** 주문 진행 단계 표시 선 */
+const ORDER_STEPS = ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'completed'];
+const ORDER_STEP_LABELS: Record<string, string> = {
+    pending: '접수',
+    confirmed: '확인',
+    quote_sent: '견적',
+    payment_confirmed: '결제',
+    production: '제작',
+    shipping: '배송',
+    completed: '완료',
+};
+
+function StatusProgress({ status }: { status: string }) {
+    if (status === 'cancelled') {
+        return (
+            <div className="flex items-center gap-2 mt-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-400/80">주문 취소됨</span>
+            </div>
+        );
+    }
+    const currentIdx = ORDER_STEPS.indexOf(status);
+    return (
+        <div className="mt-5">
+            <div className="flex items-center gap-0">
+                {ORDER_STEPS.map((step, idx) => {
+                    const done = idx <= currentIdx;
+                    const active = idx === currentIdx;
+                    return (
+                        <div key={step} className="flex items-center" style={{ flex: idx < ORDER_STEPS.length - 1 ? 1 : 'none' }}>
+                            <div className={`flex flex-col items-center`}>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black transition-all
+                                    ${active ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/40 scale-125' : done ? 'bg-teal-400/30 text-teal-400' : 'bg-white/5 text-white/20'}`}>
+                                    {idx + 1}
+                                </div>
+                                <span className={`mt-1.5 text-[8px] font-black uppercase tracking-wide whitespace-nowrap
+                                    ${active ? 'text-teal-400' : done ? 'text-white/40' : 'text-white/15'}`}>
+                                    {ORDER_STEP_LABELS[step]}
+                                </span>
+                            </div>
+                            {idx < ORDER_STEPS.length - 1 && (
+                                <div className={`h-[2px] flex-1 mx-1 rounded-full transition-all ${done && idx < currentIdx ? 'bg-teal-400/40' : 'bg-white/5'}`} />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
 
 const statusMap: Record<string, string> = {
     pending: '결제 대기',
@@ -271,12 +351,18 @@ export default function MyAccountPage() {
     if (!isAuthenticated) return null;
     if (user?.role === 'admin') return null;
 
-    // derived stats (실제 주문 데이터 기준)
-    const activeOrders = orders.filter(o => ['pending', 'confirmed', 'production', 'shipping'].includes(o.status));
+    // derived stats
+    const activeOrders = orders.filter(o =>
+        ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping'].includes(o.status)
+    );
     const completedOrders = orders.filter(o => o.status === 'completed');
+    // 수정견적 우선 적용한 누적 이용 금액 (cancelled 제외)
     const totalSpentKr = orders
-        .filter(o => !['pending', 'cancelled'].includes(o.status))
-        .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+        .filter(o => o.status !== 'cancelled')
+        .reduce((sum, o) => sum + getOrderFinalAmount(o), 0);
+
+    // 견적 발송된 주문 목록
+    const quoteSentOrders = orders.filter(o => o.status === 'quote_sent');
 
     return (
         <div className="min-h-screen bg-[#020617] text-white selection:bg-teal-500/30 selection:text-teal-400 overflow-x-hidden pb-20">
@@ -347,7 +433,7 @@ export default function MyAccountPage() {
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {[
-                                { label: '진행 중인 프로젝트', value: `${activeOrders.length}`, unit: '건', desc: '배송을 기다리고 있어요', icon: Clock, color: 'text-teal-400' },
+                        { label: '진행 중인 프로젝트', value: `${activeOrders.length}`, unit: '건', desc: '배송을 기다리고 있어요', icon: Clock, color: 'text-teal-400' },
                                 { label: '완료된 프로젝트', value: `${completedOrders.length}`, unit: '건', desc: '완료된 프로젝트 내역', icon: CheckCircle2, color: 'text-indigo-400' },
                                 { label: '누적 이용 금액', value: `₩${Math.round(totalSpentKr).toLocaleString('ko-KR')}`, unit: '', desc: '누적 이용 금액', icon: ShoppingBag, color: 'text-amber-400' },
                             ].map((stat, i) => (
@@ -391,6 +477,29 @@ export default function MyAccountPage() {
                                 ))}
                             </TabsList>
 
+                            {/* 견적 발송 알림 배너 */}
+                            {quoteSentOrders.length > 0 && (
+                                <div className="rounded-[2rem] bg-emerald-500/10 border border-emerald-500/30 p-6 flex items-center gap-5">
+                                    <div className="w-12 h-12 bg-emerald-400/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                        <CreditCard className="w-6 h-6 text-emerald-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-sm font-black text-emerald-400 mb-1">견적서가 발송되었습니다! 📧</div>
+                                        <div className="text-xs text-emerald-400/70">
+                                            {quoteSentOrders.length}개의 주문에 견적서가 발송되었습니다. 금액 확인 후 결제해 주세요.
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        className="bg-emerald-400 text-slate-950 font-black hover:bg-emerald-300 rounded-xl px-5 text-xs uppercase tracking-widest shrink-0"
+                                        onClick={() => {
+                                            const tab = document.querySelector('[data-value="active-orders"]') as HTMLElement;
+                                            tab?.click();
+                                        }}
+                                    >확인하기</Button>
+                                </div>
+                            )}
+
                             {/* Active Orders Tab */}
                             <TabsContent value="active-orders" className="space-y-6">
                                 {activeOrders.length === 0 ? (
@@ -422,21 +531,38 @@ export default function MyAccountPage() {
                                                 <div>
                                                     <div className="flex items-center gap-3 mb-1">
                                                         <h3 className="text-xl font-black">주문 #{order.orderNumber}</h3>
-                                                        <Badge className="bg-teal-400/10 text-teal-400 border-teal-400/20 text-[10px] font-black uppercase tracking-widest">
-                                                            {statusMap[order.status] || order.status}
-                                                        </Badge>
+                                                        {(() => {
+                                                            const s = getStatusStyle(order.status);
+                                                            return (
+                                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${s.bg} ${s.text} ${s.border}`}>
+                                                                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                                                                    {statusMap[order.status] || order.status}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </div>
                                                     <div className="text-xs font-bold text-white/40 uppercase tracking-widest">
                                                         주문일: {new Date(order.createdAt).toLocaleDateString('ko-KR')}
                                                     </div>
                                                 </div>
-                                                <div className="text-2xl font-black text-white">
-                                                    ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
-                                                    <span className="text-[10px] ml-2 text-white/30 font-bold">(VAT 포함)</span>
+                                                <div className="text-right">
+                                                    <div className="text-2xl font-black text-white">
+                                                        ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
+                                                    </div>
+                                                    {(order as any).expertQuoteData && (() => {
+                                                        try {
+                                                            const d = JSON.parse((order as any).expertQuoteData);
+                                                            if (d?.total_amount > 0) return <div className="text-[10px] text-emerald-400/70 font-black mt-0.5">수정견적 금액</div>;
+                                                        } catch { } return null;
+                                                    })()}
+                                                    <span className="text-[10px] ml-1 text-white/30 font-bold">(VAT 포함)</span>
                                                 </div>
                                             </div>
                                             <div className="p-8">
-                                                <div className="flex flex-col gap-4">
+                                                {/* 진행 단계 표시 */}
+                                                <StatusProgress status={order.status} />
+
+                                                <div className="flex flex-col gap-4 mt-8">
                                                     {order.items?.map(item => (
                                                         <div key={item.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.03] border border-white/5 group/item hover:bg-white/5 transition-colors">
                                                             <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0 shadow-inner">
@@ -569,6 +695,10 @@ export default function MyAccountPage() {
                                                                 className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-none ${
                                                                     order.status === 'completed'
                                                                         ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/20'
+                                                                        : order.status === 'cancelled'
+                                                                        ? 'bg-red-500/20 text-red-400'
+                                                                        : order.status === 'quote_sent'
+                                                                        ? 'bg-emerald-500/20 text-emerald-400 animate-pulse'
                                                                         : 'bg-white/10 text-white/60'
                                                                 }`}
                                                             >
@@ -603,9 +733,14 @@ export default function MyAccountPage() {
                                                         <div className="text-right">
                                                             <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2 text-left md:text-right">총 주문 금액</div>
                                                             <div className="text-3xl font-black text-white text-left md:text-right">
-                                                                ₩{Math.round((Number(order.totalAmount) || 0)).toLocaleString('ko-KR')}
-                                                            </div>
-                                                            <div className="text-[9px] font-black text-white/20 uppercase tracking-widest text-left md:text-right mt-1">(VAT 포함 금액)</div>
+                                                            ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
+                                                        </div>
+                                                        {(order as any).expertQuoteData && (() => {
+                                                            try {
+                                                                const d = JSON.parse((order as any).expertQuoteData);
+                                                                if (d?.total_amount > 0) return <div className="text-[10px] text-emerald-400/70 font-black mt-0.5 text-left md:text-right">수정견적 적용</div>;
+                                                            } catch { } return null;
+                                                        })()}
                                                         </div>
                                                         <div className="flex gap-3">
                                                             <Button
