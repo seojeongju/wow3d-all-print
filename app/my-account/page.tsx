@@ -502,6 +502,10 @@ export default function MyAccountPage() {
 
                             {/* Active Orders Tab */}
                             <TabsContent value="active-orders" className="space-y-6">
+                                <div className="mb-8 px-2">
+                                    <h2 className="text-2xl font-black text-white mb-2">진행 중인 주문</h2>
+                                    <p className="text-sm font-bold text-white/50">결제 대기, 견적 확인, 제작 및 배송 등 현재 진행 중인 프로젝트를 확인합니다.</p>
+                                </div>
                                 {activeOrders.length === 0 ? (
                                     <motion.div
                                         initial={{ opacity: 0 }}
@@ -627,6 +631,10 @@ export default function MyAccountPage() {
 
                             {/* History Tab */}
                             <TabsContent value="history" className="space-y-8">
+                                <div className="mb-4 px-2">
+                                    <h2 className="text-2xl font-black text-white mb-2">주문 내역</h2>
+                                    <p className="text-sm font-bold text-white/50">과거에 완료되었거나 취소된 주문을 포함한 전체 내역을 조회합니다.</p>
+                                </div>
                                 <div className="flex flex-col lg:flex-row gap-6 items-end lg:items-center justify-between">
                                     <div className="flex flex-1 gap-4 w-full max-w-2xl">
                                         <div className="relative flex-1">
@@ -767,6 +775,10 @@ export default function MyAccountPage() {
 
                             {/* Saved Quotes Tab */}
                             <TabsContent value="quotes">
+                                <div className="mb-8 px-2">
+                                    <h2 className="text-2xl font-black text-white mb-2">저장된 견적</h2>
+                                    <p className="text-sm font-bold text-white/50">장바구니에 담기 전 임시로 저장해 둔 출력용 3D 모델 및 설정 정보를 관리합니다.</p>
+                                </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {quotes.map((quote, i) => (
                                         <motion.div
@@ -836,6 +848,10 @@ export default function MyAccountPage() {
 
                             {/* Profile Tab */}
                             <TabsContent value="profile" className="space-y-8">
+                                <div className="mb-4 px-2">
+                                    <h2 className="text-2xl font-black text-white mb-2">내 정보 관리</h2>
+                                    <p className="text-sm font-bold text-white/50">계정 정보, 배송지 주소 등 회원 정보를 확인하고 수정할 수 있습니다.</p>
+                                </div>
                                 <div className="grid md:grid-cols-3 gap-10">
                                     {/* Profile Summary Card */}
                                     <motion.div
