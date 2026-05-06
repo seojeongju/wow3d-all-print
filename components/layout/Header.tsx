@@ -221,10 +221,13 @@ export default function Header() {
                                     }
                                 }
                             }}
-                            className="flex flex-col gap-2.5 w-full max-w-lg mx-auto h-full pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-5 sm:px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
+                            className="flex flex-col gap-2.5 w-full max-w-lg mx-auto h-full pt-[max(7rem,calc(7rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,env(safe-area-inset-bottom))] px-5 sm:px-6 overflow-y-auto overflow-x-hidden overscroll-contain touch-auto"
                             onClick={(e) => e.stopPropagation()}
                             onTouchEnd={(e) => e.stopPropagation()}
                         >
+                            {/* 상단 여백 확보용 스페이서 */}
+                            <div className="h-8 sm:h-10 shrink-0" />
+                            
                             <div className="mb-4">
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] ml-1 opacity-80">Menu Navigation</span>
                             </div>
