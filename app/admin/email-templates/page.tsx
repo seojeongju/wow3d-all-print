@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Loader2, Plus, Pencil, Trash2, Mail, Info } from 'lucide-react';
@@ -16,16 +16,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type EmailTemplate = {
@@ -54,7 +45,7 @@ export default function EmailTemplatesPage() {
     });
     const [saving, setSaving] = useState(false);
 
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+
 
     const fetchTemplates = async () => {
         try {
@@ -137,10 +128,9 @@ export default function EmailTemplatesPage() {
         }
     };
 
-    const handleDelete = async () => {
-        if (!deleteId) return;
+    const handleDelete = async (id: number) => {
         try {
-            const res = await fetch(`/api/admin/email-templates/${deleteId}`, {
+            const res = await fetch(`/api/admin/email-templates/${id}`, {
                 method: 'DELETE',
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
@@ -153,8 +143,6 @@ export default function EmailTemplatesPage() {
             }
         } catch (e) {
             toast({ title: '삭제 중 오류가 발생했습니다.', variant: 'destructive' });
-        } finally {
-            setDeleteId(null);
         }
     };
 
@@ -196,7 +184,7 @@ export default function EmailTemplatesPage() {
                                         <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(template)} className="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10">
                                             <Pencil className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(template.id)} className="h-8 w-8 text-red-400/50 hover:text-red-400 hover:bg-red-400/10">
+                                        <Button variant="ghost" size="icon" onClick={() => { if(window.confirm('이 템플릿을 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) handleDelete(template.id); }} className="h-8 w-8 text-red-400/50 hover:text-red-400 hover:bg-red-400/10">
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -270,19 +258,19 @@ export default function EmailTemplatesPage() {
                             </TabsList>
                             <TabsContent value="html" className="mt-4 space-y-2">
                                 <Label className="text-white/80 text-xs">HTML 소스 코드를 입력하세요. (HTML을 지원하는 이메일 클라이언트에서 보여집니다)</Label>
-                                <Textarea
+                                <textarea
                                     value={formData.html_content}
                                     onChange={(e) => setFormData({ ...formData, html_content: e.target.value })}
-                                    className="min-h-[300px] font-mono text-xs bg-black/40 border-white/10 text-emerald-400 focus-visible:ring-emerald-500/50"
+                                    className="w-full rounded-md px-3 py-2 min-h-[300px] font-mono text-xs bg-black/40 border-white/10 text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 border"
                                     placeholder="<p>내용을 입력하세요</p>"
                                 />
                             </TabsContent>
                             <TabsContent value="text" className="mt-4 space-y-2">
                                 <Label className="text-white/80 text-xs">일반 텍스트를 입력하세요. (HTML을 지원하지 않는 경우 보여집니다)</Label>
-                                <Textarea
+                                <textarea
                                     value={formData.text_content}
                                     onChange={(e) => setFormData({ ...formData, text_content: e.target.value })}
-                                    className="min-h-[300px] bg-white/5 border-white/10 text-white"
+                                    className="w-full rounded-md px-3 py-2 min-h-[300px] bg-white/5 border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-white/30 border"
                                     placeholder="내용을 입력하세요"
                                 />
                             </TabsContent>
@@ -301,22 +289,7 @@ export default function EmailTemplatesPage() {
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-                <AlertDialogContent className="bg-[#0c0c0c] border-white/10 text-white">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>템플릿 삭제</AlertDialogTitle>
-                        <AlertDialogDescription className="text-white/60">
-                            이 템플릿을 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white">취소</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white border-none">
-                            삭제하기
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+
         </div>
     );
 }
