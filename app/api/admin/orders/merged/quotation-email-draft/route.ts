@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
   let totalAmount: number | null = null;
   if (items.length > 0) {
     const supplyTotal = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
-    totalAmount = supplyTotal + Math.floor(supplyTotal * 0.1);
+    totalAmount = supplyTotal;
   }
   const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
   const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';

@@ -97,7 +97,7 @@ export async function GET(
         let totalAmount: number | null = null;
         if (items.length > 0) {
             const supplyTotal = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
-            totalAmount = supplyTotal + Math.floor(supplyTotal * 0.1);
+            totalAmount = supplyTotal;
         } else if (selectedItemIds.length === 0) {
             if (fullOrder.expert_quote_data) {
                 try {
