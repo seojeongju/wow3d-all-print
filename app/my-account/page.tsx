@@ -92,7 +92,7 @@ function StatusProgress({ status }: { status: string }) {
     }
     const currentIdx = ORDER_STEPS.indexOf(status);
     return (
-        <div className="mt-5">
+        <div className="mt-8 mb-6 px-4">
             <div className="flex items-center gap-0">
                 {ORDER_STEPS.map((step, idx) => {
                     const done = idx <= currentIdx;
@@ -100,17 +100,17 @@ function StatusProgress({ status }: { status: string }) {
                     return (
                         <div key={step} className="flex items-center" style={{ flex: idx < ORDER_STEPS.length - 1 ? 1 : 'none' }}>
                             <div className={`flex flex-col items-center`}>
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black transition-all
-                                    ${active ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/40 scale-125' : done ? 'bg-teal-400/30 text-teal-400' : 'bg-white/5 text-white/20'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-black transition-all shadow-sm
+                                    ${active ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/50 scale-125 border-2 border-[#020617]' : done ? 'bg-teal-500 text-slate-950' : 'bg-slate-800 text-white/50'}`}>
                                     {idx + 1}
                                 </div>
-                                <span className={`mt-1.5 text-[8px] font-black uppercase tracking-wide whitespace-nowrap
-                                    ${active ? 'text-teal-400' : done ? 'text-white/40' : 'text-white/15'}`}>
+                                <span className={`mt-3 text-[11px] font-black uppercase tracking-wide whitespace-nowrap
+                                    ${active ? 'text-teal-400' : done ? 'text-white/80' : 'text-white/30'}`}>
                                     {ORDER_STEP_LABELS[step]}
                                 </span>
                             </div>
                             {idx < ORDER_STEPS.length - 1 && (
-                                <div className={`h-[2px] flex-1 mx-1 rounded-full transition-all ${done && idx < currentIdx ? 'bg-teal-400/40' : 'bg-white/5'}`} />
+                                <div className={`h-[3px] flex-1 mx-2 rounded-full transition-all ${done && idx < currentIdx ? 'bg-teal-500' : 'bg-slate-800'}`} />
                             )}
                         </div>
                     );
@@ -525,37 +525,37 @@ export default function MyAccountPage() {
                                             key={order.id}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl group hover:border-teal-400/30 transition-all shadow-2xl"
+                                            className="overflow-hidden rounded-[2.5rem] border border-white/20 bg-[#0f172a]/80 backdrop-blur-xl group hover:border-teal-400/50 transition-all shadow-2xl"
                                         >
-                                            <div className="px-8 py-6 bg-white/5 border-b border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div className="px-8 py-6 bg-white/[0.04] border-b border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                                 <div>
-                                                    <div className="flex items-center gap-3 mb-1">
-                                                        <h3 className="text-xl font-black">주문 #{order.orderNumber}</h3>
+                                                    <div className="flex items-center gap-4 mb-2">
+                                                        <h3 className="text-2xl font-black text-white">주문 #{order.orderNumber}</h3>
                                                         {(() => {
                                                             const s = getStatusStyle(order.status);
                                                             return (
-                                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${s.bg} ${s.text} ${s.border}`}>
-                                                                    <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border ${s.bg} ${s.text} ${s.border}`}>
+                                                                    <span className={`w-2 h-2 rounded-full ${s.dot}`} />
                                                                     {statusMap[order.status] || order.status}
                                                                 </span>
                                                             );
                                                         })()}
                                                     </div>
-                                                    <div className="text-xs font-bold text-white/40 uppercase tracking-widest">
+                                                    <div className="text-sm font-bold text-white/60 uppercase tracking-widest">
                                                         주문일: {new Date(order.createdAt).toLocaleDateString('ko-KR')}
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-2xl font-black text-white">
+                                                    <div className="text-3xl font-black text-white">
                                                         ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
                                                     </div>
                                                     {(order as any).expertQuoteData && (() => {
                                                         try {
                                                             const d = JSON.parse((order as any).expertQuoteData);
-                                                            if (d?.total_amount > 0) return <div className="text-[10px] text-emerald-400/70 font-black mt-0.5">수정견적 금액</div>;
+                                                            if (d?.total_amount > 0) return <div className="text-[11px] text-emerald-400 font-black mt-1">수정견적 금액</div>;
                                                         } catch { } return null;
                                                     })()}
-                                                    <span className="text-[10px] ml-1 text-white/30 font-bold">(VAT 포함)</span>
+                                                    <span className="text-[11px] text-white/50 font-bold">(VAT 포함)</span>
                                                 </div>
                                             </div>
                                             <div className="p-8">
@@ -586,18 +586,18 @@ export default function MyAccountPage() {
                                                     ))}
                                                 </div>
 
-                                                <div className="grid md:grid-cols-2 gap-6 mt-10 p-6 rounded-3xl bg-white/[0.02] border border-white/5">
+                                                <div className="grid md:grid-cols-2 gap-6 mt-10 p-6 rounded-3xl bg-slate-800/50 border border-slate-700/50">
                                                     <div>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20 flex items-center gap-2 mb-3">
-                                                            <MapPin className="w-3.5 h-3.5" /> 배송 주소
+                                                        <span className="text-[11px] font-black uppercase tracking-widest text-teal-400 flex items-center gap-2 mb-3">
+                                                            <MapPin className="w-4 h-4" /> 배송 주소
                                                         </span>
-                                                        <span className="text-sm font-bold text-white/80 leading-relaxed block">{order.shippingAddress}</span>
+                                                        <span className="text-base font-bold text-white leading-relaxed block">{order.shippingAddress}</span>
                                                     </div>
                                                     <div>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20 flex items-center gap-2 mb-3">
-                                                            <User className="w-3.5 h-3.5" /> 수령인
+                                                        <span className="text-[11px] font-black uppercase tracking-widest text-teal-400 flex items-center gap-2 mb-3">
+                                                            <User className="w-4 h-4" /> 수령인
                                                         </span>
-                                                        <span className="text-sm font-bold text-white/80 leading-relaxed block">{order.recipientName} ({order.recipientPhone})</span>
+                                                        <span className="text-base font-bold text-white leading-relaxed block">{order.recipientName} ({order.recipientPhone})</span>
                                                     </div>
                                                 </div>
 
