@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
     pdfReady,
     pdfError: pdfError || undefined,
     order_number: list.map((o) => o.order_number).join(', '),
+    displayAmount,
+    estimateUrl,
   });
 }
-

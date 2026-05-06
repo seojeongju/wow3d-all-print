@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User, Users, FileText, Store, CreditCard, Building2, Image as ImageIcon, HelpCircle, Sparkles, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, User, Users, FileText, Store, CreditCard, Building2, Image as ImageIcon, HelpCircle, Sparkles, BarChart3, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -86,6 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             groupName: '시스템 / 설정',
             items: [
                 { title: '설정 & 소재', href: '/admin/settings', icon: Settings, match: (p: string) => p.startsWith('/admin/settings') },
+                { title: '이메일 템플릿', href: '/admin/email-templates', icon: Mail, match: (p: string) => p.startsWith('/admin/email-templates') },
                 { title: '내 정보', href: '/admin/profile', icon: User, match: (p: string) => p.startsWith('/admin/profile') },
             ],
         },

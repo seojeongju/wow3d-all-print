@@ -141,6 +141,8 @@ export async function GET(
             pdfReady,
             pdfError,
             order_number: fullOrder.order_number,
+            displayAmount,
+            estimateUrl,
         });
     } catch (e) {
         console.error('GET /api/admin/orders/[id]/quotation-email-draft', e);

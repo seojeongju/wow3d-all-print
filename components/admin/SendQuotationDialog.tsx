@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, Paperclip, FileCode, FileText, Plus, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export type QuotationSendResult = {
     success: boolean;
@@ -63,6 +64,22 @@ export function SendQuotationDialog({
     const [extraFiles, setExtraFiles] = useState<{ id: string; file: File }[]>([]);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('default');
+
+    useEffect(() => {
+        if (open && token) {
+            fetch('/api/admin/email-templates', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) setTemplates(data.data);
+                })
+                .catch(() => {});
+        }
+    }, [open, token]);
+
     useEffect(() => {
         if (!open || (orderId == null && !(mergeOrderIds?.length))) {
             setDraft(null);
@@ -92,6 +109,7 @@ export function SendQuotationDialog({
                 setSubject(data.subject ?? '');
                 setHtml(data.html ?? '');
                 setText(data.text ?? '');
+                setSelectedTemplateId('default');
             })
             .catch((e) => {
                 setLoadError(e instanceof Error ? e.message : '초안 로드 실패');
@@ -110,6 +128,34 @@ export function SendQuotationDialog({
             r.onerror = () => reject(new Error('파일 읽기 실패'));
             r.readAsDataURL(file);
         });
+
+    const handleTemplateChange = (templateId: string) => {
+        setSelectedTemplateId(templateId);
+        if (templateId === 'default' && draft) {
+            setSubject(draft.subject || '');
+            setHtml(draft.html || '');
+            setText(draft.text || '');
+            return;
+        }
+
+        const template = templates.find(t => t.id.toString() === templateId);
+        if (!template || !draft) return;
+
+        const replaceVars = (str: string) => {
+            if (!str) return '';
+            const amountText = draft.displayAmount != null ? `₩${Number(draft.displayAmount).toLocaleString()}` : '금액 미정';
+            return str
+                .replace(/\{\{주문번호\}\}/g, draft.order_number || '')
+                .replace(/\{\{견적합계\}\}/g, amountText)
+                .replace(/\{\{견적서링크\}\}/g, draft.estimateUrl || '');
+        };
+
+        setSubject(replaceVars(template.subject));
+        setHtml(replaceVars(template.html_content || ''));
+        setText(replaceVars(template.text_content || ''));
+        if (template.html_content) setBodyType('html');
+        else if (template.text_content) setBodyType('text');
+    };
 
     const handleSend = async () => {
         const isMerged = Array.isArray(mergeOrderIds) && mergeOrderIds.length > 0;
@@ -175,6 +221,22 @@ export function SendQuotationDialog({
                     <p className="text-red-400 text-sm py-4">{loadError}</p>
                 ) : draft ? (
                     <div className="space-y-4 py-2">
+                        {templates.length > 0 && (
+                            <div className="grid gap-2 mb-2 p-3 bg-white/5 border border-white/10 rounded-xl">
+                                <Label className="text-white/80">이메일 템플릿 불러오기</Label>
+                                <Select value={selectedTemplateId} onValueChange={handleTemplateChange}>
+                                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                                        <SelectValue placeholder="템플릿을 선택하세요" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="default">기본 템플릿 (초안)</SelectItem>
+                                        {templates.map(t => (
+                                            <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         <div className="grid gap-2">
                             <Label className="text-white/80">수신 이메일</Label>
                             <Input
