@@ -72,7 +72,13 @@ export async function GET(request: NextRequest) {
                 const posts = rawData.data || [];
 
                 const remoteItems = posts.map((post: any) => {
-                    let img = (post.images && post.images.length) ? post.images[0] : (post.thumbnail_url || '');
+                    // images 배열에서 절대 경로(http)를 우선 선택
+                    let img = '';
+                    if (post.images && post.images.length > 0) {
+                        const absImg = post.images.find((i: string) => i && i.startsWith('http'));
+                        img = absImg || post.images[0] || '';
+                    }
+                    if (!img) img = post.thumbnail_url || '';
                     if (!img && post.content) {
                         const m = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
                         if (m) img = m[1];
