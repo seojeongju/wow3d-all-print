@@ -19,11 +19,10 @@ export async function GET(request: NextRequest) {
         const storeIdParam = url.searchParams.get('store_id');
         const offset = (page - 1) * limit;
 
-        // 1. 로컬 DB에서 아이템 조회
+        // 1. 로컬 DB 전체 조회 (페이지네이션 없이 — 합산 후 최종 slice)
         let localItems: any[] = [];
         let localTotal = 0;
         try {
-            // store_id가 있으면 필터링, 없으면 전체 조회 (단일 테넌트 환경 대응)
             let whereClause = 'WHERE is_visible = 1';
             let params: any[] = [];
             if (storeIdParam) {
@@ -31,60 +30,56 @@ export async function GET(request: NextRequest) {
                 params.push(parseInt(storeIdParam));
             }
 
+            // LIMIT/OFFSET 없이 전체 조회 (합산 정렬 후 slice로 페이지네이션)
             const rows = await env.DB.prepare(
                 `SELECT * FROM gallery_items 
                  ${whereClause}
-                 ORDER BY sort_order DESC, created_at DESC
-                 LIMIT ? OFFSET ?`
-            ).bind(...params, limit, offset).all();
-            
-            localItems = (rows.results as any[]) || [];
-            
-            const countRow = await env.DB.prepare(
-                `SELECT COUNT(*) as cnt FROM gallery_items ${whereClause}`
-            ).bind(...params).first<{ cnt: number }>();
-            localTotal = countRow?.cnt || 0;
+                 ORDER BY sort_order DESC, created_at DESC`
+            ).bind(...params).all();
 
-            // 만약 특정 store_id로 검색했는데 결과가 없으면, 전체에서 한 번 더 찾아봄 (하이브리드 대응)
+            localItems = (rows.results as any[]) || [];
+            localTotal = localItems.length;
+
+            // store_id 결과 없으면 전체 fallback
             if (localItems.length === 0 && storeIdParam) {
                 const fallbackRows = await env.DB.prepare(
-                    `SELECT * FROM gallery_items WHERE is_visible = 1 ORDER BY created_at DESC LIMIT ?`
-                ).bind(limit).all();
-                if (fallbackRows.results?.length) {
-                    localItems = fallbackRows.results as any[];
-                    localTotal = localItems.length;
-                }
+                    `SELECT * FROM gallery_items WHERE is_visible = 1 ORDER BY created_at DESC`
+                ).bind().all();
+                localItems = (fallbackRows.results as any[]) || [];
+                localTotal = localItems.length;
             }
         } catch (dbErr) {
             console.error('Local DB gallery fetch error:', dbErr);
         }
 
-        // 2. 원격 데이터를 항상 가져와서 합산 (최신순 정렬을 위해)
+        // 2. 원격 데이터 조회 (절대경로 이미지 있는 항목만 포함)
         let remoteItems: any[] = [];
         try {
-            // 원격에서 충분한 양을 가져옴 (페이지 전체를 커버하도록)
-            const remoteLimit = Math.max(limit * 5, 50);
-            const sourceUrl = `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remoteLimit}`;
-            const res = await fetch(sourceUrl, { cache: 'no-store' });
-            const rawData = await res.json();
-            const posts = rawData.data || [];
+            // 원격 API는 최대 30개씩 반환하므로 여러 페이지 조회
+            const remotePageLimit = 30;
+            const remotePagesToFetch = 5; // 최대 150개 시도
+            const allPosts: any[] = [];
 
-            remoteItems = posts
-                // 절대 경로(http) 이미지가 하나도 없는 항목은 사전 제외
-                .filter((post: any) => {
-                    return post.images && post.images.some((i: string) => i && i.startsWith('http'));
-                })
+            for (let rPage = 1; rPage <= remotePagesToFetch; rPage++) {
+                const sourceUrl = `https://3dcookiehd.pages.dev/api/posts?category=prototype&status=published&limit=${remotePageLimit}&page=${rPage}`;
+                const res = await fetch(sourceUrl, { cache: 'no-store' });
+                const rawData = await res.json();
+                const posts: any[] = rawData.data || [];
+                if (posts.length === 0) break; // 더 이상 데이터 없으면 중단
+                allPosts.push(...posts);
+                // API 총 페이지 수 초과하면 중단
+                if (rawData.pagination && rPage >= rawData.pagination.totalPages) break;
+            }
+
+            remoteItems = allPosts
+                .filter((post: any) =>
+                    post.images && post.images.some((i: string) => i && i.startsWith('http'))
+                )
                 .map((post: any) => {
-                    // images 배열에서 절대 경로(http)를 우선 선택
-                    let img = '';
-                    if (post.images && post.images.length > 0) {
-                        const absImg = post.images.find((i: string) => i && i.startsWith('http'));
-                        img = absImg || '';
-                    }
-                    if (!img) img = post.thumbnail_url || '';
-                    if (!img || !img.startsWith('http')) return null;
+                    const absImg = post.images.find((i: string) => i && i.startsWith('http'));
+                    const img = absImg || '';
+                    if (!img) return null;
 
-                    // 출력 방식 자동 판단
                     let method = null;
                     const searchStr = ((post.title || '') + ' ' + (post.content || '')).toUpperCase();
                     if (searchStr.includes('FDM')) method = 'FDM';
@@ -92,7 +87,6 @@ export async function GET(request: NextRequest) {
                     else if (searchStr.includes('DLP')) method = 'DLP';
                     else if (searchStr.includes('MSLA')) method = 'DLP';
 
-                    // HTML 태그/엔티티 제거
                     const cleanText = (text: string) => {
                         if (!text) return '';
                         let cleaned = text
@@ -139,7 +133,7 @@ export async function GET(request: NextRequest) {
             return tb - ta;
         });
 
-        // 5. 전체 개수 기준 페이지네이션 적용
+        // 5. 페이지네이션 (한 번만 slice)
         const total = merged.length;
         const items = merged.slice(offset, offset + limit);
 
