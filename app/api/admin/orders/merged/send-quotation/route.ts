@@ -85,22 +85,30 @@ export async function POST(req: NextRequest) {
   ).bind(...orderIds).all() as { results?: ItemRow[] };
   const items = itemsRes?.results ?? [];
 
-  let totalAmount: number | null = null;
-  if (items.length > 0) {
-    const supplyTotal = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
-    totalAmount = supplyTotal + Math.floor(supplyTotal * 0.1);
+  let totalAmount: number = 0;
+  for (const o of orders) {
+    let orderTotal = o.total_amount || 0;
+    if ((o as any).expert_quote_data) {
+      try {
+        const expert = JSON.parse((o as any).expert_quote_data) as { total_amount?: number };
+        if (typeof expert.total_amount === 'number') {
+          orderTotal = expert.total_amount;
+        }
+      } catch {}
+    }
+    totalAmount += orderTotal;
   }
   const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
   const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';
 
-  // quotation_sent_at 갱신(선택된 주문 모두)
+  // quotation_sent_at 및 상태 갱신(선택된 주문 모두)
   try {
     await env.DB.prepare(
-      `UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP
+      `UPDATE orders SET quotation_sent_at = ?, status = 'quote_sent', updated_at = CURRENT_TIMESTAMP
        WHERE id IN (${placeholders})`
     ).bind(sentAt, ...orderIds).run();
   } catch (e) {
-    console.warn('merged send-quotation: UPDATE quotation_sent_at failed', e);
+    console.warn('merged send-quotation: UPDATE failed', e);
   }
 
   const envVars = env as unknown as Record<string, string | undefined>;

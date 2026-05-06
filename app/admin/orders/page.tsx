@@ -32,6 +32,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'pending', label: '접수 대기' },
     { value: 'confirmed', label: '주문 확인' },
     { value: 'production', label: '제작 중' },
+    { value: 'quote_sent', label: '견적 발송' },
     { value: 'shipping', label: '배송 중' },
     { value: 'completed', label: '완료됨' },
     { value: 'cancelled', label: '취소' },
@@ -42,6 +43,7 @@ function getStatusBadge(status: string) {
         case 'pending': return <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">접수 대기</Badge>;
         case 'confirmed': return <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">주문 확인</Badge>;
         case 'production': return <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30">제작 중</Badge>;
+        case 'quote_sent': return <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">견적 발송</Badge>;
         case 'shipping': return <Badge variant="outline" className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">배송 중</Badge>;
         case 'completed': return <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">완료됨</Badge>;
         case 'cancelled': return <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">취소</Badge>;
@@ -480,9 +482,12 @@ function OrderListInner() {
                                         </td>
                                         <td className="p-4">
                                             {order.quotation_sent_at ? (
-                                                <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px]">
-                                                    발송됨
-                                                </Badge>
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px]">
+                                                        발송됨
+                                                    </Badge>
+                                                    <Button variant="link" className="p-0 h-auto text-[10px] text-white/50 hover:text-white" onClick={(e) => { e.stopPropagation(); window.open(`/print/estimate/${order.id}`, '_blank'); }}>견적서 보기</Button>
+                                                </div>
                                             ) : (
                                                 <span className="text-white/30 text-xs">미발송</span>
                                             )}

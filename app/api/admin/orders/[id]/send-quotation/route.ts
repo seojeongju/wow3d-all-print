@@ -85,7 +85,7 @@ export async function POST(
             const whereClause = orderStoreId != null ? 'WHERE id = ? AND store_id = ?' : 'WHERE id = ?';
             const whereBind = orderStoreId != null ? [sentAt, numId, storeId] : [sentAt, numId];
             await env.DB.prepare(
-                `UPDATE orders SET quotation_sent_at = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+                `UPDATE orders SET quotation_sent_at = ?, status = 'quote_sent', updated_at = CURRENT_TIMESTAMP ${whereClause}`
             ).bind(...whereBind).run();
             quotationRecorded = true;
         } catch (updateErr) {
@@ -121,10 +121,11 @@ export async function POST(
         }
 
         let totalAmount: number | null = null;
-        if (itemsForPdf.length > 0) {
-            const supplyTotal = itemsForPdf.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
-            totalAmount = supplyTotal + Math.floor(supplyTotal * 0.1);
-        } else if (selectedItemIds.length === 0) {
+        if (selectedItemIds.length > 0) {
+            if (itemsForPdf.length > 0) {
+                totalAmount = itemsForPdf.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
+            }
+        } else {
             if (fullOrder.expert_quote_data) {
                 try {
                     const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
