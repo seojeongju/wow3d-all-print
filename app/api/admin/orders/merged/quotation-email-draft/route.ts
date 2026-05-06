@@ -76,10 +76,18 @@ export async function GET(req: NextRequest) {
   ).bind(...orderIds).all() as { results?: ItemRow[] };
   const items = itemsRes?.results ?? [];
 
-  let totalAmount: number | null = null;
-  if (items.length > 0) {
-    const supplyTotal = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
-    totalAmount = supplyTotal;
+  let totalAmount: number = 0;
+  for (const o of list) {
+    let orderTotal = o.total_amount || 0;
+    if (o.expert_quote_data) {
+      try {
+        const expert = JSON.parse(o.expert_quote_data) as { total_amount?: number };
+        if (typeof expert.total_amount === 'number') {
+          orderTotal = expert.total_amount;
+        }
+      } catch {}
+    }
+    totalAmount += orderTotal;
   }
   const displayAmount = totalAmount != null ? (correctDisplayAmount(Number(totalAmount)) ?? Number(totalAmount)) : null;
   const amountText = displayAmount != null ? ` (합계: ₩${Number(displayAmount).toLocaleString()})` : '';

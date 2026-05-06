@@ -95,10 +95,11 @@ export async function GET(
         }
 
         let totalAmount: number | null = null;
-        if (items.length > 0) {
-            const supplyTotal = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
-            totalAmount = supplyTotal;
-        } else if (selectedItemIds.length === 0) {
+        if (selectedItemIds.length > 0) {
+            if (items.length > 0) {
+                totalAmount = items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal))) ?? Math.round(Number(it.subtotal))), 0);
+            }
+        } else {
             if (fullOrder.expert_quote_data) {
                 try {
                     const expert = JSON.parse(fullOrder.expert_quote_data) as { total_amount?: number };
