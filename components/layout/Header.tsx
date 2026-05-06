@@ -65,7 +65,7 @@ export default function Header() {
                     : 'bg-white/70 backdrop-blur-md py-5'
                 : isScrolled
                     ? 'bg-[#0d1117]/90 backdrop-blur-xl border-b border-white/10 py-3'
-                    : 'bg-transparent backdrop-blur-sm py-5'}
+                    : 'bg-[#0d1117]/10 lg:bg-transparent backdrop-blur-md py-5'}
         `}
             style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
         >
@@ -182,10 +182,10 @@ export default function Header() {
                     <button
                         type="button"
                         onClick={() => setMobileOpen((o) => !o)}
-                        className={`lg:hidden w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center touch-manipulation select-none transition-colors ${
+                        className={`lg:hidden w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center touch-manipulation select-none transition-all ${
                             isPastHero
                                 ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-teal-50 hover:text-teal-600'
-                                : 'bg-white/15 border border-white/30 text-white hover:bg-white/25'
+                                : 'bg-white/25 border border-white/40 text-white hover:bg-white/30 shadow-lg shadow-black/20'
                         }`}
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
@@ -204,7 +204,7 @@ export default function Header() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 top-0 z-[100] lg:hidden bg-white backdrop-blur-xl"
+                        className="fixed inset-0 top-0 z-[100] lg:hidden bg-[#0d1117]/95 backdrop-blur-2xl"
                         onClick={() => setMobileOpen(false)}
                         aria-hidden="false"
                     >
@@ -225,8 +225,8 @@ export default function Header() {
                             onClick={(e) => e.stopPropagation()}
                             onTouchEnd={(e) => e.stopPropagation()}
                         >
-                            <div className="mb-3">
-                                <span className="text-[10px] font-bold text-teal-500 uppercase tracking-[0.2em] ml-1">Menu Navigation</span>
+                            <div className="mb-4">
+                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] ml-1 opacity-80">Menu Navigation</span>
                             </div>
 
                             {navItems.map((item) => (
@@ -234,20 +234,20 @@ export default function Header() {
                                     <Link
                                         href={item.href}
                                         onClick={() => setMobileOpen(false)}
-                                        className="px-6 py-4.5 min-h-[60px] rounded-2xl text-[17px] font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 active:scale-[0.98] transition-all flex items-center group mb-1.5"
+                                        className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group mb-2 shadow-lg shadow-black/20"
                                     >
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mr-4 group-hover:bg-teal-100 transition-colors">
-                                            {item.label === '서비스' && <Boxes className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '기능' && <Zap className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '공정' && <Layers className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '제품소개' && <Printer className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '주문조회' && <Search className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === 'FAQ' && <HelpCircle className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
-                                            {item.label === '문의하기' && <MessageSquare className="w-5 h-5 text-slate-400 group-hover:text-teal-500" />}
+                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
+                                            {item.label === '서비스' && <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '기능' && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '공정' && <Layers className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '제품소개' && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '주문조회' && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === 'FAQ' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '문의하기' && <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                         </div>
-                                        <span className="group-hover:translate-x-1 transition-transform">{item.label}</span>
-                                        <ChevronRight className="w-5 h-5 ml-auto text-slate-300 group-hover:text-teal-400 transition-colors" />
+                                        <span className="group-hover:translate-x-1 transition-transform tracking-tight">{item.label}</span>
+                                        <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
                                     </Link>
                                 </motion.div>
                             ))}
@@ -258,9 +258,9 @@ export default function Header() {
                                 <Link
                                     href="/cart"
                                     onClick={() => setMobileOpen(false)}
-                                    className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 active:scale-[0.98] transition-all flex items-center gap-3 relative group"
+                                    className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center gap-3 relative group"
                                 >
-                                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:text-teal-500 transition-colors">
+                                    <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:text-teal-400 transition-colors">
                                         <ShoppingCart className="w-5 h-5" />
                                     </div>
                                     <span>장바구니</span>
@@ -278,14 +278,14 @@ export default function Header() {
                                         <Link
                                             href={user?.role === 'admin' ? '/admin' : '/my-account'}
                                             onClick={() => setMobileOpen(false)}
-                                            className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 active:scale-[0.98] transition-all flex items-center gap-3 group"
+                                            className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center gap-3 group"
                                         >
-                                            <div className="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">
+                                            <div className="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
                                                 <User className="w-5 h-5" />
                                             </div>
                                             <div className="flex flex-col">
                                                 <span>{user?.name}</span>
-                                                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{user?.role === 'admin' ? 'Administrator' : 'Premium Member'}</span>
+                                                <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">{user?.role === 'admin' ? 'Administrator' : 'Premium Member'}</span>
                                             </div>
                                         </Link>
                                     </motion.div>
@@ -293,9 +293,9 @@ export default function Header() {
                                         <button
                                             type="button"
                                             onClick={() => { logout(); setMobileOpen(false); }}
-                                            className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 active:scale-[0.98] transition-all flex items-center gap-3 w-full text-left"
+                                            className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 active:scale-[0.98] transition-all flex items-center gap-3 w-full text-left"
                                         >
-                                            <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center text-red-500">
+                                            <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
                                                 <LogOut className="w-5 h-5" />
                                             </div>
                                             로그아웃
@@ -307,9 +307,9 @@ export default function Header() {
                                     <Link
                                         href="/auth"
                                         onClick={() => setMobileOpen(false)}
-                                        className="px-5 py-4 min-h-[52px] rounded-2xl text-[16px] font-bold text-slate-700 bg-slate-50 border border-slate-200 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 active:scale-[0.98] transition-all flex items-center gap-3 group"
+                                        className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center gap-3 group"
                                     >
-                                        <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:text-teal-500 transition-colors">
+                                        <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:text-teal-400 transition-colors">
                                             <User className="w-5 h-5" />
                                         </div>
                                         로그인
