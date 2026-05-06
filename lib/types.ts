@@ -73,7 +73,7 @@ export interface Order {
     shippingAddress: string;
     shippingPostalCode?: string;
     totalAmount: number;
-    status: 'pending' | 'confirmed' | 'production' | 'shipping' | 'completed' | 'cancelled';
+    status: 'pending' | 'confirmed' | 'quote_sent' | 'payment_confirmed' | 'production' | 'shipping' | 'completed' | 'cancelled';
     paymentMethod?: string;
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
     customerNote?: string;
