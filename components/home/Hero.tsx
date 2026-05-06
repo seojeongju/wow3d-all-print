@@ -116,6 +116,13 @@ export default function Hero() {
         <section ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
             {/* 밝은 다크 좌우 그라데이션 배경 */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            
+            {/* 은은한 배경 이미지 레이어 */}
+            <div 
+                className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.06] mix-blend-screen"
+                style={{ backgroundAttachment: 'fixed' }}
+            />
+
             {/* 틸/블루 은은한 포인트 오버레이 */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
 
