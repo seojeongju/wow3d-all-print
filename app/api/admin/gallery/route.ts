@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
         let items: any[] = [];
         let total = 0;
+        let dbDebug = {};
 
         try {
             let whereClause = 'WHERE store_id = ?';
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
             const queryParams = [...params, limit, offset];
             const countParams = [...params];
 
-            const [rows, countRow] = await Promise.all([
+            const [rows, countRow, globalCount] = await Promise.all([
                 env.DB.prepare(
                     `SELECT * FROM gallery_items
                      ${whereClause}
@@ -54,9 +55,16 @@ export async function GET(request: NextRequest) {
                 env.DB.prepare(
                     `SELECT COUNT(*) as cnt FROM gallery_items ${whereClause}`
                 ).bind(...countParams).first<{ cnt: number }>(),
+                env.DB.prepare(`SELECT COUNT(*) as cnt FROM gallery_items`).first<{ cnt: number }>()
             ]);
             items = (rows.results as any[]) ?? [];
             total = countRow?.cnt ?? 0;
+            dbDebug = { 
+                storeId: admin.storeId, 
+                totalInTable: globalCount?.cnt || 0,
+                where: whereClause,
+                params: params.map(p => typeof p === 'string' && p.length > 20 ? p.substring(0, 20) + '...' : p)
+            };
         } catch (e: any) {
             console.error('Gallery items fetch failed', e);
             if (!e.message?.includes('no such table')) {
@@ -75,6 +83,7 @@ export async function GET(request: NextRequest) {
                     totalPages: Math.ceil(total / limit),
                     hasNext: page * limit < total,
                 },
+                debug: dbDebug
             },
         });
     } catch (e) {
