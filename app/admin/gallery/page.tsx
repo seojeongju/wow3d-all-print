@@ -370,6 +370,51 @@ export default function AdminGalleryPage() {
                 </CardContent>
             </Card>
 
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 py-2">
+                    <button
+                        onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchGallery(p); }}
+                        disabled={page <= 1}
+                        className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm transition-all"
+                    >
+                        ← 이전
+                    </button>
+
+                    {(() => {
+                        const maxShow = 7;
+                        let start = Math.max(1, page - Math.floor(maxShow / 2));
+                        let end = Math.min(totalPages, start + maxShow - 1);
+                        if (end - start + 1 < maxShow) start = Math.max(1, end - maxShow + 1);
+                        return Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => (
+                            <button
+                                key={p}
+                                onClick={() => { setPage(p); fetchGallery(p); }}
+                                className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
+                                    page === p
+                                        ? 'bg-primary text-primary-foreground shadow-[0_0_12px_rgba(99,102,241,0.5)]'
+                                        : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                                }`}
+                            >
+                                {p}
+                            </button>
+                        ));
+                    })()}
+
+                    <button
+                        onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchGallery(p); }}
+                        disabled={page >= totalPages}
+                        className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm transition-all"
+                    >
+                        다음 →
+                    </button>
+
+                    <span className="ml-2 text-xs text-white/40">
+                        {page} / {totalPages} 페이지
+                    </span>
+                </div>
+            )}
+
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg">
                     <DialogHeader>

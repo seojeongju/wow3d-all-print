@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
                 env.DB.prepare(
                     `SELECT * FROM gallery_items
                      ${whereClause}
-                     ORDER BY sort_order DESC, created_at DESC
+                     ORDER BY created_at DESC, sort_order DESC
                      LIMIT ? OFFSET ?`
                 ).bind(...queryParams).all(),
                 env.DB.prepare(
