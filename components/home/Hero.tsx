@@ -148,10 +148,10 @@ export default function Hero() {
                         <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-white/80 uppercase">Next-Gen 3D Printing</span>
                     </motion.div>
 
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.1] word-keep-all text-balance text-white">
-                        <span className="text-teal-400 block text-base sm:text-lg md:text-xl mb-3 font-black uppercase tracking-[0.2em] opacity-90">WOW3D PRO</span>
-                        3D프린팅 출력 및 <br />
-                        <span className="text-teal-400 relative inline-block">
+                    <h1 className="text-[2.5rem] sm:text-5xl md:text-[4rem] font-black tracking-tight mb-6 leading-[1.15] break-keep text-white">
+                        <span className="text-teal-400 block text-sm sm:text-base md:text-lg mb-4 font-black uppercase tracking-[0.3em] opacity-90">WOW3D PRO</span>
+                        3D프린팅 출력 및<br />
+                        <span className="text-teal-400 relative inline-block mt-2">
                             시제품제작 대행 서비스
                             <svg className="absolute w-full h-2 sm:h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -159,8 +159,8 @@ export default function Hero() {
                         </span>
                     </h1>
 
-                    <p className="text-base sm:text-lg md:text-xl text-white/70 mb-8 max-w-lg leading-relaxed break-keep font-medium">
-                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-white font-bold text-teal-400">실시간 자동견적</span>을 즉시 확인하세요.<br className="hidden sm:block" />
+                    <p className="text-base sm:text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed break-keep font-medium">
+                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-teal-400 font-bold">실시간 자동견적</span>을 즉시 확인하세요.<br className="hidden sm:block" />
                         3D프린팅 출력대행부터 시제품제작까지 (주)와우쓰리디가 함께합니다.
                     </p>
 
@@ -180,27 +180,27 @@ export default function Hero() {
                         </div>
                     </motion.div>
 
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-12">
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-14">
                         <Link href="/quote" className="w-full sm:w-auto order-first sm:order-none">
-                            <Button size="lg" className="w-full h-16 px-10 text-[16px] sm:text-xl rounded-2xl bg-gradient-to-r from-teal-400 to-emerald-500 text-slate-950 shadow-[0_10px_40px_rgba(45,212,191,0.4)] hover:scale-[1.05] transition-all gap-3 font-black uppercase tracking-tight relative overflow-hidden group">
+                            <Button size="lg" className="w-full h-14 sm:h-16 px-8 sm:px-10 text-[15px] sm:text-[17px] rounded-2xl bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.3)] hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all gap-3 font-black uppercase tracking-widest relative overflow-hidden group">
                                 <motion.div 
                                     className="absolute inset-0 bg-white/30"
                                     animate={{ x: ['-100%', '200%'] }}
                                     transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                                 />
-                                <Zap className="w-6 h-6 fill-current relative z-10" />
+                                <Zap className="w-5 h-5 sm:w-6 sm:h-6 fill-current relative z-10" />
                                 <span className="relative z-10">실시간 자동견적 시작</span>
-                                <ArrowRight className="w-6 h-6 shrink-0 relative z-10" />
+                                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 relative z-10 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>
-                        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                            <Link href="/print-methods" className="flex-1">
-                                <Button size="lg" variant="outline" className="w-full h-14 px-6 text-sm rounded-xl bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all gap-2 font-bold">
+                        <div className="flex gap-4 w-full sm:w-auto">
+                            <Link href="/print-methods" className="flex-1 sm:flex-none">
+                                <Button size="lg" variant="outline" className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[15px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
                                     출력방식
                                 </Button>
                             </Link>
-                            <Link href="/materials" className="flex-1">
-                                <Button size="lg" variant="outline" className="w-full h-14 px-6 text-sm rounded-xl bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all gap-2 font-bold">
+                            <Link href="/materials" className="flex-1 sm:flex-none">
+                                <Button size="lg" variant="outline" className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[15px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
                                     소재보기
                                 </Button>
                             </Link>
@@ -226,22 +226,22 @@ export default function Hero() {
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
                     <motion.div
                         style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        className="absolute right-0 top-10 w-[400px] min-h-[480px] rounded-[2rem] border border-white/25 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/40 z-10 overflow-hidden flex flex-col ring-1 ring-white/10"
+                        className="absolute right-0 top-10 w-[420px] min-h-[500px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 overflow-hidden flex flex-col ring-1 ring-white/5"
                     >
                         {/* 그리드 배경 */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
 
                         {/* 상단: 타이틀 + 지원 형식 텍스트 */}
-                        <div className="relative p-6 pb-4 border-b border-white/5">
-                            <h3 className="text-lg font-bold text-white tracking-tight mb-1">3D 모델 지원</h3>
-                            <p className="text-[13px] text-white/70 leading-relaxed">
+                        <div className="relative p-8 pb-6 border-b border-white/5">
+                            <h3 className="text-xl font-black text-white tracking-tight mb-2">3D 모델 지원</h3>
+                            <p className="text-[13px] font-bold text-white/60 leading-relaxed break-keep">
                                 STL, OBJ, 3MF, PLY, STEP, STP를 업로드하면 AI가 부피·표면적을 분석해 실시간 견적을 제공합니다.
                             </p>
-                            <div className="mt-4 flex flex-wrap gap-2">
+                            <div className="mt-5 flex flex-wrap gap-2">
                                 {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
                                     <span
                                         key={fmt}
-                                        className="px-2.5 py-1 rounded-lg bg-teal-500/20 border border-teal-400/30 text-[11px] font-semibold text-teal-300 tracking-wide"
+                                        className="px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-400/20 text-[11px] font-black text-teal-400 tracking-widest uppercase"
                                     >
                                         .{fmt.toLowerCase()}
                                     </span>
@@ -278,7 +278,7 @@ export default function Hero() {
 
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute left-10 bottom-20 w-[280px] h-[480px] rounded-[2.5rem] border border-white/25 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/40 z-20 p-8 flex flex-col ring-1 ring-white/10"
+                        className="absolute left-6 bottom-16 w-[300px] min-h-[480px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 p-8 flex flex-col ring-1 ring-white/5"
                     >
                         <div className="flex items-center gap-4 mb-8">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
