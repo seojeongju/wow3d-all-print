@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
             const rows = await env.DB.prepare(
                 `SELECT * FROM gallery_items 
                  ${whereClause}
-                 ORDER BY sort_order DESC, created_at DESC`
+                 ORDER BY created_at DESC, sort_order DESC`
             ).bind(...params).all();
 
             localItems = (rows.results as any[]) || [];
@@ -124,10 +124,12 @@ export async function GET(request: NextRequest) {
         ];
 
         // 4. created_at 기준 최신순 정렬
+        // V8 isolate에서 'YYYY-MM-DD HH:MM:SS' 형식의 Date 파싱이 불안정하므로
+        // 문자열 직접 비교 (ISO 형식과 동일한 정렬 결과를 보장)
         merged.sort((a, b) => {
-            const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-            const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-            return tb - ta;
+            const ta = a.created_at ? String(a.created_at).replace(' ', 'T') : '0';
+            const tb = b.created_at ? String(b.created_at).replace(' ', 'T') : '0';
+            return tb.localeCompare(ta);
         });
 
         // 5. 페이지네이션 (한 번만 slice)
