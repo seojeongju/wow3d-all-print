@@ -26,7 +26,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 
-/** 금액은 DB에서 원화(KRW)로 저장·표시 */
+/** 금액은 DB에서 원화(KRW)로 저장·표시 - 2026-05-06 Status Order Fix */
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'pending', label: '접수 대기' },

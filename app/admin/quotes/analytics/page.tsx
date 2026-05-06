@@ -29,6 +29,7 @@ type QuoteAnalytics = {
     updated_at: string;
     user_name: string | null;
     user_email: string | null;
+    user_role: string | null;
     order_number: string | null;
     order_status: string | null;
     is_in_cart: number;
