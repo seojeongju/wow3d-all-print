@@ -80,7 +80,9 @@ export async function GET(request: NextRequest) {
                     
                     // 외부 서버 이미지 경로 교정 (절대 경로 보장)
                     if (img && !img.startsWith('http')) {
-                        img = 'https://3dcookiehd.pages.dev/' + img.replace(/^\//, '');
+                        // 3dcookiehd.pages.dev 는 Cloudflare Pages 정적 사이트이므로 
+                        // 실제 이미지는 원본 도메인(3dcookiehd.co.kr)에서 가져오는 것이 더 확실함
+                        img = 'http://3dcookiehd.co.kr/' + img.replace(/^\//, '');
                     }
 
                     // 출력 방식 자동 판단 (기존 로직 복구)
@@ -91,20 +93,26 @@ export async function GET(request: NextRequest) {
                     else if (searchStr.includes('DLP')) method = 'DLP';
                     else if (searchStr.includes('MSLA')) method = 'DLP';
 
-                    // 설명 추출 (HTML 태그 제거 및 정제)
-                    let desc = '';
-                    if (post.content) {
-                        desc = post.content
+                    // 제목 및 설명 추출 (HTML 태그 제거 및 정제)
+                    const cleanText = (text: string) => {
+                        if (!text) return '';
+                        return text
                             .replace(/<[^>]+>/g, ' ')
                             .replace(/&nbsp;/g, ' ')
+                            .replace(/&amp;/g, '&')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&quot;/g, '"')
                             .replace(/\s+/g, ' ')
-                            .trim()
-                            .substring(0, 150);
-                    }
+                            .trim();
+                    };
+
+                    const title = cleanText(post.title || '무제');
+                    const desc = cleanText(post.content || '').substring(0, 150);
 
                     return {
                         id: `remote_${post.id}`,
-                        title: post.title || '무제',
+                        title: title,
                         description: desc,
                         image_url: img || '', 
                         material: null,

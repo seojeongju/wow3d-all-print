@@ -44,7 +44,21 @@ export function resolveImageUrl(url: string): string {
     if (url === '/placeholder-3d.jpg' || url.endsWith('placeholder-3d.jpg') || url.includes('placeholder')) {
         return '/placeholder-3d.svg';
     }
-    if (url.startsWith('http') || url.startsWith('/')) return url;
+    
+    // 외부 절대 경로는 그대로 반환
+    if (url.startsWith('http')) return url;
+    
+    // GNUBoard 스타일의 경로 (/data/file/...) 처리
+    if (url.startsWith('/data/file/')) {
+        return `http://3dcookiehd.co.kr${url}`;
+    }
+    if (url.startsWith('data/file/')) {
+        return `http://3dcookiehd.co.kr/${url}`;
+    }
+
+    // 내부 경로(/로 시작)는 그대로 반환
+    if (url.startsWith('/')) return url;
+
     // gallery/xxx.jpg → /api/gallery/image/xxx.jpg
     if (url.startsWith('gallery/')) {
         return `/api/gallery/image/${url.replace(/^gallery\//, '')}`;

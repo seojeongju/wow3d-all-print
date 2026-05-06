@@ -134,7 +134,13 @@ export default function AdminGalleryPage() {
             tags: tagsStr,
             image: null
         });
-        setPreviewUrl(item.image_url ? `/api/gallery/image/${item.image_url.replace('gallery/', '')}` : null);
+        setPreviewUrl(
+            item.image_url 
+                ? (item.image_url.startsWith('http') || item.image_url.startsWith('/') 
+                    ? item.image_url 
+                    : `/api/gallery/image/${item.image_url.replace('gallery/', '')}`) 
+                : null
+        );
         setIsAddOpen(true);
     };
 
@@ -309,7 +315,14 @@ export default function AdminGalleryPage() {
                                             <td className="p-3">
                                                 <div className="w-16 h-16 rounded-lg bg-black/40 overflow-hidden border border-white/10 flex items-center justify-center">
                                                     {item.image_url ? (
-                                                        <img src={`/api/gallery/image/${item.image_url.replace('gallery/', '')}`} alt={item.title} className="w-full h-full object-cover" />
+                                                        <img 
+                                                            src={item.image_url.startsWith('http') || item.image_url.startsWith('/') 
+                                                                ? item.image_url 
+                                                                : `/api/gallery/image/${item.image_url.replace('gallery/', '')}`
+                                                            } 
+                                                            alt={item.title} 
+                                                            className="w-full h-full object-cover" 
+                                                        />
                                                     ) : (
                                                         <ImageIcon className="w-6 h-6 text-white/20" />
                                                     )}
