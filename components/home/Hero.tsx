@@ -148,7 +148,7 @@ export default function Hero() {
                         <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-white/80 uppercase">Next-Gen 3D Printing</span>
                     </motion.div>
 
-                    <h1 className="text-[2.5rem] sm:text-5xl md:text-[4rem] font-black tracking-tight mb-6 leading-[1.15] break-keep text-white">
+                    <h1 className="text-[2.2rem] sm:text-4xl md:text-[3rem] lg:text-[3.4rem] font-black tracking-tight mb-6 leading-[1.2] break-keep text-white">
                         <span className="text-teal-400 block text-sm sm:text-base md:text-lg mb-4 font-black uppercase tracking-[0.3em] opacity-90">WOW3D PRO</span>
                         3D프린팅 출력 및<br />
                         <span className="text-teal-400 relative inline-block mt-2">
@@ -226,7 +226,7 @@ export default function Hero() {
                 <div className="relative h-[600px] w-full hidden lg:block perspective-1000">
                     <motion.div
                         style={{ y: y1, rotateX: 5, rotateY: -5 }}
-                        className="absolute right-0 top-10 w-[420px] min-h-[500px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 overflow-hidden flex flex-col ring-1 ring-white/5"
+                        className="absolute right-0 xl:-right-10 top-10 w-[340px] lg:w-[380px] min-h-[460px] lg:min-h-[480px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 overflow-hidden flex flex-col ring-1 ring-white/5"
                     >
                         {/* 그리드 배경 */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
@@ -278,7 +278,7 @@ export default function Hero() {
 
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute left-6 bottom-16 w-[300px] min-h-[480px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 p-8 flex flex-col ring-1 ring-white/5"
+                        className="absolute -left-10 lg:left-0 bottom-10 lg:bottom-16 w-[260px] lg:w-[280px] min-h-[440px] lg:min-h-[460px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 p-6 lg:p-8 flex flex-col ring-1 ring-white/5"
                     >
                         <div className="flex items-center gap-4 mb-8">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
