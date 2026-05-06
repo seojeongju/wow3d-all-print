@@ -195,8 +195,7 @@ function OrderListInner() {
                     unit_price: unitKr,
                 };
             });
-            const totalSupply = expertItems.reduce((acc: number, it: any) => acc + it.unit_price * it.quantity, 0);
-            const totalAmount = totalSupply + Math.floor(totalSupply * 0.1);
+            const totalAmount = expertItems.reduce((acc: number, it: any) => acc + it.unit_price * it.quantity, 0);
             const res = await fetch(`/api/admin/orders/${detailOrderId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -238,16 +237,15 @@ function OrderListInner() {
             const order = detailData.order as any;
             const items = detailData.items as any[];
             const totalSub = items.reduce((acc: number, it: any) => acc + Number(it.subtotal || 0), 0);
-            const supplyAmount = Math.floor(amount / 1.1); // 공급가액
             const expertItems = totalSub > 0
                 ? items.map((it: any) => {
                     const ratio = Number(it.subtotal || 0) / totalSub;
-                    const itemSupply = Math.round(supplyAmount * ratio);
+                    const itemTotal = Math.round(amount * ratio);
                     const qty = Number(it.quantity) || 1;
-                    const unitPrice = Math.round(itemSupply / qty);
+                    const unitPrice = Math.round(itemTotal / qty);
                     return { name: it.file_name || '-', spec: it.print_method || '', quantity: qty, unit_price: unitPrice };
                 })
-                : items.map((it: any) => ({ name: it.file_name || '-', spec: it.print_method || '', quantity: Number(it.quantity) || 1, unit_price: Math.floor(supplyAmount / items.length) }));
+                : items.map((it: any) => ({ name: it.file_name || '-', spec: it.print_method || '', quantity: Number(it.quantity) || 1, unit_price: Math.floor(amount / items.length) }));
             const recipient = {
                 name: String(order.recipient_name ?? ''),
                 phone: String(order.recipient_phone ?? ''),
@@ -944,7 +942,7 @@ function OrderListInner() {
                                 if (selectedIds.size > 0 && selectedIds.size < items.length) {
                                     const selected = items.filter((it: any) => selectedIds.has(it.id));
                                     const order = detailData?.order as any;
-                                    const totalSupply = selected.reduce((acc: number, it: any) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal || 0))) ?? Math.round(Number(it.subtotal || 0))), 0);
+                                    const totalAmount = selected.reduce((acc: number, it: any) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal || 0))) ?? Math.round(Number(it.subtotal || 0))), 0);
                                     const printData = {
                                         order: {
                                             order_number: order?.order_number,
@@ -954,7 +952,7 @@ function OrderListInner() {
                                             user_email: order?.user_email,
                                             guest_email: order?.guest_email,
                                             shipping_address: order?.shipping_address,
-                                            total_amount: totalSupply + Math.floor(totalSupply * 0.1),
+                                            total_amount: totalAmount,
                                         },
                                         items: selected.map((it: any) => {
                                             const up = correctDisplayAmount(Math.round(Number(it.unit_price || 0))) ?? Math.round(Number(it.unit_price || 0));
