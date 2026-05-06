@@ -77,15 +77,38 @@ export async function GET(request: NextRequest) {
                         const m = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
                         if (m) img = m[1];
                     }
-                    if (img && img.startsWith('/')) img = 'https://3dcookiehd.pages.dev' + img;
+                    
+                    // 외부 서버 이미지 경로 교정 (절대 경로 보장)
+                    if (img && !img.startsWith('http')) {
+                        img = 'https://3dcookiehd.pages.dev/' + img.replace(/^\//, '');
+                    }
+
+                    // 출력 방식 자동 판단 (기존 로직 복구)
+                    let method = null;
+                    const searchStr = ((post.title || '') + ' ' + (post.content || '')).toUpperCase();
+                    if (searchStr.includes('FDM')) method = 'FDM';
+                    else if (searchStr.includes('SLA')) method = 'SLA';
+                    else if (searchStr.includes('DLP')) method = 'DLP';
+                    else if (searchStr.includes('MSLA')) method = 'DLP';
+
+                    // 설명 추출 (HTML 태그 제거 및 정제)
+                    let desc = '';
+                    if (post.content) {
+                        desc = post.content
+                            .replace(/<[^>]+>/g, ' ')
+                            .replace(/&nbsp;/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                            .substring(0, 150);
+                    }
 
                     return {
                         id: `remote_${post.id}`,
                         title: post.title || '무제',
-                        description: post.content?.replace(/<[^>]+>/g, ' ').substring(0, 150) || '',
+                        description: desc,
                         image_url: img || '', 
                         material: null,
-                        print_method: null,
+                        print_method: method,
                         tags: '[]',
                         created_at: post.created_at
                     };
