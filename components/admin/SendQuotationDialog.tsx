@@ -54,6 +54,8 @@ export function SendQuotationDialog({
         pdfReady: boolean;
         pdfError?: string;
         order_number: string;
+        displayAmount?: number | null;
+        estimateUrl?: string | null;
     } | null>(null);
     const [to, setTo] = useState('');
     const [subject, setSubject] = useState('');
