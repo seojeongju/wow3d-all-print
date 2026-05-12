@@ -18,6 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
+const PRIMARY_OG_IMAGE = `${SITE_URL}/opengraph-image`;
+const BRAND_LOGO_IMAGE = `${SITE_URL}/thumbnail.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -54,14 +56,15 @@ export const metadata: Metadata = {
     description:
       "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입·소량양산. (주)와우쓰리디가 당신의 상상을 현실로 만듭니다.",
     images: [
-      { url: "/thumbnail.png", width: 600, height: 600, alt: "(주)와우쓰리디 WOW3D 3D프린팅 견적" },
-      { url: "/og-image.png", width: 1200, height: 630, alt: "와우쓰리디 WOW3D 3D프린팅 서비스" }
+      { url: PRIMARY_OG_IMAGE, width: 1200, height: 630, alt: "와우쓰리디 WOW3D 3D프린팅 자동견적 서비스 화면" },
+      { url: BRAND_LOGO_IMAGE, width: 600, height: 600, alt: "(주)와우쓰리디 WOW3D 로고" },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "3D프린팅 출력·자동견적 | (주)와우쓰리디 WOW3D",
     description: "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문 (주)와우쓰리디.",
+    images: [PRIMARY_OG_IMAGE],
   },
   robots: {
     index: true,
@@ -75,7 +78,7 @@ export const metadata: Metadata = {
     other: {
       "naver-site-verification":
         process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || "ce7e7d3489dc31609cfceda1d5ad6648d527bbf8",
-      "thumbnail": `${SITE_URL}/thumbnail.png`,
+      "thumbnail": PRIMARY_OG_IMAGE,
     },
   },
 };
@@ -113,7 +116,8 @@ export default function RootLayout({
                 "@type": "Organization",
                 "name": "(주)와우쓰리디",
                 "url": SITE_URL,
-                "logo": `${SITE_URL}/thumbnail.png`,
+                "logo": BRAND_LOGO_IMAGE,
+                "image": PRIMARY_OG_IMAGE,
                 "contactPoint": {
                   "@type": "ContactPoint",
                   "telephone": "02-3144-3137",
@@ -134,7 +138,7 @@ export default function RootLayout({
                 "name": "(주)와우쓰리디 (WOW3D)",
                 "description": "(주)와우쓰리디는 AI 기반 3D프린팅 자동견적 시스템과 시제품제작 대행 전문 업체입니다.",
                 "url": SITE_URL,
-                "image": `${SITE_URL}/thumbnail.png`,
+                "image": PRIMARY_OG_IMAGE,
                 "address": {
                   "@type": "PostalAddress",
                   "streetAddress": "독막로 93 상수빌딩 4층",
@@ -163,9 +167,9 @@ export default function RootLayout({
                 "url": SITE_URL,
                 "primaryImageOfPage": {
                   "@type": "ImageObject",
-                  "url": `${SITE_URL}/thumbnail.png`,
-                  "width": "600",
-                  "height": "600"
+                  "url": PRIMARY_OG_IMAGE,
+                  "width": "1200",
+                  "height": "630"
                 }
               }
             ]),
