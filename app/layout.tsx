@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
-const PRIMARY_OG_IMAGE = `${SITE_URL}/opengraph-image`;
+const PRIMARY_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const BRAND_LOGO_IMAGE = `${SITE_URL}/thumbnail.png`;
 
 export const metadata: Metadata = {

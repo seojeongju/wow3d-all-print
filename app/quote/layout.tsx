@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
-const QUOTE_OG_IMAGE = `${SITE_URL}/quote/opengraph-image`;
+const QUOTE_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export const metadata: Metadata = {
   title: "3D 프린팅 자동 견적 | 파일 업로드 10초 견적",

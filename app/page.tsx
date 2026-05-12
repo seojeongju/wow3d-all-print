@@ -36,7 +36,7 @@ export default function HomePage() {
           <div className="mx-auto grid max-w-6xl items-center gap-8 rounded-[2rem] border border-white/10 bg-white/[0.03] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
             <figure className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/30">
               <Image
-                src="/opengraph-image"
+                src="/og-image.png"
                 alt="와우쓰리디 3D프린팅 자동견적 서비스 화면과 3D 모델 미리보기"
                 width={1200}
                 height={630}
