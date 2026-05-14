@@ -505,7 +505,7 @@ function OrderListInner() {
                                                     <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px]">
                                                         발송됨
                                                     </Badge>
-                                                    <Button variant="link" className="p-0 h-auto text-[10px] text-white/50 hover:text-white" onClick={(e) => { e.stopPropagation(); window.open(`/print/estimate/${order.id}`, '_blank'); }}>견적서 보기</Button>
+                                                    <Button variant="link" className="p-0 h-auto text-[10px] text-white/50 hover:text-white" onClick={(e) => { e.stopPropagation(); if (token) localStorage.setItem('admin_print_token', token); window.open(`/print/estimate/${order.id}`, '_blank'); }}>견적서 보기</Button>
                                                 </div>
                                             ) : (
                                                 <span className="text-white/30 text-xs">미발송</span>
