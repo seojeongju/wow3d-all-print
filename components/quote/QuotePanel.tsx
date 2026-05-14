@@ -17,6 +17,7 @@ import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
 
 type PrintSpecs = {
     fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
@@ -780,6 +781,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                     </div>
                 )}
             </div>
+            <KakaoChannelFab visible={!!analysis} />
         </div>
     )
 }
