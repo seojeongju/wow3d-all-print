@@ -130,6 +130,10 @@ function OrderListInner() {
     }, [token, toast, page, debouncedSearch, statusFilter, scopeFilter]);
 
     useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
+
+    useEffect(() => {
         const t = setTimeout(() => {
             const next = searchQuery.trim();
             if (prevDebouncedRef.current === next) return;
