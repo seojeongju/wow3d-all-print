@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/card';
 import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useToast } from '@/hooks/use-toast';
 
 type SalesTrend = {
     date: string;
@@ -35,6 +36,8 @@ type RecentOrder = {
 const ORDER_STATUS_LABEL: Record<string, string> = {
     pending: '접수대기',
     confirmed: '주문확인',
+    quote_sent: '견적발송',
+    payment_confirmed: '결제확인',
     production: '제작중',
     shipping: '배송중',
     completed: '완료',
@@ -46,15 +49,16 @@ function getOrderStatusLabel(status: string) {
 
 type Stats = {
     totalSales: number;
-    salesChangePercent: number;
+    /** 지난달 대비 계산 불가·의미 없을 때 null → "없음" */
+    salesChangePercent: number | null;
     newOrdersCount: number;
     pendingOrdersCount: number;
     totalUsers: number;
     newSignupsCount: number;
-    quotesThisMonth: number;
-    inquiriesNew: number;
-    operatingRate: number;
-    operatingDetail: string;
+    quotesThisMonth: number | null;
+    inquiriesNew: number | null;
+    operatingRate: number | null;
+    operatingDetail: string | null;
     salesTrend: SalesTrend[];
     recentOrders: RecentOrder[];
     trafficSources: TrafficSource[];
@@ -64,24 +68,37 @@ type Stats = {
 export default function AdminDashboard() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadFailed, setLoadFailed] = useState(false);
     const { token } = useAuthStore();
+    const { toast } = useToast();
 
     useEffect(() => {
         const load = async () => {
+            setLoadFailed(false);
             try {
                 const res = await fetch('/api/admin/stats', {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    cache: 'no-store',
                 });
                 const json = await res.json();
-                if (json.success && json.data) setStats(json.data);
+                if (json.success && json.data) {
+                    setStats(json.data as Stats);
+                } else {
+                    setStats(null);
+                    setLoadFailed(true);
+                    toast({ title: json.error || '대시보드 데이터를 불러오지 못했습니다.', variant: 'destructive' });
+                }
             } catch (e) {
                 console.error('Failed to fetch admin stats', e);
+                setStats(null);
+                setLoadFailed(true);
+                toast({ title: '대시보드 데이터를 불러오지 못했습니다.', variant: 'destructive' });
             } finally {
                 setLoading(false);
             }
         };
         load();
-    }, [token]);
+    }, [token, toast]);
 
     if (loading) {
         return (
@@ -91,29 +108,41 @@ export default function AdminDashboard() {
         );
     }
 
-    const s = stats || {
+    const emptyStats: Stats = {
         totalSales: 0,
-        salesChangePercent: 0,
+        salesChangePercent: null,
         newOrdersCount: 0,
         pendingOrdersCount: 0,
         totalUsers: 0,
         newSignupsCount: 0,
-        quotesThisMonth: 0,
-        inquiriesNew: 0,
-        operatingRate: 82,
-        operatingDetail: '프린터 12/15대 가동중',
+        quotesThisMonth: null,
+        inquiriesNew: null,
+        operatingRate: null,
+        operatingDetail: null,
         salesTrend: [],
         recentOrders: [],
         trafficSources: [],
         dailyVisitors: [],
     };
+    const s: Stats = stats ?? emptyStats;
 
     const maxTrend = Math.max(1, ...s.salesTrend.map((t) => t.amount));
     const maxVisitors = Math.max(1, ...s.dailyVisitors.map((v) => v.count));
     const totalTrafficCount = s.trafficSources.reduce((acc, curr) => acc + curr.count, 0);
 
+    const pctTone = (text: string) => {
+        if (text === '없음') return 'text-white/40';
+        if (text.startsWith('-')) return 'text-rose-400';
+        return 'text-emerald-400';
+    };
+
     return (
         <div className="space-y-8 pb-12">
+            {loadFailed && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
+                    대시보드 API 응답을 받지 못했습니다. 표시는 비어 있는 기본값이며, 로그인·네트워크를 확인한 뒤 새로고침 해 주세요.
+                </div>
+            )}
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
@@ -137,57 +166,66 @@ export default function AdminDashboard() {
                     {
                         title: '이번 달 매출',
                         value: `₩ ${s.totalSales.toLocaleString()}`,
-                        change: `${s.salesChangePercent >= 0 ? '+' : ''}${s.salesChangePercent}%`,
-                        detail: '지난달 대비',
+                        change: s.salesChangePercent === null ? '없음' : `${s.salesChangePercent >= 0 ? '+' : ''}${s.salesChangePercent}%`,
+                        detail: s.salesChangePercent === null ? '' : '지난달 대비',
+                        changeClass: pctTone(s.salesChangePercent === null ? '없음' : `${s.salesChangePercent >= 0 ? '+' : ''}${s.salesChangePercent}%`),
                         icon: DollarSign,
                         color: 'text-emerald-400',
-                        bg: 'bg-emerald-500/10'
+                        bg: 'bg-emerald-500/10',
                     },
                     {
                         title: '신규 주문',
                         value: s.newOrdersCount,
                         change: `${s.pendingOrdersCount}건 대기`,
                         detail: '',
+                        changeClass: 'text-white/50',
                         icon: ShoppingBag,
                         color: 'text-blue-400',
-                        bg: 'bg-blue-500/10'
+                        bg: 'bg-blue-500/10',
                     },
                     {
                         title: '활성 사용자',
                         value: s.totalUsers,
                         change: `+${s.newSignupsCount}`,
                         detail: '이번 달 가입',
+                        changeClass: 'text-white/50',
                         icon: Users,
                         color: 'text-purple-400',
-                        bg: 'bg-purple-500/10'
+                        bg: 'bg-purple-500/10',
                     },
                     {
                         title: '장비 가동률',
-                        value: `${s.operatingRate}%`,
-                        change: s.operatingDetail,
+                        value:
+                            s.operatingRate != null && !Number.isNaN(Number(s.operatingRate))
+                                ? `${s.operatingRate}%`
+                                : '없음',
+                        change: s.operatingDetail?.trim() ? s.operatingDetail : '없음',
                         detail: '',
+                        changeClass: 'text-white/50',
                         icon: Activity,
                         color: 'text-orange-400',
-                        bg: 'bg-orange-500/10'
+                        bg: 'bg-orange-500/10',
                     },
                     {
                         title: '견적 요청',
-                        value: s.quotesThisMonth,
-                        change: '이번 달 건수',
+                        value: s.quotesThisMonth === null ? '없음' : s.quotesThisMonth,
+                        change: s.quotesThisMonth === null ? '' : '이번 달 건수',
                         detail: '',
+                        changeClass: s.quotesThisMonth === null ? 'text-white/40' : 'text-white/50',
                         icon: FileText,
                         color: 'text-pink-400',
-                        bg: 'bg-pink-500/10'
+                        bg: 'bg-pink-500/10',
                     },
                     {
                         title: '미확인 문의',
-                        value: s.inquiriesNew,
-                        change: '즉시 확인 필요',
+                        value: s.inquiriesNew === null ? '없음' : s.inquiriesNew,
+                        change: s.inquiriesNew === null ? '' : '즉시 확인 필요',
                         detail: '',
+                        changeClass: s.inquiriesNew === null ? 'text-white/40' : 'text-cyan-400/90',
                         icon: MessageSquare,
                         color: 'text-cyan-400',
-                        bg: 'bg-cyan-500/10'
-                    }
+                        bg: 'bg-cyan-500/10',
+                    },
                 ].map((item, i) => (
                     <Card key={i} className="bg-[#0f0f0f] border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
                         <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity rounded-full -mr-4 -mt-4 ${item.bg}`} />
@@ -200,7 +238,7 @@ export default function AdminDashboard() {
                         <CardContent>
                             <div className="text-xl font-black text-white">{item.value}</div>
                             <div className="flex items-center gap-1.5 mt-1">
-                                <span className={`text-[10px] font-bold ${item.change.includes('+') || !item.change.includes('-') ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                <span className={`text-[10px] font-bold ${item.changeClass}`}>
                                     {item.change}
                                 </span>
                                 <span className="text-[10px] text-white/30 font-medium">{item.detail}</span>
@@ -258,7 +296,7 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="h-[280px] flex flex-col items-center justify-center text-white/20 gap-3 border border-dashed border-white/5 rounded-2xl">
                                 <Activity className="w-8 h-8 opacity-20" />
-                                <span className="text-sm">매출 데이터를 분석하고 있습니다...</span>
+                                <span className="text-sm">없음</span>
                             </div>
                         )}
                     </CardContent>
@@ -309,7 +347,7 @@ export default function AdminDashboard() {
                                 {s.recentOrders.length > 0 ? (
                                     s.recentOrders.map((o) => (
                                         <Link
-                                            key={o.orderNumber}
+                                            key={o.id}
                                             href={typeof o.id === 'number' ? `/admin/orders?detail=${o.id}` : '/admin/orders'}
                                             className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/[0.03] transition-all group border border-transparent hover:border-white/5"
                                         >
@@ -340,7 +378,7 @@ export default function AdminDashboard() {
                                 ) : (
                                     <div className="flex flex-col items-center justify-center py-10 opacity-20">
                                         <ShoppingBag className="w-8 h-8 mb-2" />
-                                        <p className="text-[11px] font-bold">표시할 주문이 없습니다</p>
+                                        <p className="text-[11px] font-bold">없음</p>
                                     </div>
                                 )}
                             </div>
@@ -387,7 +425,7 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="flex flex-col items-center justify-center text-white/20 gap-3 h-full border border-dashed border-white/5 rounded-2xl">
                                 <Users className="w-8 h-8 opacity-20" />
-                                <span className="text-sm">유입 경로를 추적하고 있습니다...</span>
+                                <span className="text-sm">없음</span>
                             </div>
                         )}
                     </CardContent>
@@ -431,7 +469,7 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="h-[220px] flex flex-col items-center justify-center text-white/20 gap-3 border border-dashed border-white/5 rounded-2xl">
                                 <Activity className="w-8 h-8 opacity-20" />
-                                <span className="text-sm">방문자 데이터를 분석중입니다...</span>
+                                <span className="text-sm">없음</span>
                             </div>
                         )}
                     </CardContent>
