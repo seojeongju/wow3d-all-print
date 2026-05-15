@@ -22,7 +22,7 @@ export function KakaoChannelFab({ visible }: Props) {
     if (!visible || !chatUrl) return null;
 
     return (
-        <div className="fixed bottom-5 right-5 z-[60] flex flex-col items-end gap-2 sm:bottom-8 sm:right-8">
+        <div className="fixed bottom-24 right-4 z-[55] flex flex-col items-end gap-2 sm:bottom-8 sm:right-8 sm:z-[60]">
             {open && (
                 <div className="w-[min(18rem,calc(100vw-2.5rem))] rounded-2xl border border-[#FEE500]/40 bg-[#0c0c0c]/95 p-4 shadow-2xl backdrop-blur-md">
                     <div className="flex items-start justify-between gap-2 mb-3">

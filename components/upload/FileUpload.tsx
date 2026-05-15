@@ -72,7 +72,7 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
         <div
             {...getRootProps()}
             className={cn(
-                "relative border-2 border-dashed rounded-[2.5rem] p-10 sm:p-14 transition-all duration-500 cursor-pointer flex flex-col items-center justify-center text-center group overflow-hidden",
+                "relative border-2 border-dashed rounded-[2rem] sm:rounded-[2.5rem] p-8 sm:p-14 min-h-[200px] sm:min-h-0 transition-all duration-500 cursor-pointer flex flex-col items-center justify-center text-center group overflow-hidden touch-manipulation",
                 isDark
                     ? isDragActive
                         ? "border-teal-400 bg-teal-400/10 scale-[1.01] shadow-[0_0_50px_rgba(20,184,166,0.15)]"

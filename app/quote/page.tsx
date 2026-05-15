@@ -14,7 +14,8 @@ import { useSearchParams } from "next/navigation";
 function QuoteContent() {
     const { file, analysis, reset, setFile } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
-    const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('viewer'); // Mobile tab state
+    // 모바일: 기본은 업로드 패널(견적 설정). 'viewer'만 보이면 FileUpload가 숨겨져 업로드 불가 이슈 발생
+    const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');
     const searchParams = useSearchParams();
     const loadQuoteId = searchParams.get('load_quote_id');
     const [loadedQuote, setLoadedQuote] = useState<any>(null); // DB quote data
@@ -151,7 +152,7 @@ function QuoteContent() {
             </header>
 
             {/* 본문: 중첩 section/div 제거 + min-height로 뷰어 열 높이 보장 */}
-            <section className="flex-1 relative z-10 flex min-h-0 flex-col">
+            <section className="flex-1 relative z-10 flex min-h-0 flex-col pb-[4.5rem] lg:pb-0">
                 <div className="flex-1 min-h-0 grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr] overflow-hidden min-h-[calc(100dvh-5rem)]">
 
                     {/* Left Sidebar: Settings Panel */}
@@ -160,7 +161,7 @@ function QuoteContent() {
                         ${activeTab === 'settings' ? 'flex flex-1' : 'hidden lg:flex'}
                         lg:h-[calc(100vh-5rem)]
                     `}>
-                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-8 pb-10 space-y-8">
+                        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-8 pb-24 lg:pb-10 space-y-8">
                             <AnimatePresence mode="wait">
                                 {step === 1 ? (
                                     // 파일 있음 + 분석 대기
@@ -298,40 +299,37 @@ function QuoteContent() {
                             </div>
 
                             {!file && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
-                                        <Boxes className="w-10 h-10 sm:w-12 sm:h-12 text-white/10" />
-                                        <div className="absolute inset-0 rounded-full border border-teal-400/20 scale-150 blur-xl" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-5">
+                                    <div className="pointer-events-none flex flex-col items-center">
+                                        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
+                                            <Boxes className="w-10 h-10 sm:w-12 sm:h-12 text-white/10" />
+                                            <div className="absolute inset-0 rounded-full border border-teal-400/20 scale-150 blur-xl" />
+                                        </div>
+                                        <div className="mt-8 sm:mt-10 text-center space-y-2">
+                                            <p className="text-white/30 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
+                                            <p className="text-white/20 text-[11px] sm:text-sm font-medium italic break-keep">
+                                                파일을 업로드하면 3D 미리보기가 활성화됩니다.
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="mt-8 sm:mt-10 text-center space-y-2 px-6">
-                                        <p className="text-white/30 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
-                                        <p className="text-white/20 text-[11px] sm:text-sm font-medium italic">파일을 업로드하면 3D 미리보기가 활성화됩니다.</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Mobile Tab Switcher Overlay */}
-                            {file && analysis && (
-                                <div className="lg:hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-[30] flex bg-black/60 backdrop-blur-xl p-1 rounded-2xl border border-white/10 shadow-2xl">
                                     <button
+                                        type="button"
                                         onClick={() => setActiveTab('settings')}
-                                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black transition-all ${activeTab === 'settings' ? 'bg-teal-500 text-white shadow-lg' : 'text-white/60'}`}
+                                        className="pointer-events-auto mt-8 flex items-center justify-center gap-2 rounded-2xl bg-teal-500 px-6 py-3.5 text-sm font-black text-slate-950 shadow-[0_8px_30px_rgba(20,184,166,0.35)] active:scale-[0.98] transition-transform lg:hidden"
                                     >
-                                        설정
+                                        <FileBox className="h-5 w-5" />
+                                        모델 파일 업로드
                                     </button>
-                                    <button
-                                        onClick={() => setActiveTab('viewer')}
-                                        className={`px-6 py-2.5 rounded-xl text-[13px] font-black transition-all ${activeTab === 'viewer' ? 'bg-teal-500 text-white shadow-lg' : 'text-white/60'}`}
-                                    >
-                                        뷰어
-                                    </button>
+                                    <p className="pointer-events-none mt-3 text-center text-[10px] text-white/35 lg:hidden break-keep">
+                                        아래 「파일 업로드」 탭에서도 선택할 수 있어요
+                                    </p>
                                 </div>
                             )}
                         </div>
 
                         {/* Bottom Info Bar - 모바일 대응 */}
-                        <div className="h-20 sm:h-24 border-t border-white/10 bg-black/60 backdrop-blur-xl flex items-center px-6 sm:px-12 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
-                            <div className="flex-1 flex items-center gap-6 sm:gap-12 text-[10px] sm:text-[12px] font-black tracking-[0.1em] sm:tracking-[0.25em] uppercase text-white/50 overflow-x-auto no-scrollbar whitespace-nowrap">
+                        <div className="h-16 sm:h-24 border-t border-white/10 bg-black/60 backdrop-blur-xl flex items-center px-4 sm:px-12 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+                            <div className="flex-1 flex items-center gap-4 sm:gap-12 text-[9px] sm:text-[12px] font-black tracking-[0.08em] sm:tracking-[0.25em] uppercase text-white/50 overflow-x-auto no-scrollbar whitespace-nowrap">
                                 <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                                     <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.5)]" />
                                     30종+ 고성능 소재
@@ -345,12 +343,41 @@ function QuoteContent() {
                                     ±0.1mm 정밀 제작
                                 </div>
                             </div>
-                            <div className="ml-6 sm:ml-auto text-right shrink-0">
-                                <div className="text-[12px] sm:text-[14px] font-black text-white/20 tracking-[0.1em] uppercase">MASTER Pro</div>
-                                <div className="text-[8px] sm:text-[10px] font-bold text-teal-400/40 tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-0.5">Industrial Intelligence</div>
+                            <div className="ml-3 sm:ml-auto text-right shrink-0 hidden sm:block">
+                                <div className="text-[10px] sm:text-[14px] font-black text-white/20 tracking-[0.1em] uppercase">MASTER Pro</div>
+                                <div className="text-[7px] sm:text-[10px] font-bold text-teal-400/40 tracking-[0.15em] sm:tracking-[0.3em] uppercase mt-0.5 max-w-[100px] sm:max-w-none leading-tight">
+                                    Industrial Intelligence
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* 모바일: 업로드 ↔ 뷰어 항상 전환 가능 (기존은 file+분석 후에만 탭 노출 → 업로드 UI 도달 불가) */}
+                <div
+                    className="lg:hidden fixed inset-x-0 bottom-0 z-[60] flex border-t border-white/15 bg-black/85 backdrop-blur-xl px-2 pt-1.5 shadow-[0_-12px_40px_rgba(0,0,0,0.45)]"
+                    style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+                >
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('settings')}
+                        className={`flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[11px] font-black transition-colors ${
+                            activeTab === 'settings' ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-white/55 active:bg-white/10'
+                        }`}
+                    >
+                        <FileBox className="h-5 w-5" />
+                        파일 업로드
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('viewer')}
+                        className={`flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[11px] font-black transition-colors ${
+                            activeTab === 'viewer' ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-white/55 active:bg-white/10'
+                        }`}
+                    >
+                        <Boxes className="h-5 w-5" />
+                        3D 뷰어
+                    </button>
                 </div>
             </section>
         </main>
