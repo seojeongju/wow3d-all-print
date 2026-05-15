@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 
 /** DB 주문 금액 단위 → 원화 (주문관리·견적서 수정과 동일) */
 // 금액은 DB/API에서 원화(KRW)로 저장·전달됨
@@ -10,10 +10,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PenLine, Printer, ChevronDown, ChevronUp, Search, Loader2, Mail } from 'lucide-react'; // Force redeploy 2026-05-06 13:46
+import { PenLine, Printer, ChevronDown, ChevronUp, Search, Loader2, Mail, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
+
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 400;
+
+type OrdersPagination = { page: number; limit: number; total: number; totalPages: number };
 
 export default function QuoteList() {
     const { toast } = useToast();
@@ -21,57 +26,76 @@ export default function QuoteList() {
     const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
+    const [pagination, setPagination] = useState<OrdersPagination>({
+        page: 1,
+        limit: PAGE_SIZE,
+        total: 0,
+        totalPages: 1,
+    });
+    const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const prevDebouncedRef = useRef('');
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
     const [sendQuotationOrderId, setSendQuotationOrderId] = useState<number | null>(null);
     const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(new Set());
     const [showMergedSendDialog, setShowMergedSendDialog] = useState(false);
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
+        setLoading(true);
         try {
-            const res = await fetch('/api/admin/orders', {
+            const params = new URLSearchParams({
+                paginated: '1',
+                page: String(page),
+                limit: String(PAGE_SIZE),
+            });
+            if (debouncedSearch) params.set('q', debouncedSearch);
+            const res = await fetch(`/api/admin/orders?${params}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 cache: 'no-store',
             });
             const data = await res.json();
-            if (data.success) {
-                setOrders(data.data || []);
+            if (data.success && data.data?.items) {
+                setOrders(data.data.items || []);
+                setPagination(
+                    data.data.pagination || {
+                        page: 1,
+                        limit: PAGE_SIZE,
+                        total: 0,
+                        totalPages: 1,
+                    }
+                );
+            } else {
+                throw new Error(data.error || '목록 형식 오류');
             }
-        } catch (e) {
+        } catch {
             toast({ title: '목록 조회 실패', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
-    };
+    }, [token, toast, page, debouncedSearch]);
 
-    useEffect(() => { fetchOrders(); }, []);
+    useEffect(() => {
+        const t = setTimeout(() => {
+            const next = searchQuery.trim();
+            if (prevDebouncedRef.current === next) return;
+            prevDebouncedRef.current = next;
+            setDebouncedSearch(next);
+            setPage(1);
+        }, SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
 
     // 견적서 수정 페이지에서 돌아올 때 목록 새로고침 (수정견적 금액 반영)
     useEffect(() => {
         const onFocus = () => fetchOrders();
         window.addEventListener('focus', onFocus);
         return () => window.removeEventListener('focus', onFocus);
-    }, []);
-
-    const filtered = useMemo(() => {
-        const q = searchQuery.trim().toLowerCase();
-        if (!q) return orders;
-        return orders.filter((o) => {
-            // 주문번호, 수령인 이름, 이메일 검색
-            if ((o.order_number || '').toLowerCase().includes(q)) return true;
-            if ((o.recipient_name || '').toLowerCase().includes(q)) return true;
-            if ((o.user_email || '').toLowerCase().includes(q)) return true;
-            if ((o.guest_email || '').toLowerCase().includes(q)) return true;
-            // 파일명 검색 (items_summary JSON에서 추출)
-            try {
-                const items = typeof o.items_summary === 'string'
-                    ? JSON.parse(o.items_summary)
-                    : (Array.isArray(o.items_summary) ? o.items_summary : []);
-                if (items.some((it: any) => (it.file_name || '').toLowerCase().includes(q))) return true;
-            } catch { }
-            return false;
-        });
-    }, [orders, searchQuery]);
+    }, [fetchOrders]);
 
     // 전문가 견적 데이터 파싱 (snake_case / camelCase 모두 처리)
     const parseExpertQuote = (order: any) => {
@@ -222,7 +246,39 @@ export default function QuoteList() {
         });
     };
 
-    if (loading) {
+    const { totalPages, total } = pagination;
+    const showPagination = totalPages > 1;
+
+    const renderPageButtons = () => {
+        if (!showPagination) return null;
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2));
+        let endPage = startPage + maxPagesToShow - 1;
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+        const buttons: React.ReactNode[] = [];
+        for (let i = startPage; i <= endPage; i++) {
+            buttons.push(
+                <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    className={`min-w-[2.25rem] h-9 px-2 rounded-lg text-sm font-bold transition-colors ${
+                        page === i
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                >
+                    {i}
+                </button>
+            );
+        }
+        return buttons;
+    };
+
+    if (loading && orders.length === 0) {
         return <div className="flex justify-center p-12"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
     }
 
@@ -238,13 +294,24 @@ export default function QuoteList() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                     <Input
                         type="search"
-                        placeholder="주문번호, 고객명 검색..."
+                        placeholder="주문번호, 고객명, 이메일, 파일명 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45"
                     />
                 </div>
                 <div className="ml-auto flex items-center gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="bg-white/5 border-white/10 text-white/80 hover:bg-white/10 text-xs h-9 px-3 rounded-xl"
+                        onClick={() => fetchOrders()}
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        <span className="ml-1.5 hidden sm:inline">새로고침</span>
+                    </Button>
                     <Button
                         size="sm"
                         className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-xs h-9 px-4 rounded-xl transition-all"
@@ -268,20 +335,25 @@ export default function QuoteList() {
 
             <Card className="bg-white/[0.03] border-white/10 overflow-hidden">
                 <CardContent className="p-0">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto relative">
+                        {loading && orders.length > 0 && (
+                            <div className="absolute inset-0 z-10 bg-black/25 flex items-center justify-center pointer-events-none">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        )}
                         <table className="w-full text-sm text-left">
                             <thead>
                                 <tr className="border-b border-white/10 bg-white/[0.02]">
                                     <th className="p-4 font-medium text-white/95 w-10 text-center">
                                         <input
                                             type="checkbox"
-                                            checked={filtered.length > 0 && filtered.every((o) => selectedOrderIds.has(o.id))}
+                                            checked={orders.length > 0 && orders.every((o) => selectedOrderIds.has(o.id))}
                                             onChange={(e) => {
                                                 const checked = e.target.checked;
                                                 setSelectedOrderIds((prev) => {
                                                     const next = new Set(prev);
-                                                    if (checked) filtered.forEach((o) => next.add(o.id));
-                                                    else filtered.forEach((o) => next.delete(o.id));
+                                                    if (checked) orders.forEach((o) => next.add(o.id));
+                                                    else orders.forEach((o) => next.delete(o.id));
                                                     return next;
                                                 });
                                             }}
@@ -301,7 +373,7 @@ export default function QuoteList() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((order) => {
+                                {orders.map((order) => {
                                     const expertData = parseExpertQuote(order);
                                     const expertAmount = expertData?.total_amount;
                                     const isExpanded = expandedRows.has(order.id);
@@ -520,7 +592,7 @@ export default function QuoteList() {
                                         </React.Fragment>
                                     );
                                 })}
-                                {filtered.length === 0 && (
+                                {orders.length === 0 && !loading && (
                                     <tr>
                                         <td colSpan={10} className="p-12 text-center text-white/40">
                                             데이터가 없습니다.
@@ -530,6 +602,41 @@ export default function QuoteList() {
                             </tbody>
                         </table>
                     </div>
+
+                    {(showPagination || total > 0) && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-white/10 bg-white/[0.02]">
+                            <p className="text-xs text-white/40 font-medium order-2 sm:order-1">
+                                총 <span className="text-white/70 font-bold">{total.toLocaleString()}</span>건 · {page}/{totalPages} 페이지
+                            </p>
+                            {showPagination && (
+                                <div className="flex items-center gap-2 order-1 sm:order-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="bg-white/5 border-white/10 h-9 w-9 p-0 text-white"
+                                        disabled={page <= 1 || loading}
+                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        aria-label="이전 페이지"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+                                    <div className="flex items-center gap-1">{renderPageButtons()}</div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="bg-white/5 border-white/10 h-9 w-9 p-0 text-white"
+                                        disabled={page >= totalPages || loading}
+                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                        aria-label="다음 페이지"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

@@ -1,14 +1,14 @@
 'use client';
 
 import { correctDisplayAmount } from '@/lib/amount-display';
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Download, Loader2, Eye, FileDown, Printer, Send } from 'lucide-react';
+import { Search, Download, Loader2, Eye, FileDown, Printer, Send, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -27,6 +27,11 @@ import {
 } from '@/components/ui/dialog';
 
 /** 금액은 DB에서 원화(KRW)로 저장·표시 - 2026-05-06 Status Order Fix */
+
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 400;
+
+type OrdersPagination = { page: number; limit: number; total: number; totalPages: number };
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'pending', label: '접수 대기' },
@@ -57,12 +62,21 @@ type DetailData = { order: Record<string, unknown>; items: Record<string, unknow
 
 function OrderListInner() {
     const { toast } = useToast();
-    const { user, token } = useAuthStore();
+    const { token } = useAuthStore();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
+    const [pagination, setPagination] = useState<OrdersPagination>({
+        page: 1,
+        limit: PAGE_SIZE,
+        total: 0,
+        totalPages: 1,
+    });
+    const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const prevDebouncedRef = useRef('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [scopeFilter, setScopeFilter] = useState<'all' | 'mine'>('all');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -76,22 +90,62 @@ function OrderListInner() {
     // 상태를 제작중으로 변경 시 수정 견적 금액 확인 다이얼로그
     const [confirmProductionDialog, setConfirmProductionDialog] = useState<{ orderId: number; expertAmount: number; autoAmount: number } | null>(null);
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
+        setLoading(true);
         try {
-            const res = await fetch('/api/admin/orders', {
+            const params = new URLSearchParams({
+                paginated: '1',
+                page: String(page),
+                limit: String(PAGE_SIZE),
+            });
+            if (debouncedSearch) params.set('q', debouncedSearch);
+            if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
+            if (scopeFilter === 'mine') params.set('mine', '1');
+            const res = await fetch(`/api/admin/orders?${params}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
+                cache: 'no-store',
             });
             const data = await res.json();
-            if (data.success) setOrders(data.data || []);
+            if (data.success && data.data?.items) {
+                const pag = data.data.pagination || {
+                    page: 1,
+                    limit: PAGE_SIZE,
+                    total: 0,
+                    totalPages: 1,
+                };
+                setOrders(data.data.items || []);
+                setPagination(pag);
+                if (pag.totalPages >= 1 && page > pag.totalPages) {
+                    setPage(pag.totalPages);
+                }
+            } else {
+                throw new Error(data.error || '목록 형식 오류');
+            }
         } catch (e) {
             console.error('Failed to fetch orders', e);
             toast({ title: '주문 목록 조회 실패', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
-    };
+    }, [token, toast, page, debouncedSearch, statusFilter, scopeFilter]);
 
-    useEffect(() => { fetchOrders(); }, []);
+    useEffect(() => {
+        const t = setTimeout(() => {
+            const next = searchQuery.trim();
+            if (prevDebouncedRef.current === next) return;
+            prevDebouncedRef.current = next;
+            setDebouncedSearch(next);
+            setPage(1);
+        }, SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
+
+
+    useEffect(() => {
+        const onFocus = () => fetchOrders();
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, [fetchOrders]);
 
     // URL ?detail=id 에서 상세 아이디 읽기
     useEffect(() => {
@@ -166,57 +220,50 @@ function OrderListInner() {
         }
     };
 
-    const handleCsvDownload = () => {
-        const headers = ['주문번호', '고객명', '주문자', '이메일', '품목수', '금액', '상태', '날짜'];
-        const rows = filtered.map((o) => [
-            o.order_number || '',
-            o.recipient_name || '',
-            o.user_id ? (o.user_name || '-') : '비회원',
-            o.user_email || o.guest_email || '-',
-            String(o.item_count ?? 1),
-            String(Math.round(Number(o.total_amount || 0))),
-            o.status || '',
-            o.created_at ? new Date(o.created_at).toLocaleDateString('ko-KR') : '',
-        ]);
-        const BOM = '\uFEFF';
-        const csv = BOM + [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\r\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `wow3d-orders-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        toast({ title: 'CSV 다운로드 완료' });
-    };
-
-    const filtered = useMemo(() => {
-        let list = orders;
-        if (scopeFilter === 'mine' && user?.id) {
-            list = list.filter((o) => Number(o.user_id) === user.id);
-        }
-        const q = searchQuery.trim().toLowerCase();
-        if (q) {
-            list = list.filter((o) => {
-                // 주문번호, 수령인 이름, 이메일 검색
-                if ((o.order_number || '').toLowerCase().includes(q)) return true;
-                if ((o.recipient_name || '').toLowerCase().includes(q)) return true;
-                if ((o.user_email || '').toLowerCase().includes(q)) return true;
-                if ((o.guest_email || '').toLowerCase().includes(q)) return true;
-                // 파일명 검색 (items_summary JSON에서 추출)
-                try {
-                    const items = typeof o.items_summary === 'string'
-                        ? JSON.parse(o.items_summary)
-                        : (Array.isArray(o.items_summary) ? o.items_summary : []);
-                    if (items.some((it: any) => (it.file_name || '').toLowerCase().includes(q))) return true;
-                } catch { }
-                return false;
+    const handleCsvDownload = async () => {
+        try {
+            const params = new URLSearchParams({
+                paginated: '1',
+                page: '1',
+                limit: '500',
             });
+            if (debouncedSearch) params.set('q', debouncedSearch);
+            if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
+            if (scopeFilter === 'mine') params.set('mine', '1');
+            const res = await fetch(`/api/admin/orders?${params}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                cache: 'no-store',
+            });
+            const data = await res.json();
+            if (!data.success || !data.data?.items) {
+                toast({ title: 'CSV용 목록을 불러오지 못했습니다.', variant: 'destructive' });
+                return;
+            }
+            const rowsData = data.data.items as any[];
+            const headers = ['주문번호', '고객명', '주문자', '이메일', '품목수', '금액', '상태', '날짜'];
+            const rows = rowsData.map((o) => [
+                o.order_number || '',
+                o.recipient_name || '',
+                o.user_id ? (o.user_name || '-') : '비회원',
+                o.user_email || o.guest_email || '-',
+                String(o.item_count ?? 1),
+                String(Math.round(Number(o.total_amount || 0))),
+                o.status || '',
+                o.created_at ? new Date(o.created_at).toLocaleDateString('ko-KR') : '',
+            ]);
+            const BOM = '\uFEFF';
+            const csv = BOM + [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `wow3d-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            toast({ title: `CSV 다운로드 완료 (${rows.length}건)` });
+        } catch {
+            toast({ title: 'CSV 다운로드 실패', variant: 'destructive' });
         }
-        if (statusFilter && statusFilter !== 'all') {
-            list = list.filter((o) => o.status === statusFilter);
-        }
-        return list;
-    }, [orders, searchQuery, statusFilter, scopeFilter, user?.id]);
+    };
 
     const handleStatusChange = async (orderId: number, newStatus: string) => {
         // 제작중으로 변경 시 수정 견적 금액이 있으면 확인 다이얼로그 출력
@@ -346,7 +393,39 @@ function OrderListInner() {
 
 
 
-    if (loading) {
+    const { totalPages, total } = pagination;
+    const showPagination = totalPages > 1;
+
+    const renderPageButtons = () => {
+        if (!showPagination) return null;
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2));
+        let endPage = startPage + maxPagesToShow - 1;
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+        const buttons: ReactNode[] = [];
+        for (let i = startPage; i <= endPage; i++) {
+            buttons.push(
+                <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    className={`min-w-[2.25rem] h-9 px-2 rounded-lg text-sm font-bold transition-colors ${
+                        page === i
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                >
+                    {i}
+                </button>
+            );
+        }
+        return buttons;
+    };
+
+    if (loading && orders.length === 0) {
         return (
             <div className="flex justify-center p-12">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -365,14 +444,20 @@ function OrderListInner() {
                 <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.06] border border-white/10">
                     <button
                         type="button"
-                        onClick={() => setScopeFilter('all')}
+                        onClick={() => {
+                            setPage(1);
+                            setScopeFilter('all');
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         전체
                     </button>
                     <button
                         type="button"
-                        onClick={() => setScopeFilter('mine')}
+                        onClick={() => {
+                            setPage(1);
+                            setScopeFilter('mine');
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         내 주문
@@ -382,13 +467,13 @@ function OrderListInner() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
                     <Input
                         type="search"
-                        placeholder="주문번호, 고객명 검색..."
+                        placeholder="주문번호, 고객명, 이메일, 파일명 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45"
                     />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(v) => { setPage(1); setStatusFilter(v); }}>
                     <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
                         <SelectValue placeholder="상태 필터" />
                     </SelectTrigger>
@@ -401,14 +486,32 @@ function OrderListInner() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="border-white/20 text-white/90 hover:bg-white/10" onClick={handleCsvDownload}>
-                    <Download className="w-4 h-4 mr-2" /> CSV 다운로드
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="border-white/20 text-white/90 hover:bg-white/10"
+                        onClick={() => fetchOrders()}
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        <span className="ml-1.5 hidden sm:inline">새로고침</span>
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-white/20 text-white/90 hover:bg-white/10" onClick={handleCsvDownload}>
+                        <Download className="w-4 h-4 mr-2" /> CSV 다운로드
+                    </Button>
+                </div>
             </div>
 
             <Card className="bg-white/[0.03] border-white/10 overflow-hidden">
                 <CardContent className="p-0">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto relative">
+                        {loading && orders.length > 0 && (
+                            <div className="absolute inset-0 z-10 bg-black/25 flex items-center justify-center pointer-events-none">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        )}
                         <table className="w-full text-sm text-left">
                             <thead>
                                 <tr className="border-b border-white/10">
@@ -425,7 +528,7 @@ function OrderListInner() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((order) => (
+                                {orders.map((order) => (
                                     <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                         <td className="p-4 font-medium text-white">{order.order_number}</td>
                                         <td className="p-4 text-white/90">
@@ -546,16 +649,51 @@ function OrderListInner() {
                                         </td>
                                     </tr>
                                 ))}
-                                {filtered.length === 0 && (
+                                {orders.length === 0 && !loading && (
                                     <tr>
                                         <td colSpan={10} className="p-12 text-center text-white/40">
-                                            {orders.length === 0 ? '접수된 주문이 없습니다.' : '검색 결과가 없습니다.'}
+                                            접수된 주문이 없거나 조건에 맞는 주문이 없습니다.
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+
+                    {(showPagination || total > 0) && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-white/10 bg-white/[0.02]">
+                            <p className="text-xs text-white/40 font-medium order-2 sm:order-1">
+                                총 <span className="text-white/70 font-bold">{total.toLocaleString()}</span>건 · {page}/{totalPages} 페이지
+                            </p>
+                            {showPagination && (
+                                <div className="flex items-center gap-2 order-1 sm:order-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="bg-white/5 border-white/10 h-9 w-9 p-0 text-white"
+                                        disabled={page <= 1 || loading}
+                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                        aria-label="이전 페이지"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+                                    <div className="flex items-center gap-1">{renderPageButtons()}</div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="bg-white/5 border-white/10 h-9 w-9 p-0 text-white"
+                                        disabled={page >= totalPages || loading}
+                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                        aria-label="다음 페이지"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
