@@ -1,15 +1,24 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-    Search, Loader2, FileText, ShoppingCart, 
-    CheckCircle2, XCircle, Download, ExternalLink, 
-    MousePointer2, Clock, BarChart3, Filter
+import {
+    Search,
+    Loader2,
+    FileText,
+    Download,
+    ExternalLink,
+    MousePointer2,
+    Clock,
+    BarChart3,
+    Filter,
+    ChevronLeft,
+    ChevronRight,
+    XCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -37,73 +46,76 @@ type QuoteAnalytics = {
     traffic_medium: string | null;
 };
 
+type Stats = { total: number; ordered: number; incart: number; abandoned: number; draft: number };
+type Pagination = { page: number; limit: number; total: number; totalPages: number };
+
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 400;
+
 export default function QuoteAnalyticsPage() {
     const { toast } = useToast();
     const router = useRouter();
     const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
-    const [data, setData] = useState<QuoteAnalytics[]>([]);
+    const [items, setItems] = useState<QuoteAnalytics[]>([]);
+    const [stats, setStats] = useState<Stats>({ total: 0, ordered: 0, incart: 0, abandoned: 0, draft: 0 });
+    const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'ordered' | 'incart' | 'abandoned' | 'draft'>('all');
+    const [page, setPage] = useState(1);
 
-    const fetchData = async () => {
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch]);
+
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/quotes/analytics', {
+            const params = new URLSearchParams({
+                filter: statusFilter,
+                page: String(page),
+                limit: String(PAGE_SIZE),
+            });
+            if (debouncedSearch) params.set('q', debouncedSearch);
+            const res = await fetch(`/api/admin/quotes/analytics?${params}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 cache: 'no-store',
             });
             const json = await res.json();
-            if (json.success) {
-                setData(json.data || []);
+            if (json.success && json.data) {
+                setItems(json.data.items || []);
+                setStats(json.data.stats || { total: 0, ordered: 0, incart: 0, abandoned: 0, draft: 0 });
+                setPagination(
+                    json.data.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 }
+                );
             } else {
                 throw new Error(json.error || '데이터 로드 실패');
             }
-        } catch (e: any) {
-            toast({ title: '분석 데이터 조회 실패', description: e.message, variant: 'destructive' });
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast({ title: '분석 데이터 조회 실패', description: msg, variant: 'destructive' });
         } finally {
             setLoading(false);
         }
-    };
+    }, [token, toast, statusFilter, page, debouncedSearch]);
 
     useEffect(() => {
         fetchData();
-    }, []);
-
-    const filteredData = useMemo(() => {
-        return data.filter(item => {
-            // Search filter
-            const matchesSearch = searchQuery === '' || 
-                item.file_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (item.user_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (item.order_number || '').toLowerCase().includes(searchQuery.toLowerCase());
-
-            if (!matchesSearch) return false;
-
-            // Status filter
-            if (statusFilter === 'all') return true;
-            if (statusFilter === 'ordered') return item.order_number !== null;
-            if (statusFilter === 'incart') return item.is_in_cart > 0 && item.order_number === null;
-            if (statusFilter === 'abandoned') return item.total_price > 0 && item.order_number === null && item.is_in_cart === 0;
-            if (statusFilter === 'draft') return item.total_price === 0;
-
-            return true;
-        });
-    }, [data, searchQuery, statusFilter]);
-
-    const stats = useMemo(() => {
-        const total = data.length;
-        const ordered = data.filter(d => d.order_number !== null).length;
-        const incart = data.filter(d => d.is_in_cart > 0 && d.order_number === null).length;
-        const draft = data.filter(d => d.total_price === 0).length;
-        const abandoned = total - ordered - incart - draft;
-
-        return { total, ordered, incart, abandoned, draft };
-    }, [data]);
+    }, [fetchData]);
 
     const getStatusBadge = (item: QuoteAnalytics) => {
         if (item.order_number) {
-            return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">주문완료 ({item.order_number})</Badge>;
+            return (
+                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                    주문완료 ({item.order_number})
+                </Badge>
+            );
         }
         if (item.is_in_cart > 0) {
             return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">장바구니 보관 중</Badge>;
@@ -119,7 +131,7 @@ export default function QuoteAnalyticsPage() {
     const handleDownload = async (item: QuoteAnalytics) => {
         if (!item.file_url) return;
         setDownloadingId(item.id);
-        
+
         try {
             const res = await fetch(`/api/files/${item.file_url}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -127,7 +139,7 @@ export default function QuoteAnalyticsPage() {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || '파일 다운로드에 실패했습니다.');
+                throw new Error((errorData as { error?: string }).error || '파일 다운로드에 실패했습니다.');
             }
 
             const blob = await res.blob();
@@ -139,21 +151,58 @@ export default function QuoteAnalyticsPage() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            
+
             toast({ title: '다운로드 완료', description: `${item.file_name} 파일을 다운로드했습니다.` });
-        } catch (e: any) {
-            toast({ 
-                title: '다운로드 실패', 
-                description: e.message, 
-                variant: 'destructive' 
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast({
+                title: '다운로드 실패',
+                description: msg,
+                variant: 'destructive',
             });
         } finally {
             setDownloadingId(null);
         }
     };
 
-    if (loading && data.length === 0) {
-        return <div className="flex justify-center p-24"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
+    const { page: curPage, totalPages, total } = pagination;
+    const showPagination = totalPages > 1;
+
+    const renderPageButtons = () => {
+        if (!showPagination) return null;
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, curPage - Math.floor(maxPagesToShow / 2));
+        let endPage = startPage + maxPagesToShow - 1;
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+        const buttons: React.ReactNode[] = [];
+        for (let i = startPage; i <= endPage; i++) {
+            buttons.push(
+                <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    className={`min-w-[2.25rem] h-9 px-2 rounded-lg text-sm font-bold transition-colors ${
+                        curPage === i
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                >
+                    {i}
+                </button>
+            );
+        }
+        return buttons;
+    };
+
+    if (loading && items.length === 0) {
+        return (
+            <div className="flex justify-center p-24">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (
@@ -163,14 +212,15 @@ export default function QuoteAnalyticsPage() {
                     <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
                         <BarChart3 className="w-8 h-8 text-primary" /> 견적 유입 분석
                     </h1>
-                    <p className="text-white/50 text-sm mt-2 font-medium">사용자의 업로드 및 견적 산출 흐름을 실시간으로 모니터링합니다.</p>
+                    <p className="text-white/50 text-sm mt-2 font-medium">
+                        사용자의 업로드 및 견적 산출 흐름을 실시간으로 모니터링합니다.
+                    </p>
                 </div>
-                <Button onClick={fetchData} variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10">
+                <Button onClick={() => fetchData()} variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10">
                     <Clock className="w-4 h-4 mr-2" /> 새로고침
                 </Button>
             </div>
 
-            {/* Stats Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
                     { label: '전체 유입', value: stats.total, color: 'text-white', bg: 'bg-white/5' },
@@ -188,7 +238,6 @@ export default function QuoteAnalyticsPage() {
                 ))}
             </div>
 
-            {/* Filters */}
             <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-6 flex flex-col md:flex-row gap-4 items-center">
                     <div className="relative flex-1 w-full">
@@ -202,19 +251,26 @@ export default function QuoteAnalyticsPage() {
                     </div>
                     <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar pb-2 md:pb-0">
                         <Filter className="w-4 h-4 text-white/40 shrink-0" />
-                        {[
-                            { id: 'all', label: '전체' },
-                            { id: 'ordered', label: '주문완료' },
-                            { id: 'incart', label: '장바구니' },
-                            { id: 'abandoned', label: '견적이탈' },
-                            { id: 'draft', label: '단순업로드' },
-                        ].map((f) => (
+                        {(
+                            [
+                                { id: 'all', label: '전체' },
+                                { id: 'ordered', label: '주문완료' },
+                                { id: 'incart', label: '장바구니' },
+                                { id: 'abandoned', label: '견적이탈' },
+                                { id: 'draft', label: '단순업로드' },
+                            ] as const
+                        ).map((f) => (
                             <Button
                                 key={f.id}
                                 size="sm"
                                 variant={statusFilter === f.id ? 'default' : 'ghost'}
-                                onClick={() => setStatusFilter(f.id as any)}
-                                className={statusFilter === f.id ? '' : 'text-white/60 hover:text-white hover:bg-white/5'}
+                                onClick={() => {
+                                    setStatusFilter(f.id);
+                                    setPage(1);
+                                }}
+                                className={
+                                    statusFilter === f.id ? '' : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }
                             >
                                 {f.label}
                             </Button>
@@ -223,9 +279,13 @@ export default function QuoteAnalyticsPage() {
                 </CardContent>
             </Card>
 
-            {/* Main Table */}
             <Card className="bg-white/[0.03] border-white/10 overflow-hidden shadow-2xl">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto relative">
+                    {loading && items.length > 0 && (
+                        <div className="absolute inset-0 z-10 bg-black/20 flex items-center justify-center pointer-events-none">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    )}
                     <table className="w-full text-sm text-left">
                         <thead>
                             <tr className="border-b border-white/10 bg-white/[0.02]">
@@ -234,11 +294,13 @@ export default function QuoteAnalyticsPage() {
                                 <th className="p-4 font-black text-white/40 uppercase tracking-widest text-[10px]">견적 금액</th>
                                 <th className="p-4 font-black text-white/40 uppercase tracking-widest text-[10px]">고객/유입</th>
                                 <th className="p-4 font-black text-white/40 uppercase tracking-widest text-[10px]">일시</th>
-                                <th className="p-4 font-black text-white/40 uppercase tracking-widest text-[10px] text-right">액션</th>
+                                <th className="p-4 font-black text-white/40 uppercase tracking-widest text-[10px] text-right">
+                                    액션
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {filteredData.map((item) => (
+                            {items.map((item) => (
                                 <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
@@ -246,21 +308,24 @@ export default function QuoteAnalyticsPage() {
                                                 <FileText className="w-5 h-5 text-white/40" />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-white truncate max-w-[240px]" title={item.file_name}>{item.file_name}</p>
+                                                <p className="font-bold text-white truncate max-w-[240px]" title={item.file_name}>
+                                                    {item.file_name}
+                                                </p>
                                                 <p className="text-[10px] text-white/30 uppercase font-bold tracking-tight">
-                                                    {item.print_method?.toUpperCase()} · {(item.file_size / (1024 * 1024)).toFixed(2)}MB
+                                                    {item.print_method?.toUpperCase()} ·{' '}
+                                                    {(item.file_size / (1024 * 1024)).toFixed(2)}MB
                                                 </p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-4">
-                                        {getStatusBadge(item)}
-                                    </td>
+                                    <td className="p-4">{getStatusBadge(item)}</td>
                                     <td className="p-4">
                                         <p className="font-mono font-bold text-white">
                                             {item.total_price > 0 ? `₩ ${Math.round(item.total_price).toLocaleString()}` : '-'}
                                         </p>
-                                        <p className="text-[10px] text-white/30 font-bold">{item.volume_cm3 > 0 ? `${item.volume_cm3.toFixed(1)} cm³` : ''}</p>
+                                        <p className="text-[10px] text-white/30 font-bold">
+                                            {item.volume_cm3 > 0 ? `${item.volume_cm3.toFixed(1)} cm³` : ''}
+                                        </p>
                                     </td>
                                     <td className="p-4">
                                         <div className="space-y-1">
@@ -268,7 +333,12 @@ export default function QuoteAnalyticsPage() {
                                                 <div className="flex items-center gap-1.5">
                                                     <p className="text-white font-medium">{item.user_name || '비회원'}</p>
                                                     {(item.user_role === 'admin' || item.user_role === 'super_admin') && (
-                                                        <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1">관리자</Badge>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1"
+                                                        >
+                                                            관리자
+                                                        </Badge>
                                                     )}
                                                 </div>
                                                 {item.user_email && <p className="text-[10px] text-white/40">{item.user_email}</p>}
@@ -287,9 +357,9 @@ export default function QuoteAnalyticsPage() {
                                     <td className="p-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {item.file_url && (
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="ghost" 
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
                                                     className="h-8 w-8 p-0 hover:bg-white/10"
                                                     onClick={() => handleDownload(item)}
                                                     disabled={downloadingId === item.id}
@@ -303,11 +373,11 @@ export default function QuoteAnalyticsPage() {
                                                 </Button>
                                             )}
                                             {item.order_number && (
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="ghost" 
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
                                                     className="h-8 w-8 p-0 hover:bg-white/10"
-                                                    onClick={() => router.push(`/admin/orders`)} // 실제론 검색 파라미터 전달 가능
+                                                    onClick={() => router.push(`/admin/orders`)}
                                                     title="주문 보기"
                                                 >
                                                     <ExternalLink className="w-4 h-4 text-primary" />
@@ -318,7 +388,7 @@ export default function QuoteAnalyticsPage() {
                                 </tr>
                             ))}
 
-                            {filteredData.length === 0 && (
+                            {items.length === 0 && !loading && (
                                 <tr>
                                     <td colSpan={6} className="p-24 text-center">
                                         <div className="flex flex-col items-center gap-4 text-white/20">
@@ -331,6 +401,42 @@ export default function QuoteAnalyticsPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {(showPagination || total > 0) && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-white/10 bg-white/[0.02]">
+                        <p className="text-xs text-white/40 font-medium order-2 sm:order-1">
+                            총 <span className="text-white/70 font-bold">{total.toLocaleString()}</span>건 ·{' '}
+                            {curPage}/{totalPages} 페이지
+                        </p>
+                        {showPagination && (
+                            <div className="flex items-center gap-2 order-1 sm:order-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-white/5 border-white/10 h-9 w-9 p-0"
+                                    disabled={curPage <= 1 || loading}
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    aria-label="이전 페이지"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <div className="flex items-center gap-1">{renderPageButtons()}</div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-white/5 border-white/10 h-9 w-9 p-0"
+                                    disabled={curPage >= totalPages || loading}
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    aria-label="다음 페이지"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Card>
         </div>
     );

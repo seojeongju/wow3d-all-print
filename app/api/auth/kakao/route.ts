@@ -11,8 +11,8 @@ const KAKAO_SCOPE = ['profile_nickname', 'account_email'].join(',');
  * 쿼리: return (선택) - 로그인 후 돌아갈 URL
  */
 export async function GET(request: NextRequest) {
-    const envVars = (getCloudflareContext().env || {}) as unknown as Record<string, string | undefined>;
-    const clientId = process.env.KAKAO_REST_API_KEY || envVars.KAKAO_REST_API_KEY;
+    const cfEnv = (getCloudflareContext().env || {}) as unknown as Record<string, string | undefined>;
+    const clientId = (cfEnv.KAKAO_REST_API_KEY || process.env.KAKAO_REST_API_KEY || '').trim();
     if (!clientId) {
         return new Response(
             JSON.stringify({ error: '카카오 로그인이 설정되지 않았습니다. (KAKAO_REST_API_KEY)' }),
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const returnTo = url.searchParams.get('return') || '';
 
-    let redirectUri = envVars.KAKAO_REDIRECT_URI || process.env.KAKAO_REDIRECT_URI;
+    let redirectUri = cfEnv.KAKAO_REDIRECT_URI || process.env.KAKAO_REDIRECT_URI;
     if (!redirectUri) {
         const host = request.headers.get('host') || url.host;
         const proto = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '') || 'https';

@@ -48,14 +48,14 @@ export async function GET(request: NextRequest) {
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=server` } });
     }
 
-    const envVars = (getCloudflareContext().env || {}) as unknown as Record<string, string | undefined>;
-    const clientId = process.env.KAKAO_REST_API_KEY || envVars.KAKAO_REST_API_KEY;
-    const clientSecret = process.env.KAKAO_CLIENT_SECRET || envVars.KAKAO_CLIENT_SECRET;
+    const cfEnv = (getCloudflareContext().env || {}) as unknown as Record<string, string | undefined>;
+    const clientId = (cfEnv.KAKAO_REST_API_KEY || process.env.KAKAO_REST_API_KEY || '').trim();
+    const clientSecret = (cfEnv.KAKAO_CLIENT_SECRET || process.env.KAKAO_CLIENT_SECRET || '').trim();
     if (!clientId || !clientSecret) {
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=config` } });
     }
 
-    let redirectUri = envVars.KAKAO_REDIRECT_URI || process.env.KAKAO_REDIRECT_URI;
+    let redirectUri = cfEnv.KAKAO_REDIRECT_URI || process.env.KAKAO_REDIRECT_URI;
     if (!redirectUri) {
         const host = request.headers.get('host') || url.host;
         const proto = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '') || 'https';
