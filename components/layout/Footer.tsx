@@ -40,6 +40,9 @@ export default function Footer() {
                                 <span className="text-[10px] font-bold text-white/70 leading-tight mt-1.5">
                                     (주)와우쓰리디
                                 </span>
+                                <span className="text-[9px] font-medium text-white/45 leading-tight mt-0.5">
+                                    (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
+                                </span>
                             </div>
                         </Link>
 
@@ -121,7 +124,7 @@ export default function Footer() {
                 {/* Bottom Bar */}
                 <div className="mt-16 sm:mt-24 pt-6 sm:pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="text-[9px] sm:text-[10px] font-bold text-white/10 sm:text-white/20 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-center sm:text-left">
-                        {mounted ? `© ${new Date().getFullYear()} WOW3D PRO. (주)와우쓰리디. All rights reserved.` : '© WOW3D PRO.'}
+                        {mounted ? `© ${new Date().getFullYear()} WOW3D PRO. (주)와우쓰리디 / 3D쿠키홍대. All rights reserved.` : '© WOW3D PRO.'}
                     </div>
                     <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/25 sm:text-white/30">
                         <Link href="/terms" className="hover:text-teal-400 transition-colors">이용약관</Link>

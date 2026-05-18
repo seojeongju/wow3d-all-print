@@ -85,8 +85,8 @@ export default function Header() {
                         <span className={`text-[10px] sm:text-[11px] font-bold leading-tight mt-1 transition-colors ${isPastHero ? 'text-slate-600' : 'text-white/80'}`}>
                             (주)와우쓰리디
                         </span>
-                        <span className={`text-[9px] sm:text-[10px] font-medium leading-tight mt-0.5 transition-colors ${isPastHero ? 'text-slate-400' : 'text-white/50'}`}>
-                            <span className="text-teal-400 font-semibold">AI</span> 실시간 자동 견적시스템
+                        <span className={`text-[9px] sm:text-[10px] font-medium leading-tight mt-0.5 transition-colors ${isPastHero ? 'text-slate-400' : 'text-white/60'}`}>
+                            (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
                         </span>
                     </div>
                 </Link>
