@@ -123,9 +123,18 @@ export async function POST(request: NextRequest) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
         }
 
+        // 사전 검증: quoteId가 유효한 주문 항목만 허용
+        const validCartItems = (body.cartItems as any[]).filter((item) => {
+            const quoteId = Number(item?.quoteId);
+            return Number.isInteger(quoteId) && quoteId > 0;
+        });
+        if (validCartItems.length === 0) {
+            return errorResponse('유효한 주문 항목이 없습니다. 장바구니를 다시 확인해 주세요.', 400);
+        }
+
         const orderNumber = generateOrderNumber();
         const totalAmount = normalizeAmountBeforeSave(
-            body.cartItems.reduce((sum: number, item: any) => {
+            validCartItems.reduce((sum: number, item: any) => {
                 const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
                 const qty = Math.max(1, Number(item.quantity) || 1);
                 return sum + unitPrice * qty;
@@ -133,7 +142,7 @@ export async function POST(request: NextRequest) {
         );
 
         // [추가] 사전 검증: 모든 quoteId가 유효한지 확인
-        const itemIds = body.cartItems.map((i: any) => i.quoteId);
+        const itemIds = [...new Set(validCartItems.map((i: any) => Number(i.quoteId)))];
         const checkQuotes = await env.DB.prepare(
             `SELECT id FROM quotes WHERE id IN (${itemIds.map(() => '?').join(',')})`
         ).bind(...itemIds).all();
@@ -180,7 +189,7 @@ export async function POST(request: NextRequest) {
         const statements = [];
 
         // 1. 주문 항목 삽입
-        for (const item of body.cartItems) {
+        for (const item of validCartItems) {
             const qty = Math.max(1, Number(item.quantity) || 1);
             const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
             const subtotal = unitPrice * qty;
@@ -193,7 +202,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. 장바구니 삭제
-        const quoteIds = [...new Set((body.cartItems as { quoteId: number }[]).map((x) => x.quoteId))];
+        const quoteIds = [...new Set(validCartItems.map((x: any) => Number(x.quoteId)))];
         if (quoteIds.length > 0) {
             const placeholders = quoteIds.map(() => '?').join(',');
             if (isGuest) {
@@ -209,17 +218,19 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 3. 배송 정보 초기화
-        statements.push(
-            env.DB.prepare('INSERT INTO shipments (order_id) VALUES (?)').bind(orderId)
-        );
-
         // 배치 실행
         const batchResults = await env.DB.batch(statements);
-        const failedStep = batchResults.findIndex((r: any) => !r.success);
+        const failedStep = batchResults.findIndex((r: any) => r?.success === false || !!r?.error);
         if (failedStep !== -1) {
             console.error('주문 처리 단계 실패:', batchResults[failedStep]);
             throw new Error(`상세 주문 처리 중 오류 발생 (단계: ${failedStep})`);
+        }
+
+        // 배송 정보 초기화 (환경별 스키마 누락으로 주문 전체 실패하지 않도록 분리)
+        try {
+            await env.DB.prepare('INSERT INTO shipments (order_id) VALUES (?)').bind(orderId).run();
+        } catch (shipmentError) {
+            console.warn('shipments 초기화 실패(주문은 정상 접수됨):', shipmentError);
         }
 
         // 8. 관리자에게 알림 메일을 전송 (Cloudflare 환경 안정성을 위해 await 적용)
