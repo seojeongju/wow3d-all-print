@@ -27,8 +27,8 @@ export async function POST(
 
     try {
         const order = await env.DB.prepare(
-            'SELECT id, user_id, order_number, store_id FROM orders WHERE id = ?'
-        ).bind(numId).first() as { id: number; user_id: number | null; order_number: string; store_id: number | null } | null;
+            'SELECT id, user_id, order_number, store_id, view_token FROM orders WHERE id = ?'
+        ).bind(numId).first() as { id: number; user_id: number | null; order_number: string; store_id: number | null; view_token: string | null } | null;
 
         if (!order) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
@@ -98,7 +98,17 @@ export async function POST(
         const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || envVars.NEXT_PUBLIC_APP_URL || '';
         const isLocalhost = (u: string) => !u || /^https?:\/\/localhost(:\d+)?(\/|$)/i.test(u);
         const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
-        const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}`;
+
+        let viewToken = order?.view_token;
+        if (!viewToken) {
+            viewToken = crypto.randomUUID();
+            try {
+                await env.DB.prepare('UPDATE orders SET view_token = ? WHERE id = ?').bind(viewToken, numId).run();
+            } catch (err) {
+                console.warn('Failed to update missing view_token on send-quotation', err);
+            }
+        }
+        const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}?token=${viewToken}`;
 
         type ItemRow = { id?: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
         let itemsForPdf: ItemRow[] = [];

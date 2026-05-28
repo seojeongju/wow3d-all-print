@@ -41,6 +41,7 @@ export default function EstimatePrintPage() {
     const searchParams = useSearchParams();
     const id = params?.id;
     const isTemp = searchParams.get('temp') === 'true';
+    const token = searchParams.get('token');
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
@@ -50,12 +51,35 @@ export default function EstimatePrintPage() {
     useEffect(() => {
         if (!id) return;
 
-        // localStorage에 저장된 관리자 토큰
+        // 1. URL 보안 토큰(token)이 주어진 경우 -> 퍼블릭 고객용 API 1회 호출로 모두 처리
+        if (token) {
+            fetch(`/api/orders/${id}/estimate?token=${token}`)
+                .then(res => res.json())
+                .then(json => {
+                    if (json.success && json.data) {
+                        const { order, items, company: dbCompany } = json.data;
+                        setData({ order, items });
+                        if (dbCompany) {
+                            setCompany({ ...DEFAULT_COMPANY, ...dbCompany });
+                        }
+                    } else {
+                        setError(json.error || '견적 정보를 불러올 수 없습니다. 유효하지 않은 링크이거나 만료되었습니다.');
+                    }
+                })
+                .catch(err => {
+                    setError('데이터 로딩 실패');
+                    console.error(err);
+                })
+                .finally(() => setLoading(false));
+            return;
+        }
+
+        // 2. 관리자 모드인 경우 (토큰이 없고 localStorage에 관리자 토큰이 존재할 때)
         const savedToken = typeof window !== 'undefined' ? localStorage.getItem('admin_print_token') : null;
         const authHeader: Record<string, string> = {};
         if (savedToken) authHeader['Authorization'] = `Bearer ${savedToken}`;
 
-        // 회사 정보 로드 (인증 토큰이 있을 때)
+        // 회사 정보 로드 (관리자 인증 토큰이 있을 때)
         if (savedToken) {
             fetch('/api/admin/company', { headers: authHeader })
                 .then(r => r.json())
@@ -95,7 +119,7 @@ export default function EstimatePrintPage() {
                 console.error(err);
             })
             .finally(() => setLoading(false));
-    }, [id, isTemp]);
+    }, [id, isTemp, token]);
 
     // 인쇄/PDF 시 브라우저 제목 통일 (훅 규칙: 조건부 return 이전에 호출)
     const orderNumber = data?.order?.order_number;

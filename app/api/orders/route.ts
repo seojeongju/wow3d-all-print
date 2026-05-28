@@ -147,13 +147,14 @@ export async function POST(request: NextRequest) {
         }
 
         const isGuest = auth.isGuest;
+        const viewToken = crypto.randomUUID();
         const orderResult = await env.DB
             .prepare(`
         INSERT INTO orders (
           user_id, session_id, guest_email, order_number,
           recipient_name, recipient_phone, shipping_address, shipping_postal_code,
-          total_amount, customer_note
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          total_amount, customer_note, view_token
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
             .bind(
                 isGuest ? null : auth.userId,
@@ -165,7 +166,8 @@ export async function POST(request: NextRequest) {
                 body.shippingAddress,
                 body.shippingPostalCode || null,
                 totalAmount,
-                body.customerNote || null
+                body.customerNote || null,
+                viewToken
             )
             .run();
 
