@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Search, Download, Loader2, Eye, FileDown, Printer, Send, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import JSZip from 'jszip';
 import {
     Select,
     SelectContent,
@@ -150,6 +151,15 @@ function OrderListInner() {
         window.addEventListener('focus', onFocus);
         return () => window.removeEventListener('focus', onFocus);
     }, [fetchOrders]);
+
+    // URL ?status= 필터
+    useEffect(() => {
+        const status = searchParams.get('status');
+        if (status && STATUS_OPTIONS.some((o) => o.value === status)) {
+            setStatusFilter(status);
+            setPage(1);
+        }
+    }, [searchParams]);
 
     // URL ?detail=id 에서 상세 아이디 읽기
     useEffect(() => {
@@ -367,31 +377,89 @@ function OrderListInner() {
             return;
         }
 
-        toast({ title: `${filesToDownload.length}개 파일 다운로드 시작...` });
+        // 전체 압축 다운로드 진행 중 로딩 상태 표시 (UI 상에서 스피너 비활성화 처리를 위해 downloadingFileId를 -1로 임시 지정)
+        setDownloadingFileId(-1);
+        toast({ 
+            title: `📦 ${filesToDownload.length}개 파일 압축 및 다운로드 시작...`, 
+            description: '서버에서 바이너리 파일을 받아 브라우저 메모리상에서 압축을 진행 중입니다.' 
+        });
 
-        let successCount = 0;
-        let failCount = 0;
+        try {
+            const zip = new JSZip();
+            let successCount = 0;
+            let failCount = 0;
 
-        for (const item of filesToDownload) {
-            try {
-                await handleFileDownload(Number(orderIdToUse), Number(item.id), Number(item.quote_id), String(item.file_name));
-                successCount++;
-                // 다운로드 사이에 약간의 지연 추가 (브라우저가 처리할 시간 제공)
-                await new Promise(resolve => setTimeout(resolve, 500));
-            } catch (e) {
-                failCount++;
-                console.error(`Failed to download ${item.file_name}:`, e);
+            // R2 API를 통해 각 모델링 파일 데이터를 순차 fetch하여 zip 객체에 추가
+            for (const item of filesToDownload) {
+                try {
+                    const url = `/api/admin/orders/${orderIdToUse}/file?quoteId=${item.quote_id}`;
+                    const headers: HeadersInit = {};
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+                    
+                    const res = await fetch(url, { headers });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err?.error || '다운로드 실패');
+                    }
+                    
+                    const blob = await res.blob();
+                    const fileName = item.file_name || `model_${item.id}.stl`;
+                    
+                    // JSZip 객체에 바이너리 파일 추가
+                    zip.file(fileName, blob);
+                    successCount++;
+                } catch (e) {
+                    failCount++;
+                    console.error(`Failed to fetch ${item.file_name} for zipping:`, e);
+                }
             }
-        }
 
-        if (failCount === 0) {
-            toast({ title: `✅ ${successCount}개 파일 다운로드 완료` });
-        } else {
+            if (successCount === 0) {
+                throw new Error('성공적으로 로드된 모델링 파일이 없습니다.');
+            }
+
+            // 브라우저 사이드에서 ZIP 압축 파일 생성
+            const zipContent = await zip.generateAsync({ type: 'blob' });
+            const downloadUrl = window.URL.createObjectURL(zipContent);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+
+            // 압축 파일명 정의: [주문번호]_modeling_files.zip (주문번호 미조회 시 order_id 대체)
+            let zipFileName = `order_${orderIdToUse}_modeling_files.zip`;
+            const currentOrder = orders.find(o => o.id === orderIdToUse) || detailData?.order;
+            if (currentOrder && currentOrder.order_number) {
+                zipFileName = `${currentOrder.order_number}_modeling_files.zip`;
+            }
+
+            link.download = zipFileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+
+            if (failCount === 0) {
+                toast({ 
+                    title: `✅ 압축 다운로드 완료`, 
+                    description: `총 ${successCount}개의 모델링 파일이 성공적으로 압축 및 저장되었습니다.` 
+                });
+            } else {
+                toast({
+                    title: `압축 다운로드 완료 (일부 파일 누락)`,
+                    description: `성공: ${successCount}개, 실패: ${failCount}개. 실패한 파일은 개별 다운로드를 이용해 주세요.`,
+                    variant: 'default',
+                });
+            }
+        } catch (e) {
             toast({
-                title: `다운로드 완료`,
-                description: `성공: ${successCount}개, 실패: ${failCount}개`,
-                variant: failCount > successCount ? 'destructive' : 'default',
+                title: '❌ 압축 다운로드 실패',
+                description: e instanceof Error ? e.message : '압축 파일을 생성하는 도중 오류가 발생했습니다.',
+                variant: 'destructive',
             });
+        } finally {
+            // 로딩 종료
+            setDownloadingFileId(null);
         }
     };
 

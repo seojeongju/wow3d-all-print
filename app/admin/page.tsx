@@ -5,9 +5,10 @@ import Link from 'next/link';
 import {
     Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 type SalesTrend = {
     date: string;
@@ -69,8 +70,9 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
     const { toast } = useToast();
+    const isSuperAdmin = user?.role === 'super_admin' || user?.store_id === 1;
 
     useEffect(() => {
         const load = async () => {
@@ -172,6 +174,8 @@ export default function AdminDashboard() {
                         icon: DollarSign,
                         color: 'text-emerald-400',
                         bg: 'bg-emerald-500/10',
+                        href: '/admin/orders',
+                        ariaLabel: '이번 달 매출 — 주문 관리에서 확인',
                     },
                     {
                         title: '신규 주문',
@@ -182,6 +186,8 @@ export default function AdminDashboard() {
                         icon: ShoppingBag,
                         color: 'text-blue-400',
                         bg: 'bg-blue-500/10',
+                        href: s.pendingOrdersCount > 0 ? '/admin/orders?status=pending' : '/admin/orders',
+                        ariaLabel: s.pendingOrdersCount > 0 ? '대기 중인 주문 보기' : '주문 관리로 이동',
                     },
                     {
                         title: '활성 사용자',
@@ -192,6 +198,8 @@ export default function AdminDashboard() {
                         icon: Users,
                         color: 'text-purple-400',
                         bg: 'bg-purple-500/10',
+                        href: isSuperAdmin ? '/admin/users' : undefined,
+                        ariaLabel: '사용자 관리',
                     },
                     {
                         title: '장비 가동률',
@@ -205,6 +213,8 @@ export default function AdminDashboard() {
                         icon: Activity,
                         color: 'text-orange-400',
                         bg: 'bg-orange-500/10',
+                        href: '/admin/settings?tab=pricing',
+                        ariaLabel: '운영 지표 설정',
                     },
                     {
                         title: '견적 요청',
@@ -215,6 +225,8 @@ export default function AdminDashboard() {
                         icon: FileText,
                         color: 'text-pink-400',
                         bg: 'bg-pink-500/10',
+                        href: '/admin/quotes',
+                        ariaLabel: '견적 관리',
                     },
                     {
                         title: '미확인 문의',
@@ -225,37 +237,70 @@ export default function AdminDashboard() {
                         icon: MessageSquare,
                         color: 'text-cyan-400',
                         bg: 'bg-cyan-500/10',
+                        href: '/admin/inquiries?status=new',
+                        ariaLabel: '미확인 문의 보기',
                     },
-                ].map((item, i) => (
-                    <Card key={i} className="bg-[#0f0f0f] border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                        <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity rounded-full -mr-4 -mt-4 ${item.bg}`} />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-[11px] font-bold text-white/40 uppercase tracking-wider">{item.title}</CardTitle>
-                            <div className={`p-1.5 rounded-lg ${item.bg} ${item.color}`}>
-                                <item.icon className="h-3.5 w-3.5" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xl font-black text-white">{item.value}</div>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className={`text-[10px] font-bold ${item.changeClass}`}>
-                                    {item.change}
-                                </span>
-                                <span className="text-[10px] text-white/30 font-medium">{item.detail}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                ].map((item, i) => {
+                    const card = (
+                        <Card
+                            className={cn(
+                                'bg-[#0f0f0f] border-white/5 transition-all group relative overflow-hidden h-full',
+                                item.href
+                                    ? 'hover:border-primary/30 hover:bg-white/[0.02] cursor-pointer'
+                                    : 'hover:border-white/10'
+                            )}
+                        >
+                            <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity rounded-full -mr-4 -mt-4 ${item.bg}`} />
+                            {item.href && (
+                                <ChevronRight className="absolute top-3 right-3 w-3.5 h-3.5 text-white/0 group-hover:text-white/30 transition-all" />
+                            )}
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-[11px] font-bold text-white/40 uppercase tracking-wider">{item.title}</CardTitle>
+                                <div className={`p-1.5 rounded-lg ${item.bg} ${item.color}`}>
+                                    <item.icon className="h-3.5 w-3.5" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-black text-white group-hover:text-primary/90 transition-colors">{item.value}</div>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <span className={`text-[10px] font-bold ${item.changeClass}`}>
+                                        {item.change}
+                                    </span>
+                                    <span className="text-[10px] text-white/30 font-medium">{item.detail}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                    return item.href ? (
+                        <Link
+                            key={i}
+                            href={item.href}
+                            aria-label={item.ariaLabel}
+                            className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+                        >
+                            {card}
+                        </Link>
+                    ) : (
+                        <div key={i}>{card}</div>
+                    );
+                })}
             </div>
 
             <div className="grid gap-6 lg:grid-cols-12 mt-8">
                 {/* Main Chart Section */}
-                <Card className="lg:col-span-8 bg-[#0f0f0f] border-white/5 overflow-hidden">
+                <Card className="lg:col-span-8 bg-[#0f0f0f] border-white/5 overflow-hidden group/chart">
                     <CardHeader className="flex flex-row items-center justify-between pb-0 px-6 pt-6">
-                        <div>
-                            <CardTitle className="text-lg font-bold text-white">최근 매출 추이</CardTitle>
-                            <p className="text-xs text-white/40 mt-1">지난 14일간의 일일 매출 데이터</p>
-                        </div>
+                        <Link
+                            href="/admin/orders"
+                            className="rounded-lg hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            aria-label="주문 관리에서 매출 상세 보기"
+                        >
+                            <CardTitle className="text-lg font-bold text-white group-hover/chart:text-primary transition-colors flex items-center gap-2">
+                                최근 매출 추이
+                                <ChevronRight className="w-4 h-4 text-white/0 group-hover/chart:text-white/40 transition-colors" />
+                            </CardTitle>
+                            <p className="text-xs text-white/40 mt-1">지난 14일간의 일일 매출 데이터 · 클릭 시 주문 관리</p>
+                        </Link>
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] text-white/60">
                                 <span className="w-2 h-2 rounded-full bg-primary" />
@@ -390,12 +435,20 @@ export default function AdminDashboard() {
             {/* Traffic Tracking Section */}
             <div className="grid gap-6 lg:grid-cols-12">
                 {/* Traffic Source Pie-like Chart */}
-                <Card className="lg:col-span-5 bg-[#0f0f0f] border-white/5">
+                <Card className="lg:col-span-5 bg-[#0f0f0f] border-white/5 group/traffic">
                     <CardHeader>
-                        <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                             유입 경로 분석
-                            <span className="text-[10px] font-medium text-white/40 bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-widest ml-2">Last 30 Days</span>
-                        </CardTitle>
+                        <Link
+                            href="/admin/quotes/analytics"
+                            className="block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            aria-label="견적 유입 분석 보기"
+                        >
+                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2 group-hover/traffic:text-primary transition-colors">
+                                유입 경로 분석
+                                <ChevronRight className="w-4 h-4 text-white/30" />
+                                <span className="text-[10px] font-medium text-white/40 bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-widest ml-auto">Last 30 Days</span>
+                            </CardTitle>
+                            <p className="text-xs text-white/40 mt-1">클릭 시 견적 유입 분석</p>
+                        </Link>
                     </CardHeader>
                     <CardContent className="h-[320px] flex flex-col justify-center">
                         {s.trafficSources.length > 0 ? (
@@ -432,12 +485,19 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* Daily Visitors Line Chart (Simplified) */}
-                <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden">
+                <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden group/visitors">
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="text-lg font-bold text-white">일별 방문자 추이</CardTitle>
-                            <p className="text-xs text-white/40 mt-1">최근 14일간의 고유 방문자 세션 수</p>
-                        </div>
+                        <Link
+                            href="/admin/quotes/analytics"
+                            className="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            aria-label="견적 유입 분석 보기"
+                        >
+                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2 group-hover/visitors:text-primary transition-colors">
+                                일별 방문자 추이
+                                <ChevronRight className="w-4 h-4 text-white/30" />
+                            </CardTitle>
+                            <p className="text-xs text-white/40 mt-1">최근 14일간의 고유 방문자 세션 수 · 클릭 시 유입 분석</p>
+                        </Link>
                     </CardHeader>
                     <CardContent className="p-6 pt-10">
                         {s.dailyVisitors.length > 0 ? (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,7 @@ function getStatusBadge(status: string) {
 export default function AdminInquiriesPage() {
   const { toast } = useToast()
   const { token } = useAuthStore()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [inquiries, setInquiries] = useState<Record<string, unknown>[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -66,6 +68,13 @@ export default function AdminInquiriesPage() {
   const [detailNote, setDetailNote] = useState('')
   const [detailStatus, setDetailStatus] = useState('')
   const [savingDetail, setSavingDetail] = useState(false)
+
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status && STATUS_OPTIONS.some((o) => o.value === status)) {
+      setStatusFilter(status)
+    }
+  }, [searchParams])
 
   const fetchInquiries = async () => {
     setLoading(true)
