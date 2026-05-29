@@ -1,9 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
-import { sendEmail, escapeHtml } from '@/lib/mail-utils';
-
-const CONTACT_TO_EMAIL = 'wow3d16@naver.com';
+import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
 
 
 
@@ -67,54 +65,35 @@ export async function POST(request: NextRequest) {
         .run();
     }
 
-    // 3. 이메일 알림 발송 (Resend)
-    const envVars = env as unknown as Record<string, string | undefined>;
-    const resendKey = process.env.RESEND_API_KEY || envVars.RESEND_API_KEY;
-    const fromAddr = process.env.RESEND_FROM || envVars.RESEND_FROM || 'WOW3D 전문가문의 <onboarding@resend.dev>';
-    
-    if (resendKey) {
-      try {
-        const textBody = [
-          `이름: ${name}`,
-          `이메일: ${email}`,
-          company ? `업체명: ${company}` : null,
-          phone ? `연락처: ${phone}` : null,
-          `문의 유형: 전문가 제품개발`,
-          `제목: ${subject}`,
-          fileUrl ? `첨부파일: https://wow3dp.co.kr/api/files/${fileUrl} (또는 관리자 패널 확인)` : '첨부파일 없음',
-          '',
-          '--- 문의 내용 ---',
+    let emailSent = false;
+    try {
+      emailSent = await notifyAdminNewInquiry(
+        {
+          inquiryId: Number(inquiryId),
+          name,
+          email,
+          phone,
+          category,
+          categoryLabel: '전문가 제품개발',
+          subject,
           message,
-        ].filter(Boolean).join('\n');
-
-        const htmlBody = `
-          <div style="font-family:sans-serif; line-height:1.6; color:#333;">
-            <h2 style="color:#2dd4bf;">Expert Product Development Inquiry</h2>
-            <p><strong>발신자:</strong> ${escapeHtml(name)} ${company ? `(${escapeHtml(company)})` : ''}</p>
-            <p><strong>이메일:</strong> <a href="mailto:${email}">${email}</a></p>
-            <p><strong>연락처:</strong> ${phone ? escapeHtml(phone) : '-'}</p>
-            <p><strong>제목:</strong> ${escapeHtml(subject)}</p>
-            ${fileUrl ? `<p><strong>첨부파일:</strong> <a href="https://wow3dp.co.kr/api/files/${fileUrl}" style="color:#2dd4bf;">파일 다운로드</a></p>` : ''}
-            <hr/>
-            <p><strong>문의 내용:</strong></p>
-            <pre style="white-space:pre-wrap; background:#f8fafc; padding:15px; border-radius:8px;">${escapeHtml(message)}</pre>
-          </div>
-        `;
-
-        await sendEmail({
-          from: fromAddr,
-          to: CONTACT_TO_EMAIL,
-          reply_to: email,
-          subject: `[전문가문의] ${company ? `(${company}) ` : ''}${name}님의 문의`,
-          text: textBody,
-          html: htmlBody,
-        }, env);
-      } catch (emailErr) {
-        console.warn('이메일 발송 실패 (문의는 저장됨):', emailErr);
+          fileUrl,
+          company,
+          source: 'expert',
+        },
+        env as unknown as Record<string, unknown>
+      );
+      if (!emailSent) {
+        console.warn('전문가 문의 관리자 알림 미발송 (RESEND_API_KEY 확인)');
       }
+    } catch (emailErr) {
+      console.warn('이메일 발송 실패 (문의는 저장됨):', emailErr);
     }
 
-    return successResponse({ id: Number(inquiryId), fileUrl }, '문의가 성공적으로 접수되었습니다. 전문가가 검토 후 연락드리겠습니다.');
+    return successResponse(
+      { id: Number(inquiryId), fileUrl, emailSent },
+      '문의가 성공적으로 접수되었습니다. 전문가가 검토 후 연락드리겠습니다.'
+    );
   } catch (e: any) {
     console.error('POST /api/expert/inquiry error:', e);
     return errorResponse(e?.message || '처리 중 오류가 발생했습니다.', 500);
