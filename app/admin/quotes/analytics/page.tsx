@@ -18,8 +18,12 @@ import {
     Filter,
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
     XCircle,
+    Folder,
+    FolderOpen,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { format } from 'date-fns';
@@ -51,6 +55,40 @@ type Pagination = { page: number; limit: number; total: number; totalPages: numb
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 400;
+
+type CustomerGroup = {
+    key: string;
+    items: QuoteAnalytics[];
+};
+
+function getCustomerKey(item: QuoteAnalytics): string {
+    if (item.user_id != null) return `user-${item.user_id}`;
+    const email = item.user_email?.trim().toLowerCase();
+    if (email) return `email-${email}`;
+    if (item.session_id) return `session-${item.session_id}`;
+    return `quote-${item.id}`;
+}
+
+function groupByCustomer(items: QuoteAnalytics[]): CustomerGroup[] {
+    const map = new Map<string, QuoteAnalytics[]>();
+    for (const item of items) {
+        const key = getCustomerKey(item);
+        const list = map.get(key) ?? [];
+        list.push(item);
+        map.set(key, list);
+    }
+    return Array.from(map.entries())
+        .map(([key, groupItems]) => ({
+            key,
+            items: groupItems.sort(
+                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            ),
+        }))
+        .sort(
+            (a, b) =>
+                new Date(b.items[0].created_at).getTime() - new Date(a.items[0].created_at).getTime()
+        );
+}
 
 export default function QuoteAnalyticsPage() {
     const { toast } = useToast();
@@ -109,6 +147,10 @@ export default function QuoteAnalyticsPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        setExpandedGroups(new Set());
+    }, [statusFilter, debouncedSearch, page]);
+
     const getStatusBadge = (item: QuoteAnalytics) => {
         if (item.order_number) {
             return (
@@ -127,6 +169,18 @@ export default function QuoteAnalyticsPage() {
     };
 
     const [downloadingId, setDownloadingId] = useState<number | null>(null);
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+    const toggleGroup = (key: string) => {
+        setExpandedGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
+    const customerGroups = groupByCustomer(items);
 
     const handleDownload = async (item: QuoteAnalytics) => {
         if (!item.file_url) return;
@@ -167,6 +221,187 @@ export default function QuoteAnalyticsPage() {
 
     const { page: curPage, totalPages, total } = pagination;
     const showPagination = totalPages > 1;
+
+    const renderCustomerCell = (item: QuoteAnalytics) => (
+        <div className="space-y-1">
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                    <p className="text-white font-medium">{item.user_name || '비회원'}</p>
+                    {(item.user_role === 'admin' || item.user_role === 'super_admin') && (
+                        <Badge
+                            variant="outline"
+                            className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1"
+                        >
+                            관리자
+                        </Badge>
+                    )}
+                </div>
+                {item.user_email && <p className="text-[10px] text-white/40">{item.user_email}</p>}
+            </div>
+            <div className="flex items-center gap-1.5">
+                <MousePointer2 className="w-3 h-3 text-primary/60" />
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-wider">
+                    {item.traffic_source || '직접 유입'} / {item.traffic_medium || '없음'}
+                </span>
+            </div>
+        </div>
+    );
+
+    const renderActions = (item: QuoteAnalytics, className?: string) => (
+        <div className={cn('flex items-center justify-end gap-2', className)}>
+            {item.file_url && (
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 hover:bg-white/10"
+                    onClick={() => handleDownload(item)}
+                    disabled={downloadingId === item.id}
+                    title="파일 다운로드"
+                >
+                    {downloadingId === item.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    ) : (
+                        <Download className="w-4 h-4 text-white/60" />
+                    )}
+                </Button>
+            )}
+            {item.order_number && (
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 hover:bg-white/10"
+                    onClick={() => router.push('/admin/orders')}
+                    title="주문 보기"
+                >
+                    <ExternalLink className="w-4 h-4 text-primary" />
+                </Button>
+            )}
+        </div>
+    );
+
+    const renderFileRow = (item: QuoteAnalytics, opts?: { nested?: boolean }) => (
+        <tr
+            key={item.id}
+            className={cn(
+                'hover:bg-white/[0.02] transition-colors group',
+                opts?.nested && 'bg-white/[0.01]'
+            )}
+        >
+            <td className={cn('p-4', opts?.nested && 'pl-10')}>
+                <div className="flex items-center gap-3">
+                    {opts?.nested && <span className="w-4 border-l border-b border-white/10 h-4 -mt-4 shrink-0" />}
+                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/50 transition-colors">
+                        <FileText className="w-5 h-5 text-white/40" />
+                    </div>
+                    <div>
+                        <p className="font-bold text-white truncate max-w-[240px]" title={item.file_name}>
+                            {item.file_name}
+                        </p>
+                        <p className="text-[10px] text-white/30 uppercase font-bold tracking-tight">
+                            {item.print_method?.toUpperCase()} · {(item.file_size / (1024 * 1024)).toFixed(2)}MB
+                        </p>
+                    </div>
+                </div>
+            </td>
+            <td className="p-4">{getStatusBadge(item)}</td>
+            <td className="p-4">
+                <p className="font-mono font-bold text-white">
+                    {item.total_price > 0 ? `₩ ${Math.round(item.total_price).toLocaleString()}` : '-'}
+                </p>
+                <p className="text-[10px] text-white/30 font-bold">
+                    {item.volume_cm3 > 0 ? `${item.volume_cm3.toFixed(1)} cm³` : ''}
+                </p>
+            </td>
+            <td className="p-4">{opts?.nested ? <span className="text-[10px] text-white/25">└ 포함 파일</span> : renderCustomerCell(item)}</td>
+            <td className="p-4 text-white/50 text-xs">{format(new Date(item.created_at), 'yy/MM/dd HH:mm')}</td>
+            <td className="p-4 text-right">{renderActions(item, 'opacity-0 group-hover:opacity-100 transition-opacity')}</td>
+        </tr>
+    );
+
+    const renderFolderRow = (group: CustomerGroup) => {
+        const { key, items: groupItems } = group;
+        const isExpanded = expandedGroups.has(key);
+        const primary = groupItems[0];
+        const totalPrice = groupItems.reduce((s, i) => s + (i.total_price || 0), 0);
+        const totalVolume = groupItems.reduce((s, i) => s + (i.volume_cm3 || 0), 0);
+        const orderNumbers = [...new Set(groupItems.map((i) => i.order_number).filter(Boolean))] as string[];
+        const statuses = new Set(
+            groupItems.map((i) => (i.order_number ? 'ordered' : i.is_in_cart > 0 ? 'incart' : i.total_price > 0 ? 'abandoned' : 'draft'))
+        );
+
+        return (
+            <React.Fragment key={key}>
+                <tr
+                    className="hover:bg-white/[0.03] transition-colors group cursor-pointer border-l-2 border-l-primary/40"
+                    onClick={() => toggleGroup(key)}
+                >
+                    <td className="p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/30">
+                                {isExpanded ? (
+                                    <FolderOpen className="w-5 h-5 text-primary" />
+                                ) : (
+                                    <Folder className="w-5 h-5 text-primary" />
+                                )}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="font-bold text-white flex items-center gap-2">
+                                    {primary.user_name || '비회원'}
+                                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px]">
+                                        {groupItems.length}개 파일
+                                    </Badge>
+                                    <ChevronDown
+                                        className={cn(
+                                            'w-4 h-4 text-white/40 transition-transform',
+                                            isExpanded && 'rotate-180'
+                                        )}
+                                    />
+                                </p>
+                                <p className="text-[10px] text-white/40 mt-0.5 truncate max-w-[280px]">
+                                    {groupItems.map((i) => i.file_name).join(' · ')}
+                                </p>
+                            </div>
+                        </div>
+                    </td>
+                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex flex-wrap gap-1">
+                            {orderNumbers.length === 1 ? (
+                                getStatusBadge({ ...primary, order_number: orderNumbers[0] })
+                            ) : statuses.size === 1 ? (
+                                getStatusBadge(primary)
+                            ) : (
+                                <Badge className="bg-white/10 text-white/60 border-white/20">혼합 상태</Badge>
+                            )}
+                        </div>
+                    </td>
+                    <td className="p-4">
+                        <p className="font-mono font-bold text-white">
+                            {totalPrice > 0 ? `₩ ${Math.round(totalPrice).toLocaleString()}` : '-'}
+                        </p>
+                        <p className="text-[10px] text-white/30 font-bold">
+                            {totalVolume > 0 ? `${totalVolume.toFixed(1)} cm³ 합계` : ''}
+                        </p>
+                    </td>
+                    <td className="p-4">{renderCustomerCell(primary)}</td>
+                    <td className="p-4 text-white/50 text-xs">
+                        {format(new Date(primary.created_at), 'yy/MM/dd HH:mm')}
+                        <span className="block text-[9px] text-white/25">최근 업로드</span>
+                    </td>
+                    <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-[10px] font-bold text-primary hover:bg-primary/10"
+                            onClick={() => toggleGroup(key)}
+                        >
+                            {isExpanded ? '접기' : '펼치기'}
+                        </Button>
+                    </td>
+                </tr>
+                {isExpanded && groupItems.map((item) => renderFileRow(item, { nested: true }))}
+            </React.Fragment>
+        );
+    };
 
     const renderPageButtons = () => {
         if (!showPagination) return null;
@@ -300,93 +535,9 @@ export default function QuoteAnalyticsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {items.map((item) => (
-                                <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-primary/50 transition-colors">
-                                                <FileText className="w-5 h-5 text-white/40" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-white truncate max-w-[240px]" title={item.file_name}>
-                                                    {item.file_name}
-                                                </p>
-                                                <p className="text-[10px] text-white/30 uppercase font-bold tracking-tight">
-                                                    {item.print_method?.toUpperCase()} ·{' '}
-                                                    {(item.file_size / (1024 * 1024)).toFixed(2)}MB
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="p-4">{getStatusBadge(item)}</td>
-                                    <td className="p-4">
-                                        <p className="font-mono font-bold text-white">
-                                            {item.total_price > 0 ? `₩ ${Math.round(item.total_price).toLocaleString()}` : '-'}
-                                        </p>
-                                        <p className="text-[10px] text-white/30 font-bold">
-                                            {item.volume_cm3 > 0 ? `${item.volume_cm3.toFixed(1)} cm³` : ''}
-                                        </p>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1.5">
-                                                    <p className="text-white font-medium">{item.user_name || '비회원'}</p>
-                                                    {(item.user_role === 'admin' || item.user_role === 'super_admin') && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="bg-purple-500/10 text-purple-400 border-purple-500/20 text-[10px] py-0 px-1"
-                                                        >
-                                                            관리자
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                {item.user_email && <p className="text-[10px] text-white/40">{item.user_email}</p>}
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <MousePointer2 className="w-3 h-3 text-primary/60" />
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-wider">
-                                                    {item.traffic_source || '직접 유입'} / {item.traffic_medium || '없음'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-white/50 text-xs">
-                                        {format(new Date(item.created_at), 'yy/MM/dd HH:mm')}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {item.file_url && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 p-0 hover:bg-white/10"
-                                                    onClick={() => handleDownload(item)}
-                                                    disabled={downloadingId === item.id}
-                                                    title="파일 다운로드"
-                                                >
-                                                    {downloadingId === item.id ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                                                    ) : (
-                                                        <Download className="w-4 h-4 text-white/60" />
-                                                    )}
-                                                </Button>
-                                            )}
-                                            {item.order_number && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 p-0 hover:bg-white/10"
-                                                    onClick={() => router.push(`/admin/orders`)}
-                                                    title="주문 보기"
-                                                >
-                                                    <ExternalLink className="w-4 h-4 text-primary" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {customerGroups.map((group) =>
+                                group.items.length > 1 ? renderFolderRow(group) : renderFileRow(group.items[0])
+                            )}
 
                             {items.length === 0 && !loading && (
                                 <tr>
@@ -405,8 +556,14 @@ export default function QuoteAnalyticsPage() {
                 {(showPagination || total > 0) && (
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-white/10 bg-white/[0.02]">
                         <p className="text-xs text-white/40 font-medium order-2 sm:order-1">
-                            총 <span className="text-white/70 font-bold">{total.toLocaleString()}</span>건 ·{' '}
-                            {curPage}/{totalPages} 페이지
+                            총 <span className="text-white/70 font-bold">{total.toLocaleString()}</span>건
+                            {customerGroups.length > 0 && items.length > customerGroups.length && (
+                                <>
+                                    {' '}
+                                    · <span className="text-white/50">{customerGroups.length}개 고객 그룹</span>
+                                </>
+                            )}{' '}
+                            · {curPage}/{totalPages} 페이지
                         </p>
                         {showPagination && (
                             <div className="flex items-center gap-2 order-1 sm:order-2">
