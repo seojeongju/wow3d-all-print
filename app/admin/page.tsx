@@ -286,31 +286,31 @@ export default function AdminDashboard() {
                 })}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-12 mt-8">
-                {/* Main Chart Section */}
-                <Card className="lg:col-span-8 bg-[#0f0f0f] border-white/5 overflow-hidden group/chart">
-                    <CardHeader className="flex flex-row items-center justify-between pb-0 px-6 pt-6">
+            <div className="grid gap-5 lg:grid-cols-12 mt-6">
+                {/* Main Chart Section — 컴팩트 높이 */}
+                <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden group/chart">
+                    <CardHeader className="flex flex-row items-center justify-between pb-0 px-4 pt-4">
                         <Link
                             href="/admin/orders"
                             className="rounded-lg hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                             aria-label="주문 관리에서 매출 상세 보기"
                         >
-                            <CardTitle className="text-lg font-bold text-white group-hover/chart:text-primary transition-colors flex items-center gap-2">
+                            <CardTitle className="text-base font-bold text-white group-hover/chart:text-primary transition-colors flex items-center gap-2">
                                 최근 매출 추이
-                                <ChevronRight className="w-4 h-4 text-white/0 group-hover/chart:text-white/40 transition-colors" />
+                                <ChevronRight className="w-3.5 h-3.5 text-white/0 group-hover/chart:text-white/40 transition-colors" />
                             </CardTitle>
-                            <p className="text-xs text-white/40 mt-1">지난 14일간의 일일 매출 데이터 · 클릭 시 주문 관리</p>
+                            <p className="text-[11px] text-white/40 mt-0.5">지난 14일 · 클릭 시 주문 관리</p>
                         </Link>
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5 text-[10px] text-white/60">
-                                <span className="w-2 h-2 rounded-full bg-primary" />
-                                매출액 (%)
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] text-white/60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                일별 매출
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-6 pt-10">
+                    <CardContent className="px-4 pb-4 pt-3">
                         {s.salesTrend.length > 0 ? (
-                            <div className="h-[280px] flex items-end gap-2 pb-6 relative">
+                            <div className="h-[160px] flex items-end gap-1.5 pb-4 relative">
                                 {/* Chart Grid lines */}
                                 <div className="absolute inset-x-0 top-0 h-full flex flex-col justify-between pointer-events-none opacity-20">
                                     {[0, 1, 2, 3].map((l) => (
@@ -328,8 +328,8 @@ export default function AdminDashboard() {
                                                 ₩ {t.amount.toLocaleString()}
                                             </div>
                                             <div
-                                                className="w-full max-w-[16px] rounded-t-sm bg-gradient-to-t from-primary/20 via-primary/60 to-primary group-hover/bar:to-white transition-all duration-300 relative group-hover/bar:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                                                style={{ height: `${Math.max(4, (t.amount / maxTrend) * 200)}px` }}
+                                                className="w-full max-w-[12px] rounded-t-sm bg-gradient-to-t from-primary/20 via-primary/60 to-primary group-hover/bar:to-white transition-all duration-300 relative group-hover/bar:shadow-[0_0_12px_rgba(255,255,255,0.15)]"
+                                                style={{ height: `${Math.max(4, (t.amount / maxTrend) * 120)}px` }}
                                             />
                                         </div>
                                         <span className="text-[9px] font-medium text-white/30 group-hover/bar:text-white transition-colors rotate-[-45deg] origin-top-left -ml-2">
@@ -339,16 +339,16 @@ export default function AdminDashboard() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="h-[280px] flex flex-col items-center justify-center text-white/20 gap-3 border border-dashed border-white/5 rounded-2xl">
-                                <Activity className="w-8 h-8 opacity-20" />
-                                <span className="text-sm">없음</span>
+                            <div className="h-[160px] flex flex-col items-center justify-center text-white/20 gap-2 border border-dashed border-white/5 rounded-xl">
+                                <Activity className="w-6 h-6 opacity-20" />
+                                <span className="text-xs">없음</span>
                             </div>
                         )}
                     </CardContent>
                 </Card>
 
                 {/* Side Content: Quick Actions & Recent Orders */}
-                <div className="lg:col-span-4 space-y-6">
+                <div className="lg:col-span-5 space-y-5">
                     {/* Quick Access Actions */}
                     <Card className="bg-[#0f0f0f] border-white/5">
                         <CardHeader className="pb-3 border-b border-white/5">
