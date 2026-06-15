@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
+import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
 
@@ -176,6 +177,7 @@ export default function RootLayout({
           }}
         />
         <ClearCartWhenGuest />
+        <SessionValidator />
         <Suspense fallback={null}>
           <TrafficTracker />
         </Suspense>

@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 /** DB 주문 금액 단위 → 원화 (주문관리·견적서 수정과 동일) */
 // 금액은 DB/API에서 원화(KRW)로 저장·전달됨
 import { correctDisplayAmount } from '@/lib/amount-display';
+import { formatKoreanDate } from '@/lib/date-utils';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -461,7 +462,7 @@ export default function QuoteList() {
                                                     )}
                                                 </td>
                                                 <td className="p-4 text-white/70 text-xs">
-                                                    {order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}
+                                                    {formatKoreanDate(order.created_at)}
                                                     {order.quotation_sent_at && (
                                                         <Badge variant="outline" className="ml-1.5 bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] py-0 px-1">발송됨</Badge>
                                                     )}
@@ -538,7 +539,7 @@ export default function QuoteList() {
                                                                     </div>
                                                                     <div className="flex justify-between text-white/40">
                                                                         <span>접수일</span>
-                                                                        <span>{new Date(order.created_at).toLocaleDateString('ko-KR')}</span>
+                                                                        <span>{formatKoreanDate(order.created_at)}</span>
                                                                     </div>
                                                                     <div className="pt-2 flex justify-end">
                                                                         <Button

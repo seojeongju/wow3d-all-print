@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft, RotateCcw, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import { formatKoreanDate } from '@/lib/date-utils';
 
 export default function QuoteEditPage() {
     const { toast } = useToast();
@@ -353,7 +354,7 @@ export default function QuoteEditPage() {
                         </div>
                         <div className="flex justify-between items-center py-2.5 border-b border-white/10">
                             <span className="text-white/60 text-sm">견적 일자</span>
-                            <span className="text-white text-sm">{new Date(orderInfo.created_at).toLocaleDateString('ko-KR')}</span>
+                            <span className="text-white text-sm">{formatKoreanDate(orderInfo.created_at)}</span>
                         </div>
                         <div className="flex justify-between items-center py-2.5 border-b border-white/10">
                             <span className="text-white/60 text-sm">공급가액</span>

@@ -13,7 +13,7 @@ interface AuthState {
 
     setUser: (user: User, token: string) => void;
     setSessionId: (id: string) => void;
-    logout: () => void;
+    logout: (options?: { keepCart?: boolean }) => void;
     updateUser: (userData: Partial<User>) => void;
 }
 
@@ -43,8 +43,10 @@ export const useAuthStore = create<AuthState>()(
 
             setSessionId: (id) => set({ sessionId: id }),
 
-            logout: () => {
-                useCartStore.getState().clearCart();
+            logout: (options) => {
+                if (!options?.keepCart) {
+                    useCartStore.getState().clearCart();
+                }
                 useFileStore.getState().reset();
                 useQuoteStore.setState({ savedQuotes: [], currentQuote: null });
 

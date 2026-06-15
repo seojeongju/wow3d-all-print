@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { formatKoreanDateISO } from '@/lib/date-utils';
 
 export type OrderForPdf = {
   order_number: string;
@@ -51,7 +52,7 @@ export async function buildQuotationPdf(
   drawText('QUOTATION', margin, y, 20, true);
   y -= 24;
   drawText(`Order No. ${toPdfSafeText(order.order_number, 40)}`, width - margin - 150, y + 4, 10);
-  drawText(`Date: ${order.created_at ? new Date(order.created_at).toLocaleDateString('en-CA') : '-'}`, margin, y, 10);
+  drawText(`Date: ${formatKoreanDateISO(order.created_at)}`, margin, y, 10);
   y -= 20;
 
   drawText('Bill To:', margin, y, 11, true);

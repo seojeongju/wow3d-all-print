@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail, Search } from 'lucide-react'
 import Link from 'next/link'
 import { showToast } from '@/lib/toast-helper'
+import { isTokenExpired, validateAuthToken, isAuthTokenError } from '@/lib/auth-session'
 import { motion } from 'framer-motion'
 import Script from 'next/script'
 
@@ -39,7 +40,7 @@ declare global {
 
 function CheckoutContent() {
     const router = useRouter()
-    const { user, isAuthenticated, token, sessionId } = useAuthStore()
+    const { user, isAuthenticated, token, logout } = useAuthStore()
     const { items, removeFromCartByIds } = useCartStore()
     const searchParams = useSearchParams()
     const idsParam = searchParams.get('ids')
@@ -141,6 +142,14 @@ function CheckoutContent() {
         })
     }
 
+    const checkoutReturnPath = `/checkout${idsParam ? `?ids=${idsParam}` : ''}`
+
+    const redirectToLoginForExpiredSession = () => {
+        logout({ keepCart: true })
+        showToast.error('로그인 만료', '세션이 만료되었습니다. 다시 로그인한 후 주문을 완료해 주세요.')
+        router.push(`/auth?return=${encodeURIComponent(checkoutReturnPath)}`)
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -162,9 +171,29 @@ function CheckoutContent() {
         setIsSubmitting(true)
 
         try {
+            if (isAuthenticated && token) {
+                if (isTokenExpired(token)) {
+                    redirectToLoginForExpiredSession()
+                    return
+                }
+                const validation = await validateAuthToken(token)
+                if (!validation.ok) {
+                    if (validation.reason === 'network_error') {
+                        showToast.error('네트워크 오류', '연결을 확인한 뒤 다시 시도해 주세요.')
+                        return
+                    }
+                    redirectToLoginForExpiredSession()
+                    return
+                }
+            }
+
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
-            if (isAuthenticated && token) headers['Authorization'] = `Bearer ${token}`
-            else if (sessionId) headers['X-Session-ID'] = sessionId
+            const authState = useAuthStore.getState()
+            if (authState.isAuthenticated && authState.token) {
+                headers['Authorization'] = `Bearer ${authState.token}`
+            } else if (authState.sessionId) {
+                headers['X-Session-ID'] = authState.sessionId
+            }
 
             let finalNote = formData.customerNote || '';
             if (!finalNote.includes('[주문자 정보]')) {
@@ -193,6 +222,10 @@ function CheckoutContent() {
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}))
+                if (isAuthTokenError(response.status, err) && isAuthenticated && token) {
+                    redirectToLoginForExpiredSession()
+                    return
+                }
                 throw new Error(err?.error || '주문 생성 실패')
             }
 

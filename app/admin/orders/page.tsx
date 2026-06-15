@@ -1,6 +1,7 @@
 'use client';
 
 import { correctDisplayAmount } from '@/lib/amount-display';
+import { formatKoreanDate } from '@/lib/date-utils';
 import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -263,7 +264,7 @@ function OrderListInner() {
                 String(o.item_count ?? 1),
                 String(Math.round(Number(o.total_amount || 0))),
                 o.status || '',
-                o.created_at ? new Date(o.created_at).toLocaleDateString('ko-KR') : '',
+                o.created_at ? formatKoreanDate(o.created_at, '') : '',
             ]);
             const BOM = '\uFEFF';
             const csv = BOM + [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\r\n');
@@ -687,7 +688,7 @@ function OrderListInner() {
                                             )}
                                         </td>
                                         <td className="p-4">{getStatusBadge(order.status)}</td>
-                                        <td className="p-4 text-white/70">{order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}</td>
+                                        <td className="p-4 text-white/70">{formatKoreanDate(order.created_at)}</td>
                                         <td className="p-4 text-right">
                                             <Select
                                                 value={order.status}

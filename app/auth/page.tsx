@@ -20,6 +20,7 @@ function AuthContent() {
     const tokenFromUrl = searchParams.get('token')
     const returnPath = searchParams.get('return') || '/'
     const authError = searchParams.get('error')
+    const sessionExpired = searchParams.get('expired') === 'true'
     const kakaoOAuth = searchParams.get('kakao') === '1'
 
     // OAuth 콜백 후 token이 URL에 있으면 로그인 처리
@@ -62,12 +63,14 @@ function AuthContent() {
     }, [tokenFromUrl, returnPath, setUser, router, kakaoOAuth])
 
     useEffect(() => {
-        if (authError === 'google_cancel') showToast.error('Google 로그인 취소', '다시 시도해 주세요.')
+        if (sessionExpired) {
+            showToast.error('로그인 만료', '세션이 만료되었습니다. 다시 로그인해 주세요.')
+        } else if (authError === 'google_cancel') showToast.error('Google 로그인 취소', '다시 시도해 주세요.')
         else if (authError === 'kakao_cancel') showToast.error('카카오 로그인 취소', '다시 시도해 주세요.')
         else if (authError === 'config') showToast.error('로그인 설정 오류', '소셜 로그인 환경 변수를 확인해 주세요.')
         else if (authError === 'db') showToast.error('데이터베이스 오류', '소셜 로그인용 DB 설정이 필요합니다. 관리자에게 문의하세요.')
         else if (authError === 'server') showToast.error('일시 오류', '잠시 후 다시 시도해 주세요.')
-    }, [authError])
+    }, [authError, sessionExpired])
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')

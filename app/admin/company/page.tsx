@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import { formatNowKoreanDate } from '@/lib/date-utils';
 
 type CompanyInfo = {
     business_number: string;
@@ -429,7 +430,7 @@ export default function CompanyInfoPage() {
                                         </div>
                                         <div className="text-xs text-slate-500 text-right">
                                             <div>견적번호 : WOW260304XXXXXX</div>
-                                            <div>견적일자 : {new Date().toLocaleDateString()}</div>
+                                            <div>견적일자 : {formatNowKoreanDate()}</div>
                                         </div>
                                     </div>
                                 </div>

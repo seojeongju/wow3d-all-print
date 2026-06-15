@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { correctDisplayAmount } from '@/lib/amount-display';
+import { formatKoreanDate, formatNowKoreanDate } from '@/lib/date-utils';
 
 type CompanyInfo = {
     business_number?: string;
@@ -199,8 +200,7 @@ export default function EstimatePrintPage() {
     if (!data) return null;
 
     const { order } = data;
-    const today = new Date();
-    const orderDate = new Date(order.created_at);
+    const estimateDate = order.created_at ? formatKoreanDate(order.created_at) : formatNowKoreanDate();
 
     return (
         <div className="bg-white text-black min-h-screen">
@@ -261,7 +261,7 @@ export default function EstimatePrintPage() {
                         </div>
                         <div className="text-sm text-right">
                             <div className="font-bold mb-1">견적번호 : {order.order_number}</div>
-                            <div>견적일자 : {order.created_at ? new Date(order.created_at).toLocaleDateString() : today.toLocaleDateString()}</div>
+                            <div>견적일자 : {estimateDate}</div>
                         </div>
                     </div>
 
@@ -404,7 +404,7 @@ export default function EstimatePrintPage() {
                     {/* 서명란 */}
                     <div className="mt-16 text-center">
                         <p className="text-lg font-serif">위와 같이 견적합니다.</p>
-                        <p className="mt-4 font-bold">{orderDate.toLocaleDateString()}</p>
+                        <p className="mt-4 font-bold">{estimateDate}</p>
                         <p className="mt-2 font-bold text-xl">{company.company_name || '와우쓰리디 (Wow3D)'}</p>
                     </div>
                 </div>
