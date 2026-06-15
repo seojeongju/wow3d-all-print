@@ -154,7 +154,7 @@ export default function Header() {
                                 </button>
                             </Link>
                             <button
-                                onClick={logout}
+                                onClick={() => logout()}
                                 className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition-all"
                                 title="로그아웃"
                             >

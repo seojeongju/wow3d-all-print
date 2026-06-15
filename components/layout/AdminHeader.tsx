@@ -48,7 +48,7 @@ export default function AdminHeader() {
                         </div>
                     </div>
                     <button
-                        onClick={logout}
+                                onClick={() => logout()}
                         className="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-white/60 hover:text-red-400 hover:border-red-400/30 transition-colors"
                         title="로그아웃"
                     >
