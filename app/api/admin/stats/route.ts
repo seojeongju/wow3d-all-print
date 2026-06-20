@@ -87,34 +87,75 @@ export async function GET(req: NextRequest) {
             newSignupsCount = Number(userNew?.c ?? 0);
         }
 
-        let salesTrend: { date: string; amount: number }[] = [];
-        try {
-            const { results: trendRows } = await env.DB.prepare(`
-            SELECT date(o.created_at) as d, SUM(o.total_amount) as amount
+        let salesTrend: {
+            date: string;
+            orderCount: number;
+            amount: number;
+            paidAmount: number;
+            outstandingAmount: number;
+        }[] = [];
+
+        const trendSql = (storeFilter: boolean) => `
+            SELECT date(o.created_at) as d,
+                SUM(CASE WHEN o.status != 'cancelled' THEN 1 ELSE 0 END) as order_count,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN o.total_amount ELSE 0 END), 0) as amount,
+                COALESCE(SUM(CASE
+                    WHEN o.status != 'cancelled' AND (
+                        o.payment_status = 'paid'
+                        OR o.status IN ('payment_confirmed', 'production', 'shipping', 'completed')
+                    ) THEN o.total_amount ELSE 0 END), 0) as paid_amount,
+                COALESCE(SUM(CASE
+                    WHEN o.status != 'cancelled'
+                        AND IFNULL(o.payment_status, 'pending') != 'paid'
+                        AND o.status NOT IN ('payment_confirmed', 'production', 'shipping', 'completed')
+                    THEN o.total_amount ELSE 0 END), 0) as outstanding_amount
             FROM orders o
-            WHERE o.status != 'cancelled' AND o.created_at >= date('now','-14 days')
-              AND ${STORE_ORDERS}
+            WHERE o.created_at >= date('now', '-13 days')
+              ${storeFilter ? `AND ${STORE_ORDERS}` : ''}
             GROUP BY d
             ORDER BY d ASC
-        `)
+        `;
+
+        try {
+            const { results: trendRows } = await env.DB.prepare(trendSql(true))
                 .bind(storeId)
-                .all() as { results: { d: string; amount: number }[] };
-            salesTrend = (trendRows || []).map((r: { d: string; amount: number }) => ({
+                .all() as {
+                results: {
+                    d: string;
+                    order_count: number;
+                    amount: number;
+                    paid_amount: number;
+                    outstanding_amount: number;
+                }[];
+            };
+            salesTrend = (trendRows || []).map((r) => ({
                 date: r.d,
+                orderCount: Number(r.order_count ?? 0),
                 amount: Number(r.amount ?? 0),
+                paidAmount: Number(r.paid_amount ?? 0),
+                outstandingAmount: Number(r.outstanding_amount ?? 0),
             }));
         } catch {
-            const { results: trendRows } = await env.DB.prepare(`
-            SELECT date(created_at) as d, SUM(total_amount) as amount
-            FROM orders
-            WHERE status != 'cancelled' AND created_at >= date('now','-14 days')
-            GROUP BY d
-            ORDER BY d ASC
-        `).all() as { results: { d: string; amount: number }[] };
-            salesTrend = (trendRows || []).map((r: { d: string; amount: number }) => ({
-                date: r.d,
-                amount: Number(r.amount ?? 0),
-            }));
+            try {
+                const { results: trendRows } = await env.DB.prepare(trendSql(false)).all() as {
+                    results: {
+                        d: string;
+                        order_count: number;
+                        amount: number;
+                        paid_amount: number;
+                        outstanding_amount: number;
+                    }[];
+                };
+                salesTrend = (trendRows || []).map((r) => ({
+                    date: r.d,
+                    orderCount: Number(r.order_count ?? 0),
+                    amount: Number(r.amount ?? 0),
+                    paidAmount: Number(r.paid_amount ?? 0),
+                    outstandingAmount: Number(r.outstanding_amount ?? 0),
+                }));
+            } catch {
+                salesTrend = [];
+            }
         }
 
         type RecentRow = {

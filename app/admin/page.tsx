@@ -6,14 +6,13 @@ import {
     Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
 import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings, ChevronRight } from 'lucide-react';
+import DashboardStatCard from '@/components/admin/DashboardStatCard';
+import SalesTrendPanel from '@/components/admin/SalesTrendPanel';
+import { type SalesTrendPoint } from '@/lib/sales-trend';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
-type SalesTrend = {
-    date: string;
-    amount: number;
-};
+type SalesTrend = SalesTrendPoint;
 
 type TrafficSource = {
     source: string;
@@ -128,15 +127,8 @@ export default function AdminDashboard() {
     };
     const s: Stats = stats ?? emptyStats;
 
-    const maxTrend = Math.max(1, ...s.salesTrend.map((t) => t.amount));
     const maxVisitors = Math.max(1, ...s.dailyVisitors.map((v) => v.count));
     const totalTrafficCount = s.trafficSources.reduce((acc, curr) => acc + curr.count, 0);
-
-    const pctTone = (text: string) => {
-        if (text === '없음') return 'text-white/40';
-        if (text.startsWith('-')) return 'text-rose-400';
-        return 'text-emerald-400';
-    };
 
     return (
         <div className="space-y-8 pb-12">
@@ -162,190 +154,155 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* Quick Stats Grid */}
+            {/* Quick Stats Grid — 주 지표 / 하단 액션 클릭 분리 */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {[
-                    {
-                        title: '이번 달 매출',
-                        value: `₩ ${s.totalSales.toLocaleString()}`,
-                        change: s.salesChangePercent === null ? '없음' : `${s.salesChangePercent >= 0 ? '+' : ''}${s.salesChangePercent}%`,
-                        detail: s.salesChangePercent === null ? '' : '지난달 대비',
-                        changeClass: pctTone(s.salesChangePercent === null ? '없음' : `${s.salesChangePercent >= 0 ? '+' : ''}${s.salesChangePercent}%`),
-                        icon: DollarSign,
-                        color: 'text-emerald-400',
-                        bg: 'bg-emerald-500/10',
+                <DashboardStatCard
+                    title="이번 달 매출"
+                    icon={DollarSign}
+                    iconColor="text-emerald-400"
+                    iconBg="bg-emerald-500/10"
+                    value={`₩ ${s.totalSales.toLocaleString()}`}
+                    primary={{
+                        label: '주문 관리에서 매출 확인',
                         href: '/admin/orders',
-                        ariaLabel: '이번 달 매출 — 주문 관리에서 확인',
-                    },
-                    {
-                        title: '신규 주문',
-                        value: s.newOrdersCount,
-                        change: `${s.pendingOrdersCount}건 대기`,
-                        detail: '',
-                        changeClass: 'text-white/50',
-                        icon: ShoppingBag,
-                        color: 'text-blue-400',
-                        bg: 'bg-blue-500/10',
-                        href: s.pendingOrdersCount > 0 ? '/admin/orders?status=pending' : '/admin/orders',
-                        ariaLabel: s.pendingOrdersCount > 0 ? '대기 중인 주문 보기' : '주문 관리로 이동',
-                    },
-                    {
-                        title: '활성 사용자',
-                        value: s.totalUsers,
-                        change: `+${s.newSignupsCount}`,
-                        detail: '이번 달 가입',
-                        changeClass: 'text-white/50',
-                        icon: Users,
-                        color: 'text-purple-400',
-                        bg: 'bg-purple-500/10',
+                        ariaLabel: '이번 달 매출 — 주문 관리',
+                    }}
+                    secondary={{
+                        label:
+                            s.salesChangePercent === null
+                                ? '지난달 대비 — 없음'
+                                : `${s.salesChangePercent >= 0 ? '+' : ''}${s.salesChangePercent}% · 지난달 대비`,
+                        tone:
+                            s.salesChangePercent === null
+                                ? 'muted'
+                                : s.salesChangePercent >= 0
+                                  ? 'success'
+                                  : 'warning',
+                    }}
+                />
+
+                <DashboardStatCard
+                    title="신규 주문"
+                    icon={ShoppingBag}
+                    iconColor="text-blue-400"
+                    iconBg="bg-blue-500/10"
+                    value={s.newOrdersCount}
+                    primary={{
+                        label: '이번 달 신규 — 전체 주문 보기',
+                        href: '/admin/orders',
+                        ariaLabel: '이번 달 신규 주문 목록',
+                    }}
+                    secondary={
+                        s.pendingOrdersCount > 0
+                            ? {
+                                  label: `${s.pendingOrdersCount}건 접수대기 — 처리 필요`,
+                                  href: '/admin/orders?status=pending',
+                                  ariaLabel: '접수대기 주문만 보기',
+                                  tone: 'warning',
+                              }
+                            : {
+                                  label: '접수대기 0건',
+                                  tone: 'muted',
+                              }
+                    }
+                />
+
+                <DashboardStatCard
+                    title="활성 사용자"
+                    icon={Users}
+                    iconColor="text-purple-400"
+                    iconBg="bg-purple-500/10"
+                    value={s.totalUsers}
+                    primary={{
+                        label: isSuperAdmin ? '전체 회원 관리' : '등록 회원 수',
                         href: isSuperAdmin ? '/admin/users' : undefined,
-                        ariaLabel: '사용자 관리',
-                    },
-                    {
-                        title: '장비 가동률',
-                        value:
-                            s.operatingRate != null && !Number.isNaN(Number(s.operatingRate))
-                                ? `${s.operatingRate}%`
-                                : '없음',
-                        change: s.operatingDetail?.trim() ? s.operatingDetail : '없음',
-                        detail: '',
-                        changeClass: 'text-white/50',
-                        icon: Activity,
-                        color: 'text-orange-400',
-                        bg: 'bg-orange-500/10',
+                        tone: isSuperAdmin ? 'default' : 'muted',
+                    }}
+                    secondary={{
+                        label: `+${s.newSignupsCount}명 · 이번 달 신규 가입`,
+                        href: isSuperAdmin ? '/admin/users' : undefined,
+                        ariaLabel: '이번 달 신규 가입 회원',
+                        tone: s.newSignupsCount > 0 && isSuperAdmin ? 'accent' : 'muted',
+                    }}
+                />
+
+                <DashboardStatCard
+                    title="장비 가동률"
+                    icon={Activity}
+                    iconColor="text-orange-400"
+                    iconBg="bg-orange-500/10"
+                    value={
+                        s.operatingRate != null && !Number.isNaN(Number(s.operatingRate))
+                            ? `${s.operatingRate}%`
+                            : '없음'
+                    }
+                    valueClassName={
+                        s.operatingRate == null || Number.isNaN(Number(s.operatingRate))
+                            ? 'text-white/40 text-lg'
+                            : undefined
+                    }
+                    primary={{
+                        label: '운영 지표 설정',
                         href: '/admin/settings?tab=pricing',
-                        ariaLabel: '운영 지표 설정',
-                    },
-                    {
-                        title: '견적 요청',
-                        value: s.quotesThisMonth === null ? '없음' : s.quotesThisMonth,
-                        change: s.quotesThisMonth === null ? '' : '이번 달 건수',
-                        detail: '',
-                        changeClass: s.quotesThisMonth === null ? 'text-white/40' : 'text-white/50',
-                        icon: FileText,
-                        color: 'text-pink-400',
-                        bg: 'bg-pink-500/10',
+                        ariaLabel: '장비 가동률 설정',
+                    }}
+                    secondary={{
+                        label: s.operatingDetail?.trim() ? s.operatingDetail : '상세 정보 없음',
+                        href: s.operatingDetail?.trim() ? '/admin/settings?tab=pricing' : undefined,
+                        tone: s.operatingDetail?.trim() ? 'default' : 'muted',
+                    }}
+                />
+
+                <DashboardStatCard
+                    title="견적 요청"
+                    icon={FileText}
+                    iconColor="text-pink-400"
+                    iconBg="bg-pink-500/10"
+                    value={s.quotesThisMonth === null ? '없음' : s.quotesThisMonth}
+                    valueClassName={s.quotesThisMonth === null ? 'text-white/40 text-lg' : undefined}
+                    primary={{
+                        label: '견적 관리',
                         href: '/admin/quotes',
-                        ariaLabel: '견적 관리',
-                    },
-                    {
-                        title: '미확인 문의',
-                        value: s.inquiriesNew === null ? '없음' : s.inquiriesNew,
-                        change: s.inquiriesNew === null ? '' : '즉시 확인 필요',
-                        detail: '',
-                        changeClass: s.inquiriesNew === null ? 'text-white/40' : 'text-cyan-400/90',
-                        icon: MessageSquare,
-                        color: 'text-cyan-400',
-                        bg: 'bg-cyan-500/10',
-                        href: '/admin/inquiries?status=new',
-                        ariaLabel: '미확인 문의 보기',
-                    },
-                ].map((item, i) => {
-                    const card = (
-                        <Card
-                            className={cn(
-                                'bg-[#0f0f0f] border-white/5 transition-all group relative overflow-hidden h-full',
-                                item.href
-                                    ? 'hover:border-primary/30 hover:bg-white/[0.02] cursor-pointer'
-                                    : 'hover:border-white/10'
-                            )}
-                        >
-                            <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity rounded-full -mr-4 -mt-4 ${item.bg}`} />
-                            {item.href && (
-                                <ChevronRight className="absolute top-3 right-3 w-3.5 h-3.5 text-white/0 group-hover:text-white/30 transition-all" />
-                            )}
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-[11px] font-bold text-white/40 uppercase tracking-wider">{item.title}</CardTitle>
-                                <div className={`p-1.5 rounded-lg ${item.bg} ${item.color}`}>
-                                    <item.icon className="h-3.5 w-3.5" />
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-xl font-black text-white group-hover:text-primary/90 transition-colors">{item.value}</div>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                    <span className={`text-[10px] font-bold ${item.changeClass}`}>
-                                        {item.change}
-                                    </span>
-                                    <span className="text-[10px] text-white/30 font-medium">{item.detail}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                    return item.href ? (
-                        <Link
-                            key={i}
-                            href={item.href}
-                            aria-label={item.ariaLabel}
-                            className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
-                        >
-                            {card}
-                        </Link>
-                    ) : (
-                        <div key={i}>{card}</div>
-                    );
-                })}
+                        ariaLabel: '견적 관리 목록',
+                    }}
+                    secondary={{
+                        label: s.quotesThisMonth === null ? '집계 없음 · 유입 분석' : '유입 분석 보기',
+                        href: '/admin/quotes/analytics',
+                        ariaLabel: '견적 유입 분석',
+                        tone: 'default',
+                    }}
+                />
+
+                <DashboardStatCard
+                    title="미확인 문의"
+                    icon={MessageSquare}
+                    iconColor="text-cyan-400"
+                    iconBg="bg-cyan-500/10"
+                    value={s.inquiriesNew === null ? '없음' : s.inquiriesNew}
+                    valueClassName={s.inquiriesNew === null ? 'text-white/40 text-lg' : undefined}
+                    primary={{
+                        label: '문의 관리',
+                        href: '/admin/inquiries',
+                        ariaLabel: '문의 관리 목록',
+                    }}
+                    secondary={
+                        s.inquiriesNew != null && s.inquiriesNew > 0
+                            ? {
+                                  label: `${s.inquiriesNew}건 즉시 확인 필요`,
+                                  href: '/admin/inquiries?status=new',
+                                  ariaLabel: '미확인 문의만 보기',
+                                  tone: 'accent',
+                              }
+                            : {
+                                  label: '미확인 문의 없음',
+                                  tone: 'muted',
+                              }
+                    }
+                />
             </div>
 
             <div className="grid gap-5 lg:grid-cols-12 mt-6">
-                {/* Main Chart Section — 컴팩트 높이 */}
-                <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden group/chart">
-                    <CardHeader className="flex flex-row items-center justify-between pb-0 px-4 pt-4">
-                        <Link
-                            href="/admin/orders"
-                            className="rounded-lg hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            aria-label="주문 관리에서 매출 상세 보기"
-                        >
-                            <CardTitle className="text-base font-bold text-white group-hover/chart:text-primary transition-colors flex items-center gap-2">
-                                최근 매출 추이
-                                <ChevronRight className="w-3.5 h-3.5 text-white/0 group-hover/chart:text-white/40 transition-colors" />
-                            </CardTitle>
-                            <p className="text-[11px] text-white/40 mt-0.5">지난 14일 · 클릭 시 주문 관리</p>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] text-white/60">
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                일별 매출
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4 pt-3">
-                        {s.salesTrend.length > 0 ? (
-                            <div className="h-[160px] flex items-end gap-1.5 pb-4 relative">
-                                {/* Chart Grid lines */}
-                                <div className="absolute inset-x-0 top-0 h-full flex flex-col justify-between pointer-events-none opacity-20">
-                                    {[0, 1, 2, 3].map((l) => (
-                                        <div key={l} className="w-full h-px bg-white/10" />
-                                    ))}
-                                </div>
-                                {s.salesTrend.map((t, idx) => (
-                                    <div
-                                        key={t.date}
-                                        className="flex-1 min-w-[12px] flex flex-col items-center gap-3 group/bar z-10"
-                                    >
-                                        <div className="relative w-full flex flex-col items-center justify-end h-full">
-                                            {/* Value Tooltip on hover */}
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-white text-black text-[10px] font-bold opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap shadow-xl z-20 pointer-events-none">
-                                                ₩ {t.amount.toLocaleString()}
-                                            </div>
-                                            <div
-                                                className="w-full max-w-[12px] rounded-t-sm bg-gradient-to-t from-primary/20 via-primary/60 to-primary group-hover/bar:to-white transition-all duration-300 relative group-hover/bar:shadow-[0_0_12px_rgba(255,255,255,0.15)]"
-                                                style={{ height: `${Math.max(4, (t.amount / maxTrend) * 120)}px` }}
-                                            />
-                                        </div>
-                                        <span className="text-[9px] font-medium text-white/30 group-hover/bar:text-white transition-colors rotate-[-45deg] origin-top-left -ml-2">
-                                            {t.date.split('-').slice(1).join('/')}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="h-[160px] flex flex-col items-center justify-center text-white/20 gap-2 border border-dashed border-white/5 rounded-xl">
-                                <Activity className="w-6 h-6 opacity-20" />
-                                <span className="text-xs">없음</span>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <SalesTrendPanel data={s.salesTrend} dayCount={14} />
 
                 {/* Side Content: Quick Actions & Recent Orders */}
                 <div className="lg:col-span-5 space-y-5">
