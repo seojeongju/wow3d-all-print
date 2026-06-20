@@ -330,21 +330,137 @@ export async function GET(req: NextRequest) {
             trafficSources = [];
         }
 
-        let dailyVisitors: { date: string; count: number }[] = [];
+        let visitorTrend: {
+            date: string;
+            pageViews: number;
+            uniqueSessions: number;
+            memberSessions: number;
+            quotePageViews: number;
+        }[] = [];
+
         try {
             const { results: visitorRows } = await env.DB.prepare(`
-                SELECT date(created_at) as d, COUNT(DISTINCT session_id) as count
+                SELECT date(created_at) as d,
+                    COUNT(*) as page_views,
+                    COUNT(DISTINCT session_id) as unique_sessions,
+                    COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN session_id END) as member_sessions,
+                    SUM(CASE
+                        WHEN path LIKE '/quote%'
+                          OR path LIKE '/experience%'
+                          OR path = '/quotes'
+                        THEN 1 ELSE 0 END) as quote_page_views
                 FROM traffic_logs
-                WHERE created_at >= date('now', '-14 days')
+                WHERE created_at >= date('now', '-13 days')
                 GROUP BY d
                 ORDER BY d ASC
-            `).all() as { results: { d: string; count: number }[] };
-            dailyVisitors = (visitorRows || []).map((r) => ({
+            `).all() as {
+                results: {
+                    d: string;
+                    page_views: number;
+                    unique_sessions: number;
+                    member_sessions: number;
+                    quote_page_views: number;
+                }[];
+            };
+            visitorTrend = (visitorRows || []).map((r) => ({
                 date: r.d,
-                count: Number(r.count ?? 0),
+                pageViews: Number(r.page_views ?? 0),
+                uniqueSessions: Number(r.unique_sessions ?? 0),
+                memberSessions: Number(r.member_sessions ?? 0),
+                quotePageViews: Number(r.quote_page_views ?? 0),
             }));
         } catch {
-            dailyVisitors = [];
+            visitorTrend = [];
+        }
+
+        const dailyVisitors = visitorTrend.map((v) => ({
+            date: v.date,
+            count: v.uniqueSessions,
+        }));
+
+        let quoteFunnelTrend: {
+            date: string;
+            totalQuotes: number;
+            ordered: number;
+            incart: number;
+            abandoned: number;
+            draft: number;
+        }[] = [];
+
+        try {
+            const { results: funnelRows } = await env.DB.prepare(`
+                SELECT date(q.created_at) as d,
+                    COUNT(*) as total_quotes,
+                    SUM(CASE WHEN EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id) THEN 1 ELSE 0 END) as ordered_cnt,
+                    SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id)
+                        AND (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) > 0 THEN 1 ELSE 0 END) as incart_cnt,
+                    SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id)
+                        AND (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) = 0
+                        AND COALESCE(q.total_price, 0) > 0 THEN 1 ELSE 0 END) as abandoned_cnt,
+                    SUM(CASE WHEN COALESCE(q.total_price, 0) = 0 THEN 1 ELSE 0 END) as draft_cnt
+                FROM quotes q
+                WHERE q.created_at >= date('now', '-13 days')
+                GROUP BY d
+                ORDER BY d ASC
+            `).all() as {
+                results: {
+                    d: string;
+                    total_quotes: number;
+                    ordered_cnt: number;
+                    incart_cnt: number;
+                    abandoned_cnt: number;
+                    draft_cnt: number;
+                }[];
+            };
+            quoteFunnelTrend = (funnelRows || []).map((r) => ({
+                date: r.d,
+                totalQuotes: Number(r.total_quotes ?? 0),
+                ordered: Number(r.ordered_cnt ?? 0),
+                incart: Number(r.incart_cnt ?? 0),
+                abandoned: Number(r.abandoned_cnt ?? 0),
+                draft: Number(r.draft_cnt ?? 0),
+            }));
+        } catch {
+            quoteFunnelTrend = [];
+        }
+
+        const quoteFunnelTotals = quoteFunnelTrend.reduce(
+            (acc, p) => ({
+                total: acc.total + p.totalQuotes,
+                ordered: acc.ordered + p.ordered,
+                incart: acc.incart + p.incart,
+                abandoned: acc.abandoned + p.abandoned,
+                draft: acc.draft + p.draft,
+            }),
+            { total: 0, ordered: 0, incart: 0, abandoned: 0, draft: 0 }
+        );
+        const quoteFunnelSummary = {
+            ...quoteFunnelTotals,
+            conversionRate:
+                quoteFunnelTotals.total > 0
+                    ? Math.round((quoteFunnelTotals.ordered / quoteFunnelTotals.total) * 1000) / 10
+                    : 0,
+        };
+
+        let quoteTrafficSources: { source: string; count: number }[] = [];
+        try {
+            const { results: qSourceRows } = await env.DB.prepare(`
+                SELECT COALESCE(NULLIF(TRIM(t.source), ''), 'direct') as source, COUNT(*) as cnt
+                FROM quotes q
+                LEFT JOIN (
+                    SELECT session_id, source FROM traffic_logs GROUP BY session_id
+                ) t ON q.session_id = t.session_id
+                WHERE q.created_at >= date('now', '-13 days')
+                GROUP BY source
+                ORDER BY cnt DESC
+                LIMIT 6
+            `).all() as { results: { source: string; cnt: number }[] };
+            quoteTrafficSources = (qSourceRows || []).map((r) => ({
+                source: r.source || 'direct',
+                count: Number(r.cnt ?? 0),
+            }));
+        } catch {
+            quoteTrafficSources = [];
         }
 
         return NextResponse.json({
@@ -363,7 +479,11 @@ export async function GET(req: NextRequest) {
                 salesTrend,
                 recentOrders,
                 trafficSources,
+                visitorTrend,
                 dailyVisitors,
+                quoteFunnelTrend,
+                quoteFunnelSummary,
+                quoteTrafficSources,
             },
         });
     } catch (e) {

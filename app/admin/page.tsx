@@ -8,7 +8,11 @@ import {
 import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings, ChevronRight } from 'lucide-react';
 import DashboardStatCard from '@/components/admin/DashboardStatCard';
 import SalesTrendPanel from '@/components/admin/SalesTrendPanel';
+import VisitorTrendPanel from '@/components/admin/VisitorTrendPanel';
+import QuoteFunnelTrendPanel from '@/components/admin/QuoteFunnelTrendPanel';
 import { type SalesTrendPoint } from '@/lib/sales-trend';
+import { type VisitorTrendPoint } from '@/lib/visitor-trend';
+import { type QuoteFunnelTrendPoint, type QuoteFunnelSummary, type QuoteTrafficSource } from '@/lib/quote-funnel-trend';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,10 +23,8 @@ type TrafficSource = {
     count: number;
 };
 
-type DailyVisitor = {
-    date: string;
-    count: number;
-};
+type VisitorTrend = VisitorTrendPoint;
+type QuoteFunnelTrend = QuoteFunnelTrendPoint;
 
 type RecentOrder = {
     id: number;
@@ -60,9 +62,12 @@ type Stats = {
     operatingRate: number | null;
     operatingDetail: string | null;
     salesTrend: SalesTrend[];
+    visitorTrend: VisitorTrend[];
+    quoteFunnelTrend: QuoteFunnelTrend[];
+    quoteFunnelSummary: QuoteFunnelSummary;
+    quoteTrafficSources: QuoteTrafficSource[];
     recentOrders: RecentOrder[];
     trafficSources: TrafficSource[];
-    dailyVisitors: DailyVisitor[];
 };
 
 export default function AdminDashboard() {
@@ -121,13 +126,15 @@ export default function AdminDashboard() {
         operatingRate: null,
         operatingDetail: null,
         salesTrend: [],
+        visitorTrend: [],
+        quoteFunnelTrend: [],
+        quoteFunnelSummary: { total: 0, ordered: 0, incart: 0, abandoned: 0, draft: 0, conversionRate: 0 },
+        quoteTrafficSources: [],
         recentOrders: [],
         trafficSources: [],
-        dailyVisitors: [],
     };
     const s: Stats = stats ?? emptyStats;
 
-    const maxVisitors = Math.max(1, ...s.dailyVisitors.map((v) => v.count));
     const totalTrafficCount = s.trafficSources.reduce((acc, curr) => acc + curr.count, 0);
 
     return (
@@ -389,6 +396,14 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* 견적 유입 분석 — 매출 추이 하단 */}
+            <QuoteFunnelTrendPanel
+                trend={s.quoteFunnelTrend ?? []}
+                summary={s.quoteFunnelSummary}
+                sources={s.quoteTrafficSources ?? []}
+                dayCount={14}
+            />
+
             {/* Traffic Tracking Section */}
             <div className="grid gap-6 lg:grid-cols-12">
                 {/* Traffic Source Pie-like Chart */}
@@ -441,56 +456,7 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Daily Visitors Line Chart (Simplified) */}
-                <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden group/visitors">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <Link
-                            href="/admin/quotes/analytics"
-                            className="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            aria-label="견적 유입 분석 보기"
-                        >
-                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2 group-hover/visitors:text-primary transition-colors">
-                                일별 방문자 추이
-                                <ChevronRight className="w-4 h-4 text-white/30" />
-                            </CardTitle>
-                            <p className="text-xs text-white/40 mt-1">최근 14일간의 고유 방문자 세션 수 · 클릭 시 유입 분석</p>
-                        </Link>
-                    </CardHeader>
-                    <CardContent className="p-6 pt-10">
-                        {s.dailyVisitors.length > 0 ? (
-                            <div className="h-[220px] flex items-end gap-2 relative">
-                                {/* Grid lines */}
-                                <div className="absolute inset-x-0 top-0 h-full flex flex-col justify-between pointer-events-none opacity-20">
-                                    {[0, 1, 2, 3].map((l) => (
-                                        <div key={l} className="w-full h-px bg-white/10" />
-                                    ))}
-                                </div>
-                                {s.dailyVisitors.map((v) => (
-                                    <div key={v.date} className="flex-1 flex flex-col items-center justify-end h-full group/vbar">
-                                        <div className="relative w-full flex flex-col items-center justify-end h-full">
-                                            {/* Tooltip */}
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-white text-black text-[9px] font-bold opacity-0 group-hover/vbar:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none">
-                                                {v.count} 명
-                                            </div>
-                                            <div 
-                                                className="w-full max-w-[8px] rounded-t-full bg-primary/40 group-hover/vbar:bg-primary transition-all duration-300"
-                                                style={{ height: `${(v.count / maxVisitors) * 160}px` }}
-                                            />
-                                        </div>
-                                        <span className="text-[8px] font-medium text-white/20 mt-3 group-hover/vbar:text-white transition-colors">
-                                            {v.date.split('-')[2]}일
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="h-[220px] flex flex-col items-center justify-center text-white/20 gap-3 border border-dashed border-white/5 rounded-2xl">
-                                <Activity className="w-8 h-8 opacity-20" />
-                                <span className="text-sm">없음</span>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <VisitorTrendPanel data={s.visitorTrend ?? []} dayCount={14} />
             </div>
         </div>
     );
