@@ -72,20 +72,25 @@ export default function Header() {
             style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
         >
             {/* 상단 바: 모바일에서 오버레이보다 위에 표시되도록 z-[101] */}
-            <div className="relative z-[101] container mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-3 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/25">
-                        <Boxes className="w-6 h-6 text-white" />
+            <div className="relative z-[101] container mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 min-w-0 max-w-full overflow-hidden">
+                {/* Logo — 클릭 시 메뉴 닫고 메인으로 */}
+                <Link
+                    href="/"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 sm:gap-3 min-w-0 shrink max-w-[calc(100%-11rem)] sm:max-w-[50%] lg:max-w-none"
+                    aria-label="WOW3D PRO 메인으로 이동"
+                >
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/25 shrink-0">
+                        <Boxes className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
-                    <div className="flex flex-col">
-                        <span className={`font-black text-lg sm:text-xl leading-none transition-colors ${isPastHero ? 'text-slate-800' : 'text-white'}`}>
+                    <div className="flex flex-col min-w-0">
+                        <span className={`font-black text-base sm:text-lg lg:text-xl leading-none transition-colors truncate ${isPastHero ? 'text-slate-800' : 'text-white'}`}>
                             WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
                         </span>
-                        <span className={`text-[10px] sm:text-[11px] font-bold leading-tight mt-1 transition-colors ${isPastHero ? 'text-slate-600' : 'text-white/80'}`}>
+                        <span className={`hidden sm:block text-[10px] sm:text-[11px] font-bold leading-tight mt-1 transition-colors truncate ${isPastHero ? 'text-slate-600' : 'text-white/80'}`}>
                             (주)와우쓰리디
                         </span>
-                        <span className={`text-[9px] sm:text-[10px] font-medium leading-tight mt-0.5 transition-colors ${isPastHero ? 'text-slate-400' : 'text-white/60'}`}>
+                        <span className={`hidden md:block text-[9px] sm:text-[10px] font-medium leading-tight mt-0.5 transition-colors truncate ${isPastHero ? 'text-slate-400' : 'text-white/60'}`}>
                             (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
                         </span>
                     </div>
@@ -112,10 +117,10 @@ export default function Header() {
                     ))}
                 </nav>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                {/* Actions — 모바일에서 아이콘 영역 축소 */}
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <Link href="/cart">
-                        <button className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                        <button className={`relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
                             isPastHero
                                 ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-teal-600 hover:bg-teal-50 hover:border-teal-200'
                                 : 'bg-white/10 border border-white/15 text-white/80 hover:text-white hover:bg-white/20'
@@ -137,14 +142,14 @@ export default function Header() {
                     </Link>
 
                     {mounted && isAuthenticated ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                             <Link href={user?.role === 'admin' ? '/admin' : '/my-account'}>
-                                <button className={`flex items-center gap-2.5 pl-2 pr-3.5 py-2 rounded-xl transition-all ${
+                                <button className={`flex items-center justify-center w-9 h-9 sm:w-auto sm:gap-2.5 sm:pl-2 sm:pr-3.5 sm:py-2 rounded-xl transition-all ${
                                     isPastHero
                                         ? 'bg-slate-100 border border-slate-200 hover:bg-teal-50 hover:border-teal-200'
                                         : 'bg-white/15 border border-white/25 hover:bg-white/25'
                                 }`}>
-                                    <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
+                                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
                                         <User className="w-4 h-4" />
                                     </div>
                                     <div className="hidden sm:flex flex-col text-left">
@@ -155,15 +160,19 @@ export default function Header() {
                             </Link>
                             <button
                                 onClick={() => logout()}
-                                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition-all"
+                                className={`hidden sm:flex w-10 h-10 rounded-xl border items-center justify-center transition-all ${
+                                    isPastHero
+                                        ? 'border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50'
+                                        : 'border-white/20 text-white/60 hover:text-red-400 hover:border-red-400/30 hover:bg-red-500/10'
+                                }`}
                                 title="로그아웃"
                             >
                                 <LogOut className="w-4 h-4" />
                             </button>
                         </div>
                     ) : (
-                        <Link href="/auth">
-                            <Button variant="ghost" className={`text-[13px] font-semibold rounded-xl px-4 h-10 border transition-colors ${
+                        <Link href="/auth" className="hidden sm:block">
+                            <Button variant="ghost" className={`text-[13px] font-semibold rounded-xl px-3 sm:px-4 h-9 sm:h-10 border transition-colors ${
                                 isPastHero
                                     ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50 border-slate-200'
                                     : 'text-white/90 hover:text-white hover:bg-white/20 border-white/30'
@@ -184,7 +193,7 @@ export default function Header() {
                     <button
                         type="button"
                         onClick={() => setMobileOpen((o) => !o)}
-                        className={`lg:hidden w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center touch-manipulation select-none transition-all ${
+                        className={`lg:hidden w-9 h-9 min-w-[36px] min-h-[36px] rounded-xl flex items-center justify-center touch-manipulation select-none transition-all shrink-0 ${
                             isPastHero
                                 ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-teal-50 hover:text-teal-600'
                                 : 'bg-white/25 border border-white/40 text-white hover:bg-white/30 shadow-lg shadow-black/20'
@@ -193,7 +202,7 @@ export default function Header() {
                         aria-label={mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
                         aria-expanded={mobileOpen}
                     >
-                        {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
                 </div>
             </div>
