@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
 
 const ALLOWED_STATUS = ['new', 'read', 'replied', 'closed'];
 const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
@@ -65,21 +66,54 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       }
     };
 
+    let existingInquiry: any = null;
+    let useStoreScope = true;
+
     try {
-      const check = await env.DB.prepare(`SELECT id FROM inquiries WHERE id = ? AND ${STORE_INQUIRIES}`)
+      existingInquiry = await env.DB.prepare(
+        `SELECT name, email, subject, message, status, admin_note FROM inquiries WHERE id = ? AND ${STORE_INQUIRIES}`
+      )
         .bind(numId, storeId)
         .first();
-      if (!check) {
+      if (!existingInquiry) {
         return NextResponse.json({ error: 'Inquiry not found or access denied' }, { status: 404 });
       }
-      await runUpdate(true);
     } catch (e) {
       if (!isMissingStoreIdColumn(e)) throw e;
-      const check = await env.DB.prepare('SELECT id FROM inquiries WHERE id = ?').bind(numId).first();
-      if (!check) {
+      useStoreScope = false;
+      existingInquiry = await env.DB.prepare('SELECT name, email, subject, message, status, admin_note FROM inquiries WHERE id = ?')
+        .bind(numId)
+        .first();
+      if (!existingInquiry) {
         return NextResponse.json({ error: 'Inquiry not found' }, { status: 404 });
       }
-      await runUpdate(false);
+    }
+
+    await runUpdate(useStoreScope);
+
+    // 문의 답변 완료 메일 전송 트리거
+    const finalStatus = status !== null ? status : existingInquiry.status;
+    const finalAdminNote = adminNote !== null ? adminNote : existingInquiry.admin_note;
+    const isRepliedNow = finalStatus === 'replied';
+    const noteChanged = adminNote !== null && adminNote !== existingInquiry.admin_note;
+    const statusChangedToReplied = status !== null && status === 'replied' && existingInquiry.status !== 'replied';
+
+    if (isRepliedNow && finalAdminNote && (statusChangedToReplied || noteChanged)) {
+      try {
+        await notifyUserInquiryReplied(
+          {
+            inquiryId: numId,
+            name: existingInquiry.name,
+            email: existingInquiry.email,
+            subject: existingInquiry.subject,
+            message: existingInquiry.message,
+            replyMessage: finalAdminNote,
+          },
+          env as any
+        );
+      } catch (mailErr) {
+        console.error('Failed to send inquiry reply notification email:', mailErr);
+      }
     }
 
     return NextResponse.json({ success: true });
