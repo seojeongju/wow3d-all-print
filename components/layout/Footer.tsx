@@ -48,7 +48,7 @@ export default function Footer() {
 
                         <p className="text-[13px] sm:text-sm text-white/40 leading-relaxed font-medium max-w-sm">
                             AI 기반 3D 프린팅 자동견적 시스템과 산업용 제작 인프라를 바탕으로
-                            3D 프린터 출력, 시제품 제작, 소량 양산 서비스를 제공합니다.
+                            3D 프린터 출력, 시제품제작 서비스, 소량 양산 서비스를 제공합니다.
                         </p>
 
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4">

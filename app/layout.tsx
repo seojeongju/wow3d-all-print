@@ -25,11 +25,11 @@ const BRAND_LOGO_IMAGE = `${SITE_URL}/thumbnail.png`;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "(주)와우쓰리디 - 3D프린팅 출력 및 시제품 제작 | 실시간 자동견적",
+    default: "(주)와우쓰리디 - 3D프린팅 출력 및 시제품제작 서비스 | 실시간 자동견적",
     template: "%s | (주)와우쓰리디 WOW3D",
   },
   description:
-    "3D프린팅 출력 및 시제품제작 전문 와우쓰리디. AI 자동견적으로 실시간 가격 확인 및 STL 파일 업로드 주문 서비스.",
+    "3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. AI 자동견적으로 실시간 가격 확인 및 STL 파일 업로드 주문 서비스.",
   keywords: [
     "와우쓰리디",
     "WOW3D",
@@ -137,7 +137,7 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "LocalBusiness",
                 "name": "(주)와우쓰리디 (WOW3D)",
-                "description": "(주)와우쓰리디는 AI 기반 3D프린팅 자동견적 시스템과 시제품제작 대행 전문 업체입니다.",
+                "description": "(주)와우쓰리디는 AI 기반 3D프린팅 자동견적 시스템과 시제품제작 서비스 전문 업체입니다.",
                 "url": SITE_URL,
                 "image": PRIMARY_OG_IMAGE,
                 "address": {
@@ -152,12 +152,12 @@ export default function RootLayout({
               {
                 "@context": "https://schema.org",
                 "@type": "Service",
-                "serviceType": "3D프린팅 출력 및 시제품제작 대행",
+                "serviceType": "3D프린팅 출력 및 시제품제작",
                 "provider": {
                   "@type": "LocalBusiness",
                   "name": "(주)와우쓰리디 (WOW3D)"
                 },
-                "description": "3D프린터 출력, 시제품 제작, 프로토타입 제작, 3D프린팅 출력대행 서비스",
+                "description": "3D프린터 출력, 시제품제작, 프로토타입 제작, 3D프린팅 출력 서비스",
                 "areaServed": "KR"
               },
               {

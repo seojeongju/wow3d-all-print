@@ -58,7 +58,7 @@ function buildFallbackShowcaseCards(): ShowcaseCard[] {
 const PROCESS_STEPS = [
     { title: "상담 및 기획", desc: "제품의 용도와 요구사항을 정밀 분석합니다." },
     { title: "설계 및 모델링", desc: "3D 데이터를 생성하거나 최적화 설계를 진행합니다." },
-    { title: "시제품 제작", desc: "선택된 소재와 공법으로 실제 동작 모델을 출력합니다." },
+    { title: "시제품제작 서비스", desc: "선택된 소재와 공법으로 실제 동작 모델을 출력합니다." },
     { title: "검수 및 양산", desc: "최종 품질 검사 후 납품 또는 대량 생산을 진행합니다." }
 ]
 

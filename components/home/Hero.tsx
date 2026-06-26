@@ -159,7 +159,7 @@ export default function Hero() {
                         <span className="text-teal-400 block text-xs sm:text-sm md:text-base mb-4 font-black uppercase tracking-[0.3em] opacity-90">WOW3D PRO</span>
                         3D프린팅 출력 및<br />
                         <span className="text-teal-400 relative inline-block mt-2">
-                            시제품 제작 대행 서비스
+                            시제품제작 서비스
                             <svg className="absolute w-full h-2 sm:h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
                                 <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
@@ -168,7 +168,7 @@ export default function Hero() {
 
                     <p className="text-base sm:text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed break-keep font-medium">
                         STL·OBJ·3MF 파일 업로드만으로 <span className="text-teal-400 font-bold">실시간 자동견적</span>을 즉시 확인하세요.<br className="hidden sm:block" />
-                        3D프린팅 출력 대행부터 시제품 제작까지 (주)와우쓰리디가 함께합니다.
+                        3D프린팅 출력 부터 시제품제작까지 (주)와우쓰리디가 함께합니다.
                     </p>
 
                     {/* 모바일 전용 AI 견적 정보 카드 (Hidden on Desktop) */}

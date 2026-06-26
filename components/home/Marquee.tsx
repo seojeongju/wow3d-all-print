@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const items = [
     "PLA", "ABS", "PETG", "TPU", "Nylon", "Standard Resin", "Tough Resin",
-    "FDM 방식", "SLA 정밀 출력", "DLP 고속 출력", "시제품 제작",
+    "FDM 방식", "SLA 정밀 출력", "DLP 고속 출력", "시제품제작 서비스",
     "졸업작품", "대량 생산", "후가공 서비스"
 ];
 
