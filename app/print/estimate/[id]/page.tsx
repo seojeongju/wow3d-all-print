@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate, formatNowKoreanDate } from '@/lib/date-utils';
+import { getStoredAdminToken } from '@/lib/client-admin-auth';
 
 type CompanyInfo = {
     business_number?: string;
@@ -47,6 +48,7 @@ export default function EstimatePrintPage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
     const [error, setError] = useState('');
+    const [errorHint, setErrorHint] = useState('');
     const [company, setCompany] = useState<CompanyInfo>(DEFAULT_COMPANY);
 
     useEffect(() => {
@@ -64,19 +66,21 @@ export default function EstimatePrintPage() {
                             setCompany({ ...DEFAULT_COMPANY, ...dbCompany });
                         }
                     } else {
-                        setError(json.error || '견적 정보를 불러올 수 없습니다. 유효하지 않은 링크이거나 만료되었습니다.');
+                        setError(json.error || '견적 정보를 불러올 수 없습니다.');
+                        setErrorHint('이메일로 받으신 최신 견적서 링크를 이용해 주세요. 링크가 동작하지 않으면 발송처에 문의해 주세요.');
                     }
                 })
                 .catch(err => {
                     setError('데이터 로딩 실패');
+                    setErrorHint('잠시 후 다시 시도해 주세요.');
                     console.error(err);
                 })
                 .finally(() => setLoading(false));
             return;
         }
 
-        // 2. 관리자 모드인 경우 (토큰이 없고 localStorage에 관리자 토큰이 존재할 때)
-        const savedToken = typeof window !== 'undefined' ? localStorage.getItem('admin_print_token') : null;
+        // 2. 관리자 모드 (토큰 없음 — 로그인 세션 또는 admin_print_token)
+        const savedToken = getStoredAdminToken();
         const authHeader: Record<string, string> = {};
         if (savedToken) authHeader['Authorization'] = `Bearer ${savedToken}`;
 
@@ -112,11 +116,17 @@ export default function EstimatePrintPage() {
                 if (json.success) {
                     setData(json.data);
                 } else {
-                    setError(json.error || '주문 정보를 불러올 수 없습니다. 관리자 페이지에서 인쇄해주세요.');
+                    setError(json.error || '주문 정보를 불러올 수 없습니다.');
+                    setErrorHint(
+                        savedToken
+                            ? '관리자 페이지 → 견적 관리에서 인쇄 버튼을 통해 열어주세요.'
+                            : '관리자는 로그인 후 견적 관리에서 인쇄 버튼을 사용하세요. 고객은 이메일로 받은 견적서 링크를 이용해 주세요.'
+                    );
                 }
             })
             .catch(err => {
                 setError('데이터 로딩 실패');
+                setErrorHint('잠시 후 다시 시도해 주세요.');
                 console.error(err);
             })
             .finally(() => setLoading(false));
@@ -191,9 +201,13 @@ export default function EstimatePrintPage() {
 
     if (error) return (
         <div className="flex h-screen items-center justify-center flex-col gap-4 text-center p-8">
-            <div className="text-red-500 text-lg font-bold">❌ 인증 오류</div>
+            <div className="text-red-500 text-lg font-bold">
+                {token ? '견적서 링크 오류' : '접근 권한 없음'}
+            </div>
             <div className="text-slate-600 text-sm max-w-sm">{error}</div>
-            <div className="text-slate-400 text-xs mt-2">관리자 페이지 → 견적 관리에서 인쇄 버튼을 통해 열어주세요.</div>
+            {errorHint && (
+                <div className="text-slate-400 text-xs mt-2 max-w-sm">{errorHint}</div>
+            )}
         </div>
     );
 

@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
+import { buildEstimatePublicUrl, ensureOrderViewToken, resolvePublicBaseUrl } from '@/lib/quotation-view-token';
 
 /**
  * GET /api/admin/orders/[id]/quotation-email-draft
@@ -70,12 +71,13 @@ export async function GET(
             : [];
 
         const toEmail = fullOrder.user_email || fullOrder.guest_email || '';
-        const requestOrigin = typeof req.url === 'string' ? new URL(req.url).origin : '';
         const envVars = env as unknown as Record<string, string | undefined>;
         const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || envVars.NEXT_PUBLIC_APP_URL || '';
-        const isLocalhost = (u: string) => !u || /^https?:\/\/localhost(:\d+)?(\/|$)/i.test(u);
-        const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
-        const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}`;
+        const baseUrl = resolvePublicBaseUrl(typeof req.url === 'string' ? req.url : '', envAppUrl);
+        const viewToken = await ensureOrderViewToken(env.DB, numId);
+        const estimateUrl = viewToken
+            ? buildEstimatePublicUrl(baseUrl, numId, viewToken)
+            : `${baseUrl}/print/estimate/${numId}`;
 
         type ItemRow = { id?: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
         let items: ItemRow[] = [];

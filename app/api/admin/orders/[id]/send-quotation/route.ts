@@ -3,6 +3,12 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
+import {
+    buildEstimatePublicUrl,
+    ensureOrderViewToken,
+    injectEstimateUrlInContent,
+    resolvePublicBaseUrl,
+} from '@/lib/quotation-view-token';
 
 /**
  * POST /api/admin/orders/[id]/send-quotation
@@ -94,21 +100,16 @@ export async function POST(
 
         const envVars = env as unknown as Record<string, string | undefined>;
         const resendKey = process.env.RESEND_API_KEY || envVars.RESEND_API_KEY;
-        const requestOrigin = typeof req.url === 'string' ? new URL(req.url).origin : '';
         const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || envVars.NEXT_PUBLIC_APP_URL || '';
-        const isLocalhost = (u: string) => !u || /^https?:\/\/localhost(:\d+)?(\/|$)/i.test(u);
-        const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
+        const baseUrl = resolvePublicBaseUrl(typeof req.url === 'string' ? req.url : '', envAppUrl);
 
         let viewToken = order?.view_token;
         if (!viewToken) {
-            viewToken = crypto.randomUUID();
-            try {
-                await env.DB.prepare('UPDATE orders SET view_token = ? WHERE id = ?').bind(viewToken, numId).run();
-            } catch (err) {
-                console.warn('Failed to update missing view_token on send-quotation', err);
-            }
+            viewToken = await ensureOrderViewToken(env.DB, numId);
         }
-        const estimateUrl = `${baseUrl.replace(/\/$/, '')}/print/estimate/${numId}?token=${viewToken}`;
+        const estimateUrl = viewToken
+            ? buildEstimatePublicUrl(baseUrl, numId, viewToken)
+            : `${baseUrl}/print/estimate/${numId}`;
 
         type ItemRow = { id?: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
         let itemsForPdf: ItemRow[] = [];
@@ -167,20 +168,28 @@ export async function POST(
                 const subject = customSubject ?? buildDefaultSubject(fullOrder.order_number);
                 const hasCustomHtml = customHtml != null;
                 const hasCustomText = customText != null;
-                const html = customHtml ?? buildDefaultHtml({
+                let html = customHtml ?? buildDefaultHtml({
                     orderNumber: fullOrder.order_number,
                     estimateUrl,
                     amountText: amountText ?? undefined,
                     displayAmount,
                     withPdfAttachment: attachments.length > 0,
                 });
-                const text = customText ?? buildDefaultText({
+                let text = customText ?? buildDefaultText({
                     orderNumber: fullOrder.order_number,
                     estimateUrl,
                     amountText: amountText ?? undefined,
                     displayAmount,
                     withPdfAttachment: attachments.length > 0,
                 });
+                if (viewToken) {
+                    if (hasCustomHtml && customHtml) {
+                        html = injectEstimateUrlInContent(customHtml, numId, estimateUrl, baseUrl);
+                    }
+                    if (hasCustomText && customText) {
+                        text = injectEstimateUrlInContent(customText, numId, estimateUrl, baseUrl);
+                    }
+                }
                 const payload: Record<string, unknown> = {
                     from: fromAddr,
                     to: [toEmail],
