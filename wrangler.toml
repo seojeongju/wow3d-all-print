@@ -2,7 +2,7 @@
 # https://opennext.js.org/cloudflare/get-started
 
 name = "wow3d-all-print"
-main = ".open-next/worker.js"
+main = "scripts/worker-entry.mjs"
 compatibility_date = "2024-12-30"
 
 # 커스텀 도메인은 Cloudflare 대시보드에서 연결 (Workers & Pages > wow3d-all-print > 설정 > 도메인 및 경로 > Custom Domain)
@@ -43,3 +43,7 @@ bucket_name = "wow3d-files"
 
 [vars]
 ENVIRONMENT = "production"
+
+# 매일 00:00 KST(UTC 15:00) — 배송중→배송완료(5일), 배송완료→완료됨(2일) 자동 전환
+[triggers]
+crons = ["0 15 * * *"]

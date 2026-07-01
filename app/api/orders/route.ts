@@ -4,6 +4,7 @@ import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, requireAuthOrGuest, generateOrderNumber } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
+import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
 
 /**
  * GET /api/orders - 주문 목록 조회
@@ -26,6 +27,8 @@ export async function GET(request: NextRequest) {
         if (!env?.DB) {
             return successResponse([]);
         }
+
+        await processAutoOrderStatusTransitions(env.DB);
 
         // 주문 목록 조회
         const orders = await env.DB

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
+import { processAutoOrderStatusTransitions, statusTimestampSql } from '@/lib/order-auto-status';
+import { isOrderStatus, ORDER_STATUS_VALUES } from '@/lib/order-status';
 
-const ALLOWED = ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'completed', 'cancelled'];
+const ALLOWED = [...ORDER_STATUS_VALUES];
 
 /**
  * GET /api/admin/orders/[id] - 주문 상세 (항목, 배송, 관리자메모)
@@ -91,8 +93,8 @@ export async function PATCH(
 
     try {
         // 해당 주문 존재 여부 확인 (store_id 일치 또는 NULL인 구 주문 포함)
-        const check = await env.DB.prepare('SELECT id, store_id FROM orders WHERE id = ?')
-            .bind(numId).first() as { id: number; store_id: number | null } | null;
+        const check = await env.DB.prepare('SELECT id, store_id, status FROM orders WHERE id = ?')
+            .bind(numId).first() as { id: number; store_id: number | null; status: string } | null;
         if (!check) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
@@ -104,20 +106,23 @@ export async function PATCH(
         }
 
         const body = (await req.json()) as { status?: string; admin_note?: string; expert_quote_data?: any };
-        const status = body?.status && ALLOWED.includes(body.status) ? body.status : null;
+        const status = body?.status && isOrderStatus(body.status) ? body.status : null;
         const adminNote = body?.admin_note !== undefined ? String(body.admin_note) : null;
+        const prevStatus = check.status;
 
         // store_id가 NULL인 구 주문은 WHERE id = ? 만 사용
         const whereClause = orderStoreId != null ? 'WHERE id = ? AND store_id = ?' : 'WHERE id = ?';
         const whereBind = orderStoreId != null ? [numId, storeId] : [numId];
 
         if (status !== null && adminNote !== null) {
+            const { setClause } = statusTimestampSql(status, prevStatus);
             await env.DB.prepare(
-                `UPDATE orders SET status = ?, admin_note = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+                `UPDATE orders SET status = ?, admin_note = ?, updated_at = CURRENT_TIMESTAMP${setClause} ${whereClause}`
             ).bind(status, adminNote, ...whereBind).run();
         } else if (status !== null) {
+            const { setClause } = statusTimestampSql(status, prevStatus);
             await env.DB.prepare(
-                `UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
+                `UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP${setClause} ${whereClause}`
             ).bind(status, ...whereBind).run();
         } else if (adminNote !== null) {
             await env.DB.prepare(
@@ -140,6 +145,8 @@ export async function PATCH(
         } else {
             return NextResponse.json({ error: 'status, admin_note or expert_quote_data required' }, { status: 400 });
         }
+
+        await processAutoOrderStatusTransitions(env.DB);
 
         return NextResponse.json({ success: true });
     } catch (e: unknown) {

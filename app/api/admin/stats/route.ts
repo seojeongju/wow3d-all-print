@@ -102,12 +102,12 @@ export async function GET(req: NextRequest) {
                 COALESCE(SUM(CASE
                     WHEN o.status != 'cancelled' AND (
                         o.payment_status = 'paid'
-                        OR o.status IN ('payment_confirmed', 'production', 'shipping', 'completed')
+                        OR o.status IN ('payment_confirmed', 'production', 'shipping', 'delivered', 'completed')
                     ) THEN o.total_amount ELSE 0 END), 0) as paid_amount,
                 COALESCE(SUM(CASE
                     WHEN o.status != 'cancelled'
                         AND IFNULL(o.payment_status, 'pending') != 'paid'
-                        AND o.status NOT IN ('payment_confirmed', 'production', 'shipping', 'completed')
+                        AND o.status NOT IN ('payment_confirmed', 'production', 'shipping', 'delivered', 'completed')
                     THEN o.total_amount ELSE 0 END), 0) as outstanding_amount
             FROM orders o
             WHERE o.created_at >= date('now', '-13 days')

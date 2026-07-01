@@ -64,6 +64,7 @@ function getStatusStyle(status: string): { bg: string; text: string; border: str
         case 'payment_confirmed': return { bg: 'bg-teal-500/10',     text: 'text-teal-400',    border: 'border-teal-500/30',   dot: 'bg-teal-400' };
         case 'production':        return { bg: 'bg-purple-500/10',   text: 'text-purple-400',  border: 'border-purple-500/30', dot: 'bg-purple-400' };
         case 'shipping':          return { bg: 'bg-indigo-500/10',   text: 'text-indigo-400',  border: 'border-indigo-500/30', dot: 'bg-indigo-400' };
+        case 'delivered':         return { bg: 'bg-sky-500/10',      text: 'text-sky-400',     border: 'border-sky-500/30',    dot: 'bg-sky-400' };
         case 'completed':         return { bg: 'bg-teal-400/10',     text: 'text-teal-400',    border: 'border-teal-400/30',   dot: 'bg-teal-400' };
         case 'cancelled':         return { bg: 'bg-red-500/10',      text: 'text-red-400',     border: 'border-red-500/30',    dot: 'bg-red-400' };
         default:                  return { bg: 'bg-white/5',          text: 'text-white/40',    border: 'border-white/10',      dot: 'bg-white/20' };
@@ -71,7 +72,7 @@ function getStatusStyle(status: string): { bg: string; text: string; border: str
 }
 
 /** 주문 진행 단계 표시 선 */
-const ORDER_STEPS = ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'completed'];
+const ORDER_STEPS = ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered', 'completed'];
 const ORDER_STEP_LABELS: Record<string, string> = {
     pending: '접수',
     confirmed: '확인',
@@ -79,6 +80,7 @@ const ORDER_STEP_LABELS: Record<string, string> = {
     payment_confirmed: '결제',
     production: '제작',
     shipping: '배송',
+    delivered: '배송완료',
     completed: '완료',
 };
 
@@ -127,7 +129,8 @@ const statusMap: Record<string, string> = {
     payment_confirmed: '결제 확인',
     production: '제작 중',
     shipping: '배송 중',
-    completed: '배송 완료',
+    delivered: '배송 완료',
+    completed: '완료됨',
     cancelled: '주문 취소',
 };
 
@@ -353,7 +356,7 @@ export default function MyAccountPage() {
 
     // derived stats
     const activeOrders = orders.filter(o =>
-        ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping'].includes(o.status)
+        ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered'].includes(o.status)
     );
     const completedOrders = orders.filter(o => o.status === 'completed');
     // 수정견적 우선 적용한 누적 이용 금액 (cancelled 제외)
@@ -657,7 +660,8 @@ export default function MyAccountPage() {
                                                 <SelectItem value="confirmed">주문 확인</SelectItem>
                                                 <SelectItem value="production">제작 중</SelectItem>
                                                 <SelectItem value="shipping">배송 중</SelectItem>
-                                                <SelectItem value="completed">배송 완료</SelectItem>
+                                                <SelectItem value="delivered">배송 완료</SelectItem>
+                                                <SelectItem value="completed">완료됨</SelectItem>
                                                 <SelectItem value="cancelled">주문 취소</SelectItem>
                                             </SelectContent>
                                         </Select>

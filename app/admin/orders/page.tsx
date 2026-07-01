@@ -42,6 +42,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'payment_confirmed', label: '결제 확인' },
     { value: 'production', label: '제작 중' },
     { value: 'shipping', label: '배송 중' },
+    { value: 'delivered', label: '배송 완료' },
     { value: 'completed', label: '완료됨' },
     { value: 'cancelled', label: '취소' },
 ];
@@ -54,6 +55,7 @@ function getStatusBadge(status: string) {
         case 'payment_confirmed': return <Badge variant="outline" className="bg-teal-500/20 text-teal-400 border-teal-500/30">결제 확인</Badge>;
         case 'production': return <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30">제작 중</Badge>;
         case 'shipping': return <Badge variant="outline" className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">배송 중</Badge>;
+        case 'delivered': return <Badge variant="outline" className="bg-sky-500/20 text-sky-400 border-sky-500/30">배송 완료</Badge>;
         case 'completed': return <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">완료됨</Badge>;
         case 'cancelled': return <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">취소</Badge>;
         default: return <Badge variant="outline" className="bg-white/10 text-white/60">미정</Badge>;

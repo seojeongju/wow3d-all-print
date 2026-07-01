@@ -8,6 +8,7 @@ interface Env {
     DB: D1Database;
     BUCKET: R2Bucket;
     ENVIRONMENT: string;
+    CRON_SECRET?: string;
 }
 
 // D1 Database 타입

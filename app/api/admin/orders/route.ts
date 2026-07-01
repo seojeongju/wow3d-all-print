@@ -1,6 +1,8 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
+import { ORDER_STATUS_VALUES } from '@/lib/order-status';
 
 /** quotation_sent_at 없을 때: 수정견적만 조회 (같은 WHERE) */
 const MAIN_EXPERT_ONLY_SQL = `
@@ -141,20 +143,13 @@ function orderSearchSql(): string {
             )`;
 }
 
-const ORDER_STATUS_FILTER_SET = new Set([
-    'pending',
-    'confirmed',
-    'quote_sent',
-    'payment_confirmed',
-    'production',
-    'shipping',
-    'completed',
-    'cancelled',
-]);
+const ORDER_STATUS_FILTER_SET = new Set<string>(ORDER_STATUS_VALUES);
 
 export async function GET(req: NextRequest) {
     const { env } = getCloudflareContext();
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 });
+
+    await processAutoOrderStatusTransitions(env.DB);
 
     const auth = await requireAdminAuth(req, env.DB);
     if (auth instanceof Response) return auth;

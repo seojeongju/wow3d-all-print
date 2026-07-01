@@ -14,7 +14,8 @@ export default function OrderTimeline({ status }: OrderTimelineProps) {
         { key: 'confirmed', label: '주문 확인', icon: CheckCircle2 },
         { key: 'production', label: '제작 중', icon: Settings },
         { key: 'shipping', label: '배송 중', icon: Truck },
-        { key: 'completed', label: '완료', icon: Package }
+        { key: 'delivered', label: '배송 완료', icon: Package },
+        { key: 'completed', label: '완료', icon: CheckCircle2 },
     ];
 
     const currentStepIndex = steps.findIndex(s => s.key === status);

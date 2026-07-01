@@ -42,6 +42,7 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
     payment_confirmed: '결제확인',
     production: '제작중',
     shipping: '배송중',
+    delivered: '배송완료',
     completed: '완료',
     cancelled: '취소',
 };
