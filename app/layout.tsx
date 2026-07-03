@@ -7,6 +7,12 @@ import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
+import {
+  absoluteUrl,
+  BRAND_LOGO_PATH,
+  OG_IMAGE_PATH,
+  SITE_URL,
+} from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,10 +23,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://wow3dp.co.kr";
-const PRIMARY_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const BRAND_LOGO_IMAGE = `${SITE_URL}/thumbnail.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -57,15 +59,19 @@ export const metadata: Metadata = {
     description:
       "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입·소량양산. (주)와우쓰리디가 당신의 상상을 현실로 만듭니다.",
     images: [
-      { url: PRIMARY_OG_IMAGE, width: 1200, height: 630, alt: "와우쓰리디 WOW3D 3D프린팅 자동견적 서비스 화면" },
-      { url: BRAND_LOGO_IMAGE, width: 600, height: 600, alt: "(주)와우쓰리디 WOW3D 로고" },
+      {
+        url: OG_IMAGE_PATH,
+        width: 1200,
+        height: 630,
+        alt: "와우쓰리디 WOW3D 3D프린팅 자동견적 서비스 화면",
+      },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "3D프린팅 출력·자동견적 | (주)와우쓰리디 WOW3D",
     description: "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문 (주)와우쓰리디.",
-    images: [PRIMARY_OG_IMAGE],
+    images: [OG_IMAGE_PATH],
   },
   robots: {
     index: true,
@@ -73,13 +79,11 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   alternates: { canonical: SITE_URL },
-  // 검색엔진 소유 확인 (Search Console/서치어드바이저에서 발급한 content 값)
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "-9piNXSyjNzl442zz",
     other: {
       "naver-site-verification":
         process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || "ce7e7d3489dc31609cfceda1d5ad6648d527bbf8",
-      "thumbnail": PRIMARY_OG_IMAGE,
     },
   },
 };
@@ -96,6 +100,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const ogImageUrl = absoluteUrl(OG_IMAGE_PATH);
+  const logoUrl = absoluteUrl(BRAND_LOGO_PATH);
+
   return (
     <html lang="ko" className="dark">
       <body
@@ -117,8 +124,8 @@ export default function RootLayout({
                 "@type": "Organization",
                 "name": "(주)와우쓰리디",
                 "url": SITE_URL,
-                "logo": BRAND_LOGO_IMAGE,
-                "image": PRIMARY_OG_IMAGE,
+                "logo": logoUrl,
+                "image": ogImageUrl,
                 "contactPoint": {
                   "@type": "ContactPoint",
                   "telephone": "02-3144-3137",
@@ -139,7 +146,7 @@ export default function RootLayout({
                 "name": "(주)와우쓰리디 (WOW3D)",
                 "description": "(주)와우쓰리디는 AI 기반 3D프린팅 자동견적 시스템과 시제품제작 서비스 전문 업체입니다.",
                 "url": SITE_URL,
-                "image": PRIMARY_OG_IMAGE,
+                "image": ogImageUrl,
                 "address": {
                   "@type": "PostalAddress",
                   "streetAddress": "독막로 93 상수빌딩 4층",
@@ -168,7 +175,7 @@ export default function RootLayout({
                 "url": SITE_URL,
                 "primaryImageOfPage": {
                   "@type": "ImageObject",
-                  "url": PRIMARY_OG_IMAGE,
+                  "url": ogImageUrl,
                   "width": "1200",
                   "height": "630"
                 }

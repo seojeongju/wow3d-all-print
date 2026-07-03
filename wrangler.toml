@@ -43,6 +43,7 @@ bucket_name = "wow3d-files"
 
 [vars]
 ENVIRONMENT = "production"
+NEXT_PUBLIC_APP_URL = "https://wow3dp.co.kr"
 
 # 매일 00:00 KST(UTC 15:00) — 배송중→배송완료(5일), 배송완료→완료됨(2일) 자동 전환
 [triggers]
