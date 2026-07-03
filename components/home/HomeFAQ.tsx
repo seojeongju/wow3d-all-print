@@ -1,55 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Minus, HelpCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import type { QnAItem } from '@/lib/qna'
 
-interface QnA {
-    id: number;
-    question: string;
-    answer: string;
-    category: string;
-}
+type HomeFAQProps = {
+    items: QnAItem[];
+};
 
-export default function HomeFAQ() {
-    const [qnas, setQnas] = useState<QnA[]>([])
-    const [loading, setLoading] = useState(true)
+export default function HomeFAQ({ items }: HomeFAQProps) {
     const [openId, setOpenId] = useState<number | null>(null)
 
-    useEffect(() => {
-        const fetchQnas = async () => {
-            try {
-                const res = await fetch('/api/qna')
-                const data = await res.json()
-                if (data.success) {
-                    // 상위 6개만 노출
-                    setQnas(data.data.slice(0, 6))
-                }
-            } catch (e) {
-                console.error('Failed to fetch FAQ for home', e)
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchQnas()
-    }, [])
-
-    if (loading && qnas.length === 0) return null;
-    if (!loading && qnas.length === 0) return null;
+    if (items.length === 0) return null;
 
     return (
         <section className="py-24 relative overflow-hidden">
-            {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
             <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
-            {/* 틸/블루 은은한 포인트 오버레이 */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
-
-            {/* 그리드 배경 */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
-            
-            {/* 배경 글로우 포인트들 */}
             <div className="absolute left-0 top-1/4 w-[500px] h-[500px] rounded-full bg-teal-500/20 blur-[130px]" />
             <div className="absolute right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
             <div className="absolute left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px]" />
@@ -71,8 +42,18 @@ export default function HomeFAQ() {
                         </p>
                     </motion.div>
 
+                    {/* AEO: 답변 텍스트를 초기 HTML에 포함 */}
+                    <section className="sr-only" aria-label="자주 묻는 질문 요약">
+                        {items.map((q) => (
+                            <article key={q.id}>
+                                <h3>{q.question}</h3>
+                                <p>{q.answer}</p>
+                            </article>
+                        ))}
+                    </section>
+
                     <div className="space-y-4">
-                        {qnas.map((q, i) => (
+                        {items.map((q, i) => (
                             <motion.div
                                 key={q.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -128,8 +109,7 @@ export default function HomeFAQ() {
                     </motion.div>
                 </div>
             </div>
-            
-            {/* Subtle background glow */}
+
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
         </section>
     )

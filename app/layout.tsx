@@ -13,6 +13,7 @@ import {
   OG_IMAGE_PATH,
   SITE_URL,
 } from "@/lib/site-url";
+import { buildQuoteHowToSchema, buildWebSiteSearchActionSchema } from "@/lib/aeo-schema";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -112,13 +113,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
-              {
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                "name": "(주)와우쓰리디",
-                "alternateName": ["와우쓰리디", "WOW3D", "와우3D"],
-                "url": SITE_URL,
-              },
+              buildWebSiteSearchActionSchema(),
               {
                 "@context": "https://schema.org",
                 "@type": "Organization",
@@ -129,6 +124,7 @@ export default function RootLayout({
                 "contactPoint": {
                   "@type": "ContactPoint",
                   "telephone": "02-3144-3137",
+                  "email": "wow3d16@naver.com",
                   "contactType": "customer service",
                   "areaServed": "KR",
                   "availableLanguage": "Korean",
@@ -179,7 +175,8 @@ export default function RootLayout({
                   "width": "1200",
                   "height": "630"
                 }
-              }
+              },
+              buildQuoteHowToSchema(),
             ]),
           }}
         />
