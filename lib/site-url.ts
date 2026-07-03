@@ -1,6 +1,6 @@
 export const PRODUCTION_SITE_URL = 'https://wow3dp.co.kr';
 
-export const OG_IMAGE_PATH = '/og-image.png';
+export const OG_IMAGE_PATH = '/og-image.jpg';
 export const BRAND_LOGO_PATH = '/thumbnail.png';
 
 const LOCALHOST_RE = /^https?:\/\/localhost(:\d+)?(\/|$)/i;
