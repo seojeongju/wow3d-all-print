@@ -3,6 +3,7 @@ import openNext, {
     DOShardedTagCache,
     BucketCachePurge,
 } from '../.open-next/worker.js';
+import { handleInquiryInboundEmail } from './inquiry-email-handler.mjs';
 
 export { DOQueueHandler, DOShardedTagCache, BucketCachePurge };
 
@@ -18,5 +19,8 @@ export default {
             },
         });
         ctx.waitUntil(openNext.fetch(req, env, ctx));
+    },
+    async email(message, env, ctx) {
+        ctx.waitUntil(handleInquiryInboundEmail(message, env));
     },
 };

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
 import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
+import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
 
 const RATE_LIMIT_PER_HOUR = 5;
 const MESSAGE_MIN = 10;
@@ -84,12 +85,24 @@ export async function POST(request: NextRequest) {
       // 비회원: userId = null
     }
 
-    const result = await env.DB.prepare(
-      `INSERT INTO inquiries (user_id, name, email, phone, category, subject, message, ip_address)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-      .bind(userId, name, email, phone || null, category, subject, message, ip)
-      .run();
+    const replyToken = generateInquiryReplyToken();
+
+    let result;
+    try {
+      result = await env.DB.prepare(
+        `INSERT INTO inquiries (user_id, name, email, phone, category, subject, message, ip_address, reply_token)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(userId, name, email, phone || null, category, subject, message, ip, replyToken)
+        .run();
+    } catch {
+      result = await env.DB.prepare(
+        `INSERT INTO inquiries (user_id, name, email, phone, category, subject, message, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(userId, name, email, phone || null, category, subject, message, ip)
+        .run();
+    }
 
     const id = result.meta?.last_row_id;
     if (!id) {
@@ -108,8 +121,10 @@ export async function POST(request: NextRequest) {
           subject,
           message,
           source: 'contact',
+          replyToken,
         },
-        env as unknown as Record<string, unknown>
+        env as unknown as Record<string, unknown>,
+        env.DB
       );
       if (!emailSent) {
         console.warn('문의 관리자 알림 메일 미발송 (RESEND_API_KEY 확인 필요, 문의는 DB 저장됨)');

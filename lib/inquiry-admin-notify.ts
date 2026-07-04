@@ -1,4 +1,8 @@
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
+import {
+    buildInquiryReplyAddress,
+    ensureInquiryReplyToken,
+} from '@/lib/inquiry-reply-address';
 
 const DEFAULT_ADMIN_EMAIL = 'wow3d16@naver.com';
 const ADMIN_INQUIRIES_URL = 'https://wow3dp.co.kr/admin/inquiries?status=new';
@@ -15,7 +19,10 @@ export type InquiryNotifyPayload = {
     fileUrl?: string | null;
     company?: string | null;
     source?: 'contact' | 'expert';
+    replyToken?: string | null;
 };
+
+type D1Like = Parameters<typeof ensureInquiryReplyToken>[0];
 
 const CATEGORY_LABELS: Record<string, string> = {
     general: '일반 문의',
@@ -42,10 +49,12 @@ export function getAdminInquiryEmail(env: Record<string, unknown>): string {
 
 /**
  * 신규 문의 접수 시 관리자에게 알림 메일 발송
+ * Reply-To: 시스템 답장 주소 → 네이버에서 답장 시 문의관리 자동 반영·고객 발송
  */
 export async function notifyAdminNewInquiry(
     payload: InquiryNotifyPayload,
-    env: Record<string, unknown>
+    env: Record<string, unknown>,
+    db?: D1Like
 ): Promise<boolean> {
     const adminEmail = getAdminInquiryEmail(env);
     const categoryLabel = getCategoryLabel(payload.category, payload.categoryLabel);
@@ -57,6 +66,25 @@ export async function notifyAdminNewInquiry(
     const fileLink = payload.fileUrl
         ? `https://wow3dp.co.kr/api/files/${payload.fileUrl}`
         : null;
+
+    let replyToken = payload.replyToken || null;
+    if (!replyToken && db) {
+        replyToken = await ensureInquiryReplyToken(db, payload.inquiryId);
+    }
+    const replyToAddress = replyToken
+        ? buildInquiryReplyAddress(payload.inquiryId, replyToken, env)
+        : payload.email;
+
+    const replyGuide = replyToken
+        ? [
+            '',
+            '--- 이메일로 답변하기 ---',
+            `이 메일에 「답장」하시면 답변 내용이 고객(${payload.email})에게 자동 발송되고,`,
+            '문의 관리 화면 상태가 「답변완료」로 변경됩니다.',
+            `(시스템 답장 주소: ${replyToAddress})`,
+            '※ 반드시 이 메일의 답장 기능을 사용해 주세요. 고객에게 직접 새 메일을 작성하면 자동 연동되지 않습니다.',
+        ].join('\n')
+        : '';
 
     const textBody = [
         `[신규 문의 #${payload.inquiryId}]`,
@@ -70,10 +98,11 @@ export async function notifyAdminNewInquiry(
         '',
         '--- 문의 내용 ---',
         payload.message,
+        replyGuide,
         '',
         `관리자 확인: ${ADMIN_INQUIRIES_URL}`,
     ]
-        .filter(Boolean)
+        .filter((line) => line !== null)
         .join('\n');
 
     const htmlBody = `
@@ -81,9 +110,18 @@ export async function notifyAdminNewInquiry(
             <span style="display: inline-block; padding: 6px 12px; background: #2dd4bf; color: #fff; font-size: 11px; font-weight: 800; border-radius: 8px;">New Inquiry #${payload.inquiryId}</span>
             <h2 style="margin: 16px 0 8px; font-size: 20px; font-weight: 900; color: #111;">${escapeHtml(sourceLabel)}가 접수되었습니다</h2>
             <p style="margin: 0 0 20px; font-size: 13px; color: #666;">${escapeHtml(new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }))}</p>
+            ${
+                replyToken
+                    ? `<div style="padding: 14px 16px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; margin-bottom: 16px; font-size: 13px; color: #065f46; line-height: 1.6;">
+                <strong>📩 이메일로 답변하기</strong><br>
+                이 메일에 <strong>「답장」</strong>하시면 답변이 고객(<a href="mailto:${escapeHtml(payload.email)}">${escapeHtml(payload.email)}</a>)에게 자동 발송되고,<br>
+                문의 관리 상태가 <strong>답변완료</strong>로 변경됩니다.
+            </div>`
+                    : ''
+            }
             <div style="padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px;">
                 <p style="margin: 0 0 8px;"><strong>이름</strong> ${escapeHtml(payload.name)}${payload.company ? ` (${escapeHtml(payload.company)})` : ''}</p>
-                <p style="margin: 0 0 8px;"><strong>이메일</strong> <a href="mailto:${escapeHtml(payload.email)}">${escapeHtml(payload.email)}</a></p>
+                <p style="margin: 0 0 8px;"><strong>고객 이메일</strong> <a href="mailto:${escapeHtml(payload.email)}">${escapeHtml(payload.email)}</a></p>
                 ${payload.phone ? `<p style="margin: 0 0 8px;"><strong>연락처</strong> ${escapeHtml(payload.phone)}</p>` : ''}
                 <p style="margin: 0 0 8px;"><strong>유형</strong> ${escapeHtml(categoryLabel)}</p>
                 ${payload.subject ? `<p style="margin: 0;"><strong>제목</strong> ${escapeHtml(payload.subject)}</p>` : ''}
@@ -103,7 +141,7 @@ export async function notifyAdminNewInquiry(
             subject: subjectLine,
             text: textBody,
             html: htmlBody,
-            reply_to: payload.email,
+            reply_to: replyToAddress,
         },
         env
     );

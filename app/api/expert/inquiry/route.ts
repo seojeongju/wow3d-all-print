@@ -2,9 +2,7 @@ import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
 import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
-
-
-
+import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
 const MESSAGE_MIN = 10;
 const MESSAGE_MAX = 10000; // 전문가 문의는 더 길 수 있음
 
@@ -37,12 +35,24 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
     // 1. DB에 기본 정보 먼저 저장
-    const result = await env.DB.prepare(
-      `INSERT INTO inquiries (name, email, phone, category, subject, message, ip_address, admin_note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-      .bind(name, email, phone, category, subject, `${company ? `[업체명: ${company}]\n` : ''}${message}`, ip, company ? `업체명: ${company}` : null)
-      .run();
+    const replyToken = generateInquiryReplyToken();
+
+    let result;
+    try {
+      result = await env.DB.prepare(
+        `INSERT INTO inquiries (name, email, phone, category, subject, message, ip_address, admin_note, reply_token)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(name, email, phone, category, subject, `${company ? `[업체명: ${company}]\n` : ''}${message}`, ip, company ? `업체명: ${company}` : null, replyToken)
+        .run();
+    } catch {
+      result = await env.DB.prepare(
+        `INSERT INTO inquiries (name, email, phone, category, subject, message, ip_address, admin_note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(name, email, phone, category, subject, `${company ? `[업체명: ${company}]\n` : ''}${message}`, ip, company ? `업체명: ${company}` : null)
+        .run();
+    }
 
     const inquiryId = result.meta?.last_row_id;
     if (!inquiryId) return errorResponse('문의 저장에 실패했습니다.', 500);
@@ -80,8 +90,10 @@ export async function POST(request: NextRequest) {
           fileUrl,
           company,
           source: 'expert',
+          replyToken,
         },
-        env as unknown as Record<string, unknown>
+        env as unknown as Record<string, unknown>,
+        env.DB
       );
       if (!emailSent) {
         console.warn('전문가 문의 관리자 알림 미발송 (RESEND_API_KEY 확인)');
