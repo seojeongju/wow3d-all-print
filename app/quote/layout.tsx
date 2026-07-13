@@ -14,7 +14,7 @@ export const metadata: Metadata = {
         url: OG_IMAGE_PATH,
         width: 1200,
         height: 630,
-        alt: "와우쓰리디 WOW3D 3D프린팅 자동견적 서비스 화면",
+        alt: "와우쓰리디 WOW3D 3D프린팅 출력 제품과 프린터",
       },
     ],
   },
