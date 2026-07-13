@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const name = (formData.get('name') as string)?.trim() || '';
     const email = (formData.get('email') as string)?.trim() || '';
-    const phone = (formData.get('phone') as string)?.trim() || null;
+    const phone = (formData.get('phone') as string)?.trim() || '';
     const company = (formData.get('company') as string)?.trim() || null;
     const category = (formData.get('category') as string)?.trim() || 'development';
     const subject = (formData.get('subject') as string)?.trim() || `[제품개발] ${company ? `(${company}) ` : ''}${name}님의 문의`;
@@ -29,6 +29,8 @@ export async function POST(request: NextRequest) {
     // 유효성 검사
     if (!name) return errorResponse('이름을 입력해 주세요.', 400);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorResponse('유효한 이메일을 입력해 주세요.', 400);
+    if (!phone) return errorResponse('연락처를 입력해 주세요.', 400);
+    if (phone.replace(/\D/g, '').length < 9) return errorResponse('올바른 연락처를 입력해 주세요.', 400);
     if (!message || message.length < MESSAGE_MIN) return errorResponse(`문의 내용을 ${MESSAGE_MIN}자 이상 입력해 주세요.`, 400);
 
     // IP기반 Rate Limit (선택적)

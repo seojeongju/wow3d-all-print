@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,8 +29,8 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
 ]
 
 export default function ContactPage() {
+  const router = useRouter()
   const { user, isAuthenticated, token } = useAuthStore()
-
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -67,6 +68,14 @@ export default function ContactPage() {
       showToast.error('입력 확인', '이메일을 입력해 주세요.')
       return
     }
+    if (!formData.phone?.trim()) {
+      showToast.error('입력 확인', '연락처를 입력해 주세요.')
+      return
+    }
+    if (formData.phone.replace(/\D/g, '').length < 9) {
+      showToast.error('입력 확인', '올바른 연락처를 입력해 주세요.')
+      return
+    }
     if (!formData.message?.trim()) {
       showToast.error('입력 확인', '문의 내용을 입력해 주세요.')
       return
@@ -87,7 +96,7 @@ export default function ContactPage() {
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
-          phone: formData.phone.trim() || undefined,
+          phone: formData.phone.trim(),
           category: formData.category || undefined,
           subject: formData.subject.trim() || undefined,
           message: formData.message.trim(),
@@ -101,11 +110,9 @@ export default function ContactPage() {
       }
 
       showToast.success('문의가 접수되었습니다.', '입력하신 이메일로 답변드리겠습니다.')
-
-      setFormData({ name: formData.name, email: formData.email, phone: '', category: '', subject: '', message: '' })
+      router.push('/')
     } catch (err) {
       showToast.error('문의 접수 실패', err)
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -184,7 +191,7 @@ export default function ContactPage() {
                                     htmlFor="phone"
                                     className="text-[11px] font-black uppercase text-white/30 tracking-[0.2em] ml-1 flex items-center gap-2"
                                 >
-                                    <Phone className="w-3.5 h-3.5 text-teal-400" /> 연락처 (선택)
+                                    <Phone className="w-3.5 h-3.5 text-teal-400" /> 연락처 <span className="text-teal-400">*</span>
                                 </Label>
                                 <Input
                                     id="phone"
@@ -194,6 +201,7 @@ export default function ContactPage() {
                                     onChange={handleInputChange}
                                     className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:ring-teal-400/20 focus:border-teal-400/50 px-6 font-bold text-white text-lg transition-all"
                                     placeholder="010-0000-0000"
+                                    required
                                 />
                             </div>
 

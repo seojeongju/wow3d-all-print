@@ -111,8 +111,12 @@ export default function ExpertServicePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!formData.name || !formData.email || !formData.message) {
+        if (!formData.name || !formData.email || !formData.phone || !formData.message) {
             showToast.error('입력 확인', '필수 항목을 모두 입력해 주세요.')
+            return
+        }
+        if (formData.phone.replace(/\D/g, '').length < 9) {
+            showToast.error('입력 확인', '올바른 연락처를 입력해 주세요.')
             return
         }
 
@@ -337,13 +341,14 @@ export default function ExpertServicePage() {
                             <div className="grid sm:grid-cols-2 gap-8">
                                 <div className="space-y-3">
                                     <Label className="text-[11px] font-black uppercase text-white/30 tracking-[0.2em] ml-1 flex items-center gap-2">
-                                        <Phone className="w-3.5 h-3.5 text-teal-400" /> 연락처
+                                        <Phone className="w-3.5 h-3.5 text-teal-400" /> 연락처 <span className="text-teal-400">*</span>
                                     </Label>
                                     <Input 
                                         placeholder="010-0000-0000"
                                         value={formData.phone}
                                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
                                         className="h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:border-teal-400/50 focus:ring-teal-400/20 px-6 font-bold text-lg transition-all"
+                                        required
                                     />
                                 </div>
                                 <div className="space-y-3">

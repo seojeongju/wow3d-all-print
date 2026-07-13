@@ -20,7 +20,7 @@ function getClientIp(request: Request): string | null {
 
 /**
  * POST /api/inquiries - 문의 접수 (인증 불필요)
- * Body: { name, email, phone?, category?, subject?, message }
+ * Body: { name, email, phone, category?, subject?, message }
  * 로그인 사용자는 Authorization 헤더로 user_id 보강 가능
  */
 export async function POST(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim() : '';
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : null;
+    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
     const category =
       typeof body.category === 'string' && CATEGORIES.includes(body.category as any)
         ? body.category
@@ -50,6 +50,12 @@ export async function POST(request: NextRequest) {
     const emailSimple = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailSimple.test(email)) {
       return errorResponse('올바른 이메일 주소를 입력해 주세요.', 400);
+    }
+    if (!phone) {
+      return errorResponse('연락처를 입력해 주세요.', 400);
+    }
+    if (phone.replace(/\D/g, '').length < 9) {
+      return errorResponse('올바른 연락처를 입력해 주세요.', 400);
     }
     if (!message) {
       return errorResponse('문의 내용을 입력해 주세요.', 400);
@@ -93,14 +99,14 @@ export async function POST(request: NextRequest) {
         `INSERT INTO inquiries (user_id, name, email, phone, category, subject, message, ip_address, reply_token)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-        .bind(userId, name, email, phone || null, category, subject, message, ip, replyToken)
+        .bind(userId, name, email, phone, category, subject, message, ip, replyToken)
         .run();
     } catch {
       result = await env.DB.prepare(
         `INSERT INTO inquiries (user_id, name, email, phone, category, subject, message, ip_address)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
-        .bind(userId, name, email, phone || null, category, subject, message, ip)
+        .bind(userId, name, email, phone, category, subject, message, ip)
         .run();
     }
 
