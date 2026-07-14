@@ -6,7 +6,6 @@ import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
 import { serializeInquiryFileUrls } from '@/lib/inquiry-files';
 
 const RATE_LIMIT_PER_HOUR = 5;
-const MESSAGE_MIN = 10;
 const MESSAGE_MAX = 5000;
 const MAX_FILES = 3;
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50MB
@@ -119,9 +118,6 @@ export async function POST(request: NextRequest) {
     }
     if (!message) {
       return errorResponse('문의 내용을 입력해 주세요.', 400);
-    }
-    if (message.length < MESSAGE_MIN) {
-      return errorResponse(`문의 내용은 ${MESSAGE_MIN}자 이상 입력해 주세요.`, 400);
     }
     if (message.length > MESSAGE_MAX) {
       return errorResponse(`문의 내용은 ${MESSAGE_MAX}자 이하여야 합니다.`, 400);

@@ -3,7 +3,6 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
 import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
 import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
-const MESSAGE_MIN = 10;
 const MESSAGE_MAX = 10000; // 전문가 문의는 더 길 수 있음
 
 /**
@@ -31,7 +30,8 @@ export async function POST(request: NextRequest) {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errorResponse('유효한 이메일을 입력해 주세요.', 400);
     if (!phone) return errorResponse('연락처를 입력해 주세요.', 400);
     if (phone.replace(/\D/g, '').length < 9) return errorResponse('올바른 연락처를 입력해 주세요.', 400);
-    if (!message || message.length < MESSAGE_MIN) return errorResponse(`문의 내용을 ${MESSAGE_MIN}자 이상 입력해 주세요.`, 400);
+    if (!message) return errorResponse('문의 내용을 입력해 주세요.', 400);
+    if (message.length > MESSAGE_MAX) return errorResponse(`문의 내용은 ${MESSAGE_MAX}자 이하여야 합니다.`, 400);
 
     // IP기반 Rate Limit (선택적)
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';

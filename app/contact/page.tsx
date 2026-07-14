@@ -130,10 +130,6 @@ export default function ContactPage() {
       showToast.error('입력 확인', '문의 내용을 입력해 주세요.')
       return
     }
-    if (formData.message.trim().length < 10) {
-      showToast.error('입력 확인', '문의 내용은 10자 이상 입력해 주세요.')
-      return
-    }
 
     setIsSubmitting(true)
     try {
@@ -305,7 +301,7 @@ export default function ContactPage() {
                                     name="message"
                                     value={formData.message}
                                     onChange={handleInputChange}
-                                    placeholder="상세 내용을 10자 이상 입력해 주세요."
+                                    placeholder="상세 내용을 입력해 주세요."
                                     rows={6}
                                     className="w-full px-6 py-6 rounded-[1.5rem] bg-white/[0.05] border border-white/10 text-lg font-bold text-white ring-offset-slate-950 focus:outline-none focus:ring-2 focus:ring-teal-400/20 focus:border-teal-400/50 transition-all placeholder:text-white/10 resize-none min-h-[180px]"
                                     required
