@@ -1,4 +1,5 @@
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
+import { getAdminInquiryEmail } from '@/lib/inquiry-admin-notify';
 
 export type UserReplyNotifyPayload = {
     inquiryId: number;
@@ -11,13 +12,16 @@ export type UserReplyNotifyPayload = {
 
 /**
  * 관리자가 문의에 답변을 작성했을 때 문의한 사용자에게 알림 메일 발송
+ * From: noreply@… (Resend 발신 도메인)
+ * Reply-To: 관리자 네이버 메일 → 고객이 「답장」하면 wow3d16@naver.com으로 수신
  */
 export async function notifyUserInquiryReplied(
     payload: UserReplyNotifyPayload,
     env: any
 ): Promise<boolean> {
     const subjectLine = `[WOW3D] 문의하신 내용에 대한 답변이 등록되었습니다.`;
-    
+    const adminReplyTo = getAdminInquiryEmail(env as Record<string, unknown>);
+
     // 개행 문자를 HTML <br> 태그로 변환하고 escape 처리
     const formattedOriginalMessage = escapeHtml(payload.message).replace(/\n/g, '<br>');
     const formattedReplyMessage = escapeHtml(payload.replyMessage).replace(/\n/g, '<br>');
@@ -35,6 +39,7 @@ export async function notifyUserInquiryReplied(
         '--- 답변 내용 ---',
         payload.replyMessage,
         '',
+        '추가 문의가 있으시면 이 메일에 「답장」해 주시면 됩니다.',
         '상세한 내용은 WOW3D 홈페이지에서도 확인하실 수 있습니다.',
         'https://wow3dp.co.kr',
     ].join('\n');
@@ -85,7 +90,7 @@ export async function notifyUserInquiryReplied(
 
             <div style="margin-top: 40px; text-align: center;">
                 <p style="font-size: 11px; color: #94a3b8; margin: 0;">
-                    본 메일은 발신 전용 메일이므로 회신을 통한 문의가 불가합니다.
+                    추가 문의가 있으시면 이 메일에 「답장」해 주시면 됩니다.
                 </p>
                 <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0;">
                     © WOW3D. All rights reserved.
@@ -100,6 +105,7 @@ export async function notifyUserInquiryReplied(
             subject: subjectLine,
             text: textBody,
             html: htmlBody,
+            reply_to: adminReplyTo,
         },
         env
     );
