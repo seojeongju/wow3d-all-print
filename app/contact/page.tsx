@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home } from 'lucide-react'
+import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
@@ -28,11 +28,24 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: 'other', label: '기타' },
 ]
 
+const MAX_FILE_BYTES = 50 * 1024 * 1024
+const ALLOWED_EXT = new Set([
+  'jpg', 'jpeg', 'png', 'webp', 'gif',
+  'pdf', 'zip',
+  'stl', 'obj', '3mf', 'step', 'stp',
+])
+
+function getExt(name: string): string {
+  const i = name.lastIndexOf('.')
+  return i >= 0 ? name.slice(i + 1).toLowerCase() : ''
+}
+
 export default function ContactPage() {
   const router = useRouter()
   const { user, isAuthenticated, token } = useAuthStore()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,6 +68,26 @@ export default function ContactPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.files?.[0] || null
+    if (!next) {
+      setFile(null)
+      return
+    }
+    if (next.size > MAX_FILE_BYTES) {
+      showToast.error('파일 확인', '첨부 파일은 50MB 이하여야 합니다.')
+      e.target.value = ''
+      return
+    }
+    const ext = getExt(next.name)
+    if (!ALLOWED_EXT.has(ext)) {
+      showToast.error('파일 확인', '이미지, PDF, ZIP, STL, OBJ, 3MF, STEP 파일만 첨부할 수 있습니다.')
+      e.target.value = ''
+      return
+    }
+    setFile(next)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,20 +120,21 @@ export default function ContactPage() {
 
     setIsSubmitting(true)
     try {
+      const fd = new FormData()
+      fd.append('name', formData.name.trim())
+      fd.append('email', formData.email.trim())
+      fd.append('phone', formData.phone.trim())
+      if (formData.category) fd.append('category', formData.category)
+      if (formData.subject.trim()) fd.append('subject', formData.subject.trim())
+      fd.append('message', formData.message.trim())
+      if (file) fd.append('file', file)
+
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone.trim(),
-          category: formData.category || undefined,
-          subject: formData.subject.trim() || undefined,
-          message: formData.message.trim(),
-        }),
+        body: fd,
       })
 
       const json = await res.json()
@@ -257,6 +291,43 @@ export default function ContactPage() {
                                     className="w-full px-6 py-6 rounded-[1.5rem] bg-white/[0.05] border border-white/10 text-lg font-bold text-white ring-offset-slate-950 focus:outline-none focus:ring-2 focus:ring-teal-400/20 focus:border-teal-400/50 transition-all placeholder:text-white/10 resize-none min-h-[180px]"
                                     required
                                 />
+                            </div>
+
+                            <div className="space-y-3 relative z-10">
+                                <Label className="text-[11px] font-black uppercase text-white/30 tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <Upload className="w-3.5 h-3.5 text-teal-400" /> 파일·이미지 첨부 (선택)
+                                </Label>
+                                <div className="relative group">
+                                    <input
+                                        type="file"
+                                        accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.zip,.stl,.obj,.3mf,.step,.stp,image/*"
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        aria-label="문의 첨부 파일"
+                                    />
+                                    <div className="min-h-24 rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.02] flex items-center justify-center gap-4 px-6 py-5 group-hover:border-teal-400/50 group-hover:bg-teal-400/5 transition-all duration-300">
+                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/30 group-hover:text-teal-400 transition-colors shrink-0">
+                                            {file ? <Paperclip className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                                        </div>
+                                        <div className="text-left min-w-0 flex-1">
+                                            <p className="text-sm font-black text-white/50 group-hover:text-white transition-colors truncate">
+                                                {file ? file.name : '파일을 클릭하거나 여기로 드래그하세요'}
+                                            </p>
+                                            <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
+                                                Max 50MB · JPG PNG WEBP PDF ZIP STL OBJ 3MF STEP
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {file && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFile(null)}
+                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white/40 hover:text-white transition-colors"
+                                    >
+                                        <X className="w-3.5 h-3.5" /> 첨부 취소
+                                    </button>
+                                )}
                             </div>
 
                             <div className="pt-4">
