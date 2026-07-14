@@ -3,6 +3,11 @@ import {
     buildInquiryReplyAddress,
     ensureInquiryReplyToken,
 } from '@/lib/inquiry-reply-address';
+import {
+    inquiryFileDisplayName,
+    inquiryFilePublicUrl,
+    parseInquiryFileUrls,
+} from '@/lib/inquiry-files';
 
 const DEFAULT_ADMIN_EMAIL = 'wow3d16@naver.com';
 const ADMIN_INQUIRIES_URL = 'https://wow3dp.co.kr/admin/inquiries?status=new';
@@ -63,9 +68,11 @@ export async function notifyAdminNewInquiry(
         payload.subject?.trim() ||
         `[${sourceLabel}] ${payload.company ? `(${payload.company}) ` : ''}${payload.name}`;
 
-    const fileLink = payload.fileUrl
-        ? `https://wow3dp.co.kr/api/files/${payload.fileUrl}`
-        : null;
+    const fileKeys = parseInquiryFileUrls(payload.fileUrl);
+    const fileLinks = fileKeys.map((key) => ({
+        name: inquiryFileDisplayName(key),
+        url: inquiryFilePublicUrl(key),
+    }));
 
     let replyToken = payload.replyToken || null;
     if (!replyToken && db) {
@@ -94,13 +101,18 @@ export async function notifyAdminNewInquiry(
         payload.phone ? `연락처: ${payload.phone}` : null,
         `문의 유형: ${categoryLabel}`,
         payload.subject ? `제목: ${payload.subject}` : null,
-        fileLink ? `첨부파일: ${fileLink}` : null,
+        fileLinks.length
+            ? `첨부파일(${fileLinks.length}):\n${fileLinks.map((f, i) => `  ${i + 1}. ${f.name}\n     ${f.url}`).join('\n')}`
+            : null,
         '',
         '--- 문의 내용 ---',
         payload.message,
         replyGuide,
         '',
         `관리자 확인: ${ADMIN_INQUIRIES_URL}`,
+        fileLinks.length
+            ? '※ 첨부 링크는 로그인 후 열리거나, 문의 관리 화면에서 다운로드할 수 있습니다.'
+            : null,
     ]
         .filter((line) => line !== null)
         .join('\n');
@@ -126,7 +138,22 @@ export async function notifyAdminNewInquiry(
                 <p style="margin: 0 0 8px;"><strong>유형</strong> ${escapeHtml(categoryLabel)}</p>
                 ${payload.subject ? `<p style="margin: 0;"><strong>제목</strong> ${escapeHtml(payload.subject)}</p>` : ''}
             </div>
-            ${fileLink ? `<p style="margin: 0 0 16px;"><strong>첨부</strong> <a href="${escapeHtml(fileLink)}" style="color:#0d9488;">파일 보기</a></p>` : ''}
+            ${
+                fileLinks.length
+                    ? `<div style="margin: 0 0 16px; padding: 14px 16px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px;">
+                <p style="margin: 0 0 8px; font-size: 12px; font-weight: 800; color: #0f766e;">첨부 파일 ${fileLinks.length}개</p>
+                <ul style="margin: 0; padding-left: 18px;">
+                  ${fileLinks
+                      .map(
+                          (f) =>
+                              `<li style="margin: 0 0 6px;"><a href="${escapeHtml(f.url)}" style="color:#0d9488; font-weight:700;">${escapeHtml(f.name)}</a></li>`
+                      )
+                      .join('')}
+                </ul>
+                <p style="margin: 8px 0 0; font-size: 11px; color: #64748b;">링크가 안 열리면 문의 관리에서 다운로드해 주세요.</p>
+            </div>`
+                    : ''
+            }
             <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; color: #334155;">문의 내용</p>
             <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; padding: 16px; background: #f1f5f9; border-radius: 12px; font-size: 13px; color: #111;">${escapeHtml(payload.message)}</pre>
             <div style="margin-top: 24px; text-align: center;">

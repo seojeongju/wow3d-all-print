@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Search, Loader2, Eye, Paperclip } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
+import { inquiryFileDisplayName, parseInquiryFileUrls } from '@/lib/inquiry-files'
 import {
   Select,
   SelectContent,
@@ -299,39 +300,46 @@ export default function AdminInquiriesPage() {
                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">문의 내용</span>
                 <p className="text-sm text-white/80 whitespace-pre-wrap mt-1">{String(detail.message || '')}</p>
               </div>
-              {detail.file_url ? (
+              {parseInquiryFileUrls(detail.file_url as string | null).length > 0 ? (
                 <div>
-                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">첨부 파일</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-1 border-teal-400/30 text-teal-400 hover:bg-teal-400/10"
-                    onClick={async () => {
-                      try {
-                        const res = await fetch(`/api/files/${String(detail.file_url)}`, {
-                          headers: token ? { Authorization: `Bearer ${token}` } : {},
-                        })
-                        if (!res.ok) throw new Error('파일을 열 수 없습니다.')
-                        const blob = await res.blob()
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = String(detail.file_url).split('/').pop() || 'attachment'
-                        a.click()
-                        URL.revokeObjectURL(url)
-                      } catch (err) {
-                        toast({
-                          title: '첨부 파일 열기 실패',
-                          description: err instanceof Error ? err.message : '잠시 후 다시 시도해 주세요.',
-                          variant: 'destructive',
-                        })
-                      }
-                    }}
-                  >
-                    <Paperclip className="w-4 h-4 mr-2" />
-                    첨부 파일 다운로드
-                  </Button>
+                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                    첨부 파일 ({parseInquiryFileUrls(detail.file_url as string | null).length})
+                  </span>
+                  <div className="mt-2 space-y-2">
+                    {parseInquiryFileUrls(detail.file_url as string | null).map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start border-teal-400/30 text-teal-400 hover:bg-teal-400/10"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/files/${key}`, {
+                              headers: token ? { Authorization: `Bearer ${token}` } : {},
+                            })
+                            if (!res.ok) throw new Error('파일을 열 수 없습니다.')
+                            const blob = await res.blob()
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = inquiryFileDisplayName(key) || 'attachment'
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          } catch (err) {
+                            toast({
+                              title: '첨부 파일 열기 실패',
+                              description: err instanceof Error ? err.message : '잠시 후 다시 시도해 주세요.',
+                              variant: 'destructive',
+                            })
+                          }
+                        }}
+                      >
+                        <Paperclip className="w-4 h-4 mr-2 shrink-0" />
+                        <span className="truncate">{inquiryFileDisplayName(key)}</span>
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               ) : null}
               <div>

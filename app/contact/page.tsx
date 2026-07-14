@@ -28,6 +28,7 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: 'other', label: '기타' },
 ]
 
+const MAX_FILES = 3
 const MAX_FILE_BYTES = 50 * 1024 * 1024
 const ALLOWED_EXT = new Set([
   'jpg', 'jpeg', 'png', 'webp', 'gif',
@@ -40,12 +41,18 @@ function getExt(name: string): string {
   return i >= 0 ? name.slice(i + 1).toLowerCase() : ''
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function ContactPage() {
   const router = useRouter()
   const { user, isAuthenticated, token } = useAuthStore()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -71,23 +78,33 @@ export default function ContactPage() {
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = e.target.files?.[0] || null
-    if (!next) {
-      setFile(null)
-      return
+    const selected = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (!selected.length) return
+
+    const next = [...files]
+    for (const file of selected) {
+      if (next.length >= MAX_FILES) {
+        showToast.error('파일 확인', `첨부 파일은 최대 ${MAX_FILES}개까지 가능합니다.`)
+        break
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        showToast.error('파일 확인', `${file.name}: 50MB 이하여야 합니다.`)
+        continue
+      }
+      const ext = getExt(file.name)
+      if (!ALLOWED_EXT.has(ext)) {
+        showToast.error('파일 확인', `${file.name}: 지원하지 않는 형식입니다.`)
+        continue
+      }
+      if (next.some((f) => f.name === file.name && f.size === file.size)) continue
+      next.push(file)
     }
-    if (next.size > MAX_FILE_BYTES) {
-      showToast.error('파일 확인', '첨부 파일은 50MB 이하여야 합니다.')
-      e.target.value = ''
-      return
-    }
-    const ext = getExt(next.name)
-    if (!ALLOWED_EXT.has(ext)) {
-      showToast.error('파일 확인', '이미지, PDF, ZIP, STL, OBJ, 3MF, STEP 파일만 첨부할 수 있습니다.')
-      e.target.value = ''
-      return
-    }
-    setFile(next)
+    setFiles(next)
+  }
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,7 +144,9 @@ export default function ContactPage() {
       if (formData.category) fd.append('category', formData.category)
       if (formData.subject.trim()) fd.append('subject', formData.subject.trim())
       fd.append('message', formData.message.trim())
-      if (file) fd.append('file', file)
+      for (const file of files) {
+        fd.append('files', file)
+      }
 
       const res = await fetch('/api/inquiries', {
         method: 'POST',
@@ -295,11 +314,12 @@ export default function ContactPage() {
 
                             <div className="space-y-3 relative z-10">
                                 <Label className="text-[11px] font-black uppercase text-white/30 tracking-[0.2em] ml-1 flex items-center gap-2">
-                                    <Upload className="w-3.5 h-3.5 text-teal-400" /> 파일·이미지 첨부 (선택)
+                                    <Upload className="w-3.5 h-3.5 text-teal-400" /> 파일·이미지 첨부 (선택, 최대 {MAX_FILES}개)
                                 </Label>
                                 <div className="relative group">
                                     <input
                                         type="file"
+                                        multiple
                                         accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.zip,.stl,.obj,.3mf,.step,.stp,image/*"
                                         onChange={handleFileChange}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -307,26 +327,43 @@ export default function ContactPage() {
                                     />
                                     <div className="min-h-24 rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.02] flex items-center justify-center gap-4 px-6 py-5 group-hover:border-teal-400/50 group-hover:bg-teal-400/5 transition-all duration-300">
                                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/30 group-hover:text-teal-400 transition-colors shrink-0">
-                                            {file ? <Paperclip className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                                            <Upload className="w-5 h-5" />
                                         </div>
                                         <div className="text-left min-w-0 flex-1">
-                                            <p className="text-sm font-black text-white/50 group-hover:text-white transition-colors truncate">
-                                                {file ? file.name : '파일을 클릭하거나 여기로 드래그하세요'}
+                                            <p className="text-sm font-black text-white/50 group-hover:text-white transition-colors">
+                                                {files.length
+                                                    ? `${files.length}개 선택됨 · 추가하려면 다시 클릭`
+                                                    : '파일을 클릭하거나 여기로 드래그하세요'}
                                             </p>
                                             <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
-                                                Max 50MB · JPG PNG WEBP PDF ZIP STL OBJ 3MF STEP
+                                                Max {MAX_FILES} files · 각 50MB · JPG PNG PDF ZIP STL OBJ 3MF STEP
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                {file && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setFile(null)}
-                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white/40 hover:text-white transition-colors"
-                                    >
-                                        <X className="w-3.5 h-3.5" /> 첨부 취소
-                                    </button>
+                                {files.length > 0 && (
+                                    <ul className="space-y-2">
+                                        {files.map((f, i) => (
+                                            <li
+                                                key={`${f.name}-${f.size}-${i}`}
+                                                className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 px-4 py-3"
+                                            >
+                                                <Paperclip className="w-4 h-4 text-teal-400 shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-bold text-white/80 truncate">{f.name}</p>
+                                                    <p className="text-[10px] text-white/30 font-bold">{formatFileSize(f.size)}</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFile(i)}
+                                                    className="inline-flex items-center gap-1 text-xs font-bold text-white/40 hover:text-white transition-colors"
+                                                    aria-label={`${f.name} 삭제`}
+                                                >
+                                                    <X className="w-3.5 h-3.5" /> 삭제
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 )}
                             </div>
 

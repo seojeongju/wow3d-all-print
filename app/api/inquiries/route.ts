@@ -3,10 +3,12 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
 import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
 import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
+import { serializeInquiryFileUrls } from '@/lib/inquiry-files';
 
 const RATE_LIMIT_PER_HOUR = 5;
 const MESSAGE_MIN = 10;
 const MESSAGE_MAX = 5000;
+const MAX_FILES = 3;
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50MB
 const ALLOWED_EXT = new Set([
   'jpg', 'jpeg', 'png', 'webp', 'gif',
@@ -29,9 +31,9 @@ function getExt(name: string): string {
   return i >= 0 ? name.slice(i + 1).toLowerCase() : '';
 }
 
-function validateAttachment(file: File | null): string | null {
-  if (!file || file.size <= 0) return null;
-  if (file.size > MAX_FILE_BYTES) return '첨부 파일은 50MB 이하여야 합니다.';
+function validateAttachment(file: File): string | null {
+  if (file.size <= 0) return '빈 파일은 첨부할 수 없습니다.';
+  if (file.size > MAX_FILE_BYTES) return '첨부 파일은 각각 50MB 이하여야 합니다.';
   const ext = getExt(file.name || '');
   if (!ext || !ALLOWED_EXT.has(ext)) {
     return '허용되지 않는 파일 형식입니다. (이미지·PDF·ZIP·STL·OBJ·3MF·STEP)';
@@ -39,9 +41,25 @@ function validateAttachment(file: File | null): string | null {
   return null;
 }
 
+function collectFiles(formData: FormData): File[] {
+  const files: File[] = [];
+  for (const key of ['files', 'file']) {
+    for (const value of formData.getAll(key)) {
+      if (value instanceof File && value.size > 0) files.push(value);
+    }
+  }
+  const seen = new Set<string>();
+  return files.filter((f) => {
+    const id = `${f.name}:${f.size}`;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 /**
- * POST /api/inquiries - 문의 접수 (인증 불필요, 파일 첨부 선택)
- * FormData 또는 JSON: name, email, phone, category?, subject?, message, file?
+ * POST /api/inquiries - 문의 접수 (인증 불필요, 멀티 파일 첨부 선택)
+ * FormData: name, email, phone, category?, subject?, message, files[]|file?
  */
 export async function POST(request: NextRequest) {
   try {
@@ -57,7 +75,7 @@ export async function POST(request: NextRequest) {
     let category: string | null = null;
     let subject: string | null = null;
     let message = '';
-    let file: File | null = null;
+    let files: File[] = [];
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -69,8 +87,7 @@ export async function POST(request: NextRequest) {
       const sub = String(formData.get('subject') || '').trim();
       subject = sub ? sub.slice(0, 200) : null;
       message = String(formData.get('message') || '').trim();
-      const rawFile = formData.get('file');
-      file = rawFile instanceof File && rawFile.size > 0 ? rawFile : null;
+      files = collectFiles(formData);
     } else {
       const body = await request.json().catch(() => ({}));
       name = typeof body.name === 'string' ? body.name.trim() : '';
@@ -110,9 +127,14 @@ export async function POST(request: NextRequest) {
       return errorResponse(`문의 내용은 ${MESSAGE_MAX}자 이하여야 합니다.`, 400);
     }
 
-    const fileError = validateAttachment(file);
-    if (fileError) return errorResponse(fileError, 400);
-    if (file && !env?.BUCKET) {
+    if (files.length > MAX_FILES) {
+      return errorResponse(`첨부 파일은 최대 ${MAX_FILES}개까지 가능합니다.`, 400);
+    }
+    for (const f of files) {
+      const err = validateAttachment(f);
+      if (err) return errorResponse(err, 400);
+    }
+    if (files.length > 0 && !env?.BUCKET) {
       return errorResponse('파일 첨부를 일시적으로 사용할 수 없습니다. 파일 없이 문의해 주세요.', 503);
     }
 
@@ -137,7 +159,7 @@ export async function POST(request: NextRequest) {
         userId = auth.userId;
       }
     } catch {
-      // 비회원: userId = null
+      // 비회원
     }
 
     const replyToken = generateInquiryReplyToken();
@@ -164,20 +186,26 @@ export async function POST(request: NextRequest) {
       return errorResponse('문의 접수에 실패했습니다.', 500);
     }
 
-    let fileUrl: string | null = null;
-    if (file && env.BUCKET) {
-      const safeName = (file.name || 'attachment').replace(/[^\w.\uac00-\ud7a3-]+/g, '_').slice(0, 120);
-      const fileName = `${Date.now()}_${safeName}`;
-      const r2Key = `inquiries/${id}/${fileName}`;
-      const arrayBuffer = await file.arrayBuffer();
-      await env.BUCKET.put(r2Key, arrayBuffer, {
-        httpMetadata: { contentType: file.type || 'application/octet-stream' },
-      });
-      fileUrl = r2Key;
+    const uploadedKeys: string[] = [];
+    if (files.length > 0 && env.BUCKET) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const safeName = (file.name || 'attachment').replace(/[^\w.\uac00-\ud7a3-]+/g, '_').slice(0, 120);
+        const fileName = `${Date.now()}_${i}_${safeName}`;
+        const r2Key = `inquiries/${id}/${fileName}`;
+        const arrayBuffer = await file.arrayBuffer();
+        await env.BUCKET.put(r2Key, arrayBuffer, {
+          httpMetadata: { contentType: file.type || 'application/octet-stream' },
+        });
+        uploadedKeys.push(r2Key);
+      }
+      const stored = serializeInquiryFileUrls(uploadedKeys);
       await env.DB.prepare('UPDATE inquiries SET file_url = ? WHERE id = ?')
-        .bind(fileUrl, id)
+        .bind(stored, id)
         .run();
     }
+
+    const fileUrl = serializeInquiryFileUrls(uploadedKeys);
 
     let emailSent = false;
     try {
@@ -204,7 +232,10 @@ export async function POST(request: NextRequest) {
       console.warn('문의 관리자 알림 메일 발송 실패 (문의는 DB 저장됨):', emailErr);
     }
 
-    return successResponse({ id: Number(id), fileUrl, emailSent }, '문의가 접수되었습니다.');
+    return successResponse(
+      { id: Number(id), fileUrl, fileUrls: uploadedKeys, emailSent },
+      '문의가 접수되었습니다.'
+    );
   } catch (e: any) {
     console.error('POST /api/inquiries error:', e);
     return errorResponse(e?.message || '문의 접수에 실패했습니다.', 500);
