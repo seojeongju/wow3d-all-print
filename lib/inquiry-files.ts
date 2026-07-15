@@ -22,8 +22,11 @@ export function serializeInquiryFileUrls(urls: string[]): string | null {
     return JSON.stringify(cleaned);
 }
 
-export function inquiryFilePublicUrl(r2Key: string): string {
-    return `https://wow3dp.co.kr/api/files/${r2Key}`;
+export function inquiryFilePublicUrl(r2Key: string, inquiryToken?: string | null): string {
+    const base = `https://wow3dp.co.kr/api/files/${r2Key}`;
+    return inquiryToken
+        ? `${base}?inquiry_token=${encodeURIComponent(inquiryToken)}`
+        : base;
 }
 
 export function inquiryFileDisplayName(r2Key: string): string {

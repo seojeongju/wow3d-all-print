@@ -68,16 +68,15 @@ export async function notifyAdminNewInquiry(
         payload.subject?.trim() ||
         `[${sourceLabel}] ${payload.company ? `(${payload.company}) ` : ''}${payload.name}`;
 
-    const fileKeys = parseInquiryFileUrls(payload.fileUrl);
-    const fileLinks = fileKeys.map((key) => ({
-        name: inquiryFileDisplayName(key),
-        url: inquiryFilePublicUrl(key),
-    }));
-
     let replyToken = payload.replyToken || null;
     if (!replyToken && db) {
         replyToken = await ensureInquiryReplyToken(db, payload.inquiryId);
     }
+    const fileKeys = parseInquiryFileUrls(payload.fileUrl);
+    const fileLinks = fileKeys.map((key) => ({
+        name: inquiryFileDisplayName(key),
+        url: inquiryFilePublicUrl(key, replyToken),
+    }));
     const replyToAddress = replyToken
         ? buildInquiryReplyAddress(payload.inquiryId, replyToken, env)
         : payload.email;
@@ -110,9 +109,7 @@ export async function notifyAdminNewInquiry(
         replyGuide,
         '',
         `관리자 확인: ${ADMIN_INQUIRIES_URL}`,
-        fileLinks.length
-            ? '※ 첨부 링크는 로그인 후 열리거나, 문의 관리 화면에서 다운로드할 수 있습니다.'
-            : null,
+        fileLinks.length ? '※ 첨부 링크는 관리자 알림 메일에서 바로 열 수 있습니다.' : null,
     ]
         .filter((line) => line !== null)
         .join('\n');
@@ -150,7 +147,7 @@ export async function notifyAdminNewInquiry(
                       )
                       .join('')}
                 </ul>
-                <p style="margin: 8px 0 0; font-size: 11px; color: #64748b;">링크가 안 열리면 문의 관리에서 다운로드해 주세요.</p>
+                <p style="margin: 8px 0 0; font-size: 11px; color: #64748b;">파일명을 클릭하면 바로 열거나 다운로드할 수 있습니다.</p>
             </div>`
                     : ''
             }
