@@ -11,12 +11,13 @@ const nextConfig: NextConfig = {
     /** 카카오 비즈 채널 검색용 ID (pf.kakao.com/_xxx). 빌드 시 주입 → 견적 페이지 FAB */
     NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID:
       process.env.NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID || "",
-    /** 네이버 톡톡 계정코드 (예: w4xxxxxx). 빌드 시 주입 → 전역 상담 FAB */
+    /** 네이버 톡톡 채팅창 코드 (예: WCWl7TU → talk.naver.com/WCWl7TU) */
     NEXT_PUBLIC_NAVER_TALKTALK_ID:
-      process.env.NEXT_PUBLIC_NAVER_TALKTALK_ID || "",
+      process.env.NEXT_PUBLIC_NAVER_TALKTALK_ID || "WCWl7TU",
     /** 네이버 톡톡 채팅 URL 전체 (있으면 ID보다 우선) */
     NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL:
-      process.env.NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL || "",
+      process.env.NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL ||
+      "https://talk.naver.com/WCWl7TU",
     /** 네이버 톡톡 배너 data-id (공식 배너 위젯, 선택) */
     NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID:
       process.env.NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID || "",

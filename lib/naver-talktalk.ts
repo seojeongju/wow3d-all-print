@@ -1,7 +1,7 @@
 /**
  * 네이버 톡톡 실시간 상담 링크 (클라이언트·서버 공통)
  *
- * NEXT_PUBLIC_NAVER_TALKTALK_ID: 톡톡 파트너센터 계정코드 (예: w4xxxxxx)
+ * NEXT_PUBLIC_NAVER_TALKTALK_ID: 파트너센터 채팅창 코드 (예: WCWl7TU → talk.naver.com/WCWl7TU)
  * NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL: 전체 채팅 URL (있으면 ID보다 우선)
  * NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID: 파트너센터 배너 data-id (공식 배너 위젯용, 선택)
  */
@@ -22,13 +22,11 @@ export function getNaverTalkTalkChatUrl(): string | null {
     const id = getNaverTalkTalkId();
     if (!id) return null;
 
-    // 이미 경로 형태(wc/xxx, ct/xxx)면 그대로 사용
-    if (id.includes('/')) {
-        return `https://talk.naver.com/${id}`;
-    }
+    // 이미 전체 URL이면 그대로
+    if (/^https?:\/\//i.test(id)) return id;
 
-    // 파트너센터 계정코드 → 웹 상담 URL
-    return `https://talk.naver.com/wc/${id}`;
+    // 경로 형태(wc/xxx, profile/xxx) 또는 채팅창 코드(WCWl7TU)
+    return `https://talk.naver.com/${id.replace(/^talk\.naver\.com\//i, '')}`;
 }
 
 export function getNaverTalkTalkBannerId(): string | null {
