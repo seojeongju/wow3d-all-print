@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X, ExternalLink } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
 import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
+import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -247,10 +248,8 @@ export default function ContactPage() {
                             className="flex items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-[#03C75A]/10 border border-[#03C75A]/30 hover:bg-[#03C75A]/15 hover:border-[#03C75A]/50 transition-colors group"
                         >
                             <div className="flex items-center gap-4 min-w-0">
-                                <div className="shrink-0 w-12 h-12 rounded-xl bg-[#03C75A] flex items-center justify-center text-white shadow-lg shadow-[#03C75A]/25">
-                                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" aria-hidden>
-                                        <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
-                                    </svg>
+                                <div className="shrink-0 w-12 h-12 rounded-full bg-[#03C75A] flex items-center justify-center text-white shadow-lg shadow-[#03C75A]/25 ring-1 ring-white/90">
+                                    <NaverTalkTalkIcon className="w-7 h-7" />
                                 </div>
                                 <div className="min-w-0 text-left">
                                     <p className="text-sm sm:text-base font-black text-white">네이버 톡톡 실시간 상담</p>
