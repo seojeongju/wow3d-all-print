@@ -7,8 +7,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X } from 'lucide-react'
+import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X, ExternalLink } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
+import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -105,6 +106,7 @@ export default function ContactPage() {
     subject: '',
     message: '',
   })
+  const talkUrl = getNaverTalkTalkChatUrl()
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -236,6 +238,30 @@ export default function ContactPage() {
                         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white">문의하기</h1>
                         <p className="text-white/40 text-lg font-bold max-w-xl mx-auto leading-relaxed break-keep">전문 기술 지원팀이 귀하의 비즈니스를 지원하기 위해 대기 중입니다.</p>
                     </div>
+
+                    {talkUrl ? (
+                        <a
+                            href={talkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-[#03C75A]/10 border border-[#03C75A]/30 hover:bg-[#03C75A]/15 hover:border-[#03C75A]/50 transition-colors group"
+                        >
+                            <div className="flex items-center gap-4 min-w-0">
+                                <div className="shrink-0 w-12 h-12 rounded-xl bg-[#03C75A] flex items-center justify-center text-white shadow-lg shadow-[#03C75A]/25">
+                                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" aria-hidden>
+                                        <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" />
+                                    </svg>
+                                </div>
+                                <div className="min-w-0 text-left">
+                                    <p className="text-sm sm:text-base font-black text-white">네이버 톡톡 실시간 상담</p>
+                                    <p className="text-[11px] sm:text-xs font-medium text-white/45 mt-0.5">
+                                        앱 설치 없이 바로 1:1 채팅으로 문의하세요
+                                    </p>
+                                </div>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-[#03C75A] shrink-0 opacity-70 group-hover:opacity-100" />
+                        </a>
+                    ) : null}
 
                     <form onSubmit={handleSubmit} className="space-y-10 p-10 md:p-16 rounded-[3rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">

@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link'
-import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown } from 'lucide-react'
+import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
 
 export default function Footer() {
     const [mounted, setMounted] = useState(false)
+    const talkUrl = getNaverTalkTalkChatUrl()
 
     useEffect(() => {
         setMounted(true)
@@ -53,6 +55,9 @@ export default function Footer() {
 
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                             {[
+                                ...(talkUrl
+                                    ? [{ name: '네이버 톡톡 상담', url: talkUrl, icon: MessageCircle }]
+                                    : []),
                                 { name: '네이버 블로그', url: 'https://blog.naver.com/3dcookiehd', icon: BookOpen },
                                 { name: '네이버 밴드', url: 'https://www.band.us/@3dcookiehd', icon: Users },
                                 { name: '인스타그램', url: 'https://www.instagram.com/3dcookie_hd/', icon: Instagram },
@@ -97,6 +102,19 @@ export default function Footer() {
                                     <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">이메일 문의</div>
                                     <a href="mailto:wow3d16@naver.com" className="text-[10px] text-teal-400 font-bold hover:underline">wow3d16@naver.com</a>
                                 </li>
+                                {talkUrl ? (
+                                    <li>
+                                        <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">실시간 상담</div>
+                                        <a
+                                            href={talkUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[10px] text-[#03C75A] font-bold hover:underline"
+                                        >
+                                            네이버 톡톡 상담하기
+                                        </a>
+                                    </li>
+                                ) : null}
                             </ul>
                         </div>
                     </div>

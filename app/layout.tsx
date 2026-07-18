@@ -7,6 +7,7 @@ import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
+import NaverTalkTalkFab from "@/components/layout/NaverTalkTalkFab";
 import {
   absoluteUrl,
   BRAND_LOGO_PATH,
@@ -188,6 +189,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <EducationQuickMenu />
+        <NaverTalkTalkFab />
       </body>
     </html>
   );
