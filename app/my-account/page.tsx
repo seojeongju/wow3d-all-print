@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import {
     User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock, Eye,
-    Trash2, Edit2, AlertCircle, ShieldCheck, Minus, Plus, Search, Filter,
+    Trash2, Edit2, AlertCircle, ShieldCheck, Minus, Plus, Search,
     RotateCcw, CheckCircle2, Truck, CreditCard, ChevronDown, MapPin, Phone, Mail, Box, ArrowLeft
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -30,13 +30,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModelThumbnail from '@/components/ModelThumbnail';
 import { useCartStore } from '@/store/useCartStore';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
@@ -196,6 +189,7 @@ export default function MyAccountPage() {
     // Order History Search/Filter
     const [orderSearch, setOrderSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [accountTab, setAccountTab] = useState('active-orders');
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -403,8 +397,9 @@ export default function MyAccountPage() {
         router.push('/cart');
     };
 
-    const filteredOrders = orders.filter(order => {
-        const matchesSearch = order.orderNumber.toLowerCase().includes(orderSearch.toLowerCase());
+    const filteredOrders = orders.filter((order) => {
+        const number = String(order.orderNumber || '').toLowerCase();
+        const matchesSearch = !orderSearch.trim() || number.includes(orderSearch.trim().toLowerCase());
         const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -520,7 +515,17 @@ export default function MyAccountPage() {
                         </div>
 
                         {/* Main Content Tabs */}
-                        <Tabs defaultValue="active-orders" className="space-y-10">
+                        <Tabs
+                            value={accountTab}
+                            onValueChange={(v) => {
+                                setAccountTab(v);
+                                if (v === 'history') {
+                                    setOrderSearch('');
+                                    setStatusFilter('all');
+                                }
+                            }}
+                            className="space-y-10"
+                        >
                             <TabsList className="bg-white/5 border border-white/10 p-1.5 rounded-[2rem] h-auto flex flex-wrap justify-start gap-1 backdrop-blur-xl">
                                 {[
                                     { val: 'active-orders', label: '진행 중인 주문' },
@@ -723,156 +728,157 @@ export default function MyAccountPage() {
                             </TabsContent>
 
                             {/* History Tab */}
-                            <TabsContent value="history" className="space-y-8">
-                                <div className="mb-4 px-2">
+                            <TabsContent value="history" className="space-y-6 outline-none">
+                                <div className="px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">주문 내역</h2>
-                                    <p className="text-sm font-bold text-white/50">과거에 완료되었거나 취소된 주문을 포함한 전체 내역을 조회합니다.</p>
-                                </div>
-                                <div className="flex flex-col lg:flex-row gap-6 items-end lg:items-center justify-between">
-                                    <div className="flex flex-1 gap-4 w-full max-w-2xl">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                                            <Input
-                                                placeholder="주문번호 검색..."
-                                                className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
-                                                value={orderSearch}
-                                                onChange={(e) => setOrderSearch(e.target.value)}
-                                            />
-                                        </div>
-                                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                            <SelectTrigger className="w-[180px] h-14 bg-white/5 border-white/10 rounded-2xl font-black uppercase tracking-widest text-[11px]">
-                                                <Filter className="w-4 h-4 mr-2 text-teal-400" />
-                                                <SelectValue placeholder="상태" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-[#0f172a] border-white/10 text-white">
-                                                <SelectItem value="all">전체 상태</SelectItem>
-                                                <SelectItem value="pending">결제 대기</SelectItem>
-                                                <SelectItem value="confirmed">주문 확인</SelectItem>
-                                                <SelectItem value="quote_sent">견적 발송</SelectItem>
-                                                <SelectItem value="payment_confirmed">결제 확인</SelectItem>
-                                                <SelectItem value="production">제작 중</SelectItem>
-                                                <SelectItem value="shipping">배송 중</SelectItem>
-                                                <SelectItem value="delivered">배송 완료</SelectItem>
-                                                <SelectItem value="completed">완료됨</SelectItem>
-                                                <SelectItem value="cancelled">주문 취소</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/20">
-                                        총 {filteredOrders.length}건 검색 결과
-                                    </div>
+                                    <p className="text-sm font-bold text-white/50">
+                                        전체 주문 {orders.length}건 · 검색 결과 {filteredOrders.length}건
+                                    </p>
                                 </div>
 
-                                {filteredOrders.length === 0 ? (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="py-24 rounded-[3rem] bg-white/[0.02] border border-white/5 border-dashed flex flex-col items-center"
+                                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                                    <div className="relative flex-1 min-w-0">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+                                        <Input
+                                            placeholder="주문번호 검색..."
+                                            className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 font-bold"
+                                            value={orderSearch}
+                                            onChange={(e) => setOrderSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        className="h-12 min-w-[10rem] rounded-2xl bg-white/5 border border-white/10 px-4 text-sm font-bold text-white outline-none focus:ring-1 focus:ring-teal-400"
+                                        aria-label="주문 상태 필터"
                                     >
-                                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-                                            <Search className="w-10 h-10 text-white/10" />
-                                        </div>
-                                        <p className="text-white/40 font-bold uppercase tracking-widest">검색 결과가 없습니다.</p>
-                                    </motion.div>
+                                        <option value="all" className="bg-slate-900">전체 상태</option>
+                                        <option value="pending" className="bg-slate-900">결제 대기</option>
+                                        <option value="confirmed" className="bg-slate-900">주문 확인</option>
+                                        <option value="quote_sent" className="bg-slate-900">견적 발송</option>
+                                        <option value="payment_confirmed" className="bg-slate-900">결제 확인</option>
+                                        <option value="production" className="bg-slate-900">제작 중</option>
+                                        <option value="shipping" className="bg-slate-900">배송 중</option>
+                                        <option value="delivered" className="bg-slate-900">배송 완료</option>
+                                        <option value="completed" className="bg-slate-900">완료됨</option>
+                                        <option value="cancelled" className="bg-slate-900">주문 취소</option>
+                                    </select>
+                                </div>
+
+                                {isLoading ? (
+                                    <div className="py-20 flex flex-col items-center justify-center gap-4 text-white/50">
+                                        <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
+                                        <p className="text-sm font-bold">주문 내역을 불러오는 중...</p>
+                                    </div>
+                                ) : filteredOrders.length === 0 ? (
+                                    <div className="py-20 rounded-[2rem] bg-white/[0.03] border border-dashed border-white/15 flex flex-col items-center text-center px-6">
+                                        <Search className="w-10 h-10 text-white/25 mb-4" />
+                                        <p className="text-base font-black text-white/70 mb-2">
+                                            {orders.length === 0 ? '아직 주문 내역이 없습니다' : '검색 조건에 맞는 주문이 없습니다'}
+                                        </p>
+                                        <p className="text-sm text-white/40 font-medium mb-6">
+                                            {orders.length === 0
+                                                ? '견적을 받아 주문을 진행해 보세요.'
+                                                : '검색어나 상태 필터를 바꿔 다시 확인해 주세요.'}
+                                        </p>
+                                        {orders.length === 0 ? (
+                                            <Link href="/quote">
+                                                <Button className="h-12 px-8 rounded-2xl bg-teal-400 text-slate-950 font-black">
+                                                    견적 받기
+                                                </Button>
+                                            </Link>
+                                        ) : (
+                                            <Button
+                                                variant="outline"
+                                                className="h-11 rounded-xl border-white/20 bg-white/5 text-white font-bold"
+                                                onClick={() => {
+                                                    setOrderSearch('');
+                                                    setStatusFilter('all');
+                                                }}
+                                            >
+                                                필터 초기화
+                                            </Button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="grid gap-4">
-                                        {filteredOrders.map(order => (
-                                            <motion.div
-                                                key={order.id}
-                                                initial={{ opacity: 0, scale: 0.98 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className="group border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] hover:border-white/20 rounded-[2rem] transition-all overflow-hidden"
-                                            >
-                                                <div className="flex flex-col md:flex-row">
-                                                    {/* Order Info Part */}
-                                                    <div className="p-8 flex-1 border-b md:border-b-0 md:border-r border-white/5">
-                                                        <div className="flex justify-between items-start mb-6">
-                                                            <div>
-                                                                <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">
-                                                                    주문일: {new Date(order.createdAt).toLocaleDateString('ko-KR')}
+                                        {filteredOrders.map((order) => {
+                                            const statusStyle = getStatusStyle(order.status);
+                                            return (
+                                                <div
+                                                    key={order.id}
+                                                    className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] hover:border-teal-400/30 transition-colors overflow-hidden"
+                                                >
+                                                    <div className="flex flex-col md:flex-row">
+                                                        <div className="p-6 md:p-8 flex-1 border-b md:border-b-0 md:border-r border-white/10">
+                                                            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                                                                <div>
+                                                                    <p className="text-[11px] font-bold text-white/40 uppercase tracking-wider mb-1">
+                                                                        주문일 {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
+                                                                    </p>
+                                                                    <p className="font-mono text-lg font-black text-white tracking-tight">
+                                                                        {order.orderNumber || `주문 #${order.id}`}
+                                                                    </p>
                                                                 </div>
-                                                                <div className="font-mono text-lg font-black tracking-tight text-white group-hover:text-teal-400 transition-colors">
-                                                                    {order.orderNumber}
+                                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
+                                                                    <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                                                                    {statusMap[order.status] || order.status}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex gap-2 mb-3">
+                                                                {order.items?.slice(0, 4).map((item, idx) => (
+                                                                    <div key={item.id ?? idx} className="w-11 h-11 rounded-xl bg-white border border-white/10 flex items-center justify-center overflow-hidden">
+                                                                        {item.quote?.fileUrl ? (
+                                                                            <ModelThumbnail fileUrl={item.quote.fileUrl} size={56} />
+                                                                        ) : (
+                                                                            <Box className="w-5 h-5 text-slate-300" />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <p className="text-sm font-bold text-white/80 truncate">
+                                                                {order.items && order.items.length > 0
+                                                                    ? `${order.items[0].quote?.fileName || '상품'} ${order.items.length > 1 ? `외 ${order.items.length - 1}건` : ''}`
+                                                                    : '상품 정보 없음'}
+                                                            </p>
+                                                        </div>
+                                                        <div className="p-6 md:p-8 w-full md:w-72 flex flex-col justify-between gap-4 bg-black/20">
+                                                            <div>
+                                                                <p className="text-[10px] font-black text-white/35 uppercase tracking-widest mb-1">총 주문 금액</p>
+                                                                <p className="text-2xl font-black text-white">
+                                                                    ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex flex-col gap-2">
+                                                                {canViewOrderEstimate(order) && (
+                                                                    <Button
+                                                                        className="w-full h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30 font-black text-xs gap-2"
+                                                                        onClick={() => openOrderEstimate(order.id)}
+                                                                    >
+                                                                        <FileText className="w-3.5 h-3.5" /> 견적서 보기
+                                                                    </Button>
+                                                                )}
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        className="flex-1 h-11 rounded-xl border-white/15 bg-white/5 text-white font-black text-xs"
+                                                                        onClick={() => setSelectedOrder(order)}
+                                                                    >
+                                                                        상세
+                                                                    </Button>
+                                                                    <Button
+                                                                        className="flex-1 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 font-black text-xs gap-1.5"
+                                                                        onClick={() => handleReOrder(order)}
+                                                                    >
+                                                                        <RotateCcw className="w-3.5 h-3.5" /> 재주문
+                                                                    </Button>
                                                                 </div>
                                                             </div>
-                                                            <Badge
-                                                                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-none ${
-                                                                    order.status === 'completed'
-                                                                        ? 'bg-teal-400 text-slate-950 shadow-lg shadow-teal-400/20'
-                                                                        : order.status === 'cancelled'
-                                                                        ? 'bg-red-500/20 text-red-400'
-                                                                        : order.status === 'quote_sent'
-                                                                        ? 'bg-emerald-500/20 text-emerald-400 animate-pulse'
-                                                                        : 'bg-white/10 text-white/60'
-                                                                }`}
-                                                            >
-                                                                {statusMap[order.status] || order.status}
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex gap-3 mb-6">
-                                                            {order.items?.slice(0, 4).map((item, idx) => (
-                                                                <div key={idx} className="w-12 h-12 rounded-xl bg-white border border-white/10 flex items-center justify-center overflow-hidden shadow-sm">
-                                                                    {item.quote?.fileUrl ? (
-                                                                        <ModelThumbnail fileUrl={item.quote.fileUrl} size={60} />
-                                                                    ) : (
-                                                                        <Box className="w-6 h-6 text-slate-200" />
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                            {(order.items?.length || 0) > 4 && (
-                                                                <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-[10px] font-black text-white/40">
-                                                                    +{(order.items?.length || 0) - 4}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-sm font-bold text-white/80">
-                                                            {order.items && order.items.length > 0
-                                                                ? `${order.items[0].quote?.fileName || '상품'} ${order.items.length > 1 ? `외 ${order.items.length - 1}건` : ''}`
-                                                                : '상품 정보 없음'}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Total & Action Part */}
-                                                    <div className="p-8 w-full md:w-80 bg-white/[0.02] flex flex-col justify-between gap-6">
-                                                        <div className="text-right">
-                                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2 text-left md:text-right">총 주문 금액</div>
-                                                            <div className="text-3xl font-black text-white text-left md:text-right">
-                                                            ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
-                                                        </div>
-                                                        {(order as any).expertQuoteData && (() => {
-                                                            try {
-                                                                const d = JSON.parse((order as any).expertQuoteData);
-                                                                if (d?.total_amount > 0) return <div className="text-[10px] text-emerald-400/70 font-black mt-0.5 text-left md:text-right">수정견적 적용</div>;
-                                                            } catch { } return null;
-                                                        })()}
-                                                        </div>
-                                                        <div className="flex gap-3">
-                                                            {canViewOrderEstimate(order) && (
-                                                                <Button
-                                                                    className="flex-1 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 font-black text-[11px] uppercase tracking-widest gap-2 transition-all"
-                                                                    onClick={() => openOrderEstimate(order.id)}
-                                                                >
-                                                                    <FileText className="w-3.5 h-3.5" /> 견적서
-                                                                </Button>
-                                                            )}
-                                                            <Button
-                                                                variant="outline"
-                                                                className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest transition-all"
-                                                                onClick={() => setSelectedOrder(order)}
-                                                            >
-                                                                상세 보기
-                                                            </Button>
-                                                            <Button
-                                                                className="flex-1 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 font-black text-[11px] uppercase tracking-widest gap-2 transition-all"
-                                                                onClick={() => handleReOrder(order)}
-                                                            >
-                                                                <RotateCcw className="w-3.5 h-3.5" /> 재주문
-                                                            </Button>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </motion.div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </TabsContent>
