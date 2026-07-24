@@ -41,6 +41,35 @@ import {
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
 
+/** API(snake_case) 견적 → UI(camelCase) */
+function mapQuoteFromApi(row: any): Quote {
+    return {
+        id: Number(row.id),
+        fileName: row.fileName ?? row.file_name ?? '',
+        fileSize: Number(row.fileSize ?? row.file_size ?? 0),
+        fileUrl: row.fileUrl ?? row.file_url ?? undefined,
+        volumeCm3: Number(row.volumeCm3 ?? row.volume_cm3 ?? 0),
+        surfaceAreaCm2: Number(row.surfaceAreaCm2 ?? row.surface_area_cm2 ?? 0),
+        dimensionsX: Number(row.dimensionsX ?? row.dimensions_x ?? 0),
+        dimensionsY: Number(row.dimensionsY ?? row.dimensions_y ?? 0),
+        dimensionsZ: Number(row.dimensionsZ ?? row.dimensions_z ?? 0),
+        printMethod: (row.printMethod ?? row.print_method ?? 'fdm') as Quote['printMethod'],
+        fdmMaterial: row.fdmMaterial ?? row.fdm_material ?? undefined,
+        fdmInfill: row.fdmInfill ?? row.fdm_infill ?? undefined,
+        fdmLayerHeight: row.fdmLayerHeight ?? row.fdm_layer_height ?? undefined,
+        fdmSupport: !!(row.fdmSupport ?? row.fdm_support),
+        resinType: row.resinType ?? row.resin_type ?? undefined,
+        layerThickness: row.layerThickness ?? row.layer_thickness ?? undefined,
+        postProcessing: !!(row.postProcessing ?? row.post_processing),
+        totalPrice: Number(row.totalPrice ?? row.total_price ?? 0),
+        estimatedTimeHours: Number(row.estimatedTimeHours ?? row.estimated_time_hours ?? 0),
+        userId: row.userId ?? row.user_id ?? undefined,
+        sessionId: row.sessionId ?? row.session_id ?? undefined,
+        createdAt: row.createdAt ?? row.created_at ?? '',
+        updatedAt: row.updatedAt ?? row.updated_at ?? '',
+    };
+}
+
 /** 개별 주문의 확정 금액 반환 (수정견적 우선, 없으면 자동견적) */
 function getOrderFinalAmount(order: Order): number {
     try {
@@ -149,7 +178,7 @@ const statusMap: Record<string, string> = {
 };
 
 export default function MyAccountPage() {
-    const { user, token, isAuthenticated, logout, updateUser } = useAuthStore();
+    const { user, token, isAuthenticated, logout, updateUser, sessionId } = useAuthStore();
     const { addToCart } = useCartStore();
     const router = useRouter();
 
@@ -196,22 +225,29 @@ export default function MyAccountPage() {
         }, 30000);
 
         return () => clearInterval(interval);
-    }, [isAuthenticated, user?.role]);
+    }, [isAuthenticated, user?.role, user?.id, token, sessionId]);
 
     const loadData = async () => {
         try {
+            const quoteHeaders: HeadersInit = {};
+            if (token && user?.id) {
+                quoteHeaders['Authorization'] = `Bearer ${token}`;
+                quoteHeaders['X-User-ID'] = String(user.id);
+            } else if (sessionId) {
+                quoteHeaders['X-Session-ID'] = sessionId;
+            }
+
             // Load saved quotes
-            const quotesRes = await fetch('/api/quotes', {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const quotesRes = await fetch('/api/quotes', { headers: quoteHeaders });
             if (quotesRes.ok) {
                 const quotesData = await quotesRes.json();
-                setQuotes(quotesData.data || []);
+                const rows = Array.isArray(quotesData.data) ? quotesData.data : [];
+                setQuotes(rows.map(mapQuoteFromApi).filter((q: Quote) => q.volumeCm3 > 0));
             }
 
             // Load orders
             const ordersRes = await fetch('/api/orders', {
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
             if (ordersRes.ok) {
                 const ordersData = await ordersRes.json();
@@ -235,9 +271,17 @@ export default function MyAccountPage() {
         if (!confirm('정말로 이 견적을 삭제하시겠습니까?')) return;
 
         try {
+            const headers: HeadersInit = {};
+            if (token && user?.id) {
+                headers['Authorization'] = `Bearer ${token}`;
+                headers['X-User-ID'] = String(user.id);
+            } else if (sessionId) {
+                headers['X-Session-ID'] = sessionId;
+            }
+
             const res = await fetch(`/api/quotes/${quoteId}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers,
             });
 
             if (res.ok) {
@@ -704,6 +748,8 @@ export default function MyAccountPage() {
                                                 <SelectItem value="all">전체 상태</SelectItem>
                                                 <SelectItem value="pending">결제 대기</SelectItem>
                                                 <SelectItem value="confirmed">주문 확인</SelectItem>
+                                                <SelectItem value="quote_sent">견적 발송</SelectItem>
+                                                <SelectItem value="payment_confirmed">결제 확인</SelectItem>
                                                 <SelectItem value="production">제작 중</SelectItem>
                                                 <SelectItem value="shipping">배송 중</SelectItem>
                                                 <SelectItem value="delivered">배송 완료</SelectItem>
