@@ -588,16 +588,13 @@ export default function MyAccountPage() {
                                                 onClick={() => openOrderEstimate(o.id)}
                                             >
                                                 <FileText className="w-3.5 h-3.5 mr-1.5" />
-                                                견적서 #{o.orderNumber.slice(-6)}
+                                                견적서 #{String(o.orderNumber || o.id).slice(-6)}
                                             </Button>
                                         ))}
                                         <Button
                                             size="sm"
                                             className="bg-emerald-400 text-slate-950 font-black hover:bg-emerald-300 rounded-xl px-5 text-xs uppercase tracking-widest"
-                                            onClick={() => {
-                                                const tab = document.querySelector('[data-value="active-orders"]') as HTMLElement;
-                                                tab?.click();
-                                            }}
+                                            onClick={() => setAccountTab('active-orders')}
                                         >확인하기</Button>
                                     </div>
                                 </div>
@@ -1210,7 +1207,7 @@ export default function MyAccountPage() {
                                             <tr>
                                                 <td colSpan={2} className="p-8 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">최종합계</td>
                                                 <td className="p-8 text-right text-3xl font-black text-teal-400">
-                                                    ₩{Math.round((Number(selectedOrder.totalAmount) || 0) ).toLocaleString('ko-KR')}
+                                                    ₩{getOrderFinalAmount(selectedOrder).toLocaleString('ko-KR')}
                                                 </td>
                                             </tr>
                                         </tfoot>
