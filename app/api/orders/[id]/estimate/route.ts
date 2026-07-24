@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { normalizeEstimateViewToken } from '@/lib/quotation-view-token';
 
 /**
  * GET /api/orders/[id]/estimate
@@ -22,11 +23,11 @@ export async function GET(
         return NextResponse.json({ error: '유효하지 않은 주문 ID입니다' }, { status: 400 });
     }
 
-    // URL에서 보안 토큰 파싱
+    // URL에서 보안 토큰 파싱 (이중 ?token= 링크 대비 정규화)
     const { searchParams } = new URL(req.url);
-    const token = searchParams.get('token');
+    const token = normalizeEstimateViewToken(searchParams.get('token'));
 
-    if (!token || token.trim() === '') {
+    if (!token) {
         return NextResponse.json({ error: '인증 토큰이 누락되었습니다' }, { status: 401 });
     }
 

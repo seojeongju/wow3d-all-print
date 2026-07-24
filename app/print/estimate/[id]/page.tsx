@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate, formatNowKoreanDate } from '@/lib/date-utils';
 import { getStoredAdminToken } from '@/lib/client-admin-auth';
+import { normalizeEstimateViewToken } from '@/lib/quotation-view-token';
 
 type CompanyInfo = {
     business_number?: string;
@@ -43,7 +44,7 @@ export default function EstimatePrintPage() {
     const searchParams = useSearchParams();
     const id = params?.id;
     const isTemp = searchParams.get('temp') === 'true';
-    const token = searchParams.get('token');
+    const token = normalizeEstimateViewToken(searchParams.get('token'));
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
@@ -56,7 +57,7 @@ export default function EstimatePrintPage() {
 
         // 1. URL 보안 토큰(token)이 주어진 경우 -> 퍼블릭 고객용 API 1회 호출로 모두 처리
         if (token) {
-            fetch(`/api/orders/${id}/estimate?token=${token}`)
+            fetch(`/api/orders/${id}/estimate?token=${encodeURIComponent(token)}`)
                 .then(res => res.json())
                 .then(json => {
                     if (json.success && json.data) {

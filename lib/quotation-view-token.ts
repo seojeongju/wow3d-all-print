@@ -38,7 +38,11 @@ export function buildEstimatePublicUrl(baseUrl: string, orderId: number, viewTok
     return `${baseUrl.replace(/\/$/, '')}/print/estimate/${orderId}?token=${encodeURIComponent(viewToken)}`;
 }
 
-/** 이메일 초안/본문에 토큰 없는 견적 URL이 있으면 보안 링크로 교체 */
+/**
+ * 이메일 초안/본문의 견적 URL을 보안 링크로 교체.
+ * 이미 ?token= 이 있어도 경로만 매칭되지 않도록 쿼리 전체까지 교체한다.
+ * (이전 버그: 경로만 교체 → .../38?token=A?token=A 이중 토큰)
+ */
 export function injectEstimateUrlInContent(
     content: string,
     orderId: number,
@@ -48,9 +52,20 @@ export function injectEstimateUrlInContent(
     if (!content?.trim()) return content;
     const base = baseUrl.replace(/\/$/, '');
     const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const barePattern = new RegExp(
-        `${escapedBase}/print/estimate/${orderId}(?:\\?(?!token=)[^"'\\s>]*)?`,
+    const pattern = new RegExp(
+        `${escapedBase}/print/estimate/${orderId}(?:\\?[^"'\\s>]*)?`,
         'g'
     );
-    return content.replace(barePattern, tokenizedUrl);
+    return content.replace(pattern, tokenizedUrl);
+}
+
+/** URL에서 읽은 token 값 정규화 (?token=... 가 값에 섞인 경우 대비) */
+export function normalizeEstimateViewToken(raw: string | null | undefined): string | null {
+    if (!raw) return null;
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    // ...uuid?token=uuid 형태로 들어온 경우 앞쪽 UUID만 사용
+    const qIdx = trimmed.indexOf('?');
+    const cleaned = (qIdx >= 0 ? trimmed.slice(0, qIdx) : trimmed).trim();
+    return cleaned || null;
 }
