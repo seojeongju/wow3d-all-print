@@ -350,6 +350,12 @@ export default function MyAccountPage() {
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
+        const trimmedName = profileForm.name.trim();
+        if (!trimmedName) {
+            showToast.error('이름을 입력해주세요');
+            return;
+        }
+
         setIsUpdating(true);
 
         try {
@@ -359,12 +365,29 @@ export default function MyAccountPage() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(profileForm),
+                body: JSON.stringify({
+                    name: trimmedName,
+                    phone: profileForm.phone.trim(),
+                }),
             });
 
             if (res.ok) {
                 const data = await res.json();
-                updateUser(data.data);
+                const next = data.data || {};
+                updateUser({
+                    id: Number(next.id ?? user?.id),
+                    email: String(next.email ?? user?.email ?? ''),
+                    name: String(next.name ?? trimmedName),
+                    phone: next.phone != null && String(next.phone).trim() !== '' ? String(next.phone) : undefined,
+                    role: next.role ?? user?.role,
+                    store_id: next.store_id ?? user?.store_id,
+                    createdAt: String(next.createdAt ?? next.created_at ?? user?.createdAt ?? ''),
+                    updatedAt: String(next.updatedAt ?? next.updated_at ?? user?.updatedAt ?? ''),
+                });
+                setProfileForm({
+                    name: String(next.name ?? trimmedName),
+                    phone: next.phone != null ? String(next.phone) : '',
+                });
                 showToast.success('프로필이 업데이트되었습니다');
                 setIsEditingProfile(false);
             } else {
@@ -957,58 +980,57 @@ export default function MyAccountPage() {
                             </TabsContent>
 
                             {/* Profile Tab */}
-                            <TabsContent value="profile" className="space-y-8">
+                            <TabsContent value="profile" className="space-y-8 outline-none">
                                 <div className="mb-4 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">내 정보 관리</h2>
-                                    <p className="text-sm font-bold text-white/50">계정 정보, 배송지 주소 등 회원 정보를 확인하고 수정할 수 있습니다.</p>
+                                    <p className="text-sm font-bold text-white/50">이름·휴대폰 등 계정 정보를 확인하고 수정할 수 있습니다.</p>
                                 </div>
                                 <div className="grid md:grid-cols-3 gap-10">
-                                    {/* Profile Summary Card */}
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        className="md:col-span-1 p-8 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center"
-                                    >
+                                    <div className="md:col-span-1 p-8 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
                                         <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
                                             <User className="w-16 h-16" />
                                         </div>
                                         <h3 className="text-2xl font-black text-white mb-2">{user?.name}님</h3>
-                                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-10">
-                                            <Mail className="w-3 h-3" /> {user?.email}
+                                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-10 break-all text-center">
+                                            <Mail className="w-3 h-3 shrink-0" /> {user?.email}
                                         </div>
 
                                         <div className="w-full space-y-4 pt-10 border-t border-white/10">
-                                            <div className="flex justify-between items-center group/info">
-                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">총 주문 횟수</span>
-                                                <span className="text-lg font-black text-white">{orders.length}</span>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">총 주문</span>
+                                                <span className="text-lg font-black text-white">{orders.length}건</span>
                                             </div>
-                                            <div className="flex justify-between items-center group/info">
-                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">저장된 견적</span>
-                                                <span className="text-lg font-black text-white">{quotes.length}</span>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">저장된 견적</span>
+                                                <span className="text-lg font-black text-white">{quotes.length}건</span>
                                             </div>
-                                            <div className="flex justify-between items-center group/info">
-                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover:text-white/40 transition-colors">최근 로그인</span>
-                                                <span className="text-sm font-black text-white/60">{new Date().toLocaleDateString('ko-KR')}</span>
+                                            <div className="flex justify-between items-center gap-3">
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] shrink-0">가입일</span>
+                                                <span className="text-sm font-black text-white/60 text-right">
+                                                    {user?.createdAt
+                                                        ? new Date(user.createdAt).toLocaleDateString('ko-KR')
+                                                        : '-'}
+                                                </span>
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </div>
 
-                                    {/* Detailed Form Card */}
-                                    <motion.div
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        className="md:col-span-2 p-10 rounded-[3rem] bg-white/[0.03] border border-white/5"
-                                    >
-                                        <div className="flex flex-row items-center justify-between mb-12">
+                                    <div className="md:col-span-2 p-10 rounded-[3rem] bg-white/[0.03] border border-white/5">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12">
                                             <div>
                                                 <h3 className="text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">회원 정보</h3>
-                                                <p className="text-xs font-bold text-white/40 mt-4 uppercase tracking-widest">사용자 이름, 휴대폰 번호 등 개인 정보를 관리합니다.</p>
+                                                <p className="text-xs font-bold text-white/40 mt-4">이름과 휴대폰 번호를 관리합니다. 이메일은 변경할 수 없습니다.</p>
                                             </div>
                                             {!isEditingProfile && (
                                                 <Button
                                                     variant="outline"
-                                                    className="h-12 px-6 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest gap-2 transition-all"
-                                                    onClick={() => setIsEditingProfile(true)}
+                                                    className="h-12 px-6 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest gap-2 transition-all shrink-0"
+                                                    onClick={() => {
+                                                        if (user) {
+                                                            setProfileForm({ name: user.name, phone: user.phone || '' });
+                                                        }
+                                                        setIsEditingProfile(true);
+                                                    }}
                                                 >
                                                     <Edit2 className="w-4 h-4" /> 프로필 수정
                                                 </Button>
@@ -1018,55 +1040,59 @@ export default function MyAccountPage() {
                                         <form onSubmit={handleUpdateProfile} className="space-y-10">
                                             <div className="grid gap-10">
                                                 <div className="grid gap-4">
-                                                    <Label htmlFor="name" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">사용자 이름</Label>
+                                                    <Label htmlFor="name" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">사용자 이름</Label>
                                                     {isEditingProfile ? (
                                                         <Input
                                                             id="name"
                                                             value={profileForm.name}
                                                             onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
+                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
                                                             required
+                                                            autoComplete="name"
                                                         />
                                                     ) : (
                                                         <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white text-lg">
-                                                            {user?.name}
+                                                            {user?.name || '-'}
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 <div className="grid gap-4">
-                                                    <Label htmlFor="phone" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">휴대폰 번호</Label>
+                                                    <Label htmlFor="phone" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">휴대폰 번호</Label>
                                                     {isEditingProfile ? (
                                                         <Input
                                                             id="phone"
+                                                            type="tel"
                                                             placeholder="010-0000-0000"
                                                             value={profileForm.phone}
                                                             onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
+                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                            autoComplete="tel"
                                                         />
                                                     ) : (
                                                         <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white/60 text-lg gap-3">
-                                                            <Phone className="w-5 h-5 text-teal-400/40" />
+                                                            <Phone className="w-5 h-5 text-teal-400/40 shrink-0" />
                                                             {user?.phone || '등록된 번호가 없습니다.'}
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                <div className="grid gap-4 opacity-40">
-                                                    <Label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">이메일 계정 (고정)</Label>
-                                                    <div className="h-14 flex items-center px-6 bg-transparent border border-white/5 border-dashed rounded-2xl font-bold text-white/50 gap-3">
-                                                        <Mail className="w-5 h-5 text-white/10" />
-                                                        {user?.email}
+                                                <div className="grid gap-4">
+                                                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">이메일 (변경 불가)</Label>
+                                                    <div className="h-14 flex items-center px-6 bg-transparent border border-white/10 border-dashed rounded-2xl font-bold text-white/50 gap-3">
+                                                        <Mail className="w-5 h-5 text-white/20 shrink-0" />
+                                                        {user?.email || '-'}
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {isEditingProfile && (
-                                                <div className="flex justify-end gap-4 pt-10 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-10 border-t border-white/10">
                                                     <Button
                                                         variant="ghost"
                                                         type="button"
-                                                        className="h-14 px-8 rounded-2xl text-white/40 font-black uppercase tracking-widest hover:bg-white/5"
+                                                        className="h-14 px-8 rounded-2xl text-white/50 font-black hover:bg-white/5"
+                                                        disabled={isUpdating}
                                                         onClick={() => {
                                                             setIsEditingProfile(false);
                                                             if (user) setProfileForm({ name: user.name, phone: user.phone || '' });
@@ -1076,7 +1102,7 @@ export default function MyAccountPage() {
                                                     </Button>
                                                     <Button
                                                         type="submit"
-                                                        className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20 gap-3"
+                                                        className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20 gap-3"
                                                         disabled={isUpdating}
                                                     >
                                                         {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
@@ -1085,7 +1111,7 @@ export default function MyAccountPage() {
                                                 </div>
                                             )}
                                         </form>
-                                    </motion.div>
+                                    </div>
                                 </div>
                             </TabsContent>
                         </Tabs>
