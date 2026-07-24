@@ -11,6 +11,7 @@ import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk';
  * 우측 플로팅 퀵액션
  * - 와우3D 홍대센터(3D쿠키) 링크
  * - 네이버 톡톡 실시간 상담 (바로 아래)
+ * - 견적/체험 3D 뷰어에서는 우측 컨트롤과 겹치지 않도록 좌측 배치
  */
 export default function EducationQuickMenu() {
     const [isHovered, setIsHovered] = useState(false);
@@ -18,34 +19,55 @@ export default function EducationQuickMenu() {
     const talkUrl = getNaverTalkTalkChatUrl();
     const isAdmin = pathname?.startsWith('/admin');
 
+    /** 3D 뷰어 우측 메뉴(스크린샷·치수·뷰 프리셋)와 겹치는 페이지 */
+    const isViewerPage =
+        pathname === '/quote' ||
+        pathname?.startsWith('/quote/') ||
+        pathname === '/experience' ||
+        pathname?.startsWith('/experience/');
+
     if (isAdmin) return null;
 
+    const dockLeft = isViewerPage;
+
     return (
-        <div className="fixed right-0 top-24 sm:top-28 z-[90] flex flex-col items-end gap-3 pointer-events-none">
+        <div
+            className={`fixed top-24 sm:top-28 z-[90] flex flex-col gap-3 pointer-events-none ${
+                dockLeft ? 'left-0 items-start' : 'right-0 items-end'
+            }`}
+        >
             <motion.a
                 href="https://3dcookiehd.co.kr/"
                 target="_blank"
                 rel="noopener noreferrer"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
-                className="pointer-events-auto relative flex items-center bg-white/10 backdrop-blur-xl border border-white/20 border-r-0 rounded-l-2xl shadow-2xl p-3 gap-4 transition-all group overflow-hidden"
+                className={`pointer-events-auto relative flex items-center bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-3 gap-4 transition-all group overflow-hidden ${
+                    dockLeft
+                        ? 'border-l-0 rounded-r-2xl flex-row-reverse'
+                        : 'border-r-0 rounded-l-2xl'
+                }`}
                 style={{
                     boxShadow: isHovered ? '0 0 40px rgba(20, 184, 166, 0.2)' : 'none',
                 }}
             >
                 <div
-                    className={`absolute inset-0 bg-gradient-to-r from-teal-500/15 to-transparent transition-opacity duration-300 ${
-                        isHovered ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`absolute inset-0 transition-opacity duration-300 ${
+                        dockLeft
+                            ? 'bg-gradient-to-l from-teal-500/15 to-transparent'
+                            : 'bg-gradient-to-r from-teal-500/15 to-transparent'
+                    } ${isHovered ? 'opacity-100' : 'opacity-0'}`}
                 />
 
                 <AnimatePresence>
                     {isHovered && (
                         <motion.div
-                            initial={{ width: 0, opacity: 0, x: 10 }}
+                            initial={{ width: 0, opacity: 0, x: dockLeft ? -10 : 10 }}
                             animate={{ width: 'auto', opacity: 1, x: 0 }}
-                            exit={{ width: 0, opacity: 0, x: 10 }}
-                            className="flex flex-col whitespace-nowrap overflow-hidden pl-1"
+                            exit={{ width: 0, opacity: 0, x: dockLeft ? -10 : 10 }}
+                            className={`flex flex-col whitespace-nowrap overflow-hidden ${
+                                dockLeft ? 'pr-1 text-right' : 'pl-1'
+                            }`}
                         >
                             <span className="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] leading-none mb-1.5">
                                 Education Center
@@ -77,7 +99,7 @@ export default function EducationQuickMenu() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="text-white/30 mr-1"
+                        className={`text-white/30 ${dockLeft ? 'ml-1' : 'mr-1'}`}
                     >
                         <ExternalLink className="w-3.5 h-3.5" />
                     </motion.div>
@@ -89,7 +111,9 @@ export default function EducationQuickMenu() {
                     href={talkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="pointer-events-auto mr-2 sm:mr-2.5 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#03C75A] text-white shadow-[0_6px_20px_rgba(0,0,0,0.28)] ring-1 ring-white/90 hover:scale-105 hover:bg-[#02b350] active:scale-95 transition-transform"
+                    className={`pointer-events-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#03C75A] text-white shadow-[0_6px_20px_rgba(0,0,0,0.28)] ring-1 ring-white/90 hover:scale-105 hover:bg-[#02b350] active:scale-95 transition-transform ${
+                        dockLeft ? 'ml-2 sm:ml-2.5' : 'mr-2 sm:mr-2.5'
+                    }`}
                     aria-label="네이버 톡톡 실시간 상담"
                     title="네이버 톡톡 상담"
                 >
