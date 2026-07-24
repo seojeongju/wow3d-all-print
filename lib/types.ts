@@ -81,6 +81,12 @@ export interface Order {
     createdAt: string;
     updatedAt: string;
     items?: OrderItem[];
+    /** 수정견적 JSON */
+    expertQuoteData?: string | null;
+    hasExpertQuote?: boolean;
+    quotationSentAt?: string | null;
+    /** 마이페이지에서 견적서 보기 가능 여부 */
+    canViewEstimate?: boolean;
 }
 
 export interface OrderItem {

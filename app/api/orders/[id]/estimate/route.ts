@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { requireAuth } from '@/lib/api-utils';
 import { normalizeEstimateViewToken } from '@/lib/quotation-view-token';
 
 /**
  * GET /api/orders/[id]/estimate
- * 이메일 견적서 링크 전용 퍼블릭 API (보안 토큰 인증)
- * 쿼리 파라미터: ?token=... (orders.view_token과 비교)
+ * 견적서 조회
+ * - ?token=... (이메일 링크용 view_token)
+ * - 또는 Authorization Bearer (주문 소유자 로그인)
  */
 export async function GET(
     req: NextRequest,
@@ -23,22 +25,15 @@ export async function GET(
         return NextResponse.json({ error: '유효하지 않은 주문 ID입니다' }, { status: 400 });
     }
 
-    // URL에서 보안 토큰 파싱 (이중 ?token= 링크 대비 정규화)
     const { searchParams } = new URL(req.url);
-    const token = normalizeEstimateViewToken(searchParams.get('token'));
-
-    if (!token) {
-        return NextResponse.json({ error: '인증 토큰이 누락되었습니다' }, { status: 401 });
-    }
+    const viewTokenParam = normalizeEstimateViewToken(searchParams.get('token'));
 
     try {
-        // 1. 주문 데이터 조회 (민감한 데이터인 admin_note 등은 제외)
-        // 비회원의 경우 guest_email, 회원의 경우 users 테이블의 이메일 조회
         const order = await env.DB.prepare(`
             SELECT o.id, o.user_id, o.order_number, o.recipient_name, o.recipient_phone,
                    o.shipping_address, o.shipping_postal_code, o.total_amount, o.status,
                    o.created_at, o.updated_at, o.has_expert_quote, o.expert_quote_data,
-                   o.view_token, o.store_id, o.guest_email,
+                   o.view_token, o.store_id, o.guest_email, o.quotation_sent_at,
                    u.email as user_email
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
@@ -49,19 +44,33 @@ export async function GET(
             total_amount: number; status: string; created_at: string; updated_at: string;
             has_expert_quote: number | null; expert_quote_data: string | null;
             view_token: string | null; store_id: number | null; guest_email: string | null;
-            user_email: string | null;
+            quotation_sent_at: string | null; user_email: string | null;
         } | null;
 
         if (!order) {
             return NextResponse.json({ error: '주문을 찾을 수 없습니다' }, { status: 404 });
         }
 
-        // 2. 보안 토큰(view_token) 일치 여부 검증
-        if (!order.view_token || order.view_token !== token) {
-            return NextResponse.json({ error: '유효하지 않은 토큰입니다' }, { status: 401 });
+        let authorized = false;
+
+        if (viewTokenParam) {
+            if (order.view_token && order.view_token === viewTokenParam) {
+                authorized = true;
+            }
+        } else {
+            const auth = await requireAuth(req);
+            if (!(auth instanceof Response) && order.user_id != null && order.user_id === auth.userId) {
+                authorized = true;
+            }
         }
 
-        // 3. 주문 품목 조회 (quotes 테이블 조인하여 파일명 및 제작사양 획득)
+        if (!authorized) {
+            return NextResponse.json(
+                { error: viewTokenParam ? '유효하지 않은 토큰입니다' : '인증이 필요합니다' },
+                { status: 401 }
+            );
+        }
+
         const { results: items } = await env.DB.prepare(`
             SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
                    q.file_name, q.print_method, q.material as material_name
@@ -70,13 +79,11 @@ export async function GET(
             WHERE oi.order_id = ?
         `).bind(numId).all();
 
-        // 4. 공급자 회사 정보 조회 (견적서에 인쇄될 정보)
-        const storeId = order.store_id ?? 1; // 기본 store_id 1 적용
+        const storeId = order.store_id ?? 1;
         const company = await env.DB.prepare(
             'SELECT * FROM company_info WHERE store_id = ?'
         ).bind(storeId).first();
 
-        // 보안상 응답 데이터에서 view_token 및 store_id 등 제거
         const { view_token, store_id, ...safeOrder } = order;
 
         return NextResponse.json({
@@ -84,11 +91,63 @@ export async function GET(
             data: {
                 order: safeOrder,
                 items: items || [],
-                company: company || null
-            }
+                company: company || null,
+            },
         });
-
     } catch (error: any) {
+        // quotation_sent_at 컬럼 없을 수 있음 → 재시도
+        if (String(error?.message || '').includes('quotation_sent_at')) {
+            try {
+                const order = await env.DB.prepare(`
+                    SELECT o.id, o.user_id, o.order_number, o.recipient_name, o.recipient_phone,
+                           o.shipping_address, o.shipping_postal_code, o.total_amount, o.status,
+                           o.created_at, o.updated_at, o.has_expert_quote, o.expert_quote_data,
+                           o.view_token, o.store_id, o.guest_email,
+                           u.email as user_email
+                    FROM orders o
+                    LEFT JOIN users u ON o.user_id = u.id
+                    WHERE o.id = ?
+                `).bind(numId).first() as any;
+
+                if (!order) {
+                    return NextResponse.json({ error: '주문을 찾을 수 없습니다' }, { status: 404 });
+                }
+
+                let authorized = false;
+                if (viewTokenParam) {
+                    if (order.view_token && order.view_token === viewTokenParam) authorized = true;
+                } else {
+                    const auth = await requireAuth(req);
+                    if (!(auth instanceof Response) && order.user_id != null && order.user_id === auth.userId) {
+                        authorized = true;
+                    }
+                }
+                if (!authorized) {
+                    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
+                }
+
+                const { results: items } = await env.DB.prepare(`
+                    SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
+                           q.file_name, q.print_method, q.material as material_name
+                    FROM order_items oi
+                    LEFT JOIN quotes q ON oi.quote_id = q.id
+                    WHERE oi.order_id = ?
+                `).bind(numId).all();
+
+                const company = await env.DB.prepare(
+                    'SELECT * FROM company_info WHERE store_id = ?'
+                ).bind(order.store_id ?? 1).first();
+
+                const { view_token, store_id, ...safeOrder } = order;
+                return NextResponse.json({
+                    success: true,
+                    data: { order: safeOrder, items: items || [], company: company || null },
+                });
+            } catch (e2: any) {
+                console.error('GET /api/orders/[id]/estimate retry error:', e2);
+                return NextResponse.json({ error: '견적서 조회 실패', reason: e2.message }, { status: 500 });
+            }
+        }
         console.error('GET /api/orders/[id]/estimate error:', error);
         return NextResponse.json({ error: '견적서 조회 실패', reason: error.message }, { status: 500 });
     }

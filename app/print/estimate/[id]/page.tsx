@@ -8,6 +8,19 @@ import { formatKoreanDate, formatNowKoreanDate } from '@/lib/date-utils';
 import { getStoredAdminToken } from '@/lib/client-admin-auth';
 import { normalizeEstimateViewToken } from '@/lib/quotation-view-token';
 
+function getPersistedUserToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = localStorage.getItem('wow3d-auth');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const t = parsed?.state?.token;
+        return typeof t === 'string' && t.trim() ? t : null;
+    } catch {
+        return null;
+    }
+}
+
 type CompanyInfo = {
     business_number?: string;
     company_name?: string;
@@ -55,7 +68,7 @@ export default function EstimatePrintPage() {
     useEffect(() => {
         if (!id) return;
 
-        // 1. URL 보안 토큰(token)이 주어진 경우 -> 퍼블릭 고객용 API 1회 호출로 모두 처리
+        // 1. URL 보안 토큰(token)이 주어진 경우 -> 퍼블릭 고객용 API
         if (token) {
             fetch(`/api/orders/${id}/estimate?token=${encodeURIComponent(token)}`)
                 .then(res => res.json())
@@ -80,57 +93,86 @@ export default function EstimatePrintPage() {
             return;
         }
 
-        // 2. 관리자 모드 (토큰 없음 — 로그인 세션 또는 admin_print_token)
-        const savedToken = getStoredAdminToken();
-        const authHeader: Record<string, string> = {};
-        if (savedToken) authHeader['Authorization'] = `Bearer ${savedToken}`;
-
-        // 회사 정보 로드 (관리자 인증 토큰이 있을 때)
-        if (savedToken) {
-            fetch('/api/admin/company', { headers: authHeader })
-                .then(r => r.json())
+        // 2. 로그인 고객: 본인 주문 견적서 (마이페이지에서 열기)
+        const userToken = getPersistedUserToken();
+        if (userToken) {
+            fetch(`/api/orders/${id}/estimate`, {
+                headers: { Authorization: `Bearer ${userToken}` },
+            })
+                .then(res => res.json())
                 .then(json => {
                     if (json.success && json.data) {
-                        setCompany({ ...DEFAULT_COMPANY, ...json.data });
+                        const { order, items, company: dbCompany } = json.data;
+                        setData({ order, items });
+                        if (dbCompany) {
+                            setCompany({ ...DEFAULT_COMPANY, ...dbCompany });
+                        }
+                        setLoading(false);
+                        return true;
+                    }
+                    return false;
+                })
+                .then((ok) => {
+                    if (ok) return;
+                    // 본인 주문이 아니면 관리자 모드로 폴백
+                    loadAdminEstimate();
+                })
+                .catch(() => loadAdminEstimate());
+            return;
+        }
+
+        loadAdminEstimate();
+
+        function loadAdminEstimate() {
+            const savedToken = getStoredAdminToken();
+            const authHeader: Record<string, string> = {};
+            if (savedToken) authHeader['Authorization'] = `Bearer ${savedToken}`;
+
+            if (savedToken) {
+                fetch('/api/admin/company', { headers: authHeader })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success && json.data) {
+                            setCompany({ ...DEFAULT_COMPANY, ...json.data });
+                        }
+                    })
+                    .catch(e => console.warn('Company info load failed', e));
+            }
+
+            if (isTemp) {
+                try {
+                    const stored = localStorage.getItem(`quote_temp_${id}`);
+                    if (stored) {
+                        setData(JSON.parse(stored));
+                        setLoading(false);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Failed to load temp quote', e);
+                }
+            }
+
+            fetch(`/api/admin/orders/${id}`, { headers: authHeader })
+                .then(res => res.json())
+                .then(json => {
+                    if (json.success) {
+                        setData(json.data);
+                    } else {
+                        setError(json.error || '주문 정보를 불러올 수 없습니다.');
+                        setErrorHint(
+                            savedToken
+                                ? '관리자 페이지 → 견적 관리에서 인쇄 버튼을 통해 열어주세요.'
+                                : '로그인 후 마이페이지에서 견적서를 확인하거나, 이메일로 받은 견적서 링크를 이용해 주세요.'
+                        );
                     }
                 })
-                .catch(e => console.warn('Company info load failed', e));
+                .catch(err => {
+                    setError('데이터 로딩 실패');
+                    setErrorHint('잠시 후 다시 시도해 주세요.');
+                    console.error(err);
+                })
+                .finally(() => setLoading(false));
         }
-
-        if (isTemp) {
-            // 임시 저장된 데이터 (관리자 수정본)
-            try {
-                const stored = localStorage.getItem(`quote_temp_${id}`);
-                if (stored) {
-                    setData(JSON.parse(stored));
-                    setLoading(false);
-                    return;
-                }
-            } catch (e) {
-                console.error('Failed to load temp quote', e);
-            }
-        }
-
-        fetch(`/api/admin/orders/${id}`, { headers: authHeader })
-            .then(res => res.json())
-            .then(json => {
-                if (json.success) {
-                    setData(json.data);
-                } else {
-                    setError(json.error || '주문 정보를 불러올 수 없습니다.');
-                    setErrorHint(
-                        savedToken
-                            ? '관리자 페이지 → 견적 관리에서 인쇄 버튼을 통해 열어주세요.'
-                            : '관리자는 로그인 후 견적 관리에서 인쇄 버튼을 사용하세요. 고객은 이메일로 받은 견적서 링크를 이용해 주세요.'
-                    );
-                }
-            })
-            .catch(err => {
-                setError('데이터 로딩 실패');
-                setErrorHint('잠시 후 다시 시도해 주세요.');
-                console.error(err);
-            })
-            .finally(() => setLoading(false));
     }, [id, isTemp, token]);
 
     // 인쇄/PDF 시 브라우저 제목 통일 (훅 규칙: 조건부 return 이전에 호출)

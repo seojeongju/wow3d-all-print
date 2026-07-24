@@ -69,6 +69,15 @@ export async function GET(request: NextRequest) {
                     adminNote: order.admin_note,
                     createdAt: order.created_at,
                     updatedAt: order.updated_at,
+                    hasExpertQuote: !!order.has_expert_quote,
+                    expertQuoteData: order.expert_quote_data ?? null,
+                    quotationSentAt: order.quotation_sent_at ?? null,
+                    canViewEstimate:
+                        !!order.quotation_sent_at ||
+                        !!order.has_expert_quote ||
+                        ['quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered', 'completed'].includes(
+                            String(order.status)
+                        ),
                     items: (items.results || []).map((item: any) => ({
                         id: item.id,
                         orderId: item.order_id,
@@ -78,13 +87,12 @@ export async function GET(request: NextRequest) {
                         subtotal: item.subtotal,
                         createdAt: item.created_at,
                         quote: {
-                            id: item.quote_id, // items 조회 시 quotes 테이블과 조인했으므로 quote 정보도 포함됨
+                            id: item.quote_id,
                             fileName: item.file_name,
                             fileSize: item.file_size,
                             fileUrl: item.file_url,
                             printMethod: item.print_method,
                             totalPrice: item.total_price,
-                            // 필요한 경우 다른 quote 필드도 추가
                         }
                     })),
                 };

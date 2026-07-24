@@ -55,6 +55,20 @@ function getOrderFinalAmount(order: Order): number {
     return correctDisplayAmount(raw) ?? raw;
 }
 
+/** 관리자 견적 발송 후 마이페이지에서 견적서 열람 가능 여부 */
+function canViewOrderEstimate(order: Order): boolean {
+    if (order.canViewEstimate) return true;
+    if (order.quotationSentAt) return true;
+    if (order.hasExpertQuote) return true;
+    return ['quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered', 'completed'].includes(
+        order.status
+    );
+}
+
+function openOrderEstimate(orderId: number) {
+    window.open(`/print/estimate/${orderId}`, '_blank', 'noopener,noreferrer');
+}
+
 /** 상태별 스타일 */
 function getStatusStyle(status: string): { bg: string; text: string; border: string; dot: string } {
     switch (status) {
@@ -492,14 +506,28 @@ export default function MyAccountPage() {
                                             {quoteSentOrders.length}개의 주문에 견적서가 발송되었습니다. 금액 확인 후 결제해 주세요.
                                         </div>
                                     </div>
-                                    <Button
-                                        size="sm"
-                                        className="bg-emerald-400 text-slate-950 font-black hover:bg-emerald-300 rounded-xl px-5 text-xs uppercase tracking-widest shrink-0"
-                                        onClick={() => {
-                                            const tab = document.querySelector('[data-value="active-orders"]') as HTMLElement;
-                                            tab?.click();
-                                        }}
-                                    >확인하기</Button>
+                                    <div className="flex flex-wrap gap-2 shrink-0">
+                                        {quoteSentOrders.slice(0, 2).map((o) => (
+                                            <Button
+                                                key={o.id}
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-emerald-400/40 text-emerald-300 hover:bg-emerald-400/10 rounded-xl px-4 text-xs font-black"
+                                                onClick={() => openOrderEstimate(o.id)}
+                                            >
+                                                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                                                견적서 #{o.orderNumber.slice(-6)}
+                                            </Button>
+                                        ))}
+                                        <Button
+                                            size="sm"
+                                            className="bg-emerald-400 text-slate-950 font-black hover:bg-emerald-300 rounded-xl px-5 text-xs uppercase tracking-widest"
+                                            onClick={() => {
+                                                const tab = document.querySelector('[data-value="active-orders"]') as HTMLElement;
+                                                tab?.click();
+                                            }}
+                                        >확인하기</Button>
+                                    </div>
                                 </div>
                             )}
 
@@ -568,6 +596,24 @@ export default function MyAccountPage() {
                                             <div className="p-8">
                                                 {/* 진행 단계 표시 */}
                                                 <StatusProgress status={order.status} />
+
+                                                {canViewOrderEstimate(order) && (
+                                                    <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-black text-emerald-300">관리자 견적서가 준비되었습니다</p>
+                                                            <p className="text-[11px] font-bold text-emerald-400/60 mt-0.5">
+                                                                이메일로도 발송되었습니다. 아래에서 바로 확인할 수 있습니다.
+                                                            </p>
+                                                        </div>
+                                                        <Button
+                                                            className="h-11 rounded-xl bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-emerald-300 gap-2 shrink-0"
+                                                            onClick={() => openOrderEstimate(order.id)}
+                                                        >
+                                                            <FileText className="w-4 h-4" />
+                                                            견적서 보기
+                                                        </Button>
+                                                    </div>
+                                                )}
 
                                                 <div className="flex flex-col gap-4 mt-8">
                                                     {order.items?.map(item => (
@@ -755,6 +801,14 @@ export default function MyAccountPage() {
                                                         })()}
                                                         </div>
                                                         <div className="flex gap-3">
+                                                            {canViewOrderEstimate(order) && (
+                                                                <Button
+                                                                    className="flex-1 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 font-black text-[11px] uppercase tracking-widest gap-2 transition-all"
+                                                                    onClick={() => openOrderEstimate(order.id)}
+                                                                >
+                                                                    <FileText className="w-3.5 h-3.5" /> 견적서
+                                                                </Button>
+                                                            )}
                                                             <Button
                                                                 variant="outline"
                                                                 className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest transition-all"
@@ -1011,6 +1065,16 @@ export default function MyAccountPage() {
                                     </Badge>
                                 </div>
                             </div>
+
+                            {canViewOrderEstimate(selectedOrder) && (
+                                <Button
+                                    className="w-full h-14 rounded-2xl bg-emerald-400 text-slate-950 font-black uppercase tracking-widest hover:bg-emerald-300 gap-2"
+                                    onClick={() => openOrderEstimate(selectedOrder.id)}
+                                >
+                                    <FileText className="w-5 h-5" />
+                                    견적서 보기
+                                </Button>
+                            )}
 
                             {/* 배송 정보 */}
                             <div className="space-y-6">
