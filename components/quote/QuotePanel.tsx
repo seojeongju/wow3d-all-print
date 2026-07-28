@@ -198,6 +198,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             : (spec?.hourlyRate ?? (printMethod === 'fdm' ? 5000 : printMethod === 'dlp' ? 9000 : 8000))
 
         if (printMethod === 'fdm') {
+            const fdmSpec = printSpecs?.fdm
             const mat = materials.find((m) => m.type === 'FDM' && m.name === fdmMaterial)
             const density = mat?.density ?? 1.24
             const pricePerGramKr = mat ? (Number(mat.price_per_gram) || 0) : 0
@@ -212,16 +213,16 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 heightMm,
                 surfaceAreaCm2,
                 layerHeightMm: layerHeight,
-                fdmLayerHoursFactor: spec?.fdm_layer_hours_factor,
+                fdmLayerHoursFactor: fdmSpec?.fdm_layer_hours_factor,
             })
             const numLayers = timeEst.numLayers
             const estTimeHours = timeEst.hours
 
             // 비용 계산 (볼륨 디스카운트: 5h+ 10%, 10h+ 15%)
-            const supportPerCm2Kr = spec?.fdm_support_per_cm2_krw ?? 26
+            const supportPerCm2Kr = fdmSpec?.fdm_support_per_cm2_krw ?? 26
             const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
             const supportCost = supportEnabled ? supportPerCm2Kr * supportTargetArea : 0
-            const laborKr = spec?.fdm_labor_cost_krw ?? 6500
+            const laborKr = fdmSpec?.fdm_labor_cost_krw ?? 6500
             const laborCost = laborKr
             const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
             const machineCost = estTimeHours * effectiveRate
@@ -239,7 +240,9 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
             const volumeML = volumeCm3
             const resinCost = pricePerMlKr * volumeML
-            const layerExp = printMethod === 'dlp' ? (spec?.dlp_layer_exposure_sec ?? 3) : (spec?.sla_layer_exposure_sec ?? 8)
+            const layerExp = printMethod === 'dlp'
+                ? (printSpecs?.dlp?.dlp_layer_exposure_sec ?? 3)
+                : (printSpecs?.sla?.sla_layer_exposure_sec ?? 8)
             const timeEst = estimateResinPrintTimeHours({
                 heightMm,
                 layerHeightMm: slaLayerHeight,
@@ -247,11 +250,17 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             })
             const numLayers = timeEst.numLayers
             const estTimeHours = timeEst.hours
-            const consKr = printMethod === 'dlp' ? (spec?.dlp_consumables_krw ?? 3900) : (spec?.sla_consumables_krw ?? 3900)
-            const postKr = printMethod === 'dlp' ? (spec?.dlp_post_process_krw ?? 10400) : (spec?.sla_post_process_krw ?? 10400)
+            const consKr = printMethod === 'dlp'
+                ? (printSpecs?.dlp?.dlp_consumables_krw ?? 3900)
+                : (printSpecs?.sla?.sla_consumables_krw ?? 3900)
+            const postKr = printMethod === 'dlp'
+                ? (printSpecs?.dlp?.dlp_post_process_krw ?? 10400)
+                : (printSpecs?.sla?.sla_post_process_krw ?? 10400)
             const consumablesCost = consKr
             const postProcessCost = postProcessing ? postKr : 0
-            const laborKr = printMethod === 'dlp' ? (spec?.dlp_labor_cost_krw ?? 9100) : (spec?.sla_labor_cost_krw ?? 9100)
+            const laborKr = printMethod === 'dlp'
+                ? (printSpecs?.dlp?.dlp_labor_cost_krw ?? 9100)
+                : (printSpecs?.sla?.sla_labor_cost_krw ?? 9100)
             const laborCost = laborKr
             const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
             const machineCost = estTimeHours * effectiveRate
@@ -323,10 +332,10 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             }
 
             const quoteData: QuoteData = {
-                id: currentQuoteId,
+                id: currentQuoteId ?? undefined,
                 fileName: file.name,
                 fileSize: file.size,
-                fileUrl,
+                fileUrl: fileUrl ?? undefined,
                 volumeCm3,
                 surfaceAreaCm2,
                 dimensionsX: analysis.boundingBox.x,

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
             bindings = [parsed];
         } else {
             query = 'SELECT * FROM quotes WHERE session_id = ? AND volume_cm3 > 0 ORDER BY created_at DESC';
-            bindings = [sessionId];
+            bindings = [sessionId ?? null];
         }
 
         // D1 Database가 있는 경우에만 실행

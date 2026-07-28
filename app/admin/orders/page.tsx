@@ -125,7 +125,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'cancelled', label: '취소' },
 ];
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status?: string) {
     switch (status) {
         case 'pending': return <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">접수 대기</Badge>;
         case 'confirmed': return <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">주문 확인</Badge>;
@@ -787,7 +787,7 @@ function OrderListInner() {
                                         <td className="p-4 text-white/70">{formatKoreanDate(order.created_at)}</td>
                                         <td className="p-4 text-right">
                                             <Select
-                                                value={order.status}
+                                                value={order.status ?? 'pending'}
                                                 onValueChange={(v) => handleStatusChange(order.id, v)}
                                                 disabled={updatingId === order.id}
                                             >
@@ -1010,7 +1010,10 @@ function OrderListInner() {
                                                                     size="sm"
                                                                     className="h-8 px-3 text-xs text-primary hover:text-primary/90 hover:bg-primary/10 disabled:opacity-50"
                                                                     disabled={downloadingFileId === it.id}
-                                                                    onClick={() => handleFileDownload(Number(detailOrderId), it.id, it.quote_id, it.file_name)}
+                                                                    onClick={() => {
+                                                                        if (it.id == null || it.quote_id == null) return;
+                                                                        handleFileDownload(Number(detailOrderId), it.id, it.quote_id, it.file_name || 'model.stl');
+                                                                    }}
                                                                 >
                                                                     {downloadingFileId === it.id ? (
                                                                         <>
