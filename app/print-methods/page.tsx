@@ -52,6 +52,21 @@ const methods = [
     },
 ];
 
+const methodFaqs = [
+    {
+        q: '기능성 시제품에는 FDM과 SLA 중 어떤 방식이 더 적합한가요?',
+        a: '조립성 확인, 내구성 테스트, 기능 시험이 목적이라면 일반적으로 FDM이 더 적합합니다. 외관과 디테일이 더 중요하다면 SLA 또는 DLP가 유리합니다.',
+    },
+    {
+        q: 'SLA와 DLP는 비슷해 보이는데 어떤 차이가 있나요?',
+        a: '둘 다 레진 기반 정밀 공정이지만, SLA는 레이저로 한 점씩 경화하고 DLP는 한 레이어를 동시에 경화합니다. 같은 소형 정밀 부품을 반복 제작할 때는 DLP가 유리할 수 있습니다.',
+    },
+    {
+        q: '표면 품질이 가장 중요한 제품은 어떤 3D 프린팅 방식을 선택해야 하나요?',
+        a: '매끄러운 표면과 미세한 디테일이 중요하다면 SLA 또는 DLP가 적합합니다. FDM은 상대적으로 경제적이지만 층선이 보일 수 있습니다.',
+    },
+];
+
 export default function PrintMethodsPage() {
     return (
         <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
@@ -168,6 +183,28 @@ export default function PrintMethodsPage() {
                                 </div>
                             </motion.article>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            <section className="pb-24">
+                <div className="container mx-auto px-4 max-w-5xl">
+                    <div className="rounded-3xl border border-border bg-card/40 p-8 md:p-10 space-y-6">
+                        <div className="max-w-3xl">
+                            <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-3">Common Questions</p>
+                            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">출력 방식 선택 전에 많이 묻는 질문</h2>
+                            <p className="text-muted-foreground break-keep">
+                                FDM, SLA, DLP 중 무엇이 맞는지 고민할 때 고객이 가장 자주 묻는 질문을 먼저 정리했습니다.
+                            </p>
+                        </div>
+                        <div className="grid gap-4">
+                            {methodFaqs.map((item) => (
+                                <article key={item.q} className="rounded-2xl border border-border bg-background/60 p-6">
+                                    <h3 className="text-lg font-bold mb-2 break-keep">{item.q}</h3>
+                                    <p className="text-sm text-muted-foreground leading-relaxed break-keep">{item.a}</p>
+                                </article>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>

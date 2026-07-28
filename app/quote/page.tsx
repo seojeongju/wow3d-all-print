@@ -11,6 +11,21 @@ import { useState, useEffect, Suspense } from "react";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 
+const quickQuoteFaqs = [
+    {
+        q: "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
+        a: "일반적으로 STL, OBJ, 3MF 파일이 가장 안정적으로 분석됩니다. 파일 단위와 실제 크기도 함께 확인하면 더 정확한 견적을 받을 수 있습니다.",
+    },
+    {
+        q: "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
+        a: "레이어 높이가 낮아질수록 출력 시간이 늘어나고, 인필이 높아질수록 재료 사용량이 증가합니다. 그래서 옵션에 따라 가격과 예상 시간이 함께 달라집니다.",
+    },
+    {
+        q: "자동견적 후 실제 제작 금액이 달라질 수도 있나요?",
+        a: "일반적인 모델은 자동견적이 유효하지만, 복잡한 형상이나 특수 후가공이 필요한 경우에는 관리자 검토 후 수정견적으로 안내될 수 있습니다.",
+    },
+];
+
 function QuoteContent() {
     const { file, analysis, reset, setFile } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
@@ -248,6 +263,17 @@ function QuoteContent() {
                                                         <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">STL, OBJ, 3MF 업로드 전 두께, 단위, 메쉬 오류를 체크하는 방법을 확인하세요.</p>
                                                     </div>
                                                 </Link>
+                                            </div>
+                                            <div className="space-y-3 pt-2">
+                                                <div className="px-1">
+                                                    <h2 className="text-sm sm:text-base font-black text-white">자동견적 전에 많이 묻는 질문</h2>
+                                                </div>
+                                                {quickQuoteFaqs.map((item) => (
+                                                    <div key={item.q} className="p-4 sm:p-5 rounded-[1.25rem] bg-white/5 border border-white/10">
+                                                        <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
+                                                        <p className="mt-2 text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </motion.div>
                                     )
