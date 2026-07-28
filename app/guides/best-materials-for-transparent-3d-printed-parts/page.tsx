@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import GuideCTA from '@/components/guides/GuideCTA';
 import { absoluteUrl } from '@/lib/site-url';
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema';
 
@@ -127,18 +126,13 @@ export default function TransparentPartsGuidePage() {
                         </div>
                     </article>
 
-                    <div className="flex gap-3">
-                        <Link href="/materials">
-                            <Button variant="outline" className="rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10">
-                                소재 전체 보기
-                            </Button>
-                        </Link>
-                        <Link href="/quote">
-                            <Button className="rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black">
-                                자동견적 시작 <ArrowRight className="w-4 h-4 ml-1" />
-                            </Button>
-                        </Link>
-                    </div>
+                    <GuideCTA
+                        eyebrow="Transparent Parts CTA"
+                        title="투명 커버와 관찰창 부품 조건으로 바로 견적을 받아보세요"
+                        description="투명도, 시인성, 후처리 허용 범위를 고려해 Clear 레진이나 PETG 조건으로 실제 견적과 제작 가능성을 확인할 수 있습니다."
+                        secondaryHref="/materials"
+                        secondaryLabel="소재 전체 보기"
+                    />
                 </div>
             </section>
 
