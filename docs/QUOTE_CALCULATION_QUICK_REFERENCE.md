@@ -19,20 +19,26 @@
 ```
 총 견적금액 = 재료비 + 지지구조비 + 장비비 + 인건비
 
-재료비      = (price_per_gram / 1300) × 소요무게(g)
-지지구조비  = (fdm_support_per_cm2_krw / 1300) × 표면적(cm²)  [선택사항]
-장비비      = 출력시간(h) × (hourlyRate 또는 layerCosts / 1300)
-인건비      = fdm_labor_cost_krw / 1300
+재료비      = price_per_gram × 소요무게(g)
+지지구조비  = fdm_support_per_cm2_krw × 지지면적  [선택]
+출력시간(h) = volumeTime×speedModifier + movementTime + surfaceTime×speedModifier
+              speedModifier = (0.2 / layerHeight)^1
+장비비      = 출력시간(h) × (hourlyRate 또는 layerCosts) × 볼륨할인
+인건비      = fdm_labor_cost_krw
+
+공통 모듈: lib/print-time-estimate.ts
+검증: npx tsx scripts/verify-print-time.ts
 ```
 
 ### SLA/DLP 방식
 ```
 총 견적금액 = 레진비 + 기타비용 + 장비비 + 인건비
 
-레진비    = (price_per_ml / 1300) × 부피(mL)
-기타비용  = 소모품비 + 후가공비  [후가공비는 선택사항]
-장비비    = 출력시간(h) × (hourlyRate 또는 layerCosts / 1300)
-인건비    = sla_labor_cost_krw 또는 dlp_labor_cost_krw / 1300
+레진비    = price_per_ml × 부피(mL)
+기타비용  = 소모품비 + 후가공비  [후가공비는 선택]
+출력시간  = max(0.5, (numLayers×(노출+8.5초)/3600 + 0.1)^0.9 × 0.953)
+장비비    = 출력시간(h) × (hourlyRate 또는 layerCosts) × 볼륨할인
+인건비    = sla/dlp_labor_cost_krw
 ```
 
 ---

@@ -15,6 +15,11 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
+import {
+    estimateFdmPrintTimeHours,
+    estimateResinPrintTimeHours,
+    formatEstimatedPrintTime,
+} from '@/lib/print-time-estimate'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -175,24 +180,17 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const adjustedDensity = Math.max(density * 0.2, effectiveDensity)
             const weightGrams = volumeCm3 * adjustedDensity
             const materialCost = pricePerGramKr * weightGrams
-            const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight))
 
-            // [개선된 알고리즘] 부피 기반 시간 산출
-            // 기존 단순 높이 비례 방식은 컵과 같이 속이 빈 모델의 특성을 반영하지 못함
-            // 개선: (부피 × 부피계수) + (높이 × 레이어계수)로 형상의 복잡도와 크기를 모두 반영
-
-            // 1. 부피 시간 서브리니어 (지수 0.85: 대형도 견적 완만) 100g 근처 유지용 계수 0.0297
-            const volumeTime = Math.pow(weightGrams + 1, 0.85) * 0.0297;
-
-            // 2. 레이어 변경 및 Z축 이동 시간 (레이어당 0.002시간 = 7.2초)
-            const baseLayerFactor = (spec as any)?.fdm_layer_hours_factor ?? 0.02;
-            const layerTimeFactor = baseLayerFactor * 0.08; // 0.015 -> 0.08 (약 5배 상향)
-            const movementTime = numLayers * layerTimeFactor;
-
-            // 3. 표면적 시간 서브리니어 (지수 0.8: 대형에서 더 완만)
-            const surfaceTime = Math.pow(surfaceAreaCm2 + 1, 0.8) * 0.00126;
-
-            const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
+            // 공통 모듈: 부피·표면 시간에 레이어 속도 보정(0.2mm 기준) 적용
+            const timeEst = estimateFdmPrintTimeHours({
+                weightGrams,
+                heightMm,
+                surfaceAreaCm2,
+                layerHeightMm: layerHeight,
+                fdmLayerHoursFactor: (spec as any)?.fdm_layer_hours_factor,
+            })
+            const numLayers = timeEst.numLayers
+            const estTimeHours = timeEst.hours
 
             // 비용 계산 (볼륨 디스카운트: 5h+ 10%, 10h+ 15%)
             const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
@@ -216,12 +214,14 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
             const volumeML = volumeCm3
             const resinCost = pricePerMlKr * volumeML
-            const numLayers = Math.max(1, Math.ceil(heightMm / slaLayerHeight))
             const layerExp = printMethod === 'dlp' ? ((spec as any)?.dlp_layer_exposure_sec ?? 3) : ((spec as any)?.sla_layer_exposure_sec ?? 8)
-            const mechanicDelay = 8.5
-            const rawEstTimeHours = (numLayers * (layerExp + mechanicDelay)) / 3600
-            // 서브리니어: 크기 커져도 견적이 과하게 뛰지 않도록 (FDM과 동일 방향)
-            const estTimeHours = Math.max(0.5, Math.pow(rawEstTimeHours + 0.1, 0.9) * 0.953)
+            const timeEst = estimateResinPrintTimeHours({
+                heightMm,
+                layerHeightMm: slaLayerHeight,
+                layerExposureSec: layerExp,
+            })
+            const numLayers = timeEst.numLayers
+            const estTimeHours = timeEst.hours
             const consKr = printMethod === 'dlp' ? ((spec as any)?.dlp_consumables_krw ?? 3900) : ((spec as any)?.sla_consumables_krw ?? 3900)
             const postKr = printMethod === 'dlp' ? ((spec as any)?.dlp_post_process_krw ?? 10400) : ((spec as any)?.sla_post_process_krw ?? 10400)
             const consumablesCost = consKr
@@ -698,7 +698,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">산출 결과</h4>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                 <div className="text-slate-400">소요 시간</div>
-                                <div className="font-bold text-emerald-400">{quoteDetail.time.toFixed(2)} h</div>
+                                <div className="font-bold text-emerald-400">
+                                    {formatEstimatedPrintTime(quoteDetail.time)}
+                                    <span className="ml-1.5 text-xs font-medium text-emerald-400/60">({quoteDetail.time.toFixed(2)} h)</span>
+                                </div>
                                 <div className="text-slate-400">소재 소요량</div>
                                 <div className="font-mono font-medium text-slate-100">{quoteDetail.materialAmount.toFixed(1)} {quoteDetail.materialUnit}</div>
                                 <div className="text-slate-400">출력 레이어 수</div>
@@ -748,7 +751,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                         <div className="flex items-center justify-end gap-2 text-[9.5px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5 sm:mb-2">
                             <Clock className="w-3.5 h-3.5" /> 제작 예상 기간
                         </div>
-                        <span className="text-[15px] sm:text-[17px] font-black text-teal-400 tracking-tight">~{estimatedTimeHours < 1 ? (Math.ceil(estimatedTimeHours * 60) + '분') : (estimatedTimeHours >= 24 ? (Math.ceil(estimatedTimeHours / 24) + '일') : (Math.ceil(estimatedTimeHours) + 'H'))}</span>
+                        <span className="text-[15px] sm:text-[17px] font-black text-teal-400 tracking-tight">~{formatEstimatedPrintTime(estimatedTimeHours)}</span>
                     </div>
                 </div>
 

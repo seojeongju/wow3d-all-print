@@ -59,40 +59,44 @@
 ## 견적 산출 공식
 
 ### 내부 환산 단위
-- 모든 비용은 내부적으로 `KRW / 1300` 으로 환산하여 계산
-- 최종 표시 시 다시 `× 1300` 하여 원화(KRW)로 표시
+- 비용은 **원화(KRW)** 로 직접 계산·표시합니다. (구 `/1300` 환산은 사용하지 않음)
+- 최종 견적은 공급가에 VAT 10%를 적용한 뒤 `roundTo100`으로 100원 단위 정리
 
 ### FDM 방식
 
 ```
 총 견적금액 = 재료비 + 지지구조비 + 장비비 + 인건비
 
+구현 위치: lib/print-time-estimate.ts (QuotePanel / Hero / PricingCalculator 공통)
+
 1. 재료비 (Material Cost)
-   - 기본 계산식:
-     volumeCm3 × adjustedDensity × pricePerGram / 1300
-   
-   - 상세:
-     effectiveDensity = density × (infill / 100)
-     adjustedDensity = max(density × 0.2, effectiveDensity)
-     weightGrams = volumeCm3 × adjustedDensity
-     materialCost = (pricePerGram / 1300) × weightGrams
+   effectiveDensity = density × (infill / 100)
+   adjustedDensity = max(density × 0.2, effectiveDensity)
+   weightGrams = volumeCm3 × adjustedDensity
+   materialCost = pricePerGram × weightGrams
 
 2. 지지구조비 (Support Cost)
-   - 계산식:
-     supportEnabled ? (fdm_support_per_cm2_krw / 1300) × surfaceAreaCm2 : 0
+   supportEnabled ? fdm_support_per_cm2_krw × (overhangArea 또는 surfaceArea×0.3) : 0
 
-3. 장비비 (Machine Cost)
-   - 계산식:
-     estTimeHours × machineRate
-   
-   - 상세:
-     numLayers = ceil(heightMm / layerHeight)
-     estTimeHours = max(1, numLayers × fdm_layer_hours_factor)
-     machineRate = (layerCosts[layerHeight] 또는 hourlyRate) / 1300
+3. 출력 시간 (estTimeHours)  ← 레이어 높이 반영
+   refLayer = 0.2 mm
+   speedModifier = (refLayer / layerHeight) ^ alpha   // alpha 기본 1
+   numLayers = ceil(heightMm / layerHeight)
+   volumeTime   = (weightGrams + 1)^0.85 × 0.0297 × speedModifier
+   movementTime = numLayers × (fdm_layer_hours_factor × 0.08)
+   surfaceTime  = (surfaceAreaCm2 + 1)^0.8 × 0.00126 × speedModifier
+   estTimeHours = max(0.5, volumeTime + movementTime + surfaceTime)
 
-4. 인건비 (Labor Cost)
-   - 계산식:
-     fdm_labor_cost_krw / 1300
+   ※ 0.1mm → speedModifier=2, 0.2mm → 1, 0.3mm → ≈0.67
+   ※ 체감이 과하면 layerSpeedAlpha=0.85 등으로 완화 가능
+
+4. 장비비 (Machine Cost)
+   machineRate = layerCosts[layerHeight] 또는 hourlyRate
+   effectiveRate = time>10 ? rate×0.7 : time>5 ? rate×0.8 : rate
+   machineCost = estTimeHours × effectiveRate
+
+5. 인건비 (Labor Cost)
+   fdm_labor_cost_krw (고정)
 ```
 
 ### SLA/DLP 방식
@@ -100,35 +104,22 @@
 ```
 총 견적금액 = 레진비 + 기타비용 + 장비비 + 인건비
 
-1. 레진비 (Resin Cost)
-   - 계산식:
-     (pricePerMl / 1300) × volumeML
-   
-   - 상세:
-     volumeML = volumeCm3
-     resinCost = (pricePerMl / 1300) × volumeML
+1. 레진비
+   resinCost = pricePerMl × volumeCm3
 
-2. 기타비용 (Other Cost)
-   - 계산식:
-     consumablesCost + postProcessCost
-   
-   - 상세:
-     consumablesCost = (sla_consumables_krw 또는 dlp_consumables_krw) / 1300
-     postProcessCost = postProcessing ? (sla_post_process_krw 또는 dlp_post_process_krw) / 1300 : 0
+2. 기타비용
+   consumables + (postProcessing ? postProcess : 0)
 
-3. 장비비 (Machine Cost)
-   - 계산식:
-     estTimeHours × machineRate
-   
-   - 상세:
-     numLayers = ceil(heightMm / slaLayerHeight)
-     layerExposure = sla_layer_exposure_sec 또는 dlp_layer_exposure_sec
-     estTimeHours = (numLayers × layerExposure) / 3600
-     machineRate = (layerCosts[slaLayerHeight] 또는 hourlyRate) / 1300
+3. 출력 시간
+   numLayers = ceil(heightMm / layerHeight)
+   rawHours = numLayers × (layerExposureSec + 8.5) / 3600
+   estTimeHours = max(0.5, (rawHours + 0.1)^0.9 × 0.953)
 
-4. 인건비 (Labor Cost)
-   - 계산식:
-     (sla_labor_cost_krw 또는 dlp_labor_cost_krw) / 1300
+4. 장비비
+   FDM과 동일하게 시간 × (layerCosts 또는 hourlyRate), 볼륨 디스카운트 적용
+
+5. 인건비
+   sla/dlp_labor_cost_krw
 ```
 
 ---
@@ -147,6 +138,9 @@
 ---
 
 ## 예시 계산
+
+> 참고: 아래 숫자 예시는 구 `/1300` 환산 시절의 참고용입니다.  
+> **현재 시간은 `lib/print-time-estimate.ts` + `scripts/verify-print-time.ts` 기준으로 검증하세요.**
 
 ### FDM 출력 예시
 - **모델 정보**:

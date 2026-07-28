@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Calculator, TrendingUp, AlertCircle, Info, Target } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { estimateFdmPrintTimeHours, estimateResinPrintTimeHours } from '@/lib/print-time-estimate'
 
 type CalcParams = {
     // 모델 정보
@@ -96,17 +97,16 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const weightGrams = params.volumeCm3 * adjustedDensity
         const materialCost = params.fdm_material_price_per_gram * weightGrams
 
-        const numLayers = Math.max(1, Math.ceil(params.heightMm / params.fdm_layer_height))
+        const timeEst = estimateFdmPrintTimeHours({
+            weightGrams,
+            heightMm: params.heightMm,
+            surfaceAreaCm2: params.surfaceAreaCm2,
+            layerHeightMm: params.fdm_layer_height,
+            fdmLayerHoursFactor: ep.fdm_layer_hours_factor,
+        })
+        const numLayers = timeEst.numLayers
+        const estTimeHours = timeEst.hours
 
-        // [개선된 알고리즘] 부피 서브리니어 + 표면적·높이 반영 (QuotePanel과 동일)
-        // 레이어 높이 보정: 0.2mm 기준, 얇아지면 시간 증가 (Speed Modifier)
-        const speedModifier = 0.2 / params.fdm_layer_height;
-        const volumeTime = Math.pow(weightGrams + 1, 0.85) * 0.0297 * speedModifier;
-        const layerTimeFactor = (ep.fdm_layer_hours_factor ?? 0.02) * 0.08;
-        const movementTime = numLayers * layerTimeFactor;
-        const surfaceTime = Math.pow(params.surfaceAreaCm2 + 1, 0.8) * 0.00126 * speedModifier;
-
-        const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
 
         const supportCost = params.fdm_support_enabled
             ? ep.fdm_support_per_cm2_krw * params.surfaceAreaCm2
@@ -141,11 +141,13 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const volumeML = params.volumeCm3
         const resinCost = params.sla_material_price_per_ml * volumeML
 
-        const numLayers = Math.max(1, Math.ceil(params.heightMm / params.sla_layer_height))
-        // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
-        const mechanicDelay = 8.5
-        const rawEstTimeHours = (numLayers * (ep.sla_layer_exposure_sec + mechanicDelay)) / 3600
-        const estTimeHours = Math.max(0.5, Math.pow(rawEstTimeHours + 0.1, 0.9) * 0.953)
+        const timeEst = estimateResinPrintTimeHours({
+            heightMm: params.heightMm,
+            layerHeightMm: params.sla_layer_height,
+            layerExposureSec: ep.sla_layer_exposure_sec,
+        })
+        const numLayers = timeEst.numLayers
+        const estTimeHours = timeEst.hours
 
         const consumablesCost = ep.sla_consumables_krw
         const postProcessCost = params.sla_post_processing
@@ -182,11 +184,13 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const volumeML = params.volumeCm3
         const resinCost = params.dlp_material_price_per_ml * volumeML
 
-        const numLayers = Math.max(1, Math.ceil(params.heightMm / params.dlp_layer_height))
-        // [개선] 기구 동작 시간(Lift & Retract) 추가 (약 8.5초)
-        const mechanicDelay = 8.5
-        const rawEstTimeHours = (numLayers * (ep.dlp_layer_exposure_sec + mechanicDelay)) / 3600
-        const estTimeHours = Math.max(0.5, Math.pow(rawEstTimeHours + 0.1, 0.9) * 0.953)
+        const timeEst = estimateResinPrintTimeHours({
+            heightMm: params.heightMm,
+            layerHeightMm: params.dlp_layer_height,
+            layerExposureSec: ep.dlp_layer_exposure_sec,
+        })
+        const numLayers = timeEst.numLayers
+        const estTimeHours = timeEst.hours
 
         const consumablesCost = ep.dlp_consumables_krw
         const postProcessCost = params.dlp_post_processing

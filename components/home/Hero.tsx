@@ -12,6 +12,7 @@ import LandingHeroScene from './LandingHeroScene';
 
 // 금액은 원화(KRW)로만 계산·표시. 자동견적(QuotePanel)과 동일한 공식·roundTo100·minPriceKr 적용
 import { roundTo100 } from '@/lib/amount-display';
+import { estimateFdmPrintTimeHours } from '@/lib/print-time-estimate';
 
 type PrintSpecs = {
     fdm?: {
@@ -70,15 +71,14 @@ export default function Hero() {
         const weightGrams = volumeCm3 * adjustedDensity;
         const materialCost = pricePerGramKr * weightGrams;
         const layerHeight = 0.2;
-        const numLayers = Math.max(1, Math.ceil(heightMm / layerHeight));
-
-        // 서브리니어 보완: 대형도 완만 (지수 0.85, 계수 0.0297)
-        const volumeTime = Math.pow(weightGrams + 1, 0.85) * 0.0297;
-        const baseLayerFactor = spec.fdm_layer_hours_factor ?? 0.02;
-        const layerTimeFactor = baseLayerFactor * 0.08;
-        const movementTime = numLayers * layerTimeFactor;
-        const surfaceTime = Math.pow(surfaceAreaCm2 + 1, 0.8) * 0.00126;
-        const estTimeHours = Math.max(0.5, volumeTime + movementTime + surfaceTime);
+        const timeEst = estimateFdmPrintTimeHours({
+            weightGrams,
+            heightMm,
+            surfaceAreaCm2,
+            layerHeightMm: layerHeight,
+            fdmLayerHoursFactor: spec.fdm_layer_hours_factor,
+        });
+        const estTimeHours = timeEst.hours;
 
         const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
         const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW;

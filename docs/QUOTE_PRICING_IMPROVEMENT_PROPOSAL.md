@@ -56,7 +56,14 @@
   `estTimeHours = max(0.5, (rawEstTimeHours + 0.1)^0.9 × 0.953)`
 - 약 1시간 구간은 기존과 비슷, 장시간 작업은 완만하게 증가.
 
-적용 위치: QuotePanel(/quote), 관리자 PricingCalculator. (Hero는 FDM만 표시)
+적용 위치: QuotePanel(/quote), 관리자 PricingCalculator, Hero.  
+공통 모듈: `lib/print-time-estimate.ts`
+
+### 레이어 높이 차별화 (2026-07 적용)
+- **문제**: 고객 견적에서 `volumeTime`/`surfaceTime`이 레이어 높이와 무관해 0.1·0.2·0.3 차이가 거의 없음
+- **수정**: `speedModifier = (0.2 / layerHeight)^alpha` (alpha 기본 1)를 부피·표면 시간에 곱함
+- **검증**: `npx tsx scripts/verify-print-time.ts` → 0.1≈2.0×, 0.3≈0.67× (0.2 대비)
+- **완화**: 체감이 과하면 `estimateFdmPrintTimeHours({ layerSpeedAlpha: 0.85 })` 로 조정
 
 
 ### 볼륨 디스카운트 (2단계)
