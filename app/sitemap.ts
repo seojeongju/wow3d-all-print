@@ -24,6 +24,7 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/guides/standard-vs-tough-vs-clear-vs-flexible-resin", priority: 0.88, changeFrequency: "weekly" },
   { path: "/guides/best-materials-for-3d-printing-prototypes", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/best-materials-for-transparent-3d-printed-parts", priority: 0.89, changeFrequency: "weekly" },
+  { path: "/guides/best-materials-for-3d-printed-housings-and-cases", priority: 0.89, changeFrequency: "weekly" },
   { path: "/privacy", priority: 0.5, changeFrequency: "monthly" },
   { path: "/terms", priority: 0.5, changeFrequency: "monthly" },
 ];

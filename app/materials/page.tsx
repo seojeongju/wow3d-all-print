@@ -200,9 +200,14 @@ export default function MaterialsPage() {
                         <p className="text-white/60 break-keep leading-relaxed mb-5">
                             FDM 소재 선택에서 가장 많이 비교되는 세 가지 필라멘트를 강도, 내열성, 후가공성, 추천 용도 기준으로 따로 정리했습니다.
                         </p>
-                        <Link href="/guides/pla-vs-abs-vs-petg" className="inline-flex items-center gap-2 text-sm font-black text-teal-300 hover:text-white transition-colors">
-                            비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        <div className="flex flex-wrap gap-4">
+                            <Link href="/guides/pla-vs-abs-vs-petg" className="inline-flex items-center gap-2 text-sm font-black text-teal-300 hover:text-white transition-colors">
+                                비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                            </Link>
+                            <Link href="/guides/best-materials-for-3d-printed-housings-and-cases" className="inline-flex items-center gap-2 text-sm font-black text-amber-300 hover:text-white transition-colors">
+                                하우징·케이스용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
                     </div>
                     <motion.h2
                         initial={{ opacity: 0, x: -20 }}
