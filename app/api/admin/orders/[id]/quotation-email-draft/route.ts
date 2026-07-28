@@ -142,14 +142,27 @@ export async function GET(
             withPdfAttachment: false,
         });
 
-        let template = getDefaultQuotationTemplateSeed();
+        const templateSeed = getDefaultQuotationTemplateSeed();
+        let template = {
+            ...templateSeed,
+            html_content: templateSeed.html_content || '',
+            text_content: templateSeed.text_content || '',
+        };
         try {
             const saved = await env.DB.prepare(
                 'SELECT name, subject, html_content, text_content FROM email_templates WHERE store_id = ? AND template_key = ? LIMIT 1'
             ).bind(storeId, DEFAULT_QUOTATION_TEMPLATE_KEY).first() as {
                 name?: string; subject?: string; html_content?: string | null; text_content?: string | null;
             } | null;
-            if (saved) template = { ...template, ...saved };
+            if (saved) {
+                template = {
+                    ...template,
+                    ...(saved.name ? { name: saved.name } : {}),
+                    ...(saved.subject ? { subject: saved.subject } : {}),
+                    ...(saved.html_content != null ? { html_content: saved.html_content } : {}),
+                    ...(saved.text_content != null ? { text_content: saved.text_content } : {}),
+                };
+            }
         } catch { /* old schema fallback */ }
 
         const vars = {
