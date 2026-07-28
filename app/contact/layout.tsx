@@ -4,11 +4,11 @@ import { SITE_URL } from '@/lib/site-url';
 export const metadata: Metadata = {
   title: '문의하기',
   description:
-    '와우쓰리디 WOW3D 3D프린팅 견적·시제품제작·기술·파트너십 문의. 전화 02-3144-3137, 이메일 wow3d16@naver.com',
+    '3D 프린팅 견적, 제작 기간, 파일 업로드, FDM·SLA·DLP 방식, 시제품 제작, 파트너십 관련 문의를 WOW3D에 접수할 수 있습니다.',
   openGraph: {
     url: `${SITE_URL}/contact`,
     title: '문의하기 | 와우쓰리디 WOW3D',
-    description: '3D프린팅 출력·시제품제작·견적 문의. 24시간 이내 답변.',
+    description: '3D 프린팅 견적, 제작 기간, 파일 형식, 시제품 제작 관련 문의를 남겨 주세요.',
   },
   alternates: { canonical: `${SITE_URL}/contact` },
 };

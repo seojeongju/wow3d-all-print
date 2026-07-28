@@ -175,6 +175,18 @@ export default function PrintMethodsPage() {
             {/* CTA */}
             <section className="py-24 border-t border-border">
                 <div className="container mx-auto px-4 text-center">
+                    <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-5 mb-10 text-left">
+                        <Link href="/guides/fdm-vs-sla-vs-dlp" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
+                            <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Guide</p>
+                            <h3 className="text-xl font-bold mb-3">FDM vs SLA vs DLP 비교 가이드</h3>
+                            <p className="text-sm text-foreground/65 break-keep">기능성 시제품, 외관 모델, 정밀 부품에 어떤 공정이 맞는지 질문형으로 정리했습니다.</p>
+                        </Link>
+                        <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
+                            <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Pricing</p>
+                            <h3 className="text-xl font-bold mb-3">견적 계산 방식 가이드</h3>
+                            <p className="text-sm text-foreground/65 break-keep">레이어 높이, 소재, 인필, 후가공이 가격과 시간에 어떤 영향을 주는지 설명합니다.</p>
+                        </Link>
+                    </div>
                     <p className="text-muted-foreground mb-6 break-keep">
                         출력 방식을 선택했다면, 파일을 업로드하고 견적을 받아보세요.
                     </p>

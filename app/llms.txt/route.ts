@@ -21,6 +21,8 @@ export function GET() {
         `- FAQ: ${SITE_URL}/qna`,
         `- Contact: ${SITE_URL}/contact`,
         `- Quote Guide: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
+        `- Process Comparison Guide: ${absoluteUrl('/guides/fdm-vs-sla-vs-dlp')}`,
+        `- Turnaround Guide: ${absoluteUrl('/guides/3d-printing-turnaround-time')}`,
         '',
         '## Key Facts',
         '- WOW3D는 STL, OBJ, 3MF 등 3D 파일 업로드 후 자동으로 부피, 표면적, 치수를 분석합니다.',

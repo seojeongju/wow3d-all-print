@@ -262,6 +262,19 @@ export default function ContactPage() {
                         </a>
                     ) : null}
 
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Link href="/guides/3d-printing-turnaround-time" className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Guide</p>
+                            <h2 className="text-xl font-black text-white mb-2">제작 기간과 납기 안내</h2>
+                            <p className="text-sm text-white/55 break-keep">출력부터 후처리, 검수, 배송까지 3D 프린팅 납기에 영향을 주는 요소를 정리했습니다.</p>
+                        </Link>
+                        <Link href="/guides/fdm-vs-sla-vs-dlp" className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Compare</p>
+                            <h2 className="text-xl font-black text-white mb-2">FDM · SLA · DLP 비교</h2>
+                            <p className="text-sm text-white/55 break-keep">문의 전에 각 공정의 특징과 추천 용도를 비교해서 더 빠르게 방향을 잡을 수 있습니다.</p>
+                        </Link>
+                    </div>
+
                     <form onSubmit={handleSubmit} className="space-y-10 p-10 md:p-16 rounded-[3rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
                             <Send className="w-40 h-40 text-teal-400" />
