@@ -68,7 +68,9 @@ export async function GET(req: NextRequest) {
   // 아이템 병합
   type ItemRow = { id?: number; order_id: number; quantity: number; unit_price: number; subtotal: number; file_name: string; print_method: string | null };
   const itemsRes = await env.DB.prepare(
-    `SELECT oi.id, oi.order_id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
+    `SELECT oi.id, oi.order_id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method,
+            q.fdm_material, q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+            q.resin_type, q.layer_thickness, q.post_processing
      FROM order_items oi
      LEFT JOIN quotes q ON oi.quote_id = q.id
      WHERE oi.order_id IN (${placeholders})

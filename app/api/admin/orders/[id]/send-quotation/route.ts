@@ -118,7 +118,9 @@ export async function POST(
                 'SELECT recipient_name, recipient_phone, shipping_address, created_at FROM orders WHERE id = ?'
             ).bind(numId).first() as { recipient_name: string; recipient_phone: string; shipping_address: string; created_at: string } | null;
             const itemRes = await env.DB.prepare(`
-                SELECT oi.id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method
+                SELECT oi.id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method,
+                       q.fdm_material, q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+                       q.resin_type, q.layer_thickness, q.post_processing
                 FROM order_items oi
                 LEFT JOIN quotes q ON oi.quote_id = q.id
                 WHERE oi.order_id = ?

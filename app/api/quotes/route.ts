@@ -71,13 +71,20 @@ function snapSlaLayer(v: unknown): typeof SLA_LAYER[number] | null {
 }
 function snapFdmMaterial(v: unknown): string | null {
     if (v == null || v === '') return null;
-    const s = String(v).toUpperCase();
+    const s = String(v).trim().toUpperCase();
     return FDM_MAT.includes(s as any) ? s : null;
 }
 function snapResinType(v: unknown): string | null {
     if (v == null || v === '') return null;
-    const s = String(v);
-    return RESIN.includes(s as any) ? s : null;
+    const s = String(v).trim();
+    const hit = RESIN.find((r) => r.toLowerCase() === s.toLowerCase());
+    return hit ?? null;
+}
+/** CHECK와 별도로 고객이 고른 소재 표시명 보존 */
+function materialDisplayName(v: unknown): string | null {
+    if (v == null || v === '') return null;
+    const s = String(v).trim().slice(0, 80);
+    return s || null;
 }
 function clampFdmInfill(v: unknown): number | null {
     if (v == null || v === '') return null;
@@ -129,85 +136,88 @@ export async function POST(request: NextRequest) {
         const layerThickness = snapSlaLayer(body.layerThickness);
         const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
         const resinType = snapResinType(body.resinType);
+        const fdmMaterialName = materialDisplayName(body.fdmMaterial) ?? fdmMaterial;
+        const resinTypeName = materialDisplayName(body.resinType) ?? resinType;
         const fdmInfill = clampFdmInfill(body.fdmInfill);
 
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
             let runResult;
+            const baseBind = [
+                uid,
+                sessionId ?? null,
+                body.fileName,
+                fileSize,
+                body.fileUrl || null,
+                volumeCm3,
+                surfaceAreaCm2,
+                dimensionsX,
+                dimensionsY,
+                dimensionsZ,
+                body.printMethod,
+                fdmMaterial,
+                fdmInfill,
+                fdmLayerHeight,
+                body.fdmSupport ? 1 : 0,
+                resinType,
+                layerThickness,
+                body.postProcessing ? 1 : 0,
+                totalPrice,
+                estimatedTimeHours,
+            ] as const;
+
             if (body.id) {
-                // 기존 견적 업데이트 (파일 업로드 시 이미 생성된 경우 등)
-                const query = `
-                    UPDATE quotes SET 
-                        user_id = ?, session_id = ?, file_name = ?, file_size = ?, file_url = ?,
-                        volume_cm3 = ?, surface_area_cm2 = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
-                        print_method = ?,
-                        fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
-                        resin_type = ?, layer_thickness = ?, post_processing = ?,
-                        total_price = ?, estimated_time_hours = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                `;
-                runResult = await env.DB.prepare(query)
-                    .bind(
-                        uid,
-                        sessionId ?? null,
-                        body.fileName,
-                        fileSize,
-                        body.fileUrl || null,
-                        volumeCm3,
-                        surfaceAreaCm2,
-                        dimensionsX,
-                        dimensionsY,
-                        dimensionsZ,
-                        body.printMethod,
-                        fdmMaterial,
-                        fdmInfill,
-                        fdmLayerHeight,
-                        body.fdmSupport ? 1 : 0,
-                        resinType,
-                        layerThickness,
-                        body.postProcessing ? 1 : 0,
-                        totalPrice,
-                        estimatedTimeHours,
-                        body.id
-                    )
-                    .run();
+                try {
+                    runResult = await env.DB.prepare(`
+                        UPDATE quotes SET 
+                            user_id = ?, session_id = ?, file_name = ?, file_size = ?, file_url = ?,
+                            volume_cm3 = ?, surface_area_cm2 = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
+                            print_method = ?,
+                            fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
+                            resin_type = ?, layer_thickness = ?, post_processing = ?,
+                            total_price = ?, estimated_time_hours = ?,
+                            fdm_material_name = ?, resin_type_name = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    `).bind(...baseBind, fdmMaterialName, resinTypeName, body.id).run();
+                } catch {
+                    runResult = await env.DB.prepare(`
+                        UPDATE quotes SET 
+                            user_id = ?, session_id = ?, file_name = ?, file_size = ?, file_url = ?,
+                            volume_cm3 = ?, surface_area_cm2 = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
+                            print_method = ?,
+                            fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
+                            resin_type = ?, layer_thickness = ?, post_processing = ?,
+                            total_price = ?, estimated_time_hours = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    `).bind(...baseBind, body.id).run();
+                }
             } else {
-                // 신규 견적 생성
-                const query = `
-                    INSERT INTO quotes (
-                        user_id, session_id, file_name, file_size, file_url,
-                        volume_cm3, surface_area_cm2, dimensions_x, dimensions_y, dimensions_z,
-                        print_method,
-                        fdm_material, fdm_infill, fdm_layer_height, fdm_support,
-                        resin_type, layer_thickness, post_processing,
-                        total_price, estimated_time_hours
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `;
-                runResult = await env.DB.prepare(query)
-                    .bind(
-                        uid,
-                        sessionId ?? null,
-                        body.fileName,
-                        fileSize,
-                        body.fileUrl || null,
-                        volumeCm3,
-                        surfaceAreaCm2,
-                        dimensionsX,
-                        dimensionsY,
-                        dimensionsZ,
-                        body.printMethod,
-                        fdmMaterial,
-                        fdmInfill,
-                        fdmLayerHeight,
-                        body.fdmSupport ? 1 : 0,
-                        resinType,
-                        layerThickness,
-                        body.postProcessing ? 1 : 0,
-                        totalPrice,
-                        estimatedTimeHours
-                    )
-                    .run();
+                try {
+                    runResult = await env.DB.prepare(`
+                        INSERT INTO quotes (
+                            user_id, session_id, file_name, file_size, file_url,
+                            volume_cm3, surface_area_cm2, dimensions_x, dimensions_y, dimensions_z,
+                            print_method,
+                            fdm_material, fdm_infill, fdm_layer_height, fdm_support,
+                            resin_type, layer_thickness, post_processing,
+                            total_price, estimated_time_hours,
+                            fdm_material_name, resin_type_name
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `).bind(...baseBind, fdmMaterialName, resinTypeName).run();
+                } catch {
+                    runResult = await env.DB.prepare(`
+                        INSERT INTO quotes (
+                            user_id, session_id, file_name, file_size, file_url,
+                            volume_cm3, surface_area_cm2, dimensions_x, dimensions_y, dimensions_z,
+                            print_method,
+                            fdm_material, fdm_infill, fdm_layer_height, fdm_support,
+                            resin_type, layer_thickness, post_processing,
+                            total_price, estimated_time_hours
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `).bind(...baseBind).run();
+                }
             }
 
             const r = runResult as { success?: boolean; error?: string; meta?: { last_row_id?: number } };

@@ -50,12 +50,34 @@ export async function GET(
 
         if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-        const { results: items } = await env.DB.prepare(`
-            SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.file_url, q.print_method
-            FROM order_items oi
-            LEFT JOIN quotes q ON oi.quote_id = q.id
-            WHERE oi.order_id = ?
-        `).bind(numId).all();
+        let items: Record<string, unknown>[] = [];
+        try {
+            const withNames = await env.DB.prepare(`
+                SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal,
+                       q.file_name, q.file_url, q.print_method,
+                       COALESCE(q.fdm_material_name, q.fdm_material) as fdm_material,
+                       q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+                       COALESCE(q.resin_type_name, q.resin_type) as resin_type,
+                       q.layer_thickness, q.post_processing,
+                       q.volume_cm3, q.estimated_time_hours, q.total_price
+                FROM order_items oi
+                LEFT JOIN quotes q ON oi.quote_id = q.id
+                WHERE oi.order_id = ?
+            `).bind(numId).all();
+            items = (withNames.results || []) as Record<string, unknown>[];
+        } catch {
+            const fallback = await env.DB.prepare(`
+                SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal,
+                       q.file_name, q.file_url, q.print_method,
+                       q.fdm_material, q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+                       q.resin_type, q.layer_thickness, q.post_processing,
+                       q.volume_cm3, q.estimated_time_hours, q.total_price
+                FROM order_items oi
+                LEFT JOIN quotes q ON oi.quote_id = q.id
+                WHERE oi.order_id = ?
+            `).bind(numId).all();
+            items = (fallback.results || []) as Record<string, unknown>[];
+        }
 
         const shipment = await env.DB.prepare(
             'SELECT * FROM shipments WHERE order_id = ? ORDER BY id DESC LIMIT 1'

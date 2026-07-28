@@ -2,6 +2,7 @@
 
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate } from '@/lib/date-utils';
+import { formatQuotePrintSettings } from '@/lib/quote-print-settings';
 import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -623,6 +624,7 @@ function OrderListInner() {
                                             )}
                                         </td>
                                         <td className="p-4 text-white/70">
+                                            <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
                                                 <span>{order.item_count || 1}개 품목</span>
                                                 {(() => {
@@ -654,6 +656,23 @@ function OrderListInner() {
                                                     }
                                                     return null;
                                                 })()}
+                                            </div>
+                                            {(() => {
+                                                let items: any[] = [];
+                                                try {
+                                                    if (typeof order.items_summary === 'string') items = JSON.parse(order.items_summary);
+                                                    else if (Array.isArray(order.items_summary)) items = order.items_summary;
+                                                } catch { /* ignore */ }
+                                                const first = items[0];
+                                                if (!first) return null;
+                                                const line = formatQuotePrintSettings(first);
+                                                if (!line) return null;
+                                                return (
+                                                    <p className="text-[10px] text-white/40 truncate max-w-[220px]" title={line}>
+                                                        {String(first.print_method || '').toUpperCase()} · {line}
+                                                    </p>
+                                                );
+                                            })()}
                                             </div>
                                         </td>
                                         <td className="p-4">
@@ -862,16 +881,44 @@ function OrderListInner() {
                                     </div>
                                     <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
                                         <table className="w-full text-sm">
-                                            <thead><tr className="border-b border-white/10 bg-white/5"><th className="p-2 text-left text-white/70 pl-4">파일/방식</th><th className="p-2 text-right text-white/70">수량</th><th className="p-2 text-right text-white/70">단가</th><th className="p-2 text-right text-white/70">소계</th><th className="p-2 text-center text-white/70 w-24">파일</th></tr></thead>
+                                            <thead>
+                                                <tr className="border-b border-white/10 bg-white/5">
+                                                    <th className="p-2 text-left text-white/70 pl-4">파일 / 고객 출력 설정</th>
+                                                    <th className="p-2 text-right text-white/70">수량</th>
+                                                    <th className="p-2 text-right text-white/70">단가</th>
+                                                    <th className="p-2 text-right text-white/70">소계</th>
+                                                    <th className="p-2 text-center text-white/70 w-24">파일</th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
                                                 {detailData.items.map((it: any) => {
                                                     const upRaw = Math.round(Number(it.unit_price || 0));
                                                     const subRaw = Math.round(Number(it.subtotal || 0));
                                                     const unitPrice = correctDisplayAmount(upRaw) ?? upRaw;
                                                     const subtotal = correctDisplayAmount(subRaw) ?? subRaw;
+                                                    const method = String(it.print_method || '').toUpperCase() || '-';
+                                                    const settingsLine = formatQuotePrintSettings(it);
                                                     return (
-                                                    <tr key={it.id} className="border-b border-white/5">
-                                                        <td className="p-2 text-white/90 pl-4">{it.file_name || '-'} ({it.print_method || '-'})</td>
+                                                    <tr key={it.id} className="border-b border-white/5 align-top">
+                                                        <td className="p-3 text-white/90 pl-4">
+                                                            <div className="font-medium text-white">{it.file_name || '-'}</div>
+                                                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                                <span className="inline-flex items-center rounded-md bg-teal-400/15 border border-teal-400/25 px-2 py-0.5 text-[10px] font-black tracking-wide text-teal-300">
+                                                                    {method}
+                                                                </span>
+                                                                {settingsLine ? (
+                                                                    <span className="text-[11px] text-white/70 leading-relaxed">{settingsLine}</span>
+                                                                ) : (
+                                                                    <span className="text-[11px] text-white/35">출력 설정 정보 없음</span>
+                                                                )}
+                                                            </div>
+                                                            {it.estimated_time_hours != null && Number(it.estimated_time_hours) > 0 && (
+                                                                <div className="mt-1 text-[10px] text-white/40">
+                                                                    예상 출력 {Number(it.estimated_time_hours).toFixed(2)}h
+                                                                    {it.volume_cm3 != null ? ` · 부피 ${Number(it.volume_cm3).toFixed(1)} cm³` : ''}
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                         <td className="p-2 text-right">{it.quantity}</td>
                                                         <td className="p-2 text-right">₩ {unitPrice.toLocaleString()}</td>
                                                         <td className="p-2 text-right font-medium">₩ {subtotal.toLocaleString()}</td>

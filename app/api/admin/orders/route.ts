@@ -3,6 +3,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
 import { ORDER_STATUS_VALUES } from '@/lib/order-status';
+import { QUOTE_PRINT_SETTINGS_JSON_FIELDS } from '@/lib/quote-print-settings';
+
+/** order_items + quotes 요약 JSON (고객 출력 설정 포함) */
+const ITEMS_SUMMARY_JSON = `
+JSON_GROUP_ARRAY(JSON_OBJECT(
+    'id', oi.id,
+    'quote_id', oi.quote_id,
+    'file_name', q.file_name,
+    'file_url', q.file_url,
+    ${QUOTE_PRINT_SETTINGS_JSON_FIELDS}
+))
+`.replace(/\s+/g, ' ').trim();
 
 /** quotation_sent_at 없을 때: 수정견적만 조회 (같은 WHERE) */
 const MAIN_EXPERT_ONLY_SQL = `
@@ -14,7 +26,7 @@ const MAIN_EXPERT_ONLY_SQL = `
         u.name as user_name, u.email as user_email, u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
-        (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
+        (SELECT ${ITEMS_SUMMARY_JSON}
          FROM order_items oi JOIN quotes q ON oi.quote_id = q.id WHERE oi.order_id = o.id) as items_summary
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.id
@@ -31,7 +43,7 @@ const MAIN_SAFE_SQL = `
         u.name as user_name, u.email as user_email, u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
-        (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
+        (SELECT ${ITEMS_SUMMARY_JSON}
          FROM order_items oi JOIN quotes q ON oi.quote_id = q.id WHERE oi.order_id = o.id) as items_summary
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.id
@@ -60,9 +72,7 @@ const FALLBACK_SQL = `
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
         (
-            SELECT JSON_GROUP_ARRAY(
-                JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url)
-            )
+            SELECT ${ITEMS_SUMMARY_JSON}
             FROM order_items oi
             JOIN quotes q ON oi.quote_id = q.id
             WHERE oi.order_id = o.id
@@ -81,7 +91,7 @@ const FALLBACK_MINIMAL_SQL = `
         u.name as user_name, u.email as user_email, u.role as user_role,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
         (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
-        (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('id', oi.id, 'quote_id', oi.quote_id, 'file_name', q.file_name, 'file_url', q.file_url))
+        (SELECT ${ITEMS_SUMMARY_JSON}
          FROM order_items oi JOIN quotes q ON oi.quote_id = q.id WHERE oi.order_id = o.id) as items_summary
     FROM orders o
     LEFT JOIN users u ON o.user_id = u.id
@@ -107,14 +117,7 @@ const ORDERS_SELECT_BODY = `
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
                 (SELECT COALESCE(SUM(oi.subtotal), 0) FROM order_items oi WHERE oi.order_id = o.id) as items_total,
                 (
-                    SELECT JSON_GROUP_ARRAY(
-                        JSON_OBJECT(
-                            'id', oi.id, 
-                            'quote_id', oi.quote_id, 
-                            'file_name', q.file_name, 
-                            'file_url', q.file_url
-                        )
-                    )
+                    SELECT ${ITEMS_SUMMARY_JSON}
                     FROM order_items oi
                     JOIN quotes q ON oi.quote_id = q.id
                     WHERE oi.order_id = o.id
