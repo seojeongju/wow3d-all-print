@@ -103,9 +103,9 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
             </Link>
           </div>
           <div className="flex justify-center mt-8">
-            <Link href="/guides/3d-printing-quote-guide">
+            <Link href="/guides">
               <Button size="lg" className="rounded-full px-8 gap-2">
-                가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                가이드 모아보기 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>

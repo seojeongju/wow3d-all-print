@@ -20,6 +20,7 @@ export function GET() {
         `- Print Methods: ${SITE_URL}/print-methods`,
         `- FAQ: ${SITE_URL}/qna`,
         `- Contact: ${SITE_URL}/contact`,
+        `- Guide Hub: ${absoluteUrl('/guides')}`,
         `- Quote Guide: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
         `- Process Comparison Guide: ${absoluteUrl('/guides/fdm-vs-sla-vs-dlp')}`,
         `- File Preparation Guide: ${absoluteUrl('/guides/3d-printing-file-preparation')}`,

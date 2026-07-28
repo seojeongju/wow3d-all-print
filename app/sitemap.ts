@@ -16,6 +16,7 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/partnership", priority: 0.75, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.9, changeFrequency: "monthly" },
   { path: "/qna", priority: 0.88, changeFrequency: "weekly" },
+  { path: "/guides", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-quote-guide", priority: 0.92, changeFrequency: "weekly" },
   { path: "/guides/fdm-vs-sla-vs-dlp", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-file-preparation", priority: 0.9, changeFrequency: "weekly" },
