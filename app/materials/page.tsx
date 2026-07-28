@@ -123,9 +123,13 @@ export default function MaterialsPage() {
                             소재 <span className="text-teal-400">살펴보기</span>
                         </h1>
                         <p className="text-lg md:text-xl font-bold text-white/40 leading-relaxed break-keep max-w-2xl mx-auto">
-                            각 소재의 기계적 성질과 최적의 활용 분야를 확인하고, 출력 방식에 맞는 완벽한 솔루션을 선택하세요.
+                            PLA, ABS, PETG 차이는 무엇인지, 어떤 소재가 시제품과 기능 부품에 적합한지,
+                            레진과 필라멘트는 어떤 기준으로 고르면 되는지 한 번에 확인할 수 있습니다.
                         </p>
-                        <div className="flex justify-center pt-2">
+                        <div className="flex flex-wrap justify-center gap-3 pt-2">
+                            <Link href="/guides/pla-vs-abs-vs-petg" className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-teal-400/10 border border-teal-400/20 text-xs font-black text-teal-300 uppercase tracking-widest hover:text-white hover:bg-teal-400/15 transition-all">
+                                PLA / ABS / PETG Guide
+                            </Link>
                             <Link href="/materials/safety" className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white/40 uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all">
                                 <Shield className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform" />
                                 Material Safety Data
@@ -187,6 +191,16 @@ export default function MaterialsPage() {
             {/* FDM 소재 상세 */}
             <section className="py-20 relative z-10">
                 <div className="container mx-auto px-6">
+                    <div className="mb-10 rounded-[2rem] border border-teal-400/15 bg-teal-400/5 p-6 md:p-8">
+                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-3">Popular Guide</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-white mb-3">PLA, ABS, PETG 중 어떤 소재가 맞을까요?</h2>
+                        <p className="text-white/60 break-keep leading-relaxed mb-5">
+                            FDM 소재 선택에서 가장 많이 비교되는 세 가지 필라멘트를 강도, 내열성, 후가공성, 추천 용도 기준으로 따로 정리했습니다.
+                        </p>
+                        <Link href="/guides/pla-vs-abs-vs-petg" className="inline-flex items-center gap-2 text-sm font-black text-teal-300 hover:text-white transition-colors">
+                            비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
                     <motion.h2
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
