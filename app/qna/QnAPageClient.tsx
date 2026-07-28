@@ -79,7 +79,10 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                             <HelpCircle className="w-4 h-4" /> FAQ System
                         </div>
                         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white">자주 묻는 질문</h1>
-                        <p className="text-white/40 text-lg font-bold max-w-xl mx-auto leading-relaxed break-keep">Wow3D 플랫폼 이용에 대한 궁금증을 즉시 해결해 드립니다.</p>
+                        <p className="text-white/40 text-lg font-bold max-w-3xl mx-auto leading-relaxed break-keep">
+                            3D 프린팅 견적은 어떻게 계산되는지, FDM과 SLA 차이는 무엇인지,
+                            STL 파일 업로드 후 제작 기간은 얼마나 걸리는지 등 WOW3D 고객이 자주 묻는 질문을 정리했습니다.
+                        </p>
                     </div>
 
                     {/* AEO: 크롤러·AI가 읽을 수 있는 전체 FAQ (시각적으로 숨김) */}
@@ -90,6 +93,24 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                                 <p>{q.answer}</p>
                             </article>
                         ))}
+                    </section>
+
+                    <section className="grid gap-4 md:grid-cols-3">
+                        <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Guide</p>
+                            <h2 className="text-xl font-black text-white mb-2">3D 프린팅 견적 계산 방식</h2>
+                            <p className="text-sm text-white/55 break-keep">레이어 높이, 인필, 소재, 후가공이 가격과 시간에 어떤 영향을 주는지 설명합니다.</p>
+                        </Link>
+                        <Link href="/print-methods" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Compare</p>
+                            <h2 className="text-xl font-black text-white mb-2">FDM · SLA · DLP 비교</h2>
+                            <p className="text-sm text-white/55 break-keep">어떤 출력 방식이 시제품, 정밀 모델, 기능성 부품에 맞는지 한 번에 비교할 수 있습니다.</p>
+                        </Link>
+                        <Link href="/quote" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Action</p>
+                            <h2 className="text-xl font-black text-white mb-2">실시간 자동견적 받기</h2>
+                            <p className="text-sm text-white/55 break-keep">STL, OBJ, 3MF 파일을 업로드하고 실시간으로 출력 시간과 가격을 확인해 보세요.</p>
+                        </Link>
                     </section>
 
                     <div className="space-y-10">

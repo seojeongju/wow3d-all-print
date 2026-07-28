@@ -16,6 +16,7 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/partnership", priority: 0.75, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.9, changeFrequency: "monthly" },
   { path: "/qna", priority: 0.88, changeFrequency: "weekly" },
+  { path: "/guides/3d-printing-quote-guide", priority: 0.92, changeFrequency: "weekly" },
   { path: "/privacy", priority: 0.5, changeFrequency: "monthly" },
   { path: "/terms", priority: 0.5, changeFrequency: "monthly" },
 ];
