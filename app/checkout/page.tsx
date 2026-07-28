@@ -14,6 +14,13 @@ import { showToast } from '@/lib/toast-helper'
 import { isTokenExpired, validateAuthToken, isAuthTokenError } from '@/lib/auth-session'
 import { motion } from 'framer-motion'
 import Script from 'next/script'
+import {
+    calculateShippingFee,
+    DEFAULT_SHIPPING_SETTINGS,
+    formatFreeShippingBenefit,
+    formatFreeShippingHint,
+    parseShippingSettings,
+} from '@/lib/shipping-settings'
 
 declare global {
     interface Window {
@@ -65,7 +72,7 @@ function CheckoutContent() {
         customerNote: '',
     })
 
-    const [storeSettings, setStoreSettings] = useState<{ baseFee: number, freeThreshold: number }>({ baseFee: 3000, freeThreshold: 50000 })
+    const [storeSettings, setStoreSettings] = useState(DEFAULT_SHIPPING_SETTINGS)
 
     useEffect(() => {
         if (items.length === 0 || orderItems.length === 0) router.push('/cart')
@@ -78,12 +85,7 @@ function CheckoutContent() {
                 if (!res.ok) return
                 const json = await res.json()
                 if (json.success && Array.isArray(json.data)) {
-                    let baseFee = 3000, freeThreshold = 50000
-                    json.data.forEach((s: any) => {
-                        if (s.setting_key === 'shipping_base_fee') baseFee = Number(s.setting_value) || 3000
-                        if (s.setting_key === 'shipping_free_threshold') freeThreshold = Number(s.setting_value) || 50000
-                    })
-                    setStoreSettings({ baseFee, freeThreshold })
+                    setStoreSettings(parseShippingSettings(json.data))
                 }
             } catch (e) {
                 console.error('Failed to load store settings', e)
@@ -255,7 +257,7 @@ function CheckoutContent() {
     const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0)
     
     // 배송비 로직: 관리자 설정에 따른 동적 계산
-    const shippingFee = totalPriceKWR >= storeSettings.freeThreshold ? 0 : storeSettings.baseFee;
+    const shippingFee = calculateShippingFee(totalPriceKWR, storeSettings);
     const finalAmount = totalPriceKWR + shippingFee;
 
     return (
@@ -491,11 +493,11 @@ function CheckoutContent() {
                                         <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
                                             <span>기본 배송비</span>
                                             {shippingFee === 0 ? (
-                                                <span className="text-emerald-400 font-black">5만원 ↑ 무료배송 혜택</span>
+                                                <span className="text-emerald-400 font-black">{formatFreeShippingBenefit(storeSettings.freeThreshold)}</span>
                                             ) : (
                                                 <div className="text-right">
                                                     <span className="text-white block">₩{shippingFee.toLocaleString()}</span>
-                                                    <span className="text-[9px] text-white/10 mt-0.5 block italic">(5만원 이상 무료배송)</span>
+                                                    <span className="text-[9px] text-white/10 mt-0.5 block italic">({formatFreeShippingHint(storeSettings.freeThreshold)})</span>
                                                 </div>
                                             )}
                                         </div>

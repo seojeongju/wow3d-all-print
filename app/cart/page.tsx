@@ -14,6 +14,13 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ModelThumbnail from '@/components/ModelThumbnail'
 import type { Quote, Order } from '@/lib/types'
+import {
+    calculateShippingFee,
+    DEFAULT_SHIPPING_SETTINGS,
+    formatShippingChargeHint,
+    formatFreeShippingHint,
+    parseShippingSettings,
+} from '@/lib/shipping-settings'
 
 type QuoteRow = {
     id: number
@@ -76,7 +83,7 @@ function CartPageContent() {
     const [isLoadingSaved, setIsLoadingSaved] = useState(false)
     const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>(initialTab)
     const [addingId, setAddingId] = useState<number | null>(null)
-    const [storeSettings, setStoreSettings] = useState<{ baseFee: number, freeThreshold: number }>({ baseFee: 3000, freeThreshold: 50000 })
+    const [storeSettings, setStoreSettings] = useState(DEFAULT_SHIPPING_SETTINGS)
 
     // 주문조회
     const [orders, setOrders] = useState<Order[]>([])
@@ -159,12 +166,7 @@ function CartPageContent() {
                 if (!res.ok) return
                 const json = await res.json()
                 if (json.success && Array.isArray(json.data)) {
-                    let baseFee = 3000, freeThreshold = 50000
-                    json.data.forEach((s: any) => {
-                        if (s.setting_key === 'shipping_base_fee') baseFee = Number(s.setting_value) || 3000
-                        if (s.setting_key === 'shipping_free_threshold') freeThreshold = Number(s.setting_value) || 50000
-                    })
-                    setStoreSettings({ baseFee, freeThreshold })
+                    setStoreSettings(parseShippingSettings(json.data))
                 }
             } catch (e) {
                 console.error('Failed to load store settings', e)
@@ -178,7 +180,7 @@ function CartPageContent() {
     const selectedCount = selectedItems.reduce((s, i) => s + i.quantity, 0)
     
     // 배송비 계산
-    const shippingFee = selectedCount > 0 ? (selectedTotal >= storeSettings.freeThreshold ? 0 : storeSettings.baseFee) : 0;
+    const shippingFee = selectedCount > 0 ? calculateShippingFee(selectedTotal, storeSettings) : 0;
     const finalTotal = selectedTotal + shippingFee;
 
     const handleQuantityChange = (itemId: number, newQuantity: number) => {
@@ -652,7 +654,9 @@ function CartPageContent() {
                                             {selectedCount === 0 ? '-' : shippingFee === 0 ? '무료' : `₩${shippingFee.toLocaleString()}`}
                                         </span>
                                         {selectedCount > 0 && shippingFee > 0 && (
-                                            <span className="block text-[9px] text-white/20 mt-0.5">5만원 미만 부과</span>
+                                            <span className="block text-[9px] text-white/20 mt-0.5">
+                                                {formatShippingChargeHint(storeSettings.freeThreshold)}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -711,7 +715,7 @@ function CartPageContent() {
                                     <ShieldCheck className="w-6 h-6 text-teal-400/40 shrink-0" />
                                     <div className="text-[10px] text-white/20 font-bold leading-relaxed uppercase tracking-widest">
                                         <span className="font-black text-white/40">안전한 거래</span><br />
-                                        견적은 소재 단가 기준이며, 배송비는 결제 단계에서 산정됩니다.
+                                        견적은 소재 단가 기준이며, 배송비는 {formatFreeShippingHint(storeSettings.freeThreshold)} 기준으로 적용됩니다.
                                     </div>
                                 </div>
                             </div>
