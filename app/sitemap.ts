@@ -21,6 +21,7 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/guides/3d-printing-file-preparation", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-turnaround-time", priority: 0.86, changeFrequency: "weekly" },
   { path: "/guides/pla-vs-abs-vs-petg", priority: 0.88, changeFrequency: "weekly" },
+  { path: "/guides/standard-vs-tough-vs-clear-vs-flexible-resin", priority: 0.88, changeFrequency: "weekly" },
   { path: "/privacy", priority: 0.5, changeFrequency: "monthly" },
   { path: "/terms", priority: 0.5, changeFrequency: "monthly" },
 ];

@@ -268,6 +268,16 @@ export default function MaterialsPage() {
             {/* 레진 소재 상세 (SLA·DLP) */}
             <section className="py-20 relative z-10">
                 <div className="container mx-auto px-6">
+                    <div className="mb-10 rounded-[2rem] border border-indigo-400/15 bg-indigo-400/5 p-6 md:p-8">
+                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-300 mb-3">Popular Guide</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-white mb-3">Standard, Tough, Clear, Flexible 레진은 어떻게 다를까요?</h2>
+                        <p className="text-white/60 break-keep leading-relaxed mb-5">
+                            외관 시제품, 기능 테스트, 투명 부품, 유연 부품에 어떤 레진이 적합한지 검색형 질문 기준으로 따로 정리했습니다.
+                        </p>
+                        <Link href="/guides/standard-vs-tough-vs-clear-vs-flexible-resin" className="inline-flex items-center gap-2 text-sm font-black text-indigo-300 hover:text-white transition-colors">
+                            레진 비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    </div>
                     <motion.h2
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
