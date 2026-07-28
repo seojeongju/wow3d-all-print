@@ -207,6 +207,9 @@ export default function MaterialsPage() {
                             <Link href="/guides/best-materials-for-3d-printed-housings-and-cases" className="inline-flex items-center gap-2 text-sm font-black text-amber-300 hover:text-white transition-colors">
                                 하우징·케이스용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
                             </Link>
+                            <Link href="/guides/best-materials-for-heat-resistant-and-impact-resistant-parts" className="inline-flex items-center gap-2 text-sm font-black text-rose-300 hover:text-white transition-colors">
+                                내열·내충격 부품용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                            </Link>
                         </div>
                     </div>
                     <motion.h2
