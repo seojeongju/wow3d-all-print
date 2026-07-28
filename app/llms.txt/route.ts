@@ -26,6 +26,7 @@ export function GET() {
         `- Turnaround Guide: ${absoluteUrl('/guides/3d-printing-turnaround-time')}`,
         `- PLA vs ABS vs PETG Guide: ${absoluteUrl('/guides/pla-vs-abs-vs-petg')}`,
         `- Resin Type Comparison Guide: ${absoluteUrl('/guides/standard-vs-tough-vs-clear-vs-flexible-resin')}`,
+        `- Prototype Material Recommendation Guide: ${absoluteUrl('/guides/best-materials-for-3d-printing-prototypes')}`,
         '',
         '## Key Facts',
         '- WOW3D는 STL, OBJ, 3MF 등 3D 파일 업로드 후 자동으로 부피, 표면적, 치수를 분석합니다.',
