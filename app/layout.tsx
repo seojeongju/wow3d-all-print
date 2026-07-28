@@ -9,11 +9,14 @@ import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
 import {
   absoluteUrl,
-  BRAND_LOGO_PATH,
   OG_IMAGE_PATH,
   SITE_URL,
 } from "@/lib/site-url";
-import { buildQuoteHowToSchema, buildWebSiteSearchActionSchema } from "@/lib/aeo-schema";
+import {
+  buildBusinessSchemas,
+  buildQuoteHowToSchema,
+  buildWebSiteSearchActionSchema,
+} from "@/lib/aeo-schema";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,7 +105,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const ogImageUrl = absoluteUrl(OG_IMAGE_PATH);
-  const logoUrl = absoluteUrl(BRAND_LOGO_PATH);
+  const businessSchemas = buildBusinessSchemas();
 
   return (
     <html lang="ko" className="dark">
@@ -114,55 +117,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
               buildWebSiteSearchActionSchema(),
-              {
-                "@context": "https://schema.org",
-                "@type": "Organization",
-                "name": "(주)와우쓰리디",
-                "url": SITE_URL,
-                "logo": logoUrl,
-                "image": ogImageUrl,
-                "contactPoint": {
-                  "@type": "ContactPoint",
-                  "telephone": "02-3144-3137",
-                  "email": "wow3d16@naver.com",
-                  "contactType": "customer service",
-                  "areaServed": "KR",
-                  "availableLanguage": "Korean",
-                },
-                "sameAs": [
-                  "https://www.band.us/@3dcookiehd",
-                  "https://blog.naver.com/3dcookiehd",
-                  "https://www.instagram.com/3dcookie_hd/",
-                  "https://ko-kr.facebook.com/3dfabcafe/"
-                ],
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "LocalBusiness",
-                "name": "(주)와우쓰리디 (WOW3D)",
-                "description": "(주)와우쓰리디는 AI 기반 3D프린팅 자동견적 시스템과 시제품제작 서비스 전문 업체입니다.",
-                "url": SITE_URL,
-                "image": ogImageUrl,
-                "address": {
-                  "@type": "PostalAddress",
-                  "streetAddress": "독막로 93 상수빌딩 4층",
-                  "addressLocality": "마포구",
-                  "addressRegion": "서울",
-                  "postalCode": "04044",
-                  "addressCountry": "KR",
-                },
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "Service",
-                "serviceType": "3D프린팅 출력 및 시제품제작",
-                "provider": {
-                  "@type": "LocalBusiness",
-                  "name": "(주)와우쓰리디 (WOW3D)"
-                },
-                "description": "3D프린터 출력, 시제품제작, 프로토타입 제작, 3D프린팅 출력 서비스",
-                "areaServed": "KR"
-              },
+              ...businessSchemas,
               {
                 "@context": "https://schema.org",
                 "@type": "WebPage",

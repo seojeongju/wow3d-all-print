@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { SITE_URL } from '@/lib/site-url';
+import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema';
+import { SITE_URL, absoluteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
   title: '문의하기',
@@ -14,5 +15,34 @@ export const metadata: Metadata = {
 };
 
 export default function ContactLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  const schemas = [
+    buildCollectionPageSchema({
+      name: '3D 프린팅 문의하기',
+      description:
+        '3D 프린팅 견적, 파일 검토, 제작 기간, 공정 선택, 시제품 제작과 관련된 문의를 접수하는 페이지입니다.',
+      path: '/contact',
+    }),
+    buildBreadcrumbSchema([
+      { name: '홈', path: '/' },
+      { name: '문의하기', path: '/contact' },
+    ]),
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ContactPage',
+      name: 'WOW3D 문의하기',
+      description:
+        '3D 프린팅 자동견적, 파일 준비, 제작 기간, FDM·SLA·DLP 공정 선택과 관련된 상담을 받을 수 있는 문의 페이지입니다.',
+      url: absoluteUrl('/contact'),
+    },
+  ];
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+      />
+      {children}
+    </>
+  );
 }

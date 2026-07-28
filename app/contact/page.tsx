@@ -237,7 +237,10 @@ export default function ContactPage() {
                             <Mail className="w-4 h-4" /> Support Center
                         </div>
                         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white">문의하기</h1>
-                        <p className="text-white/40 text-lg font-bold max-w-xl mx-auto leading-relaxed break-keep">전문 기술 지원팀이 귀하의 비즈니스를 지원하기 위해 대기 중입니다.</p>
+                        <p className="text-white/40 text-lg font-bold max-w-2xl mx-auto leading-relaxed break-keep">
+                            3D 프린팅 견적은 어떻게 받는지, 파일 업로드 전 무엇을 준비해야 하는지,
+                            제작 기간과 공정 선택은 어떻게 해야 하는지 궁금하다면 WOW3D에 바로 문의하실 수 있습니다.
+                        </p>
                     </div>
 
                     {talkUrl ? (

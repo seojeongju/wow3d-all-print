@@ -132,3 +132,91 @@ export function buildArticleSchema(input: {
         url: absoluteUrl(input.path),
     };
 }
+
+export function buildBusinessSchemas() {
+    return [
+        {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: '(주)와우쓰리디',
+            alternateName: ['WOW3D', '와우쓰리디', '와우3D'],
+            url: SITE_URL,
+            logo: absoluteUrl('/thumbnail.png'),
+            image: absoluteUrl('/og-image-v2.jpg'),
+            email: 'wow3d16@naver.com',
+            telephone: '02-3144-3137',
+            sameAs: [
+                'https://www.band.us/@3dcookiehd',
+                'https://blog.naver.com/3dcookiehd',
+                'https://www.instagram.com/3dcookie_hd/',
+                'https://ko-kr.facebook.com/3dfabcafe/',
+            ],
+            contactPoint: {
+                '@type': 'ContactPoint',
+                telephone: '02-3144-3137',
+                email: 'wow3d16@naver.com',
+                contactType: 'customer service',
+                areaServed: 'KR',
+                availableLanguage: 'Korean',
+            },
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'LocalBusiness',
+            '@id': `${SITE_URL}#localbusiness`,
+            name: '(주)와우쓰리디 (WOW3D)',
+            description:
+                '(주)와우쓰리디는 3D 프린팅 출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 기반 업체입니다.',
+            url: SITE_URL,
+            image: absoluteUrl('/og-image-v2.jpg'),
+            email: 'wow3d16@naver.com',
+            telephone: '02-3144-3137',
+            priceRange: '$$',
+            address: {
+                '@type': 'PostalAddress',
+                streetAddress: '독막로 93 상수빌딩 4층',
+                addressLocality: '마포구',
+                addressRegion: '서울',
+                postalCode: '04044',
+                addressCountry: 'KR',
+            },
+            geo: {
+                '@type': 'GeoCoordinates',
+                latitude: 37.5477,
+                longitude: 126.9226,
+            },
+            openingHoursSpecification: [
+                {
+                    '@type': 'OpeningHoursSpecification',
+                    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                    opens: '09:00',
+                    closes: '18:00',
+                },
+            ],
+            areaServed: 'KR',
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'Service',
+            serviceType: '3D프린팅 출력 및 시제품제작',
+            provider: {
+                '@type': 'LocalBusiness',
+                name: '(주)와우쓰리디 (WOW3D)',
+            },
+            areaServed: 'KR',
+            description:
+                '3D 프린팅 자동견적, FDM·SLA·DLP 출력, 시제품 제작, 소량 양산, 파일 검토와 납기 상담 서비스를 제공합니다.',
+            hasOfferCatalog: {
+                '@type': 'OfferCatalog',
+                name: 'WOW3D 3D 프린팅 서비스',
+                itemListElement: [
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '3D 프린팅 자동견적' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'FDM 출력 서비스' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'SLA 출력 서비스' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'DLP 출력 서비스' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '시제품 제작' } },
+                ],
+            },
+        },
+    ];
+}

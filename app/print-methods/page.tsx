@@ -70,7 +70,7 @@ export default function PrintMethodsPage() {
                             3D 프린터 <span className="text-primary">출력방식</span>
                         </h1>
                         <p className="text-xl text-muted-foreground break-keep">
-                            FDM, SLA, DLP 세 가지 방식의 원리·소재·특징을 비교하고, 목적에 맞는 출력 방식을 선택하세요.
+                            FDM과 SLA 차이는 무엇인지, DLP는 어떤 작업에 적합한지, 시제품과 정밀 모델에는 어떤 공정이 좋은지 한눈에 비교할 수 있습니다.
                         </p>
                     </motion.div>
                 </div>
