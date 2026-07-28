@@ -277,9 +277,14 @@ export default function MaterialsPage() {
                         <p className="text-white/60 break-keep leading-relaxed mb-5">
                             외관 시제품, 기능 테스트, 투명 부품, 유연 부품에 어떤 레진이 적합한지 검색형 질문 기준으로 따로 정리했습니다.
                         </p>
-                        <Link href="/guides/standard-vs-tough-vs-clear-vs-flexible-resin" className="inline-flex items-center gap-2 text-sm font-black text-indigo-300 hover:text-white transition-colors">
-                            레진 비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        <div className="flex flex-wrap gap-4">
+                            <Link href="/guides/standard-vs-tough-vs-clear-vs-flexible-resin" className="inline-flex items-center gap-2 text-sm font-black text-indigo-300 hover:text-white transition-colors">
+                                레진 비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                            </Link>
+                            <Link href="/guides/best-materials-for-transparent-3d-printed-parts" className="inline-flex items-center gap-2 text-sm font-black text-cyan-300 hover:text-white transition-colors">
+                                투명 부품용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
                     </div>
                     <motion.h2
                         initial={{ opacity: 0, x: -20 }}
