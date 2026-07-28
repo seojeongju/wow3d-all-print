@@ -82,3 +82,53 @@ export function buildWebSiteSearchActionSchema() {
         },
     };
 }
+
+export function buildBreadcrumbSchema(items: Array<{ name: string; path: string }>) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: items.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.name,
+            item: absoluteUrl(item.path),
+        })),
+    };
+}
+
+export function buildCollectionPageSchema(input: {
+    name: string;
+    description: string;
+    path: string;
+}) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: input.name,
+        description: input.description,
+        url: absoluteUrl(input.path),
+    };
+}
+
+export function buildArticleSchema(input: {
+    headline: string;
+    description: string;
+    path: string;
+}) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: input.headline,
+        description: input.description,
+        author: {
+            '@type': 'Organization',
+            name: '(주)와우쓰리디',
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: '(주)와우쓰리디',
+        },
+        mainEntityOfPage: absoluteUrl(input.path),
+        url: absoluteUrl(input.path),
+    };
+}

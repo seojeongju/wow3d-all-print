@@ -239,6 +239,15 @@ function QuoteContent() {
                                                         <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">업로드된 자산은 AES-256 암호화되어 안전하게 처리됩니다.</p>
                                                     </div>
                                                 </div>
+                                                <Link href="/guides/3d-printing-file-preparation" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
+                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
+                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
+                                                    </div>
+                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
+                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">파일 준비 가이드 보기</h3>
+                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">STL, OBJ, 3MF 업로드 전 두께, 단위, 메쉬 오류를 체크하는 방법을 확인하세요.</p>
+                                                    </div>
+                                                </Link>
                                             </div>
                                         </motion.div>
                                     )

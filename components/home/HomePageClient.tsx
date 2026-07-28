@@ -80,7 +80,7 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
               정리했습니다.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-5 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
             <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Guide</p>
               <h3 className="text-xl font-bold mb-3">3D 프린팅 견적 계산 방식</h3>
@@ -90,6 +90,11 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Compare</p>
               <h3 className="text-xl font-bold mb-3">FDM · SLA · DLP 비교</h3>
               <p className="text-sm text-foreground/65 break-keep">시제품, 정밀 모델, 기능성 부품에 어떤 출력 방식이 적합한지 비교합니다.</p>
+            </Link>
+            <Link href="/guides/3d-printing-file-preparation" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">File</p>
+              <h3 className="text-xl font-bold mb-3">파일 준비 가이드</h3>
+              <p className="text-sm text-foreground/65 break-keep">STL·OBJ·3MF 업로드 전 파일 형식, 두께, 메쉬 오류, 단위를 점검하는 방법을 정리했습니다.</p>
             </Link>
             <Link href="/qna" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">FAQ</p>

@@ -95,7 +95,7 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                         ))}
                     </section>
 
-                    <section className="grid gap-4 md:grid-cols-3">
+                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
                             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Guide</p>
                             <h2 className="text-xl font-black text-white mb-2">3D 프린팅 견적 계산 방식</h2>
@@ -105,6 +105,11 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Compare</p>
                             <h2 className="text-xl font-black text-white mb-2">FDM · SLA · DLP 비교</h2>
                             <p className="text-sm text-white/55 break-keep">어떤 출력 방식이 시제품, 정밀 모델, 기능성 부품에 맞는지 한 번에 비교할 수 있습니다.</p>
+                        </Link>
+                        <Link href="/guides/3d-printing-file-preparation" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">File</p>
+                            <h2 className="text-xl font-black text-white mb-2">파일 준비 가이드</h2>
+                            <p className="text-sm text-white/55 break-keep">업로드 전 파일 형식, 단위, 벽 두께, 메쉬 오류를 어떻게 점검해야 하는지 안내합니다.</p>
                         </Link>
                         <Link href="/quote" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
                             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Action</p>
