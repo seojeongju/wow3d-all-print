@@ -292,6 +292,9 @@ export default function MaterialsPage() {
                             <Link href="/guides/best-materials-for-transparent-3d-printed-parts" className="inline-flex items-center gap-2 text-sm font-black text-cyan-300 hover:text-white transition-colors">
                                 투명 부품용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
                             </Link>
+                            <Link href="/guides/best-materials-for-miniatures-and-figurines" className="inline-flex items-center gap-2 text-sm font-black text-fuchsia-300 hover:text-white transition-colors">
+                                정밀 모형·피규어용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                            </Link>
                         </div>
                     </div>
                     <motion.h2

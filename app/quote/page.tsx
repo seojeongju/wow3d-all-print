@@ -299,6 +299,15 @@ function QuoteContent() {
                                                         <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">기능성 부품, 열과 충격을 받는 구조물에 어떤 소재가 적합한지 확인하세요.</p>
                                                     </div>
                                                 </Link>
+                                                <Link href="/guides/best-materials-for-miniatures-and-figurines" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
+                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
+                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
+                                                    </div>
+                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
+                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">정밀 모형·피규어용 소재 추천 보기</h3>
+                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">미니어처, 피규어, 디오라마 같은 정밀 모델에 어떤 소재가 적합한지 확인하세요.</p>
+                                                    </div>
+                                                </Link>
                                             </div>
                                             <div className="space-y-3 pt-2">
                                                 <div className="px-1">
