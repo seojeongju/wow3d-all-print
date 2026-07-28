@@ -4,6 +4,11 @@ import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
 import { buildEstimatePublicUrl, ensureOrderViewToken, resolvePublicBaseUrl } from '@/lib/quotation-view-token';
+import {
+    DEFAULT_QUOTATION_TEMPLATE_KEY,
+    getDefaultQuotationTemplateSeed,
+    renderEmailTemplateVariables,
+} from '@/lib/email-template-defaults';
 
 /**
  * GET /api/admin/orders/[id]/quotation-email-draft
@@ -121,21 +126,46 @@ export async function GET(
         const pdfReady = false;
         const pdfError = '견적서는 인쇄(저장) 후 아래 파일 첨부로 추가해 주세요.';
 
-        const subject = buildDefaultSubject(fullOrder.order_number);
-        const html = buildDefaultHtml({
+        const fallbackSubject = buildDefaultSubject(fullOrder.order_number);
+        const fallbackHtml = buildDefaultHtml({
             orderNumber: fullOrder.order_number,
             estimateUrl,
             amountText,
             displayAmount,
             withPdfAttachment: false,
         });
-        const text = buildDefaultText({
+        const fallbackText = buildDefaultText({
             orderNumber: fullOrder.order_number,
             estimateUrl,
             amountText,
             displayAmount,
             withPdfAttachment: false,
         });
+
+        let template = getDefaultQuotationTemplateSeed();
+        try {
+            const saved = await env.DB.prepare(
+                'SELECT name, subject, html_content, text_content FROM email_templates WHERE store_id = ? AND template_key = ? LIMIT 1'
+            ).bind(storeId, DEFAULT_QUOTATION_TEMPLATE_KEY).first() as {
+                name?: string; subject?: string; html_content?: string | null; text_content?: string | null;
+            } | null;
+            if (saved) template = { ...template, ...saved };
+        } catch { /* old schema fallback */ }
+
+        const vars = {
+            주문번호: fullOrder.order_number || '',
+            견적합계: displayAmount != null ? `₩${Number(displayAmount).toLocaleString()}` : '금액 미정',
+            견적서링크: estimateUrl || '',
+        };
+        const subject = template.subject
+            ? renderEmailTemplateVariables(template.subject, vars)
+            : fallbackSubject;
+        const html = template.html_content
+            ? renderEmailTemplateVariables(template.html_content, vars)
+            : fallbackHtml;
+        const text = template.text_content
+            ? renderEmailTemplateVariables(template.text_content, vars)
+            : fallbackText;
 
         return NextResponse.json({
             to: toEmail,

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import {
+    DEFAULT_QUOTATION_TEMPLATE_KEY,
+    getDefaultQuotationTemplateSeed,
+} from '@/lib/email-template-defaults';
 
 export async function GET(req: NextRequest) {
     const { env } = getCloudflareContext();
@@ -11,10 +15,31 @@ export async function GET(req: NextRequest) {
     const { storeId } = auth;
 
     try {
-        const result = await env.DB.prepare(
-            'SELECT * FROM email_templates WHERE store_id = ? ORDER BY id DESC'
-        ).bind(storeId).all();
-        return NextResponse.json({ success: true, data: result.results || [] });
+        let defaultTemplate: Record<string, unknown> | null = null;
+        let rows: Record<string, unknown>[] = [];
+
+        try {
+            defaultTemplate = await env.DB.prepare(
+                'SELECT * FROM email_templates WHERE store_id = ? AND template_key = ? LIMIT 1'
+            ).bind(storeId, DEFAULT_QUOTATION_TEMPLATE_KEY).first() as Record<string, unknown> | null;
+
+            const result = await env.DB.prepare(
+                'SELECT * FROM email_templates WHERE store_id = ? AND (template_key IS NULL OR template_key != ?) ORDER BY id DESC'
+            ).bind(storeId, DEFAULT_QUOTATION_TEMPLATE_KEY).all();
+            rows = (result.results || []) as Record<string, unknown>[];
+        } catch {
+            const result = await env.DB.prepare(
+                'SELECT * FROM email_templates WHERE store_id = ? ORDER BY id DESC'
+            ).bind(storeId).all();
+            rows = (result.results || []) as Record<string, unknown>[];
+        }
+
+        const seed = getDefaultQuotationTemplateSeed();
+        const mergedDefault = defaultTemplate
+            ? { ...seed, ...defaultTemplate }
+            : seed;
+
+        return NextResponse.json({ success: true, data: [mergedDefault, ...rows] });
     } catch (e) {
         console.error('GET /api/admin/email-templates', e);
         return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });

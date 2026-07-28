@@ -3,6 +3,11 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { buildDefaultSubject, buildDefaultHtml, buildDefaultText } from '@/lib/quotation-email';
+import {
+  DEFAULT_QUOTATION_TEMPLATE_KEY,
+  getDefaultQuotationTemplateSeed,
+  renderEmailTemplateVariables,
+} from '@/lib/email-template-defaults';
 
 /**
  * GET /api/admin/orders/merged/quotation-email-draft?orderIds=1,2,3
@@ -104,21 +109,40 @@ export async function GET(req: NextRequest) {
   const baseUrl = !isLocalhost(requestOrigin) ? requestOrigin : (envAppUrl || requestOrigin);
   const estimateUrl = `${baseUrl.replace(/\/$/, '')}/admin/quotes`;
 
-  const subject = buildDefaultSubject(`MERGED-${orderIds.length}`);
-  const html = buildDefaultHtml({
+  const fallbackSubject = buildDefaultSubject(`MERGED-${orderIds.length}`);
+  const fallbackHtml = buildDefaultHtml({
     orderNumber: list.map((o) => o.order_number).join(', '),
     estimateUrl,
     amountText,
     displayAmount,
     withPdfAttachment: pdfReady,
   });
-  const text = buildDefaultText({
+  const fallbackText = buildDefaultText({
     orderNumber: list.map((o) => o.order_number).join(', '),
     estimateUrl,
     amountText,
     displayAmount,
     withPdfAttachment: pdfReady,
   });
+
+  let template = getDefaultQuotationTemplateSeed();
+  try {
+    const saved = await env.DB.prepare(
+      'SELECT name, subject, html_content, text_content FROM email_templates WHERE store_id = ? AND template_key = ? LIMIT 1'
+    ).bind(storeId, DEFAULT_QUOTATION_TEMPLATE_KEY).first() as {
+      name?: string; subject?: string; html_content?: string | null; text_content?: string | null;
+    } | null;
+    if (saved) template = { ...template, ...saved };
+  } catch { /* old schema fallback */ }
+
+  const vars = {
+    주문번호: list.map((o) => o.order_number).join(', '),
+    견적합계: displayAmount != null ? `₩${Number(displayAmount).toLocaleString()}` : '금액 미정',
+    견적서링크: estimateUrl || '',
+  };
+  const subject = template.subject ? renderEmailTemplateVariables(template.subject, vars) : fallbackSubject;
+  const html = template.html_content ? renderEmailTemplateVariables(template.html_content, vars) : fallbackHtml;
+  const text = template.text_content ? renderEmailTemplateVariables(template.text_content, vars) : fallbackText;
 
   return NextResponse.json({
     to: toEmail,

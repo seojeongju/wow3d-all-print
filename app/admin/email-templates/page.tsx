@@ -20,13 +20,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type EmailTemplate = {
-    id: number;
+    id: number | string;
     name: string;
     subject: string;
     html_content: string | null;
     text_content: string | null;
     created_at: string;
     updated_at: string;
+    template_key?: string | null;
+    is_system?: number | boolean | null;
 };
 
 export default function EmailTemplatesPage() {
@@ -128,7 +130,7 @@ export default function EmailTemplatesPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number | string) => {
         try {
             const res = await fetch(`/api/admin/email-templates/${id}`, {
                 method: 'DELETE',
@@ -184,9 +186,15 @@ export default function EmailTemplatesPage() {
                                         <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(template)} className="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10">
                                             <Pencil className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => { if(window.confirm('이 템플릿을 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) handleDelete(template.id); }} className="h-8 w-8 text-red-400/50 hover:text-red-400 hover:bg-red-400/10">
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        {template.template_key ? (
+                                            <div className="h-8 px-2 inline-flex items-center rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-300">
+                                                기본
+                                            </div>
+                                        ) : (
+                                            <Button variant="ghost" size="icon" onClick={() => { if(window.confirm('이 템플릿을 정말 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) handleDelete(template.id); }} className="h-8 w-8 text-red-400/50 hover:text-red-400 hover:bg-red-400/10">
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-3 text-sm flex-1">
