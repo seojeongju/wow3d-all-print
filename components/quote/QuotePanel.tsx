@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
-    Loader2, Box, Layers, Ruler, Printer,
+    Loader2, Box, Layers, Printer,
     Droplets, Zap, Save, ShoppingCart,
     ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight
 } from 'lucide-react'
@@ -15,6 +15,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
+import type { Quote, QuoteData } from '@/lib/types'
 import {
     estimateFdmPrintTimeHours,
     estimateResinPrintTimeHours,
@@ -36,10 +37,45 @@ type PrintMethod = 'fdm' | 'sla' | 'dlp'
 
 type QuotePanelProps = {
     embedded?: boolean
-    initialQuote?: any
+    initialQuote?: InitialQuoteData | null
+    guideSource?: string
+    guideTopic?: string
 }
 
-export default function QuotePanel({ embedded = false, initialQuote }: QuotePanelProps) {
+type InitialQuoteData = Partial<Quote> & {
+    print_method?: PrintMethod
+    fdm_material?: string | null
+    fdm_infill?: number | null
+    fdm_layer_height?: number | null
+    fdm_support?: boolean | number | null
+    resin_type?: string | null
+    layer_thickness?: number | null
+    post_processing?: boolean | number | null
+}
+
+type UploadResponse = {
+    data?: {
+        fileUrl?: string | null
+        quoteId?: number | null
+    }
+}
+
+type SaveQuoteResult = {
+    id: number
+    sessionId?: string
+}
+
+const defaultQuoteDetail = {
+    total: 0,
+    time: 0,
+    numLayers: 0,
+    materialAmount: 0,
+    materialUnit: 'g' as const,
+    materialName: '-',
+    costBreakdown: { material: 0, other: 0, machine: 0, labor: 0 },
+}
+
+export default function QuotePanel({ embedded = false, initialQuote, guideSource, guideTopic }: QuotePanelProps) {
     const { file, analysis } = useFileStore()
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
@@ -82,7 +118,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
     /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
-    const [priceRoundMode, setPriceRoundMode] = useState<PriceRoundMode>('round')
+    const [priceRoundMode] = useState<PriceRoundMode>('round')
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -115,10 +151,10 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
     const resinMaterials = materials.filter((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA'))
     useEffect(() => {
         if (fdmMaterials.length && (fdmMaterial === '' || !fdmMaterials.some((m) => m.name === fdmMaterial))) setFdmMaterial(fdmMaterials[0].name)
-    }, [materials, fdmMaterial])
+    }, [fdmMaterials, fdmMaterial])
     useEffect(() => {
         if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
-    }, [materials, resinType, printMethod])
+    }, [resinMaterials, resinType, printMethod])
     const MAT_COLORS: Record<string, string> = { 
         PLA: 'text-teal-400', 
         ABS: 'text-amber-400', 
@@ -151,20 +187,9 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
         return over.length ? over.join(', ') : null
     }, [printSpecs, printMethod, bx, by, bz, analysis])
 
-    // 금액은 전부 원화(KRW)로 계산·저장·표시 (한국 사용자 대상)
-    const defaultDetail = {
-        total: 0,
-        time: 0,
-        numLayers: 0,
-        materialAmount: 0,
-        materialUnit: 'g' as 'g' | 'mL',
-        materialName: '-',
-        costBreakdown: { material: 0, other: 0, machine: 0, labor: 0 },
-    }
-
     // 견적 상세: 관리자 산출 기준(printSpecs)·소재(materials) 연동
     const quoteDetail = useMemo(() => {
-        if (!analysis) return defaultDetail
+        if (!analysis) return defaultQuoteDetail
         const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
         const spec = printSpecs?.[key]
         const layer = printMethod === 'fdm' ? layerHeight : slaLayerHeight
@@ -187,16 +212,16 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 heightMm,
                 surfaceAreaCm2,
                 layerHeightMm: layerHeight,
-                fdmLayerHoursFactor: (spec as any)?.fdm_layer_hours_factor,
+                fdmLayerHoursFactor: spec?.fdm_layer_hours_factor,
             })
             const numLayers = timeEst.numLayers
             const estTimeHours = timeEst.hours
 
             // 비용 계산 (볼륨 디스카운트: 5h+ 10%, 10h+ 15%)
-            const supportPerCm2Kr = (spec as any)?.fdm_support_per_cm2_krw ?? 26
+            const supportPerCm2Kr = spec?.fdm_support_per_cm2_krw ?? 26
             const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
             const supportCost = supportEnabled ? supportPerCm2Kr * supportTargetArea : 0
-            const laborKr = (spec as any)?.fdm_labor_cost_krw ?? 6500
+            const laborKr = spec?.fdm_labor_cost_krw ?? 6500
             const laborCost = laborKr
             const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
             const machineCost = estTimeHours * effectiveRate
@@ -214,7 +239,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
             const volumeML = volumeCm3
             const resinCost = pricePerMlKr * volumeML
-            const layerExp = printMethod === 'dlp' ? ((spec as any)?.dlp_layer_exposure_sec ?? 3) : ((spec as any)?.sla_layer_exposure_sec ?? 8)
+            const layerExp = printMethod === 'dlp' ? (spec?.dlp_layer_exposure_sec ?? 3) : (spec?.sla_layer_exposure_sec ?? 8)
             const timeEst = estimateResinPrintTimeHours({
                 heightMm,
                 layerHeightMm: slaLayerHeight,
@@ -222,11 +247,11 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
             })
             const numLayers = timeEst.numLayers
             const estTimeHours = timeEst.hours
-            const consKr = printMethod === 'dlp' ? ((spec as any)?.dlp_consumables_krw ?? 3900) : ((spec as any)?.sla_consumables_krw ?? 3900)
-            const postKr = printMethod === 'dlp' ? ((spec as any)?.dlp_post_process_krw ?? 10400) : ((spec as any)?.sla_post_process_krw ?? 10400)
+            const consKr = printMethod === 'dlp' ? (spec?.dlp_consumables_krw ?? 3900) : (spec?.sla_consumables_krw ?? 3900)
+            const postKr = printMethod === 'dlp' ? (spec?.dlp_post_process_krw ?? 10400) : (spec?.sla_post_process_krw ?? 10400)
             const consumablesCost = consKr
             const postProcessCost = postProcessing ? postKr : 0
-            const laborKr = printMethod === 'dlp' ? ((spec as any)?.dlp_labor_cost_krw ?? 9100) : ((spec as any)?.sla_labor_cost_krw ?? 9100)
+            const laborKr = printMethod === 'dlp' ? (spec?.dlp_labor_cost_krw ?? 9100) : (spec?.sla_labor_cost_krw ?? 9100)
             const laborCost = laborKr
             const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
             const machineCost = estTimeHours * effectiveRate
@@ -241,7 +266,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 costBreakdown: { material: resinCost, other: otherCost, machine: machineCost, labor: laborCost },
             }
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials])
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, surfaceAreaCm2, volumeCm3])
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
@@ -283,7 +308,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                     });
 
                     if (uploadRes.ok) {
-                        const uploadData = await uploadRes.json();
+                        const uploadData = await uploadRes.json() as UploadResponse;
                         fileUrl = uploadData.data?.fileUrl || null;
                         currentQuoteId = uploadData.data?.quoteId || null;
                         setUploadedQuoteId(currentQuoteId);
@@ -297,7 +322,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 // 이미 업로드된 경우 기존 fileUrl 정보 유지 (보통 DB에 이미 있음)
             }
 
-            const quoteData: any = {
+            const quoteData: QuoteData = {
                 id: currentQuoteId,
                 fileName: file.name,
                 fileSize: file.size,
@@ -309,17 +334,19 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 dimensionsZ: analysis.boundingBox.z,
                 printMethod,
                 ...(printMethod === 'fdm' ? {
-                    fdmMaterial: (fdmMaterial || '').toUpperCase() as any,
+                    fdmMaterial: (fdmMaterial || '').toUpperCase() as QuoteData['fdmMaterial'],
                     fdmInfill: infill,
                     fdmLayerHeight: layerHeight,
                     fdmSupport: supportEnabled,
                 } : {
-                    resinType: (resinType ? resinType.charAt(0).toUpperCase() + resinType.slice(1) : '') as any,
+                    resinType: (resinType ? resinType.charAt(0).toUpperCase() + resinType.slice(1) : '') as QuoteData['resinType'],
                     layerThickness: slaLayerHeight,
                     postProcessing,
                 }),
                 totalPrice,
                 estimatedTimeHours,
+                guideSource: guideSource || undefined,
+                guideTopic: guideTopic || undefined,
             }
 
             // 설정값 변경 여부 확인용 키 생성
@@ -355,7 +382,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 const msg = (result && typeof result.error === 'string') ? result.error : '견적 저장 실패'
                 throw new Error(msg)
             }
-            const data = result.data as { id: number; sessionId?: string }
+            const data = result.data as SaveQuoteResult
 
             // data.id가 위에서 전달한 currentQuoteId와 같을 것입니다 (업데이트됨)
             const finalQuoteId = data.id || currentQuoteId;
@@ -444,7 +471,7 @@ export default function QuotePanel({ embedded = false, initialQuote }: QuotePane
                 thumbnailDataUrl: thumbnailDataUrl || undefined,
             }
             showToast.success('장바구니 추가', '제품이 장바구니에 담겼습니다.');
-            addToCart(quoteForCart as any, 1)
+            addToCart(quoteForCart as Quote, 1)
         } catch (error) {
             showToast.error('추가 실패', error);
         }

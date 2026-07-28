@@ -130,6 +130,8 @@ export default function HousingMaterialGuidePage() {
                         eyebrow="Housing CTA"
                         title="하우징과 케이스 요구 조건으로 바로 견적을 받아보세요"
                         description="조립성, 체결성, 내열성, 외관 품질까지 고려해 ABS, PETG, Tough 레진 조건으로 실제 제작 견적을 바로 확인할 수 있습니다."
+                        trackingSource="housings_cases"
+                        trackingTopic="하우징·케이스용 소재 추천"
                         secondaryHref="/materials"
                         secondaryLabel="소재 전체 보기"
                     />

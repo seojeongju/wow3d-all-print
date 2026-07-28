@@ -2,7 +2,7 @@
 
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate } from '@/lib/date-utils';
-import { formatQuotePrintSettings } from '@/lib/quote-print-settings';
+import { formatQuoteGuideContext, formatQuotePrintSettings } from '@/lib/quote-print-settings';
 import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Download, Loader2, Eye, FileDown, Printer, Send, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Search, Download, Loader2, Eye, FileDown, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import JSZip from 'jszip';
@@ -35,6 +35,83 @@ const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 400;
 
 type OrdersPagination = { page: number; limit: number; total: number; totalPages: number };
+
+type OrderItemSummary = {
+    id?: number;
+    quote_id?: number;
+    file_name?: string;
+    file_url?: string | null;
+    print_method?: string;
+    guide_source?: string | null;
+    guide_topic?: string | null;
+    fdm_material?: string | null;
+    fdm_infill?: number | null;
+    fdm_layer_height?: number | null;
+    fdm_support?: number | boolean | null;
+    resin_type?: string | null;
+    layer_thickness?: number | null;
+    post_processing?: number | boolean | null;
+};
+
+type AdminOrder = {
+    id: number;
+    order_number?: string;
+    recipient_name?: string;
+    user_id?: number | null;
+    user_name?: string | null;
+    user_email?: string | null;
+    user_role?: string | null;
+    guest_email?: string | null;
+    item_count?: number;
+    total_amount?: number;
+    status?: string;
+    created_at?: string;
+    has_expert_quote?: boolean | number;
+    expert_quote_data?: string | null;
+    quotation_sent_at?: string | null;
+    items_summary?: string | OrderItemSummary[];
+};
+
+type AdminOrderDetail = Record<string, unknown> & {
+    admin_note?: string | null;
+    status?: string;
+    recipient_name?: string;
+    user_id?: number | null;
+    user_name?: string | null;
+    user_email?: string | null;
+    guest_email?: string | null;
+    shipping_address?: string;
+    shipping_postal_code?: string | null;
+    recipient_phone?: string;
+    customer_note?: string | null;
+    total_amount?: number;
+    has_expert_quote?: boolean | number;
+    expert_quote_data?: string | null;
+    quotation_sent_at?: string | null;
+};
+
+type AdminOrderItem = Record<string, unknown> & {
+    id?: number;
+    quote_id?: number;
+    file_name?: string;
+    file_url?: string | null;
+    print_method?: string;
+    quantity?: number;
+    unit_price?: number;
+    subtotal?: number;
+    estimated_time_hours?: number | null;
+    volume_cm3?: number | null;
+    guide_source?: string | null;
+    guide_topic?: string | null;
+};
+
+function parseItemsSummary(raw: unknown): OrderItemSummary[] {
+    try {
+        if (typeof raw === 'string') return JSON.parse(raw) as OrderItemSummary[];
+        if (Array.isArray(raw)) return raw as OrderItemSummary[];
+    } catch { /* ignore */ }
+    return [];
+}
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'pending', label: '접수 대기' },
@@ -63,7 +140,7 @@ function getStatusBadge(status: string) {
     }
 }
 
-type DetailData = { order: Record<string, unknown>; items: Record<string, unknown>[]; shipment: Record<string, unknown> | null };
+type DetailData = { order: AdminOrderDetail; items: AdminOrderItem[]; shipment: Record<string, unknown> | null };
 
 function OrderListInner() {
     const { toast } = useToast();
@@ -71,7 +148,7 @@ function OrderListInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
-    const [orders, setOrders] = useState<any[]>([]);
+    const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [pagination, setPagination] = useState<OrdersPagination>({
         page: 1,
         limit: PAGE_SIZE,
@@ -186,7 +263,6 @@ function OrderListInner() {
             .then((j) => {
                 if (j.success && j.data) {
                     setDetailData(j.data);
-                    const items = (j.data.items || []) as { id?: number }[];
                     setDetailAdminNote(String(j.data.order?.admin_note ?? ''));
                     setDetailStatus(String(j.data.order?.status ?? 'pending'));
                 } else {
@@ -199,7 +275,7 @@ function OrderListInner() {
                 setDetailOrderId(null);
             })
             .finally(() => setLoadingDetail(false));
-    }, [detailOrderId, toast]);
+    }, [detailOrderId, toast, token]);
 
     const openDetail = (id: number) => {
         setDetailOrderId(id);
@@ -257,7 +333,7 @@ function OrderListInner() {
                 toast({ title: 'CSV용 목록을 불러오지 못했습니다.', variant: 'destructive' });
                 return;
             }
-            const rowsData = data.data.items as any[];
+            const rowsData = data.data.items as AdminOrder[];
             const headers = ['주문번호', '고객명', '주문자', '이메일', '품목수', '금액', '상태', '날짜'];
             const rows = rowsData.map((o) => [
                 o.order_number || '',
@@ -324,7 +400,7 @@ function OrderListInner() {
             } else {
                 toast({ title: json.error || '변경 실패', variant: 'destructive' });
             }
-        } catch (e) {
+        } catch {
             toast({ title: '변경 중 오류가 발생했습니다.', variant: 'destructive' });
         } finally {
             setUpdatingId(null);
@@ -366,16 +442,16 @@ function OrderListInner() {
     };
 
 
-    const handleBulkDownload = async (orderId?: number, itemsToUse?: any[]) => {
+    const handleBulkDownload = async (orderId?: number, itemsToUse?: OrderItemSummary[] | AdminOrderItem[]) => {
         const orderIdToUse = orderId || detailOrderId;
-        const items = itemsToUse || (detailData?.items as any[]);
+        const items = itemsToUse || detailData?.items || [];
 
         if (!orderIdToUse || !items || items.length === 0) {
             toast({ title: '다운로드할 파일이 없습니다.', variant: 'destructive' });
             return;
         }
 
-        const filesToDownload = items.filter((it: any) => it.file_url || it.quote_id);
+        const filesToDownload = items.filter((it) => it.file_url || it.quote_id);
         if (filesToDownload.length === 0) {
             toast({ title: '다운로드할 파일이 없습니다.', variant: 'destructive' });
             return;
@@ -628,14 +704,7 @@ function OrderListInner() {
                                             <div className="flex items-center gap-2">
                                                 <span>{order.item_count || 1}개 품목</span>
                                                 {(() => {
-                                                    let items: any[] = [];
-                                                    try {
-                                                        if (typeof order.items_summary === 'string') {
-                                                            items = JSON.parse(order.items_summary);
-                                                        } else if (Array.isArray(order.items_summary)) {
-                                                            items = order.items_summary;
-                                                        }
-                                                    } catch (e) { }
+                                                    const items = parseItemsSummary(order.items_summary);
 
                                                     if (items.length > 0) {
                                                         return (
@@ -658,19 +727,25 @@ function OrderListInner() {
                                                 })()}
                                             </div>
                                             {(() => {
-                                                let items: any[] = [];
-                                                try {
-                                                    if (typeof order.items_summary === 'string') items = JSON.parse(order.items_summary);
-                                                    else if (Array.isArray(order.items_summary)) items = order.items_summary;
-                                                } catch { /* ignore */ }
+                                                const items = parseItemsSummary(order.items_summary);
                                                 const first = items[0];
                                                 if (!first) return null;
                                                 const line = formatQuotePrintSettings(first);
-                                                if (!line) return null;
+                                                const guideLine = formatQuoteGuideContext(first);
+                                                if (!line && !guideLine) return null;
                                                 return (
-                                                    <p className="text-[10px] text-white/40 truncate max-w-[220px]" title={line}>
-                                                        {String(first.print_method || '').toUpperCase()} · {line}
-                                                    </p>
+                                                    <div className="max-w-[220px]">
+                                                        {line ? (
+                                                            <p className="text-[10px] text-white/40 truncate" title={line}>
+                                                                {String(first.print_method || '').toUpperCase()} · {line}
+                                                            </p>
+                                                        ) : null}
+                                                        {guideLine ? (
+                                                            <p className="text-[10px] text-teal-300/70 truncate" title={guideLine}>
+                                                                가이드 유입 · {guideLine}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
                                                 );
                                             })()}
                                             </div>
@@ -828,7 +903,7 @@ function OrderListInner() {
                                 <div>
                                     <span className="text-[10px] font-bold text-white/40 uppercase">총 금액</span>
                                     {(() => {
-                                        const order = detailData.order as any;
+                                        const order = detailData.order;
                                         let expertAmount: number | null = null;
                                         if (order.has_expert_quote && order.expert_quote_data) {
                                             try {
@@ -852,11 +927,11 @@ function OrderListInner() {
                                     <span className="text-[10px] font-bold text-white/40 uppercase">고객 메모</span>
                                     <p className="text-white/80">{String(detailData.order.customer_note || '-')}</p>
                                 </div>
-                                {(detailData.order as any).quotation_sent_at && (
+                                {detailData.order.quotation_sent_at && (
                                     <div className="col-span-2">
                                         <span className="text-[10px] font-bold text-white/40 uppercase">견적서 발송 일시</span>
                                         <p className="text-emerald-400/90 text-sm">
-                                            {new Date((detailData.order as any).quotation_sent_at).toLocaleString('ko-KR')}
+                                            {new Date(String(detailData.order.quotation_sent_at)).toLocaleString('ko-KR')}
                                         </p>
                                     </div>
                                 )}
@@ -866,7 +941,7 @@ function OrderListInner() {
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <Label className="text-[10px] font-bold text-white/40 uppercase">주문 항목</Label>
-                                        {detailData.items.filter((it: any) => it.file_url).length > 1 && (
+                                        {detailData.items.filter((it) => it.file_url).length > 1 && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -875,7 +950,7 @@ function OrderListInner() {
                                                 disabled={downloadingFileId !== null}
                                             >
                                                 <Download className="w-3 h-3 mr-1.5" />
-                                                전체 다운로드 ({detailData.items.filter((it: any) => it.file_url).length}개)
+                                                전체 다운로드 ({detailData.items.filter((it) => it.file_url).length}개)
                                             </Button>
                                         )}
                                     </div>
@@ -891,13 +966,14 @@ function OrderListInner() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {detailData.items.map((it: any) => {
+                                                {detailData.items.map((it) => {
                                                     const upRaw = Math.round(Number(it.unit_price || 0));
                                                     const subRaw = Math.round(Number(it.subtotal || 0));
                                                     const unitPrice = correctDisplayAmount(upRaw) ?? upRaw;
                                                     const subtotal = correctDisplayAmount(subRaw) ?? subRaw;
                                                     const method = String(it.print_method || '').toUpperCase() || '-';
                                                     const settingsLine = formatQuotePrintSettings(it);
+                                                    const guideLine = formatQuoteGuideContext(it);
                                                     return (
                                                     <tr key={it.id} className="border-b border-white/5 align-top">
                                                         <td className="p-3 text-white/90 pl-4">
@@ -918,6 +994,11 @@ function OrderListInner() {
                                                                     {it.volume_cm3 != null ? ` · 부피 ${Number(it.volume_cm3).toFixed(1)} cm³` : ''}
                                                                 </div>
                                                             )}
+                                                            {guideLine ? (
+                                                                <div className="mt-1 text-[10px] text-teal-300/75">
+                                                                    가이드 유입: {guideLine}
+                                                                </div>
+                                                            ) : null}
                                                         </td>
                                                         <td className="p-2 text-right">{it.quantity}</td>
                                                         <td className="p-2 text-right">₩ {unitPrice.toLocaleString()}</td>
@@ -956,7 +1037,7 @@ function OrderListInner() {
                                     <div className="mt-2 flex justify-end">
                                         <span className="text-white/50 text-xs">자동 견적 총액 </span>
                                         <span className="ml-2 font-bold text-white">
-                                            ₩ {(detailData.items as any[]).reduce((acc: number, it: any) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal || 0))) ?? Math.round(Number(it.subtotal || 0))), 0).toLocaleString()}
+                                            ₩ {detailData.items.reduce((acc, it) => acc + (correctDisplayAmount(Math.round(Number(it.subtotal || 0))) ?? Math.round(Number(it.subtotal || 0))), 0).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>

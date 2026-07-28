@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, Suspense } from "react";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
+import type { Quote } from "@/lib/types";
 
 const quickQuoteFaqs = [
     {
@@ -26,6 +27,14 @@ const quickQuoteFaqs = [
     },
 ];
 
+const GUIDE_SOURCE_LABELS: Record<string, string> = {
+    prototypes: '시제품용 소재 추천',
+    transparent_parts: '투명 부품용 소재 추천',
+    housings_cases: '하우징·케이스용 소재 추천',
+    heat_impact_parts: '내열·내충격 부품용 소재 추천',
+    miniatures_figurines: '정밀 모형·피규어용 소재 추천',
+};
+
 function QuoteContent() {
     const { file, analysis, reset, setFile } = useFileStore();
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
@@ -33,7 +42,10 @@ function QuoteContent() {
     const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');
     const searchParams = useSearchParams();
     const loadQuoteId = searchParams.get('load_quote_id');
-    const [loadedQuote, setLoadedQuote] = useState<any>(null); // DB quote data
+    const guideSource = searchParams.get('guide_source') || '';
+    const guideTopic = searchParams.get('guide_topic') || '';
+    const [loadedQuote, setLoadedQuote] = useState<Quote | null>(null); // DB quote data
+    const guideLabel = guideTopic || GUIDE_SOURCE_LABELS[guideSource] || '';
 
     // Auto-switch to settings tab when analysis is complete
     useEffect(() => {
@@ -221,6 +233,15 @@ function QuoteContent() {
                                             className="space-y-8 sm:space-y-10"
                                         >
                                             <div className="space-y-3 sm:space-y-4">
+                                                {guideLabel ? (
+                                                    <div className="rounded-[1.5rem] border border-teal-400/20 bg-teal-400/10 px-5 py-4">
+                                                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300 mb-2">Guide Context</p>
+                                                        <p className="text-sm sm:text-[15px] font-bold text-white/85 break-keep">
+                                                            현재 <span className="text-teal-300">{guideLabel}</span> 가이드에서 들어오셨습니다.
+                                                            업로드 후 해당 용도에 맞는 소재와 옵션으로 바로 견적을 확인해 보세요.
+                                                        </p>
+                                                    </div>
+                                                ) : null}
                                                 <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-[1.15]">
                                                     새로운 프로젝트 <br />
                                                     <span className="text-teal-400">시작하기</span>
@@ -340,7 +361,11 @@ function QuoteContent() {
                                             </button>
                                         </div>
                                         <div className="relative">
-                                            <QuotePanel initialQuote={loadedQuote} />
+                                            <QuotePanel
+                                                initialQuote={loadedQuote}
+                                                guideSource={guideSource}
+                                                guideTopic={guideTopic}
+                                            />
                                         </div>
                                     </motion.div>
                                 )}

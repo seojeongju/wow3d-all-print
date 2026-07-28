@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
-import { jsonResponse, errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
+import { errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
 import type { QuoteData } from '@/lib/types';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         }
 
         let query: string;
-        let bindings: any[];
+        let bindings: QuoteQueryBinding[];
 
         if (userId) {
             const parsed = parseInt(userId, 10);
@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
 
         // 로컬 개발 환경에서는 빈 배열 반환
         return successResponse([]);
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('GET /api/quotes error:', error);
-        return errorResponse(error.message || '견적 조회 실패', 500);
+        return errorResponse(getErrorMessage(error, '견적 조회 실패'), 500);
     }
 }
 
@@ -58,21 +58,28 @@ const FDM_LAYER = [0.1, 0.2, 0.3] as const;
 const SLA_LAYER = [0.025, 0.05, 0.1] as const;
 const FDM_MAT = ['PLA', 'ABS', 'PETG', 'TPU'] as const;
 const RESIN = ['Standard', 'Tough', 'Clear', 'Flexible'] as const;
+type QuoteQueryBinding = string | number | null;
+type QuoteRunResult = { success?: boolean; error?: string; meta?: { last_row_id?: number } };
+
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error) return error.message || fallback;
+    return fallback;
+}
 
 function snapFdmLayer(v: unknown): typeof FDM_LAYER[number] | null {
     if (v == null || v === '') return null;
     const n = Math.round(Number(v) * 10) / 10;
-    return FDM_LAYER.includes(n as any) ? (n as typeof FDM_LAYER[number]) : null;
+    return FDM_LAYER.includes(n as typeof FDM_LAYER[number]) ? (n as typeof FDM_LAYER[number]) : null;
 }
 function snapSlaLayer(v: unknown): typeof SLA_LAYER[number] | null {
     if (v == null || v === '') return null;
     const n = Math.round(Number(v) * 1000) / 1000;
-    return SLA_LAYER.includes(n as any) ? (n as typeof SLA_LAYER[number]) : null;
+    return SLA_LAYER.includes(n as typeof SLA_LAYER[number]) ? (n as typeof SLA_LAYER[number]) : null;
 }
 function snapFdmMaterial(v: unknown): string | null {
     if (v == null || v === '') return null;
     const s = String(v).trim().toUpperCase();
-    return FDM_MAT.includes(s as any) ? s : null;
+    return FDM_MAT.includes(s as typeof FDM_MAT[number]) ? s : null;
 }
 function snapResinType(v: unknown): string | null {
     if (v == null || v === '') return null;
@@ -84,6 +91,11 @@ function snapResinType(v: unknown): string | null {
 function materialDisplayName(v: unknown): string | null {
     if (v == null || v === '') return null;
     const s = String(v).trim().slice(0, 80);
+    return s || null;
+}
+function guideText(v: unknown, max = 120): string | null {
+    if (v == null || v === '') return null;
+    const s = String(v).trim().slice(0, max);
     return s || null;
 }
 function clampFdmInfill(v: unknown): number | null {
@@ -139,10 +151,12 @@ export async function POST(request: NextRequest) {
         const fdmMaterialName = materialDisplayName(body.fdmMaterial) ?? fdmMaterial;
         const resinTypeName = materialDisplayName(body.resinType) ?? resinType;
         const fdmInfill = clampFdmInfill(body.fdmInfill);
+        const guideSource = guideText(body.guideSource, 80);
+        const guideTopic = guideText(body.guideTopic, 120);
 
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
-            let runResult;
+            let runResult: QuoteRunResult;
             const baseBind = [
                 uid,
                 sessionId ?? null,
@@ -164,7 +178,10 @@ export async function POST(request: NextRequest) {
                 body.postProcessing ? 1 : 0,
                 totalPrice,
                 estimatedTimeHours,
+                guideSource,
+                guideTopic,
             ] as const;
+            const legacyBind = baseBind.slice(0, 20);
 
             if (body.id) {
                 try {
@@ -176,6 +193,7 @@ export async function POST(request: NextRequest) {
                             fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
                             resin_type = ?, layer_thickness = ?, post_processing = ?,
                             total_price = ?, estimated_time_hours = ?,
+                            guide_source = ?, guide_topic = ?,
                             fdm_material_name = ?, resin_type_name = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
@@ -191,7 +209,7 @@ export async function POST(request: NextRequest) {
                             total_price = ?, estimated_time_hours = ?,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
-                    `).bind(...baseBind, body.id).run();
+                    `).bind(...legacyBind, body.id).run();
                 }
             } else {
                 try {
@@ -203,8 +221,9 @@ export async function POST(request: NextRequest) {
                             fdm_material, fdm_infill, fdm_layer_height, fdm_support,
                             resin_type, layer_thickness, post_processing,
                             total_price, estimated_time_hours,
+                            guide_source, guide_topic,
                             fdm_material_name, resin_type_name
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `).bind(...baseBind, fdmMaterialName, resinTypeName).run();
                 } catch {
                     runResult = await env.DB.prepare(`
@@ -216,16 +235,16 @@ export async function POST(request: NextRequest) {
                             resin_type, layer_thickness, post_processing,
                             total_price, estimated_time_hours
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    `).bind(...baseBind).run();
+                    `).bind(...legacyBind).run();
                 }
             }
 
-            const r = runResult as { success?: boolean; error?: string; meta?: { last_row_id?: number } };
+            const r = runResult;
             if (r && r.success === false && r.error) throw new Error(r.error);
 
             return successResponse(
                 {
-                    id: (runResult?.meta as { last_row_id?: number })?.last_row_id ?? 0,
+                    id: runResult.meta?.last_row_id ?? 0,
                     sessionId: sessionId || undefined
                 },
                 '견적이 저장되었습니다'
@@ -240,9 +259,9 @@ export async function POST(request: NextRequest) {
             },
             '견적이 저장되었습니다 (개발 모드)'
         );
-    } catch (error: any) {
-        const msg = error?.message || (error?.cause?.message) || '견적 저장 실패';
-        console.error('POST /api/quotes error:', msg, error?.cause ?? error);
+    } catch (error: unknown) {
+        const msg = getErrorMessage(error, '견적 저장 실패');
+        console.error('POST /api/quotes error:', msg, error);
         return errorResponse(msg, 500);
     }
 }

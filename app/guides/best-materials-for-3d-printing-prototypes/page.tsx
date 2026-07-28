@@ -140,6 +140,8 @@ export default function PrototypeMaterialGuidePage() {
                         eyebrow="Prototype CTA"
                         title="시제품 목적에 맞는 소재로 바로 견적을 받아보세요"
                         description="외관 확인용인지, 조립 테스트용인지, 기능 검토용인지에 따라 적합한 소재를 적용해 바로 견적과 예상 시간을 확인할 수 있습니다."
+                        trackingSource="prototypes"
+                        trackingTopic="시제품용 소재 추천"
                         secondaryHref="/materials"
                         secondaryLabel="소재 전체 보기"
                     />

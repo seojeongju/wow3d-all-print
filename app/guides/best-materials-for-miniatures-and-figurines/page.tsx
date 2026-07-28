@@ -130,6 +130,8 @@ export default function MiniatureMaterialGuidePage() {
                         eyebrow="Miniature CTA"
                         title="정밀 모델과 피규어 조건으로 바로 견적을 받아보세요"
                         description="미세 디테일, 도색 예정 여부, 투명 파츠 유무까지 고려해 Standard 레진이나 대안 소재 조건으로 제작 견적을 확인할 수 있습니다."
+                        trackingSource="miniatures_figurines"
+                        trackingTopic="정밀 모형·피규어용 소재 추천"
                         secondaryHref="/materials"
                         secondaryLabel="소재 전체 보기"
                     />

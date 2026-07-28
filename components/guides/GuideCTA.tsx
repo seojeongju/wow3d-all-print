@@ -8,6 +8,8 @@ type GuideCTAProps = {
     description: string;
     primaryHref?: string;
     primaryLabel?: string;
+    trackingSource?: string;
+    trackingTopic?: string;
     secondaryHref?: string;
     secondaryLabel?: string;
 };
@@ -18,9 +20,22 @@ export default function GuideCTA({
     description,
     primaryHref = '/quote',
     primaryLabel = '자동견적 시작',
+    trackingSource,
+    trackingTopic,
     secondaryHref = '/contact',
     secondaryLabel = '1:1 문의하기',
 }: GuideCTAProps) {
+    const primaryLink =
+        trackingSource || trackingTopic
+            ? {
+                  pathname: primaryHref,
+                  query: {
+                      ...(trackingSource ? { guide_source: trackingSource } : {}),
+                      ...(trackingTopic ? { guide_topic: trackingTopic } : {}),
+                  },
+              }
+            : primaryHref;
+
     return (
         <div className="rounded-[2rem] border border-teal-400/20 bg-teal-400/5 p-8 md:p-10 space-y-5">
             <div className="space-y-2">
@@ -29,7 +44,7 @@ export default function GuideCTA({
                 <p className="text-white/70 break-keep leading-relaxed">{description}</p>
             </div>
             <div className="flex gap-3">
-                <Link href={primaryHref}>
+                <Link href={primaryLink}>
                     <Button className="rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black">
                         {primaryLabel} <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>

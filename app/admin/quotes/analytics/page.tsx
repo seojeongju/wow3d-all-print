@@ -38,6 +38,8 @@ type QuoteAnalytics = {
     volume_cm3: number;
     total_price: number;
     print_method: string;
+    guide_source: string | null;
+    guide_topic: string | null;
     created_at: string;
     updated_at: string;
     user_name: string | null;
@@ -50,7 +52,25 @@ type QuoteAnalytics = {
     traffic_medium: string | null;
 };
 
-type Stats = { total: number; ordered: number; incart: number; abandoned: number; draft: number };
+type GuideSourceStat = {
+    guideSource: string;
+    guideTopic: string;
+    quoteCount: number;
+    orderedCount: number;
+    incartCount: number;
+    abandonedCount: number;
+    draftCount: number;
+    orderRate: number;
+};
+
+type Stats = {
+    total: number;
+    ordered: number;
+    incart: number;
+    abandoned: number;
+    draft: number;
+    guideSources: GuideSourceStat[];
+};
 type Pagination = { page: number; limit: number; total: number; totalPages: number };
 
 const PAGE_SIZE = 20;
@@ -96,7 +116,14 @@ export default function QuoteAnalyticsPage() {
     const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [items, setItems] = useState<QuoteAnalytics[]>([]);
-    const [stats, setStats] = useState<Stats>({ total: 0, ordered: 0, incart: 0, abandoned: 0, draft: 0 });
+    const [stats, setStats] = useState<Stats>({
+        total: 0,
+        ordered: 0,
+        incart: 0,
+        abandoned: 0,
+        draft: 0,
+        guideSources: [],
+    });
     const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -128,7 +155,14 @@ export default function QuoteAnalyticsPage() {
             const json = await res.json();
             if (json.success && json.data) {
                 setItems(json.data.items || []);
-                setStats(json.data.stats || { total: 0, ordered: 0, incart: 0, abandoned: 0, draft: 0 });
+                setStats(json.data.stats || {
+                    total: 0,
+                    ordered: 0,
+                    incart: 0,
+                    abandoned: 0,
+                    draft: 0,
+                    guideSources: [],
+                });
                 setPagination(
                     json.data.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 }
                 );
@@ -244,6 +278,16 @@ export default function QuoteAnalyticsPage() {
                     {item.traffic_source || '직접 유입'} / {item.traffic_medium || '없음'}
                 </span>
             </div>
+            {item.guide_topic && (
+                <div className="flex items-center gap-1.5">
+                    <Badge className="bg-teal-400/10 text-teal-300 border-teal-400/20 text-[10px]">
+                        가이드 유입
+                    </Badge>
+                    <span className="text-[10px] text-teal-200/70 truncate max-w-[220px]" title={item.guide_topic}>
+                        {item.guide_topic}
+                    </span>
+                </div>
+            )}
         </div>
     );
 
@@ -472,6 +516,75 @@ export default function QuoteAnalyticsPage() {
                     </Card>
                 ))}
             </div>
+
+            <Card className="bg-white/[0.03] border-white/10">
+                <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4 mb-5">
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-teal-300/80 mb-1">Guide Attribution</p>
+                            <h2 className="text-xl font-black text-white">가이드 유입 상위 주제</h2>
+                            <p className="text-sm text-white/45 mt-1">어떤 가이드가 실제 견적과 주문으로 이어지는지 빠르게 확인합니다.</p>
+                        </div>
+                    </div>
+
+                    {stats.guideSources.length > 0 ? (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                            {stats.guideSources.map((guide, index) => (
+                                <div key={`${guide.guideSource}-${index}`} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-teal-400/15 px-2 text-[10px] font-black text-teal-300">
+                                                    #{index + 1}
+                                                </span>
+                                                <Badge className="bg-white/5 text-white/60 border-white/10 text-[10px]">
+                                                    {guide.guideSource}
+                                                </Badge>
+                                            </div>
+                                            <p className="font-bold text-white break-keep">{guide.guideTopic}</p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-2xl font-black text-teal-300">{guide.quoteCount}</p>
+                                            <p className="text-[10px] text-white/35 uppercase tracking-widest">quotes</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-4 gap-2 mt-4">
+                                        {[
+                                            { label: '주문', value: guide.orderedCount, color: 'text-emerald-400' },
+                                            { label: '장바구니', value: guide.incartCount, color: 'text-blue-400' },
+                                            { label: '견적이탈', value: guide.abandonedCount, color: 'text-amber-400' },
+                                            { label: '업로드이탈', value: guide.draftCount, color: 'text-slate-400' },
+                                        ].map((item) => (
+                                            <div key={item.label} className="rounded-xl border border-white/8 bg-black/20 px-3 py-2">
+                                                <p className="text-[10px] text-white/35 mb-1">{item.label}</p>
+                                                <p className={`font-black ${item.color}`}>{item.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <div className="flex items-center justify-between text-[11px] mb-1.5">
+                                            <span className="text-white/45">주문 전환율</span>
+                                            <span className="font-black text-white">{(guide.orderRate * 100).toFixed(1)}%</span>
+                                        </div>
+                                        <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-400"
+                                                style={{ width: `${Math.min(100, Math.max(0, guide.orderRate * 100))}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center text-white/35">
+                            아직 저장된 가이드 유입 데이터가 없습니다.
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-6 flex flex-col md:flex-row gap-4 items-center">

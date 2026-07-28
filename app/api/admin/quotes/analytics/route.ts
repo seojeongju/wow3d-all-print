@@ -25,7 +25,7 @@ const TRAFFIC_JOIN = `
 const SELECT_LIST = `
             SELECT 
                 q.id, q.user_id, q.session_id, q.file_name, q.file_size, q.file_url,
-                q.volume_cm3, q.total_price, q.print_method, q.created_at, q.updated_at,
+                q.volume_cm3, q.total_price, q.print_method, q.guide_source, q.guide_topic, q.created_at, q.updated_at,
                 u.name as user_name, u.email as user_email, u.role as user_role,
                 (SELECT o.order_number FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.quote_id = q.id LIMIT 1) as order_number,
                 (SELECT o.status FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.quote_id = q.id LIMIT 1) as order_status,
@@ -93,6 +93,33 @@ export async function GET(req: NextRequest) {
         const draft = Number(statsRow?.draft_cnt ?? 0);
         const abandoned = Math.max(0, totalAll - ordered - incart - draft);
 
+        const { results: guideSourceRows } = await env.DB.prepare(
+            `
+            SELECT
+                COALESCE(NULLIF(TRIM(q.guide_source), ''), 'unknown') AS guide_source,
+                COALESCE(NULLIF(TRIM(q.guide_topic), ''), COALESCE(NULLIF(TRIM(q.guide_source), ''), 'unknown')) AS guide_topic,
+                COUNT(*) AS quote_count,
+                SUM(CASE WHEN EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id) THEN 1 ELSE 0 END) AS ordered_count,
+                SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id)
+                    AND (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) > 0 THEN 1 ELSE 0 END) AS incart_count,
+                SUM(CASE WHEN COALESCE(q.total_price,0) = 0 THEN 1 ELSE 0 END) AS draft_count
+            FROM quotes q
+            WHERE COALESCE(NULLIF(TRIM(q.guide_source), ''), NULLIF(TRIM(q.guide_topic), '')) IS NOT NULL
+            GROUP BY 1, 2
+            ORDER BY quote_count DESC, ordered_count DESC, guide_topic ASC
+            LIMIT 10
+        `
+        ).all() as {
+            results?: Array<{
+                guide_source: string;
+                guide_topic: string;
+                quote_count: number;
+                ordered_count: number;
+                incart_count: number;
+                draft_count: number;
+            }>;
+        };
+
         let countSql = `SELECT COUNT(*) as cnt FROM quotes q LEFT JOIN users u ON q.user_id = u.id WHERE ${filterSql}`;
         const countBinds: (string | number)[] = [];
 
@@ -136,6 +163,23 @@ export async function GET(req: NextRequest) {
                     incart,
                     abandoned,
                     draft,
+                    guideSources: (guideSourceRows || []).map((row) => {
+                        const quoteCount = Number(row.quote_count || 0);
+                        const orderedCount = Number(row.ordered_count || 0);
+                        const incartCount = Number(row.incart_count || 0);
+                        const draftCount = Number(row.draft_count || 0);
+                        const abandonedCount = Math.max(0, quoteCount - orderedCount - incartCount - draftCount);
+                        return {
+                            guideSource: row.guide_source,
+                            guideTopic: row.guide_topic,
+                            quoteCount,
+                            orderedCount,
+                            incartCount,
+                            abandonedCount,
+                            draftCount,
+                            orderRate: quoteCount > 0 ? orderedCount / quoteCount : 0,
+                        };
+                    }),
                 },
                 pagination: {
                     page,

@@ -3,9 +3,25 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { processAutoOrderStatusTransitions, statusTimestampSql } from '@/lib/order-auto-status';
-import { isOrderStatus, ORDER_STATUS_VALUES } from '@/lib/order-status';
+import { isOrderStatus } from '@/lib/order-status';
 
-const ALLOWED = [...ORDER_STATUS_VALUES];
+type ExpertQuoteItem = {
+    unit_price?: number;
+    quantity?: number;
+    [k: string]: unknown;
+};
+
+type ExpertQuoteData = {
+    items?: ExpertQuoteItem[];
+    total_amount?: number;
+    [k: string]: unknown;
+};
+
+type PatchOrderBody = {
+    status?: string;
+    admin_note?: string;
+    expert_quote_data?: ExpertQuoteData;
+};
 
 /**
  * GET /api/admin/orders/[id] - 주문 상세 (항목, 배송, 관리자메모)
@@ -54,7 +70,7 @@ export async function GET(
         try {
             const withNames = await env.DB.prepare(`
                 SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal,
-                       q.file_name, q.file_url, q.print_method,
+                       q.file_name, q.file_url, q.print_method, q.guide_source, q.guide_topic,
                        COALESCE(q.fdm_material_name, q.fdm_material) as fdm_material,
                        q.fdm_infill, q.fdm_layer_height, q.fdm_support,
                        COALESCE(q.resin_type_name, q.resin_type) as resin_type,
@@ -127,7 +143,7 @@ export async function PATCH(
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 });
         }
 
-        const body = (await req.json()) as { status?: string; admin_note?: string; expert_quote_data?: any };
+        const body = (await req.json()) as PatchOrderBody;
         const status = body?.status && isOrderStatus(body.status) ? body.status : null;
         const adminNote = body?.admin_note !== undefined ? String(body.admin_note) : null;
         const prevStatus = check.status;
@@ -151,9 +167,9 @@ export async function PATCH(
                 `UPDATE orders SET admin_note = ?, updated_at = CURRENT_TIMESTAMP ${whereClause}`
             ).bind(adminNote, ...whereBind).run();
         } else if (body?.expert_quote_data) {
-            const raw = body.expert_quote_data as { items?: Array<{ unit_price?: number; quantity?: number; [k: string]: unknown }>; total_amount?: number; [k: string]: unknown };
+            const raw = body.expert_quote_data;
             const items = Array.isArray(raw.items)
-                ? raw.items.map((it: { unit_price?: number; quantity?: number; [k: string]: unknown }) => {
+                ? raw.items.map((it) => {
                     const unitPrice = normalizeAmountBeforeSave(it.unit_price);
                     const qty = Math.max(1, Number(it.quantity) || 1);
                     return { ...it, unit_price: unitPrice, subtotal: unitPrice * qty };

@@ -31,6 +31,10 @@ export interface QuoteData {
     // 가격 정보
     totalPrice: number;
     estimatedTimeHours: number;
+
+    // 가이드 유입 정보
+    guideSource?: string;
+    guideTopic?: string;
 }
 
 export interface Quote extends QuoteData {

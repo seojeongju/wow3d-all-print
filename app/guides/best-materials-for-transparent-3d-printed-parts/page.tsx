@@ -130,6 +130,8 @@ export default function TransparentPartsGuidePage() {
                         eyebrow="Transparent Parts CTA"
                         title="투명 커버와 관찰창 부품 조건으로 바로 견적을 받아보세요"
                         description="투명도, 시인성, 후처리 허용 범위를 고려해 Clear 레진이나 PETG 조건으로 실제 견적과 제작 가능성을 확인할 수 있습니다."
+                        trackingSource="transparent_parts"
+                        trackingTopic="투명 부품용 소재 추천"
                         secondaryHref="/materials"
                         secondaryLabel="소재 전체 보기"
                     />

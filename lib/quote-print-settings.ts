@@ -4,6 +4,8 @@
 
 export type QuotePrintSettings = {
     print_method?: string | null
+    guide_source?: string | null
+    guide_topic?: string | null
     fdm_material?: string | null
     fdm_material_name?: string | null
     fdm_infill?: number | null
@@ -52,8 +54,27 @@ export function formatQuotePrintSettings(q: QuotePrintSettings | null | undefine
     return ''
 }
 
+export function formatQuoteGuideContext(q: QuotePrintSettings | null | undefined): string {
+    if (!q) return ''
+    const topic = String(q.guide_topic || '').trim()
+    if (topic) return topic
+    const source = String(q.guide_source || '').trim()
+    if (!source) return ''
+
+    const labels: Record<string, string> = {
+        prototypes: '시제품용 소재 추천',
+        transparent_parts: '투명 부품용 소재 추천',
+        housings_cases: '하우징·케이스용 소재 추천',
+        heat_impact_parts: '내열·내충격 부품용 소재 추천',
+        miniatures_figurines: '정밀 모형·피규어용 소재 추천',
+    }
+    return labels[source] || source
+}
+
 export const QUOTE_PRINT_SETTINGS_SQL = `
     q.print_method,
+    q.guide_source,
+    q.guide_topic,
     q.fdm_material,
     q.fdm_material_name,
     q.fdm_infill,
@@ -68,6 +89,8 @@ export const QUOTE_PRINT_SETTINGS_SQL = `
 /** JSON_OBJECT용 키-값 조각 (D1 JSON_GROUP_ARRAY) */
 export const QUOTE_PRINT_SETTINGS_JSON_FIELDS = `
     'print_method', q.print_method,
+    'guide_source', q.guide_source,
+    'guide_topic', q.guide_topic,
     'fdm_material', COALESCE(q.fdm_material_name, q.fdm_material),
     'fdm_infill', q.fdm_infill,
     'fdm_layer_height', q.fdm_layer_height,

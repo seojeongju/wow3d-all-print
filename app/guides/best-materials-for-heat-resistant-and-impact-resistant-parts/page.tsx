@@ -130,6 +130,8 @@ export default function HeatImpactMaterialGuidePage() {
                         eyebrow="Functional Parts CTA"
                         title="내열·내충격 조건을 반영해 바로 견적을 받아보세요"
                         description="열, 충격, 체결, 실사용 여부를 고려해 ABS, PETG, Tough 레진 기준으로 실제 제작 견적과 방향을 빠르게 확인할 수 있습니다."
+                        trackingSource="heat_impact_parts"
+                        trackingTopic="내열·내충격 부품용 소재 추천"
                         secondaryHref="/materials"
                         secondaryLabel="소재 전체 보기"
                     />
