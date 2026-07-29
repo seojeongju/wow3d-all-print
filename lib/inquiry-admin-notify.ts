@@ -10,7 +10,7 @@ import {
 } from '@/lib/inquiry-files';
 
 const DEFAULT_ADMIN_EMAIL = 'wow3d16@naver.com';
-const ADMIN_INQUIRIES_URL = 'https://wow3dp.co.kr/admin/inquiries?status=new';
+const ADMIN_INQUIRIES_URL = 'https://www.wow3dp.co.kr/admin/inquiries?status=new';
 
 export type InquiryNotifyPayload = {
     inquiryId: number;

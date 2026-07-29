@@ -11,12 +11,12 @@ import Link from 'next/link';
 // 타입 정의
 // ─────────────────────────────────────────────────────
 export interface GalleryItem {
-    id: number;
+    id: number | string;
     title: string;
     description?: string;
     image_url: string;
-    material?: string;
-    print_method?: string;
+    material?: string | null;
+    print_method?: string | null;
     tags?: string;
     created_at: string;
 }
@@ -24,7 +24,7 @@ export interface GalleryItem {
 // ─────────────────────────────────────────────────────
 // 출력 방식 아이콘 매핑
 // ─────────────────────────────────────────────────────
-function MethodIcon({ method }: { method?: string }) {
+function MethodIcon({ method }: { method?: string | null }) {
     const m = method?.toUpperCase();
     if (m === 'FDM') return <Box className="w-3 h-3" />;
     if (m === 'SLA') return <Droplets className="w-3 h-3" />;

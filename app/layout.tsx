@@ -8,13 +8,11 @@ import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
 import {
-  absoluteUrl,
   OG_IMAGE_PATH,
   SITE_URL,
 } from "@/lib/site-url";
 import {
   buildBusinessSchemas,
-  buildQuoteHowToSchema,
   buildWebSiteSearchActionSchema,
 } from "@/lib/aeo-schema";
 
@@ -39,20 +37,10 @@ export const metadata: Metadata = {
   keywords: [
     "와우쓰리디",
     "WOW3D",
-    "(주)와우쓰리디",
-    "와우3D",
-    "3D프린팅출력",
-    "3D프린터출력",
+    "3D프린팅 출력",
     "시제품제작",
-    "3D프린팅출력대행",
-    "3D프린터출력대행",
     "3D 프린팅 자동 견적",
-    "3D 프린팅 출력 서비스",
     "프로토타입 제작",
-    "3D 모델 분석",
-    "산업용 3D 프린팅",
-    "3D 프린팅 업체",
-    "3D 프린팅 제작",
   ],
   openGraph: {
     type: "website",
@@ -82,7 +70,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
-  alternates: { canonical: SITE_URL },
+  alternates: { canonical: '/' },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "-9piNXSyjNzl442zz",
     other: {
@@ -104,7 +92,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const ogImageUrl = absoluteUrl(OG_IMAGE_PATH);
   const businessSchemas = buildBusinessSchemas();
 
   return (
@@ -118,20 +105,6 @@ export default function RootLayout({
             __html: JSON.stringify([
               buildWebSiteSearchActionSchema(),
               ...businessSchemas,
-              {
-                "@context": "https://schema.org",
-                "@type": "WebPage",
-                "name": "3D프린팅 출력·자동견적 | 시제품제작 전문 (주)와우쓰리디",
-                "description": "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문 (주)와우쓰리디.",
-                "url": SITE_URL,
-                "primaryImageOfPage": {
-                  "@type": "ImageObject",
-                  "url": ogImageUrl,
-                  "width": "1200",
-                  "height": "630"
-                }
-              },
-              buildQuoteHowToSchema(),
             ]),
           }}
         />

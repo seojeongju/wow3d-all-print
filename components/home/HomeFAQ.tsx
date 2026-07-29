@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Plus, Minus, HelpCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -42,18 +42,10 @@ export default function HomeFAQ({ items }: HomeFAQProps) {
                         </p>
                     </motion.div>
 
-                    {/* AEO: 답변 텍스트를 초기 HTML에 포함 */}
-                    <section className="sr-only" aria-label="자주 묻는 질문 요약">
-                        {items.map((q) => (
-                            <article key={q.id}>
-                                <h3>{q.question}</h3>
-                                <p>{q.answer}</p>
-                            </article>
-                        ))}
-                    </section>
-
                     <div className="space-y-4">
-                        {items.map((q, i) => (
+                        {items.map((q, i) => {
+                            const isOpen = openId === q.id
+                            return (
                             <motion.div
                                 key={q.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -61,36 +53,33 @@ export default function HomeFAQ({ items }: HomeFAQProps) {
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.1 }}
                                 className={`border rounded-2xl overflow-hidden transition-all duration-300 ${
-                                    openId === q.id ? 'bg-white/10 border-teal-500/30 shadow-2xl shadow-black/40' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                    isOpen ? 'bg-white/10 border-teal-500/30 shadow-2xl shadow-black/40' : 'bg-white/5 border-white/10 hover:bg-white/10'
                                 }`}
                             >
                                 <button
-                                    onClick={() => setOpenId(openId === q.id ? null : q.id)}
+                                    onClick={() => setOpenId(isOpen ? null : q.id)}
                                     className="w-full px-6 py-5 flex items-center justify-between text-left"
+                                    aria-expanded={isOpen}
                                 >
                                     <span className="text-base md:text-lg font-bold text-white leading-snug">{q.question}</span>
-                                    <div className={`p-1.5 rounded-lg transition-all ${openId === q.id ? 'bg-teal-500 text-white rotate-180 shadow-lg shadow-teal-500/30' : 'bg-white/10 text-white/40'}`}>
-                                        {openId === q.id ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                                    <div className={`p-1.5 rounded-lg transition-all ${isOpen ? 'bg-teal-500 text-white rotate-180 shadow-lg shadow-teal-500/30' : 'bg-white/10 text-white/40'}`}>
+                                        {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                                     </div>
                                 </button>
-                                <AnimatePresence>
-                                    {openId === q.id && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                        >
-                                            <div className="px-6 pb-6 pt-2 border-t border-white/5">
-                                                <p className="text-white/80 leading-relaxed whitespace-pre-wrap text-sm md:text-base break-keep">
-                                                    {q.answer}
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                {/* 답변은 항상 DOM에 두어 JSON-LD·sr-only 중복 없이 크롤러가 읽게 함 */}
+                                <div
+                                    className={isOpen ? 'block' : 'hidden'}
+                                    aria-hidden={!isOpen}
+                                >
+                                    <div className="px-6 pb-6 pt-2 border-t border-white/5">
+                                        <p className="text-white/80 leading-relaxed whitespace-pre-wrap text-sm md:text-base break-keep">
+                                            {q.answer}
+                                        </p>
+                                    </div>
+                                </div>
                             </motion.div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     <motion.div

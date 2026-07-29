@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import { SERVICE_LANDINGS } from "@/lib/seo-service-pages";
 import { NEW_SEO_GUIDES } from "@/lib/seo-guide-pages";
+import { SHOWCASE_SLUGS } from "@/lib/showcase";
 
-const BASE_URL = "https://wow3dp.co.kr";
-
-/** 검색엔진에 노출할 공개 페이지 (우선순위·변경주기 포함) */
+/** 검색엔진에 노출할 공개 페이지 — www 대표 URL만 수록 */
 const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily" | "weekly" | "monthly" }[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/quote", priority: 0.98, changeFrequency: "weekly" },
@@ -21,9 +21,16 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/hardware/3d-printer", priority: 0.85, changeFrequency: "monthly" },
   { path: "/experience", priority: 0.8, changeFrequency: "monthly" },
   { path: "/maker", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/expert", priority: 0.92, changeFrequency: "weekly" },
+  ...SHOWCASE_SLUGS.map((slug) => ({
+    path: `/expert/showcase/${slug}`,
+    priority: 0.9,
+    changeFrequency: "weekly" as const,
+  })),
   { path: "/partnership", priority: 0.75, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.9, changeFrequency: "monthly" },
   { path: "/qna", priority: 0.88, changeFrequency: "weekly" },
+  { path: "/gallery", priority: 0.85, changeFrequency: "weekly" },
   { path: "/guides", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-quote-guide", priority: 0.92, changeFrequency: "weekly" },
   { path: "/guides/fdm-vs-sla-vs-dlp", priority: 0.9, changeFrequency: "weekly" },
@@ -47,7 +54,7 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return PUBLIC_PAGES.map(({ path, priority = 0.8, changeFrequency = "weekly" }) => ({
-    url: `${BASE_URL}${path}`,
+    url: `${SITE_URL}${path === "/" ? "" : path}`,
     lastModified: new Date(),
     changeFrequency,
     priority,

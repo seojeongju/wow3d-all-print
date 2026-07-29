@@ -23,7 +23,7 @@ export function serializeInquiryFileUrls(urls: string[]): string | null {
 }
 
 export function inquiryFilePublicUrl(r2Key: string, inquiryToken?: string | null): string {
-    const base = `https://wow3dp.co.kr/api/files/${r2Key}`;
+    const base = `https://www.wow3dp.co.kr/api/files/${r2Key}`;
     return inquiryToken
         ? `${base}?inquiry_token=${encodeURIComponent(inquiryToken)}`
         : base;

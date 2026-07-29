@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
                     </div>
 
                     <div style="margin-top: 40px; text-align: center;">
-                        <a href="https://wow3dp.co.kr/admin/orders" style="display: inline-block; padding: 14px 28px; background-color: #111111; color: #ffffff; font-size: 13px; font-weight: 800; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">주문 상세 확인하기</a>
+                        <a href="https://www.wow3dp.co.kr/admin/orders" style="display: inline-block; padding: 14px 28px; background-color: #111111; color: #ffffff; font-size: 13px; font-weight: 800; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">주문 상세 확인하기</a>
                     </div>
 
                     <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9; text-align: center;">
@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
                 </div>
             `;
 
-            const textBody = `[새 주문 알림]\n주문번호: ${orderNumber}\n주문자: ${body.recipientName}\n연락처: ${body.recipientPhone}\n금액: ₩${totalAmount.toLocaleString()}\n상세 확인: https://wow3dp.co.kr/admin/orders`;
+            const textBody = `[새 주문 알림]\n주문번호: ${orderNumber}\n주문자: ${body.recipientName}\n연락처: ${body.recipientPhone}\n금액: ₩${totalAmount.toLocaleString()}\n상세 확인: https://www.wow3dp.co.kr/admin/orders`;
 
             await sendEmail({
                 to: adminEmail,

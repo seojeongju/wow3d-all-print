@@ -2,15 +2,15 @@
 
 ## 1. 적용된 SEO 설정 요약
 
-- **메타데이터**: 루트 `app/layout.tsx`에서 title, description, keywords, Open Graph, Twitter Card, canonical, robots 설정
-- **robots.txt**: `app/robots.ts`로 생성 → `/admin/`, `/api/`, `/auth` 등 비공개 경로 차단, sitemap 위치 안내
-- **sitemap.xml**: `app/sitemap.ts`로 생성 → 공개 페이지 목록(메인, 견적, 소재, 하드웨어, 제휴, 문의, 약관 등) 제공
-- **사이트 URL**: `NEXT_PUBLIC_APP_URL`이 없으면 `https://wow3dp.co.kr` 사용
+- **대표 URL**: `https://www.wow3dp.co.kr` (non-www → www 301, canonical·sitemap 통일)
+- **메타데이터**: 루트 `app/layout.tsx` + 페이지별 title/description/canonical
+- **robots.txt**: `app/robots.ts` → `/admin/`, `/api/` 등 비공개 경로 차단
+- **sitemap.xml**: `app/sitemap.ts` → 서비스·가이드·갤러리·전문가 사례 포함
 
-배포 후 다음 URL로 확인하세요.
+배포 후 확인:
 
-- **robots.txt**: https://wow3dp.co.kr/robots.txt  
-- **sitemap**: https://wow3dp.co.kr/sitemap.xml  
+- **robots.txt**: https://www.wow3dp.co.kr/robots.txt
+- **sitemap**: https://www.wow3dp.co.kr/sitemap.xml
 
 ---
 
@@ -18,66 +18,83 @@
 
 ### 2-1. 사이트 등록
 
-1. [네이버 서치어드바이저](https://searchadvisor.naver.com) 로그인 (네이버 계정)
-2. **사이트 요약** → **사이트 추가**
-3. **사이트 URL**에 `https://wow3dp.co.kr` 입력 후 추가
-4. **소유 확인** 방법 선택:
-   - **HTML 태그**: 관리자 페이지 등에 메타 태그 넣기 (Next.js에서는 루트 layout에 추가 가능)
-   - **파일 업로드**: `public/` 폴더에 확인용 HTML 파일 올리기
-   - **DNS**: TXT 레코드 추가 (Cloudflare DNS에서 가능)
+1. [네이버 서치어드바이저](https://searchadvisor.naver.com) 로그인
+2. **사이트 추가** → `https://www.wow3dp.co.kr`
+3. 소유 확인 (HTML 태그 / 파일 / DNS)
 
 ### 2-2. 사이트맵 제출
 
-1. 서치어드바이저에서 해당 사이트 선택
-2. **요청** → **사이트맵 제출**
-3. **사이트맵 URL**에 `https://wow3dp.co.kr/sitemap.xml` 입력 후 제출
+- **요청** → **사이트맵 제출** → `https://www.wow3dp.co.kr/sitemap.xml`
 
-### 2-3. URL 제출 (선택)
+### 2-3. 주요 URL 수집 요청
 
-- **URL 제출** 메뉴에서 중요한 페이지 URL을 직접 제출할 수 있음 (메인, 견적, 문의 등)
+**요청** → **웹 페이지 수집**에서 아래 URL을 우선 제출하세요.
+
+```
+https://www.wow3dp.co.kr/
+https://www.wow3dp.co.kr/quote
+https://www.wow3dp.co.kr/services
+https://www.wow3dp.co.kr/gallery
+https://www.wow3dp.co.kr/expert
+https://www.wow3dp.co.kr/expert/showcase/industrial
+https://www.wow3dp.co.kr/expert/showcase/medical
+https://www.wow3dp.co.kr/expert/showcase/art
+https://www.wow3dp.co.kr/expert/showcase/architecture
+https://www.wow3dp.co.kr/guides
+https://www.wow3dp.co.kr/qna
+https://www.wow3dp.co.kr/contact
+```
+
+서비스 랜딩·가이드는 사이트맵 제출 후 필요 시 개별 수집을 추가합니다.
 
 ---
 
 ## 3. 구글 검색 등록 (Google Search Console)
 
-### 3-1. 속성 추가
+### 3-1. 속성
 
-1. [Google Search Console](https://search.google.com/search-console) 로그인
-2. **속성 추가** → **URL 접두어** 선택
-3. **URL 접두어**에 `https://wow3dp.co.kr` 입력
+1. [Google Search Console](https://search.google.com/search-console)
+2. **URL 접두어** 속성: `https://www.wow3dp.co.kr`
+3. (권장) 기존 apex 속성이 있으면 www 속성으로 이전·통합
 
-### 3-2. 소유권 확인
+### 3-2. 사이트맵
 
-- **HTML 태그**: `<meta name="google-site-verification" content="…" />` 를 사이트에 추가
-- **HTML 파일**: 지정된 파일을 사이트 루트에 업로드 (예: `public/google123.html`)
-- **Google Analytics**: GA 추적 코드가 이미 있으면 선택 가능
-- **DNS**: Cloudflare 등에서 TXT 레코드 추가
+- **Sitemaps** → `sitemap.xml` 제출  
+  (= `https://www.wow3dp.co.kr/sitemap.xml`)
 
-확인 완료 후 Search Console에서 인덱스·검색 현황을 볼 수 있습니다.
+### 3-3. URL 검사 · 색인 생성 요청
 
-### 3-3. 사이트맵 제출
+**URL 검사**에 아래를 넣고 **색인 생성 요청**을 차례로 실행하세요.
 
-1. 해당 속성 선택 → 왼쪽 **색인 생성** → **Sitemaps**
-2. **새 사이트맵 추가**에 `sitemap.xml` 입력 (전체 URL은 `https://wow3dp.co.kr/sitemap.xml`)
-3. **제출** 클릭
+```
+https://www.wow3dp.co.kr/
+https://www.wow3dp.co.kr/quote
+https://www.wow3dp.co.kr/services
+https://www.wow3dp.co.kr/gallery
+https://www.wow3dp.co.kr/expert
+https://www.wow3dp.co.kr/expert/showcase/industrial
+https://www.wow3dp.co.kr/expert/showcase/medical
+https://www.wow3dp.co.kr/expert/showcase/art
+https://www.wow3dp.co.kr/expert/showcase/architecture
+https://www.wow3dp.co.kr/guides
+https://www.wow3dp.co.kr/qna
+```
 
 ---
 
-## 4. 추가 권장 사항
+## 4. 추가 권장
 
-- **OG 이미지**: SNS·검색 미리보기용 이미지. `public/og-image.png` (권장 크기 1200×630) 추가 시 자동 반영됨.
-- **NEXT_PUBLIC_APP_URL**: Cloudflare Workers 환경 변수에 `https://wow3dp.co.kr` 설정 시 canonical·sitemap URL이 일치합니다.
-- **주요 페이지별 메타**: `/quote`, `/materials`, `/contact` 등은 각 layout 또는 page에서 `metadata`로 title/description을 다르게 줄 수 있습니다.
+- Cloudflare `NEXT_PUBLIC_APP_URL` = `https://www.wow3dp.co.kr`
+- apex·www 모두 Worker에 연결해 301이 동작하는지 확인
+- OG 이미지: `public/og-image-v2.jpg` (1200×630)
 
 ---
 
 ## 5. 체크리스트
 
-- [ ] 배포 후 https://wow3dp.co.kr/robots.txt 접속 확인
-- [ ] 배포 후 https://wow3dp.co.kr/sitemap.xml 접속 확인
-- [ ] 네이버 서치어드바이저에 사이트 추가 및 소유 확인
-- [ ] 네이버에서 사이트맵 URL 제출
-- [ ] Google Search Console에 속성 추가 및 소유 확인
-- [ ] 구글에서 Sitemaps에 `sitemap.xml` 제출
-- [ ] (선택) `public/og-image.png` 추가
-- [ ] (선택) Cloudflare에 `NEXT_PUBLIC_APP_URL` = `https://wow3dp.co.kr` 설정
+- [ ] `https://wow3dp.co.kr/` → `https://www.wow3dp.co.kr/` 301 확인
+- [ ] https://www.wow3dp.co.kr/robots.txt
+- [ ] https://www.wow3dp.co.kr/sitemap.xml (서비스·가이드·expert 포함)
+- [ ] 네이버 www 사이트 + 사이트맵 + 주요 URL 수집
+- [ ] Google Search Console www 속성 + 사이트맵 + URL 검사
+- [ ] Cloudflare `NEXT_PUBLIC_APP_URL` = www

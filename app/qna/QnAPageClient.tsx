@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Plus, Minus, Search, MessageSquare, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -85,16 +85,6 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                         </p>
                     </div>
 
-                    {/* AEO: 크롤러·AI가 읽을 수 있는 전체 FAQ (시각적으로 숨김) */}
-                    <section className="sr-only" aria-label="전체 자주 묻는 질문 목록">
-                        {qnas.map((q) => (
-                            <article key={q.id}>
-                                <h2>{q.question}</h2>
-                                <p>{q.answer}</p>
-                            </article>
-                        ))}
-                    </section>
-
                     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
                             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Guide</p>
@@ -155,52 +145,47 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
 
             <div className="space-y-4 min-h-[400px]">
               {currentItems.length > 0 ? (
-                currentItems.map((q) => (
+                currentItems.map((q) => {
+                  const isOpen = openId === q.id
+                  return (
                                     <motion.div
                                         layout
                                         key={q.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         className={`rounded-3xl overflow-hidden transition-all duration-500 border backdrop-blur-3xl ${
-                                            openId === q.id 
+                                            isOpen
                                             ? 'bg-white/[0.05] border-teal-400/30 shadow-2xl shadow-teal-400/5' 
                                             : 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
                                         }`}
                                     >
                                         <button
-                                            onClick={() => setOpenId(openId === q.id ? null : q.id)}
+                                            onClick={() => setOpenId(isOpen ? null : q.id)}
                                             className="w-full px-8 py-8 flex items-center justify-between text-left group"
+                                            aria-expanded={isOpen}
                                         >
                                             <div className="flex flex-col gap-2 mr-6">
                                                 <span className="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em]">
                                                     {CATEGORY_LABELS[q.category] || '일반'}
                                                 </span>
-                                                <span className={`text-lg md:text-xl font-black leading-snug transition-colors ${openId === q.id ? 'text-white' : 'text-white/80 group-hover:text-white'}`}>
+                                                <span className={`text-lg md:text-xl font-black leading-snug transition-colors ${isOpen ? 'text-white' : 'text-white/80 group-hover:text-white'}`}>
                                                     {q.question}
                                                 </span>
                                             </div>
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${openId === q.id ? 'bg-teal-400 text-slate-950 rotate-180 shadow-lg shadow-teal-400/20' : 'bg-white/5 text-white/20 group-hover:text-teal-400 group-hover:bg-teal-400/10'}`}>
-                                                {openId === q.id ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isOpen ? 'bg-teal-400 text-slate-950 rotate-180 shadow-lg shadow-teal-400/20' : 'bg-white/5 text-white/20 group-hover:text-teal-400 group-hover:bg-teal-400/10'}`}>
+                                                {isOpen ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                                             </div>
                                         </button>
-                                        <AnimatePresence>
-                                            {openId === q.id && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                                                >
+                                        <div className={isOpen ? 'block' : 'hidden'} aria-hidden={!isOpen}>
                                                     <div className="px-8 pb-8 pt-4 border-t border-white/5">
                                                         <p className="text-white/40 font-bold leading-relaxed whitespace-pre-wrap text-base md:text-lg break-keep">
                                                             {q.answer}
                                                         </p>
                                                     </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                        </div>
                                     </motion.div>
-                ))
+                  )
+                })
               ) : (
                 <div className="text-center py-20 space-y-4">
                   <p className="text-white/20 text-lg font-bold">검색 결과가 없습니다.</p>

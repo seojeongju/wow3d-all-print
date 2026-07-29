@@ -58,16 +58,6 @@ export default function ServiceLandingPage({ config }: { config: ServiceLandingC
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {config.description}
                     </p>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        {config.keywords.map((kw) => (
-                            <span
-                                key={kw}
-                                className="px-3 py-1.5 rounded-full border border-teal-400/20 bg-teal-400/10 text-[11px] font-bold text-teal-300"
-                            >
-                                {kw}
-                            </span>
-                        ))}
-                    </div>
                     <div className="flex flex-wrap gap-3 pt-4">
                         <Link href={config.primaryCta.href}>
                             <Button className="h-12 px-6 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black gap-2">

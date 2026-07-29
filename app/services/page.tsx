@@ -86,7 +86,7 @@ export default function ServicesHubPage() {
                                 {s.h1} {s.h1Accent}
                             </h2>
                             <p className="text-sm text-white/60 break-keep leading-relaxed">
-                                {s.keywords.join(' · ')}
+                                {s.description}
                             </p>
                         </Link>
                     ))}

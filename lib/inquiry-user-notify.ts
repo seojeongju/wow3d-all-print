@@ -41,7 +41,7 @@ export async function notifyUserInquiryReplied(
         '',
         '추가 문의가 있으시면 이 메일에 「답장」해 주시면 됩니다.',
         '상세한 내용은 WOW3D 홈페이지에서도 확인하실 수 있습니다.',
-        'https://wow3dp.co.kr',
+        'https://www.wow3dp.co.kr',
     ].join('\n');
 
     const htmlBody = `
@@ -83,7 +83,7 @@ export async function notifyUserInquiryReplied(
             </div>
 
             <div style="text-align: center; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 32px;">
-                <a href="https://wow3dp.co.kr" style="display: inline-block; padding: 14px 32px; background: #0f172a; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 12px; transition: background-color 0.2s;">
+                <a href="https://www.wow3dp.co.kr" style="display: inline-block; padding: 14px 32px; background: #0f172a; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 12px; transition: background-color 0.2s;">
                     WOW3D 홈페이지 바로가기
                 </a>
             </div>

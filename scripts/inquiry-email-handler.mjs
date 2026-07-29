@@ -75,7 +75,7 @@ export async function handleInquiryInboundEmail(message, env) {
         return;
     }
 
-    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://wow3dp.co.kr';
+    const baseUrl = env.NEXT_PUBLIC_APP_URL || 'https://www.wow3dp.co.kr';
     const secret = env.INQUIRY_EMAIL_SECRET || env.CRON_SECRET || '';
     if (!secret) {
         console.error('inquiry-email: secret not configured');
