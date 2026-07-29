@@ -92,9 +92,10 @@ https://www.wow3dp.co.kr/qna
 
 ## 5. 체크리스트
 
-- [ ] `https://wow3dp.co.kr/` → `https://www.wow3dp.co.kr/` 301 확인
-- [ ] https://www.wow3dp.co.kr/robots.txt
-- [ ] https://www.wow3dp.co.kr/sitemap.xml (서비스·가이드·expert 포함)
-- [ ] 네이버 www 사이트 + 사이트맵 + 주요 URL 수집
-- [ ] Google Search Console www 속성 + 사이트맵 + URL 검사
-- [ ] Cloudflare `NEXT_PUBLIC_APP_URL` = www
+- [x] `https://wow3dp.co.kr/` → `https://www.wow3dp.co.kr/` 301 확인
+- [x] https://www.wow3dp.co.kr/robots.txt
+- [x] https://www.wow3dp.co.kr/sitemap.xml (서비스·가이드·expert 포함, 약 48 URL)
+- [x] 네이버 www 소유확인 메타 배포 (`a5e68284…`)
+- [ ] 네이버 서치어드바이저: www 소유확인 완료 → 사이트맵 제출 → 주요 URL 수집
+- [ ] Google Search Console: www 속성 → 사이트맵 제출 → URL 검사/색인 요청
+- [ ] Cloudflare `NEXT_PUBLIC_APP_URL` = `https://www.wow3dp.co.kr` (이미 wrangler에 설정됨)
