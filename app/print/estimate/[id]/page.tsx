@@ -7,6 +7,13 @@ import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate, formatNowKoreanDate } from '@/lib/date-utils';
 import { getStoredAdminToken } from '@/lib/client-admin-auth';
 import { normalizeEstimateViewToken } from '@/lib/quotation-view-token';
+import {
+    DEFAULT_SHIPPING_SETTINGS,
+    formatFreeShippingHint,
+    parseShippingSettings,
+    resolveShippingFee,
+    type ShippingSettings,
+} from '@/lib/shipping-settings';
 
 function getPersistedUserToken(): string | null {
     if (typeof window === 'undefined') return null;
@@ -64,6 +71,7 @@ export default function EstimatePrintPage() {
     const [error, setError] = useState('');
     const [errorHint, setErrorHint] = useState('');
     const [company, setCompany] = useState<CompanyInfo>(DEFAULT_COMPANY);
+    const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS);
 
     useEffect(() => {
         if (!id) return;
@@ -74,11 +82,12 @@ export default function EstimatePrintPage() {
                 .then(res => res.json())
                 .then(json => {
                     if (json.success && json.data) {
-                        const { order, items, company: dbCompany } = json.data;
-                        setData({ order, items });
+                        const { order, items, company: dbCompany, shippingSettings: rows } = json.data;
+                        setData({ order, items, shipping_fee: json.data.shipping_fee });
                         if (dbCompany) {
                             setCompany({ ...DEFAULT_COMPANY, ...dbCompany });
                         }
+                        if (rows) setShippingSettings(parseShippingSettings(rows));
                     } else {
                         setError(json.error || '견적 정보를 불러올 수 없습니다.');
                         setErrorHint('이메일로 받으신 최신 견적서 링크를 이용해 주세요. 링크가 동작하지 않으면 발송처에 문의해 주세요.');
@@ -102,11 +111,12 @@ export default function EstimatePrintPage() {
                 .then(res => res.json())
                 .then(json => {
                     if (json.success && json.data) {
-                        const { order, items, company: dbCompany } = json.data;
-                        setData({ order, items });
+                        const { order, items, company: dbCompany, shippingSettings: rows } = json.data;
+                        setData({ order, items, shipping_fee: json.data.shipping_fee });
                         if (dbCompany) {
                             setCompany({ ...DEFAULT_COMPANY, ...dbCompany });
                         }
+                        if (rows) setShippingSettings(parseShippingSettings(rows));
                         setLoading(false);
                         return true;
                     }
@@ -138,6 +148,15 @@ export default function EstimatePrintPage() {
                     })
                     .catch(e => console.warn('Company info load failed', e));
             }
+
+            fetch('/api/settings')
+                .then(r => r.json())
+                .then(json => {
+                    if (json.success && Array.isArray(json.data)) {
+                        setShippingSettings(parseShippingSettings(json.data));
+                    }
+                })
+                .catch(() => {});
 
             if (isTemp) {
                 try {
@@ -226,15 +245,43 @@ export default function EstimatePrintPage() {
 
     const totalAmount = displayItems.reduce((acc: number, item: any) =>
         acc + Math.round(Number(item.unit_price || 0) * Number(item.quantity || 0)), 0);
-    const totalSupply = Math.round(totalAmount / 1.1);
-    const totalVat = totalAmount - totalSupply;
-    const footerLines = company.estimate_footer_note
-        ? company.estimate_footer_note.split('\n').filter(Boolean)
-        : [
-            `본 견적의 유효기간은 견적일로부터 ${company.estimate_valid_days || 14}일입니다.`,
-            '제작 사양 변경 시 견적 금액이 변동될 수 있습니다.',
-            '본 견적서는 귀사의 발주를 위한 기초 자료로 제공됩니다.',
-        ];
+
+    const shippingOverride = useMemo(() => {
+        if (!data) return null;
+        if (data.shipping_fee != null && data.shipping_fee !== '') {
+            const n = Number(data.shipping_fee);
+            return Number.isFinite(n) ? n : null;
+        }
+        const rawExpert = data.order?.expert_quote_data ?? data.order?.expertQuoteData;
+        if (!rawExpert) return null;
+        try {
+            const expert = typeof rawExpert === 'string' ? JSON.parse(rawExpert) : rawExpert;
+            if (expert?.shipping_fee != null && expert.shipping_fee !== '') {
+                const n = Number(expert.shipping_fee);
+                return Number.isFinite(n) ? n : null;
+            }
+        } catch {
+            /* ignore */
+        }
+        return null;
+    }, [data]);
+
+    const shippingFee = resolveShippingFee(totalAmount, shippingSettings, shippingOverride);
+    const grandTotal = totalAmount + shippingFee;
+    const totalSupply = Math.round(grandTotal / 1.1);
+    const totalVat = grandTotal - totalSupply;
+    const footerLines = [
+        ...(company.estimate_footer_note
+            ? company.estimate_footer_note.split('\n').filter(Boolean)
+            : [
+                `본 견적의 유효기간은 견적일로부터 ${company.estimate_valid_days || 14}일입니다.`,
+                '제작 사양 변경 시 견적 금액이 변동될 수 있습니다.',
+                '본 견적서는 귀사의 발주를 위한 기초 자료로 제공됩니다.',
+            ]),
+        shippingFee > 0
+            ? `배송비 ₩${shippingFee.toLocaleString()} 포함 (${formatFreeShippingHint(shippingSettings.freeThreshold)})`
+            : `배송비: 무료 (${formatFreeShippingHint(shippingSettings.freeThreshold)})`,
+    ];
 
     if (loading) return (
         <div className="flex h-screen items-center justify-center">
@@ -380,12 +427,29 @@ export default function EstimatePrintPage() {
                     </div>
 
                     {/* 합계 금액 */}
-                    <div className="print-avoid-break border-b-2 border-black pb-2 mb-6 flex justify-between items-end">
-                        <span className="font-bold text-lg">합계금액 (Supply Price Total)</span>
-                        <span className="text-2xl font-bold">
-                            ₩ {totalAmount.toLocaleString()}
-                            <span className="text-sm font-normal text-slate-600"> (VAT 포함)</span>
-                        </span>
+                    <div className="print-avoid-break border-b-2 border-black pb-2 mb-6 space-y-2">
+                        <div className="flex justify-between items-end text-sm">
+                            <span className="text-slate-600">품목 합계 (VAT 포함)</span>
+                            <span>₩ {totalAmount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-end text-sm">
+                            <span className="text-slate-600">
+                                배송비
+                                {shippingFee > 0 ? (
+                                    <span className="text-xs text-slate-400 ml-2">
+                                        ({formatFreeShippingHint(shippingSettings.freeThreshold)})
+                                    </span>
+                                ) : null}
+                            </span>
+                            <span>{shippingFee === 0 ? '무료' : `₩ ${shippingFee.toLocaleString()}`}</span>
+                        </div>
+                        <div className="flex justify-between items-end pt-1">
+                            <span className="font-bold text-lg">합계금액 (Supply Price Total)</span>
+                            <span className="text-2xl font-bold">
+                                ₩ {grandTotal.toLocaleString()}
+                                <span className="text-sm font-normal text-slate-600"> (VAT 포함)</span>
+                            </span>
+                        </div>
                     </div>
 
                     {/* 품목 리스트 */}
@@ -430,10 +494,29 @@ export default function EstimatePrintPage() {
                         </tbody>
                         <tfoot>
                             <tr className="bg-slate-50 font-bold">
-                                <td className="border border-black p-2 text-center" colSpan={2}>합 계</td>
+                                <td className="border border-black p-2 text-center" colSpan={2}>품목 합계</td>
                                 <td className="border border-black p-2 text-center">
                                     {displayItems.reduce((acc: number, curr: any) => acc + Number(curr.quantity || 0), 0)}
                                 </td>
+                                <td className="border border-black p-2 text-right">-</td>
+                                <td className="border border-black p-2 text-right">
+                                    {Math.round(totalAmount / 1.1).toLocaleString()}
+                                </td>
+                                <td className="border border-black p-2 text-right">
+                                    {(totalAmount - Math.round(totalAmount / 1.1)).toLocaleString()}
+                                </td>
+                            </tr>
+                            <tr className="bg-white">
+                                <td className="border border-black p-2 text-center" colSpan={2}>배송비</td>
+                                <td className="border border-black p-2 text-center">-</td>
+                                <td className="border border-black p-2 text-right">-</td>
+                                <td className="border border-black p-2 text-right" colSpan={2}>
+                                    {shippingFee === 0 ? '무료' : `₩ ${shippingFee.toLocaleString()}`}
+                                </td>
+                            </tr>
+                            <tr className="bg-slate-50 font-bold">
+                                <td className="border border-black p-2 text-center" colSpan={2}>최종 합계</td>
+                                <td className="border border-black p-2 text-center">-</td>
                                 <td className="border border-black p-2 text-right">-</td>
                                 <td className="border border-black p-2 text-right">{totalSupply.toLocaleString()}</td>
                                 <td className="border border-black p-2 text-right">{totalVat.toLocaleString()}</td>

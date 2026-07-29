@@ -85,6 +85,22 @@ export async function GET(
             'SELECT * FROM company_info WHERE store_id = ?'
         ).bind(storeId).first();
 
+        let shippingSettings = [
+            { setting_key: 'shipping_base_fee', setting_value: '3000' },
+            { setting_key: 'shipping_free_threshold', setting_value: '50000' },
+        ];
+        try {
+            const settingsResult = await env.DB.prepare(
+                `SELECT setting_key, setting_value FROM store_settings
+                 WHERE setting_key IN ('shipping_base_fee', 'shipping_free_threshold')`
+            ).all();
+            if (settingsResult.results?.length) {
+                shippingSettings = settingsResult.results as typeof shippingSettings;
+            }
+        } catch {
+            // store_settings 없으면 기본값 유지
+        }
+
         const { view_token, store_id, ...safeOrder } = order;
 
         return NextResponse.json({
@@ -93,6 +109,7 @@ export async function GET(
                 order: safeOrder,
                 items: items || [],
                 company: company || null,
+                shippingSettings,
             },
         });
     } catch (error: any) {
@@ -143,7 +160,7 @@ export async function GET(
                 const { view_token, store_id, ...safeOrder } = order;
                 return NextResponse.json({
                     success: true,
-                    data: { order: safeOrder, items: items || [], company: company || null },
+                    data: { order: safeOrder, items: items || [], company: company || null, shippingSettings: [] },
                 });
             } catch (e2: any) {
                 console.error('GET /api/orders/[id]/estimate retry error:', e2);

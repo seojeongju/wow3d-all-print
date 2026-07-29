@@ -14,6 +14,13 @@ import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft, RotateCcw, Pencil } fr
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatKoreanDate } from '@/lib/date-utils';
+import {
+    DEFAULT_SHIPPING_SETTINGS,
+    formatFreeShippingHint,
+    parseShippingSettings,
+    resolveShippingFee,
+    type ShippingSettings,
+} from '@/lib/shipping-settings';
 
 export default function QuoteEditPage() {
     const { toast } = useToast();
@@ -31,9 +38,21 @@ export default function QuoteEditPage() {
     const [autoRecipient, setAutoRecipient] = useState({ name: '', phone: '', email: '', address: '' });
     const [saving, setSaving] = useState(false);
     const [hasExpertQuote, setHasExpertQuote] = useState(false);
+    const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS);
+    const [shippingFeeOverride, setShippingFeeOverride] = useState<number | null>(null);
+    const [shippingFeeManual, setShippingFeeManual] = useState(false);
 
     useEffect(() => {
         if (!id) return;
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(json => {
+                if (json.success && Array.isArray(json.data)) {
+                    setShippingSettings(parseShippingSettings(json.data));
+                }
+            })
+            .catch(() => {});
+
         fetch(`/api/admin/orders/${id}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
@@ -73,6 +92,10 @@ export default function QuoteEditPage() {
                                 quantity: Number(it.quantity) || 1,
                             })) || []);
                             setRecipient(expertData.recipient || baseRecipient);
+                            if (expertData.shipping_fee != null && Number.isFinite(Number(expertData.shipping_fee))) {
+                                setShippingFeeOverride(Number(expertData.shipping_fee));
+                                setShippingFeeManual(true);
+                            }
                             setHasExpertQuote(true);
                         } catch (e) {
                             setItems(autoItemsMapped);
@@ -110,9 +133,15 @@ export default function QuoteEditPage() {
     };
 
     // 금액 계산 (이미 부가세가 포함된 단가 기준)
-    const totalAmount = items.reduce((acc, it) => {
+    const itemsSubtotal = items.reduce((acc, it) => {
         return acc + (Math.round(Number(it.unit_price) || 0) * Math.round(Number(it.quantity) || 0));
     }, 0);
+    const shippingFee = resolveShippingFee(
+        itemsSubtotal,
+        shippingSettings,
+        shippingFeeManual ? shippingFeeOverride : null
+    );
+    const totalAmount = itemsSubtotal + shippingFee;
     // 합계금액에서 부가세를 역산 (합계 = 공급가 * 1.1)
     const totalSupply = Math.round(totalAmount / 1.1);
     const totalVat = totalAmount - totalSupply;
@@ -131,6 +160,7 @@ export default function QuoteEditPage() {
                     expert_quote_data: {
                         items,
                         recipient,
+                        shipping_fee: shippingFee,
                         total_amount: totalAmount,
                         updated_at: new Date().toISOString()
                     }
@@ -158,6 +188,8 @@ export default function QuoteEditPage() {
         if (confirm('자동견적 원본 데이터로 초기화하시겠습니까?')) {
             setItems(autoItems.map(it => ({ ...it })));
             setRecipient({ ...autoRecipient });
+            setShippingFeeManual(false);
+            setShippingFeeOverride(null);
         }
     };
 
@@ -171,6 +203,13 @@ export default function QuoteEditPage() {
                 guest_email: recipient.email,
                 shipping_address: recipient.address,
                 total_amount: totalAmount,
+                has_expert_quote: true,
+                expert_quote_data: JSON.stringify({
+                    items,
+                    recipient,
+                    shipping_fee: shippingFee,
+                    total_amount: totalAmount,
+                }),
             },
             items: items.map(it => ({
                 id: it.id,
@@ -180,7 +219,8 @@ export default function QuoteEditPage() {
                 quantity: it.quantity,
                 unit_price: Math.round(Number(it.unit_price) || 0),
                 subtotal: Math.round(Number(it.unit_price) || 0) * Number(it.quantity),
-            }))
+            })),
+            shipping_fee: shippingFee,
         };
         localStorage.setItem(`quote_temp_${id}`, JSON.stringify(printData));
         if (token) localStorage.setItem('admin_print_token', token);
@@ -236,15 +276,17 @@ export default function QuoteEditPage() {
                             variant="ghost" size="sm"
                             className="text-white/30 hover:text-white text-xs h-6 px-2"
                             onClick={() => {
-                                const autoTotal = autoItems.reduce((acc, it) => acc + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0);
+                                const autoItemsTotal = autoItems.reduce((acc, it) => acc + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0);
+                                const autoShipping = resolveShippingFee(autoItemsTotal, shippingSettings, null);
                                 const printData = {
-                                    order: { ...orderInfo, total_amount: autoTotal },
+                                    order: { ...orderInfo, total_amount: autoItemsTotal + autoShipping },
                                     items: autoItems.map(it => ({
                                         file_name: it.name, print_method: it.spec, material_name: '',
                                         quantity: it.quantity,
                                         unit_price: Math.round(Number(it.unit_price) || 0),
                                         subtotal: Math.round(Number(it.unit_price) || 0) * Number(it.quantity),
-                                    }))
+                                    })),
+                                    shipping_fee: autoShipping,
                                 };
                                 localStorage.setItem(`quote_temp_${id}`, JSON.stringify(printData));
                                 if (token) localStorage.setItem('admin_print_token', token);
@@ -357,6 +399,41 @@ export default function QuoteEditPage() {
                             <span className="text-white text-sm">{formatKoreanDate(orderInfo.created_at)}</span>
                         </div>
                         <div className="flex justify-between items-center py-2.5 border-b border-white/10">
+                            <span className="text-white/60 text-sm">품목 합계</span>
+                            <span className="text-white font-medium">₩ {itemsSubtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-3">
+                            <div className="min-w-0">
+                                <span className="text-white/60 text-sm block">배송비</span>
+                                <span className="text-[10px] text-white/30">
+                                    {formatFreeShippingHint(shippingSettings.freeThreshold)}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    className="w-28 bg-white/5 border-white/20 text-white text-sm text-right"
+                                    value={shippingFee}
+                                    onChange={(e) => {
+                                        const cleaned = e.target.value.replace(/,/g, '').replace(/[^0-9]/g, '');
+                                        setShippingFeeManual(true);
+                                        setShippingFeeOverride(cleaned === '' ? 0 : Number(cleaned));
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-[10px] text-white/40 hover:text-white h-8 px-2"
+                                    onClick={() => {
+                                        setShippingFeeManual(false);
+                                        setShippingFeeOverride(null);
+                                    }}
+                                >
+                                    자동
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center py-2.5 border-b border-white/10">
                             <span className="text-white/60 text-sm">공급가액</span>
                             <span className="text-white font-medium">₩ {totalSupply.toLocaleString()}</span>
                         </div>
@@ -365,7 +442,7 @@ export default function QuoteEditPage() {
                             <span className="text-white font-medium">₩ {totalVat.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-center pt-4 pb-1">
-                            <span className="text-lg font-bold text-white">합계금액 (VAT포함)</span>
+                            <span className="text-lg font-bold text-white">합계금액 (VAT·배송비 포함)</span>
                             <span className="text-2xl font-bold text-primary">₩ {totalAmount.toLocaleString()}</span>
                         </div>
                     </CardContent>

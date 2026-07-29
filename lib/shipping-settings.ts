@@ -41,6 +41,18 @@ export function calculateShippingFee(subtotal: number, settings: ShippingSetting
     return subtotal >= settings.freeThreshold ? 0 : settings.baseFee
 }
 
+/** 전문가 견적에 명시된 배송비가 있으면 우선, 없으면 상점 설정으로 계산 */
+export function resolveShippingFee(
+    itemsSubtotal: number,
+    settings: ShippingSettings,
+    overrideFee?: number | null
+): number {
+    if (overrideFee != null && Number.isFinite(Number(overrideFee)) && Number(overrideFee) >= 0) {
+        return Number(overrideFee)
+    }
+    return calculateShippingFee(itemsSubtotal, settings)
+}
+
 export function formatKoreanWonShort(amount: number): string {
     if (amount >= 10000 && amount % 10000 === 0) {
         return `${amount / 10000}만원`
