@@ -88,9 +88,6 @@ export default function Header() {
                             WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
                         </span>
                         <span className={`hidden sm:block text-[10px] sm:text-[11px] font-bold leading-tight mt-1 transition-colors truncate ${isPastHero ? 'text-slate-600' : 'text-white/80'}`}>
-                            (주)와우쓰리디
-                        </span>
-                        <span className={`hidden md:block text-[9px] sm:text-[10px] font-medium leading-tight mt-0.5 transition-colors truncate ${isPastHero ? 'text-slate-400' : 'text-white/60'}`}>
                             (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
                         </span>
                     </div>

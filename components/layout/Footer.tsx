@@ -40,9 +40,6 @@ export default function Footer() {
                                     WOW3D<span className="text-teal-400 font-light ml-0.5">PRO</span>
                                 </span>
                                 <span className="text-[10px] font-bold text-white/70 leading-tight mt-1.5">
-                                    (주)와우쓰리디
-                                </span>
-                                <span className="text-[9px] font-medium text-white/45 leading-tight mt-0.5">
                                     (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
                                 </span>
                             </div>
