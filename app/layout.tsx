@@ -73,12 +73,11 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "-9piNXSyjNzl442zz",
-    other: {
-      "naver-site-verification":
-        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION || "a5e68284a983861b03b77e7085666c955007de7a",
-    },
   },
 };
+
+/** 네이버 www 속성 소유확인 — metadata.other 대신 head에 직접 넣어 크롤러가 확실히 읽게 함 */
+const NAVER_SITE_VERIFICATION = "a5e68284a983861b03b77e7085666c955007de7a";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -96,6 +95,9 @@ export default function RootLayout({
 
   return (
     <html lang="ko" className="dark">
+      <head>
+        <meta name="naver-site-verification" content={NAVER_SITE_VERIFICATION} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
