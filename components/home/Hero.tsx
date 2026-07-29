@@ -297,10 +297,10 @@ export default function Hero() {
                         </motion.div>
                     </motion.div>
 
-                    {/* Card 2: AI Quote Analysis */}
+                    {/* Card 2: AI Quote Analysis — 3D 모델 지원 카드와 동일 폭·높이 비율 */}
                     <motion.div
                         style={{ y: y2 }}
-                        className="absolute -left-12 lg:-left-16 xl:left-0 bottom-10 lg:bottom-16 z-20"
+                        className="absolute -left-8 lg:-left-10 xl:left-0 bottom-8 lg:bottom-12 z-20"
                     >
                         <motion.div
                             animate={{ 
@@ -312,22 +312,22 @@ export default function Hero() {
                                 ease: "easeInOut",
                                 delay: 0.5
                             }}
-                            className="w-[240px] lg:w-[260px] xl:w-[280px] min-h-[420px] lg:min-h-[460px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6 lg:p-8 flex flex-col ring-1 ring-white/5"
+                            className="w-[320px] lg:w-[350px] xl:w-[380px] min-h-[440px] lg:min-h-[480px] rounded-[2.5rem] border border-white/10 bg-[#0f172a]/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-8 flex flex-col ring-1 ring-white/5"
                         >
                             <div className="flex items-center gap-4 mb-8">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${file && !analysis ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : analysis ? 'bg-teal-500/10 text-teal-400 shadow-lg shadow-teal-500/5' : 'bg-white/5 text-white/20'}`}>
                                     {file && !analysis ? <Loader2 className="w-7 h-7 animate-spin" /> : <Sparkles className="w-7 h-7" />}
                                 </div>
                                 <div>
-                                    <div className="font-black text-white text-lg tracking-tight">AI 견적 분석</div>
+                                    <div className="font-black text-white text-xl tracking-tight">AI 견적 분석</div>
                                     <div className="text-[11px] text-white/60 font-black uppercase tracking-widest mt-1">
                                         {!file ? 'WAITING...' : !analysis ? 'ANALYZING...' : 'COMPLETED'}
                                     </div>
                                 </div>
                             </div>
-                            <div className="space-y-6 flex-1">
+                            <div className="flex flex-col flex-1 gap-6">
                                 <div className="space-y-3">
-                                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                         <motion.div
                                             className={`h-full rounded-full ${file && !analysis ? 'bg-amber-500/80 animate-pulse' : 'bg-teal-400'}`}
                                             initial={false}
@@ -345,18 +345,21 @@ export default function Hero() {
                                     </div>
                                 </div>
                                 
-                                <div className="p-5 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
+                                <div className="flex-1 flex flex-col justify-center p-6 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm min-h-[120px]">
                                     <div className="text-[10px] text-white/40 mb-3 font-black uppercase tracking-[0.2em]">Estimate (FDM)</div>
-                                    <div className={`text-2xl font-black ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
+                                    <div className={`text-3xl lg:text-4xl font-black tracking-tight ${!file || !analysis || !heroEstimate ? 'text-white/10' : 'text-white'}`}>
                                         {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
                                     </div>
+                                    <p className="mt-3 text-[12px] text-white/45 font-medium break-keep leading-relaxed">
+                                        파일을 올리면 출력성·예상 견적이 여기에 표시됩니다.
+                                    </p>
                                 </div>
 
-                                <div className="space-y-3 pt-2">
+                                <div className="space-y-3 mt-auto pt-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="w-full h-11 rounded-xl border-white/25 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest transition-all"
+                                        className="w-full h-12 rounded-xl border-white/25 bg-white/10 hover:bg-white/20 text-white font-black text-[11px] uppercase tracking-widest transition-all"
                                         onClick={handleTrySample}
                                         disabled={isLoadingSample}
                                     >
