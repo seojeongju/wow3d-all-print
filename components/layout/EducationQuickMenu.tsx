@@ -37,7 +37,7 @@ export default function EducationQuickMenu() {
             }`}
         >
             <motion.a
-                href="https://3dcookiehd.co.kr/"
+                href="https://3dcookiehd.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 onMouseEnter={() => setIsHovered(true)}
