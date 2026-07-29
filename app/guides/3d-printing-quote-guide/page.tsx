@@ -7,12 +7,12 @@ import { ArrowRight, Calculator, Layers, Printer, Clock } from 'lucide-react';
 import { absoluteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
-    title: '3D 프린팅 견적 계산 방식 가이드',
+    title: '3D 프린팅 비용 계산 방법 · 견적 계산 방식 가이드',
     description:
-        '3D 프린팅 견적이 어떻게 계산되는지, FDM·SLA·DLP 방식별 가격과 출력 시간이 어떤 요소에 따라 달라지는지 설명합니다.',
+        '3D프린팅 비용 계산 방법과 견적 산출 기준을 설명합니다. 레이어·인필·소재·후가공이 가격과 시간에 미치는 영향을 정리했습니다.',
     alternates: { canonical: absoluteUrl('/guides/3d-printing-quote-guide') },
     openGraph: {
-        title: '3D 프린팅 견적 계산 방식 가이드',
+        title: '3D프린팅 비용 계산 방법 | 견적 가이드',
         description:
             '3D 프린팅 견적 산출 기준, 레이어 높이, 인필, 소재, 후가공이 가격과 시간에 미치는 영향을 정리했습니다.',
         url: absoluteUrl('/guides/3d-printing-quote-guide'),

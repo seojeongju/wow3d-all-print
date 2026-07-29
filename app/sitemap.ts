@@ -1,11 +1,19 @@
 import type { MetadataRoute } from "next";
+import { SERVICE_LANDINGS } from "@/lib/seo-service-pages";
+import { NEW_SEO_GUIDES } from "@/lib/seo-guide-pages";
 
 const BASE_URL = "https://wow3dp.co.kr";
 
 /** 검색엔진에 노출할 공개 페이지 (우선순위·변경주기 포함) */
 const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily" | "weekly" | "monthly" }[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
-  { path: "/quote", priority: 0.95, changeFrequency: "weekly" },
+  { path: "/quote", priority: 0.98, changeFrequency: "weekly" },
+  { path: "/services", priority: 0.96, changeFrequency: "weekly" },
+  ...SERVICE_LANDINGS.map((s) => ({
+    path: s.path,
+    priority: 0.94,
+    changeFrequency: "weekly" as const,
+  })),
   { path: "/quotes", priority: 0.9, changeFrequency: "weekly" },
   { path: "/print-methods", priority: 0.85, changeFrequency: "monthly" },
   { path: "/materials", priority: 0.85, changeFrequency: "monthly" },
@@ -28,6 +36,11 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/guides/best-materials-for-3d-printed-housings-and-cases", priority: 0.89, changeFrequency: "weekly" },
   { path: "/guides/best-materials-for-heat-resistant-and-impact-resistant-parts", priority: 0.89, changeFrequency: "weekly" },
   { path: "/guides/best-materials-for-miniatures-and-figurines", priority: 0.89, changeFrequency: "weekly" },
+  ...NEW_SEO_GUIDES.map((g) => ({
+    path: g.path,
+    priority: 0.9,
+    changeFrequency: "weekly" as const,
+  })),
   { path: "/privacy", priority: 0.5, changeFrequency: "monthly" },
   { path: "/terms", priority: 0.5, changeFrequency: "monthly" },
 ];

@@ -79,25 +79,25 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
             </p>
           </div>
           <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
+            <Link href="/services" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Services</p>
+              <h3 className="text-xl font-bold mb-3">핵심 전환 서비스</h3>
+              <p className="text-sm text-foreground/65 break-keep">출력대행·시제품·FDM·SLA·졸업작품·소량생산</p>
+            </Link>
             <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Guide</p>
-              <h3 className="text-xl font-bold mb-3">견적 계산 방식</h3>
-              <p className="text-sm text-foreground/65 break-keep">레이어·인필·소재·후가공이 가격에 미치는 영향</p>
+              <h3 className="text-xl font-bold mb-3">비용 계산 방법</h3>
+              <p className="text-sm text-foreground/65 break-keep">레이어·인필·소재가 가격에 미치는 영향</p>
             </Link>
             <Link href="/print-methods" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Compare</p>
               <h3 className="text-xl font-bold mb-3">FDM · SLA · DLP</h3>
               <p className="text-sm text-foreground/65 break-keep">용도별 출력 방식 비교</p>
             </Link>
-            <Link href="/guides/3d-printing-file-preparation" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">File</p>
-              <h3 className="text-xl font-bold mb-3">파일 준비</h3>
-              <p className="text-sm text-foreground/65 break-keep">형식·두께·메쉬·단위 점검</p>
-            </Link>
-            <Link href="/qna" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">FAQ</p>
-              <h3 className="text-xl font-bold mb-3">자주 묻는 질문</h3>
-              <p className="text-sm text-foreground/65 break-keep">제작 기간·파일·견적 답변</p>
+            <Link href="/guides" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Guides</p>
+              <h3 className="text-xl font-bold mb-3">가이드 전체</h3>
+              <p className="text-sm text-foreground/65 break-keep">공차·서포트·STL·졸업작품 체크리스트</p>
             </Link>
           </div>
           <div className="flex justify-center mt-8">

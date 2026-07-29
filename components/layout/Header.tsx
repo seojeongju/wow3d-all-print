@@ -10,9 +10,10 @@ import { useFileStore } from "@/store/useFileStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = [
-    { label: '서비스', href: '/#services' },
-    { label: '기능', href: '/#features' },
-    { label: '공정', href: '/#process' },
+    { label: '서비스', href: '/services' },
+    { label: '자동견적', href: '/quote' },
+    { label: '공정', href: '/print-methods' },
+    { label: '가이드', href: '/guides' },
     { label: '제품소개', href: '/hardware/3d-printer' },
     { label: '제품개발 및 문의', href: '/expert' },
     { label: '주문조회', href: '/my-account' },
@@ -249,8 +250,9 @@ export default function Header() {
                                     >
                                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
                                             {item.label === '서비스' && <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '기능' && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '자동견적' && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                             {item.label === '공정' && <Layers className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            {item.label === '가이드' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                             {item.label === '제품소개' && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                             {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                             {item.label === '주문조회' && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}

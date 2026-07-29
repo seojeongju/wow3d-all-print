@@ -7,9 +7,9 @@ import { ArrowRight } from 'lucide-react';
 import { absoluteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = {
-    title: '3D 프린팅 제작 기간과 납기 안내',
+    title: '시제품 제작 기간 · 3D 프린팅 제작 기간과 납기 안내',
     description:
-        '3D 프린팅 제작 기간은 파일 상태, 출력 방식, 후가공, 수량에 따라 달라집니다. WOW3D의 자동견적부터 제작·검수·배송까지 납기 기준을 안내합니다.',
+        '시제품 제작 기간과 3D 프린팅 납기 기준. 파일 검토, 출력, 후처리, 검수, 배송까지 포함해 평균 3~7일 내 수령 가능 여부를 안내합니다.',
     alternates: { canonical: absoluteUrl('/guides/3d-printing-turnaround-time') },
 };
 

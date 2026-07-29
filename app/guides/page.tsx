@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { absoluteUrl } from '@/lib/site-url';
 import { buildArticleSchema, buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema';
+import { NEW_SEO_GUIDES } from '@/lib/seo-guide-pages';
 
 export const metadata: Metadata = {
     title: '3D 프린팅 가이드 모음',
     description:
-        '3D 프린팅 견적 계산, 출력 방식 비교, 파일 준비, 납기, 소재 비교, 용도별 소재 추천까지 WOW3D의 핵심 가이드를 한곳에 모았습니다.',
+        '3D 프린팅 견적 계산, 가격 절감, FDM·SLA 비교, 인필, STL 오류, 벽 두께, 서포트, 공차, 대형 분할, 졸업작품 체크리스트까지 WOW3D 가이드.',
     alternates: { canonical: absoluteUrl('/guides') },
 };
 
@@ -18,11 +19,31 @@ const guideSections = [
     {
         title: '기본 가이드',
         items: [
-            { href: '/guides/3d-printing-quote-guide', title: '3D 프린팅 견적 계산 방식', desc: '레이어 높이, 인필, 소재, 후가공이 가격과 시간에 미치는 영향' },
-            { href: '/guides/fdm-vs-sla-vs-dlp', title: 'FDM vs SLA vs DLP 비교', desc: '출력 방식 차이와 추천 용도 비교' },
-            { href: '/guides/3d-printing-file-preparation', title: '파일 준비 가이드', desc: '업로드 전 형식, 단위, 메쉬 오류 점검법' },
-            { href: '/guides/3d-printing-turnaround-time', title: '제작 기간과 납기 안내', desc: '출력, 후처리, 검수, 배송까지 걸리는 시간 정리' },
+            { href: '/guides/3d-printing-quote-guide', title: '3D프린팅 비용 계산 방법', desc: '견적 산출 기준과 가격·시간에 영향을 주는 요소' },
+            { href: '/guides/how-to-reduce-3d-printing-cost', title: '3D프린팅 가격을 줄이는 방법', desc: '레이어·인필·서포트·소재로 비용 절감' },
+            { href: '/guides/fdm-vs-sla-vs-dlp', title: 'FDM과 SLA 차이', desc: 'FDM vs SLA vs DLP 출력 방식 비교' },
+            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA와 PETG 차이', desc: 'FDM 주요 필라멘트 비교' },
+            { href: '/guides/3d-printing-file-preparation', title: '파일 준비 가이드', desc: '업로드 전 형식, 단위, 메쉬 오류 점검' },
+            { href: '/guides/3d-printing-turnaround-time', title: '시제품 제작 기간', desc: '출력·후처리·검수·배송 납기 안내' },
         ],
+    },
+    {
+        title: '실무 체크',
+        items: NEW_SEO_GUIDES.filter((g) =>
+            [
+                'choosing-infill-density',
+                'fixing-stl-file-errors',
+                'minimum-wall-thickness',
+                'why-support-costs',
+                '3d-printing-tolerances',
+                'splitting-large-3d-prints',
+                'graduation-project-checklist',
+            ].includes(g.slug)
+        ).map((g) => ({
+            href: g.path,
+            title: g.title,
+            desc: g.description,
+        })),
     },
     {
         title: '소재 비교',
