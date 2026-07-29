@@ -43,7 +43,7 @@ export default function ModelUploadSection() {
                         3D 모델을 업로드하고 <span className="text-teal-400">실시간 견적</span> 받기
                     </h2>
                     <p className="text-white/95 text-lg max-w-2xl mx-auto font-medium">
-                        STL, OBJ, 3MF, PLY, STEP, STP 지원 · 회원가입 없이 견적 확인 가능
+                        STL·OBJ·3MF·PLY 즉시 견적 · STEP·STP 자동 변환 후 견적 · 회원가입 없이 확인 가능
                     </p>
                 </motion.div>
 

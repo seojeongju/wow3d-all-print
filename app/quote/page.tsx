@@ -15,7 +15,7 @@ import type { Quote } from "@/lib/types";
 const quickQuoteFaqs = [
     {
         q: "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
-        a: "일반적으로 STL, OBJ, 3MF 파일이 가장 안정적으로 분석됩니다. 파일 단위와 실제 크기도 함께 확인하면 더 정확한 견적을 받을 수 있습니다.",
+        a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 파일 단위(mm)와 실제 크기도 함께 확인하면 더 정확합니다.",
     },
     {
         q: "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
@@ -247,7 +247,7 @@ function QuoteContent() {
                                                     <span className="text-teal-400">시작하기</span>
                                                 </h1>
                                                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                                                    STL, STEP, OBJ 등 3D 파일을 업로드하세요. <br />
+                                                    STL·OBJ·3MF·PLY는 즉시 견적, STEP·STP는 자동 변환 후 견적을 제공합니다. <br />
                                                     지능형 분석 엔진이 실시간으로 비용을 산출합니다.
                                                 </p>
                                             </div>

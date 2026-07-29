@@ -28,8 +28,8 @@ export default function TurnaroundGuidePage() {
                         <span className="text-teal-400">얼마나 걸리나요?</span>
                     </h1>
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
-                        3D 프린팅 제작 기간은 출력 시간만으로 결정되지 않습니다. 파일 검토, 소재 선택,
-                        후처리, 검수, 배송까지 포함해 실제 납기가 정해집니다.
+                        주문 확정 후 제작·검수·발송을 진행하며, 일반적으로 평균 3~7일 내 수령 가능합니다.
+                        공정·수량·후가공에 따라 달라질 수 있으며, 파일 검토부터 배송까지를 포함해 납기가 정해집니다.
                     </p>
                 </div>
             </section>

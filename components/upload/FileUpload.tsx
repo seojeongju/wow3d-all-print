@@ -114,7 +114,8 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
             </div>
             <h3 className={cn("text-xl font-black mb-2 tracking-tight transition-colors duration-500", isDark ? "text-white/90 group-hover:text-white" : "text-foreground")}>3D 모델 업로드</h3>
             <p className={cn("text-sm mb-6 max-w-xs font-bold leading-relaxed transition-colors duration-500", isDark ? "text-white/40 group-hover:text-white/60" : "text-muted-foreground")}>
-                STL, OBJ, 3MF, STEP 파일을 <br />드래그하거나 <span className="text-teal-400">클릭하여</span> 업로드하세요
+                STL, OBJ, 3MF, PLY, STEP, STP 파일을 <br />드래그하거나 <span className="text-teal-400">클릭하여</span> 업로드하세요<br />
+                <span className="text-[11px] font-medium opacity-80">메쉬 파일은 즉시 견적 · STEP/STP는 자동 변환</span>
             </p>
             <div className={cn("text-[10px] px-4 py-1.5 rounded-full font-black tracking-widest uppercase transition-all duration-500", isDark ? "bg-white/5 text-white/30 border border-white/5 group-hover:border-teal-400/20 group-hover:text-teal-400/60" : "bg-muted text-muted-foreground/60")}>
                 최대 업로드 용량: 100MB

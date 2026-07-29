@@ -20,7 +20,7 @@ const processPaths = [
       {
         icon: FileSearch,
         label: "STEP 1",
-        text: "3D 모델링 파일 준비 (STL/OBJ 등)"
+        text: "3D 파일 준비 (STL·OBJ·3MF·PLY / STEP·STP)"
       },
       {
         icon: UploadCloud,
@@ -76,7 +76,7 @@ const processPaths = [
       {
         icon: FileSearch,
         label: "STEP 1",
-        text: "3D 모델링 파일 준비 (STL/OBJ 등)"
+        text: "3D 파일 준비 (STL·OBJ·3MF·PLY / STEP·STP)"
       },
       {
         icon: Mail,
@@ -112,11 +112,11 @@ export default function QuickProcessSteps() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
-              와우 3D <span className="text-primary italic">3D 프린팅 견적</span> 요청 프로세스
+              파일이 없거나 <span className="text-primary italic">다른 방식</span>으로 견적받기
             </h2>
             <p className="text-lg text-foreground/60 max-w-2xl mx-auto break-keep leading-relaxed">
-              상황에 맞는 최적의 경로로 빠르게 견적을 받아보세요.<br className="hidden md:block" />
-              전문 설계 서비스부터 자동 실시간 견적까지 지원합니다.
+              자동견적 외에 모델링 의뢰·이메일 견적도 가능합니다.<br className="hidden md:block" />
+              먼저 파일이 있다면 위의 업로드 경로를 이용해 주세요.
             </p>
           </motion.div>
         </div>

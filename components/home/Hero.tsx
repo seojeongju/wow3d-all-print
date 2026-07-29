@@ -167,8 +167,8 @@ export default function Hero() {
                     </h1>
 
                     <p className="text-base sm:text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed break-keep font-medium">
-                        STL·OBJ·3MF 파일 업로드만으로 <span className="text-teal-400 font-bold">실시간 자동견적</span>을 즉시 확인하세요.<br className="hidden sm:block" />
-                        3D프린팅 출력 부터 시제품제작까지 (주)와우쓰리디가 함께합니다.
+                        파일 업로드 → 가격·제작기간 확인 → 주문·결제.<br className="hidden sm:block" />
+                        STL·OBJ·3MF·PLY는 즉시 <span className="text-teal-400 font-bold">자동견적</span>, STEP·STP는 업로드 시 자동 변환합니다.
                     </p>
 
                     {/* 모바일 전용 AI 견적 정보 카드 (Hidden on Desktop) */}
@@ -255,7 +255,7 @@ export default function Hero() {
                             <div className="relative p-8 pb-6 border-b border-white/5">
                                 <h3 className="text-xl font-black text-white tracking-tight mb-2">3D 모델 지원</h3>
                                 <p className="text-[13px] font-bold text-white/60 leading-relaxed break-keep">
-                                    STL, OBJ, 3MF, PLY, STEP, STP를 업로드하면 AI가 부피·표면적을 분석해 실시간 견적을 제공합니다.
+                                    STL·OBJ·3MF·PLY는 즉시 자동견적, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다.
                                 </p>
                                 <div className="mt-5 flex flex-wrap gap-2">
                                     {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (

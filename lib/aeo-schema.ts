@@ -17,17 +17,17 @@ export function buildFaqPageSchema(items: QnAItem[], pagePath = '/qna') {
     };
 }
 
-/** 3D 프린팅 견적 요청 4단계 (홈 ProcessSection과 동일) */
+/** 3D 프린팅 견적 요청 3단계 (홈 CoreJourneySection과 동일) */
 export function buildQuoteHowToSchema() {
     return {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
         name: '와우쓰리디 3D 프린팅 견적 받는 방법',
         description:
-            'STL·OBJ·3MF 파일을 업로드하고 출력 옵션을 선택한 뒤 주문·결제까지 진행하는 3D 프린팅 견적·주문 절차입니다.',
+            '파일 업로드 자동견적 → 가격·예상 제작기간 확인 → 주문·결제로 진행하는 3D 프린팅 견적·주문 절차입니다.',
         totalTime: 'PT10M',
         supply: [
-            { '@type': 'HowToSupply', name: '3D 모델 파일 (STL, OBJ, 3MF, PLY 등)' },
+            { '@type': 'HowToSupply', name: '3D 모델 파일 (STL, OBJ, 3MF, PLY, STEP, STP)' },
         ],
         tool: [
             { '@type': 'HowToTool', name: '와우쓰리디 웹 자동견적 시스템' },
@@ -36,30 +36,23 @@ export function buildQuoteHowToSchema() {
             {
                 '@type': 'HowToStep',
                 position: 1,
-                name: '파일 업로드 및 분석',
-                text: 'STL·OBJ·3MF·PLY 파일을 업로드하면 부피·표면적·치수가 자동 분석됩니다. 3D 뷰어에서 확인 후 견적 단계로 진행합니다.',
+                name: '파일 업로드 · 자동견적',
+                text: 'STL·OBJ·3MF·PLY는 즉시 자동견적, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다.',
                 url: absoluteUrl('/quote'),
             },
             {
                 '@type': 'HowToStep',
                 position: 2,
-                name: '견적 및 옵션 선택',
-                text: '출력 방식(FDM·SLA·DLP), 소재, 내부 채움·레이어 두께를 선택하면 가격이 실시간 반영됩니다.',
+                name: '가격 · 예상 제작기간 확인',
+                text: '소재·출력 방식을 선택하면 가격이 실시간으로 반영됩니다. 검수·후처리 후 포장하여 발송하며, 평균 3~7일 내 수령 가능합니다.',
                 url: absoluteUrl('/quote'),
             },
             {
                 '@type': 'HowToStep',
                 position: 3,
-                name: '주문 및 결제',
-                text: '배송지·수령인·연락처를 입력하고 결제를 완료하면 주문이 접수됩니다.',
-                url: absoluteUrl('/quotes'),
-            },
-            {
-                '@type': 'HowToStep',
-                position: 4,
-                name: '제작·검수·배송',
-                text: '주문 확정 후 산업용 프린터로 제작이 시작되며, 검수·후처리 후 발송됩니다. 평균 3~7일 내 수령 가능합니다.',
-                url: SITE_URL,
+                name: '주문 · 결제',
+                text: '배송 정보를 입력하고 결제하면 주문이 접수됩니다. 이후 제작·검수·발송이 진행됩니다.',
+                url: absoluteUrl('/checkout'),
             },
         ],
     };

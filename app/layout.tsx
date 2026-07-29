@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     template: "%s | (주)와우쓰리디 WOW3D",
   },
   description:
-    "3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. AI 자동견적으로 실시간 가격 확인 및 STL 파일 업로드 주문 서비스.",
+    "3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환 후 견적.",
   keywords: [
     "와우쓰리디",
     "WOW3D",
