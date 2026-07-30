@@ -256,6 +256,7 @@
 4. 체계적으로 어긋나면 `FDM_SHELL_THICKNESS_MM` 또는 `print-time-estimate` 계수 조정
 5. FDM 견적 저장 시 `/api/quotes`는 서버 재계산값(`pricingSource: server`)을 우선 저장
 6. SLA/DLP도 동일하게 서버 재계산 후 저장 (후가공·레이어 두께·레진 단가 반영)
+7. **주문 생성** (`POST /api/orders`): `quotes.total_price`를 DB에서 읽어 단가 확정. 클라이언트 `cartItems.totalPrice`는 사용하지 않음. 장바구니 소유권(cart JOIN) 검증 포함
 
 ### 레진(SLA/DLP) 캘리브레이션 체크리스트
 

@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, requireAuthOrGuest, generateOrderNumber } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
+import { resolveOrderLinesFromDb } from '@/lib/resolve-order-quote-prices';
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
 import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
 
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 사전 검증: quoteId가 유효한 주문 항목만 허용
-        const validCartItems = (body.cartItems as any[]).filter((item) => {
+        const validCartItems = (body.cartItems as Array<{ quoteId?: unknown; quantity?: unknown; totalPrice?: unknown }>).filter((item) => {
             const quoteId = Number(item?.quoteId);
             return Number.isInteger(quoteId) && quoteId > 0;
         });
@@ -143,30 +144,26 @@ export async function POST(request: NextRequest) {
             return errorResponse('유효한 주문 항목이 없습니다. 장바구니를 다시 확인해 주세요.', 400);
         }
 
-        const orderNumber = generateOrderNumber();
-        const totalAmount = normalizeAmountBeforeSave(
-            validCartItems.reduce((sum: number, item: any) => {
-                const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
-                const qty = Math.max(1, Number(item.quantity) || 1);
-                return sum + unitPrice * qty;
-            }, 0)
+        const isGuest = auth.isGuest;
+        const resolved = await resolveOrderLinesFromDb(
+            env.DB,
+            validCartItems.map((item) => ({
+                quoteId: Number(item.quoteId),
+                quantity: Number(item.quantity),
+                totalPrice: item.totalPrice != null ? Number(item.totalPrice) : undefined,
+            })),
+            {
+                isGuest,
+                userId: isGuest ? undefined : auth.userId,
+                sessionId: isGuest ? auth.sessionId : undefined,
+            }
         );
-
-        // [추가] 사전 검증: 모든 quoteId가 유효한지 확인
-        const itemIds = [...new Set(validCartItems.map((i: any) => Number(i.quoteId)))];
-        const checkQuotes = await env.DB.prepare(
-            `SELECT id FROM quotes WHERE id IN (${itemIds.map(() => '?').join(',')})`
-        ).bind(...itemIds).all();
-        
-        const existingQuoteIds = new Set((checkQuotes.results || []).map((q: any) => q.id));
-        const missingIds = itemIds.filter((id: number) => !existingQuoteIds.has(id));
-        
-        if (missingIds.length > 0) {
-            console.error('존재하지 않는 견적 참조 시도:', missingIds);
-            return errorResponse(`일부 견적 정보(${missingIds.join(', ')})가 소실되어 주문을 진행할 수 없습니다. 다시 견적을 내주세요.`, 400);
+        if (!resolved.ok) {
+            return errorResponse(resolved.error, resolved.status);
         }
 
-        const isGuest = auth.isGuest;
+        const orderNumber = generateOrderNumber();
+        const totalAmount = normalizeAmountBeforeSave(resolved.totalAmount);
         const viewToken = crypto.randomUUID();
         const orderResult = await env.DB
             .prepare(`
@@ -199,21 +196,18 @@ export async function POST(request: NextRequest) {
 
         const statements = [];
 
-        // 1. 주문 항목 삽입
-        for (const item of validCartItems) {
-            const qty = Math.max(1, Number(item.quantity) || 1);
-            const unitPrice = normalizeAmountBeforeSave(item.totalPrice);
-            const subtotal = unitPrice * qty;
+        // 1. 주문 항목 삽입 (단가 = quotes.total_price)
+        for (const line of resolved.lines) {
             statements.push(
                 env.DB.prepare(`
                     INSERT INTO order_items (order_id, quote_id, quantity, unit_price, subtotal)
                     VALUES (?, ?, ?, ?, ?)
-                `).bind(orderId, item.quoteId, qty, unitPrice, subtotal)
+                `).bind(orderId, line.quoteId, line.quantity, line.unitPrice, line.subtotal)
             );
         }
 
         // 2. 장바구니 삭제
-        const quoteIds = [...new Set(validCartItems.map((x: any) => Number(x.quoteId)))];
+        const quoteIds = [...new Set(resolved.lines.map((l) => l.quoteId))];
         if (quoteIds.length > 0) {
             const placeholders = quoteIds.map(() => '?').join(',');
             if (isGuest) {
