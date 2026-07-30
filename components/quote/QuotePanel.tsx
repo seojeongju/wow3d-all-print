@@ -17,7 +17,12 @@ import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import type { Quote, QuoteData } from '@/lib/types'
 import {
-    estimateFdmPrintTimeHours,
+    calculateFdmQuote,
+    FDM_INFILL_DEFAULT,
+    FDM_INFILL_MAX,
+    FDM_INFILL_MIN,
+} from '@/lib/fdm-quote'
+import {
     estimateResinPrintTimeHours,
     formatEstimatedPrintTime,
 } from '@/lib/print-time-estimate'
@@ -106,7 +111,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
 
     // FDM Options (fdmMaterial = 소재 이름, API와 연동)
     const [fdmMaterial, setFdmMaterial] = useState('')
-    const [infill, setInfill] = useState(20)
+    const [infill, setInfill] = useState(FDM_INFILL_DEFAULT)
     const [layerHeight, setLayerHeight] = useState(0.2) // mm
     const [supportEnabled, setSupportEnabled] = useState(true)
 
@@ -202,78 +207,77 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             const mat = materials.find((m) => m.type === 'FDM' && m.name === fdmMaterial)
             const density = mat?.density ?? 1.24
             const pricePerGramKr = mat ? (Number(mat.price_per_gram) || 0) : 0
-            const effectiveDensity = density * (infill / 100)
-            const adjustedDensity = Math.max(density * 0.2, effectiveDensity)
-            const weightGrams = volumeCm3 * adjustedDensity
-            const materialCost = pricePerGramKr * weightGrams
 
-            // 공통 모듈: 부피·표면 시간에 레이어 속도 보정(0.2mm 기준) 적용
-            const timeEst = estimateFdmPrintTimeHours({
-                weightGrams,
-                heightMm,
+            const q = calculateFdmQuote({
+                volumeCm3,
                 surfaceAreaCm2,
+                heightMm,
+                density,
+                pricePerGramKr,
+                infillPercent: infill,
                 layerHeightMm: layerHeight,
+                supportEnabled,
+                overhangAreaCm2: overhangAreaRaw,
+                hourlyRateKr: rateKRW,
+                fdmLaborCostKrw: fdmSpec?.fdm_labor_cost_krw,
+                fdmSupportPerCm2Krw: fdmSpec?.fdm_support_per_cm2_krw,
                 fdmLayerHoursFactor: fdmSpec?.fdm_layer_hours_factor,
+                applyVat: false,
             })
-            const numLayers = timeEst.numLayers
-            const estTimeHours = timeEst.hours
 
-            // 비용 계산 (볼륨 디스카운트: 5h+ 10%, 10h+ 15%)
-            const supportPerCm2Kr = fdmSpec?.fdm_support_per_cm2_krw ?? 26
-            const supportTargetArea = (overhangAreaRaw !== undefined) ? overhangAreaRaw : (surfaceAreaCm2 * 0.3)
-            const supportCost = supportEnabled ? supportPerCm2Kr * supportTargetArea : 0
-            const laborKr = fdmSpec?.fdm_labor_cost_krw ?? 6500
-            const laborCost = laborKr
-            const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
-            const machineCost = estTimeHours * effectiveRate
             return {
-                total: materialCost + supportCost + machineCost + laborCost,
-                time: estTimeHours,
-                numLayers,
-                materialAmount: weightGrams,
+                total: q.subtotal,
+                time: q.timeHours,
+                numLayers: q.numLayers,
+                materialAmount: q.weightGrams,
                 materialUnit: 'g' as const,
                 materialName: (mat?.name ?? fdmMaterial) || '-',
-                costBreakdown: { material: materialCost, other: supportCost, machine: machineCost, labor: laborCost },
+                costBreakdown: {
+                    material: q.costBreakdown.material,
+                    other: q.costBreakdown.support,
+                    machine: q.costBreakdown.machine,
+                    labor: q.costBreakdown.labor,
+                },
             }
-        } else {
-            const mat = materials.find((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA') && m.name === resinType)
-            const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
-            const volumeML = volumeCm3
-            const resinCost = pricePerMlKr * volumeML
-            const layerExp = printMethod === 'dlp'
-                ? (printSpecs?.dlp?.dlp_layer_exposure_sec ?? 3)
-                : (printSpecs?.sla?.sla_layer_exposure_sec ?? 8)
-            const timeEst = estimateResinPrintTimeHours({
-                heightMm,
-                layerHeightMm: slaLayerHeight,
-                layerExposureSec: layerExp,
-            })
-            const numLayers = timeEst.numLayers
-            const estTimeHours = timeEst.hours
-            const consKr = printMethod === 'dlp'
-                ? (printSpecs?.dlp?.dlp_consumables_krw ?? 3900)
-                : (printSpecs?.sla?.sla_consumables_krw ?? 3900)
-            const postKr = printMethod === 'dlp'
-                ? (printSpecs?.dlp?.dlp_post_process_krw ?? 10400)
-                : (printSpecs?.sla?.sla_post_process_krw ?? 10400)
-            const consumablesCost = consKr
-            const postProcessCost = postProcessing ? postKr : 0
-            const laborKr = printMethod === 'dlp'
-                ? (printSpecs?.dlp?.dlp_labor_cost_krw ?? 9100)
-                : (printSpecs?.sla?.sla_labor_cost_krw ?? 9100)
-            const laborCost = laborKr
-            const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
-            const machineCost = estTimeHours * effectiveRate
-            const otherCost = consumablesCost + postProcessCost
-            return {
-                total: resinCost + otherCost + machineCost + laborCost,
-                time: estTimeHours,
-                numLayers,
-                materialAmount: volumeML,
-                materialUnit: 'mL' as const,
-                materialName: (mat?.name ?? resinType) || '-',
-                costBreakdown: { material: resinCost, other: otherCost, machine: machineCost, labor: laborCost },
-            }
+        }
+
+        const mat = materials.find((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA') && m.name === resinType)
+        const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
+        const volumeML = volumeCm3
+        const resinCost = pricePerMlKr * volumeML
+        const layerExp = printMethod === 'dlp'
+            ? (printSpecs?.dlp?.dlp_layer_exposure_sec ?? 3)
+            : (printSpecs?.sla?.sla_layer_exposure_sec ?? 8)
+        const timeEst = estimateResinPrintTimeHours({
+            heightMm,
+            layerHeightMm: slaLayerHeight,
+            layerExposureSec: layerExp,
+        })
+        const numLayers = timeEst.numLayers
+        const estTimeHours = timeEst.hours
+        const consKr = printMethod === 'dlp'
+            ? (printSpecs?.dlp?.dlp_consumables_krw ?? 3900)
+            : (printSpecs?.sla?.sla_consumables_krw ?? 3900)
+        const postKr = printMethod === 'dlp'
+            ? (printSpecs?.dlp?.dlp_post_process_krw ?? 10400)
+            : (printSpecs?.sla?.sla_post_process_krw ?? 10400)
+        const consumablesCost = consKr
+        const postProcessCost = postProcessing ? postKr : 0
+        const laborKr = printMethod === 'dlp'
+            ? (printSpecs?.dlp?.dlp_labor_cost_krw ?? 9100)
+            : (printSpecs?.sla?.sla_labor_cost_krw ?? 9100)
+        const laborCost = laborKr
+        const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
+        const machineCost = estTimeHours * effectiveRate
+        const otherCost = consumablesCost + postProcessCost
+        return {
+            total: resinCost + otherCost + machineCost + laborCost,
+            time: estTimeHours,
+            numLayers,
+            materialAmount: volumeML,
+            materialUnit: 'mL' as const,
+            materialName: (mat?.name ?? resinType) || '-',
+            costBreakdown: { material: resinCost, other: otherCost, machine: machineCost, labor: laborCost },
         }
     }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, surfaceAreaCm2, volumeCm3])
 
@@ -610,12 +614,17 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                                 <div className="px-1">
                                     <input
                                         type="range"
-                                        min="10" max="100" step="10"
+                                        min={FDM_INFILL_MIN}
+                                        max={FDM_INFILL_MAX}
+                                        step="10"
                                         value={infill}
                                         onChange={(e) => setInfill(Number(e.target.value))}
                                         className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-teal-400"
                                     />
                                 </div>
+                                <p className="px-1 text-[11px] text-white/45 font-medium leading-relaxed break-keep">
+                                    인필이 높을수록 재료 사용량·출력 시간·견적이 증가합니다. 외관 확인은 {FDM_INFILL_DEFAULT}% 전후, 기능·강도 부품은 40~100%를 권장합니다.
+                                </p>
                             </div>
 
                             <div className="space-y-4">

@@ -1,8 +1,8 @@
 /**
  * FDM / SLA / DLP 출력 시간 산출 (견적·히어로·관리자 시뮬 공통)
  *
- * FDM: 부피·표면 시간에 레이어 높이 속도 보정(speedModifier)을 적용해
- * 0.1 / 0.2 / 0.3mm 선택이 실제 슬라이서처럼 차별화되도록 함.
+ * FDM: weightGrams(쉘+인필 반영, lib/fdm-quote)로 volumeTime 산출.
+ * 레이어 높이 속도 보정(speedModifier)으로 0.1/0.2/0.3mm 차별화.
  * 기준 레이어 = 0.2mm (speedModifier = (0.2 / layer)^alpha)
  */
 
@@ -43,8 +43,12 @@ export type FdmTimeEstimateInput = {
     fdmLayerHoursFactor?: number
     /** 기본 1. 과하면 0.85 권장 */
     layerSpeedAlpha?: number
+    /**
+     * 인필 %(10~100). 견적 모듈에서 무게 산출에 이미 반영됨.
+     * 시간식은 weightGrams(쉘+인필 무게)를 사용하므로 별도 배율은 두지 않음.
+     */
+    infillPercent?: number
 }
-
 export type FdmTimeEstimateResult = {
     hours: number
     numLayers: number

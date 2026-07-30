@@ -66,19 +66,23 @@
 
 ```
 총 견적금액 = 재료비 + 지지구조비 + 장비비 + 인건비
+(+ QuotePanel: 최소견적 적용 후 VAT 10% + 100원 반올림)
 
-구현 위치: lib/print-time-estimate.ts (QuotePanel / Hero / PricingCalculator 공통)
+구현 위치: lib/fdm-quote.ts (QuotePanel / Hero / PricingCalculator 공통)
+시간: lib/print-time-estimate.ts
 
-1. 재료비 (Material Cost)
-   effectiveDensity = density × (infill / 100)
-   adjustedDensity = max(density × 0.2, effectiveDensity)
-   weightGrams = volumeCm3 × adjustedDensity
+1. 재료비 (Material Cost) — 쉘 + 인필 분리
+   shellThicknessMm = 0.8  (대략 perimeter 2줄)
+   shellVolCm3 = min(volumeCm3, surfaceAreaCm2 × shellThicknessMm/10)
+   infillVolCm3 = max(0, volumeCm3 − shellVolCm3)
+   weightGrams = shellVol×density + infillVol×density×(infill/100)
    materialCost = pricePerGram × weightGrams
+   ※ 인필 범위 10~100% (기본 20%). 구 density×0.2 floor는 제거 → 10%도 실제 반영
 
 2. 지지구조비 (Support Cost)
    supportEnabled ? fdm_support_per_cm2_krw × (overhangArea 또는 surfaceArea×0.3) : 0
 
-3. 출력 시간 (estTimeHours)  ← 레이어 높이 반영
+3. 출력 시간 (estTimeHours)  ← 레이어 높이 + 인필 반영 무게
    refLayer = 0.2 mm
    speedModifier = (refLayer / layerHeight) ^ alpha   // alpha 기본 1
    numLayers = ceil(heightMm / layerHeight)
@@ -86,9 +90,7 @@
    movementTime = numLayers × (fdm_layer_hours_factor × 0.08)
    surfaceTime  = (surfaceAreaCm2 + 1)^0.8 × 0.00126 × speedModifier
    estTimeHours = max(0.5, volumeTime + movementTime + surfaceTime)
-
-   ※ 0.1mm → speedModifier=2, 0.2mm → 1, 0.3mm → ≈0.67
-   ※ 체감이 과하면 layerSpeedAlpha=0.85 등으로 완화 가능
+   ※ 인필↑ → weightGrams↑ → volumeTime↑ (간접)
 
 4. 장비비 (Machine Cost)
    machineRate = layerCosts[layerHeight] 또는 hourlyRate
@@ -228,7 +230,7 @@
 
 2. **레이어별 시간당 비용**: 레이어 두께가 얇을수록 정밀도는 높지만 시간이 오래 걸리므로, 시간당 비용을 높게 설정하는 것이 일반적입니다.
 
-3. **Infill 밀도**: FDM에서 infill이 낮을수록 재료 사용량이 줄어들지만, 최소 20% 밀도는 유지해야 구조적 안정성을 확보할 수 있습니다.
+3. **Infill 밀도**: FDM에서 인필이 낮을수록 내부 재료·시간이 줄어듭니다. 외벽(쉘)은 인필과 무관하게 반영되며, UI 최소는 10%(권장 기본 20%)입니다.
 
 4. **지지 구조**: 복잡한 형상의 경우 지지 구조가 필요하며, 이는 표면적에 비례하여 비용이 증가합니다.
 

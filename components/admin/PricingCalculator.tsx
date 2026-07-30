@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Calculator, TrendingUp, AlertCircle, Info, Target } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { estimateFdmPrintTimeHours, estimateResinPrintTimeHours } from '@/lib/print-time-estimate'
+import { calculateFdmQuote, FDM_INFILL_DEFAULT, FDM_INFILL_MAX, FDM_INFILL_MIN } from '@/lib/fdm-quote'
+import { estimateResinPrintTimeHours } from '@/lib/print-time-estimate'
 
 type CalcParams = {
     // 모델 정보
@@ -74,7 +75,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         volumeCm3: 10,
         surfaceAreaCm2: 50,
         heightMm: 50,
-        fdm_infill: 20,
+        fdm_infill: FDM_INFILL_DEFAULT,
         fdm_layer_height: 0.2,
         fdm_support_enabled: true,
         fdm_material_price_per_gram: 50,
@@ -87,51 +88,44 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         dlp_post_processing: true,
     })
 
-    // FDM 계산
+    // FDM 계산 — QuotePanel과 동일 모듈 (쉘+인필, 지지면적 surface×0.3)
     const fdmCalc = useMemo(() => {
         const ep = equipmentParams.fdm
         if (!ep) return null
 
-        const effectiveDensity = params.fdm_material_density * (params.fdm_infill / 100)
-        const adjustedDensity = Math.max(params.fdm_material_density * 0.2, effectiveDensity)
-        const weightGrams = params.volumeCm3 * adjustedDensity
-        const materialCost = params.fdm_material_price_per_gram * weightGrams
-
-        const timeEst = estimateFdmPrintTimeHours({
-            weightGrams,
-            heightMm: params.heightMm,
-            surfaceAreaCm2: params.surfaceAreaCm2,
-            layerHeightMm: params.fdm_layer_height,
-            fdmLayerHoursFactor: ep.fdm_layer_hours_factor,
-        })
-        const numLayers = timeEst.numLayers
-        const estTimeHours = timeEst.hours
-
-
-        const supportCost = params.fdm_support_enabled
-            ? ep.fdm_support_per_cm2_krw * params.surfaceAreaCm2
-            : 0
-
-        const laborCost = ep.fdm_labor_cost_krw
-
         const machineRate = ep.layer_costs[String(params.fdm_layer_height)]
             ?? ep.hourly_rate
-        const effectiveRate = estTimeHours > 10 ? machineRate * 0.7 : estTimeHours > 5 ? machineRate * 0.8 : machineRate
-        const machineCost = estTimeHours * effectiveRate
 
-        const total = materialCost + supportCost + machineCost + laborCost
+        const q = calculateFdmQuote({
+            volumeCm3: params.volumeCm3,
+            surfaceAreaCm2: params.surfaceAreaCm2,
+            heightMm: params.heightMm,
+            density: params.fdm_material_density,
+            pricePerGramKr: params.fdm_material_price_per_gram,
+            infillPercent: params.fdm_infill,
+            layerHeightMm: params.fdm_layer_height,
+            supportEnabled: params.fdm_support_enabled,
+            overhangAreaCm2: null,
+            hourlyRateKr: machineRate,
+            fdmLaborCostKrw: ep.fdm_labor_cost_krw,
+            fdmSupportPerCm2Krw: ep.fdm_support_per_cm2_krw,
+            fdmLayerHoursFactor: ep.fdm_layer_hours_factor,
+            applyVat: false,
+        })
 
         return {
-            materialCost,
-            supportCost,
-            machineCost,
-            laborCost,
-            total,
-            timeHours: estTimeHours,
-            numLayers,
-            weightGrams,
+            weightGrams: q.weightGrams,
+            materialCost: q.costBreakdown.material,
+            numLayers: q.numLayers,
+            timeHours: q.timeHours,
+            supportCost: q.costBreakdown.support,
+            laborCost: q.costBreakdown.labor,
+            machineCost: q.costBreakdown.machine,
+            total: q.subtotal,
+            shellVolCm3: q.shellVolCm3,
+            infillVolCm3: q.infillVolCm3,
         }
-    }, [equipmentParams.fdm, params])
+    }, [params, equipmentParams.fdm])
 
     // SLA 계산
     const slaCalc = useMemo(() => {
@@ -328,12 +322,21 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                     <TabsContent value="fdm" className="space-y-4 mt-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label className="text-[10px] text-white/50">Infill (%)</Label>
+                                <Label className="text-[10px] text-white/50">Infill (%) — {FDM_INFILL_MIN}~{FDM_INFILL_MAX}</Label>
                                 <Input
                                     type="number"
+                                    min={FDM_INFILL_MIN}
+                                    max={FDM_INFILL_MAX}
+                                    step={10}
                                     className="mt-1 bg-white/5 border-white/10 text-white"
                                     value={params.fdm_infill}
-                                    onChange={(e) => setParams({ ...params, fdm_infill: parseFloat(e.target.value) || 0 })}
+                                    onChange={(e) => {
+                                        const n = parseFloat(e.target.value)
+                                        const clamped = Number.isFinite(n)
+                                            ? Math.min(FDM_INFILL_MAX, Math.max(FDM_INFILL_MIN, n))
+                                            : FDM_INFILL_DEFAULT
+                                        setParams({ ...params, fdm_infill: clamped })
+                                    }}
                                 />
                             </div>
                             <div>

@@ -11,8 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import LandingHeroScene from './LandingHeroScene';
 
 // 금액은 원화(KRW)로만 계산·표시. 자동견적(QuotePanel)과 동일한 공식·roundTo100·minPriceKr 적용
-import { roundTo100 } from '@/lib/amount-display';
-import { estimateFdmPrintTimeHours } from '@/lib/print-time-estimate';
+import {
+    calculateFdmQuote,
+    FDM_INFILL_DEFAULT,
+} from '@/lib/fdm-quote';
 
 type PrintSpecs = {
     fdm?: {
@@ -58,34 +60,37 @@ export default function Hero() {
         const mat = materials.find((m) => m.type === 'FDM');
         const density = mat?.density ?? 1.24;
         const pricePerGramKr = mat && typeof mat.price_per_gram === 'number' ? mat.price_per_gram : 0;
-        const infill = 20;
-        const effectiveDensity = density * (infill / 100);
-        const adjustedDensity = Math.max(density * 0.2, effectiveDensity);
         const volumeCm3 = analysis.volume || 0;
         const surfaceAreaCm2 = analysis.surfaceArea || 0;
         const heightMm = bz;
-        const weightGrams = volumeCm3 * adjustedDensity;
-        const materialCost = pricePerGramKr * weightGrams;
         const layerHeight = 0.2;
-        const timeEst = estimateFdmPrintTimeHours({
-            weightGrams,
-            heightMm,
-            surfaceAreaCm2,
-            layerHeightMm: layerHeight,
-            fdmLayerHoursFactor: spec.fdm_layer_hours_factor,
-        });
-        const estTimeHours = timeEst.hours;
-
         const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
-        const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW;
-        const machineCost = estTimeHours * effectiveRate;
-        const laborCost = spec.fdm_labor_cost_krw ?? 6500;
-        const supportCost = 0; // 히어로에서는 지지대 미적용(QuotePanel 기본값과 동일)
-        const totalRaw = materialCost + supportCost + machineCost + laborCost;
-        const rounded = roundTo100(totalRaw, 'round');
-        const minPriceKr = spec.minPriceKr;
-        const total = minPriceKr != null && minPriceKr > 0 ? Math.max(rounded, minPriceKr) : rounded;
-        return { total, printability: overflow ? 85 : 100, overflow };
+
+        // QuotePanel과 동일 모듈. 히어로는 빠른 미리보기용으로 인필 20%·지지대 OFF (VAT 미포함)
+        const q = calculateFdmQuote({
+            volumeCm3,
+            surfaceAreaCm2,
+            heightMm,
+            density,
+            pricePerGramKr,
+            infillPercent: FDM_INFILL_DEFAULT,
+            layerHeightMm: layerHeight,
+            supportEnabled: false,
+            hourlyRateKr: rateKRW,
+            fdmLaborCostKrw: spec.fdm_labor_cost_krw,
+            fdmSupportPerCm2Krw: spec.fdm_support_per_cm2_krw,
+            fdmLayerHoursFactor: spec.fdm_layer_hours_factor,
+            applyVat: false,
+            minPriceKr: spec.minPriceKr,
+        });
+
+        return {
+            total: q.total,
+            printability: overflow ? 85 : 100,
+            overflow,
+            infillPercent: FDM_INFILL_DEFAULT,
+            supportEnabled: false,
+        };
     }, [analysis, printSpecs, materials]);
 
     const handleTrySample = async () => {
@@ -281,7 +286,7 @@ export default function Hero() {
                                         {!file ? '₩ —' : !analysis ? '₩ —' : heroEstimate ? `₩ ${Math.round(heroEstimate.total).toLocaleString('ko-KR')}` : '₩ —'}
                                     </div>
                                     <p className="mt-2 text-[11px] xl:text-[12px] text-white/45 font-medium break-keep leading-relaxed">
-                                        파일을 올리면 출력성·예상 견적이 여기에 표시됩니다.
+                                        미리보기 견적(인필 {FDM_INFILL_DEFAULT}% · 지지대 미포함 · VAT 별도). 상세 옵션은 자동견적에서 조정하세요.
                                     </p>
                                 </div>
 
