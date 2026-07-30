@@ -256,3 +256,22 @@
 4. 체계적으로 어긋나면 `FDM_SHELL_THICKNESS_MM` 또는 `print-time-estimate` 계수 조정
 5. FDM 견적 저장 시 `/api/quotes`는 서버 재계산값(`pricingSource: server`)을 우선 저장
 6. SLA/DLP도 동일하게 서버 재계산 후 저장 (후가공·레이어 두께·레진 단가 반영)
+
+### 레진(SLA/DLP) 캘리브레이션 체크리스트
+
+1. 대표 모델 1~3개(소·중·대)를 Chitubox/Lychee 등에서 슬라이싱
+2. 레이어 0.025 / 0.05 / 0.1 mm 각각 예상 레진량(mL)·시간(h) 기록
+3. `/quote` 동일 조건 견적과 비교 — 재료량 ±20%, 시간 ±30% 목표
+4. 후가공 ON/OFF 시 견적 차이가 `sla_post_process_krw` / `dlp_post_process_krw`와 일치하는지 확인
+5. FDM 대비 비율: `npm run calibrate:quotes` — DLP≈3.5×, SLA≈6× (±10%) 목표
+6. 비율이 어긋나면 `docs/QUOTE_FDM_SLA_DLP_RATIO_PROPOSAL.md` 계수(시간당비용·노출시간·인건비·레진단가) 조정
+
+### 캘리브레이션 스크립트
+
+```bash
+npm run calibrate:quotes          # 비율·인필·레이어 민감도 리포트
+npm run test:fdm                  # FDM 단위 검증
+npm run test:resin                # SLA/DLP 단위 검증
+```
+
+슬라이서 실측 비교: `scripts/calibrate-samples.json`에 `materialAmount`·`hours` 입력 후 재실행

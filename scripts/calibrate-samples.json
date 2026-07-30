@@ -1,0 +1,24 @@
+{
+  "samples": [
+    {
+      "model": "소형",
+      "method": "fdm",
+      "materialAmount": null,
+      "hours": null,
+      "notes": "슬라이서(Cura/Prusa) 예상 필라멘트(g)·시간(h) 입력 후 npm run calibrate:quotes 재실행"
+    },
+    {
+      "model": "소형",
+      "method": "sla",
+      "materialAmount": null,
+      "hours": null,
+      "notes": "Chitubox/Lychee 예상 레진(mL)·시간(h)"
+    },
+    {
+      "model": "소형",
+      "method": "dlp",
+      "materialAmount": null,
+      "hours": null
+    }
+  ]
+}
