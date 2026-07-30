@@ -21,6 +21,7 @@ import {
     FDM_INFILL_DEFAULT,
     FDM_INFILL_MAX,
     FDM_INFILL_MIN,
+    FDM_INFILL_PRESETS,
 } from '@/lib/fdm-quote'
 import {
     estimateResinPrintTimeHours,
@@ -611,6 +612,23 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                                     <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">인필(채움) 밀도 (Infill)</label>
                                     <span className="font-mono text-sm sm:text-[15px] text-teal-400 font-black">{infill}%</span>
                                 </div>
+                                <div className="grid grid-cols-3 gap-2 px-1">
+                                    {FDM_INFILL_PRESETS.map((p) => (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => setInfill(p.percent)}
+                                            className={`py-2.5 rounded-xl border text-left px-3 transition-all ${
+                                                infill === p.percent
+                                                    ? 'bg-teal-400/15 border-teal-400/40 text-teal-300'
+                                                    : 'bg-white/5 border-white/10 text-white/50 hover:border-white/25 hover:text-white/80'
+                                            }`}
+                                        >
+                                            <div className="text-[11px] sm:text-xs font-black">{p.label} {p.percent}%</div>
+                                            <div className="text-[9px] sm:text-[10px] font-medium opacity-70 mt-0.5 break-keep">{p.hint}</div>
+                                        </button>
+                                    ))}
+                                </div>
                                 <div className="px-1">
                                     <input
                                         type="range"
@@ -623,7 +641,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                                     />
                                 </div>
                                 <p className="px-1 text-[11px] text-white/45 font-medium leading-relaxed break-keep">
-                                    인필이 높을수록 재료 사용량·출력 시간·견적이 증가합니다. 외관 확인은 {FDM_INFILL_DEFAULT}% 전후, 기능·강도 부품은 40~100%를 권장합니다.
+                                    인필이 높을수록 재료 사용량·출력 시간·견적이 증가합니다. 프리셋으로 빠르게 고르거나 슬라이더로 세밀 조정하세요.
                                 </p>
                             </div>
 

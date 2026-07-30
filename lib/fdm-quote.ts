@@ -16,6 +16,14 @@ import {
 export const FDM_INFILL_MIN = 10
 export const FDM_INFILL_MAX = 100
 export const FDM_INFILL_DEFAULT = 20
+
+/** 용도별 인필 프리셋 (QuotePanel 빠른 선택) */
+export const FDM_INFILL_PRESETS = [
+    { id: 'appearance' as const, label: '외관', percent: 20, hint: '시제품·형상 확인' },
+    { id: 'functional' as const, label: '기능', percent: 40, hint: '조립·일반 하중' },
+    { id: 'strength' as const, label: '고강도', percent: 80, hint: '내구·응력 부품' },
+]
+
 /** 외벽 근사 두께 — 대략 perimeter 2줄 × 0.4mm */
 export const FDM_SHELL_THICKNESS_MM = 0.8
 export const FDM_DEFAULT_DENSITY = 1.24

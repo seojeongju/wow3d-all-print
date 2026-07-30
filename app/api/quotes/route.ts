@@ -4,6 +4,8 @@ import type { Env } from '@/env';
 import { errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
 import type { QuoteData } from '@/lib/types';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
+import { clampFdmInfillPercent } from '@/lib/fdm-quote';
+import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
 
 /**
  * GET /api/quotes - 견적 목록 조회
@@ -101,7 +103,9 @@ function guideText(v: unknown, max = 120): string | null {
 function clampFdmInfill(v: unknown): number | null {
     if (v == null || v === '') return null;
     const n = Math.round(Number(v));
-    return n >= 10 && n <= 100 ? n : null;
+    if (!Number.isFinite(n)) return null;
+    const clamped = clampFdmInfillPercent(n);
+    return clamped >= 10 && clamped <= 100 ? clamped : null;
 }
 
 /**
@@ -142,8 +146,6 @@ export async function POST(request: NextRequest) {
         const dimensionsX = Number(body.dimensionsX) || 0;
         const dimensionsY = Number(body.dimensionsY) || 0;
         const dimensionsZ = Number(body.dimensionsZ) || 0;
-        const totalPrice = normalizeAmountBeforeSave(Number(body.totalPrice) || 0);
-        const estimatedTimeHours = Number(body.estimatedTimeHours) || 0;
         const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
         const layerThickness = snapSlaLayer(body.layerThickness);
         const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
@@ -154,8 +156,30 @@ export async function POST(request: NextRequest) {
         const guideSource = guideText(body.guideSource, 80);
         const guideTopic = guideText(body.guideTopic, 120);
 
+        let totalPrice = normalizeAmountBeforeSave(Number(body.totalPrice) || 0);
+        let estimatedTimeHours = Number(body.estimatedTimeHours) || 0;
+        let quotePricingSource: 'server' | 'client' = 'client';
+
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
+            // FDM: 서버에서 동일 공식으로 재계산 후 저장 (클라이언트 금액 변조 방어)
+            if (body.printMethod === 'fdm') {
+                const serverQuote = await resolveServerFdmQuote(env.DB, {
+                    volumeCm3,
+                    surfaceAreaCm2,
+                    heightMm: dimensionsZ,
+                    fdmMaterialName: fdmMaterialName,
+                    infillPercent: fdmInfill,
+                    layerHeightMm: fdmLayerHeight,
+                    supportEnabled: !!body.fdmSupport,
+                    clientTotalPrice: totalPrice,
+                    clientEstimatedHours: estimatedTimeHours,
+                });
+                totalPrice = normalizeAmountBeforeSave(serverQuote.totalPrice);
+                estimatedTimeHours = serverQuote.estimatedTimeHours;
+                quotePricingSource = serverQuote.source;
+            }
+
             let runResult: QuoteRunResult;
             const baseBind = [
                 uid,
@@ -245,7 +269,10 @@ export async function POST(request: NextRequest) {
             return successResponse(
                 {
                     id: runResult.meta?.last_row_id ?? 0,
-                    sessionId: sessionId || undefined
+                    sessionId: sessionId || undefined,
+                    totalPrice,
+                    estimatedTimeHours,
+                    pricingSource: quotePricingSource,
                 },
                 '견적이 저장되었습니다'
             );
