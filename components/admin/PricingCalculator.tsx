@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Calculator, TrendingUp, AlertCircle, Info, Target } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { calculateFdmQuote, FDM_INFILL_DEFAULT, FDM_INFILL_MAX, FDM_INFILL_MIN } from '@/lib/fdm-quote'
-import { estimateResinPrintTimeHours } from '@/lib/print-time-estimate'
+import { calculateResinQuote } from '@/lib/resin-quote'
 
 type CalcParams = {
     // 모델 정보
@@ -132,41 +132,33 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const ep = equipmentParams.sla
         if (!ep) return null
 
-        const volumeML = params.volumeCm3
-        const resinCost = params.sla_material_price_per_ml * volumeML
-
-        const timeEst = estimateResinPrintTimeHours({
-            heightMm: params.heightMm,
-            layerHeightMm: params.sla_layer_height,
-            layerExposureSec: ep.sla_layer_exposure_sec,
-        })
-        const numLayers = timeEst.numLayers
-        const estTimeHours = timeEst.hours
-
-        const consumablesCost = ep.sla_consumables_krw
-        const postProcessCost = params.sla_post_processing
-            ? ep.sla_post_process_krw
-            : 0
-        const otherCost = consumablesCost + postProcessCost
-
-        const laborCost = ep.sla_labor_cost_krw
-
         const machineRate = ep.layer_costs[String(params.sla_layer_height)]
             ?? ep.hourly_rate
-        const effectiveRate = estTimeHours > 10 ? machineRate * 0.7 : estTimeHours > 5 ? machineRate * 0.8 : machineRate
-        const machineCost = estTimeHours * effectiveRate
 
-        const total = resinCost + otherCost + machineCost + laborCost
+        const q = calculateResinQuote({
+            method: 'sla',
+            volumeCm3: params.volumeCm3,
+            heightMm: params.heightMm,
+            layerHeightMm: params.sla_layer_height,
+            pricePerMlKr: params.sla_material_price_per_ml,
+            postProcessing: params.sla_post_processing,
+            hourlyRateKr: machineRate,
+            layerExposureSec: ep.sla_layer_exposure_sec,
+            laborCostKrw: ep.sla_labor_cost_krw,
+            consumablesKrw: ep.sla_consumables_krw,
+            postProcessKrw: ep.sla_post_process_krw,
+            applyVat: false,
+        })
 
         return {
-            materialCost: resinCost,
-            otherCost,
-            machineCost,
-            laborCost,
-            total,
-            timeHours: estTimeHours,
-            numLayers,
-            volumeML,
+            materialCost: q.costBreakdown.material,
+            otherCost: q.costBreakdown.other,
+            machineCost: q.costBreakdown.machine,
+            laborCost: q.costBreakdown.labor,
+            total: q.subtotal,
+            timeHours: q.timeHours,
+            numLayers: q.numLayers,
+            volumeML: q.volumeMl,
         }
     }, [equipmentParams.sla, params])
 
@@ -175,41 +167,33 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const ep = equipmentParams.dlp
         if (!ep) return null
 
-        const volumeML = params.volumeCm3
-        const resinCost = params.dlp_material_price_per_ml * volumeML
-
-        const timeEst = estimateResinPrintTimeHours({
-            heightMm: params.heightMm,
-            layerHeightMm: params.dlp_layer_height,
-            layerExposureSec: ep.dlp_layer_exposure_sec,
-        })
-        const numLayers = timeEst.numLayers
-        const estTimeHours = timeEst.hours
-
-        const consumablesCost = ep.dlp_consumables_krw
-        const postProcessCost = params.dlp_post_processing
-            ? ep.dlp_post_process_krw
-            : 0
-        const otherCost = consumablesCost + postProcessCost
-
-        const laborCost = ep.dlp_labor_cost_krw
-
         const machineRate = ep.layer_costs[String(params.dlp_layer_height)]
             ?? ep.hourly_rate
-        const effectiveRate = estTimeHours > 10 ? machineRate * 0.7 : estTimeHours > 5 ? machineRate * 0.8 : machineRate
-        const machineCost = estTimeHours * effectiveRate
 
-        const total = resinCost + otherCost + machineCost + laborCost
+        const q = calculateResinQuote({
+            method: 'dlp',
+            volumeCm3: params.volumeCm3,
+            heightMm: params.heightMm,
+            layerHeightMm: params.dlp_layer_height,
+            pricePerMlKr: params.dlp_material_price_per_ml,
+            postProcessing: params.dlp_post_processing,
+            hourlyRateKr: machineRate,
+            layerExposureSec: ep.dlp_layer_exposure_sec,
+            laborCostKrw: ep.dlp_labor_cost_krw,
+            consumablesKrw: ep.dlp_consumables_krw,
+            postProcessKrw: ep.dlp_post_process_krw,
+            applyVat: false,
+        })
 
         return {
-            materialCost: resinCost,
-            otherCost,
-            machineCost,
-            laborCost,
-            total,
-            timeHours: estTimeHours,
-            numLayers,
-            volumeML,
+            materialCost: q.costBreakdown.material,
+            otherCost: q.costBreakdown.other,
+            machineCost: q.costBreakdown.machine,
+            laborCost: q.costBreakdown.labor,
+            total: q.subtotal,
+            timeHours: q.timeHours,
+            numLayers: q.numLayers,
+            volumeML: q.volumeMl,
         }
     }, [equipmentParams.dlp, params])
 

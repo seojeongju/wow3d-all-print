@@ -106,8 +106,11 @@
 ```
 총 견적금액 = 레진비 + 기타비용 + 장비비 + 인건비
 
+구현 위치: lib/resin-quote.ts (QuotePanel / PricingCalculator / 서버 재계산 공통)
+시간: lib/print-time-estimate.ts → estimateResinPrintTimeHours
+
 1. 레진비
-   resinCost = pricePerMl × volumeCm3
+   resinCost = pricePerMl × volumeCm3  (1 cm³ ≈ 1 mL)
 
 2. 기타비용
    consumables + (postProcessing ? postProcess : 0)
@@ -116,6 +119,7 @@
    numLayers = ceil(heightMm / layerHeight)
    rawHours = numLayers × (layerExposureSec + 8.5) / 3600
    estTimeHours = max(0.5, (rawHours + 0.1)^0.9 × 0.953)
+   ※ SLA 노출 8s / DLP 노출 3s (DB·장비 설정으로 변경 가능)
 
 4. 장비비
    FDM과 동일하게 시간 × (layerCosts 또는 hourlyRate), 볼륨 디스카운트 적용
@@ -205,10 +209,12 @@
 ## 구현 파일 위치
 
 ### 프론트엔드
-- **견적 계산 로직**: `components/quote/QuotePanel.tsx` (147-208줄)
+- **FDM 견적**: `lib/fdm-quote.ts` — QuotePanel / Hero / PricingCalculator
+- **SLA/DLP 견적**: `lib/resin-quote.ts` — QuotePanel / PricingCalculator
 - **견적 저장 스토어**: `store/useQuoteStore.ts`
 
 ### 백엔드 API
+- **견적 저장(서버 재계산)**: `app/api/quotes/route.ts` — FDM `lib/server-fdm-quote.ts`, SLA/DLP `lib/server-resin-quote.ts`
 - **출력 스펙 조회**: `app/api/print-specs/route.ts`
 - **소재 조회**: `app/api/materials/route.ts`
 
@@ -249,3 +255,4 @@
 3. 재료량 오차 ±20% 이내, 시간 오차 ±30% 이내를 1차 목표로 둠
 4. 체계적으로 어긋나면 `FDM_SHELL_THICKNESS_MM` 또는 `print-time-estimate` 계수 조정
 5. FDM 견적 저장 시 `/api/quotes`는 서버 재계산값(`pricingSource: server`)을 우선 저장
+6. SLA/DLP도 동일하게 서버 재계산 후 저장 (후가공·레이어 두께·레진 단가 반영)

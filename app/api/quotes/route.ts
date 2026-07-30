@@ -6,6 +6,7 @@ import type { QuoteData } from '@/lib/types';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { clampFdmInfillPercent } from '@/lib/fdm-quote';
 import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
+import { resolveServerResinQuote } from '@/lib/server-resin-quote';
 
 /**
  * GET /api/quotes - 견적 목록 조회
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
 
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
-            // FDM: 서버에서 동일 공식으로 재계산 후 저장 (클라이언트 금액 변조 방어)
+            // FDM / SLA / DLP: 서버에서 동일 공식으로 재계산 후 저장 (클라이언트 금액 변조 방어)
             if (body.printMethod === 'fdm') {
                 const serverQuote = await resolveServerFdmQuote(env.DB, {
                     volumeCm3,
@@ -172,6 +173,20 @@ export async function POST(request: NextRequest) {
                     infillPercent: fdmInfill,
                     layerHeightMm: fdmLayerHeight,
                     supportEnabled: !!body.fdmSupport,
+                    clientTotalPrice: totalPrice,
+                    clientEstimatedHours: estimatedTimeHours,
+                });
+                totalPrice = normalizeAmountBeforeSave(serverQuote.totalPrice);
+                estimatedTimeHours = serverQuote.estimatedTimeHours;
+                quotePricingSource = serverQuote.source;
+            } else if (body.printMethod === 'sla' || body.printMethod === 'dlp') {
+                const serverQuote = await resolveServerResinQuote(env.DB, {
+                    method: body.printMethod,
+                    volumeCm3,
+                    heightMm: dimensionsZ,
+                    layerHeightMm: layerThickness,
+                    resinTypeName: resinTypeName,
+                    postProcessing: !!body.postProcessing,
                     clientTotalPrice: totalPrice,
                     clientEstimatedHours: estimatedTimeHours,
                 });

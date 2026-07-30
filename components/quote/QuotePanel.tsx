@@ -23,10 +23,8 @@ import {
     FDM_INFILL_MIN,
     FDM_INFILL_PRESETS,
 } from '@/lib/fdm-quote'
-import {
-    estimateResinPrintTimeHours,
-    formatEstimatedPrintTime,
-} from '@/lib/print-time-estimate'
+import { calculateResinQuote } from '@/lib/resin-quote'
+import { formatEstimatedPrintTime } from '@/lib/print-time-estimate'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -244,41 +242,36 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
 
         const mat = materials.find((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA') && m.name === resinType)
         const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
-        const volumeML = volumeCm3
-        const resinCost = pricePerMlKr * volumeML
-        const layerExp = printMethod === 'dlp'
-            ? (printSpecs?.dlp?.dlp_layer_exposure_sec ?? 3)
-            : (printSpecs?.sla?.sla_layer_exposure_sec ?? 8)
-        const timeEst = estimateResinPrintTimeHours({
+        const q = calculateResinQuote({
+            method: printMethod === 'dlp' ? 'dlp' : 'sla',
+            volumeCm3,
             heightMm,
             layerHeightMm: slaLayerHeight,
-            layerExposureSec: layerExp,
+            pricePerMlKr,
+            postProcessing,
+            hourlyRateKr: rateKRW,
+            layerExposureSec: printMethod === 'dlp'
+                ? printSpecs?.dlp?.dlp_layer_exposure_sec
+                : printSpecs?.sla?.sla_layer_exposure_sec,
+            laborCostKrw: printMethod === 'dlp'
+                ? printSpecs?.dlp?.dlp_labor_cost_krw
+                : printSpecs?.sla?.sla_labor_cost_krw,
+            consumablesKrw: printMethod === 'dlp'
+                ? printSpecs?.dlp?.dlp_consumables_krw
+                : printSpecs?.sla?.sla_consumables_krw,
+            postProcessKrw: printMethod === 'dlp'
+                ? printSpecs?.dlp?.dlp_post_process_krw
+                : printSpecs?.sla?.sla_post_process_krw,
+            applyVat: false,
         })
-        const numLayers = timeEst.numLayers
-        const estTimeHours = timeEst.hours
-        const consKr = printMethod === 'dlp'
-            ? (printSpecs?.dlp?.dlp_consumables_krw ?? 3900)
-            : (printSpecs?.sla?.sla_consumables_krw ?? 3900)
-        const postKr = printMethod === 'dlp'
-            ? (printSpecs?.dlp?.dlp_post_process_krw ?? 10400)
-            : (printSpecs?.sla?.sla_post_process_krw ?? 10400)
-        const consumablesCost = consKr
-        const postProcessCost = postProcessing ? postKr : 0
-        const laborKr = printMethod === 'dlp'
-            ? (printSpecs?.dlp?.dlp_labor_cost_krw ?? 9100)
-            : (printSpecs?.sla?.sla_labor_cost_krw ?? 9100)
-        const laborCost = laborKr
-        const effectiveRate = estTimeHours > 10 ? rateKRW * 0.7 : estTimeHours > 5 ? rateKRW * 0.8 : rateKRW
-        const machineCost = estTimeHours * effectiveRate
-        const otherCost = consumablesCost + postProcessCost
         return {
-            total: resinCost + otherCost + machineCost + laborCost,
-            time: estTimeHours,
-            numLayers,
-            materialAmount: volumeML,
+            total: q.subtotal,
+            time: q.timeHours,
+            numLayers: q.numLayers,
+            materialAmount: q.volumeMl,
             materialUnit: 'mL' as const,
             materialName: (mat?.name ?? resinType) || '-',
-            costBreakdown: { material: resinCost, other: otherCost, machine: machineCost, labor: laborCost },
+            costBreakdown: q.costBreakdown,
         }
     }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, surfaceAreaCm2, volumeCm3])
 

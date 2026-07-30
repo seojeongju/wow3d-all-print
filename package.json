@@ -13,7 +13,8 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:init": "wrangler d1 execute wow3d-production --file=./schema.sql",
     "db:migrations:apply": "wrangler d1 migrations apply wow3d-production",
-    "test:fdm": "npx --yes tsx scripts/test-fdm-quote.ts"
+    "test:fdm": "npx --yes tsx scripts/test-fdm-quote.ts",
+    "test:resin": "npx --yes tsx scripts/test-resin-quote.ts"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.0.0-beta.17",
