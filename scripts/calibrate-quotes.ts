@@ -36,9 +36,9 @@ const DEFAULTS = {
     sla: {
         pricePerMlKr: 150,
         layerHeightMm: SLA_LAYER_DEFAULT,
-        hourlyRateKr: 8000,
-        layerExposureSec: 8,
-        laborCostKrw: 9100,
+        hourlyRateKr: 11100,
+        layerExposureSec: 9,
+        laborCostKrw: 10700,
         consumablesKrw: 3900,
         postProcessKrw: 10400,
         postProcessing: false,
@@ -46,7 +46,7 @@ const DEFAULTS = {
     dlp: {
         pricePerMlKr: 150,
         layerHeightMm: SLA_LAYER_DEFAULT,
-        hourlyRateKr: 9000,
+        hourlyRateKr: 7100,
         layerExposureSec: 3,
         laborCostKrw: 9100,
         consumablesKrw: 3900,
@@ -64,11 +64,25 @@ const REF_MODELS: RefModel[] = [
 type SlicerSample = {
     model: string
     method: 'fdm' | 'sla' | 'dlp'
-    /** 슬라이서 예상 재료량 (g 또는 mL) */
-    materialAmount?: number
-    /** 슬라이서 예상 시간 (시간) */
-    hours?: number
+    materialAmount?: number | null
+    hours?: number | null
+    volumeCm3?: number
+    surfaceAreaCm2?: number
+    heightMm?: number
+    file?: string
     notes?: string
+}
+
+function refFromSample(s: SlicerSample): RefModel | null {
+    if (s.volumeCm3 != null && s.heightMm != null) {
+        return {
+            name: s.file ?? s.model,
+            volumeCm3: s.volumeCm3,
+            surfaceAreaCm2: s.surfaceAreaCm2 ?? s.volumeCm3 * 5,
+            heightMm: s.heightMm,
+        }
+    }
+    return REF_MODELS.find((m) => m.name.startsWith(s.model) || m.name.includes(s.model)) ?? null
 }
 
 function fmtKr(n: number) {
@@ -210,9 +224,9 @@ if (existsSync(samplesPath)) {
     } else {
         console.log('모델 | 방식 | 슬라이서재료 | 자동견적재료 | 재료오차% | 슬라이서시간 | 자동시간 | 시간오차%')
         for (const s of samples) {
-            const model = REF_MODELS.find((m) => m.name.startsWith(s.model) || m.name.includes(s.model))
+            const model = refFromSample(s)
             if (!model) {
-                console.log(`${s.model} | ${s.method} | (모델명 불일치 — REF_MODELS name과 맞추세요)`)
+                console.log(`${s.model} | ${s.method} | (모델 치수 없음 — volumeCm3/heightMm 추가 또는 REF_MODELS name 확인)`)
                 continue
             }
             let autoMaterial = 0

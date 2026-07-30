@@ -76,14 +76,14 @@ const PRESETS: PricingPreset[] = [
                 fdm_layer_hours_factor: 0.02,
             },
             sla: {
-                hourly_rate: 8000,
-                sla_labor_cost_krw: 9100,
+                hourly_rate: 11100,
+                sla_labor_cost_krw: 10700,
                 sla_consumables_krw: 3900,
                 sla_post_process_krw: 10400,
-                sla_layer_exposure_sec: 8,
+                sla_layer_exposure_sec: 9,
             },
             dlp: {
-                hourly_rate: 9000,
+                hourly_rate: 7100,
                 dlp_labor_cost_krw: 9100,
                 dlp_consumables_krw: 3900,
                 dlp_post_process_krw: 10400,

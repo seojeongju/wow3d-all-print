@@ -1,24 +1,42 @@
 {
+  "_comment": "materialAmount: FDM=g, SLA/DLP=mL. hours=시간. slicer-proxy는 Cura/Chitubox 기본 설정 근사값 — 실제 슬라이서 값으로 교체 권장.",
+  "_generatedAt": "2026-07-30T07:44:15.450Z",
   "samples": [
     {
       "model": "소형",
       "method": "fdm",
-      "materialAmount": null,
-      "hours": null,
-      "notes": "슬라이서(Cura/Prusa) 예상 필라멘트(g)·시간(h) 입력 후 npm run calibrate:quotes 재실행"
+      "materialAmount": 2.69,
+      "hours": 0.46,
+      "file": "test_cube",
+      "volumeCm3": 2.67,
+      "surfaceAreaCm2": 24,
+      "heightMm": 20,
+      "slicerSettings": "FDM 0.2mm / infill 20% / PLA",
+      "notes": "extract-stl-metrics.ts 자동 생성 (slicer-proxy)"
     },
     {
       "model": "소형",
       "method": "sla",
-      "materialAmount": null,
-      "hours": null,
-      "notes": "Chitubox/Lychee 예상 레진(mL)·시간(h)"
+      "materialAmount": 2.59,
+      "hours": 1.639,
+      "file": "test_cube",
+      "volumeCm3": 2.67,
+      "surfaceAreaCm2": 24,
+      "heightMm": 20,
+      "slicerSettings": "SLA 0.05mm / exp 8s",
+      "notes": "extract-stl-metrics.ts 자동 생성 (slicer-proxy)"
     },
     {
       "model": "소형",
       "method": "dlp",
-      "materialAmount": null,
-      "hours": null
+      "materialAmount": 2.59,
+      "hours": 1.208,
+      "file": "test_cube",
+      "volumeCm3": 2.67,
+      "surfaceAreaCm2": 24,
+      "heightMm": 20,
+      "slicerSettings": "DLP 0.05mm / exp 3s",
+      "notes": "extract-stl-metrics.ts 자동 생성 (slicer-proxy)"
     }
   ]
 }

@@ -15,7 +15,9 @@
     "db:migrations:apply": "wrangler d1 migrations apply wow3d-production",
     "test:fdm": "npx --yes tsx scripts/test-fdm-quote.ts",
     "test:resin": "npx --yes tsx scripts/test-resin-quote.ts",
-    "calibrate:quotes": "npx --yes tsx scripts/calibrate-quotes.ts"
+    "calibrate:quotes": "npx --yes tsx scripts/calibrate-quotes.ts",
+    "calibrate:extract": "npx --yes tsx scripts/extract-stl-metrics.ts",
+    "calibrate:suggest": "npx --yes tsx scripts/suggest-calibration.ts"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.0.0-beta.17",

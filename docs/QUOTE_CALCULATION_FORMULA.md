@@ -269,9 +269,11 @@
 ### 캘리브레이션 스크립트
 
 ```bash
-npm run calibrate:quotes          # 비율·인필·레이어 민감도 리포트
-npm run test:fdm                  # FDM 단위 검증
-npm run test:resin                # SLA/DLP 단위 검증
+npm run calibrate:extract   # STL → calibrate-samples.json (test_cube.stl)
+npm run calibrate:suggest   # 오차 분석 + SLA/DLP 계수 제안
+npm run calibrate:quotes    # 비율·인필·레이어 민감도 리포트
+npm run test:fdm            # FDM 단위 검증
+npm run test:resin          # SLA/DLP 단위 검증
 ```
 
-슬라이서 실측 비교: `scripts/calibrate-samples.json`에 `materialAmount`·`hours` 입력 후 재실행
+슬라이서 실측: `scripts/calibrate-samples.json` (또는 `calibrate:extract`로 자동 생성). 프로덕션 D1 반영은 `migrations/update_sla_dlp_calibration_20260730.sql`.

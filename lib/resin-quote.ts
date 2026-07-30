@@ -16,13 +16,13 @@ export type ResinMethod = 'sla' | 'dlp'
 export const SLA_LAYER_HEIGHTS = [0.025, 0.05, 0.1] as const
 export const SLA_LAYER_DEFAULT = 0.05
 
-export const SLA_DEFAULT_HOURLY_RATE_KRW = 8000
-export const SLA_DEFAULT_LAYER_EXPOSURE_SEC = 8
-export const SLA_DEFAULT_LABOR_KRW = 9100
+export const SLA_DEFAULT_HOURLY_RATE_KRW = 11100
+export const SLA_DEFAULT_LAYER_EXPOSURE_SEC = 9
+export const SLA_DEFAULT_LABOR_KRW = 10700
 export const SLA_DEFAULT_CONSUMABLES_KRW = 3900
 export const SLA_DEFAULT_POST_PROCESS_KRW = 10400
 
-export const DLP_DEFAULT_HOURLY_RATE_KRW = 9000
+export const DLP_DEFAULT_HOURLY_RATE_KRW = 7100
 export const DLP_DEFAULT_LAYER_EXPOSURE_SEC = 3
 export const DLP_DEFAULT_LABOR_KRW = 9100
 export const DLP_DEFAULT_CONSUMABLES_KRW = 3900
