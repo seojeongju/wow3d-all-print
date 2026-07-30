@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, ExternalLink } from 'lucide-react';
+import { GraduationCap, ExternalLink, Globe2 } from 'lucide-react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon';
@@ -10,6 +10,7 @@ import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk';
 /**
  * 우측 플로팅 퀵액션
  * - 와우3D 홍대센터(3D쿠키) 링크
+ * - (주)와우쓰리디 홈페이지 바로가기
  * - 네이버 톡톡 실시간 상담 (바로 아래)
  * - 견적/체험 3D 뷰어에서는 우측 컨트롤과 겹치지 않도록 좌측 배치
  */
@@ -105,6 +106,20 @@ export default function EducationQuickMenu() {
                     </motion.div>
                 )}
             </motion.a>
+
+            <a
+                href="https://wow3dsw.co.kr/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`pointer-events-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white/10 text-white shadow-[0_6px_20px_rgba(0,0,0,0.28)] ring-1 ring-white/20 backdrop-blur-xl hover:scale-105 hover:bg-white/15 active:scale-95 transition-transform ${
+                    dockLeft ? 'ml-2 sm:ml-2.5' : 'mr-2 sm:mr-2.5'
+                }`}
+                aria-label="(주)와우쓰리디 홈페이지 바로가기"
+                title="(주)와우쓰리디 홈페이지"
+            >
+                <span className="sr-only">(주)와우쓰리디 홈페이지 바로가기</span>
+                <Globe2 className="w-6 h-6 sm:w-7 sm:h-7 text-teal-300" strokeWidth={2.1} />
+            </a>
 
             {talkUrl ? (
                 <a
