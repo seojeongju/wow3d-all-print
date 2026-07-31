@@ -4,13 +4,16 @@
 
 - **대표 URL**: `https://www.wow3dp.co.kr` (non-www → www 301, canonical·sitemap 통일)
 - **메타데이터**: 루트 `app/layout.tsx` + 페이지별 title/description/canonical
+  - materials / partnership / experience / gallery / expert / services / guides / quote / contact / qna
 - **robots.txt**: `app/robots.ts` → `/admin/`, `/api/` 등 비공개 경로 차단
-- **sitemap.xml**: `app/sitemap.ts` → 서비스·가이드·갤러리·전문가 사례 포함
+- **sitemap.xml**: `app/sitemap.ts` → 서비스·가이드·갤러리·전문가 사례 포함 (`/maker`·`/quotes` 제외)
+- **llms.txt**: `app/llms.txt/route.ts` 단일 소스 (www URL)
 
 배포 후 확인:
 
 - **robots.txt**: https://www.wow3dp.co.kr/robots.txt
 - **sitemap**: https://www.wow3dp.co.kr/sitemap.xml
+- **llms.txt**: https://www.wow3dp.co.kr/llms.txt
 
 ---
 
@@ -20,7 +23,7 @@
 
 1. [네이버 서치어드바이저](https://searchadvisor.naver.com) 로그인
 2. **사이트 추가** → `https://www.wow3dp.co.kr`
-3. 소유 확인 (HTML 태그 / 파일 / DNS)
+3. 소유 확인 (HTML 태그 / 파일 / DNS) — 메타 `a5e68284…` 배포됨
 
 ### 2-2. 사이트맵 제출
 
@@ -35,6 +38,7 @@ https://www.wow3dp.co.kr/
 https://www.wow3dp.co.kr/quote
 https://www.wow3dp.co.kr/services
 https://www.wow3dp.co.kr/gallery
+https://www.wow3dp.co.kr/materials
 https://www.wow3dp.co.kr/expert
 https://www.wow3dp.co.kr/expert/showcase/industrial
 https://www.wow3dp.co.kr/expert/showcase/medical
@@ -43,9 +47,8 @@ https://www.wow3dp.co.kr/expert/showcase/architecture
 https://www.wow3dp.co.kr/guides
 https://www.wow3dp.co.kr/qna
 https://www.wow3dp.co.kr/contact
+https://www.wow3dp.co.kr/partnership
 ```
-
-서비스 랜딩·가이드는 사이트맵 제출 후 필요 시 개별 수집을 추가합니다.
 
 ---
 
@@ -71,6 +74,7 @@ https://www.wow3dp.co.kr/
 https://www.wow3dp.co.kr/quote
 https://www.wow3dp.co.kr/services
 https://www.wow3dp.co.kr/gallery
+https://www.wow3dp.co.kr/materials
 https://www.wow3dp.co.kr/expert
 https://www.wow3dp.co.kr/expert/showcase/industrial
 https://www.wow3dp.co.kr/expert/showcase/medical
@@ -78,6 +82,7 @@ https://www.wow3dp.co.kr/expert/showcase/art
 https://www.wow3dp.co.kr/expert/showcase/architecture
 https://www.wow3dp.co.kr/guides
 https://www.wow3dp.co.kr/qna
+https://www.wow3dp.co.kr/partnership
 ```
 
 ---
@@ -87,6 +92,7 @@ https://www.wow3dp.co.kr/qna
 - Cloudflare `NEXT_PUBLIC_APP_URL` = `https://www.wow3dp.co.kr`
 - apex·www 모두 Worker에 연결해 301이 동작하는지 확인
 - OG 이미지: `public/og-image-v2.jpg` (1200×630)
+- WebSite JSON-LD는 SearchAction 없이 제공 (잘못된 `/qna?q=` 검색 제거)
 
 ---
 
@@ -94,8 +100,11 @@ https://www.wow3dp.co.kr/qna
 
 - [x] `https://wow3dp.co.kr/` → `https://www.wow3dp.co.kr/` 301 확인
 - [x] https://www.wow3dp.co.kr/robots.txt
-- [x] https://www.wow3dp.co.kr/sitemap.xml (서비스·가이드·expert 포함, 약 48 URL)
+- [x] https://www.wow3dp.co.kr/sitemap.xml (서비스·가이드·expert·materials 포함, maker/quotes 제외)
 - [x] 네이버 www 소유확인 메타 배포 (`a5e68284…`)
+- [x] materials / partnership / experience 전용 canonical·title
+- [x] QnA 메타 단일화 + FAQ JSON-LD를 1페이지 가시 항목과 맞춤
+- [x] 잘못된 WebSite SearchAction 제거
 - [ ] 네이버 서치어드바이저: www 소유확인 완료 → 사이트맵 제출 → 주요 URL 수집
 - [ ] Google Search Console: www 속성 → 사이트맵 제출 → URL 검사/색인 요청
-- [ ] Cloudflare `NEXT_PUBLIC_APP_URL` = `https://www.wow3dp.co.kr` (이미 wrangler에 설정됨)
+- [x] Cloudflare `NEXT_PUBLIC_APP_URL` = `https://www.wow3dp.co.kr` (wrangler 설정)

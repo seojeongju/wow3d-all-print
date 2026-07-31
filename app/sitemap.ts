@@ -14,13 +14,11 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
     priority: 0.94,
     changeFrequency: "weekly" as const,
   })),
-  { path: "/quotes", priority: 0.9, changeFrequency: "weekly" },
   { path: "/print-methods", priority: 0.85, changeFrequency: "monthly" },
   { path: "/materials", priority: 0.85, changeFrequency: "monthly" },
   { path: "/materials/safety", priority: 0.7, changeFrequency: "monthly" },
   { path: "/hardware/3d-printer", priority: 0.85, changeFrequency: "monthly" },
   { path: "/experience", priority: 0.8, changeFrequency: "monthly" },
-  { path: "/maker", priority: 0.8, changeFrequency: "monthly" },
   { path: "/expert", priority: 0.92, changeFrequency: "weekly" },
   ...SHOWCASE_SLUGS.map((slug) => ({
     path: `/expert/showcase/${slug}`,

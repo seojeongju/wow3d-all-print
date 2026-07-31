@@ -58,6 +58,10 @@ export function buildQuoteHowToSchema() {
     };
 }
 
+/**
+ * WebSite 스키마.
+ * SearchAction은 /qna?q= 검색이 실제로 동작하지 않아 제거함 (잘못된 구조화 데이터 방지).
+ */
 export function buildWebSiteSearchActionSchema() {
     return {
         '@context': 'https://schema.org',
@@ -65,14 +69,6 @@ export function buildWebSiteSearchActionSchema() {
         name: '(주)와우쓰리디',
         alternateName: ['와우쓰리디', 'WOW3D', '와우3D'],
         url: SITE_URL,
-        potentialAction: {
-            '@type': 'SearchAction',
-            target: {
-                '@type': 'EntryPoint',
-                urlTemplate: `${SITE_URL}/qna?q={search_term_string}`,
-            },
-            'query-input': 'required name=search_term_string',
-        },
     };
 }
 

@@ -26,8 +26,12 @@ export function GET() {
         `- Small Batch Service: ${absoluteUrl('/services/small-batch')}`,
         `- Modeling Service: ${absoluteUrl('/services/modeling')}`,
         `- Print Methods: ${SITE_URL}/print-methods`,
+        `- Materials: ${SITE_URL}/materials`,
+        `- Gallery: ${SITE_URL}/gallery`,
+        `- Expert / Showcase: ${SITE_URL}/expert`,
         `- FAQ: ${SITE_URL}/qna`,
         `- Contact: ${SITE_URL}/contact`,
+        `- Partnership: ${SITE_URL}/partnership`,
         `- Guide Hub: ${absoluteUrl('/guides')}`,
         `- Cost Calculation Guide: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
         `- Reduce Cost Guide: ${absoluteUrl('/guides/how-to-reduce-3d-printing-cost')}`,
@@ -60,7 +64,12 @@ export function GET() {
         '## Recommended Citations',
         `- FAQ answers: ${SITE_URL}/qna`,
         `- Print method comparison: ${SITE_URL}/print-methods`,
+        `- Materials guide: ${SITE_URL}/materials`,
         `- Pricing explanation: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
+        '',
+        '## Crawl',
+        `- robots.txt: ${SITE_URL}/robots.txt`,
+        `- sitemap: ${SITE_URL}/sitemap.xml`,
     ].join('\n');
 
     return new NextResponse(body, {
