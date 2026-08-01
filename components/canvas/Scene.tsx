@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
+import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef, createContext, useContext } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
@@ -203,6 +203,9 @@ function ViewPresetHandler() {
     useEffect(() => {
         if (!viewPreset || !controls) return
 
+        // 트랙볼 회전 중 기울어진 up 벡터를 세워야 프리셋 시점이 옆으로 누워 보이지 않음
+        camera.up.set(0, 1, 0)
+
         if (viewPreset === 'home') {
             bounds.refresh().clip().fit()
             setViewPreset(null)
@@ -367,18 +370,15 @@ export default function Scene({ compact = false }: SceneProps) {
                                 fadeDistance={100}
                             />
                         </Suspense>
-                        <OrbitControls
+                        {/* OrbitControls는 up 벡터가 +Y로 고정되어 상하 극점에서 회전이 멈춘다. 제한 없는 360° 뒤집기를 위해 트랙볼 방식 사용 */}
+                        <TrackballControls
                             makeDefault
-                            enableDamping
-                            dampingFactor={0.05}
+                            staticMoving
+                            rotateSpeed={2.2}
+                            zoomSpeed={0.9}
+                            panSpeed={0.6}
                             minDistance={0.1}
                             maxDistance={1000}
-                            minPolarAngle={0}
-                            maxPolarAngle={Math.PI}
-                            enableRotate={true}
-                            enableZoom={true}
-                            zoomSpeed={0.4}
-                            enablePan={true}
                         />
                     </Canvas>
                 </div>
