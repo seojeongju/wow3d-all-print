@@ -1,8 +1,10 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getOAuthRedirectUri } from '@/lib/site-url';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const SCOPES = ['openid', 'email', 'profile'].join(' ');
+const GOOGLE_CALLBACK_PATH = '/api/auth/google/callback';
 
 /**
  * GET /api/auth/google - Google OAuth 로그인 시작 (구글 로그인 페이지로 리다이렉트)
@@ -20,17 +22,11 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const returnTo = url.searchParams.get('return') || '';
-    
-    // REDIRECT_URI 결정 로직: 
-    // 1. 환경 변수에 설정된 명시적 URI (가장 확실함)
-    // 2. 요청 헤더 기반의 동적 URI
-    let redirectUri = envVars.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
-    
-    if (!redirectUri) {
-        const host = request.headers.get('host') || url.host;
-        const proto = request.headers.get('x-forwarded-proto') || (url.protocol.replace(':', '')) || 'https';
-        redirectUri = `${proto}://${host}/api/auth/google/callback`;
-    }
+
+    const redirectUri = getOAuthRedirectUri(
+        GOOGLE_CALLBACK_PATH,
+        envVars.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI
+    );
 
     const params = new URLSearchParams({
         client_id: clientId,

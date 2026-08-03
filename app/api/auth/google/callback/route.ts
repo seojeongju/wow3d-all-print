@@ -2,9 +2,11 @@ import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
 import { generateToken } from '@/lib/api-utils';
+import { getOAuthRedirectUri } from '@/lib/site-url';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
+const GOOGLE_CALLBACK_PATH = '/api/auth/google/callback';
 
 type GoogleUserInfo = { id: string; email: string; name?: string; picture?: string };
 
@@ -45,13 +47,11 @@ export async function GET(request: NextRequest) {
         return new Response(null, { status: 302, headers: { Location: `${authPage}?error=config` } });
     }
 
-    // REDIRECT_URI 결정 로직 (시작 API와 반드시 일치해야 함)
-    let redirectUri = envVars.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
-    if (!redirectUri) {
-        const host = request.headers.get('host') || url.host;
-        const proto = request.headers.get('x-forwarded-proto') || (url.protocol.replace(':', '')) || 'https';
-        redirectUri = `${proto}://${host}/api/auth/google/callback`;
-    }
+    // 시작 API(/api/auth/google)와 동일한 대표 URL — Host 헤더에 의존하지 않음
+    const redirectUri = getOAuthRedirectUri(
+        GOOGLE_CALLBACK_PATH,
+        envVars.GOOGLE_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI
+    );
 
     // 1) code → access_token
     const tokenRes = await fetch(GOOGLE_TOKEN_URL, {

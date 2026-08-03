@@ -44,6 +44,8 @@ bucket_name = "wow3d-files"
 [vars]
 ENVIRONMENT = "production"
 NEXT_PUBLIC_APP_URL = "https://www.wow3dp.co.kr"
+# Google OAuth — Cloud Console Authorized redirect URIs에 동일 문자열 등록 필요
+GOOGLE_REDIRECT_URI = "https://www.wow3dp.co.kr/api/auth/google/callback"
 # 네이버 톡톡 — 프로필/상담 https://talk.naver.com/profile/wowi7tu
 NEXT_PUBLIC_NAVER_TALKTALK_ID = "wowi7tu"
 NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL = "https://talk.naver.com/profile/wowi7tu"

@@ -33,3 +33,18 @@ export const SITE_URL = getSiteUrl();
 export function absoluteUrl(path: string): string {
     return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 }
+
+/**
+ * OAuth redirect_uri — Google Cloud Console 등록값과 바이트 단위로 일치해야 함.
+ * Host 헤더(workers.dev / apex)에 의존하지 않고 사이트 대표 URL을 사용한다.
+ */
+export function getOAuthRedirectUri(
+    callbackPath: string,
+    envOverride?: string | null
+): string {
+    const explicit = envOverride?.trim();
+    if (explicit) {
+        return normalizeProductionOrigin(explicit.replace(/\/$/, ''));
+    }
+    return absoluteUrl(callbackPath);
+}
