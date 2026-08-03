@@ -127,7 +127,7 @@ function QuickLinkButton({
 
 /**
  * 우측 플로팅 퀵액션
- * - 와우3D 홍대센터(3D쿠키) 링크
+ * - 와우3D홍대교육센터(3D쿠키) 링크
  * - (주)와우쓰리디 홈페이지 바로가기
  * - 네이버 톡톡 실시간 상담
  * - 견적/체험 3D 뷰어에서는 우측 컨트롤과 겹치지 않도록 좌측 배치
@@ -152,8 +152,8 @@ export default function EducationQuickMenu() {
         {
             href: 'https://3dcookiehd.com/',
             eyebrow: 'Education Center',
-            title: '와우3D 홍대센터',
-            ariaLabel: '와우3D 홍대센터 바로가기',
+            title: '와우3D홍대교육센터',
+            ariaLabel: '와우3D홍대교육센터 바로가기',
             accent: 'teal',
             icon: <GraduationCap className="w-5 h-5" />,
         },
