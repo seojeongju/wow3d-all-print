@@ -1,21 +1,63 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useState, type DragEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Boxes, CheckCircle2, Zap } from 'lucide-react';
+import { CheckCircle2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import FileUpload from '@/components/upload/FileUpload';
 import { useFileStore } from '@/store/useFileStore';
 import Scene from '@/components/canvas/Scene';
+import { getModelFileFromDataTransfer, MODEL_FILE_MAX_BYTES } from '@/lib/model-file';
+import { cn } from '@/lib/utils';
 
 export default function ModelUploadSection() {
-    const { file, reset } = useFileStore();
+    const { file, setFile } = useFileStore();
+    const [isCardDragging, setIsCardDragging] = useState(false);
+    const [cardError, setCardError] = useState<string | null>(null);
 
     const handleQuoteClick = () => {
         // 이미 파일이 업로드된 경우 견적 페이지로 이동 시 리셋이 필요한 경우에만 사용 (필요 시)
-        // 현재는 초기 상태가 비어있으므로 특별한 처리가 필요 없습니다.
+        // 현재는 초기 상태가 비어있으므로 특별한 처리가 없습니다.
     };
+
+    const handleCardDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+        if (!e.dataTransfer?.types?.includes('Files')) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setIsCardDragging(true);
+    }, []);
+
+    const handleCardDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+        // 자식으로 이동할 때 leave가 발생하는 경우 무시
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsCardDragging(false);
+    }, []);
+
+    const handleCardDrop = useCallback(
+        (e: DragEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            setIsCardDragging(false);
+            setCardError(null);
+
+            const files = e.dataTransfer?.files;
+            if (!files?.length) return;
+
+            const candidate = files[0];
+            if (candidate.size > MODEL_FILE_MAX_BYTES) {
+                setCardError('파일 크기는 최대 100MB까지 가능합니다.');
+                return;
+            }
+
+            const model = getModelFileFromDataTransfer(e.dataTransfer);
+            if (!model) {
+                setCardError('STL, OBJ, 3MF, PLY, STEP, STP 파일만 업로드할 수 있습니다.');
+                return;
+            }
+            setFile(model);
+        },
+        [setFile]
+    );
 
     return (
         <section id="upload" className="py-24 md:py-32 relative overflow-hidden">
@@ -54,7 +96,18 @@ export default function ModelUploadSection() {
                     transition={{ delay: 0.1 }}
                     className="max-w-5xl mx-auto"
                 >
-                    <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/50">
+                    <div
+                        onDragEnter={handleCardDragOver}
+                        onDragOver={handleCardDragOver}
+                        onDragLeave={handleCardDragLeave}
+                        onDrop={handleCardDrop}
+                        className={cn(
+                            'rounded-3xl border bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/50 transition-all duration-300',
+                            isCardDragging
+                                ? 'border-teal-400 ring-2 ring-teal-400/40 bg-teal-400/5'
+                                : 'border-white/10'
+                        )}
+                    >
                         <div className="grid md:grid-cols-2 gap-0">
                             {/* 좌: 3D 플레이스홀더 또는 업로드 완료 CTA */}
                             <div className="flex flex-col items-center justify-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-white/10 min-h-[280px]">
@@ -64,9 +117,16 @@ export default function ModelUploadSection() {
                                             <div className="absolute inset-0">
                                                 <Scene compact />
                                             </div>
+                                            {isCardDragging ? (
+                                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm pointer-events-none">
+                                                    <p className="text-teal-300 font-black text-sm tracking-wide">
+                                                        여기에 모델을 놓아 업로드
+                                                    </p>
+                                                </div>
+                                            ) : null}
                                         </div>
                                         <p className="mt-2 text-sm text-white/85 font-medium italic">
-                                            샘플 모델을 직접 돌려보고 확대해보세요
+                                            샘플 모델을 직접 돌려보고 확대해보세요 · 파일 드래그도 가능합니다
                                         </p>
                                     </>
                                 ) : (
@@ -86,9 +146,14 @@ export default function ModelUploadSection() {
                                 )}
                             </div>
 
-                            {/* 우: 3D 모델 업로드 (이미지 2 스타일) */}
+                            {/* 우: 3D 모델 업로드 */}
                             <div className="p-8 md:p-10 flex flex-col justify-center">
                                 <FileUpload variant="dark" />
+                                {cardError ? (
+                                    <p className="mt-3 text-xs font-bold text-red-300" role="alert">
+                                        {cardError}
+                                    </p>
+                                ) : null}
                             </div>
                         </div>
                     </div>

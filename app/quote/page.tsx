@@ -7,10 +7,12 @@ import QuotePanel from "@/components/quote/QuotePanel";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback, type DragEvent } from "react";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
+import { getModelFileFromDataTransfer } from "@/lib/model-file";
+import { cn } from "@/lib/utils";
 
 const quickQuoteFaqs = [
     {
@@ -86,6 +88,31 @@ function QuoteContent() {
     }, [loadQuoteId, setFile]);
 
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
+    const [isViewerDragging, setIsViewerDragging] = useState(false);
+
+    const handleViewerDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+        if (!e.dataTransfer?.types?.includes('Files')) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setIsViewerDragging(true);
+    }, []);
+
+    const handleViewerDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsViewerDragging(false);
+    }, []);
+
+    const handleViewerDrop = useCallback(
+        (e: DragEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            setIsViewerDragging(false);
+            const model = getModelFileFromDataTransfer(e.dataTransfer);
+            if (!model) return;
+            setFile(model);
+            setActiveTab('settings');
+        },
+        [setFile]
+    );
 
     // 샘플 견적 체험 후 실시간 견적 진입 시: 샘플 파일이면 제거 (업로드부터 다시)
     useEffect(() => {
@@ -383,17 +410,31 @@ function QuoteContent() {
                     </div>
 
                     {/* Right Column: 3D Visualization */}
-                    <div className={`
-                        relative flex flex-col bg-slate-950/20 backdrop-blur-[2px] overflow-hidden transition-all duration-300
-                        ${activeTab === 'viewer' ? 'flex flex-1' : 'hidden lg:flex'}
-                        lg:h-[calc(100vh-5rem)]
-                    `}>
+                    <div
+                        onDragEnter={handleViewerDragOver}
+                        onDragOver={handleViewerDragOver}
+                        onDragLeave={handleViewerDragLeave}
+                        onDrop={handleViewerDrop}
+                        className={cn(
+                            'relative flex flex-col bg-slate-950/20 backdrop-blur-[2px] overflow-hidden transition-all duration-300',
+                            activeTab === 'viewer' ? 'flex flex-1' : 'hidden lg:flex',
+                            'lg:h-[calc(100vh-5rem)]',
+                            isViewerDragging && 'ring-2 ring-inset ring-teal-400/70'
+                        )}
+                    >
                         <div className="flex-1 relative group min-h-[min(60dvh,560px)]">
                             <div className="absolute inset-0 z-0">
                                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><Loader2 className="w-12 h-12 text-teal-400/30 animate-spin" /></div>}>
                                     <Scene />
                                 </Suspense>
                             </div>
+                            {isViewerDragging ? (
+                                <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm pointer-events-none">
+                                    <p className="text-teal-300 font-black text-sm sm:text-base tracking-wide">
+                                        여기에 모델을 놓아 업로드
+                                    </p>
+                                </div>
+                            ) : null}
 
                             {/* Viewer HUD */}
                             <div className="absolute top-6 left-6 sm:top-10 sm:left-10 flex flex-col gap-4 z-20 pointer-events-none">
@@ -413,7 +454,7 @@ function QuoteContent() {
                                         <div className="mt-8 sm:mt-10 text-center space-y-2">
                                             <p className="text-white/30 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
                                             <p className="text-white/20 text-[11px] sm:text-sm font-medium italic break-keep">
-                                                파일을 업로드하면 3D 미리보기가 활성화됩니다.
+                                                파일을 드래그하거나 왼쪽에서 업로드하면 3D 미리보기가 활성화됩니다.
                                             </p>
                                         </div>
                                     </div>
