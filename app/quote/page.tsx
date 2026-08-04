@@ -38,7 +38,8 @@ const GUIDE_SOURCE_LABELS: Record<string, string> = {
 };
 
 function QuoteContent() {
-    const { file, analysis, reset, setFile } = useFileStore();
+    const { file, baseAnalysis, reset, setFile } = useFileStore();
+    const analysis = baseAnalysis;
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
     // 모바일: 기본은 업로드 패널(견적 설정). 'viewer'만 보이면 FileUpload가 숨겨져 업로드 불가 이슈 발생
     const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');

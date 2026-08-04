@@ -16,7 +16,8 @@ const SAMPLES = [
 ] as const
 
 export default function ExperiencePage() {
-    const { file, analysis, setFile, reset } = useFileStore()
+    const { file, baseAnalysis, setFile, reset } = useFileStore()
+    const analysis = baseAnalysis
     const [step, setStep] = useState(1)
     const [loadingSample, setLoadingSample] = useState(false)
     const [loadError, setLoadError] = useState<string | null>(null)

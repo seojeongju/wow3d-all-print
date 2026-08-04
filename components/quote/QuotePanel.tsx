@@ -1,6 +1,6 @@
 'use client'
 
-import { useFileStore } from '@/store/useFileStore'
+import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
@@ -80,7 +80,8 @@ const defaultQuoteDetail = {
 }
 
 export default function QuotePanel({ embedded = false, initialQuote, guideSource, guideTopic }: QuotePanelProps) {
-    const { file, analysis } = useFileStore()
+    const file = useFileStore((s) => s.file)
+    const analysis = useEffectiveAnalysis()
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
     const [isSaving, setIsSaving] = useState(false)

@@ -1,38 +1,100 @@
 import { create } from 'zustand'
-
-interface GeometryData {
-    volume: number
-    surfaceArea: number
-    overhangArea?: number
-    boundingBox: { x: number; y: number; z: number }
-}
+import type { GeometryAnalysis } from '@/lib/geometry'
+import {
+    applyTransformToAnalysis,
+    clampScalePercent,
+    DEFAULT_MODEL_TRANSFORM,
+    nextAxis90,
+    type Axis90,
+    type ModelTransform,
+} from '@/lib/model-transform'
 
 interface FileState {
     file: File | null
     fileUrl: string | null
-    analysis: GeometryData | null
+    /** CPU/원본 메쉬 분석 (스케일·회전 미적용) */
+    baseAnalysis: GeometryAnalysis | null
+    transform: ModelTransform
     setFile: (file: File) => void
-    setAnalysis: (data: GeometryData) => void
+    setAnalysis: (data: GeometryAnalysis) => void
+    setScalePercent: (percent: number) => void
+    rotateAxis90: (axis: 'x' | 'y' | 'z', delta?: number) => void
+    setSnapToBed: (snap: boolean) => void
+    alignAxes: () => void
+    resetTransform: () => void
     reset: () => void
 }
 
 export const useFileStore = create<FileState>((set) => ({
     file: null,
     fileUrl: null,
-    analysis: null,
+    baseAnalysis: null,
+    transform: { ...DEFAULT_MODEL_TRANSFORM },
     setFile: (file) => {
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
             return {
                 file,
                 fileUrl: URL.createObjectURL(file),
-                analysis: null // reset analysis on new file
+                baseAnalysis: null,
+                transform: { ...DEFAULT_MODEL_TRANSFORM },
             }
         })
     },
-    setAnalysis: (data) => set({ analysis: data }),
-    reset: () => set((state) => {
-        if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
-        return { file: null, fileUrl: null, analysis: null }
-    }),
+    setAnalysis: (data) => set({ baseAnalysis: data }),
+    setScalePercent: (percent) =>
+        set((state) => ({
+            transform: {
+                ...state.transform,
+                scalePercent: clampScalePercent(percent),
+            },
+        })),
+    rotateAxis90: (axis, delta = 90) =>
+        set((state) => {
+            const key = axis === 'x' ? 'rotX' : axis === 'y' ? 'rotY' : 'rotZ'
+            const current = state.transform[key] as Axis90
+            return {
+                transform: {
+                    ...state.transform,
+                    [key]: nextAxis90(current, delta),
+                },
+            }
+        }),
+    setSnapToBed: (snap) =>
+        set((state) => ({
+            transform: { ...state.transform, snapToBed: snap },
+        })),
+    alignAxes: () =>
+        set((state) => ({
+            transform: {
+                ...state.transform,
+                rotX: 0,
+                rotY: 0,
+                rotZ: 0,
+            },
+        })),
+    resetTransform: () => set({ transform: { ...DEFAULT_MODEL_TRANSFORM } }),
+    reset: () =>
+        set((state) => {
+            if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
+            return {
+                file: null,
+                fileUrl: null,
+                baseAnalysis: null,
+                transform: { ...DEFAULT_MODEL_TRANSFORM },
+            }
+        }),
 }))
+
+/** 견적·치수 표시용: 변환이 반영된 분석값 */
+export function getEffectiveAnalysis(
+    baseAnalysis: GeometryAnalysis | null,
+    transform: ModelTransform
+): GeometryAnalysis | null {
+    if (!baseAnalysis) return null
+    return applyTransformToAnalysis(baseAnalysis, transform)
+}
+
+export function useEffectiveAnalysis(): GeometryAnalysis | null {
+    return useFileStore((s) => getEffectiveAnalysis(s.baseAnalysis, s.transform))
+}

@@ -2,14 +2,16 @@
 
 import { Canvas, useThree } from '@react-three/fiber'
 import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
-import { Suspense, useEffect, useState, useRef, createContext, useContext } from 'react'
+import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect } from 'react'
 import { useFileStore } from '@/store/useFileStore'
 import * as THREE from 'three'
 import { parseModelArrayBuffer } from '@/lib/parseModelGeometry'
 import { useCpuModelAnalysis } from '@/hooks/useCpuModelAnalysis'
 import { Button } from '@/components/ui/button'
-import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MousePointer2, Touchpad, HelpCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, HelpCircle, ChevronDown, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ModelTransformPanel from '@/components/canvas/ModelTransformPanel'
+import { degreesToRadians } from '@/lib/model-transform'
 
 // 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
 const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPreset: (v: string | null) => void }>({ viewPreset: null, setViewPreset: () => { } })
@@ -79,6 +81,9 @@ function Model({
     const boundsRef = useRef(bounds)
     boundsRef.current = bounds
     const mountedRef = useRef(true)
+    const groupRef = useRef<THREE.Group>(null)
+    const transform = useFileStore((s) => s.transform)
+    const scale = transform.scalePercent / 100
 
     useEffect(() => {
         mountedRef.current = true
@@ -86,6 +91,32 @@ function Model({
             mountedRef.current = false
         }
     }, [])
+
+    // 스케일·회전·바닥 붙이기 후 Bounds 다시 fit
+    useLayoutEffect(() => {
+        const group = groupRef.current
+        if (!group || !geometry) return
+
+        group.position.set(0, 0, 0)
+        group.updateMatrixWorld(true)
+
+        if (transform.snapToBed) {
+            const box = new THREE.Box3().setFromObject(group)
+            if (Number.isFinite(box.min.y)) {
+                group.position.y = -box.min.y
+                group.updateMatrixWorld(true)
+            }
+        }
+
+        const t = setTimeout(() => {
+            try {
+                boundsRef.current.refresh().clip().fit()
+            } catch {
+                /* ignore */
+            }
+        }, 50)
+        return () => clearTimeout(t)
+    }, [geometry, scale, transform.rotX, transform.rotY, transform.rotZ, transform.snapToBed])
 
     useEffect(() => {
         if (!url) return
@@ -163,15 +194,16 @@ function Model({
         return null
     }
 
-    // Bounding Box 사이즈 계산 (Wireframe용)
-    const boxSize: [number, number, number] = boundingBox ? [
-        boundingBox.max.x - boundingBox.min.x,
-        boundingBox.max.y - boundingBox.min.y,
-        boundingBox.max.z - boundingBox.min.z
-    ] : [1, 1, 1];
-
     return (
-        <group>
+        <group
+            ref={groupRef}
+            scale={[scale, scale, scale]}
+            rotation={[
+                degreesToRadians(transform.rotX),
+                degreesToRadians(transform.rotY),
+                degreesToRadians(transform.rotZ),
+            ]}
+        >
             <mesh geometry={geometry}>
                 <meshStandardMaterial
                     color={color}
@@ -183,7 +215,13 @@ function Model({
             {showMeasurements && boundingBox && (
                 <>
                     <mesh>
-                        <boxGeometry args={boxSize} />
+                        <boxGeometry
+                            args={[
+                                boundingBox.max.x - boundingBox.min.x,
+                                boundingBox.max.y - boundingBox.min.y,
+                                boundingBox.max.z - boundingBox.min.z,
+                            ]}
+                        />
                         <meshBasicMaterial color="#00ff00" wireframe />
                     </mesh>
                     <MeasurementTool boundingBox={boundingBox} />
@@ -382,6 +420,13 @@ export default function Scene({ compact = false }: SceneProps) {
                         />
                     </Canvas>
                 </div>
+
+                {/* 모델 변환 컨트롤 (견적/체험 뷰어) */}
+                {!compact && fileUrl && (
+                    <div className="absolute left-3 bottom-20 sm:left-4 sm:bottom-28 z-20 pointer-events-none max-w-[calc(100%-5.5rem)]">
+                        <ModelTransformPanel />
+                    </div>
+                )}
 
                 {/* 조작 가이드 - 하단 플로팅 바 형태로 변경 (전체화면 차단 방지) */}
                 <AnimatePresence>

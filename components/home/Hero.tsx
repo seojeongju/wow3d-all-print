@@ -6,7 +6,7 @@ import { ArrowRight, Sparkles, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFileStore } from '@/store/useFileStore';
+import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import LandingHeroScene from './LandingHeroScene';
 
@@ -33,7 +33,8 @@ type ApiMaterial = { type: string; name?: string; price_per_gram?: number; densi
 
 export default function Hero() {
     const router = useRouter();
-    const { setFile, file, analysis, reset } = useFileStore();
+    const { setFile, file, baseAnalysis, reset } = useFileStore();
+    const analysis = useEffectiveAnalysis() ?? baseAnalysis;
 
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
     const clearSampleIfPresent = () => { if (file && SAMPLE_NAMES.includes(file.name)) reset(); };

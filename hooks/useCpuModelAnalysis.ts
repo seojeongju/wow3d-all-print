@@ -11,12 +11,12 @@ import { parseModelArrayBuffer } from '@/lib/parseModelGeometry';
  */
 export function useCpuModelAnalysis() {
     const file = useFileStore((s) => s.file);
-    const analysis = useFileStore((s) => s.analysis);
+    const baseAnalysis = useFileStore((s) => s.baseAnalysis);
     const setAnalysis = useFileStore((s) => s.setAnalysis);
     const runId = useRef(0);
 
     useEffect(() => {
-        if (!file || analysis) return;
+        if (!file || baseAnalysis) return;
 
         const id = ++runId.current;
         let cancelled = false;
@@ -46,5 +46,5 @@ export function useCpuModelAnalysis() {
         return () => {
             cancelled = true;
         };
-    }, [file, analysis, setAnalysis]);
+    }, [file, baseAnalysis, setAnalysis]);
 }
