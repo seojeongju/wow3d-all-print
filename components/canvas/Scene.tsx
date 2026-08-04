@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Download, Ruler, Loader2, Palette, Home, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, HelpCircle, ChevronDown, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ModelTransformPanel from '@/components/canvas/ModelTransformPanel'
+import { ViewerErrorBoundary } from '@/components/canvas/ViewerErrorBoundary'
 import { degreesToRadians } from '@/lib/model-transform'
 
 // 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
@@ -152,7 +153,11 @@ function Model({
                 })
 
                 setTimeout(() => {
-                    boundsRef.current.refresh().clip().fit()
+                    try {
+                        boundsRef.current?.refresh?.().clip?.().fit?.()
+                    } catch {
+                        /* context/controls 미준비 시 무시 */
+                    }
                 }, 100)
 
                 setIsLoading(false)
@@ -273,6 +278,33 @@ function ViewPresetHandler() {
 
 const SUPPORTED_EXT = ['stl', 'obj', '3mf', 'ply', 'step', 'stp'] as const
 
+/** domElement가 준비된 뒤에만 Trackball을 연결 — connect(null) TypeError 방지 */
+function SafeTrackballControls() {
+    const gl = useThree((s) => s.gl)
+    const [domElement, setDomElement] = useState<HTMLElement | null>(null)
+
+    useEffect(() => {
+        const el = gl?.domElement ?? null
+        if (!el) return
+        setDomElement(el)
+    }, [gl])
+
+    if (!domElement) return null
+
+    return (
+        <TrackballControls
+            makeDefault
+            domElement={domElement}
+            staticMoving
+            rotateSpeed={2.2}
+            zoomSpeed={0.9}
+            panSpeed={0.6}
+            minDistance={0.1}
+            maxDistance={1000}
+        />
+    )
+}
+
 // 뷰어 컨텐츠 컴포넌트
 function ViewerContent({ color, showMeasurements }: { color: string, showMeasurements: boolean }) {
     const { file, fileUrl } = useFileStore()
@@ -313,6 +345,7 @@ export default function Scene({ compact = false }: SceneProps) {
     const [viewPreset, setViewPreset] = useState<string | null>(null)
     const [showGuide, setShowGuide] = useState(true)
     const [colorPanelOpen, setColorPanelOpen] = useState(false)
+    const [viewerEpoch, setViewerEpoch] = useState(0)
 
     useEffect(() => {
         const timer = setTimeout(() => setShowGuide(false), 5000)
@@ -365,60 +398,54 @@ export default function Scene({ compact = false }: SceneProps) {
     return (
         <div className="w-full h-full min-h-[400px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
-                {/* 3D Canvas — demand 모드는 초기 프레임이 안 그려지는 환경이 있어 always 사용 */}
+                {/* 파일 업로드마다 Canvas를 재생성하지 않음 — WebGL Context Lost + Trackball connect(null) 방지 */}
                 <div ref={canvasRef} className="absolute inset-0 z-0 h-full min-h-[400px]">
-                    <Canvas
-                        key={fileUrl || 'no-file'}
-                        shadows
-                        dpr={[1, 1.5]}
-                        frameloop="always"
-                        camera={{ position: [50, 50, 50], fov: 45 }}
-                        gl={{
-                            preserveDrawingBuffer: true,
-                            antialias: true,
-                            powerPreference: 'default',
-                            stencil: false,
-                        }}
-                        onCreated={({ gl, invalidate }) => {
-                            invalidate()
-                            const el = gl.domElement
-                            el.addEventListener('webglcontextlost', (e) => {
-                                e.preventDefault()
-                            })
-                        }}
-                    >
-                        <Suspense fallback={<LoadingSpinner />}>
-                            {/* Stage+environment="city" 제거: 외부 HDR 로드가 Context Lost 유발 → 수동 조명으로 대체 */}
-                            <ambientLight intensity={0.5} />
-                            <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow shadow-mapSize={1024} />
-                            <directionalLight position={[-10, -5, -10]} intensity={0.4} />
-                            <pointLight position={[0, 20, 0]} intensity={0.6} />
-                            <Bounds fit clip observe margin={1.5}>
-                                <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
-                                <ViewPresetHandler />
-                            </Bounds>
-                            <Grid
-                                renderOrder={-1}
-                                position={[0, -1, 0]}
-                                infiniteGrid
-                                cellSize={0.6}
-                                sectionSize={3}
-                                sectionColor="#4d4d66"
-                                cellColor="#1a1a33"
-                                fadeDistance={100}
-                            />
-                        </Suspense>
-                        {/* OrbitControls는 up 벡터가 +Y로 고정되어 상하 극점에서 회전이 멈춘다. 제한 없는 360° 뒤집기를 위해 트랙볼 방식 사용 */}
-                        <TrackballControls
-                            makeDefault
-                            staticMoving
-                            rotateSpeed={2.2}
-                            zoomSpeed={0.9}
-                            panSpeed={0.6}
-                            minDistance={0.1}
-                            maxDistance={1000}
-                        />
-                    </Canvas>
+                    <ViewerErrorBoundary onRetry={() => setViewerEpoch((n) => n + 1)}>
+                        <Canvas
+                            key={viewerEpoch}
+                            shadows
+                            dpr={[1, 1.5]}
+                            frameloop="always"
+                            camera={{ position: [50, 50, 50], fov: 45 }}
+                            gl={{
+                                preserveDrawingBuffer: true,
+                                antialias: true,
+                                powerPreference: 'default',
+                                stencil: false,
+                            }}
+                            onCreated={({ gl, invalidate }) => {
+                                invalidate()
+                                const el = gl?.domElement
+                                if (!el) return
+                                const onLost = (e: Event) => {
+                                    e.preventDefault()
+                                }
+                                el.addEventListener('webglcontextlost', onLost)
+                            }}
+                        >
+                            <Suspense fallback={<LoadingSpinner />}>
+                                <ambientLight intensity={0.5} />
+                                <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow shadow-mapSize={1024} />
+                                <directionalLight position={[-10, -5, -10]} intensity={0.4} />
+                                <pointLight position={[0, 20, 0]} intensity={0.6} />
+                                <Bounds fit clip observe margin={1.5}>
+                                    <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
+                                    <ViewPresetHandler />
+                                </Bounds>
+                                <Grid
+                                    renderOrder={-1}
+                                    position={[0, -1, 0]}
+                                    infiniteGrid
+                                    cellSize={0.6}
+                                    sectionSize={3}
+                                    sectionColor="#4d4d66"
+                                    cellColor="#1a1a33"
+                                    fadeDistance={100}
+                                />
+                            </Suspense>
+                            <SafeTrackballControls />
+                        </Canvas>
+                    </ViewerErrorBoundary>
                 </div>
 
                 {/* 모델 변환 컨트롤 (견적/체험 뷰어) */}
