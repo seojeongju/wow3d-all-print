@@ -142,15 +142,24 @@ export default function ModelTransformPanel({ className }: { className?: string 
                 </button>
             </div>
 
-            <div className="rounded-xl bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white/45 space-y-0.5">
-                <div className="flex justify-between gap-2">
-                    <span>치수 (mm)</span>
-                    <span className="font-mono text-white/75">
-                        {box.x.toFixed(1)} × {box.y.toFixed(1)} × {box.z.toFixed(1)}
-                    </span>
+            <div className="rounded-xl bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white/45 space-y-1.5">
+                <div className="text-white/35 text-[9px] font-black uppercase tracking-wider">치수 · 스케일/회전 적용</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                    <div className="rounded-lg bg-black/25 px-1.5 py-1.5 text-center">
+                        <div className="text-[8px] font-black text-teal-400/80 uppercase">X</div>
+                        <div className="font-mono text-white/85 text-[11px]">{box.x.toFixed(2)}</div>
+                    </div>
+                    <div className="rounded-lg bg-black/25 px-1.5 py-1.5 text-center">
+                        <div className="text-[8px] font-black text-teal-400/80 uppercase">Y</div>
+                        <div className="font-mono text-white/85 text-[11px]">{box.y.toFixed(2)}</div>
+                    </div>
+                    <div className="rounded-lg bg-black/25 px-1.5 py-1.5 text-center">
+                        <div className="text-[8px] font-black text-teal-400/80 uppercase">Z</div>
+                        <div className="font-mono text-white/85 text-[11px]">{box.z.toFixed(2)}</div>
+                    </div>
                 </div>
-                <div className="flex justify-between gap-2">
-                    <span>부피</span>
+                <div className="flex justify-between gap-2 pt-0.5">
+                    <span>메쉬 부피</span>
                     <span className="font-mono text-white/75">{effective.volume.toFixed(2)} cm³</span>
                 </div>
             </div>

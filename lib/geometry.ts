@@ -67,6 +67,9 @@ export const analyzeGeometry = (geometry: THREE.BufferGeometry): GeometryAnalysi
     }
 
 
+    if (!geometry.boundingBox) {
+        geometry.computeBoundingBox();
+    }
     const box = geometry.boundingBox!;
     const size = new THREE.Vector3();
     box.getSize(size);

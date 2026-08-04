@@ -3,7 +3,7 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect } from 'react'
-import { useFileStore } from '@/store/useFileStore'
+import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import * as THREE from 'three'
 import { parseModelArrayBuffer } from '@/lib/parseModelGeometry'
 import { useCpuModelAnalysis } from '@/hooks/useCpuModelAnalysis'
@@ -29,12 +29,12 @@ function LoadingSpinner() {
     )
 }
 
-// 측정 도구 컴포넌트
-function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
-    if (!boundingBox) return null
+// 측정 도구: Model Adjust·견적과 동일한 유효 치수(스케일·90° 회전 반영)
+function MeasurementTool() {
+    const effective = useEffectiveAnalysis()
+    if (!effective) return null
 
-    const size = new THREE.Vector3()
-    boundingBox.getSize(size)
+    const { x, y, z } = effective.boundingBox
 
     return (
         <Html position={[0, 0, 0]}>
@@ -42,17 +42,22 @@ function MeasurementTool({ boundingBox }: { boundingBox: THREE.Box3 | null }) {
                 <div className="font-black text-teal-400 mb-3 flex items-center gap-2 uppercase tracking-widest text-[10px]">
                     <Ruler className="w-3.5 h-3.5" /> 모델 치수 측정
                 </div>
+                <p className="text-[9px] font-bold text-white/35 -mt-1 mb-1">스케일·회전 적용 후 (견적 기준)</p>
                 <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
                     <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">X (Width)</span>
-                    <span className="font-mono font-black text-white">{size.x.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
+                    <span className="font-mono font-black text-white">{x.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
                 </div>
                 <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
                     <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">Y (Depth)</span>
-                    <span className="font-mono font-black text-white">{size.y.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
+                    <span className="font-mono font-black text-white">{y.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
                 </div>
                 <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
                     <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">Z (Height)</span>
-                    <span className="font-mono font-black bg-teal-500/20 text-teal-400 px-1.5 rounded">{size.z.toFixed(2)}<span className="text-[10px] text-teal-400/50 ml-0.5 font-sans">mm</span></span>
+                    <span className="font-mono font-black bg-teal-500/20 text-teal-400 px-1.5 rounded">{z.toFixed(2)}<span className="text-[10px] text-teal-400/50 ml-0.5 font-sans">mm</span></span>
+                </div>
+                <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
+                    <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">Volume</span>
+                    <span className="font-mono font-black text-white">{effective.volume.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">cm³</span></span>
                 </div>
             </div>
         </Html>
@@ -239,7 +244,7 @@ function Model({
                         />
                         <meshBasicMaterial color="#00ff00" wireframe />
                     </mesh>
-                    <MeasurementTool boundingBox={boundingBox} />
+                    <MeasurementTool />
                 </>
             )}
         </group>
