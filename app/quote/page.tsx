@@ -48,14 +48,16 @@ function QuoteContent() {
     const guideSource = searchParams.get('guide_source') || '';
     const guideTopic = searchParams.get('guide_topic') || '';
     const [loadedQuote, setLoadedQuote] = useState<Quote | null>(null); // DB quote data
+    const [isViewerDragging, setIsViewerDragging] = useState(false);
     const guideLabel = guideTopic || GUIDE_SOURCE_LABELS[guideSource] || '';
+    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
 
     // Auto-switch to settings tab when analysis is complete
     useEffect(() => {
         if (analysis && activeTab === 'viewer') {
             setActiveTab('settings');
         }
-    }, [analysis]);
+    }, [analysis, activeTab]);
 
     // Load quote data if ID is present
     useEffect(() => {
@@ -87,9 +89,6 @@ function QuoteContent() {
 
         load();
     }, [loadQuoteId, setFile]);
-
-    const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
-    const [isViewerDragging, setIsViewerDragging] = useState(false);
 
     const handleViewerDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
         if (!e.dataTransfer?.types?.includes('Files')) return;

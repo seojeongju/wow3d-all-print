@@ -87,9 +87,19 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const [isSaving, setIsSaving] = useState(false)
     const [uploadedQuoteId, setUploadedQuoteId] = useState<number | null>(null)
     const [lastSavedConfig, setLastSavedConfig] = useState<string>('')
-
-    // Print Method Selection
     const [printMethod, setPrintMethod] = useState<PrintMethod>('fdm')
+    const [fdmMaterial, setFdmMaterial] = useState('')
+    const [infill, setInfill] = useState(FDM_INFILL_DEFAULT)
+    const [layerHeight, setLayerHeight] = useState(0.2) // mm
+    const [supportEnabled, setSupportEnabled] = useState(true)
+    const [resinType, setResinType] = useState('')
+    const [slaLayerHeight, setSlaLayerHeight] = useState(0.05) // mm
+    const [postProcessing, setPostProcessing] = useState(false)
+    const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
+    const [materials, setMaterials] = useState<ApiMaterial[]>([])
+    /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
+    const [priceRoundMode] = useState<PriceRoundMode>('round')
+    const [detailModalOpen, setDetailModalOpen] = useState(false)
 
     // Initial Data Effect
     useEffect(() => {
@@ -108,22 +118,6 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
         }
     }, [initialQuote])
-
-    // FDM Options (fdmMaterial = 소재 이름, API와 연동)
-    const [fdmMaterial, setFdmMaterial] = useState('')
-    const [infill, setInfill] = useState(FDM_INFILL_DEFAULT)
-    const [layerHeight, setLayerHeight] = useState(0.2) // mm
-    const [supportEnabled, setSupportEnabled] = useState(true)
-
-    // SLA/DLP Options (resinType = 소재 이름)
-    const [resinType, setResinType] = useState('')
-    const [slaLayerHeight, setSlaLayerHeight] = useState(0.05) // mm
-    const [postProcessing, setPostProcessing] = useState(false)
-
-    const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
-    const [materials, setMaterials] = useState<ApiMaterial[]>([])
-    /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
-    const [priceRoundMode] = useState<PriceRoundMode>('round')
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -283,8 +277,6 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const baseAmount = minPriceKr != null && minPriceKr > 0 ? Math.max(quoteDetail.total, minPriceKr) : quoteDetail.total
     const totalPrice = roundTo100(baseAmount * 1.1, priceRoundMode)
     const estimatedTimeHours = quoteDetail.time
-
-    const [detailModalOpen, setDetailModalOpen] = useState(false)
 
     const handleSaveQuote = async () => {
         if (!analysis || !file) return

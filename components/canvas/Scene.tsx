@@ -83,6 +83,7 @@ function Model({
     boundsRef.current = bounds
     const mountedRef = useRef(true)
     const groupRef = useRef<THREE.Group>(null)
+    const geometryRef = useRef<THREE.BufferGeometry | null>(null)
     const transform = useFileStore((s) => s.transform)
     const scale = transform.scalePercent / 100
 
@@ -122,6 +123,8 @@ function Model({
     useEffect(() => {
         if (!url) return
 
+        let cancelled = false
+
         const loadModel = async () => {
             setIsLoading(true)
             setError(null)
@@ -131,8 +134,15 @@ function Model({
                     ? await fileRecord.arrayBuffer()
                     : await (await fetch(url)).arrayBuffer()
 
+                if (cancelled) return
+
                 const name = fileRecord?.name || 'model.stl'
                 const geo = await parseModelArrayBuffer(name, arrayBuffer)
+
+                if (cancelled) {
+                    geo?.dispose()
+                    return
+                }
 
                 if (!geo) {
                     setError('모델을 해석할 수 없습니다. 지원 형식(STL, OBJ, 3MF, PLY, STEP)인지 확인해 주세요.')
@@ -144,15 +154,15 @@ function Model({
                 const bbox = geo.boundingBox
                 if (bbox) setBoundingBox(bbox)
 
-                // 클린업: 이전 geometry가 있다면 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
-                setGeometry(prev => {
-                    if (prev) {
-                        try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
-                    }
-                    return geo
-                })
+                const prev = geometryRef.current
+                geometryRef.current = geo
+                if (prev && prev !== geo) {
+                    try { prev.dispose() } catch { /* context lost */ }
+                }
+                setGeometry(geo)
 
                 setTimeout(() => {
+                    if (cancelled) return
                     try {
                         boundsRef.current?.refresh?.().clip?.().fit?.()
                     } catch {
@@ -162,6 +172,7 @@ function Model({
 
                 setIsLoading(false)
             } catch (e) {
+                if (cancelled) return
                 console.error('❌ Model loading failed:', e)
                 setError(e instanceof Error ? e.message : 'Failed to load model')
                 setIsLoading(false)
@@ -170,14 +181,13 @@ function Model({
 
         loadModel()
 
-        // 컴포넌트 언마운트 시 geometry 메모리 해제 (컨텍스트 손실 시 안전하게 처리)
         return () => {
-            setGeometry(prev => {
-                if (prev) {
-                    try { prev.dispose() } catch (_) { /* context lost 시 무시 */ }
-                }
-                return null
-            })
+            cancelled = true
+            const g = geometryRef.current
+            geometryRef.current = null
+            if (g) {
+                try { g.dispose() } catch { /* context lost */ }
+            }
         }
     }, [url, fileRecord])
 
@@ -278,18 +288,9 @@ function ViewPresetHandler() {
 
 const SUPPORTED_EXT = ['stl', 'obj', '3mf', 'ply', 'step', 'stp'] as const
 
-/** domElement가 준비된 뒤에만 Trackball을 연결 — connect(null) TypeError 방지 */
+/** Canvas 내부에서는 gl.domElement가 항상 있음 — connect(null) 방지 */
 function SafeTrackballControls() {
-    const gl = useThree((s) => s.gl)
-    const [domElement, setDomElement] = useState<HTMLElement | null>(null)
-
-    useEffect(() => {
-        const el = gl?.domElement ?? null
-        if (!el) return
-        setDomElement(el)
-    }, [gl])
-
-    if (!domElement) return null
+    const domElement = useThree((s) => s.gl.domElement)
 
     return (
         <TrackballControls
@@ -307,10 +308,11 @@ function SafeTrackballControls() {
 
 // 뷰어 컨텐츠 컴포넌트
 function ViewerContent({ color, showMeasurements }: { color: string, showMeasurements: boolean }) {
-    const { file, fileUrl } = useFileStore()
+    const file = useFileStore((s) => s.file)
+    const fileUrl = useFileStore((s) => s.fileUrl)
 
     const fileExtension = file?.name.split('.').pop()?.toLowerCase()
-    const isSupported = fileExtension && SUPPORTED_EXT.includes(fileExtension as any)
+    const isSupported = fileExtension && SUPPORTED_EXT.includes(fileExtension as (typeof SUPPORTED_EXT)[number])
     const modelType: ModelType = (fileExtension === 'stp' ? 'step' : fileExtension) as ModelType
 
     if (fileUrl && isSupported) {
@@ -428,8 +430,8 @@ export default function Scene({ compact = false }: SceneProps) {
                                 <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow shadow-mapSize={1024} />
                                 <directionalLight position={[-10, -5, -10]} intensity={0.4} />
                                 <pointLight position={[0, 20, 0]} intensity={0.6} />
-                                <Bounds fit clip observe margin={1.5}>
-                                    <ViewerContent key={fileUrl || 'empty'} color={modelColor} showMeasurements={showMeasurements} />
+                                <Bounds fit clip margin={1.5}>
+                                    <ViewerContent color={modelColor} showMeasurements={showMeasurements} />
                                     <ViewPresetHandler />
                                 </Bounds>
                                 <Grid

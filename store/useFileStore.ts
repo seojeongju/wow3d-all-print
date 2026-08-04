@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useMemo } from 'react'
 import type { GeometryAnalysis } from '@/lib/geometry'
 import {
     applyTransformToAnalysis,
@@ -95,6 +96,18 @@ export function getEffectiveAnalysis(
     return applyTransformToAnalysis(baseAnalysis, transform)
 }
 
+/**
+ * 견적·치수용 유효 분석값.
+ * 주의: selector에서 매번 새 객체를 만들면 React 19 useSyncExternalStore가
+ * getSnapshot 불안정으로 깨지며 Minified error #310으로 이어질 수 있음.
+ * base/transform 참조만 구독하고 파생값은 useMemo로 고정한다.
+ */
 export function useEffectiveAnalysis(): GeometryAnalysis | null {
-    return useFileStore((s) => getEffectiveAnalysis(s.baseAnalysis, s.transform))
+    const baseAnalysis = useFileStore((s) => s.baseAnalysis)
+    const transform = useFileStore((s) => s.transform)
+
+    return useMemo(
+        () => getEffectiveAnalysis(baseAnalysis, transform),
+        [baseAnalysis, transform]
+    )
 }
