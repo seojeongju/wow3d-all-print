@@ -233,11 +233,12 @@ export async function generateFaqDraft(
     throw new Error('FAQ로 만들 문의 내용이 없습니다.')
   }
 
-  const fromWorkers = await generateWithWorkersAi(env, input)
-  if (fromWorkers) return fromWorkers
-
+  // 품질 우선: OpenAI 키가 있으면 먼저 사용
   const fromOpenAi = await generateWithOpenAi(env, input)
   if (fromOpenAi) return fromOpenAi
+
+  const fromWorkers = await generateWithWorkersAi(env, input)
+  if (fromWorkers) return fromWorkers
 
   return templateDraft(input)
 }
