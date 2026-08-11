@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import LandingHeroScene from './LandingHeroScene';
+import { OG_IMAGE_ALT, OG_IMAGE_PATH } from '@/lib/site-url';
 
 // 금액은 원화(KRW)로만 계산·표시. 자동견적(QuotePanel)과 동일한 공식·roundTo100·minPriceKr 적용
 import {
@@ -229,6 +230,22 @@ export default function Hero() {
                             <div className="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-teal-500/80 mt-0.5">최적의 출력 파트너</div>
                         </div>
                     </div>
+
+                    {/* 네이버 검색 썸네일 수집용 대표 제품 사진 (본문 <img>, CSS background 아님) */}
+                    <figure className="mt-8 max-w-sm">
+                        <img
+                            src={OG_IMAGE_PATH}
+                            alt={OG_IMAGE_ALT}
+                            width={1200}
+                            height={1200}
+                            className="w-full aspect-square max-h-44 sm:max-h-52 rounded-2xl object-cover border border-white/10 shadow-2xl"
+                            fetchPriority="high"
+                            decoding="async"
+                        />
+                        <figcaption className="mt-2 text-[11px] font-bold text-white/35 tracking-wide">
+                            WOW3D 3D프린팅 출력 · 시제품 제작 사례
+                        </figcaption>
+                    </figure>
                 </motion.div>
 
                 {/* Right Visual — 두 카드 동일 비율, 겹침 없이 나란히 */}

@@ -8,7 +8,11 @@ import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
 import {
+  absoluteUrl,
+  buildOgImages,
   OG_IMAGE_PATH,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
   SITE_URL,
 } from "@/lib/site-url";
 import {
@@ -26,14 +30,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const ogImages = buildOgImages();
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "(주)와우쓰리디 - 3D프린팅 출력 및 시제품제작 서비스 | 실시간 자동견적",
+    default: SITE_TITLE,
     template: "%s | (주)와우쓰리디 WOW3D",
   },
-  description:
-    "3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환 후 견적.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "와우쓰리디",
     "WOW3D",
@@ -47,30 +52,23 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: SITE_URL,
     siteName: "(주)와우쓰리디",
-    title: "3D프린팅 출력·자동견적 | 시제품제작 전문 (주)와우쓰리디 WOW3D",
-    description:
-      "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입·소량양산. (주)와우쓰리디가 당신의 상상을 현실로 만듭니다.",
-    images: [
-      {
-        url: OG_IMAGE_PATH,
-        width: 1200,
-        height: 630,
-        alt: "와우쓰리디 WOW3D 3D프린팅 출력 제품과 프린터",
-      },
-    ],
+    // 네이버: title과 og:title을 동일하게 권장
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ogImages,
   },
   twitter: {
     card: "summary_large_image",
-    title: "3D프린팅 출력·자동견적 | (주)와우쓰리디 WOW3D",
-    description: "3D 프린팅 출력 서비스와 AI 실시간 자동견적. 시제품·프로토타입 제작 전문 (주)와우쓰리디.",
-    images: [OG_IMAGE_PATH],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl(OG_IMAGE_PATH)],
   },
   robots: {
     index: true,
     follow: true,
     googleBot: { index: true, follow: true },
   },
-  alternates: { canonical: '/' },
+  alternates: { canonical: "/" },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "-9piNXSyjNzl442zz",
   },
@@ -92,11 +90,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const businessSchemas = buildBusinessSchemas();
+  const primaryImage = absoluteUrl(OG_IMAGE_PATH);
 
   return (
     <html lang="ko" className="dark">
       <head>
         <meta name="naver-site-verification" content={NAVER_SITE_VERIFICATION} />
+        {/* 네이버·구형 크롤러용 대표 이미지 힌트 */}
+        <link rel="image_src" href={primaryImage} />
+        <meta property="og:image:type" content="image/jpeg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

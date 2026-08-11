@@ -69,6 +69,43 @@ export function buildWebSiteSearchActionSchema() {
         name: '(주)와우쓰리디',
         alternateName: ['와우쓰리디', 'WOW3D', '와우3D'],
         url: SITE_URL,
+        image: absoluteUrl('/og-naver-v1.jpg'),
+        publisher: {
+            '@type': 'Organization',
+            name: '(주)와우쓰리디',
+            logo: {
+                '@type': 'ImageObject',
+                url: absoluteUrl('/thumbnail.png'),
+            },
+        },
+    };
+}
+
+/** 홈·대표 페이지용 — 네이버가 썸네일로 쓸 primaryImageOfPage */
+export function buildWebPageSchema(input?: {
+    name?: string;
+    description?: string;
+    path?: string;
+}) {
+    const path = input?.path ?? '/';
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: input?.name ?? '(주)와우쓰리디 - 3D프린팅 출력 및 시제품제작 서비스 | 실시간 자동견적',
+        description:
+            input?.description ??
+            '3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환 후 견적.',
+        url: absoluteUrl(path),
+        isPartOf: { '@type': 'WebSite', url: SITE_URL, name: '(주)와우쓰리디' },
+        primaryImageOfPage: {
+            '@type': 'ImageObject',
+            url: absoluteUrl('/og-naver-v1.jpg'),
+            width: 1200,
+            height: 1200,
+            caption: '와우쓰리디 WOW3D 3D프린팅 출력 시제품·산업용 부품과 프린터',
+        },
+        image: absoluteUrl('/og-naver-v1.jpg'),
+        inLanguage: 'ko-KR',
     };
 }
 
@@ -131,7 +168,10 @@ export function buildBusinessSchemas() {
             alternateName: ['WOW3D', '와우쓰리디', '와우3D'],
             url: SITE_URL,
             logo: absoluteUrl('/thumbnail.png'),
-            image: absoluteUrl('/og-image-v2.jpg'),
+            image: [
+                absoluteUrl('/og-naver-v1.jpg'),
+                absoluteUrl('/og-image-v2.jpg'),
+            ],
             email: 'wow3d16@naver.com',
             telephone: '02-3144-3137',
             sameAs: [
@@ -157,7 +197,10 @@ export function buildBusinessSchemas() {
             description:
                 '(주)와우쓰리디는 3D 프린팅 출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 기반 업체입니다.',
             url: SITE_URL,
-            image: absoluteUrl('/og-image-v2.jpg'),
+            image: [
+                absoluteUrl('/og-naver-v1.jpg'),
+                absoluteUrl('/og-image-v2.jpg'),
+            ],
             email: 'wow3d16@naver.com',
             telephone: '02-3144-3137',
             priceRange: '$$',
