@@ -91,10 +91,10 @@ export function buildWebPageSchema(input?: {
     return {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: input?.name ?? '(주)와우쓰리디 - 3D프린팅 출력 및 시제품제작 서비스 | 실시간 자동견적',
+        name: input?.name ?? '3D프린팅출력 · 3D프린터출력 전문 | (주)와우쓰리디 WOW3D',
         description:
             input?.description ??
-            '3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환 후 견적.',
+            '3D프린팅출력·3D프린터출력 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환. 시제품제작부터 소량생산까지.',
         url: absoluteUrl(path),
         isPartOf: { '@type': 'WebSite', url: SITE_URL, name: '(주)와우쓰리디' },
         primaryImageOfPage: {
@@ -102,7 +102,7 @@ export function buildWebPageSchema(input?: {
             url: absoluteUrl('/og-naver-v1.jpg'),
             width: 1200,
             height: 1200,
-            caption: '와우쓰리디 WOW3D 3D프린팅 출력 시제품·산업용 부품과 프린터',
+            caption: '와우쓰리디 WOW3D 3D프린팅출력·3D프린터출력 시제품·산업용 부품',
         },
         image: absoluteUrl('/og-naver-v1.jpg'),
         inLanguage: 'ko-KR',
@@ -195,7 +195,7 @@ export function buildBusinessSchemas() {
             '@id': `${SITE_URL}#localbusiness`,
             name: '(주)와우쓰리디 (WOW3D)',
             description:
-                '(주)와우쓰리디는 3D 프린팅 출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 기반 업체입니다.',
+                '(주)와우쓰리디는 3D프린팅출력, 3D프린터출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 기반 업체입니다.',
             url: SITE_URL,
             image: [
                 absoluteUrl('/og-naver-v1.jpg'),
@@ -230,19 +230,20 @@ export function buildBusinessSchemas() {
         {
             '@context': 'https://schema.org',
             '@type': 'Service',
-            serviceType: '3D프린팅 출력 및 시제품제작',
+            serviceType: '3D프린팅출력 및 3D프린터출력 · 시제품제작',
             provider: {
                 '@type': 'LocalBusiness',
                 name: '(주)와우쓰리디 (WOW3D)',
             },
             areaServed: 'KR',
             description:
-                '3D 프린팅 자동견적, FDM·SLA·DLP 출력, 시제품 제작, 소량 양산, 파일 검토와 납기 상담 서비스를 제공합니다.',
+                '3D프린팅출력·3D프린터출력 자동견적, FDM·SLA·DLP 출력, 시제품 제작, 소량 양산, 파일 검토와 납기 상담 서비스를 제공합니다.',
             hasOfferCatalog: {
                 '@type': 'OfferCatalog',
                 name: 'WOW3D 3D 프린팅 서비스',
                 itemListElement: [
-                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '3D 프린팅 자동견적' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '3D프린팅출력 자동견적' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '3D프린터출력 서비스' } },
                     { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'FDM 출력 서비스' } },
                     { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'SLA 출력 서비스' } },
                     { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'DLP 출력 서비스' } },

@@ -19,10 +19,10 @@ export const OG_IMAGE_WIDE_HEIGHT = 630;
 export const BRAND_LOGO_PATH = '/thumbnail.png';
 
 export const SITE_TITLE =
-    '(주)와우쓰리디 - 3D프린팅 출력 및 시제품제작 서비스 | 실시간 자동견적';
+    '3D프린팅출력 · 3D프린터출력 전문 | (주)와우쓰리디 WOW3D';
 export const SITE_DESCRIPTION =
-    '3D프린팅 출력 및 시제품제작 서비스 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환 후 견적.';
-export const OG_IMAGE_ALT = '와우쓰리디 WOW3D 3D프린팅 출력 시제품·산업용 부품과 프린터';
+    '3D프린팅출력·3D프린터출력 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환. 시제품제작부터 소량생산까지.';
+export const OG_IMAGE_ALT = '와우쓰리디 WOW3D 3D프린팅출력·3D프린터출력 시제품·산업용 부품';
 
 const LOCALHOST_RE = /^https?:\/\/localhost(:\d+)?(\/|$)/i;
 const APEX_ORIGIN = 'https://wow3dp.co.kr';

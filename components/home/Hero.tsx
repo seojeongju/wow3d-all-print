@@ -160,7 +160,7 @@ export default function Hero() {
 
                     <h1 className="text-[2rem] sm:text-4xl md:text-[2.8rem] lg:text-[3.2rem] xl:text-[3.8rem] font-black tracking-tight mb-6 leading-[1.2] break-keep text-white">
                         <span className="text-teal-400 block text-xs sm:text-sm md:text-base mb-4 font-black uppercase tracking-[0.3em] opacity-90">WOW3D PRO</span>
-                        3D프린팅 출력 및<br />
+                        3D프린팅출력 · 3D프린터출력<br />
                         <span className="text-teal-400 relative inline-block mt-2">
                             시제품제작 서비스
                             <svg className="absolute w-full h-2 sm:h-3 -bottom-1 left-0 text-teal-400/30" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -243,7 +243,7 @@ export default function Hero() {
                             decoding="async"
                         />
                         <figcaption className="mt-2 text-[11px] font-bold text-white/35 tracking-wide">
-                            WOW3D 3D프린팅 출력 · 시제품 제작 사례
+                            WOW3D 3D프린팅출력 · 3D프린터출력 제작 사례
                         </figcaption>
                     </figure>
                 </motion.div>

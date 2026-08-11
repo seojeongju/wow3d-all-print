@@ -17,6 +17,10 @@ export default function robots(): MetadataRoute.Robots {
           "/maker",
         ],
       },
+      {
+        userAgent: "Yeti",
+        allow: "/",
+      },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

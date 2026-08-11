@@ -9,7 +9,7 @@ const quoteDescription =
 export const metadata: Metadata = {
   title: quoteTitle,
   description: quoteDescription,
-  keywords: ["3D프린팅 자동견적", "3D프린팅 견적", "3D프린터 출력 가격", "3D 프린팅 견적"],
+  keywords: ["3D프린팅출력", "3D프린터출력", "3D프린팅 자동견적", "3D프린팅 견적", "3D프린터 출력 가격", "3D 프린팅 견적"],
   openGraph: {
     url: `${SITE_URL}/quote`,
     title: quoteTitle,

@@ -9,9 +9,9 @@ import { SERVICE_LANDINGS } from '@/lib/seo-service-pages'
 import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema'
 
 export const metadata: Metadata = {
-    title: '3D프린팅 서비스 | 출력대행·시제품·FDM·SLA·소량생산',
+    title: '3D프린팅출력·3D프린터출력 서비스 | 출력대행·시제품·FDM·SLA',
     description:
-        '3D프린팅 출력대행, 시제품 제작, FDM·SLA 출력, 졸업작품, 소량생산, 3D 모델링 의뢰까지 WOW3D 전환 서비스를 한곳에서 확인하세요.',
+        '3D프린팅출력, 3D프린터출력, 시제품 제작, FDM·SLA 출력, 졸업작품, 소량생산, 3D 모델링 의뢰까지 WOW3D 서비스를 한곳에서 확인하세요.',
     alternates: { canonical: absoluteUrl('/services') },
     openGraph: {
         title: '3D프린팅 서비스 | WOW3D',

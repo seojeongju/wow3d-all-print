@@ -40,12 +40,15 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   keywords: [
+    "3D프린팅출력",
+    "3D프린터출력",
+    "3D프린팅 출력",
+    "3D프린터 출력",
     "와우쓰리디",
     "WOW3D",
-    "3D프린팅 출력",
     "시제품제작",
-    "3D 프린팅 자동 견적",
-    "프로토타입 제작",
+    "3D프린팅 자동견적",
+    "3D프린팅 출력대행",
   ],
   openGraph: {
     type: "website",
