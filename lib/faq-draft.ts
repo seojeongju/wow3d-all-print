@@ -137,30 +137,53 @@ function parseDraftPayload(
   }
 }
 
+function isGreetingOrNoise(line: string): boolean {
+  const t = line.trim()
+  if (t.length < 12) return true
+  return /^(안녕하세요|안녕하십니까|안녕|hello|hi|수고|문의드립니다|문의 드립니다)[.!]?\s*$/i.test(t)
+}
+
+function pickMeaningfulLine(message: string, subject: string): string {
+  const lines = message
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length >= 12 && !isGreetingOrNoise(l))
+  if (lines.length) {
+    // 질문형·키워드 우선
+    const scored = lines
+      .map((l) => {
+        let score = 0
+        if (/[?？]|나요|까요|인가요|가능한|추천|견적|소재|파일|출력/.test(l)) score += 3
+        if (l.length >= 20 && l.length <= 120) score += 1
+        return { l, score }
+      })
+      .sort((a, b) => b.score - a.score)
+    return scored[0]?.l || lines[0]
+  }
+  if (subject && !isGreetingOrNoise(subject)) return subject
+  return message.replace(/\s+/g, ' ').trim().slice(0, 100)
+}
+
 function templateDraft(input: FaqDraftInput): FaqDraftResult {
   const message = sanitizeFaqSourceText(input.message || '')
   const subject = sanitizeFaqSourceText(input.subject || '')
   const category = normalizeCategory(input.categoryHint)
-  const firstLine =
-    message
-      .split(/\n/)
-      .map((l) => l.trim())
-      .find((l) => l.length >= 8) || subject
+  const meaningful = pickMeaningfulLine(message, subject)
 
-  let question = firstLine.replace(/[?？]*$/, '').slice(0, 80)
-  if (!question.endsWith('나요') && !question.endsWith('까요') && !question.includes('?')) {
-    question = `${question}?`
-  }
-  if (question.length < 10) {
+  let question = meaningful.replace(/[?？]*$/, '').slice(0, 80)
+  // 인사/원문 그대로보다 FAQ형 질문으로 정리
+  if (/안녕하세요|문의드립니다/i.test(question) || question.length < 12) {
     question =
       category === 'quote'
-        ? '3D 프린팅 자동견적은 어떻게 확인하나요?'
+        ? '3D 프린팅 견적·소재는 어떻게 선택하나요?'
         : category === 'tech'
           ? '3D 프린팅에 어떤 파일을 업로드할 수 있나요?'
           : '와우쓰리디 3D 프린팅 서비스는 어떤 도움을 주나요?'
+  } else if (!question.endsWith('나요') && !question.endsWith('까요') && !question.includes('?')) {
+    question = `${question}?`
   }
 
-  const excerpt = (firstLine || message).slice(0, 120)
+  const excerpt = meaningful.slice(0, 120)
   const answerByCategory: Record<FaqCategory, string> = {
     quote:
       '와우쓰리디 자동견적은 파일 부피·크기·출력 방식·소재·레이어 높이 등을 반영해 실시간으로 안내합니다. STL·OBJ·3MF·PLY는 즉시 견적이 가능하고, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다. 특수 소재나 복잡한 형상은 관리자 검토 후 금액이 조정될 수 있으니 자동견적 결과와 함께 문의해 주세요.',
@@ -189,39 +212,54 @@ function templateDraft(input: FaqDraftInput): FaqDraftResult {
 
 type AiAttempt<T> = { result: T | null; error?: string }
 
+/** deprecated llama-3.1-8b-instruct 대체 — 활성 모델 순서로 시도 */
+const WORKERS_AI_MODELS = [
+  '@cf/meta/llama-3.1-8b-instruct-fast',
+  '@cf/zai-org/glm-4.7-flash',
+  '@cf/meta/llama-4-scout-17b-16e-instruct',
+] as const
+
 async function generateWithWorkersAi(
   env: FaqDraftAiEnv,
   input: FaqDraftInput
 ): Promise<AiAttempt<FaqDraftResult>> {
   if (!env.AI?.run) return { result: null, error: 'Workers AI 바인딩 없음' }
-  try {
-    const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: buildUserPrompt(input) },
-      ],
-      max_tokens: 700,
-      temperature: 0.3,
-    })
-    const parsed = parseDraftPayload(result, input, 'workers-ai')
-    if (!parsed) {
-      return { result: null, error: 'Workers AI 응답 JSON 파싱 실패' }
+
+  const errors: string[] = []
+  for (const model of WORKERS_AI_MODELS) {
+    try {
+      const result = await env.AI.run(model, {
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: buildUserPrompt(input) },
+        ],
+        max_tokens: 700,
+        temperature: 0.3,
+      })
+      const parsed = parseDraftPayload(result, input, 'workers-ai')
+      if (parsed) return { result: parsed }
+      errors.push(`${model}: JSON 파싱 실패`)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.warn('[faq-draft] Workers AI failed', model, e)
+      errors.push(`${model}: ${msg.slice(0, 120)}`)
     }
-    return { result: parsed }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.warn('[faq-draft] Workers AI failed', e)
-    return { result: null, error: msg.slice(0, 200) }
   }
+  return { result: null, error: errors.join(' | ').slice(0, 280) }
 }
 
 function summarizeOpenAiHttpError(status: number, body: string): string {
-  const trimmed = body.replace(/\s+/g, ' ').trim().slice(0, 180)
-  if (status === 401) return `OpenAI 인증 실패(401). API 키를 확인하세요.${trimmed ? ` ${trimmed}` : ''}`
-  if (status === 429) return `OpenAI 한도/쿼터 초과(429).${trimmed ? ` ${trimmed}` : ''}`
-  if (status === 402 || /billing|quota|credit/i.test(body)) {
-    return `OpenAI 결제/크레딧 문제(${status}). Billing을 확인하세요.`
+  if (/insufficient_quota|no credits remaining/i.test(body) || status === 402) {
+    return 'OpenAI 크레딧이 부족합니다. platform.openai.com → Billing에서 크레딧을 충전하세요.'
   }
+  if (status === 401) return 'OpenAI 인증 실패(401). API 키를 확인하세요.'
+  if (status === 429) {
+    if (/rate.?limit/i.test(body)) {
+      return 'OpenAI 요청 한도(rate limit)를 초과했습니다. 잠시 후 다시 시도하세요.'
+    }
+    return 'OpenAI 한도/쿼터 초과(429). Billing·사용량을 확인하세요.'
+  }
+  const trimmed = body.replace(/\s+/g, ' ').trim().slice(0, 120)
   return `OpenAI HTTP ${status}${trimmed ? `: ${trimmed}` : ''}`
 }
 

@@ -3,7 +3,9 @@
 관리자 **문의 관리 → FAQ 초안 생성**은 OpenAI API 키가 있으면 이를 **최우선**으로 사용합니다.  
 키가 없으면 Workers AI → 규칙 기반 폴백 순입니다.
 
-현재 모델: `gpt-4o-mini` (품질·비용 균형)
+현재 모델: `gpt-4o-mini` (품질·비용 균형)  
+Workers AI 폴백: `llama-3.1-8b-instruct-fast` → `glm-4.7-flash` → `llama-4-scout`  
+(구 `llama-3.1-8b-instruct`는 2026-05-30 deprecated)
 
 ## 1. OpenAI API 키 발급
 
@@ -52,6 +54,7 @@ OPENAI_API_KEY=sk-xxxxxxxx
 3. 미리보기 안내의 `provider: openai` 이면 OpenAI 사용 중  
 
 `provider: workers-ai` / `template` 이면 키가 없거나 API 오류입니다.  
+특히 `insufficient_quota` / 크레딧 부족이면 [OpenAI Billing](https://platform.openai.com/settings/organization/billing)에서 충전하세요.  
 Workers 로그·OpenAI 사용량 대시보드를 확인하세요.
 
 ## 5. 비용·보안 참고
