@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { QnAItem } from "@/lib/qna";
+import { OG_IMAGE_ALT, OG_IMAGE_PATH } from "@/lib/site-url";
 
 const MakerWorkspace = dynamic(
   () => import("@/components/maker/MakerWorkspace").then((mod) => mod.MakerWorkspace),
@@ -38,6 +39,30 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
       {/* ─── 상단 3구역: 업로드 → 가격·납기 → 주문 ─── */}
       <Hero />
       <Marquee />
+
+      {/* 네이버 썸네일용 대표 이미지 — 히어로 밖 배치(헤더 겹침 방지) */}
+      <section className="relative border-y border-white/5 bg-slate-950/80" aria-label="WOW3D 3D프린팅 제작 사례">
+        <div className="container mx-auto px-4 py-8 sm:py-10 flex flex-col sm:flex-row items-center gap-5 sm:gap-8">
+          <img
+            src={OG_IMAGE_PATH}
+            alt={OG_IMAGE_ALT}
+            width={1200}
+            height={1200}
+            className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover border border-white/10 shadow-xl shrink-0"
+            decoding="async"
+          />
+          <div className="text-center sm:text-left min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400/80 mb-2">Featured Work</p>
+            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
+              WOW3D 3D프린팅출력 · 시제품 제작 사례
+            </h2>
+            <p className="mt-1.5 text-sm text-white/45 font-medium break-keep">
+              산업용 부품·시제품을 정밀 출력합니다. 파일 업로드 후 실시간 자동견적으로 바로 확인하세요.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <ModelUploadSection />
       <CoreJourneySection />
 
