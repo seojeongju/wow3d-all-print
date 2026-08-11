@@ -71,7 +71,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
                 { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p === '/admin/quotes' || p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics') },
                 { title: '견적 유입 분석', href: '/admin/quotes/analytics', icon: BarChart3, match: (p: string) => p.startsWith('/admin/quotes/analytics') },
-                { title: '문의 관리', href: '/admin/inquiries', icon: MessageSquare, match: (p: string) => p.startsWith('/admin/inquiries') },
+                {
+                    title: '문의 관리',
+                    href: '/admin/inquiries',
+                    icon: MessageSquare,
+                    match: (p: string) =>
+                        p.startsWith('/admin/inquiries') && !p.startsWith('/admin/inquiries/faq-draft'),
+                },
+                {
+                    title: 'AI FAQ 작성',
+                    href: '/admin/inquiries/faq-draft',
+                    icon: Sparkles,
+                    match: (p: string) => p.startsWith('/admin/inquiries/faq-draft'),
+                    nested: true,
+                },
             ],
         },
         {
@@ -127,7 +140,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                             key={item.href}
                                             href={item.href}
                                             className={cn(
-                                                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                                                'flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                                                'nested' in item && item.nested ? 'pl-8 pr-3' : 'px-3',
                                                 item.match(pathname)
                                                     ? 'bg-primary/20 text-primary border border-primary/30'
                                                     : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'

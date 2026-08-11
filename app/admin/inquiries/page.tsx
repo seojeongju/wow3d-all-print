@@ -272,11 +272,19 @@ export default function AdminInquiriesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">문의 관리</h1>
-        <p className="text-white/50 text-sm mt-1">
-          접수된 문의를 확인하고 상태·메모를 관리할 수 있습니다. 네이버 알림 메일에 「답장」하면 고객 발송·답변완료가 자동 반영됩니다.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">문의 관리</h1>
+          <p className="text-white/50 text-sm mt-1">
+            접수된 문의를 확인하고 상태·메모를 관리할 수 있습니다. 네이버 알림 메일에 「답장」하면 고객 발송·답변완료가 자동 반영됩니다.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="border-teal-400/30 text-teal-300 hover:bg-teal-400/10 shrink-0">
+          <Link href="/admin/inquiries/faq-draft">
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI FAQ 작성
+          </Link>
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
