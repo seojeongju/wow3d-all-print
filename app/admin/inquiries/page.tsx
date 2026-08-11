@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 import { inquiryFileDisplayName, parseInquiryFileUrls } from '@/lib/inquiry-files'
+import AdminListPagination from '@/components/admin/AdminListPagination'
 import {
   Select,
   SelectContent,
@@ -27,6 +28,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
+const PAGE_SIZE = 20
+const SEARCH_DEBOUNCE_MS = 400
+
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'new', label: '신규' },
   { value: 'read', label: '확인함' },
@@ -41,6 +45,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   partnership: '파트너십',
   other: '기타',
 }
+
+type ListPagination = { page: number; limit: number; total: number; totalPages: number }
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -63,7 +69,16 @@ export default function AdminInquiriesPage() {
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [inquiries, setInquiries] = useState<Record<string, unknown>[]>([])
+  const [pagination, setPagination] = useState<ListPagination>({
+    page: 1,
+    limit: PAGE_SIZE,
+    total: 0,
+    totalPages: 1,
+  })
+  const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const prevDebouncedRef = useRef('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [updatingId, setUpdatingId] = useState<number | null>(null)
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null)
@@ -79,46 +94,79 @@ export default function AdminInquiriesPage() {
     category: 'general',
     provider: '',
     similarQuestions: [] as string[],
+    diagnostics: undefined as
+      | {
+          openaiKeyPresent?: boolean
+          openaiError?: string
+          workersAiError?: string
+        }
+      | undefined,
   })
 
   useEffect(() => {
     const status = searchParams.get('status')
     if (status && STATUS_OPTIONS.some((o) => o.value === status)) {
       setStatusFilter(status)
+      setPage(1)
     }
   }, [searchParams])
 
-  const fetchInquiries = async () => {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = searchQuery.trim()
+      if (prevDebouncedRef.current === next) return
+      prevDebouncedRef.current = next
+      setDebouncedSearch(next)
+      setPage(1)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(t)
+  }, [searchQuery])
+
+  const fetchInquiries = useCallback(async () => {
     setLoading(true)
     try {
-      const url = statusFilter && statusFilter !== 'all' ? `/api/admin/inquiries?status=${statusFilter}` : '/api/admin/inquiries'
-      const res = await fetch(url, {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      })
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
+      if (debouncedSearch) params.set('q', debouncedSearch)
+
+      const res = await fetch(`/api/admin/inquiries?${params}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: 'no-store',
       })
       const data = await res.json()
-      if (data.success) setInquiries(data.data || [])
+      if (data.success && data.data?.items) {
+        const pag = data.data.pagination || {
+          page: 1,
+          limit: PAGE_SIZE,
+          total: 0,
+          totalPages: 1,
+        }
+        setInquiries(Array.isArray(data.data.items) ? data.data.items : [])
+        setPagination(pag)
+        if (pag.totalPages >= 1 && page > pag.totalPages) {
+          setPage(pag.totalPages)
+        }
+      } else if (data.success && Array.isArray(data.data)) {
+        // 구 응답 호환
+        setInquiries(data.data)
+        setPagination({ page: 1, limit: PAGE_SIZE, total: data.data.length, totalPages: 1 })
+      } else {
+        toast({ title: '문의 목록 조회 실패', variant: 'destructive' })
+      }
     } catch (e) {
       console.error('Failed to fetch inquiries', e)
       toast({ title: '문의 목록 조회 실패', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, toast, page, statusFilter, debouncedSearch])
 
   useEffect(() => {
     fetchInquiries()
-  }, [statusFilter])
-
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    if (!q) return inquiries
-    return inquiries.filter(
-      (i) =>
-        (String(i.name || '').toLowerCase().includes(q)) ||
-        (String(i.email || '').toLowerCase().includes(q)) ||
-        (String(i.message || '').toLowerCase().includes(q))
-    )
-  }, [inquiries, searchQuery])
+  }, [fetchInquiries])
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     setUpdatingId(id)
@@ -208,15 +256,27 @@ export default function AdminInquiriesPage() {
         similarQuestions: Array.isArray(json.data.similarQuestions)
           ? json.data.similarQuestions.map(String)
           : [],
+        diagnostics: json.data.diagnostics || undefined,
       })
       setFaqDraftOpen(true)
-      toast({
-        title: 'FAQ 초안이 생성되었습니다',
-        description:
-          json.data.provider === 'template'
-            ? '규칙 기반 초안입니다. 내용을 다듬은 뒤 미게시에 저장하세요.'
-            : '내용을 검수한 뒤 미게시에 저장하세요.',
-      })
+      const provider = String(json.data.provider || '')
+      const openaiError = json.data.diagnostics?.openaiError as string | undefined
+      if (provider === 'openai') {
+        toast({
+          title: 'FAQ 초안이 생성되었습니다',
+          description: 'OpenAI 초안입니다. 내용을 검수한 뒤 미게시에 저장하세요.',
+        })
+      } else {
+        toast({
+          title: `FAQ 초안 생성됨 (${provider || 'fallback'})`,
+          description:
+            openaiError ||
+            (provider === 'template'
+              ? 'OpenAI가 동작하지 않아 규칙 기반 초안입니다. 키·결제·로그를 확인하세요.'
+              : '내용을 검수한 뒤 미게시에 저장하세요.'),
+          variant: provider === 'template' ? 'destructive' : 'default',
+        })
+      }
     } catch {
       toast({ title: 'FAQ 초안 생성 중 오류', variant: 'destructive' })
     } finally {
@@ -262,7 +322,7 @@ export default function AdminInquiriesPage() {
     }
   }
 
-  if (loading) {
+  if (loading && inquiries.length === 0) {
     return (
       <div className="flex justify-center p-12">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -298,7 +358,13 @@ export default function AdminInquiriesPage() {
             className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => {
+            setStatusFilter(v)
+            setPage(1)
+          }}
+        >
           <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
             <SelectValue placeholder="상태 필터" />
           </SelectTrigger>
@@ -330,7 +396,7 @@ export default function AdminInquiriesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((inq) => (
+                {inquiries.map((inq) => (
                   <tr key={inq.id as number} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                     <td className="p-4 font-medium text-white">{String(inq.name || '-')}</td>
                     <td className="p-4 text-white/90">{String(inq.email || '-')}</td>
@@ -374,16 +440,26 @@ export default function AdminInquiriesPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {inquiries.length === 0 && !loading && (
                   <tr>
                     <td colSpan={8} className="p-12 text-center text-white/40">
-                      {inquiries.length === 0 ? '접수된 문의가 없습니다.' : '검색 결과가 없습니다.'}
+                      {pagination.total === 0 && !debouncedSearch && statusFilter === 'all'
+                        ? '접수된 문의가 없습니다.'
+                        : '검색·필터 결과가 없습니다.'}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          <AdminListPagination
+            page={page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            loading={loading}
+            filterHint={!!debouncedSearch || statusFilter !== 'all'}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 
@@ -511,9 +587,26 @@ export default function AdminInquiriesPage() {
               AI/규칙 기반 초안입니다. 개인정보가 없는지 확인한 뒤 <strong className="text-white/70">미게시</strong>로 저장하고,
               FAQ 관리에서 공개하세요.
               {faqDraft.provider ? (
-                <span className="ml-1 text-white/30">(provider: {faqDraft.provider})</span>
+                <span
+                  className={`ml-1 ${
+                    faqDraft.provider === 'openai' ? 'text-teal-400/80' : 'text-amber-300/80'
+                  }`}
+                >
+                  (provider: {faqDraft.provider})
+                </span>
               ) : null}
             </p>
+            {faqDraft.provider && faqDraft.provider !== 'openai' ? (
+              <div className="rounded-lg border border-amber-400/20 bg-amber-500/10 p-3 space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">OpenAI 미사용</p>
+                <p className="text-xs text-amber-100/80 leading-relaxed">
+                  {faqDraft.diagnostics?.openaiError ||
+                    (faqDraft.diagnostics?.openaiKeyPresent === false
+                      ? 'OPENAI_API_KEY가 런타임에 없습니다. Cloudflare Secret을 확인하세요.'
+                      : 'OpenAI 호출에 실패해 대체 초안을 사용했습니다.')}
+                </p>
+              </div>
+            ) : null}
             <div>
               <Label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">질문</Label>
               <Input

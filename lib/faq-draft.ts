@@ -1,6 +1,6 @@
 /**
  * FAQ 초안 생성 — 문의/메모를 검색용 Q&A로 일반화.
- * 프로바이더: Workers AI → OpenAI → 규칙 기반 폴백
+ * 프로바이더: OpenAI → Workers AI → 규칙 기반 폴백
  */
 
 export type FaqCategory = 'general' | 'quote' | 'tech' | 'partnership' | 'other'
@@ -13,12 +13,19 @@ export type FaqDraftInput = {
   sourceLabel?: string
 }
 
+export type FaqDraftDiagnostics = {
+  openaiKeyPresent: boolean
+  openaiError?: string
+  workersAiError?: string
+}
+
 export type FaqDraftResult = {
   question: string
   answer: string
   category: FaqCategory
   provider: 'workers-ai' | 'openai' | 'template'
   similarQuestions?: string[]
+  diagnostics?: FaqDraftDiagnostics
 }
 
 export type FaqDraftAiEnv = {
@@ -29,6 +36,14 @@ export type FaqDraftAiEnv = {
     ) => Promise<unknown>
   }
   OPENAI_API_KEY?: string
+}
+
+function resolveOpenAiKey(env: FaqDraftAiEnv): string {
+  // Workers: nodejs_compat_populate_process_env 시 Secret은 process.env에 먼저 들어옴
+  const fromProcess =
+    typeof process !== 'undefined' ? process.env?.OPENAI_API_KEY?.trim() : ''
+  if (fromProcess) return fromProcess
+  return env.OPENAI_API_KEY?.trim() || ''
 }
 
 const CATEGORIES: FaqCategory[] = ['general', 'quote', 'tech', 'partnership', 'other']
@@ -145,6 +160,7 @@ function templateDraft(input: FaqDraftInput): FaqDraftResult {
           : '와우쓰리디 3D 프린팅 서비스는 어떤 도움을 주나요?'
   }
 
+  const excerpt = (firstLine || message).slice(0, 120)
   const answerByCategory: Record<FaqCategory, string> = {
     quote:
       '와우쓰리디 자동견적은 파일 부피·크기·출력 방식·소재·레이어 높이 등을 반영해 실시간으로 안내합니다. STL·OBJ·3MF·PLY는 즉시 견적이 가능하고, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다. 특수 소재나 복잡한 형상은 관리자 검토 후 금액이 조정될 수 있으니 자동견적 결과와 함께 문의해 주세요.',
@@ -158,19 +174,26 @@ function templateDraft(input: FaqDraftInput): FaqDraftResult {
       '와우쓰리디는 3D 프린팅 출력과 시제품 제작, 실시간 자동견적을 제공합니다. 파일 업로드 후 가격과 예상 제작기간을 확인하고 주문할 수 있으며, 세부 조건은 공정·수량·후가공에 따라 달라질 수 있습니다. 구체 조건은 자동견적 또는 문의를 통해 확인해 주세요.',
   }
 
+  const base = answerByCategory[category]
+  const answer = excerpt
+    ? `${base} (문의 요지 참고: ${excerpt}${excerpt.length >= 120 ? '…' : ''})`
+    : base
+
   return {
     question,
-    answer: answerByCategory[category],
+    answer: answer.slice(0, 2000),
     category,
     provider: 'template',
   }
 }
 
+type AiAttempt<T> = { result: T | null; error?: string }
+
 async function generateWithWorkersAi(
   env: FaqDraftAiEnv,
   input: FaqDraftInput
-): Promise<FaqDraftResult | null> {
-  if (!env.AI?.run) return null
+): Promise<AiAttempt<FaqDraftResult>> {
+  if (!env.AI?.run) return { result: null, error: 'Workers AI 바인딩 없음' }
   try {
     const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
       messages: [
@@ -180,19 +203,34 @@ async function generateWithWorkersAi(
       max_tokens: 700,
       temperature: 0.3,
     })
-    return parseDraftPayload(result, input, 'workers-ai')
+    const parsed = parseDraftPayload(result, input, 'workers-ai')
+    if (!parsed) {
+      return { result: null, error: 'Workers AI 응답 JSON 파싱 실패' }
+    }
+    return { result: parsed }
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
     console.warn('[faq-draft] Workers AI failed', e)
-    return null
+    return { result: null, error: msg.slice(0, 200) }
   }
+}
+
+function summarizeOpenAiHttpError(status: number, body: string): string {
+  const trimmed = body.replace(/\s+/g, ' ').trim().slice(0, 180)
+  if (status === 401) return `OpenAI 인증 실패(401). API 키를 확인하세요.${trimmed ? ` ${trimmed}` : ''}`
+  if (status === 429) return `OpenAI 한도/쿼터 초과(429).${trimmed ? ` ${trimmed}` : ''}`
+  if (status === 402 || /billing|quota|credit/i.test(body)) {
+    return `OpenAI 결제/크레딧 문제(${status}). Billing을 확인하세요.`
+  }
+  return `OpenAI HTTP ${status}${trimmed ? `: ${trimmed}` : ''}`
 }
 
 async function generateWithOpenAi(
   env: FaqDraftAiEnv,
   input: FaqDraftInput
-): Promise<FaqDraftResult | null> {
-  const key = env.OPENAI_API_KEY?.trim()
-  if (!key) return null
+): Promise<AiAttempt<FaqDraftResult>> {
+  const key = resolveOpenAiKey(env)
+  if (!key) return { result: null, error: 'OPENAI_API_KEY 없음' }
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -202,7 +240,7 @@ async function generateWithOpenAi(
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        temperature: 0.3,
+        temperature: 0.4,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -211,17 +249,27 @@ async function generateWithOpenAi(
       }),
     })
     if (!res.ok) {
-      console.warn('[faq-draft] OpenAI HTTP', res.status, await res.text().catch(() => ''))
-      return null
+      const body = await res.text().catch(() => '')
+      const error = summarizeOpenAiHttpError(res.status, body)
+      console.warn('[faq-draft] OpenAI HTTP', res.status, body.slice(0, 300))
+      return { result: null, error }
     }
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>
     }
     const content = data.choices?.[0]?.message?.content || ''
-    return parseDraftPayload(content, input, 'openai')
+    if (!content.trim()) {
+      return { result: null, error: 'OpenAI 응답이 비어 있음' }
+    }
+    const parsed = parseDraftPayload(content, input, 'openai')
+    if (!parsed) {
+      return { result: null, error: 'OpenAI 응답 JSON 파싱 실패' }
+    }
+    return { result: parsed }
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
     console.warn('[faq-draft] OpenAI failed', e)
-    return null
+    return { result: null, error: msg.slice(0, 200) }
   }
 }
 
@@ -233,14 +281,23 @@ export async function generateFaqDraft(
     throw new Error('FAQ로 만들 문의 내용이 없습니다.')
   }
 
-  // 품질 우선: OpenAI 키가 있으면 먼저 사용
+  const diagnostics: FaqDraftDiagnostics = {
+    openaiKeyPresent: !!resolveOpenAiKey(env),
+  }
+
   const fromOpenAi = await generateWithOpenAi(env, input)
-  if (fromOpenAi) return fromOpenAi
+  if (fromOpenAi.error) diagnostics.openaiError = fromOpenAi.error
+  if (fromOpenAi.result) {
+    return { ...fromOpenAi.result, diagnostics }
+  }
 
   const fromWorkers = await generateWithWorkersAi(env, input)
-  if (fromWorkers) return fromWorkers
+  if (fromWorkers.error) diagnostics.workersAiError = fromWorkers.error
+  if (fromWorkers.result) {
+    return { ...fromWorkers.result, diagnostics }
+  }
 
-  return templateDraft(input)
+  return { ...templateDraft(input), diagnostics }
 }
 
 /** 기존 FAQ와 단순 유사도(포함/공통 토큰) — 중복 안내용 */

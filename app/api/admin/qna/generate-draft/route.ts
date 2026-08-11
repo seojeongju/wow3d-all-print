@@ -92,11 +92,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const envVars = env as unknown as Record<string, string | undefined>
     const aiEnv: FaqDraftAiEnv = {
       AI: (env as { AI?: FaqDraftAiEnv['AI'] }).AI,
+      // process.env 우선 (nodejs_compat_populate_process_env)
       OPENAI_API_KEY:
-        (env as { OPENAI_API_KEY?: string }).OPENAI_API_KEY ||
-        process.env.OPENAI_API_KEY,
+        (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined) ||
+        envVars.OPENAI_API_KEY,
     }
 
     const draft = await generateFaqDraft(
@@ -124,6 +126,10 @@ export async function POST(req: NextRequest) {
         .bind(draft.question, draft.answer, draft.category, storeId)
         .run()
       savedId = Number(result.meta.last_row_id) || null
+    }
+
+    if (draft.provider !== 'openai') {
+      console.warn('[generate-draft] fallback provider=', draft.provider, draft.diagnostics)
     }
 
     return successResponse({
