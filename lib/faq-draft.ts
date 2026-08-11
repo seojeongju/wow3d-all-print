@@ -1,0 +1,273 @@
+/**
+ * FAQ 초안 생성 — 문의/메모를 검색용 Q&A로 일반화.
+ * 프로바이더: Workers AI → OpenAI → 규칙 기반 폴백
+ */
+
+export type FaqCategory = 'general' | 'quote' | 'tech' | 'partnership' | 'other'
+
+export type FaqDraftInput = {
+  subject?: string | null
+  message: string
+  categoryHint?: string | null
+  adminNote?: string | null
+  sourceLabel?: string
+}
+
+export type FaqDraftResult = {
+  question: string
+  answer: string
+  category: FaqCategory
+  provider: 'workers-ai' | 'openai' | 'template'
+  similarQuestions?: string[]
+}
+
+export type FaqDraftAiEnv = {
+  AI?: {
+    run: (
+      model: string,
+      input: Record<string, unknown>
+    ) => Promise<unknown>
+  }
+  OPENAI_API_KEY?: string
+}
+
+const CATEGORIES: FaqCategory[] = ['general', 'quote', 'tech', 'partnership', 'other']
+
+const SYSTEM_PROMPT = `당신은 (주)와우쓰리디(WOW3D) 3D프린팅 출력·시제품 제작 서비스의 FAQ 작성 담당자입니다.
+고객 문의 원문을 바탕으로 공개 FAQ용 질문·답변 초안을 JSON으로만 작성하세요.
+
+규칙:
+1. 이름·이메일·전화·주소·회사명·주문번호·파일명 등 개인·식별 정보를 절대 넣지 마세요.
+2. 질문은 검색에 잘 걸리도록 일반화하세요. (예: "제 STL 견적 얼마예요?" → "3D 프린팅 자동견적은 어떻게 확인하나요?")
+3. 답변은 2~5문장, 한국어, 사실 확인된 서비스 범위만. 확실하지 않은 가격·납기는 단정하지 말고 "파일·공정에 따라 다르며 자동견적/상담으로 확인" 식으로 안내.
+4. category는 general|quote|tech|partnership|other 중 하나.
+5. 출력은 반드시 JSON 한 객체만: {"question":"...","answer":"...","category":"quote"}`
+
+function normalizeCategory(raw: string | null | undefined, hint?: string | null): FaqCategory {
+  const v = (raw || hint || 'general').toLowerCase().trim()
+  if (v === 'development') return 'tech'
+  if (CATEGORIES.includes(v as FaqCategory)) return v as FaqCategory
+  if (v.includes('견적') || v.includes('quote') || v.includes('price')) return 'quote'
+  if (v.includes('파일') || v.includes('tech') || v.includes('stl')) return 'tech'
+  if (v.includes('파트너') || v.includes('partner')) return 'partnership'
+  return 'general'
+}
+
+/** 이메일·전화·과도한 숫자열 등 민감 패턴 마스킹 */
+export function sanitizeFaqSourceText(text: string): string {
+  return text
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[이메일]')
+    .replace(/(?:\+?82[-\s]?)?0?\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}/g, '[연락처]')
+    .replace(/\b\d{6,}\b/g, '[번호]')
+    .replace(/[^\S\n]+/g, ' ')
+    .trim()
+    .slice(0, 2500)
+}
+
+function extractJsonObject(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim()
+  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const candidate = fence?.[1]?.trim() || trimmed
+  const start = candidate.indexOf('{')
+  const end = candidate.lastIndexOf('}')
+  if (start < 0 || end <= start) return null
+  try {
+    return JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function buildUserPrompt(input: FaqDraftInput): string {
+  const subject = sanitizeFaqSourceText(input.subject || '')
+  const message = sanitizeFaqSourceText(input.message || '')
+  const note = sanitizeFaqSourceText(input.adminNote || '')
+  return [
+    input.sourceLabel ? `출처: ${input.sourceLabel}` : '',
+    subject ? `제목: ${subject}` : '',
+    `문의 내용:\n${message || '(내용 없음)'}`,
+    note ? `관리자 참고 메모(비공개, 답변 힌트만):\n${note}` : '',
+    `카테고리 힌트: ${input.categoryHint || 'general'}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+function parseDraftPayload(
+  raw: unknown,
+  input: FaqDraftInput,
+  provider: FaqDraftResult['provider']
+): FaqDraftResult | null {
+  let text = ''
+  if (typeof raw === 'string') text = raw
+  else if (raw && typeof raw === 'object') {
+    const o = raw as Record<string, unknown>
+    if (typeof o.response === 'string') text = o.response
+    else if (typeof o.result === 'string') text = o.result
+    else if (typeof o.output_text === 'string') text = o.output_text
+    else if (Array.isArray(o.output) && o.output[0] && typeof (o.output[0] as { content?: unknown }).content === 'string') {
+      text = String((o.output[0] as { content: string }).content)
+    } else text = JSON.stringify(raw)
+  }
+  const parsed = extractJsonObject(text)
+  if (!parsed) return null
+  const question = String(parsed.question || '').trim()
+  const answer = String(parsed.answer || '').trim()
+  if (question.length < 8 || answer.length < 20) return null
+  return {
+    question: question.slice(0, 200),
+    answer: answer.slice(0, 2000),
+    category: normalizeCategory(String(parsed.category || ''), input.categoryHint),
+    provider,
+  }
+}
+
+function templateDraft(input: FaqDraftInput): FaqDraftResult {
+  const message = sanitizeFaqSourceText(input.message || '')
+  const subject = sanitizeFaqSourceText(input.subject || '')
+  const category = normalizeCategory(input.categoryHint)
+  const firstLine =
+    message
+      .split(/\n/)
+      .map((l) => l.trim())
+      .find((l) => l.length >= 8) || subject
+
+  let question = firstLine.replace(/[?？]*$/, '').slice(0, 80)
+  if (!question.endsWith('나요') && !question.endsWith('까요') && !question.includes('?')) {
+    question = `${question}?`
+  }
+  if (question.length < 10) {
+    question =
+      category === 'quote'
+        ? '3D 프린팅 자동견적은 어떻게 확인하나요?'
+        : category === 'tech'
+          ? '3D 프린팅에 어떤 파일을 업로드할 수 있나요?'
+          : '와우쓰리디 3D 프린팅 서비스는 어떤 도움을 주나요?'
+  }
+
+  const answerByCategory: Record<FaqCategory, string> = {
+    quote:
+      '와우쓰리디 자동견적은 파일 부피·크기·출력 방식·소재·레이어 높이 등을 반영해 실시간으로 안내합니다. STL·OBJ·3MF·PLY는 즉시 견적이 가능하고, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다. 특수 소재나 복잡한 형상은 관리자 검토 후 금액이 조정될 수 있으니 자동견적 결과와 함께 문의해 주세요.',
+    tech:
+      'STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원하며 STEP·STP는 변환 후 견적합니다. 업로드 전 단위(mm), 벽 두께, 메쉬 오류를 확인하면 제작 품질이 안정적입니다. 파일이 열리더라도 얇은 벽·열린 형상 등으로 출력이 어려울 수 있어, 필요 시 파일 검토를 요청해 주세요.',
+    partnership:
+      '대리점·협업·대량 제작 관련 문의는 파트너십 상담으로 접수됩니다. 사업 형태와 예상 물량, 희망 공정을 알려주시면 담당자가 가능 여부와 절차를 안내합니다. 자세한 내용은 파트너십 페이지 또는 문의하기를 이용해 주세요.',
+    other:
+      '문의 내용을 확인한 뒤 담당자가 안내드립니다. 견적·파일·제작 관련은 자동견적과 FAQ를 먼저 참고하시면 더 빠르게 확인하실 수 있습니다. 추가 상담이 필요하면 문의하기에 내용을 남겨 주세요.',
+    general:
+      '와우쓰리디는 3D 프린팅 출력과 시제품 제작, 실시간 자동견적을 제공합니다. 파일 업로드 후 가격과 예상 제작기간을 확인하고 주문할 수 있으며, 세부 조건은 공정·수량·후가공에 따라 달라질 수 있습니다. 구체 조건은 자동견적 또는 문의를 통해 확인해 주세요.',
+  }
+
+  return {
+    question,
+    answer: answerByCategory[category],
+    category,
+    provider: 'template',
+  }
+}
+
+async function generateWithWorkersAi(
+  env: FaqDraftAiEnv,
+  input: FaqDraftInput
+): Promise<FaqDraftResult | null> {
+  if (!env.AI?.run) return null
+  try {
+    const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(input) },
+      ],
+      max_tokens: 700,
+      temperature: 0.3,
+    })
+    return parseDraftPayload(result, input, 'workers-ai')
+  } catch (e) {
+    console.warn('[faq-draft] Workers AI failed', e)
+    return null
+  }
+}
+
+async function generateWithOpenAi(
+  env: FaqDraftAiEnv,
+  input: FaqDraftInput
+): Promise<FaqDraftResult | null> {
+  const key = env.OPENAI_API_KEY?.trim()
+  if (!key) return null
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        temperature: 0.3,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: buildUserPrompt(input) },
+        ],
+      }),
+    })
+    if (!res.ok) {
+      console.warn('[faq-draft] OpenAI HTTP', res.status, await res.text().catch(() => ''))
+      return null
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>
+    }
+    const content = data.choices?.[0]?.message?.content || ''
+    return parseDraftPayload(content, input, 'openai')
+  } catch (e) {
+    console.warn('[faq-draft] OpenAI failed', e)
+    return null
+  }
+}
+
+export async function generateFaqDraft(
+  input: FaqDraftInput,
+  env: FaqDraftAiEnv = {}
+): Promise<FaqDraftResult> {
+  if (!sanitizeFaqSourceText(input.message || input.subject || '')) {
+    throw new Error('FAQ로 만들 문의 내용이 없습니다.')
+  }
+
+  const fromWorkers = await generateWithWorkersAi(env, input)
+  if (fromWorkers) return fromWorkers
+
+  const fromOpenAi = await generateWithOpenAi(env, input)
+  if (fromOpenAi) return fromOpenAi
+
+  return templateDraft(input)
+}
+
+/** 기존 FAQ와 단순 유사도(포함/공통 토큰) — 중복 안내용 */
+export function findSimilarQuestions(
+  draftQuestion: string,
+  existing: Array<{ question: string }>,
+  limit = 3
+): string[] {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^0-9a-z가-힣\s]/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  const q = norm(draftQuestion)
+  if (!q) return []
+  const tokens = new Set(q.split(' ').filter((t) => t.length >= 2))
+  const scored = existing
+    .map((item) => {
+      const eq = norm(item.question)
+      if (!eq) return { q: item.question, score: 0 }
+      if (eq === q || eq.includes(q) || q.includes(eq)) return { q: item.question, score: 1 }
+      const et = eq.split(' ').filter((t) => t.length >= 2)
+      const hit = et.filter((t) => tokens.has(t)).length
+      const score = et.length ? hit / Math.max(et.length, tokens.size) : 0
+      return { q: item.question, score }
+    })
+    .filter((x) => x.score >= 0.35)
+    .sort((a, b) => b.score - a.score)
+  return scored.slice(0, limit).map((x) => x.q)
+}

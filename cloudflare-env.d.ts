@@ -7,8 +7,14 @@ interface CloudflareEnv {
 	DB: D1Database;
 	WORKER_SELF_REFERENCE: Fetcher;
 	ASSETS: Fetcher;
+	/** Workers AI (FAQ 초안 등) */
+	AI?: {
+		run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
+	};
 	/** Cloudflare Workers Variables and Secrets (대시보드에서 설정) */
 	REMOVE_BG_API_KEY?: string;
 	TRIPO3D_API_KEY?: string;
 	TRIPO_API_KEY?: string;
+	/** 선택: Workers AI 미사용 시 FAQ 초안용 */
+	OPENAI_API_KEY?: string;
 }

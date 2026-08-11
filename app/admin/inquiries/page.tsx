@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Search, Loader2, Eye, Paperclip } from 'lucide-react'
+import { Search, Loader2, Eye, Paperclip, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 import { inquiryFileDisplayName, parseInquiryFileUrls } from '@/lib/inquiry-files'
@@ -69,6 +70,16 @@ export default function AdminInquiriesPage() {
   const [detailNote, setDetailNote] = useState('')
   const [detailStatus, setDetailStatus] = useState('')
   const [savingDetail, setSavingDetail] = useState(false)
+  const [faqGenerating, setFaqGenerating] = useState(false)
+  const [faqSaving, setFaqSaving] = useState(false)
+  const [faqDraftOpen, setFaqDraftOpen] = useState(false)
+  const [faqDraft, setFaqDraft] = useState({
+    question: '',
+    answer: '',
+    category: 'general',
+    provider: '',
+    similarQuestions: [] as string[],
+  })
 
   useEffect(() => {
     const status = searchParams.get('status')
@@ -165,6 +176,89 @@ export default function AdminInquiriesPage() {
       toast({ title: '저장 중 오류가 발생했습니다.', variant: 'destructive' })
     } finally {
       setSavingDetail(false)
+    }
+  }
+
+  const handleGenerateFaqDraft = async () => {
+    if (!detail?.id) return
+    setFaqGenerating(true)
+    try {
+      const res = await fetch('/api/admin/qna/generate-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          source: 'inquiry',
+          sourceId: detail.id,
+          save: false,
+        }),
+      })
+      const json = await res.json()
+      if (!json.success || !json.data) {
+        toast({ title: json.error || 'FAQ 초안 생성 실패', variant: 'destructive' })
+        return
+      }
+      setFaqDraft({
+        question: String(json.data.question || ''),
+        answer: String(json.data.answer || ''),
+        category: String(json.data.category || 'general'),
+        provider: String(json.data.provider || ''),
+        similarQuestions: Array.isArray(json.data.similarQuestions)
+          ? json.data.similarQuestions.map(String)
+          : [],
+      })
+      setFaqDraftOpen(true)
+      toast({
+        title: 'FAQ 초안이 생성되었습니다',
+        description:
+          json.data.provider === 'template'
+            ? '규칙 기반 초안입니다. 내용을 다듬은 뒤 미게시에 저장하세요.'
+            : '내용을 검수한 뒤 미게시에 저장하세요.',
+      })
+    } catch {
+      toast({ title: 'FAQ 초안 생성 중 오류', variant: 'destructive' })
+    } finally {
+      setFaqGenerating(false)
+    }
+  }
+
+  const handleSaveFaqDraft = async () => {
+    if (!faqDraft.question.trim() || !faqDraft.answer.trim()) {
+      toast({ title: '질문과 답변을 입력해 주세요.', variant: 'destructive' })
+      return
+    }
+    setFaqSaving(true)
+    try {
+      const res = await fetch('/api/admin/qna/generate-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          source: 'manual',
+          save: true,
+          question: faqDraft.question.trim(),
+          answer: faqDraft.answer.trim(),
+          category: faqDraft.category,
+        }),
+      })
+      const json = await res.json()
+      if (!json.success) {
+        toast({ title: json.error || '저장 실패', variant: 'destructive' })
+        return
+      }
+      toast({
+        title: '미게시 FAQ로 저장됨',
+        description: 'FAQ 관리에서 검수 후 공개할 수 있습니다.',
+      })
+      setFaqDraftOpen(false)
+    } catch {
+      toast({ title: '저장 중 오류', variant: 'destructive' })
+    } finally {
+      setFaqSaving(false)
     }
   }
 
@@ -369,12 +463,105 @@ export default function AdminInquiriesPage() {
               </div>
             </div>
           )}
+          <DialogFooter showCloseButton={false} className="flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-teal-400/40 text-teal-300 hover:bg-teal-400/10"
+              onClick={handleGenerateFaqDraft}
+              disabled={faqGenerating || !detail?.message}
+            >
+              {faqGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              FAQ 초안 생성
+            </Button>
+            <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+              <Button variant="outline" className="border-white/10 text-white flex-1 sm:flex-none" onClick={() => setDetail(null)}>
+                닫기
+              </Button>
+              <Button onClick={handleSaveDetail} disabled={savingDetail} className="flex-1 sm:flex-none">
+                {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={faqDraftOpen} onOpenChange={setFaqDraftOpen}>
+        <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-xl" showCloseButton>
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-teal-400" />
+              FAQ 초안 검수
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-white/45 leading-relaxed">
+              AI/규칙 기반 초안입니다. 개인정보가 없는지 확인한 뒤 <strong className="text-white/70">미게시</strong>로 저장하고,
+              FAQ 관리에서 공개하세요.
+              {faqDraft.provider ? (
+                <span className="ml-1 text-white/30">(provider: {faqDraft.provider})</span>
+              ) : null}
+            </p>
+            <div>
+              <Label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">질문</Label>
+              <Input
+                value={faqDraft.question}
+                onChange={(e) => setFaqDraft((d) => ({ ...d, question: e.target.value }))}
+                className="mt-1 bg-white/5 border-white/10 text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">답변</Label>
+              <textarea
+                value={faqDraft.answer}
+                onChange={(e) => setFaqDraft((d) => ({ ...d, answer: e.target.value }))}
+                rows={7}
+                className="mt-1 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white resize-y"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">카테고리</Label>
+              <Select
+                value={faqDraft.category}
+                onValueChange={(v) => setFaqDraft((d) => ({ ...d, category: v }))}
+              >
+                <SelectTrigger className="mt-1 w-full bg-white/5 border-white/10 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {faqDraft.similarQuestions.length > 0 ? (
+              <div className="rounded-lg border border-amber-400/20 bg-amber-500/10 p-3 space-y-1.5">
+                <p className="text-[10px] font-black uppercase tracking-wider text-amber-300">유사 FAQ 주의</p>
+                <ul className="text-xs text-amber-100/80 space-y-1 list-disc pl-4">
+                  {faqDraft.similarQuestions.map((q) => (
+                    <li key={q}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
           <DialogFooter showCloseButton={false}>
-            <Button variant="outline" className="border-white/10 text-white" onClick={() => setDetail(null)}>
+            <Button variant="outline" className="border-white/10 text-white" onClick={() => setFaqDraftOpen(false)}>
               닫기
             </Button>
-            <Button onClick={handleSaveDetail} disabled={savingDetail}>
-              {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
+            <Button asChild variant="outline" className="border-white/10 text-white">
+              <Link href="/admin/qna">FAQ 관리로</Link>
+            </Button>
+            <Button onClick={handleSaveFaqDraft} disabled={faqSaving}>
+              {faqSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              미게시에 저장
             </Button>
           </DialogFooter>
         </DialogContent>

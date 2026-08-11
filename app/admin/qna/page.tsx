@@ -186,7 +186,14 @@ export default function AdminQnAPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white uppercase tracking-tight">FAQ 관리</h1>
-          <p className="text-white/40 text-sm mt-1">자주 묻는 질문(FAQ) 항목을 관리하고 노출 순서를 설정합니다.</p>
+          <p className="text-white/40 text-sm mt-1">
+            자주 묻는 질문(FAQ)을 관리합니다. 문의 관리에서 AI 초안을 만들면 여기 <span className="text-amber-300/90">미게시</span>로 쌓입니다 — 검수 후 공개하세요.
+          </p>
+          {qnas.some((q) => !q.is_published) ? (
+            <p className="text-amber-300/80 text-xs mt-1 font-bold">
+              미게시 초안 {qnas.filter((q) => !q.is_published).length}건
+            </p>
+          ) : null}
         </div>
         <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 h-11 px-6 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-primary/20">
           <Plus className="w-4 h-4" /> 질문 추가
