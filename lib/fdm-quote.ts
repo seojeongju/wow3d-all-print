@@ -4,7 +4,7 @@
  * 인필(속채움):
  * - UI 범위 10~100% (기본 20%) — 10%도 실제 반영 (구 density×0.2 floor 제거)
  * - 무게 = 외벽(shell) 부피×밀도 + 내부 부피×밀도×(인필/100)
- * - 출력 시간은 인필이 반영된 weightGrams로 volumeTime에 간접 반영
+ * - 출력 시간: 모델 무게 + 서포트 추정 무게를 Bambu급 유량식으로 반영
  */
 
 import { roundTo100 } from '@/lib/amount-display'
@@ -30,6 +30,16 @@ export const FDM_DEFAULT_DENSITY = 1.24
 export const FDM_DEFAULT_LABOR_KRW = 6500
 export const FDM_DEFAULT_SUPPORT_PER_CM2_KRW = 26
 export const FDM_DEFAULT_HOURLY_RATE_KRW = 5000
+
+/**
+ * 트리/오가닉 서포트 채움 밀도 근사 (Bambu tree ~희소).
+ * supportVol ≈ overhangArea × (height×frac) × fill
+ */
+export const FDM_SUPPORT_FILL_RATIO = 0.125
+/** 오버행 아래 평균 기둥 높이 = 모델 높이 × 이 비율 */
+export const FDM_SUPPORT_AVG_HEIGHT_FRAC = 0.42
+/** 서포트 무게 상한: 모델 무게 대비 배수 (극단 오버행 클램프) */
+export const FDM_SUPPORT_MAX_MODEL_WEIGHT_RATIO = 3.5
 
 export function clampFdmInfillPercent(v: unknown, fallback = FDM_INFILL_DEFAULT): number {
     const n = Math.round(Number(v))
@@ -69,6 +79,36 @@ export function estimateFdmWeightGrams(input: {
     return { weightGrams, shellVolCm3, infillVolCm3, effectiveInfill, shellThicknessMm }
 }
 
+/**
+ * Bambu급 서포트 필라멘트 무게 근사.
+ * overhang 그림자 부피 × 희소 채움 밀도 (트리 서포트 체감).
+ */
+export function estimateFdmSupportGrams(input: {
+    supportEnabled: boolean
+    overhangAreaCm2: number
+    heightMm: number
+    density: number
+    /** 클램프용 모델 무게(g) */
+    modelWeightGrams?: number
+}): number {
+    if (!input.supportEnabled) return 0
+    const overhang = Math.max(0, Number(input.overhangAreaCm2) || 0)
+    if (overhang <= 0) return 0
+    const heightCm = Math.max(0, Number(input.heightMm) || 0) / 10
+    const density = Math.max(0, Number(input.density) || FDM_DEFAULT_DENSITY)
+    const volCm3 =
+        overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC * FDM_SUPPORT_FILL_RATIO
+    let grams = volCm3 * density
+    const modelW = Math.max(0, Number(input.modelWeightGrams) || 0)
+    if (modelW > 0) {
+        grams = Math.min(grams, modelW * FDM_SUPPORT_MAX_MODEL_WEIGHT_RATIO)
+    }
+    return grams
+}
+
+/** 오버행 미측정 시 표면적의 이 비율을 지지면적으로 사용 */
+export const FDM_DEFAULT_OVERHANG_SURFACE_RATIO = 0.3
+
 export type CalculateFdmQuoteInput = {
     volumeCm3: number
     surfaceAreaCm2: number
@@ -97,7 +137,10 @@ export type CalculateFdmQuoteResult = {
     total: number
     timeHours: number
     numLayers: number
+    /** 모델(쉘+인필) 무게 — 재료비 기준 */
     weightGrams: number
+    /** 서포트 추정 무게(g). 재료비에는 면적 단가 사용, 시간에는 반영 */
+    supportGrams: number
     shellVolCm3: number
     infillVolCm3: number
     effectiveInfill: number
@@ -133,8 +176,16 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
     const overhang =
         input.overhangAreaCm2 != null && Number.isFinite(Number(input.overhangAreaCm2))
             ? Math.max(0, Number(input.overhangAreaCm2))
-            : Math.max(0, Number(input.surfaceAreaCm2) || 0) * 0.3
+            : Math.max(0, Number(input.surfaceAreaCm2) || 0) * FDM_DEFAULT_OVERHANG_SURFACE_RATIO
     const supportCost = input.supportEnabled ? supportPerCm2 * overhang : 0
+
+    const supportGrams = estimateFdmSupportGrams({
+        supportEnabled: input.supportEnabled,
+        overhangAreaCm2: overhang,
+        heightMm: input.heightMm,
+        density: input.density,
+        modelWeightGrams: weight.weightGrams,
+    })
 
     const laborCost = input.fdmLaborCostKrw ?? FDM_DEFAULT_LABOR_KRW
 
@@ -145,6 +196,9 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         layerHeightMm: input.layerHeightMm,
         fdmLayerHoursFactor: input.fdmLayerHoursFactor,
         infillPercent: weight.effectiveInfill,
+        density: input.density,
+        supportGrams,
+        overhangAreaCm2: input.supportEnabled ? overhang : 0,
     })
 
     const rate = Math.max(0, Number(input.hourlyRateKr) || FDM_DEFAULT_HOURLY_RATE_KRW)
@@ -169,6 +223,7 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         timeHours: timeDetail.hours,
         numLayers: timeDetail.numLayers,
         weightGrams: weight.weightGrams,
+        supportGrams,
         shellVolCm3: weight.shellVolCm3,
         infillVolCm3: weight.infillVolCm3,
         effectiveInfill: weight.effectiveInfill,

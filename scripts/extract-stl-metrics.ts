@@ -53,6 +53,7 @@ function slicerProxyFdm(analysis: ReturnType<typeof analyzeGeometry>) {
         heightMm: analysis.boundingBox.z,
         surfaceAreaCm2: analysis.surfaceArea,
         layerHeightMm: FDM_SLICER.layerHeightMm,
+        density: FDM_SLICER.density,
     })
     return {
         materialAmount: +(w.weightGrams * FDM_SLICER.weightCalibrationFactor).toFixed(2),
