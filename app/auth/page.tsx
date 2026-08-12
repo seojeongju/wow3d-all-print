@@ -20,6 +20,7 @@ import {
   Printer,
 } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
+import { safeAuthReturnPath } from '@/lib/auth-session'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -42,9 +43,9 @@ function AuthContent() {
   const { setUser } = useAuthStore()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('return') || undefined
+  const returnTo = safeAuthReturnPath(searchParams.get('return'), '') || undefined
   const tokenFromUrl = searchParams.get('token')
-  const returnPath = searchParams.get('return') || '/'
+  const returnPath = safeAuthReturnPath(searchParams.get('return'), '/')
   const authError = searchParams.get('error')
   const sessionExpired = searchParams.get('expired') === 'true'
   const kakaoOAuth = searchParams.get('kakao') === '1'
@@ -135,7 +136,7 @@ function AuthContent() {
 
       showToast.success('로그인 성공', `${result.data.user.name}님, 다시 만나서 반갑습니다.`)
 
-      const target = returnTo || (result.data.user?.role === 'admin' ? '/admin' : '/')
+      const target = returnTo || (result.data.user?.role === 'admin' || result.data.user?.role === 'super_admin' ? '/admin' : '/')
       router.push(target)
     } catch (error) {
       showToast.error(

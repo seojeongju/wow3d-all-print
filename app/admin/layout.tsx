@@ -7,6 +7,7 @@ import { LayoutDashboard, ShoppingCart, Settings, Boxes, Home, MessageSquare, Us
 import { cn } from '@/lib/utils';
 import AdminHeader from '@/components/layout/AdminHeader';
 import { useAuthStore } from '@/store/useAuthStore';
+import { safeAuthReturnPath } from '@/lib/auth-session';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -15,8 +16,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     useEffect(() => {
         const checkAuth = async () => {
+            const returnPath = safeAuthReturnPath(
+                typeof window !== 'undefined'
+                    ? `${window.location.pathname}${window.location.search}`
+                    : pathname,
+                '/admin'
+            );
+            const authUrl = `/auth?return=${encodeURIComponent(returnPath)}`;
+
             if (!isAuthenticated || !token) {
-                router.replace('/auth');
+                router.replace(authUrl);
                 return;
             }
 
@@ -32,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 if (res.status === 401 || (data && data.error === '유효하지 않은 토큰입니다')) {
                     console.warn('AdminLayout: Session expired or invalid');
                     logout();
-                    window.location.href = '/auth?expired=true';
+                    window.location.href = `${authUrl}&expired=true`;
                     return;
                 }
 
@@ -48,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         };
 
         checkAuth();
-    }, [isAuthenticated, token, router, logout]);
+    }, [isAuthenticated, token, router, logout, pathname]);
 
     if (!isAuthenticated || (user && user.role !== 'admin' && user.role !== 'super_admin')) {
         return (

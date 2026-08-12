@@ -6,6 +6,7 @@ import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { resolveOrderLinesFromDb } from '@/lib/resolve-order-quote-prices';
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
 import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
+import { absoluteUrl } from '@/lib/site-url';
 
 /**
  * GET /api/orders - 주문 목록 조회
@@ -242,6 +243,7 @@ export async function POST(request: NextRequest) {
         try {
             const adminEmail = (env as any).ADMIN_EMAIL || 'wow3d16@naver.com';
             const orderDate = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+            const adminOrderDetailUrl = absoluteUrl(`/admin/orders?detail=${orderId}`);
             
             const htmlBody = `
                 <div style="font-family: 'Pretendard', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border: 1px solid #f0f0f0; border-radius: 24px;">
@@ -283,7 +285,7 @@ export async function POST(request: NextRequest) {
                     </div>
 
                     <div style="margin-top: 40px; text-align: center;">
-                        <a href="https://www.wow3dp.co.kr/admin/orders" style="display: inline-block; padding: 14px 28px; background-color: #111111; color: #ffffff; font-size: 13px; font-weight: 800; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">주문 상세 확인하기</a>
+                        <a href="${adminOrderDetailUrl}" style="display: inline-block; padding: 14px 28px; background-color: #111111; color: #ffffff; font-size: 13px; font-weight: 800; text-decoration: none; border-radius: 12px; letter-spacing: 0.5px;">주문 상세 확인하기</a>
                     </div>
 
                     <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9; text-align: center;">
@@ -292,7 +294,7 @@ export async function POST(request: NextRequest) {
                 </div>
             `;
 
-            const textBody = `[새 주문 알림]\n주문번호: ${orderNumber}\n주문자: ${body.recipientName}\n연락처: ${body.recipientPhone}\n금액: ₩${totalAmount.toLocaleString()}\n상세 확인: https://www.wow3dp.co.kr/admin/orders`;
+            const textBody = `[새 주문 알림]\n주문번호: ${orderNumber}\n주문자: ${body.recipientName}\n연락처: ${body.recipientPhone}\n금액: ₩${totalAmount.toLocaleString()}\n상세 확인: ${adminOrderDetailUrl}`;
 
             await sendEmail({
                 to: adminEmail,

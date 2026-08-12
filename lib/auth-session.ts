@@ -3,6 +3,17 @@ export type AuthValidationResult = {
     reason?: 'token_expired' | 'invalid_token' | 'network_error';
 };
 
+/**
+ * 로그인 후 복귀 URL — 오픈 리다이렉트 방지 (상대 경로만 허용).
+ * 예: /admin/orders?detail=123
+ */
+export function safeAuthReturnPath(raw: string | null | undefined, fallback = '/'): string {
+    if (!raw) return fallback
+    const path = raw.trim()
+    if (!path.startsWith('/') || path.startsWith('//') || path.includes('://')) return fallback
+    return path
+}
+
 function decodeJwtPayload(token: string): { exp?: number } | null {
     try {
         const parts = token.trim().split('.');
