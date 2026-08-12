@@ -10,36 +10,76 @@ function isMissingStoreIdColumn(e: unknown): boolean {
   return /no such column:\s*store_id/i.test(msg);
 }
 
-async function listInquiries(
+function likePattern(raw: string): string {
+  const t = raw.trim().replace(/[%_\\]/g, '');
+  if (!t) return '';
+  return `%${t}%`;
+}
+
+function parsePageLimit(req: NextRequest) {
+  const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') || '1', 10) || 1);
+  const limitRaw = parseInt(req.nextUrl.searchParams.get('limit') || '20', 10) || 20;
+  const limit = Math.min(100, Math.max(1, limitRaw));
+  return { page, limit, offset: (page - 1) * limit };
+}
+
+type ListResult = {
+  items: unknown[];
+  total: number;
+};
+
+async function listInquiriesPaginated(
   db: NonNullable<Awaited<ReturnType<typeof getCloudflareContext>>['env']>['DB'],
   storeId: number,
-  status: string | null
-) {
-  const hasStatus = status && STATUS_VALUES.includes(status);
+  status: string | null,
+  pattern: string,
+  limit: number,
+  offset: number,
+  useStoreFilter: boolean
+): Promise<ListResult> {
+  const hasStatus = !!(status && STATUS_VALUES.includes(status));
+  const whereParts: string[] = [];
+  const binds: (string | number)[] = [];
 
-  try {
-    const stmt = hasStatus
-      ? db.prepare(
-            `SELECT * FROM inquiries WHERE ${STORE_INQUIRIES} AND status = ? ORDER BY created_at DESC LIMIT 200`
-        ).bind(storeId, status)
-      : db.prepare(
-            `SELECT * FROM inquiries WHERE ${STORE_INQUIRIES} ORDER BY created_at DESC LIMIT 200`
-        ).bind(storeId);
-    const { results } = await stmt.all();
-    return results || [];
-  } catch (e) {
-    if (!isMissingStoreIdColumn(e)) throw e;
-    const stmt = hasStatus
-      ? db.prepare(`SELECT * FROM inquiries WHERE status = ? ORDER BY created_at DESC LIMIT 200`).bind(status)
-      : db.prepare(`SELECT * FROM inquiries ORDER BY created_at DESC LIMIT 200`);
-    const { results } = await stmt.all();
-    return results || [];
+  if (useStoreFilter) {
+    whereParts.push(STORE_INQUIRIES);
+    binds.push(storeId);
   }
+  if (hasStatus) {
+    whereParts.push('status = ?');
+    binds.push(status!);
+  }
+  if (pattern) {
+    whereParts.push(`(
+      LOWER(COALESCE(name, '')) LIKE LOWER(?)
+      OR LOWER(COALESCE(email, '')) LIKE LOWER(?)
+      OR LOWER(COALESCE(subject, '')) LIKE LOWER(?)
+      OR LOWER(COALESCE(message, '')) LIKE LOWER(?)
+    )`);
+    binds.push(pattern, pattern, pattern, pattern);
+  }
+
+  const where = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
+
+  const countRow = await db
+    .prepare(`SELECT COUNT(*) as cnt FROM inquiries ${where}`)
+    .bind(...binds)
+    .first<{ cnt?: number }>();
+  const total = Number(countRow?.cnt ?? 0);
+
+  const { results } = await db
+    .prepare(
+      `SELECT * FROM inquiries ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    )
+    .bind(...binds, limit, offset)
+    .all();
+
+  return { items: results || [], total };
 }
 
 /**
  * GET /api/admin/inquiries - 문의 목록 (관리자)
- * Query: ?status=new|read|replied|closed
+ * Query: page, limit, status, q
  */
 export async function GET(req: NextRequest) {
   try {
@@ -53,9 +93,47 @@ export async function GET(req: NextRequest) {
     const { storeId } = auth;
 
     const status = req.nextUrl.searchParams.get('status');
-    const results = await listInquiries(env.DB, storeId, status);
+    const pattern = likePattern(req.nextUrl.searchParams.get('q') || '');
+    const { page, limit, offset } = parsePageLimit(req);
 
-    return Response.json({ success: true, data: results });
+    try {
+      const { items, total } = await listInquiriesPaginated(
+        env.DB,
+        storeId,
+        status,
+        pattern,
+        limit,
+        offset,
+        true
+      );
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      return Response.json({
+        success: true,
+        data: {
+          items,
+          pagination: { page, limit, total, totalPages },
+        },
+      });
+    } catch (e) {
+      if (!isMissingStoreIdColumn(e)) throw e;
+      const { items, total } = await listInquiriesPaginated(
+        env.DB,
+        storeId,
+        status,
+        pattern,
+        limit,
+        offset,
+        false
+      );
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      return Response.json({
+        success: true,
+        data: {
+          items,
+          pagination: { page, limit, total, totalPages },
+        },
+      });
+    }
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error('GET /api/admin/inquiries', e);
