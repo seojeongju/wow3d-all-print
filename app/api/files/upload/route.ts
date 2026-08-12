@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { requireAuth, requireAuthOrGuest } from '@/lib/api-utils';
+import { requireAuthOrGuest } from '@/lib/api-utils';
+import { buildQuoteR2Key, sanitizeR2FileName } from '@/lib/r2-quote-file';
 
 /**
  * POST /api/files/upload - 파일을 R2에 업로드
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: '파일이 없습니다' }, { status: 400 });
         }
 
+        const safeName = sanitizeR2FileName(file.name);
+
         let quoteId: number | null = null;
         if (quoteIdParam) {
             const parsed = parseInt(String(quoteIdParam), 10);
@@ -36,16 +39,13 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // quoteId가 있으면 해당 견적의 파일로 저장
-        // 없으면 임시 quoteId 생성 (나중에 견적 저장 시 업데이트)
         if (!quoteId) {
-            // 임시 quoteId 생성 (나중에 견적 저장 시 실제 quoteId로 업데이트)
             const uid = auth.isGuest ? null : auth.userId;
             const sessionId = auth.isGuest ? auth.sessionId : null;
             const result = await env.DB.prepare(
                 'INSERT INTO quotes (user_id, session_id, file_name, file_size, volume_cm3, surface_area_cm2, dimensions_x, dimensions_y, dimensions_z, print_method, total_price, estimated_time_hours) VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, ?, 0, 0)'
             )
-                .bind(uid, sessionId, file.name, file.size, 'fdm')
+                .bind(uid, sessionId, safeName, file.size, 'fdm')
                 .run();
             quoteId = (result.meta as { last_row_id?: number })?.last_row_id ?? 0;
             if (quoteId === 0) {
@@ -53,8 +53,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // R2에 파일 업로드
-        const r2Key = `quotes/${quoteId}/${file.name}`;
+        const r2Key = buildQuoteR2Key(quoteId, safeName);
         const arrayBuffer = await file.arrayBuffer();
         await env.BUCKET.put(r2Key, arrayBuffer, {
             httpMetadata: {
@@ -62,9 +61,10 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // quotes 테이블의 file_url 업데이트
-        await env.DB.prepare('UPDATE quotes SET file_url = ? WHERE id = ?')
-            .bind(r2Key, quoteId)
+        await env.DB.prepare(
+            'UPDATE quotes SET file_url = ?, file_name = COALESCE(?, file_name) WHERE id = ?'
+        )
+            .bind(r2Key, safeName, quoteId)
             .run();
 
         return NextResponse.json({
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
             data: {
                 fileUrl: r2Key,
                 quoteId,
+                fileName: safeName,
             },
         });
     } catch (e) {

@@ -318,15 +318,14 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 } catch (uploadError) {
                     console.error('파일 업로드 중 오류:', uploadError);
                 }
-            } else {
-                // 이미 업로드된 경우 기존 fileUrl 정보 유지 (보통 DB에 이미 있음)
             }
 
             const quoteData: QuoteData = {
                 id: currentQuoteId ?? undefined,
                 fileName: file.name,
                 fileSize: file.size,
-                fileUrl: fileUrl ?? undefined,
+                // 재저장 시 fileUrl을 보내지 않음 → 서버에서 기존 file_url 유지 (COALESCE)
+                ...(fileUrl ? { fileUrl } : {}),
                 volumeCm3,
                 surfaceAreaCm2,
                 dimensionsX: analysis.boundingBox.x,

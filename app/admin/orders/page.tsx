@@ -497,7 +497,9 @@ function OrderListInner() {
             }
 
             if (successCount === 0) {
-                throw new Error('성공적으로 로드된 모델링 파일이 없습니다.');
+                throw new Error(
+                    '모델링 파일을 받지 못했습니다. 견적 파일 경로가 비어 있거나 R2에 파일이 없을 수 있습니다. 상세에서 개별 다운로드를 시도하거나 고객에게 재업로드를 요청해 주세요.'
+                );
             }
 
             // 브라우저 사이드에서 ZIP 압축 파일 생성

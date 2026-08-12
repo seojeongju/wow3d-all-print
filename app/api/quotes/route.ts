@@ -223,10 +223,12 @@ export async function POST(request: NextRequest) {
             const legacyBind = baseBind.slice(0, 20);
 
             if (body.id) {
+                // file_url이 요청에 없으면 기존 값 유지 (견적 재저장 시 null로 지워지던 버그 방지)
                 try {
                     runResult = await env.DB.prepare(`
                         UPDATE quotes SET 
-                            user_id = ?, session_id = ?, file_name = ?, file_size = ?, file_url = ?,
+                            user_id = ?, session_id = ?, file_name = ?, file_size = ?,
+                            file_url = COALESCE(?, file_url),
                             volume_cm3 = ?, surface_area_cm2 = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
                             print_method = ?,
                             fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
@@ -240,7 +242,8 @@ export async function POST(request: NextRequest) {
                 } catch {
                     runResult = await env.DB.prepare(`
                         UPDATE quotes SET 
-                            user_id = ?, session_id = ?, file_name = ?, file_size = ?, file_url = ?,
+                            user_id = ?, session_id = ?, file_name = ?, file_size = ?,
+                            file_url = COALESCE(?, file_url),
                             volume_cm3 = ?, surface_area_cm2 = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
                             print_method = ?,
                             fdm_material = ?, fdm_infill = ?, fdm_layer_height = ?, fdm_support = ?,
