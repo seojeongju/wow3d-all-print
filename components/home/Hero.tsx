@@ -232,7 +232,12 @@ export default function Hero() {
                                     출력방식
                                 </Button>
                             </Link>
-                            <Link href="/materials" className="flex-1">
+                            <Link href="/#ai-3d-maker" className="flex-1">
+                                <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 text-[13px] sm:text-[14px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
+                                    로고 Maker
+                                </Button>
+                            </Link>
+                            <Link href="/materials" className="flex-1 hidden sm:block">
                                 <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 text-[13px] sm:text-[14px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
                                     소재보기
                                 </Button>

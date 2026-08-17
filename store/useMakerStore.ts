@@ -50,6 +50,7 @@ interface MakerState {
   setStrokeColor: (color: string) => void;
   setExtrusionHeight: (height: number) => void;
   setBasePlateType: (type: 'none' | 'rect' | 'circle' | 'outline') => void;
+  setBaseHeight: (height: number) => void;
   setShowGrid: (show: boolean) => void;
 
   // Importer
@@ -143,6 +144,7 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   setStrokeColor: (color) => set({ strokeColor: color }),
   setExtrusionHeight: (height) => set({ extrusionHeight: height }),
   setBasePlateType: (type) => set({ basePlateType: type }),
+  setBaseHeight: (height) => set({ baseHeight: Math.max(0.5, Math.min(20, height)) }),
   setShowGrid: (show) => set({ showGrid: show }),
   updateCanvasSize: (width, height) => set({ canvasSize: { width, height } })
 }));

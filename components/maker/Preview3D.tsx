@@ -49,8 +49,11 @@ export function Preview3D() {
                 <p className="text-sm font-medium text-white/80 text-center">
                     표시할 3D 모델이 없습니다
                 </p>
-                <p className="text-xs text-white/50 text-center max-w-[260px]">
-                    <strong className="text-white/70">스케치(2D)</strong> 탭에서 마우스로 그리거나, 왼쪽 도구에서 <strong className="text-white/70">이미지</strong>를 넣어 주세요.
+                <p className="text-xs text-white/50 text-center max-w-[260px] break-keep">
+                    <strong className="text-white/70">스케치(2D)</strong>에서 그리거나 로고·SVG를 넣어 주세요.
+                    제품 실사 입체는{' '}
+                    <a href="/quote?entry=photo" className="text-indigo-300 font-bold hover:underline">사진→AI 3D 견적</a>
+                    을 이용하세요.
                 </p>
             </div>
         );

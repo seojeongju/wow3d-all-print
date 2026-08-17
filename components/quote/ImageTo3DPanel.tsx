@@ -229,7 +229,12 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     사진으로 <span className="text-indigo-300">3D 만들기</span>
                 </h1>
                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                    제품이 잘 보이는 JPG/PNG 사진을 올려 주세요. AI가 3D 모델을 생성한 뒤 자동견적으로 이어집니다.
+                    제품·피규어가 잘 보이는 JPG/PNG 실사 사진을 올려 주세요. AI가 <strong className="text-white/90">입체 메시</strong>를 만든 뒤 자동견적으로 이어집니다.
+                </p>
+                <p className="text-[12px] text-white/40 font-bold leading-relaxed break-keep">
+                    로고·배지·키캡처럼 실루엣만 돌출하려면{' '}
+                    <a href="/#ai-3d-maker" className="text-teal-400 hover:underline">AI 3D Maker(2.5D)</a>
+                    를 이용하세요.
                 </p>
             </div>
 

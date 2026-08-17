@@ -21,7 +21,8 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                     <span className="text-teal-400">견적을 시작할까요?</span>
                 </h1>
                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                    3D 파일이 있으면 바로 업로드하세요. 파일이 없다면 사진으로 AI 모델링 후 견적으로 이어집니다.
+                    3D 파일이 있으면 바로 업로드하세요. 제품 실사 사진이면 AI가 입체 메시를 만듭니다.
+                    로고·스케치 돌출(2.5D)은 Maker를 이용하세요.
                 </p>
             </div>
 
@@ -93,6 +94,9 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
 
             <p className="text-[11px] text-white/35 font-bold leading-relaxed break-keep px-1">
                 AI 모델링은 시제품·형상 확인에 적합합니다. 정밀 치수가 필요하면 3D 파일 업로드를 권장합니다.
+                로고·배지는{' '}
+                <a href="/#ai-3d-maker" className="text-teal-400 hover:underline">AI 3D Maker(2.5D)</a>
+                를 이용해 주세요.
             </p>
         </div>
     )

@@ -75,17 +75,39 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
       <section className="py-20 md:py-24 relative overflow-hidden border-t border-border/40">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="container relative mx-auto px-4 z-10">
-          <div className="text-center mb-12 max-w-2xl mx-auto">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary mb-3">Optional</p>
+          <div className="text-center mb-12 max-w-3xl mx-auto">
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-primary mb-3">Choose your path</p>
             <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
               모델 파일이 <span className="text-primary">없으신가요?</span>
             </h2>
-            <p className="text-foreground/70 break-keep leading-relaxed">
-              스케치나 레퍼런스 이미지로 간단한 3D 모델을 만들어 볼 수 있습니다.
-              자동견적 전 선택 사항입니다.
+            <p className="text-foreground/70 break-keep leading-relaxed mb-8">
+              목적에 맞는 도구를 고르세요. <strong className="text-foreground/90">로고·스케치</strong>는 Maker(2.5D),{' '}
+              <strong className="text-foreground/90">제품 실사</strong>는 자동견적 AI(입체 3D)입니다.
             </p>
+            <div className="grid sm:grid-cols-2 gap-4 text-left max-w-2xl mx-auto mb-10">
+              <div className="rounded-2xl border border-teal-500/25 bg-teal-500/5 p-5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-teal-400 mb-2">AI 3D Maker</p>
+                <h3 className="font-bold text-lg mb-2">로고 · 스케치 → 2.5D</h3>
+                <p className="text-sm text-foreground/60 break-keep leading-relaxed mb-4">
+                  펜으로 그리거나 SVG/로고를 올려 실루엣을 돌출합니다. 배지·키캡·간판에 적합합니다.
+                </p>
+                <Button asChild variant="outline" className="w-full border-teal-500/40 hover:bg-teal-500/10">
+                  <a href="#ai-3d-maker">아래에서 Maker 사용</a>
+                </Button>
+              </div>
+              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">자동견적 AI</p>
+                <h3 className="font-bold text-lg mb-2">사진 → 입체 3D</h3>
+                <p className="text-sm text-foreground/60 break-keep leading-relaxed mb-4">
+                  제품·피규어 실사 사진으로 입체 메시를 만든 뒤 바로 자동견적합니다.
+                </p>
+                <Button asChild className="w-full bg-indigo-500 hover:bg-indigo-400 text-white">
+                  <Link href="/quote?entry=photo">사진으로 3D 만들기</Link>
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-center">
+          <div id="ai-3d-maker" className="flex justify-center scroll-mt-24">
             <MakerWorkspace />
           </div>
         </div>

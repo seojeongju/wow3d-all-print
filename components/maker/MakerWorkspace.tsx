@@ -1,44 +1,58 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMakerStore } from '@/store/useMakerStore';
+import { useFileStore } from '@/store/useFileStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Zap, ImagePlus, Check, ImageIcon, PanelRightOpen, X } from 'lucide-react';
+import {
+    Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Check,
+    ImageIcon, PanelRightOpen, X, Sparkles, Loader2, ShoppingCart,
+} from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
 import { ImageUploader } from '@/components/maker/ImageUploader';
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
+import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { showToast } from '@/lib/toast-helper';
 
 /** 3D → 스케치 전환 시 WebGL을 즉시 언마운트하면 Context Lost 발생. 짧은 지연 후 언마운트로 완화 */
 const UNMOUNT_3D_DELAY_MS = 180;
 
 export function MakerWorkspace() {
+    const router = useRouter();
+    const setFile = useFileStore((s) => s.setFile);
     const {
         tool, setTool,
         strokeWidth, setStrokeWidth,
         strokeColor, setStrokeColor,
         extrusionHeight, setExtrusionHeight,
         basePlateType, setBasePlateType,
+        baseHeight, setBaseHeight,
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
         addImportedSvg,
         importedSvgs,
         removeImportedSvg,
+        paths,
+        canvasSize,
     } = useMakerStore();
 
     const [activeTab, setActiveTab] = useState('draw');
     const [show3dCanvas, setShow3dCanvas] = useState(false);
     const [pendingSvg, setPendingSvg] = useState<{ name: string; svgContent: string } | null>(null);
-    const [convertMode, setConvertMode] = useState<ConvertMode>('detailed');
+    const [convertMode, setConvertMode] = useState<ConvertMode>('simple');
     const [useRemoveBg, setUseRemoveBg] = useState(false);
     const [removeBgConfigured, setRemoveBgConfigured] = useState<boolean | null>(null);
     const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+    const [isQuoting, setIsQuoting] = useState(false);
 
     useEffect(() => {
         fetch('/api/maker/remove-bg')
@@ -67,6 +81,46 @@ export function MakerWorkspace() {
         setActiveTab('3d');
     };
 
+    const handleRequestQuote = async () => {
+        if (
+            !hasMakerExportContent({
+                paths,
+                importedSvgs,
+                extrusionHeight,
+                basePlateType,
+                baseHeight,
+                canvasSize,
+            })
+        ) {
+            showToast.error('견적 불가', '스케치를 그리거나 로고·SVG를 추가한 뒤 다시 시도해 주세요.');
+            return;
+        }
+        setIsQuoting(true);
+        try {
+            const blob = buildMakerStlBlob({
+                paths,
+                importedSvgs,
+                extrusionHeight,
+                basePlateType,
+                baseHeight,
+                canvasSize,
+            });
+            if (!blob) {
+                showToast.error('견적 불가', '3D 메시를 만들지 못했습니다. 결과물(3D) 탭에서 미리보기를 확인해 주세요.');
+                return;
+            }
+            const file = new File([blob], `wow3d-maker-${Date.now()}.stl`, { type: 'model/stl' });
+            setFile(file);
+            showToast.success('견적으로 이동', 'Maker 2.5D 모델을 자동견적에 불러왔습니다.');
+            router.push('/quote?entry=file');
+        } catch (e) {
+            console.error(e);
+            showToast.error('견적 연동 실패', e instanceof Error ? e.message : '다시 시도해 주세요.');
+        } finally {
+            setIsQuoting(false);
+        }
+    };
+
     return (
         <>
         <Exporter />
@@ -74,16 +128,19 @@ export function MakerWorkspace() {
             {/* Header */}
             <header className="h-14 md:h-16 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-3 md:px-6 z-20 shrink-0">
                 <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0">
-                        <Box className="w-4 h-4 text-primary" />
+                    <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center border border-teal-400/30 shrink-0">
+                        <Box className="w-4 h-4 text-teal-400" />
                     </div>
-                    <span className="font-bold text-white tracking-wide text-sm md:text-base truncate">AI 3D Maker</span>
+                    <div className="min-w-0">
+                        <span className="font-bold text-white tracking-wide text-sm md:text-base truncate block leading-tight">AI 3D Maker</span>
+                        <span className="hidden sm:block text-[9px] font-black uppercase tracking-widest text-teal-400/80">로고·스케치 2.5D</span>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-9 md:h-10">
                         <TabsList className="grid w-[160px] md:w-[200px] grid-cols-2 h-9 md:h-10 bg-white/5 border border-white/10 rounded-lg md:rounded-xl p-1">
-                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-white/50 hover:text-white rounded-md md:rounded-lg transition-all">스케치(2D)</TabsTrigger>
+                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 text-white/50 hover:text-white rounded-md md:rounded-lg transition-all">스케치(2D)</TabsTrigger>
                             <TabsTrigger value="3d" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/50 hover:text-white rounded-md md:rounded-lg transition-all">결과물(3D)</TabsTrigger>
                         </TabsList>
                     </Tabs>
@@ -94,15 +151,35 @@ export function MakerWorkspace() {
                         <Download className="w-3.5 h-3.5 md:w-4 md:h-4 sm:mr-1.5" />
                         <span className="hidden sm:inline">STL 저장</span>
                     </Button>
-                    {/* 모바일: 설정 패널 열기 */}
                     <Button variant="outline" size="sm" className="md:hidden h-9 w-9 p-0 rounded-lg border-white/20 text-white/80 hover:bg-white/10" onClick={() => setMobileSettingsOpen(true)} aria-label="설정">
                         <PanelRightOpen className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" className="hidden sm:flex h-9 md:h-10 px-4 md:px-6 text-[10px] md:text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_4px_14px_0_rgba(0,118,255,0.4)] rounded-lg md:rounded-xl transition-all">
+                    <Button
+                        size="sm"
+                        disabled={isQuoting}
+                        onClick={handleRequestQuote}
+                        className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 text-[10px] md:text-xs font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-lg md:rounded-xl transition-all gap-1.5"
+                    >
+                        {isQuoting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                         견적 의뢰하기
                     </Button>
                 </div>
             </header>
+
+            {/* 역할 구분 배너 */}
+            <div className="shrink-0 px-3 md:px-6 py-2.5 bg-gradient-to-r from-teal-500/10 via-transparent to-indigo-500/10 border-b border-white/5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <p className="text-[11px] md:text-[12px] text-white/65 font-bold leading-relaxed break-keep flex-1">
+                    <span className="text-teal-300">Maker</span>는 로고·배지·키캡용 <strong className="text-white/85">실루엣 돌출(2.5D)</strong> 도구입니다.
+                    제품 <strong className="text-white/85">실사 사진 → 입체 3D</strong>는 자동견적 AI를 이용하세요.
+                </p>
+                <Link
+                    href="/quote?entry=photo"
+                    className="inline-flex items-center gap-1.5 shrink-0 rounded-lg border border-indigo-400/35 bg-indigo-500/15 px-3 py-1.5 text-[11px] font-black text-indigo-200 hover:bg-indigo-500/25 transition-colors"
+                >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    사진으로 입체 3D 만들기
+                </Link>
+            </div>
 
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden relative min-h-0">
@@ -199,13 +276,18 @@ export function MakerWorkspace() {
                     </div>
 
                     {/* 1. 이미지 또는 SVG 입력 */}
-                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 shadow-xl">
+                    <div className="bg-teal-500/5 border border-teal-400/20 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-3">
-                            <span className="inline-flex w-6 h-6 rounded-full bg-primary/30 text-primary text-[11px] font-black items-center justify-center">1</span>
-                            이미지 또는 SVG 입력
+                            <span className="inline-flex w-6 h-6 rounded-full bg-teal-500/30 text-teal-300 text-[11px] font-black items-center justify-center">1</span>
+                            로고·SVG 입력
                         </h3>
-                        <p className="text-[11px] text-white/70 leading-relaxed">
-                            왼쪽 도구에서 <strong className="text-white/90">이미지</strong>(PNG/JPEG → SVG 변환) 또는 <strong className="text-white/90">SVG</strong>(파일 직접 사용)를 선택하세요. SVG 직접 입력이 가장 안정적입니다.
+                        <p className="text-[11px] text-white/70 leading-relaxed break-keep">
+                            <strong className="text-white/90">SVG</strong> 또는 단순 로고(PNG/JPEG)를 올려 실루엣을 돌출합니다.
+                            제품 실사·인물·입체 피규어 사진은 Maker보다{' '}
+                            <Link href="/quote?entry=photo" className="text-indigo-300 font-black underline-offset-2 hover:underline">
+                                사진→AI 3D 견적
+                            </Link>
+                            이 적합합니다.
                         </p>
                     </div>
 
@@ -275,9 +357,21 @@ export function MakerWorkspace() {
                         <div className="space-y-8 relative">
                             {/* Extrusion Height */}
                             <div>
-                                <div className="flex justify-between items-center mb-4">
-                                    <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">돌출 높이 (Z-Axis)</label>
-                                    <span className="text-xs font-black text-primary bg-primary/20 px-3 py-1 rounded-full border border-primary/30">{extrusionHeight}mm</span>
+                                <div className="flex justify-between items-center mb-4 gap-2">
+                                    <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">돌출 높이 (mm)</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={50}
+                                        step={0.5}
+                                        value={extrusionHeight}
+                                        onChange={(e) => {
+                                            const n = Number(e.target.value)
+                                            if (Number.isFinite(n)) setExtrusionHeight(Math.min(50, Math.max(1, n)))
+                                        }}
+                                        className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
+                                        aria-label="돌출 높이 mm"
+                                    />
                                 </div>
                                 <div className="px-1">
                                     <Slider
@@ -301,12 +395,38 @@ export function MakerWorkspace() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setBasePlateType(type)}
-                                            className={`text-[12px] font-bold h-10 border-white/10 transition-all rounded-xl ${basePlateType === type ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                            className={`text-[12px] font-bold h-10 border-white/10 transition-all rounded-xl ${basePlateType === type ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-lg shadow-teal-500/20' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
                                         >
                                             {type === 'none' ? '없음' : '사각형'}
                                         </Button>
                                     ))}
                                 </div>
+                                {basePlateType === 'rect' && (
+                                    <div className="mt-4">
+                                        <div className="flex justify-between items-center mb-3 gap-2">
+                                            <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">베이스 두께 (mm)</label>
+                                            <input
+                                                type="number"
+                                                min={0.5}
+                                                max={20}
+                                                step={0.5}
+                                                value={baseHeight}
+                                                onChange={(e) => {
+                                                    const n = Number(e.target.value)
+                                                    if (Number.isFinite(n)) setBaseHeight(n)
+                                                }}
+                                                className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
+                                                aria-label="베이스 두께 mm"
+                                            />
+                                        </div>
+                                        <Slider
+                                            value={[baseHeight]}
+                                            min={0.5} max={20} step={0.5}
+                                            onValueChange={([v]) => setBaseHeight(v)}
+                                            className="cursor-pointer"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="h-px bg-white/5" />
@@ -324,12 +444,12 @@ export function MakerWorkspace() {
                         </div>
                     </div>
 
-                    {/* 이미지 선택 시 변환 옵션 (1단계에서 이미지 사용 시만 해당) */}
+                    {/* 이미지 선택 시 변환 옵션 */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-                        <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">이미지 선택 시 변환 옵션</h3>
+                        <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-4">로고 변환 옵션</h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-2 block">변환 모드 (돌출 시)</label>
+                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-2 block">변환 모드 (실루엣 돌출)</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
                                         type="button"
@@ -338,7 +458,7 @@ export function MakerWorkspace() {
                                         title="로고·단순 도형에 적합"
                                         onClick={() => setConvertMode('simple')}
                                         className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${convertMode === 'simple'
-                                            ? 'bg-primary border-2 border-primary text-primary-foreground font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
+                                            ? 'bg-teal-500 border-2 border-teal-400 text-slate-950 font-semibold'
                                             : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
                                     >
                                         {convertMode === 'simple' && <Check className="w-3.5 h-3.5 shrink-0" />}
@@ -348,25 +468,39 @@ export function MakerWorkspace() {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        title="사진·실물·펜 등 디테일 권장"
+                                        title="단순 실루엣이 필요한 사진용 — 입체 메시가 필요하면 견적 AI 사용"
                                         onClick={() => setConvertMode('detailed')}
                                         className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${convertMode === 'detailed'
-                                            ? 'bg-primary border-2 border-primary text-primary-foreground font-semibold ring-2 ring-primary/50 ring-offset-2 ring-offset-[#0d0d0d]'
+                                            ? 'bg-teal-500 border-2 border-teal-400 text-slate-950 font-semibold'
                                             : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/15 hover:text-white font-medium'}`}
                                     >
                                         {convertMode === 'detailed' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                                        상세(사진·실물)
+                                        상세(실루엣)
                                     </Button>
                                 </div>
-                                <p className="text-[10px] text-white/40 mt-1.5">사진·펜 등은 상세 권장</p>
+                                <p className="text-[10px] text-white/40 mt-1.5 break-keep">
+                                    Maker는 항상 <strong className="text-white/60">평면 돌출</strong>입니다. 입체 피규어·제품 사진은{' '}
+                                    <Link href="/quote?entry=photo" className="text-indigo-300 hover:underline">사진→AI 3D</Link>를 사용하세요.
+                                </p>
                             </div>
+                            {convertMode === 'detailed' && (
+                                <div className="rounded-xl border border-indigo-400/25 bg-indigo-500/10 p-3 space-y-2">
+                                    <p className="text-[11px] text-indigo-100/90 font-bold leading-relaxed break-keep">
+                                        실사 입체 모델이 필요하신가요?
+                                    </p>
+                                    <Link href="/quote?entry=photo" className="inline-flex items-center gap-1.5 text-[11px] font-black text-indigo-200 hover:text-white">
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                        자동견적 · 사진으로 3D 만들기
+                                    </Link>
+                                </div>
+                            )}
                             <div className="flex items-center gap-3">
                                 <button
                                     type="button"
                                     role="checkbox"
                                     aria-checked={useRemoveBg}
                                     onClick={() => setUseRemoveBg((v) => !v)}
-                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border transition-colors focus:outline-none ${useRemoveBg ? 'bg-primary border-primary' : 'bg-white/10 border-white/20'}`}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border transition-colors focus:outline-none ${useRemoveBg ? 'bg-teal-500 border-teal-400' : 'bg-white/10 border-white/20'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${useRemoveBg ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
@@ -380,6 +514,21 @@ export function MakerWorkspace() {
                                 {removeBgConfigured === null && 'remove.bg API 키 설정 시 사용 가능'}
                             </p>
                         </div>
+                    </div>
+
+                    {/* 모바일 견적 버튼 */}
+                    <div className="md:hidden">
+                        <Button
+                            disabled={isQuoting}
+                            onClick={() => {
+                                setMobileSettingsOpen(false)
+                                void handleRequestQuote()
+                            }}
+                            className="w-full h-12 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black gap-2"
+                        >
+                            {isQuoting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
+                            견적 의뢰하기
+                        </Button>
                     </div>
 
                     {/* 추가된 이미지(SVG): 스케치 탭에서도 삭제 가능 — 3D 탭 열지 않아도 됨 */}
