@@ -5,6 +5,7 @@ import { sanitizeR2FileName } from '@/lib/r2-quote-file'
 import {
     MESHY_IMAGE_MAX_BYTES,
     createMeshyImageTo3DTask,
+    createMeshyMultiImageTo3DTask,
     isAllowedMeshyImage,
     resolveMeshyApiKey,
     toDataUri,
@@ -122,6 +123,9 @@ export async function POST(request: NextRequest) {
 
         const formData = await request.formData()
         const image = formData.get('image') as File | null
+        const extraFiles = ['view_right', 'view_back', 'view_left']
+            .map((k) => formData.get(k))
+            .filter((f): f is File => f instanceof File && f.size > 0)
         const qualityRaw = String(formData.get('quality') || 'standard')
         const quality = qualityRaw === 'fast' ? 'fast' : 'standard'
         if (!image) {
@@ -132,6 +136,14 @@ export async function POST(request: NextRequest) {
         }
         if (image.size > MESHY_IMAGE_MAX_BYTES) {
             return NextResponse.json({ error: '이미지는 최대 8MB까지 가능합니다' }, { status: 400 })
+        }
+        for (const extra of extraFiles) {
+            if (!isAllowedMeshyImage(extra)) {
+                return NextResponse.json({ error: '추가 사진도 JPG 또는 PNG만 지원합니다' }, { status: 400 })
+            }
+            if (extra.size > MESHY_IMAGE_MAX_BYTES) {
+                return NextResponse.json({ error: '추가 사진은 최대 8MB까지 가능합니다' }, { status: 400 })
+            }
         }
 
         const userId = auth.userId
@@ -176,10 +188,25 @@ export async function POST(request: NextRequest) {
             .run()
 
         const dataUri = toDataUri(image.type || 'image/jpeg', buffer)
+        const extraUris: string[] = []
+        for (const extra of extraFiles) {
+            const buf = await extra.arrayBuffer()
+            extraUris.push(toDataUri(extra.type || 'image/jpeg', buf))
+        }
+
         let meshyTaskId: string
         try {
-            const created = await createMeshyImageTo3DTask(apiKey, dataUri, { quality })
-            meshyTaskId = created.id
+            if (extraUris.length > 0) {
+                const created = await createMeshyMultiImageTo3DTask(
+                    apiKey,
+                    [dataUri, ...extraUris],
+                    { quality }
+                )
+                meshyTaskId = created.id
+            } else {
+                const created = await createMeshyImageTo3DTask(apiKey, dataUri, { quality })
+                meshyTaskId = created.id
+            }
         } catch (e) {
             const msg = e instanceof Error ? e.message : 'Meshy 작업 생성 실패'
             await env.DB.prepare(

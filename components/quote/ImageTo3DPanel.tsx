@@ -121,6 +121,22 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     const [enhanceContrast, setEnhanceContrast] = useState(true)
     const [useRemoveBg, setUseRemoveBg] = useState(false)
     const [quality, setQuality] = useState<'fast' | 'standard'>('standard')
+    const [extraViews, setExtraViews] = useState<{
+        right: File | null
+        back: File | null
+        left: File | null
+    }>({ right: null, back: null, left: null })
+    const [extraPreview, setExtraPreview] = useState<{
+        right: string | null
+        back: string | null
+        left: string | null
+    }>({ right: null, back: null, left: null })
+    const [previewThumbs, setPreviewThumbs] = useState<{
+        front?: string
+        right?: string
+        back?: string
+        left?: string
+    } | null>(null)
     const [removeBgConfigured, setRemoveBgConfigured] = useState(false)
     const [applying, setApplying] = useState(false)
     const [resuming, setResuming] = useState(true)
@@ -218,7 +234,15 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         setJobId(null)
         setThumbnailUrl(null)
         setResultFileName(null)
+        setPreviewThumbs(null)
         setApplying(false)
+        setExtraViews({ right: null, back: null, left: null })
+        setExtraPreview((prev) => {
+            Object.values(prev).forEach((u) => {
+                if (u) URL.revokeObjectURL(u)
+            })
+            return { right: null, back: null, left: null }
+        })
         if (previewUrl) URL.revokeObjectURL(previewUrl)
         setPreviewUrl(null)
     }
@@ -255,6 +279,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             status: string
             progress?: number
             thumbnailUrl?: string | null
+            thumbnailUrls?: { front?: string; right?: string; back?: string; left?: string } | null
             resultFileName?: string
             modelReady?: boolean
             error?: string
@@ -264,6 +289,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             setProgress(Number(data.progress) || 0)
             if (data.thumbnailUrl) setThumbnailUrl(data.thumbnailUrl)
             if (data.resultFileName) setResultFileName(data.resultFileName)
+            if (data.thumbnailUrls) setPreviewThumbs(data.thumbnailUrls)
 
             if (data.status === 'succeeded' && data.modelReady) {
                 clearPoll()
@@ -486,6 +512,16 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             const fd = new FormData()
             fd.append('image', prepared)
             fd.append('quality', quality)
+            for (const [key, file] of [
+                ['view_right', extraViews.right],
+                ['view_back', extraViews.back],
+                ['view_left', extraViews.left],
+            ] as const) {
+                if (file && file.size > 0) {
+                    const extraPrep = await preprocessMeshyImage(file, { enhanceContrast })
+                    fd.append(key, extraPrep)
+                }
+            }
             const res = await fetch('/api/meshy/jobs', {
                 method: 'POST',
                 headers: authHeaders(),
@@ -684,6 +720,57 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                         </div>
                     )}
 
+                    {status === 'idle' && token && selected && selected.size > 0 && (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                            <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
+                                멀티뷰 (선택)
+                            </p>
+                            <p className="text-[11px] font-bold text-white/50 leading-relaxed break-keep">
+                                같은 물체의 <strong className="text-white/70">우측·뒷면·좌측</strong> 사진을
+                                더하면 뒷면·옆면 품질이 좋아집니다. 정면만으로도 생성할 수 있습니다.
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(
+                                    [
+                                        { id: 'right' as const, label: '우측' },
+                                        { id: 'back' as const, label: '뒷면' },
+                                        { id: 'left' as const, label: '좌측' },
+                                    ]
+                                ).map((v) => (
+                                    <label
+                                        key={v.id}
+                                        className="relative flex flex-col items-center justify-center min-h-[5.5rem] rounded-xl border border-dashed border-white/20 bg-black/20 cursor-pointer hover:border-indigo-400/40 overflow-hidden"
+                                    >
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                                            className="sr-only"
+                                            onChange={(e) => {
+                                                const f = e.target.files?.[0]
+                                                if (!f) return
+                                                setExtraPreview((prev) => {
+                                                    if (prev[v.id]) URL.revokeObjectURL(prev[v.id] as string)
+                                                    return { ...prev, [v.id]: URL.createObjectURL(f) }
+                                                })
+                                                setExtraViews((prev) => ({ ...prev, [v.id]: f }))
+                                            }}
+                                        />
+                                        {extraPreview[v.id] ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={extraPreview[v.id] || ''}
+                                                alt={v.label}
+                                                className="absolute inset-0 w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-[11px] font-black text-white/50">{v.label}</span>
+                                        )}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {status === 'idle' && token && (
                         <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                             <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
@@ -776,6 +863,32 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                     </p>
                                 </div>
                             </div>
+                            {previewThumbs && (
+                                <div className="grid grid-cols-4 gap-1.5">
+                                    {(
+                                        [
+                                            ['front', '정면'],
+                                            ['right', '우측'],
+                                            ['back', '뒷면'],
+                                            ['left', '좌측'],
+                                        ] as const
+                                    ).map(([k, label]) =>
+                                        previewThumbs[k] ? (
+                                            <div key={k} className="rounded-lg overflow-hidden border border-white/10 bg-black/30">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={previewThumbs[k]}
+                                                    alt={label}
+                                                    className="w-full aspect-square object-cover"
+                                                />
+                                                <p className="text-[9px] font-black text-center text-white/50 py-0.5">
+                                                    {label}
+                                                </p>
+                                            </div>
+                                        ) : null
+                                    )}
+                                </div>
+                            )}
                             <button
                                 type="button"
                                 disabled={applying || !jobId}

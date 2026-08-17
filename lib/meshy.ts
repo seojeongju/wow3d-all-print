@@ -15,12 +15,15 @@ export const MESHY_TODAY_KST_SQL = `date(created_at, '+9 hours') = date('now', '
 
 export type MeshyTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED' | 'CANCELED'
 
+export type MeshyTaskKind = 'image-to-3d' | 'multi-image-to-3d'
+
 export type MeshyImageTo3DTask = {
     id: string
     status: MeshyTaskStatus
     progress?: number
     model_urls?: { stl?: string; glb?: string; obj?: string }
     thumbnail_url?: string
+    thumbnail_urls?: { front?: string; right?: string; back?: string; left?: string }
     task_error?: { message?: string }
     credits_used?: number
 }
@@ -55,6 +58,20 @@ export function toDataUri(mime: string, buffer: ArrayBuffer): string {
     return `data:${safeMime};base64,${arrayBufferToBase64(buffer)}`
 }
 
+function meshyCreateBody(quality: MeshyQualityPreset, extra?: Record<string, unknown>) {
+    return {
+        should_texture: false,
+        ai_model: 'latest',
+        target_formats: ['stl'],
+        auto_size: true,
+        moderation: true,
+        topology: 'triangle',
+        target_polycount: quality === 'fast' ? 20000 : 40000,
+        multi_view_thumbnails: true,
+        ...extra,
+    }
+}
+
 export type MeshyQualityPreset = 'fast' | 'standard'
 
 export async function createMeshyImageTo3DTask(
@@ -63,23 +80,39 @@ export async function createMeshyImageTo3DTask(
     options?: { quality?: MeshyQualityPreset }
 ): Promise<{ id: string }> {
     const quality: MeshyQualityPreset = options?.quality === 'fast' ? 'fast' : 'standard'
-    const res = await fetch(`${MESHY_API_BASE}/image-to-3d`, {
+    return postMeshyTask(apiKey, 'image-to-3d', {
+        ...meshyCreateBody(quality),
+        image_url: imageDataUri,
+    })
+}
+
+/** 같은 물체 1~4장 (정면 + 선택 우측/뒷면/좌측) */
+export async function createMeshyMultiImageTo3DTask(
+    apiKey: string,
+    imageDataUris: string[],
+    options?: { quality?: MeshyQualityPreset }
+): Promise<{ id: string }> {
+    const quality: MeshyQualityPreset = options?.quality === 'fast' ? 'fast' : 'standard'
+    const urls = imageDataUris.filter(Boolean).slice(0, 4)
+    if (urls.length < 1) throw new Error('이미지가 필요합니다')
+    return postMeshyTask(apiKey, 'multi-image-to-3d', {
+        ...meshyCreateBody(quality),
+        image_urls: urls,
+    })
+}
+
+async function postMeshyTask(
+    apiKey: string,
+    kind: MeshyTaskKind,
+    body: Record<string, unknown>
+): Promise<{ id: string }> {
+    const res = await fetch(`${MESHY_API_BASE}/${kind}`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            image_url: imageDataUri,
-            should_texture: false,
-            ai_model: 'latest',
-            target_formats: ['stl'],
-            auto_size: true,
-            moderation: true,
-            topology: 'triangle',
-            // 표준: 더 촘촘한 메시 · 빠름: 저폴리로 크레딧·시간 절약
-            target_polycount: quality === 'fast' ? 20000 : 40000,
-        }),
+        body: JSON.stringify(body),
     })
 
     const text = await res.text()
@@ -109,21 +142,28 @@ export async function getMeshyImageTo3DTask(
     apiKey: string,
     taskId: string
 ): Promise<MeshyImageTo3DTask> {
-    const res = await fetch(`${MESHY_API_BASE}/image-to-3d/${encodeURIComponent(taskId)}`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        cache: 'no-store',
-    })
-    const text = await res.text()
-    let json: MeshyImageTo3DTask & { message?: string } = { id: taskId, status: 'FAILED' }
-    try {
-        json = JSON.parse(text)
-    } catch {
-        throw new Error(`Meshy 상태 응답 파싱 실패 (${res.status})`)
+    const kinds: MeshyTaskKind[] = ['image-to-3d', 'multi-image-to-3d']
+    let lastError = `Meshy 상태 조회 실패`
+
+    for (const kind of kinds) {
+        const res = await fetch(`${MESHY_API_BASE}/${kind}/${encodeURIComponent(taskId)}`, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+            cache: 'no-store',
+        })
+        const text = await res.text()
+        let json: MeshyImageTo3DTask & { message?: string } = { id: taskId, status: 'FAILED' }
+        try {
+            json = JSON.parse(text)
+        } catch {
+            lastError = `Meshy 상태 응답 파싱 실패 (${res.status})`
+            continue
+        }
+        if (res.ok) return json
+        lastError = json.message || `Meshy 상태 조회 실패 (${res.status})`
+        if (res.status !== 404) throw new Error(lastError)
     }
-    if (!res.ok) {
-        throw new Error(json.message || `Meshy 상태 조회 실패 (${res.status})`)
-    }
-    return json
+
+    throw new Error(lastError)
 }
 
 export function mapMeshyStatusToJob(

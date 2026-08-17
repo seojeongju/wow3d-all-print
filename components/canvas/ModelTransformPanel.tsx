@@ -9,7 +9,7 @@ import {
     scalePercentFromTargetMm,
 } from '@/lib/model-transform'
 import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { assessPrintability } from '@/lib/printability'
 
 /**
  * 자동견적 뷰어용 모델 컨트롤
@@ -95,9 +95,21 @@ export default function ModelTransformPanel({ className }: { className?: string 
             </div>
 
             {isAiPhoto && (
-                <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2 text-[10px] font-bold text-amber-100/90 leading-relaxed break-keep">
-                    AI 사진 생성 모델입니다. 아래 <strong className="text-amber-50">치수(mm)</strong>로
-                    실제 길이에 맞추세요. 정밀 공차는 STL 직접 업로드를 권장합니다.
+                <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2 text-[10px] font-bold text-amber-100/90 leading-relaxed break-keep space-y-1.5">
+                    <p>
+                        AI 사진 생성 모델입니다. 아래 <strong className="text-amber-50">치수(mm)</strong>로
+                        실제 길이에 맞추세요. 정밀 공차는 STL 직접 업로드를 권장합니다.
+                    </p>
+                    {assessPrintability(effective).map((w) => (
+                        <p
+                            key={w.message}
+                            className={
+                                w.level === 'warn' ? 'text-amber-50' : 'text-amber-100/80'
+                            }
+                        >
+                            · {w.message}
+                        </p>
+                    ))}
                 </div>
             )}
 

@@ -73,13 +73,14 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_bonus.sql
 ```
 
-### Phase D (품질 · 일부)
+### Phase D (품질)
 - 품질 프리셋: **빠름**(저폴리) / **표준**(기본)
-- 멀티뷰·메시 수리는 다음 스프린트
+- **멀티뷰**: 정면 + 선택 우측·뒷면·좌측 → Meshy Multi-Image to 3D
+- 생성 완료 시 정면·우·뒤·좌 썸네일 미리보기
+- 견적 화면 **출력 적합성 경고**(얇은 벽·작은 부피·오버행) — 자동 수리는 하지 않음
 
 ## 다음 (미구현)
 
-- 멀티뷰(앞·옆·위)
-- 고품질 텍스처·GLB 미리보기
-- Printability repair
+- 고품질 텍스처·GLB 다운로드
+- Printability 자동 메시 수리
 - 결제 연동 추가 생성 (현재는 관리자 보너스)
