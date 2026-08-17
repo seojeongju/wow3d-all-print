@@ -24,6 +24,14 @@ export type MakerScenePath = {
 
 export type MakerSceneSvg = {
     svgContent: string
+    /** 자동 맞춤 대비 배율 (1 = 판 안쪽에 맞춤) */
+    scale?: number
+    /** 판 중심 기준 X 이동 (mm, +오른쪽) */
+    offsetXMm?: number
+    /** 판 중심 기준 Y 이동 (mm, +위) */
+    offsetYMm?: number
+    /** Z축 회전 (도) */
+    rotationDeg?: number
 }
 
 export type BackMountType = 'none' | 'magnet' | 'pin'
@@ -50,6 +58,15 @@ export type MakerSceneInput = {
 
 export function mmToScene(mm: number): number {
     return Math.max(0, mm) * MM_TO_SCENE
+}
+
+/** 부호 있는 mm → 씬 (오프셋용) */
+export function mmToSceneSigned(mm: number): number {
+    return mm * MM_TO_SCENE
+}
+
+function clampNum(n: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, n))
 }
 
 export function hasMakerSceneContent(input: MakerSceneInput): boolean {
@@ -422,7 +439,8 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     const corner = mmToScene(Math.max(0.4, input.cornerRadiusMm))
     const topZ = plateTopZ(input.baseHeight, hasBase)
     const rimInset = size * 0.07
-    const logoFit = hasBase ? size * 0.72 : mmToScene(40)
+    // 림 안쪽을 거의 채우도록 — 사용자가 크기 슬라이더로 줄일 수 있음
+    const logoFitBase = hasBase ? Math.max(0.05, size - rimInset * 2) * 0.98 : mmToScene(40)
 
     if (hasBase) {
         const baseMat = makeMaterial(mode, input.baseColor || '#1f1f2e', { roughness: 0.45, metalness: 0.2 })
@@ -451,17 +469,26 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     }
 
     input.importedSvgs.forEach((svg) => {
+        const scale = clampNum(svg.scale ?? 1, 0.2, 2.5)
+        const logoFit = logoFitBase * scale
         const shapes = parseSvgToSceneShapes(svg.svgContent, logoFit)
         if (shapes.length === 0) {
             console.warn('[Maker] SVG에서 돌출할 path를 찾지 못했습니다. 배경만 있거나 변환에 실패했을 수 있습니다.')
             return
         }
         const logoMat = makeMaterial(mode, input.logoColor || '#4f46e5', { roughness: 0.3, metalness: 0.1 })
-        // 베이스 윗면보다 살짝 올려 림과 깊이 충돌을 줄임
         const logoZ = topZ + (preview ? 0.002 : 0)
+        const logoGroup = new THREE.Group()
+        logoGroup.position.set(
+            mmToSceneSigned(svg.offsetXMm ?? 0),
+            mmToSceneSigned(svg.offsetYMm ?? 0),
+            logoZ
+        )
+        logoGroup.rotation.z = THREE.MathUtils.degToRad(svg.rotationDeg ?? 0)
         shapes.forEach((shape) => {
-            addExtruded(group, shape, input.extrusionHeight, input.bevelMm, logoMat, logoZ, preview)
+            addExtruded(logoGroup, shape, input.extrusionHeight, input.bevelMm, logoMat, 0, preview)
         })
+        group.add(logoGroup)
     })
 
     const ox = input.canvasSize.width / 2

@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Check,
-    ImageIcon, ImagePlus, PanelRightOpen, X, Sparkles, Loader2, ShoppingCart, Zap, ChevronDown,
+    ImagePlus, PanelRightOpen, X, Sparkles, Loader2, ShoppingCart, Zap, ChevronDown,
 } from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
@@ -20,6 +20,7 @@ import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
 import { MakerTemplatePicker } from '@/components/maker/MakerTemplatePicker';
 import { MakerSizeControl } from '@/components/maker/MakerSizeControl';
+import { MakerLogoAdjust } from '@/components/maker/MakerLogoAdjust';
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export';
 import { getMakerTemplate, MAKER_LAYER_SWATCHES } from '@/lib/maker-templates';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -55,6 +56,8 @@ export function MakerWorkspace() {
         addImportedSvg,
         importedSvgs,
         removeImportedSvg,
+        updateImportedSvg,
+        resetImportedSvgTransform,
         paths,
         canvasSize,
     } = useMakerStore();
@@ -62,6 +65,7 @@ export function MakerWorkspace() {
     const [activeTab, setActiveTab] = useState('draw');
     const [show3dCanvas, setShow3dCanvas] = useState(false);
     const [pendingSvg, setPendingSvg] = useState<{ name: string; svgContent: string } | null>(null);
+    const [selectedLogoId, setSelectedLogoId] = useState<string | null>(null);
     const [convertMode, setConvertMode] = useState<ConvertMode>('simple');
     const [useRemoveBg, setUseRemoveBg] = useState(false);
     const [removeBgConfigured, setRemoveBgConfigured] = useState<boolean | null>(null);
@@ -111,39 +115,55 @@ export function MakerWorkspace() {
         }
     }, [activeTab]);
 
+    useEffect(() => {
+        if (importedSvgs.length === 0) {
+            setSelectedLogoId(null);
+            return;
+        }
+        if (!selectedLogoId || !importedSvgs.some((s) => s.id === selectedLogoId)) {
+            setSelectedLogoId(importedSvgs[importedSvgs.length - 1].id);
+        }
+    }, [importedSvgs, selectedLogoId]);
+
     const handleAddPendingTo3D = () => {
         if (!pendingSvg) return;
+        const id = crypto.randomUUID();
         addImportedSvg({
-            id: crypto.randomUUID(),
+            id,
             name: pendingSvg.name,
             svgContent: pendingSvg.svgContent
         });
+        setSelectedLogoId(id);
         setPendingSvg(null);
         setActiveTab('3d');
-        showToast.success('로고 추가됨', '결과물(3D)에서 배지 위 돌출을 확인하세요.');
+        showToast.success('로고 추가됨', '아래에서 크기·위치를 맞춘 뒤 결과물(3D)을 확인하세요.');
     };
 
     /** 변환 완료 시 바로 3D에 올려 배지 위에 보이도록 함 (별도 확인 버튼 불필요) */
     const handleSvgConverted = (data: { name: string; svgContent: string }) => {
         const pathCount = (data.svgContent.match(/<\s*path\b/gi) || []).length;
+        const id = crypto.randomUUID();
         addImportedSvg({
-            id: crypto.randomUUID(),
+            id,
             name: data.name,
             svgContent: data.svgContent,
+            scale: 1,
+            offsetXMm: 0,
+            offsetYMm: 0,
+            rotationDeg: 0,
         });
+        setSelectedLogoId(id);
         setPendingSvg(null);
         setActiveTab('3d');
         if (pathCount <= 1) {
             showToast.error(
                 '실루엣이 단순합니다',
-                '통짜 사각형처럼 보일 수 있습니다. 「글자·로고」 모드로 다시 올리거나, 가능하면 SVG를 사용하세요.'
+                '통짜처럼 보이면 「글자·로고」로 다시 올리거나 SVG를 쓰세요. 크기·위치는 오른쪽에서 조절할 수 있습니다.'
             );
         } else {
             showToast.success(
-                '로고를 배지에 올렸습니다',
-                basePlateType !== 'none'
-                    ? `path ${pathCount}개 · 결과물(3D)에서 글자·마크 실루엣을 확인하세요.`
-                    : '결과물(3D)에서 확인하세요. 템플릿을 고르면 배지 판이 붙습니다.'
+                '로고를 올렸습니다',
+                '오른쪽 「로고 위치·크기」에서 맞춘 뒤 돌출·STL을 확인하세요.'
             );
         }
     };
@@ -383,6 +403,25 @@ export function MakerWorkspace() {
                         baseSizeMm={baseSizeMm}
                         activeTemplateId={activeTemplateId}
                         onChange={setBaseSizeMm}
+                    />
+
+                    <MakerLogoAdjust
+                        items={importedSvgs}
+                        selectedId={selectedLogoId}
+                        onSelect={setSelectedLogoId}
+                        baseSizeMm={baseSizeMm}
+                        onChange={(id, patch) => {
+                            updateImportedSvg(id, patch)
+                            setActiveTab('3d')
+                        }}
+                        onReset={(id) => {
+                            resetImportedSvgTransform(id)
+                            setActiveTab('3d')
+                        }}
+                        onRemove={(id) => {
+                            removeImportedSvg(id)
+                            setSelectedLogoId((cur) => (cur === id ? null : cur))
+                        }}
                     />
 
                     {/* 1. 이미지 또는 SVG 입력 */}
@@ -752,37 +791,6 @@ export function MakerWorkspace() {
                             견적 의뢰하기
                         </Button>
                     </div>
-
-                    {/* 추가된 이미지(SVG): 스케치 탭에서도 삭제 가능 — 3D 탭 열지 않아도 됨 */}
-                    {importedSvgs.length > 0 && (
-                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-                            <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
-                                <ImageIcon className="w-4 h-4 text-primary" />
-                                추가된 이미지 ({importedSvgs.length})
-                            </h3>
-                            <ul className="space-y-2">
-                                {importedSvgs.map((svg) => (
-                                    <li key={svg.id} className="flex items-center gap-2 p-2 rounded-xl bg-black/30 border border-white/10">
-                                        <span className="text-[11px] text-white/80 truncate flex-1 min-w-0" title={svg.name}>{svg.name}</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 w-8 p-0 shrink-0 text-white/70 hover:text-red-400 hover:bg-red-500/10"
-                                            onClick={() => {
-                                                if (window.confirm(`"${svg.name}"을(를) 3D 목록에서 삭제하시겠습니까?`)) {
-                                                    removeImportedSvg(svg.id);
-                                                }
-                                            }}
-                                            title="삭제"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </li>
-                                ))}
-                            </ul>
-                            <p className="text-[12px] text-white/75 mt-2">3D 보기 없이 여기서 삭제할 수 있습니다.</p>
-                        </div>
-                    )}
 
                     {/* 2. SVG 미리보기 — 확인 후 3D에 추가 */}
                     {pendingSvg && (

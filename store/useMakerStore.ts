@@ -20,7 +20,19 @@ interface ImportedSvg {
   id: string;
   name: string;
   svgContent: string;
+  /** 자동 맞춤 대비 배율 */
+  scale: number;
+  offsetXMm: number;
+  offsetYMm: number;
+  rotationDeg: number;
 }
+
+export type ImportedSvgTransform = {
+  scale?: number;
+  offsetXMm?: number;
+  offsetYMm?: number;
+  rotationDeg?: number;
+};
 
 interface MakerState {
   paths: Path[];
@@ -74,8 +86,10 @@ interface MakerState {
   clearTemplate: () => void;
   setShowGrid: (show: boolean) => void;
 
-  addImportedSvg: (svg: ImportedSvg) => void;
+  addImportedSvg: (svg: Omit<ImportedSvg, 'scale' | 'offsetXMm' | 'offsetYMm' | 'rotationDeg'> & Partial<ImportedSvgTransform>) => void;
   removeImportedSvg: (id: string) => void;
+  updateImportedSvg: (id: string, patch: ImportedSvgTransform) => void;
+  resetImportedSvgTransform: (id: string) => void;
 
   exportTrigger: number;
   triggerExport: () => void;
@@ -197,11 +211,40 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   })),
 
   addImportedSvg: (svg) => set((state) => ({
-    importedSvgs: [...state.importedSvgs, svg]
+    importedSvgs: [...state.importedSvgs, {
+      id: svg.id,
+      name: svg.name,
+      svgContent: svg.svgContent,
+      scale: clamp(svg.scale ?? 1, 0.2, 2.5),
+      offsetXMm: clamp(svg.offsetXMm ?? 0, -40, 40),
+      offsetYMm: clamp(svg.offsetYMm ?? 0, -40, 40),
+      rotationDeg: clamp(svg.rotationDeg ?? 0, -180, 180),
+    }]
   })),
 
   removeImportedSvg: (id) => set((state) => ({
     importedSvgs: state.importedSvgs.filter(s => s.id !== id)
+  })),
+
+  updateImportedSvg: (id, patch) => set((state) => ({
+    importedSvgs: state.importedSvgs.map((s) => {
+      if (s.id !== id) return s
+      return {
+        ...s,
+        scale: patch.scale !== undefined ? clamp(patch.scale, 0.2, 2.5) : s.scale,
+        offsetXMm: patch.offsetXMm !== undefined ? clamp(patch.offsetXMm, -40, 40) : s.offsetXMm,
+        offsetYMm: patch.offsetYMm !== undefined ? clamp(patch.offsetYMm, -40, 40) : s.offsetYMm,
+        rotationDeg: patch.rotationDeg !== undefined ? clamp(patch.rotationDeg, -180, 180) : s.rotationDeg,
+      }
+    })
+  })),
+
+  resetImportedSvgTransform: (id) => set((state) => ({
+    importedSvgs: state.importedSvgs.map((s) =>
+      s.id === id
+        ? { ...s, scale: 1, offsetXMm: 0, offsetYMm: 0, rotationDeg: 0 }
+        : s
+    )
   })),
 
   triggerExport: () => set((state) => ({ exportTrigger: state.exportTrigger + 1 })),
