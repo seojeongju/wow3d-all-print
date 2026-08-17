@@ -4,14 +4,23 @@ import React, { useRef, useState } from 'react';
 import { Image as ImageIcon, Loader2, X, FileCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { convertImageToSVG, removeBackground, type ConvertMode } from '@/lib/image-processor';
+import { showToast } from '@/lib/toast-helper';
 
 type Props = {
     onSvgConverted: (data: { name: string; svgContent: string }) => void;
     convertMode?: ConvertMode;
     useRemoveBg?: boolean;
+    authHeaders?: HeadersInit;
+    onRemoveBgDone?: () => void;
 };
 
-export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRemoveBg = false }: Props) {
+export function ImageUploader({
+    onSvgConverted,
+    convertMode = 'detailed',
+    useRemoveBg = false,
+    authHeaders,
+    onRemoveBgDone,
+}: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const svgInputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
@@ -54,20 +63,23 @@ export function ImageUploader({ onSvgConverted, convertMode = 'detailed', useRem
             let imageToConvert: File = file;
             if (useRemoveBg) {
                 try {
-                    imageToConvert = await removeBackground(file, signal);
+                    imageToConvert = await removeBackground(file, signal, authHeaders);
+                    showToast.success('배경 제거 완료', '실루엣만 남긴 뒤 돌출용 SVG로 변환합니다.');
+                    onRemoveBgDone?.();
                 } catch (bgErr) {
                     imageToConvert = file;
                     const msg = bgErr instanceof Error ? bgErr.message : '';
                     const status = (bgErr as Error & { status?: number }).status;
-                    const isUnavailable = status === 503 || msg.includes('503') || msg.includes('설정되지 않았습니다') || msg.includes('Service Unavailable');
-                    const isLimit = status === 402 || msg.includes('한도');
+                    const isUnavailable = status === 503 || msg.includes('설정되지 않았습니다');
+                    const isLimit = status === 402 || status === 429 || msg.includes('한도') || msg.includes('크레딧');
                     if (isUnavailable) {
-                        alert('배경 제거 API가 설정되지 않았거나 일시적으로 사용할 수 없습니다. 배경 제거 없이 변환합니다.');
+                        showToast.error('배경 제거 불가', 'API가 없거나 일시 중단입니다. 배경 없이 변환합니다.');
                     } else if (isLimit) {
-                        alert('배경 제거 API 한도 초과. 배경 제거 없이 변환합니다.');
+                        showToast.error('배경 제거 한도', `${msg || '오늘 한도에 도달했습니다.'} 배경 없이 변환합니다.`);
                     } else {
-                        alert(`배경 제거 실패: ${msg}. 배경 제거 없이 변환합니다.`);
+                        showToast.error('배경 제거 실패', `${msg || '오류가 발생했습니다.'} 배경 없이 변환합니다.`);
                     }
+                    onRemoveBgDone?.();
                 }
             }
             const svgContent = await convertImageToSVG(imageToConvert, signal, convertMode);

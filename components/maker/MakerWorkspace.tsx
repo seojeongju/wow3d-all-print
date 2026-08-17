@@ -21,6 +21,7 @@ import type { ConvertMode } from '@/lib/image-processor';
 import { MakerTemplatePicker } from '@/components/maker/MakerTemplatePicker';
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export';
 import { getMakerTemplate } from '@/lib/maker-templates';
+import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { showToast } from '@/lib/toast-helper';
@@ -42,6 +43,8 @@ export function MakerWorkspace() {
         rimHeightMm, setRimHeightMm,
         baseSizeMm, setBaseSizeMm,
         cornerRadiusMm, setCornerRadiusMm,
+        mxStem, setMxStem,
+        backMount, setBackMount,
         activeTemplateId, applyTemplate,
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
@@ -58,15 +61,41 @@ export function MakerWorkspace() {
     const [convertMode, setConvertMode] = useState<ConvertMode>('simple');
     const [useRemoveBg, setUseRemoveBg] = useState(false);
     const [removeBgConfigured, setRemoveBgConfigured] = useState<boolean | null>(null);
+    const [removeBgRemaining, setRemoveBgRemaining] = useState<number | null>(null);
+    const [removeBgLimit, setRemoveBgLimit] = useState<number | null>(null);
     const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
     const [isQuoting, setIsQuoting] = useState(false);
 
-    useEffect(() => {
-        fetch('/api/maker/remove-bg')
+    const token = useAuthStore((s) => s.token);
+    const sessionId = useAuthStore((s) => s.sessionId);
+    const userId = useAuthStore((s) => s.user?.id);
+
+    const removeBgAuthHeaders = (): HeadersInit => {
+        const h: HeadersInit = {};
+        if (token) {
+            h.Authorization = `Bearer ${token}`;
+            if (userId) h['X-User-ID'] = String(userId);
+        } else if (sessionId) {
+            h['X-Session-ID'] = sessionId;
+        }
+        return h;
+    };
+
+    const refreshRemoveBgStatus = () => {
+        fetch('/api/maker/remove-bg', { headers: removeBgAuthHeaders() })
             .then((r) => r.json())
-            .then((j: { configured?: boolean }) => setRemoveBgConfigured(!!j?.configured))
+            .then((j: { configured?: boolean; remaining?: number; limit?: number }) => {
+                setRemoveBgConfigured(!!j?.configured);
+                setRemoveBgRemaining(typeof j?.remaining === 'number' ? j.remaining : null);
+                setRemoveBgLimit(typeof j?.limit === 'number' ? j.limit : null);
+            })
             .catch(() => setRemoveBgConfigured(false));
-    }, []);
+    };
+
+    useEffect(() => {
+        refreshRemoveBgStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 로그인/세션 변경 시에만
+    }, [token, sessionId, userId]);
 
     useEffect(() => {
         if (activeTab === '3d') {
@@ -98,6 +127,8 @@ export function MakerWorkspace() {
         rimHeightMm,
         baseSizeMm,
         cornerRadiusMm,
+        mxStem,
+        backMount,
         canvasSize,
     });
 
@@ -233,6 +264,8 @@ export function MakerWorkspace() {
                             onSvgConverted={(data) => setPendingSvg(data)}
                             convertMode={convertMode}
                             useRemoveBg={useRemoveBg}
+                            authHeaders={removeBgAuthHeaders()}
+                            onRemoveBgDone={refreshRemoveBgStatus}
                         />
                     </div>
                 </aside>
@@ -453,6 +486,51 @@ export function MakerWorkspace() {
                                 onChange={setBevelMm}
                             />
 
+                            {basePlateType !== 'none' && (
+                                <>
+                                    <div className="h-px bg-white/5" />
+                                    <div>
+                                        <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-2 block">MX 스템 (키캡 밑면)</label>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={mxStem}
+                                            onClick={() => setMxStem(!mxStem)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${mxStem ? 'bg-teal-500' : 'bg-white/10'}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${mxStem ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                        <p className="text-[10px] text-white/40 mt-1.5 break-keep">
+                                            Cherry MX 간이 십자(+). FDM 여유 슬롯 1.35mm · 높이 4mm. 레진은 후가공이 필요할 수 있습니다.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-2 block">배지 뒷면 장착</label>
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            {([
+                                                ['none', '없음'],
+                                                ['magnet', '마그넷'],
+                                                ['pin', '옷핀'],
+                                            ] as const).map(([id, label]) => (
+                                                <Button
+                                                    key={id}
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setBackMount(id)}
+                                                    className={`text-[10px] font-bold h-8 border-white/10 rounded-lg px-1 ${backMount === id ? 'bg-teal-500 text-slate-950 border-teal-400' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                                >
+                                                    {label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                        <p className="text-[10px] text-white/40 mt-1.5 break-keep">
+                                            마그넷: Ø10×2mm 네오디뮴 컵. 옷핀: 16mm 채널에 브로치핀을 넣습니다.
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+
                             <div className="h-px bg-white/5" />
 
                             <div className="flex items-center justify-between">
@@ -522,19 +600,38 @@ export function MakerWorkspace() {
                                     type="button"
                                     role="checkbox"
                                     aria-checked={useRemoveBg}
-                                    onClick={() => setUseRemoveBg((v) => !v)}
+                                    onClick={() => {
+                                        if (removeBgConfigured === false) {
+                                            showToast.error('배경 제거 불가', 'API가 설정되지 않았습니다. SVG를 직접 올리거나 배경 없이 변환해 주세요.');
+                                            return;
+                                        }
+                                        if (removeBgRemaining === 0) {
+                                            showToast.error('오늘 한도 소진', '배경 없이 변환하거나 내일 다시 시도해 주세요.');
+                                            return;
+                                        }
+                                        setUseRemoveBg((v) => !v);
+                                    }}
                                     className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border transition-colors focus:outline-none ${useRemoveBg ? 'bg-teal-500 border-teal-400' : 'bg-white/10 border-white/20'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${useRemoveBg ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
-                                <label className="text-[11px] text-white/70 cursor-pointer" onClick={() => setUseRemoveBg((v) => !v)}>
+                                <label
+                                    className="text-[11px] text-white/70 cursor-pointer"
+                                    onClick={() => {
+                                        if (removeBgConfigured === false || removeBgRemaining === 0) return;
+                                        setUseRemoveBg((v) => !v);
+                                    }}
+                                >
                                     배경 제거 후 변환
                                 </label>
                             </div>
-                            <p className="text-[10px] text-white/40">
-                                {removeBgConfigured === true && '배경 제거 사용 가능'}
-                                {removeBgConfigured === false && 'API 미설정 — 켜도 배경 제거 없이 변환됩니다'}
-                                {removeBgConfigured === null && 'remove.bg API 키 설정 시 사용 가능'}
+                            <p className="text-[10px] text-white/40 break-keep">
+                                {removeBgConfigured === true && removeBgRemaining != null && removeBgLimit != null && (
+                                    <>오늘 남은 횟수 {removeBgRemaining}/{removeBgLimit}회 (회원 5 · 비회원 2). JPG/PNG 최대 8MB.</>
+                                )}
+                                {removeBgConfigured === true && (removeBgRemaining == null || removeBgLimit == null) && '배경 제거 사용 가능 · JPG/PNG 최대 8MB'}
+                                {removeBgConfigured === false && 'API 미설정 — 켜도 배경 제거 없이 변환됩니다. SVG 직접 업로드를 권장합니다.'}
+                                {removeBgConfigured === null && 'remove.bg 상태 확인 중…'}
                             </p>
                         </div>
                     </div>

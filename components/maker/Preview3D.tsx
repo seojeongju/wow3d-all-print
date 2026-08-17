@@ -35,6 +35,8 @@ function MakerPreviewMeshes() {
     const rimHeightMm = useMakerStore((s) => s.rimHeightMm);
     const baseSizeMm = useMakerStore((s) => s.baseSizeMm);
     const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
+    const mxStem = useMakerStore((s) => s.mxStem);
+    const backMount = useMakerStore((s) => s.backMount);
     const canvasSize = useMakerStore((s) => s.canvasSize);
 
     const group = useMemo(() => {
@@ -48,6 +50,8 @@ function MakerPreviewMeshes() {
             rimHeightMm,
             baseSizeMm,
             cornerRadiusMm,
+            mxStem,
+            backMount,
             canvasSize,
         });
         return buildMakerSceneGroup(input, 'preview');
@@ -61,6 +65,8 @@ function MakerPreviewMeshes() {
         rimHeightMm,
         baseSizeMm,
         cornerRadiusMm,
+        mxStem,
+        backMount,
         canvasSize,
     ]);
 
@@ -97,6 +103,8 @@ export function Preview3D() {
         baseSizeMm: 40,
         cornerRadiusMm: 4,
         canvasSize: { width: 800, height: 600 },
+        mxStem: false,
+        backMount: 'none',
     });
 
     if (!hasContent) {

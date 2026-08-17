@@ -15,6 +15,8 @@ export function Exporter() {
     const rimHeightMm = useMakerStore((s) => s.rimHeightMm);
     const baseSizeMm = useMakerStore((s) => s.baseSizeMm);
     const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
+    const mxStem = useMakerStore((s) => s.mxStem);
+    const backMount = useMakerStore((s) => s.backMount);
     const canvasSize = useMakerStore((s) => s.canvasSize);
 
     useEffect(() => {
@@ -31,6 +33,8 @@ export function Exporter() {
                 rimHeightMm,
                 baseSizeMm,
                 cornerRadiusMm,
+                mxStem,
+                backMount,
                 canvasSize,
             }));
             if (!blob) {
@@ -53,6 +57,8 @@ export function Exporter() {
         rimHeightMm,
         baseSizeMm,
         cornerRadiusMm,
+        mxStem,
+        backMount,
         canvasSize,
     ]);
 

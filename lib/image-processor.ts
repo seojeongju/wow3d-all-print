@@ -96,19 +96,30 @@ export async function convertImageToSVG(file: File, signal?: AbortSignal, mode: 
 }
 
 /** 배경 제거 API 호출 후 반환된 이미지로 새 File 생성. API 미설정 시 실패. */
-export async function removeBackground(file: File, signal?: AbortSignal): Promise<File> {
+export async function removeBackground(
+    file: File,
+    signal?: AbortSignal,
+    headers?: HeadersInit
+): Promise<File> {
+    if (file.size > 8 * 1024 * 1024) {
+        const err = new Error('이미지는 최대 8MB까지 가능합니다.') as Error & { status?: number };
+        err.status = 400;
+        throw err;
+    }
     const formData = new FormData();
     formData.append('image', file);
     const res = await fetch('/api/maker/remove-bg', {
         method: 'POST',
         body: formData,
-        signal
+        signal,
+        headers,
     });
     if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         const msg = j?.error || res.statusText || '배경 제거 실패';
-        const err = new Error(msg) as Error & { status?: number };
+        const err = new Error(msg) as Error & { status?: number; remaining?: number };
         err.status = res.status;
+        if (typeof j?.remaining === 'number') err.remaining = j.remaining;
         throw err;
     }
     const blob = await res.blob();

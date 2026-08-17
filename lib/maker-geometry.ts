@@ -26,6 +26,8 @@ export type MakerSceneSvg = {
     svgContent: string
 }
 
+export type BackMountType = 'none' | 'magnet' | 'pin'
+
 export type MakerSceneInput = {
     paths: MakerScenePath[]
     importedSvgs: MakerSceneSvg[]
@@ -37,6 +39,10 @@ export type MakerSceneInput = {
     baseSizeMm: number
     cornerRadiusMm: number
     canvasSize: { width: number; height: number }
+    /** Cherry MX 간이 스템 (키캡 밑면 −Z) */
+    mxStem: boolean
+    /** 배지 뒷면 장착 */
+    backMount: BackMountType
 }
 
 export function mmToScene(mm: number): number {
@@ -271,6 +277,89 @@ function addExtruded(
     }
 }
 
+function addMesh(
+    group: THREE.Group,
+    geom: THREE.BufferGeometry,
+    material: THREE.Material,
+    preview: boolean,
+    x = 0,
+    y = 0,
+    z = 0
+): void {
+    const mesh = new THREE.Mesh(geom, material)
+    mesh.position.set(x, y, z)
+    if (preview) {
+        mesh.castShadow = true
+        mesh.receiveShadow = true
+    }
+    group.add(mesh)
+}
+
+/** Cherry MX 간이 십자 스템 (FDM 여유: 슬롯 1.35mm) */
+function mxCrossShape(): THREE.Shape {
+    const L = mmToScene(4.1) / 2
+    const w = mmToScene(1.35) / 2
+    const shape = new THREE.Shape()
+    shape.moveTo(-w, L)
+    shape.lineTo(w, L)
+    shape.lineTo(w, w)
+    shape.lineTo(L, w)
+    shape.lineTo(L, -w)
+    shape.lineTo(w, -w)
+    shape.lineTo(w, -L)
+    shape.lineTo(-w, -L)
+    shape.lineTo(-w, -w)
+    shape.lineTo(-L, -w)
+    shape.lineTo(-L, w)
+    shape.lineTo(-w, w)
+    shape.closePath()
+    return shape
+}
+
+function addHardware(
+    group: THREE.Group,
+    input: MakerSceneInput,
+    mode: 'preview' | 'export',
+    preview: boolean
+): void {
+    const hwMat = makeMaterial(mode, '#3f3f52', { roughness: 0.5, metalness: 0.12 })
+
+    if (input.mxStem) {
+        const stemH = 4.0
+        addExtruded(group, mxCrossShape(), stemH, 0, hwMat, -mmToScene(stemH), preview)
+        const collarR = mmToScene(5.6) / 2
+        const collarH = mmToScene(1.1)
+        const collar = new THREE.CylinderGeometry(collarR, collarR, collarH, 20)
+        const collarMesh = new THREE.Mesh(collar, hwMat)
+        collarMesh.rotation.x = Math.PI / 2
+        collarMesh.position.z = -collarH / 2
+        if (preview) {
+            collarMesh.castShadow = true
+            collarMesh.receiveShadow = true
+        }
+        group.add(collarMesh)
+    }
+
+    if (input.backMount === 'magnet') {
+        const innerR = mmToScene(10.4) / 2
+        const outerR = innerR + mmToScene(1.5)
+        const depth = 2.2
+        addExtruded(group, circleRingShape(outerR, innerR), depth, 0, hwMat, -mmToScene(depth), preview)
+    }
+
+    if (input.backMount === 'pin') {
+        const padL = mmToScene(16)
+        const padW = mmToScene(5.5)
+        const floorD = mmToScene(0.8)
+        addMesh(group, new THREE.BoxGeometry(padL, padW, floorD), hwMat, preview, 0, 0, -floorD / 2)
+        const wallT = mmToScene(1.1)
+        const wallH = mmToScene(2.0)
+        const wallY = padW / 2 - wallT / 2
+        addMesh(group, new THREE.BoxGeometry(padL, wallT, wallH), hwMat, preview, 0, wallY, -wallH / 2)
+        addMesh(group, new THREE.BoxGeometry(padL, wallT, wallH), hwMat, preview, 0, -wallY, -wallH / 2)
+    }
+}
+
 function plateTopZ(baseHeightMm: number, hasBase: boolean): number {
     return hasBase ? mmToScene(baseHeightMm) : 0
 }
@@ -308,6 +397,8 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
             }
             addExtruded(group, rimShape, input.rimHeightMm, Math.min(input.bevelMm, input.rimHeightMm * 0.4), rimMat, topZ, preview)
         }
+
+        addHardware(group, input, mode, preview)
     }
 
     input.importedSvgs.forEach((svg) => {

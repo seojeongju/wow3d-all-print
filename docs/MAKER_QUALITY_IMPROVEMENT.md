@@ -98,3 +98,5 @@
   - `REMOVE_BG_API_KEY=your_api_key`
 - Next.js: `.env.local` 또는 Cloudflare Pages/Workers 환경 변수에 추가.
 - 설정 후 AI 3D Maker 오른쪽 패널에서 **「배경 제거 후 변환」**을 켜면 업로드 시 배경 제거 후 SVG 변환이 적용됩니다.
+- **일일 한도**: 회원 5회 · 비회원 2회 (Meshy 사진→3D와 동일). JPG/PNG 최대 8MB.
+- D1: `npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_maker_remove_bg.sql`

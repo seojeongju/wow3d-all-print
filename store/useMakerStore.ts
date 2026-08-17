@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { simplifyPoints, smoothPoints } from '@/lib/sketch-optimizer';
-import type { BasePlateType, MakerSceneInput } from '@/lib/maker-geometry';
+import type { BackMountType, BasePlateType, MakerSceneInput } from '@/lib/maker-geometry';
 import { getMakerTemplate, type MakerTemplateId } from '@/lib/maker-templates';
 
 interface Point {
@@ -39,6 +39,8 @@ interface MakerState {
   rimHeightMm: number;
   baseSizeMm: number;
   cornerRadiusMm: number;
+  mxStem: boolean;
+  backMount: BackMountType;
   activeTemplateId: MakerTemplateId | null;
   showGrid: boolean;
 
@@ -59,6 +61,8 @@ interface MakerState {
   setRimHeightMm: (mm: number) => void;
   setBaseSizeMm: (mm: number) => void;
   setCornerRadiusMm: (mm: number) => void;
+  setMxStem: (on: boolean) => void;
+  setBackMount: (mount: BackMountType) => void;
   applyTemplate: (id: MakerTemplateId) => void;
   setShowGrid: (show: boolean) => void;
 
@@ -85,6 +89,8 @@ export function makerSceneInputFromState(s: {
   rimHeightMm: number;
   baseSizeMm: number;
   cornerRadiusMm: number;
+  mxStem: boolean;
+  backMount: BackMountType;
   canvasSize: { width: number; height: number };
 }): MakerSceneInput {
   return {
@@ -98,6 +104,8 @@ export function makerSceneInputFromState(s: {
     baseSizeMm: s.baseSizeMm,
     cornerRadiusMm: s.cornerRadiusMm,
     canvasSize: s.canvasSize,
+    mxStem: s.mxStem,
+    backMount: s.backMount,
   };
 }
 
@@ -119,6 +127,8 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   rimHeightMm: 0,
   baseSizeMm: 40,
   cornerRadiusMm: 4,
+  mxStem: false,
+  backMount: 'none',
   activeTemplateId: null,
   showGrid: true,
 
@@ -189,6 +199,8 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   setRimHeightMm: (mm) => set({ rimHeightMm: clamp(mm, 0, 8) }),
   setBaseSizeMm: (mm) => set({ baseSizeMm: clamp(mm, 10, 80) }),
   setCornerRadiusMm: (mm) => set({ cornerRadiusMm: clamp(mm, 0.4, 16) }),
+  setMxStem: (on) => set({ mxStem: on }),
+  setBackMount: (mount) => set({ backMount: mount }),
   applyTemplate: (id) => {
     const t = getMakerTemplate(id);
     if (!t) return;
@@ -201,6 +213,8 @@ export const useMakerStore = create<MakerState>((set, get) => ({
       rimHeightMm: t.rimHeightMm,
       bevelMm: t.bevelMm,
       cornerRadiusMm: t.cornerRadiusMm,
+      mxStem: t.mxStem,
+      backMount: t.backMount,
     });
   },
   setShowGrid: (show) => set({ showGrid: show }),
