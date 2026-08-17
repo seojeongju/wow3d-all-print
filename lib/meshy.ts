@@ -55,10 +55,14 @@ export function toDataUri(mime: string, buffer: ArrayBuffer): string {
     return `data:${safeMime};base64,${arrayBufferToBase64(buffer)}`
 }
 
+export type MeshyQualityPreset = 'fast' | 'standard'
+
 export async function createMeshyImageTo3DTask(
     apiKey: string,
-    imageDataUri: string
+    imageDataUri: string,
+    options?: { quality?: MeshyQualityPreset }
 ): Promise<{ id: string }> {
+    const quality: MeshyQualityPreset = options?.quality === 'fast' ? 'fast' : 'standard'
     const res = await fetch(`${MESHY_API_BASE}/image-to-3d`, {
         method: 'POST',
         headers: {
@@ -72,6 +76,9 @@ export async function createMeshyImageTo3DTask(
             target_formats: ['stl'],
             auto_size: true,
             moderation: true,
+            topology: 'triangle',
+            // 표준: 더 촘촘한 메시 · 빠름: 저폴리로 크레딧·시간 절약
+            target_polycount: quality === 'fast' ? 20000 : 40000,
         }),
     })
 

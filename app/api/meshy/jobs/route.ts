@@ -122,6 +122,8 @@ export async function POST(request: NextRequest) {
 
         const formData = await request.formData()
         const image = formData.get('image') as File | null
+        const qualityRaw = String(formData.get('quality') || 'standard')
+        const quality = qualityRaw === 'fast' ? 'fast' : 'standard'
         if (!image) {
             return NextResponse.json({ error: '이미지 파일이 필요합니다' }, { status: 400 })
         }
@@ -176,7 +178,7 @@ export async function POST(request: NextRequest) {
         const dataUri = toDataUri(image.type || 'image/jpeg', buffer)
         let meshyTaskId: string
         try {
-            const created = await createMeshyImageTo3DTask(apiKey, dataUri)
+            const created = await createMeshyImageTo3DTask(apiKey, dataUri, { quality })
             meshyTaskId = created.id
         } catch (e) {
             const msg = e instanceof Error ? e.message : 'Meshy 작업 생성 실패'

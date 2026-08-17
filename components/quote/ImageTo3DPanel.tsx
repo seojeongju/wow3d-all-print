@@ -120,6 +120,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     const [history, setHistory] = useState<HistoryItem[]>([])
     const [enhanceContrast, setEnhanceContrast] = useState(true)
     const [useRemoveBg, setUseRemoveBg] = useState(false)
+    const [quality, setQuality] = useState<'fast' | 'standard'>('standard')
     const [removeBgConfigured, setRemoveBgConfigured] = useState(false)
     const [applying, setApplying] = useState(false)
     const [resuming, setResuming] = useState(true)
@@ -484,6 +485,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
             const fd = new FormData()
             fd.append('image', prepared)
+            fd.append('quality', quality)
             const res = await fetch('/api/meshy/jobs', {
                 method: 'POST',
                 headers: authHeaders(),
@@ -685,7 +687,32 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     {status === 'idle' && token && (
                         <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                             <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
-                                전처리 옵션
+                                품질 · 전처리
+                            </p>
+                            <div className="flex gap-1.5">
+                                {(
+                                    [
+                                        { id: 'fast' as const, label: '빠름' },
+                                        { id: 'standard' as const, label: '표준' },
+                                    ]
+                                ).map((q) => (
+                                    <button
+                                        key={q.id}
+                                        type="button"
+                                        onClick={() => setQuality(q.id)}
+                                        className={cn(
+                                            'h-8 px-3 rounded-lg border text-[11px] font-black',
+                                            quality === q.id
+                                                ? 'bg-indigo-500 border-indigo-400 text-white'
+                                                : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/10'
+                                        )}
+                                    >
+                                        {q.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] font-bold text-white/40 break-keep">
+                                표준은 메시가 더 촘촘합니다. 텍스처는 견적용 STL에 포함되지 않습니다.
                             </p>
                             <label className="flex items-center gap-2.5 text-[12px] font-bold text-white/80 cursor-pointer">
                                 <input

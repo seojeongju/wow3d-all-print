@@ -72,3 +72,14 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 ```bash
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_bonus.sql
 ```
+
+### Phase D (품질 · 일부)
+- 품질 프리셋: **빠름**(저폴리) / **표준**(기본)
+- 멀티뷰·메시 수리는 다음 스프린트
+
+## 다음 (미구현)
+
+- 멀티뷰(앞·옆·위)
+- 고품질 텍스처·GLB 미리보기
+- Printability repair
+- 결제 연동 추가 생성 (현재는 관리자 보너스)
