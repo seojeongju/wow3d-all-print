@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Loader2, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Loader2, Zap, ImageIcon, FileBox } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -147,15 +147,26 @@ export default function Hero() {
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="text-left"
                 >
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-6 backdrop-blur-md"
-                    >
-                        <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-                        <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-white/80 uppercase">Next-Gen 3D Printing</span>
-                    </motion.div>
+                    <div className="flex flex-wrap items-center gap-2 mb-6">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md"
+                        >
+                            <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                            <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-white/80 uppercase">Next-Gen 3D Printing</span>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.25 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/30 backdrop-blur-md"
+                        >
+                            <ImageIcon className="w-3.5 h-3.5 text-indigo-300" />
+                            <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-indigo-200 uppercase">사진 → AI 3D</span>
+                        </motion.div>
+                    </div>
 
                     <h1 className="text-[2rem] sm:text-4xl md:text-[2.8rem] lg:text-[3.2rem] xl:text-[3.8rem] font-black tracking-tight mb-6 leading-[1.2] break-keep text-white">
                         <span className="text-teal-400 block text-xs sm:text-sm md:text-base mb-4 font-black uppercase tracking-[0.3em] opacity-90">WOW3D PRO</span>
@@ -170,7 +181,8 @@ export default function Hero() {
 
                     <p className="text-base sm:text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed break-keep font-medium">
                         파일 업로드 → 가격·제작기간 확인 → 주문·결제.<br className="hidden sm:block" />
-                        STL·OBJ·3MF·PLY는 즉시 <span className="text-teal-400 font-bold">자동견적</span>, STEP·STP는 업로드 시 자동 변환합니다.
+                        <span className="text-teal-400 font-bold">3D 파일</span>이 있으면 즉시 자동견적,{' '}
+                        <span className="text-indigo-300 font-bold">사진만</span> 있어도 AI가 3D 모델을 만들어 견적으로 이어집니다.
                     </p>
 
                     {/* 모바일 전용 AI 견적 정보 카드 (Hidden on Desktop) */}
@@ -189,27 +201,39 @@ export default function Hero() {
                         </div>
                     </motion.div>
 
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-14">
-                        <Link href="/quote" className="w-full sm:w-auto order-first sm:order-none">
-                            <Button size="lg" className="w-full h-14 sm:h-16 px-8 sm:px-10 text-[15px] sm:text-[17px] rounded-2xl bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.3)] hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all gap-3 font-black uppercase tracking-widest relative overflow-hidden group">
-                                <motion.div 
-                                    className="absolute inset-0 bg-white/30"
-                                    animate={{ x: ['-100%', '200%'] }}
-                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                                />
-                                <Zap className="w-5 h-5 sm:w-6 sm:h-6 fill-current relative z-10" />
-                                <span className="relative z-10">실시간 자동견적 시작</span>
-                                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 relative z-10 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                        </Link>
-                        <div className="flex gap-4 w-full sm:w-auto">
-                            <Link href="/print-methods" className="flex-1 sm:flex-none">
-                                <Button size="lg" variant="outline" className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[15px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
+                    <div className="flex flex-col gap-3 sm:gap-4 mb-14">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <Link href="/quote?entry=file" className="w-full sm:flex-1" onClick={clearSampleIfPresent}>
+                                <Button size="lg" className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[16px] rounded-2xl bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.3)] hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all gap-2.5 font-black relative overflow-hidden group">
+                                    <motion.div
+                                        className="absolute inset-0 bg-white/30"
+                                        animate={{ x: ['-100%', '200%'] }}
+                                        transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                                    />
+                                    <FileBox className="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
+                                    <span className="relative z-10">3D 파일로 견적</span>
+                                    <ArrowRight className="w-5 h-5 shrink-0 relative z-10 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
+                            <Link href="/quote?entry=photo" className="w-full sm:flex-1" onClick={clearSampleIfPresent}>
+                                <Button
+                                    size="lg"
+                                    className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[16px] rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white shadow-[0_0_30px_rgba(99,102,241,0.35)] hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] transition-all gap-2.5 font-black relative overflow-hidden group"
+                                >
+                                    <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
+                                    <span className="relative z-10">사진으로 3D 만들기</span>
+                                    <ArrowRight className="w-5 h-5 shrink-0 relative z-10 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
+                        </div>
+                        <div className="flex gap-3 sm:gap-4 w-full">
+                            <Link href="/print-methods" className="flex-1">
+                                <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 text-[13px] sm:text-[14px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
                                     출력방식
                                 </Button>
                             </Link>
-                            <Link href="/materials" className="flex-1 sm:flex-none">
-                                <Button size="lg" variant="outline" className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[15px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
+                            <Link href="/materials" className="flex-1">
+                                <Button size="lg" variant="outline" className="w-full h-12 sm:h-14 px-6 text-[13px] sm:text-[14px] rounded-2xl bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all font-bold">
                                     소재보기
                                 </Button>
                             </Link>
@@ -305,20 +329,26 @@ export default function Hero() {
                                             '샘플 견적 체험'
                                         )}
                                     </Button>
-                                    <Link href="/quote" className="block" onClick={clearSampleIfPresent}>
-                                        <Button
-                                            size="sm"
-                                            className="w-full h-12 xl:h-14 rounded-xl bg-teal-400 text-slate-950 font-black text-[10px] xl:text-[11px] uppercase tracking-widest hover:bg-teal-300 shadow-[0_0_30px_rgba(45,212,191,0.4)] active:scale-95 transition-all relative overflow-hidden group"
-                                        >
-                                            <motion.div
-                                                className="absolute inset-0 bg-white/20"
-                                                animate={{ x: ['-100%', '200%'] }}
-                                                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                                            />
-                                            <Zap className="w-4 h-4 mr-2 fill-current relative z-10" />
-                                            <span className="relative z-10">실시간 자동견적 시작</span>
-                                        </Button>
-                                    </Link>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        <Link href="/quote?entry=file" className="block" onClick={clearSampleIfPresent}>
+                                            <Button
+                                                size="sm"
+                                                className="w-full h-11 xl:h-12 rounded-xl bg-teal-400 text-slate-950 font-black text-[10px] xl:text-[11px] tracking-wide hover:bg-teal-300 shadow-[0_0_24px_rgba(45,212,191,0.35)] active:scale-95 transition-all"
+                                            >
+                                                <FileBox className="w-4 h-4 mr-2" />
+                                                3D 파일로 견적
+                                            </Button>
+                                        </Link>
+                                        <Link href="/quote?entry=photo" className="block" onClick={clearSampleIfPresent}>
+                                            <Button
+                                                size="sm"
+                                                className="w-full h-11 xl:h-12 rounded-xl bg-indigo-500 text-white font-black text-[10px] xl:text-[11px] tracking-wide hover:bg-indigo-400 shadow-[0_0_24px_rgba(99,102,241,0.35)] active:scale-95 transition-all"
+                                            >
+                                                <ImageIcon className="w-4 h-4 mr-2" />
+                                                사진으로 3D 만들기
+                                            </Button>
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -343,15 +373,23 @@ export default function Hero() {
                             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
 
                             <div className="relative p-5 xl:p-7 pb-4 border-b border-white/5">
-                                <h3 className="text-lg xl:text-xl font-black text-white tracking-tight mb-2">3D 모델 지원</h3>
+                                <h3 className="text-lg xl:text-xl font-black text-white tracking-tight mb-2">파일 · 사진 모두 OK</h3>
                                 <p className="text-[12px] xl:text-[13px] font-bold text-white/60 leading-relaxed break-keep">
-                                    STL·OBJ·3MF·PLY는 즉시 자동견적, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다.
+                                    3D 파일은 즉시 자동견적, JPG/PNG 사진은 AI가 3D 모델로 변환한 뒤 견적으로 이어집니다.
                                 </p>
                                 <div className="mt-4 flex flex-wrap gap-1.5 xl:gap-2">
                                     {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
                                         <span
                                             key={fmt}
                                             className="px-2.5 py-1 xl:px-3 xl:py-1.5 rounded-xl bg-teal-500/10 border border-teal-400/20 text-[10px] xl:text-[11px] font-black text-teal-400 tracking-widest uppercase"
+                                        >
+                                            .{fmt.toLowerCase()}
+                                        </span>
+                                    ))}
+                                    {['JPG', 'PNG'].map((fmt) => (
+                                        <span
+                                            key={fmt}
+                                            className="px-2.5 py-1 xl:px-3 xl:py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-400/30 text-[10px] xl:text-[11px] font-black text-indigo-300 tracking-widest uppercase"
                                         >
                                             .{fmt.toLowerCase()}
                                         </span>
@@ -379,7 +417,7 @@ export default function Hero() {
                                     </span>
                                 </div>
                                 <p className="mt-2 text-[10px] text-white/70 font-medium break-keep">
-                                    파일을 업로드하면 3D 미리보기와 상세 견적이 활성화됩니다.
+                                    3D 파일 또는 제품 사진만으로도 미리보기와 상세 견적을 시작할 수 있습니다.
                                 </p>
                             </div>
                         </motion.div>
