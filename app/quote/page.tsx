@@ -4,6 +4,8 @@ import Scene from "@/components/canvas/Scene";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/upload/FileUpload";
 import QuotePanel from "@/components/quote/QuotePanel";
+import QuoteSourceChooser, { type QuoteEntryMode } from "@/components/quote/QuoteSourceChooser";
+import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,7 +19,11 @@ import { cn } from "@/lib/utils";
 const quickQuoteFaqs = [
     {
         q: "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
-        a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 파일 단위(mm)와 실제 크기도 함께 확인하면 더 정확합니다.",
+        a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없다면 제품 사진으로 AI 모델링 후 견적할 수 있습니다.",
+    },
+    {
+        q: "3D 모델 파일이 없어도 견적이 가능한가요?",
+        a: "가능합니다. 견적 시작 화면에서 「3D 모델이 없어요」를 선택한 뒤 제품 사진(JPG/PNG)을 올리면 AI가 3D 모델을 생성하고 자동견적으로 이어집니다. 정밀 치수 부품은 파일 업로드를 권장합니다.",
     },
     {
         q: "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
@@ -47,10 +53,23 @@ function QuoteContent() {
     const loadQuoteId = searchParams.get('load_quote_id');
     const guideSource = searchParams.get('guide_source') || '';
     const guideTopic = searchParams.get('guide_topic') || '';
+    const entryParam = searchParams.get('entry');
+    const [entryMode, setEntryMode] = useState<QuoteEntryMode | null>(
+        entryParam === 'file' || entryParam === 'photo' ? entryParam : null
+    );
     const [loadedQuote, setLoadedQuote] = useState<Quote | null>(null); // DB quote data
     const [isViewerDragging, setIsViewerDragging] = useState(false);
     const guideLabel = guideTopic || GUIDE_SOURCE_LABELS[guideSource] || '';
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
+
+    useEffect(() => {
+        if (entryParam === 'file' || entryParam === 'photo') setEntryMode(entryParam);
+    }, [entryParam]);
+
+    // 저장된 견적 로드 시에는 선택 화면 건너뛰기
+    useEffect(() => {
+        if (loadQuoteId) setEntryMode('file');
+    }, [loadQuoteId]);
 
     // Auto-switch to settings tab when analysis is complete
     useEffect(() => {
@@ -108,6 +127,7 @@ function QuoteContent() {
             setIsViewerDragging(false);
             const model = getModelFileFromDataTransfer(e.dataTransfer);
             if (!model) return;
+            setEntryMode('file');
             setFile(model);
             setActiveTab('settings');
         },
@@ -251,6 +271,38 @@ function QuoteContent() {
                                                 </div>
                                             </div>
                                         </motion.div>
+                                    ) : !entryMode ? (
+                                        <motion.div
+                                            key="chooser"
+                                            initial={{ opacity: 0, x: -30 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -30 }}
+                                        >
+                                            <QuoteSourceChooser onSelect={setEntryMode} />
+                                            <div className="space-y-3 pt-8">
+                                                <div className="px-1">
+                                                    <h2 className="text-sm sm:text-base font-black text-white">자동견적 전에 많이 묻는 질문</h2>
+                                                </div>
+                                                {quickQuoteFaqs.map((item) => (
+                                                    <div key={item.q} className="p-4 sm:p-5 rounded-[1.25rem] bg-white/5 border border-white/10">
+                                                        <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
+                                                        <p className="mt-2 text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    ) : entryMode === 'photo' ? (
+                                        <motion.div
+                                            key="photo"
+                                            initial={{ opacity: 0, x: -30 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -30 }}
+                                        >
+                                            <ImageTo3DPanel
+                                                onBack={() => setEntryMode(null)}
+                                                onModelReady={() => setActiveTab('settings')}
+                                            />
+                                        </motion.div>
                                     ) : (
                                         <motion.div
                                             key="upload"
@@ -260,6 +312,14 @@ function QuoteContent() {
                                             className="space-y-8 sm:space-y-10"
                                         >
                                             <div className="space-y-3 sm:space-y-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEntryMode(null)}
+                                                    className="inline-flex items-center gap-1.5 text-[12px] font-black text-white/50 hover:text-white transition-colors"
+                                                >
+                                                    <ArrowLeft className="w-3.5 h-3.5" />
+                                                    시작 방식 다시 선택
+                                                </button>
                                                 {guideLabel ? (
                                                     <div className="rounded-[1.5rem] border border-teal-400/20 bg-teal-400/10 px-5 py-4">
                                                         <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300 mb-2">Guide Context</p>
@@ -270,8 +330,8 @@ function QuoteContent() {
                                                     </div>
                                                 ) : null}
                                                 <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-[1.15]">
-                                                    새로운 프로젝트 <br />
-                                                    <span className="text-teal-400">시작하기</span>
+                                                    3D 모델 <br />
+                                                    <span className="text-teal-400">업로드</span>
                                                 </h1>
                                                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
                                                     STL·OBJ·3MF·PLY는 즉시 견적, STEP·STP는 자동 변환 후 견적을 제공합니다. <br />
@@ -311,51 +371,6 @@ function QuoteContent() {
                                                         <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">STL, OBJ, 3MF 업로드 전 두께, 단위, 메쉬 오류를 체크하는 방법을 확인하세요.</p>
                                                     </div>
                                                 </Link>
-                                                <Link href="/guides/best-materials-for-3d-printing-prototypes" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
-                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">시제품용 소재 추천 보기</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">외관 확인, 조립 테스트, 기능 검토 목적에 따라 어떤 소재가 적합한지 바로 확인하세요.</p>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/guides/best-materials-for-transparent-3d-printed-parts" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
-                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">투명 부품용 소재 추천 보기</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">투명 커버, 관찰창, 시인성 부품에 어떤 소재가 적합한지 확인하세요.</p>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/guides/best-materials-for-3d-printed-housings-and-cases" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
-                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">하우징·케이스용 소재 추천 보기</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">전자기기 하우징, 보호 케이스, 외장 커버에 어떤 소재가 적합한지 확인하세요.</p>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/guides/best-materials-for-heat-resistant-and-impact-resistant-parts" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
-                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">내열·내충격 부품용 소재 추천 보기</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">기능성 부품, 열과 충격을 받는 구조물에 어떤 소재가 적합한지 확인하세요.</p>
-                                                    </div>
-                                                </Link>
-                                                <Link href="/guides/best-materials-for-miniatures-and-figurines" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
-                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">정밀 모형·피규어용 소재 추천 보기</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">미니어처, 피규어, 디오라마 같은 정밀 모델에 어떤 소재가 적합한지 확인하세요.</p>
-                                                    </div>
-                                                </Link>
                                             </div>
                                             <div className="space-y-3 pt-2">
                                                 <div className="px-1">
@@ -380,7 +395,7 @@ function QuoteContent() {
                                         <div className="flex items-center justify-between px-1">
                                             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
                                             <button
-                                                onClick={() => { reset(); setStep(1); }}
+                                                onClick={() => { reset(); setStep(1); setEntryMode(null); }}
                                                 className="px-3 py-1.5 rounded-lg bg-teal-400/20 border border-teal-400/30 text-[10px] sm:text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
                                             >
                                                 <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:rotate-180 transition-transform duration-500" />

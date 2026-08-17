@@ -4,7 +4,7 @@ import { absoluteUrl, buildOgImages, OG_IMAGE_PATH, SITE_URL } from "@/lib/site-
 
 const quoteTitle = "3D프린팅 자동견적 | 3D프린팅 견적 · 3D프린터 출력 가격";
 const quoteDescription =
-  "3D프린팅 자동견적·3D프린팅 견적·3D프린터 출력 가격을 파일 업로드 후 즉시 확인하세요. STL·OBJ·3MF·PLY 즉시 견적, STEP·STP 자동 변환.";
+  "3D프린팅 자동견적·3D프린팅 견적·3D프린터 출력 가격을 파일 업로드 또는 사진 AI 모델링 후 즉시 확인하세요. STL·OBJ·3MF·PLY 즉시 견적, STEP·STP 자동 변환, 사진→3D.";
 
 export const metadata: Metadata = {
   title: quoteTitle,
