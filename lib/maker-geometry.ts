@@ -317,6 +317,16 @@ export function extrudeOptions(heightMm: number, bevelMm: number): THREE.Extrude
     }
 }
 
+function hexLuminance(hex: string): number {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+    if (!m) return 0.5
+    const n = parseInt(m[1], 16)
+    const r = ((n >> 16) & 255) / 255
+    const g = ((n >> 8) & 255) / 255
+    const b = (n & 255) / 255
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
 function makeMaterial(
     mode: 'preview' | 'export',
     color: string,
@@ -329,6 +339,28 @@ function makeMaterial(
         metalness: extra?.metalness ?? 0.15,
         emissive: extra?.emissive ?? '#000000',
         emissiveIntensity: extra?.emissiveIntensity ?? 0,
+    })
+}
+
+/** 미리보기에서 어두운 로고가 배경에 묻히지 않도록 색·발광 보정 (STL export 색은 유지) */
+function logoPreviewMaterial(mode: 'preview' | 'export', logoColor: string): THREE.Material {
+    const color = logoColor || '#0f172a'
+    if (mode === 'export') return makeMaterial(mode, color)
+    const lum = hexLuminance(color)
+    // 거의 검정 → 틸 하이라이트로 실루엣이 보이게
+    if (lum < 0.18) {
+        return makeMaterial(mode, '#14b8a6', {
+            roughness: 0.32,
+            metalness: 0.12,
+            emissive: '#0f766e',
+            emissiveIntensity: 0.28,
+        })
+    }
+    return makeMaterial(mode, color, {
+        roughness: 0.28,
+        metalness: 0.1,
+        emissive: color,
+        emissiveIntensity: lum < 0.45 ? 0.22 : 0.08,
     })
 }
 
@@ -463,7 +495,13 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     const logoFitBase = hasBase ? Math.max(0.05, size - rimInset * 2) * 0.85 : mmToScene(40)
 
     if (hasBase) {
-        const baseMat = makeMaterial(mode, input.baseColor || '#1f1f2e', { roughness: 0.45, metalness: 0.2 })
+        const baseHex = input.baseColor || '#f4f4f5'
+        const baseMat = makeMaterial(mode, baseHex, {
+            roughness: 0.55,
+            metalness: 0.05,
+            emissive: preview && hexLuminance(baseHex) > 0.7 ? '#ffffff' : '#000000',
+            emissiveIntensity: preview && hexLuminance(baseHex) > 0.7 ? 0.12 : 0,
+        })
         let baseShape: THREE.Shape
         if (input.basePlateType === 'circle') {
             baseShape = circleShape(size / 2)
@@ -475,7 +513,12 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
         addExtruded(group, baseShape, input.baseHeight, input.bevelMm, baseMat, 0, preview)
 
         if (input.rimHeightMm >= 0.4) {
-            const rimMat = makeMaterial(mode, input.rimColor || '#334155', { roughness: 0.4, metalness: 0.18 })
+            const rimMat = makeMaterial(mode, input.rimColor || '#d4d4d8', {
+                roughness: 0.45,
+                metalness: 0.12,
+                emissive: preview ? '#a1a1aa' : '#000000',
+                emissiveIntensity: preview ? 0.08 : 0,
+            })
             let rimShape: THREE.Shape
             if (input.basePlateType === 'circle') {
                 rimShape = circleRingShape(size / 2, Math.max(0.05, size / 2 - rimInset))
@@ -496,7 +539,7 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
             console.warn('[Maker] SVG에서 돌출할 path를 찾지 못했습니다. 배경만 있거나 변환에 실패했을 수 있습니다.')
             return
         }
-        const logoMat = makeMaterial(mode, input.logoColor || '#4f46e5', { roughness: 0.3, metalness: 0.1 })
+        const logoMat = logoPreviewMaterial(mode, input.logoColor || '#0f172a')
         const logoZ = topZ + (preview ? 0.002 : 0)
         const logoGroup = new THREE.Group()
         logoGroup.position.set(

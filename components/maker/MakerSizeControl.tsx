@@ -49,7 +49,7 @@ export function MakerSizeControl({
     const clamped = Math.min(max, Math.max(min, baseSizeMm))
 
     return (
-        <div className="rounded-2xl border border-teal-400/30 bg-teal-500/10 p-4 shadow-xl">
+        <div className="rounded-2xl border border-teal-400/30 bg-teal-500/10 p-4 shadow-xl select-none">
             <div className="flex items-center justify-between gap-2 mb-1">
                 <label className="text-[12px] font-black text-white">{label}</label>
                 <span className="text-[13px] font-black text-teal-200 tabular-nums">
@@ -99,7 +99,7 @@ export function MakerSizeControl({
                         const n = Number(e.target.value)
                         if (Number.isFinite(n)) onChange(n)
                     }}
-                    className="w-14 shrink-0 rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-right font-mono text-[12px] font-bold text-teal-200 outline-none focus:border-teal-400/60"
+                    className="w-14 shrink-0 rounded-lg border border-white/20 bg-black/40 px-2 py-1.5 text-right font-mono text-[12px] font-bold text-teal-200 outline-none focus:border-teal-400/60 select-text"
                     aria-label={`${label} (mm)`}
                 />
             </div>

@@ -188,12 +188,15 @@ function PreviewScene({
             <ContextLossHandler onContextLost={onContextLost} />
             <CameraViewController preset={viewPreset} presetTick={viewTick} autoRotate={autoRotate} />
 
-            <ambientLight intensity={1.05} />
-            <hemisphereLight args={['#e8eef7', '#2a2a35', 0.55]} />
-            <spotLight position={[16, -18, 26]} angle={0.35} penumbra={0.9} intensity={1.4} />
-            <pointLight position={[-14, 10, 16]} intensity={1.1} />
-            <directionalLight position={[6, -8, 22]} intensity={1.25} />
-            <directionalLight position={[-10, 6, 8]} intensity={0.55} />
+            <ambientLight intensity={1.35} />
+            <hemisphereLight args={['#f0f4fa', '#3a3a48', 0.75]} />
+            <spotLight position={[16, -18, 26]} angle={0.4} penumbra={0.85} intensity={1.85} />
+            <pointLight position={[-14, 10, 16]} intensity={1.35} />
+            <directionalLight position={[6, -8, 22]} intensity={1.55} />
+            <directionalLight position={[-10, 6, 8]} intensity={0.85} />
+            {/* 측면 림: 어두운 로고 실루엣 강조 */}
+            <directionalLight position={[18, 0, 6]} intensity={0.7} color="#9fe8df" />
+            <directionalLight position={[-16, -4, 4]} intensity={0.45} color="#c7d2fe" />
 
             <OrbitControls
                 makeDefault
@@ -219,7 +222,7 @@ function PreviewScene({
 
             {showGrid && (
                 <gridHelper
-                    args={[50, 50, '#3a3a55', '#222236']}
+                    args={[50, 50, '#4a5568', '#2d3340']}
                     rotation={[Math.PI / 2, 0, 0]}
                     position={[0, 0, -0.15]}
                 />
@@ -296,7 +299,7 @@ export function Preview3D() {
                 onCreated={({ camera, scene }) => {
                     camera.up.set(0, 0, 1);
                     camera.lookAt(0, 0, 1.5);
-                    scene.background = new THREE.Color('#0f1118');
+                    scene.background = new THREE.Color('#141820');
                 }}
                 gl={{
                     antialias: true,

@@ -44,7 +44,7 @@ export function MakerLogoAdjust({
     const maxOffset = Math.max(8, Math.round(baseSizeMm * 0.45))
 
     return (
-        <div className="rounded-2xl border border-teal-400/35 bg-teal-500/10 p-4 shadow-xl space-y-4">
+        <div className="rounded-2xl border border-teal-400/35 bg-teal-500/10 p-4 shadow-xl space-y-4 select-none">
             <div>
                 <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.12em]">
                     <Box className="w-4 h-4 text-teal-300" />

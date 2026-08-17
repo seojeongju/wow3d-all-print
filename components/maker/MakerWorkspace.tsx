@@ -930,7 +930,7 @@ function MmControl({
     onChange: (n: number) => void
 }) {
     return (
-        <div>
+        <div className="select-none">
             <div className="flex justify-between items-center mb-3 gap-2">
                 <label className="text-[12px] font-bold text-white/85">{label}</label>
                 <input
@@ -943,7 +943,7 @@ function MmControl({
                         const n = Number(e.target.value)
                         if (Number.isFinite(n)) onChange(n)
                     }}
-                    className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
+                    className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50 select-text"
                     aria-label={label}
                 />
             </div>
