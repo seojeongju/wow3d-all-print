@@ -315,7 +315,23 @@ export function MakerWorkspace() {
                         label="취소"
                     />
                     <ToolbarButton
-                        onClick={clearCanvas}
+                        onClick={() => {
+                            const hasWork =
+                                paths.length > 0 ||
+                                importedSvgs.length > 0 ||
+                                basePlateType !== 'none' ||
+                                activeTemplateId != null
+                            if (!hasWork) {
+                                showToast.success('초기화', '지울 작업이 없습니다.')
+                                return
+                            }
+                            if (!window.confirm('스케치·로고·배지 템플릿을 모두 지울까요?')) return
+                            clearCanvas()
+                            setPendingSvg(null)
+                            setSelectedLogoId(null)
+                            setActiveTab('draw')
+                            showToast.success('전체 지우기', '스케치·로고·배지 작업을 초기화했습니다.')
+                        }}
                         icon={<Trash2 className="w-4 h-4 md:w-5 md:h-5" />}
                         label="지우기"
                         className="hover:text-red-400 hover:bg-red-500/10 text-white/70"

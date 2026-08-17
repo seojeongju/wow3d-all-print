@@ -204,7 +204,25 @@ export const useMakerStore = create<MakerState>((set, get) => ({
     });
   },
 
-  clearCanvas: () => set({ paths: [], currentPath: [] }),
+  clearCanvas: () => set({
+    paths: [],
+    currentPath: [],
+    isDrawing: false,
+    importedSvgs: [],
+    activeTemplateId: null,
+    basePlateType: 'none',
+    baseHeight: 2,
+    bevelMm: 0,
+    rimHeightMm: 0,
+    baseSizeMm: 40,
+    cornerRadiusMm: 4,
+    mxStem: false,
+    backMount: 'none',
+    extrusionHeight: 5,
+    baseColor: '#f4f4f5',
+    logoColor: '#0f172a',
+    rimColor: '#d4d4d8',
+  }),
 
   undo: () => set((state) => ({
     paths: state.paths.slice(0, -1)
