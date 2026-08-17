@@ -1,47 +1,39 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { buildMakerStlBlob, downloadMakerStl } from '@/lib/maker-stl-export';
 
+/**
+ * STL 저장은 exportTrigger가 증가할 때만 실행합니다.
+ * paths/importedSvgs를 deps에 넣으면 취소·지우기 때도 다운로드가 다시 뜹니다.
+ */
 export function Exporter() {
     const exportTrigger = useMakerStore((s) => s.exportTrigger);
-    const paths = useMakerStore((s) => s.paths);
-    const importedSvgs = useMakerStore((s) => s.importedSvgs);
-    const extrusionHeight = useMakerStore((s) => s.extrusionHeight);
-    const basePlateType = useMakerStore((s) => s.basePlateType);
-    const baseHeight = useMakerStore((s) => s.baseHeight);
-    const bevelMm = useMakerStore((s) => s.bevelMm);
-    const rimHeightMm = useMakerStore((s) => s.rimHeightMm);
-    const baseSizeMm = useMakerStore((s) => s.baseSizeMm);
-    const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
-    const mxStem = useMakerStore((s) => s.mxStem);
-    const backMount = useMakerStore((s) => s.backMount);
-    const baseColor = useMakerStore((s) => s.baseColor);
-    const logoColor = useMakerStore((s) => s.logoColor);
-    const rimColor = useMakerStore((s) => s.rimColor);
-    const canvasSize = useMakerStore((s) => s.canvasSize);
+    const lastHandled = useRef(0);
 
     useEffect(() => {
-        if (exportTrigger === 0) return;
+        if (exportTrigger === 0 || exportTrigger === lastHandled.current) return;
+        lastHandled.current = exportTrigger;
 
+        const s = useMakerStore.getState();
         try {
             const blob = buildMakerStlBlob(makerSceneInputFromState({
-                paths,
-                importedSvgs,
-                extrusionHeight,
-                basePlateType,
-                baseHeight,
-                bevelMm,
-                rimHeightMm,
-                baseSizeMm,
-                cornerRadiusMm,
-                mxStem,
-                backMount,
-                baseColor,
-                logoColor,
-                rimColor,
-                canvasSize,
+                paths: s.paths,
+                importedSvgs: s.importedSvgs,
+                extrusionHeight: s.extrusionHeight,
+                basePlateType: s.basePlateType,
+                baseHeight: s.baseHeight,
+                bevelMm: s.bevelMm,
+                rimHeightMm: s.rimHeightMm,
+                baseSizeMm: s.baseSizeMm,
+                cornerRadiusMm: s.cornerRadiusMm,
+                mxStem: s.mxStem,
+                backMount: s.backMount,
+                baseColor: s.baseColor,
+                logoColor: s.logoColor,
+                rimColor: s.rimColor,
+                canvasSize: s.canvasSize,
             }));
             if (!blob) {
                 alert('저장할 모델이 없습니다. 템플릿을 고르거나 스케치·로고를 넣어 주세요.');
@@ -52,24 +44,7 @@ export function Exporter() {
             console.error('STL export failed', e);
             alert('STL 저장에 실패했습니다. 콘솔을 확인해 주세요.');
         }
-    }, [
-        exportTrigger,
-        paths,
-        importedSvgs,
-        extrusionHeight,
-        basePlateType,
-        baseHeight,
-        bevelMm,
-        rimHeightMm,
-        baseSizeMm,
-        cornerRadiusMm,
-        mxStem,
-        backMount,
-        baseColor,
-        logoColor,
-        rimColor,
-        canvasSize,
-    ]);
+    }, [exportTrigger]);
 
     return null;
 }
