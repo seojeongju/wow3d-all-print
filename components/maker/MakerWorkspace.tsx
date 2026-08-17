@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Pencil, Eraser, Undo, Trash2, Box, Download, Settings, Layers, Check,
-    ImageIcon, ImagePlus, PanelRightOpen, X, Sparkles, Loader2, ShoppingCart,
+    ImageIcon, ImagePlus, PanelRightOpen, X, Sparkles, Loader2, ShoppingCart, Zap,
 } from 'lucide-react';
 import { Canvas2D } from '@/components/maker/Canvas2D';
 import { Preview3D } from '@/components/maker/Preview3D';
