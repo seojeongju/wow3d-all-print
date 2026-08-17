@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useDropzone, type FileRejection } from 'react-dropzone'
 import {
     ImageIcon,
@@ -11,10 +12,11 @@ import {
     AlertTriangle,
     ArrowLeft,
     Sparkles,
+    LogIn,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useFileStore } from '@/store/useFileStore'
-import { MESHY_IMAGE_MAX_BYTES } from '@/lib/meshy'
+import { MESHY_IMAGE_MAX_BYTES, MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -174,8 +176,8 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
     const startGeneration = async () => {
         if (!selected) return
-        if (!token && !sessionId) {
-            setError('세션을 확인할 수 없습니다. 페이지를 새로고침 후 다시 시도해 주세요.')
+        if (!token) {
+            setError('사진→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다.')
             return
         }
         setError(null)
@@ -191,7 +193,17 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             })
             const json = await res.json()
             if (!res.ok || !json.success) {
-                setError(json.error || 'AI 모델링 요청에 실패했습니다')
+                const code = (json as { code?: string }).code
+                if (code === 'LOGIN_REQUIRED') {
+                    setError('로그인 후 하루 1회 이용할 수 있습니다. 로그인 페이지로 이동해 주세요.')
+                } else if (code === 'DAILY_LIMIT') {
+                    setError(
+                        (json as { error?: string }).error ||
+                            '오늘 이용 횟수(1회)를 모두 사용했습니다. 내일 다시 시도해 주세요.'
+                    )
+                } else {
+                    setError(json.error || 'AI 모델링 요청에 실패했습니다')
+                }
                 setStatus('failed')
                 return
             }
@@ -325,14 +337,24 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     )}
 
                     {status === 'idle' && (
-                        <button
-                            type="button"
-                            onClick={startGeneration}
-                            className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black flex items-center justify-center gap-2 transition-all"
-                        >
-                            <Sparkles className="w-4 h-4" />
-                            AI로 3D 모델 생성하기
-                        </button>
+                        token ? (
+                            <button
+                                type="button"
+                                onClick={startGeneration}
+                                className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black flex items-center justify-center gap-2 transition-all"
+                            >
+                                <Sparkles className="w-4 h-4" />
+                                AI로 3D 모델 생성하기
+                            </button>
+                        ) : (
+                            <Link
+                                href={`/auth?return=${encodeURIComponent('/quote?entry=photo')}`}
+                                className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black flex items-center justify-center gap-2 transition-all"
+                            >
+                                <LogIn className="w-4 h-4" />
+                                로그인 후 생성하기
+                            </Link>
+                        )
                     )}
 
                     {status === 'failed' && (
@@ -361,7 +383,8 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                 <p className="text-[11px] font-black uppercase tracking-widest text-white/40">안내</p>
                 <ul className="text-[12px] text-white/50 font-bold space-y-1.5 leading-relaxed break-keep">
-                    <li>· 하루 이용 한도: 회원 5회 · 비회원 2회</li>
+                    <li>· 로그인 회원만 이용 가능 · 계정당 하루 {MESHY_USER_DAILY_LIMIT}회 (한국 시간 기준)</li>
+                    <li>· AI 생성에 실패하면 횟수가 차감되지 않습니다</li>
                     <li>· 절대 치수는 생성 후 견적 화면에서 스케일로 조정하세요</li>
                     <li>· 정밀 부품·조립 공차는 3D 파일 업로드를 권장합니다</li>
                 </ul>

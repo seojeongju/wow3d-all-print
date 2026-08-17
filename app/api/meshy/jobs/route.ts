@@ -3,8 +3,8 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
 import { sanitizeR2FileName } from '@/lib/r2-quote-file'
 import {
-    MESHY_GUEST_DAILY_LIMIT,
     MESHY_IMAGE_MAX_BYTES,
+    MESHY_TODAY_KST_SQL,
     MESHY_USER_DAILY_LIMIT,
     createMeshyImageTo3DTask,
     isAllowedMeshyImage,
@@ -16,11 +16,22 @@ import {
  * POST /api/meshy/jobs
  * FormData: image (jpg/png)
  * Image → Meshy Image-to-3D 작업 생성
+ * 권한: 로그인 회원만, 계정당 한국 시간 기준 1일 1회
  */
 export async function POST(request: NextRequest) {
     try {
         const auth = await requireAuthOrGuest(request)
         if (auth instanceof Response) return auth
+
+        if (auth.isGuest) {
+            return NextResponse.json(
+                {
+                    error: '사진→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다. 로그인 후 다시 시도해 주세요.',
+                    code: 'LOGIN_REQUIRED',
+                },
+                { status: 401 }
+            )
+        }
 
         const { env } = getCloudflareContext()
         if (!env?.DB || !env?.BUCKET) {
@@ -50,44 +61,37 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: '이미지는 최대 8MB까지 가능합니다' }, { status: 400 })
         }
 
-        const userId = auth.isGuest ? null : auth.userId
-        const sessionId = auth.isGuest ? auth.sessionId : null
-        const dailyLimit = auth.isGuest ? MESHY_GUEST_DAILY_LIMIT : MESHY_USER_DAILY_LIMIT
+        const userId = auth.userId
+        const dailyLimit = MESHY_USER_DAILY_LIMIT
 
-        let usedToday = 0
-        if (userId != null) {
-            const r = await env.DB.prepare(
-                `SELECT COUNT(*) AS c FROM meshy_jobs
-                 WHERE user_id = ? AND created_at >= datetime('now', '-1 day')`
-            )
-                .bind(userId)
-                .first<{ c: number }>()
-            usedToday = Number(r?.c) || 0
-        } else if (sessionId) {
-            const r = await env.DB.prepare(
-                `SELECT COUNT(*) AS c FROM meshy_jobs
-                 WHERE session_id = ? AND created_at >= datetime('now', '-1 day')`
-            )
-                .bind(sessionId)
-                .first<{ c: number }>()
-            usedToday = Number(r?.c) || 0
-        }
+        // 실패(failed)만 제외 — 진행 중·성공은 오늘 할당으로 집계
+        const r = await env.DB.prepare(
+            `SELECT COUNT(*) AS c FROM meshy_jobs
+             WHERE user_id = ?
+               AND ${MESHY_TODAY_KST_SQL}
+               AND status != 'failed'`
+        )
+            .bind(userId)
+            .first<{ c: number }>()
+        const usedToday = Number(r?.c) || 0
 
         if (usedToday >= dailyLimit) {
             return NextResponse.json(
                 {
-                    error: `하루 AI 모델링 한도(${dailyLimit}회)에 도달했습니다. 내일 다시 시도하거나 3D 파일을 직접 업로드해 주세요.`,
+                    error: '오늘 AI 모델링 이용 횟수(1회)를 모두 사용했습니다. 내일 다시 시도하거나 3D 파일을 직접 업로드해 주세요.',
                     code: 'DAILY_LIMIT',
                     limit: dailyLimit,
+                    remainingToday: 0,
                 },
                 { status: 429 }
             )
         }
+
         const insert = await env.DB.prepare(
             `INSERT INTO meshy_jobs (user_id, session_id, status, source_file_name, progress)
              VALUES (?, ?, 'uploading', ?, 0)`
         )
-            .bind(userId, sessionId, sanitizeR2FileName(image.name || 'photo.jpg'))
+            .bind(userId, null, sanitizeR2FileName(image.name || 'photo.jpg'))
             .run()
 
         const jobId = Number((insert.meta as { last_row_id?: number })?.last_row_id || 0)

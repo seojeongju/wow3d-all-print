@@ -5,8 +5,13 @@
 
 export const MESHY_API_BASE = 'https://api.meshy.ai/openapi/v1'
 export const MESHY_IMAGE_MAX_BYTES = 8 * 1024 * 1024
-export const MESHY_GUEST_DAILY_LIMIT = 2
-export const MESHY_USER_DAILY_LIMIT = 5
+/** 비회원은 생성 불가(로그인 필수). 하위 호환용으로 0 유지 */
+export const MESHY_GUEST_DAILY_LIMIT = 0
+/** 회원 계정(user_id)당 한국 시간 기준 1일 1회 */
+export const MESHY_USER_DAILY_LIMIT = 1
+
+/** D1/SQLite: 한국(UTC+9) 캘린더일 기준 오늘 생성분 카운트 조건 */
+export const MESHY_TODAY_KST_SQL = `date(created_at, '+9 hours') = date('now', '+9 hours')`
 
 export type MeshyTaskStatus = 'PENDING' | 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED' | 'CANCELED'
 
