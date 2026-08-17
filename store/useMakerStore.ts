@@ -41,6 +41,9 @@ interface MakerState {
   cornerRadiusMm: number;
   mxStem: boolean;
   backMount: BackMountType;
+  baseColor: string;
+  logoColor: string;
+  rimColor: string;
   activeTemplateId: MakerTemplateId | null;
   showGrid: boolean;
 
@@ -63,6 +66,9 @@ interface MakerState {
   setCornerRadiusMm: (mm: number) => void;
   setMxStem: (on: boolean) => void;
   setBackMount: (mount: BackMountType) => void;
+  setBaseColor: (color: string) => void;
+  setLogoColor: (color: string) => void;
+  setRimColor: (color: string) => void;
   applyTemplate: (id: MakerTemplateId) => void;
   setShowGrid: (show: boolean) => void;
 
@@ -91,6 +97,9 @@ export function makerSceneInputFromState(s: {
   cornerRadiusMm: number;
   mxStem: boolean;
   backMount: BackMountType;
+  baseColor: string;
+  logoColor: string;
+  rimColor: string;
   canvasSize: { width: number; height: number };
 }): MakerSceneInput {
   return {
@@ -106,6 +115,9 @@ export function makerSceneInputFromState(s: {
     canvasSize: s.canvasSize,
     mxStem: s.mxStem,
     backMount: s.backMount,
+    baseColor: s.baseColor,
+    logoColor: s.logoColor,
+    rimColor: s.rimColor,
   };
 }
 
@@ -129,6 +141,9 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   cornerRadiusMm: 4,
   mxStem: false,
   backMount: 'none',
+  baseColor: '#1f1f2e',
+  logoColor: '#4f46e5',
+  rimColor: '#334155',
   activeTemplateId: null,
   showGrid: true,
 
@@ -201,6 +216,9 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   setCornerRadiusMm: (mm) => set({ cornerRadiusMm: clamp(mm, 0.4, 16) }),
   setMxStem: (on) => set({ mxStem: on }),
   setBackMount: (mount) => set({ backMount: mount }),
+  setBaseColor: (color) => set({ baseColor: color }),
+  setLogoColor: (color) => set({ logoColor: color }),
+  setRimColor: (color) => set({ rimColor: color }),
   applyTemplate: (id) => {
     const t = getMakerTemplate(id);
     if (!t) return;

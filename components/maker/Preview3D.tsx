@@ -37,6 +37,9 @@ function MakerPreviewMeshes() {
     const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
     const mxStem = useMakerStore((s) => s.mxStem);
     const backMount = useMakerStore((s) => s.backMount);
+    const baseColor = useMakerStore((s) => s.baseColor);
+    const logoColor = useMakerStore((s) => s.logoColor);
+    const rimColor = useMakerStore((s) => s.rimColor);
     const canvasSize = useMakerStore((s) => s.canvasSize);
 
     const group = useMemo(() => {
@@ -52,6 +55,9 @@ function MakerPreviewMeshes() {
             cornerRadiusMm,
             mxStem,
             backMount,
+            baseColor,
+            logoColor,
+            rimColor,
             canvasSize,
         });
         return buildMakerSceneGroup(input, 'preview');
@@ -67,6 +73,9 @@ function MakerPreviewMeshes() {
         cornerRadiusMm,
         mxStem,
         backMount,
+        baseColor,
+        logoColor,
+        rimColor,
         canvasSize,
     ]);
 
@@ -105,6 +114,9 @@ export function Preview3D() {
         canvasSize: { width: 800, height: 600 },
         mxStem: false,
         backMount: 'none',
+        baseColor: '#1f1f2e',
+        logoColor: '#4f46e5',
+        rimColor: '#334155',
     });
 
     if (!hasContent) {

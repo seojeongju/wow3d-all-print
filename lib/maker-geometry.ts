@@ -43,6 +43,9 @@ export type MakerSceneInput = {
     mxStem: boolean
     /** 배지 뒷면 장착 */
     backMount: BackMountType
+    baseColor: string
+    logoColor: string
+    rimColor: string
 }
 
 export function mmToScene(mm: number): number {
@@ -376,7 +379,7 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     const logoFit = hasBase ? size * 0.72 : mmToScene(40)
 
     if (hasBase) {
-        const baseMat = makeMaterial(mode, '#1f1f2e', { roughness: 0.45, metalness: 0.2 })
+        const baseMat = makeMaterial(mode, input.baseColor || '#1f1f2e', { roughness: 0.45, metalness: 0.2 })
         let baseShape: THREE.Shape
         if (input.basePlateType === 'circle') {
             baseShape = circleShape(size / 2)
@@ -388,7 +391,7 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
         addExtruded(group, baseShape, input.baseHeight, input.bevelMm, baseMat, 0, preview)
 
         if (input.rimHeightMm >= 0.4) {
-            const rimMat = makeMaterial(mode, '#334155', { roughness: 0.4, metalness: 0.18 })
+            const rimMat = makeMaterial(mode, input.rimColor || '#334155', { roughness: 0.4, metalness: 0.18 })
             let rimShape: THREE.Shape
             if (input.basePlateType === 'circle') {
                 rimShape = circleRingShape(size / 2, Math.max(0.05, size / 2 - rimInset))
@@ -404,7 +407,7 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     input.importedSvgs.forEach((svg) => {
         const shapes = parseSvgToSceneShapes(svg.svgContent, logoFit)
         if (shapes.length === 0) return
-        const logoMat = makeMaterial(mode, '#4f46e5', { roughness: 0.3, metalness: 0.1 })
+        const logoMat = makeMaterial(mode, input.logoColor || '#4f46e5', { roughness: 0.3, metalness: 0.1 })
         shapes.forEach((shape) => {
             addExtruded(group, shape, input.extrusionHeight, input.bevelMm, logoMat, topZ, preview)
         })

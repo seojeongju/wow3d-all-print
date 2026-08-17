@@ -20,7 +20,7 @@ import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
 import { MakerTemplatePicker } from '@/components/maker/MakerTemplatePicker';
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export';
-import { getMakerTemplate } from '@/lib/maker-templates';
+import { getMakerTemplate, MAKER_LAYER_SWATCHES } from '@/lib/maker-templates';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -45,6 +45,9 @@ export function MakerWorkspace() {
         cornerRadiusMm, setCornerRadiusMm,
         mxStem, setMxStem,
         backMount, setBackMount,
+        baseColor, setBaseColor,
+        logoColor, setLogoColor,
+        rimColor, setRimColor,
         activeTemplateId, applyTemplate,
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
@@ -129,6 +132,9 @@ export function MakerWorkspace() {
         cornerRadiusMm,
         mxStem,
         backMount,
+        baseColor,
+        logoColor,
+        rimColor,
         canvasSize,
     });
 
@@ -533,6 +539,22 @@ export function MakerWorkspace() {
 
                             <div className="h-px bg-white/5" />
 
+                            <div>
+                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-2 block">레이어 색 (미리보기)</label>
+                                <p className="text-[10px] text-white/40 font-bold leading-relaxed break-keep mb-3">
+                                    결과물 탭에서 배색을 확인합니다. STL은 형상만 저장되며, 이색 출력은 소재 조합·도색으로 진행합니다.
+                                </p>
+                                {basePlateType !== 'none' && (
+                                    <LayerSwatches label="1층 베이스" value={baseColor} onChange={setBaseColor} />
+                                )}
+                                <LayerSwatches label="2층 로고" value={logoColor} onChange={setLogoColor} />
+                                {basePlateType !== 'none' && rimHeightMm >= 0.4 && (
+                                    <LayerSwatches label="3층 림" value={rimColor} onChange={setRimColor} />
+                                )}
+                            </div>
+
+                            <div className="h-px bg-white/5" />
+
                             <div className="flex items-center justify-between">
                                 <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">그리드 표시 (Grid)</label>
                                 <button
@@ -748,6 +770,39 @@ export function MakerWorkspace() {
         </div>
         </>
     );
+}
+
+function LayerSwatches({
+    label,
+    value,
+    onChange,
+}: {
+    label: string
+    value: string
+    onChange: (c: string) => void
+}) {
+    return (
+        <div className="flex items-center justify-between gap-2 mb-2 last:mb-0">
+            <span className="text-[10px] font-bold text-white/55">{label}</span>
+            <div className="flex gap-1.5">
+                {MAKER_LAYER_SWATCHES.map((s) => (
+                    <button
+                        key={`${label}-${s.id}`}
+                        type="button"
+                        title={s.label}
+                        aria-label={`${label} ${s.label}`}
+                        onClick={() => onChange(s.value)}
+                        className={`h-6 w-6 rounded-full border-2 transition-transform ${
+                            value.toLowerCase() === s.value.toLowerCase()
+                                ? 'border-white scale-110'
+                                : 'border-white/15 hover:scale-110'
+                        }`}
+                        style={{ backgroundColor: s.value }}
+                    />
+                ))}
+            </div>
+        </div>
+    )
 }
 
 function MmControl({

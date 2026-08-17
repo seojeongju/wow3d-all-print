@@ -17,6 +17,9 @@ export function Exporter() {
     const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
     const mxStem = useMakerStore((s) => s.mxStem);
     const backMount = useMakerStore((s) => s.backMount);
+    const baseColor = useMakerStore((s) => s.baseColor);
+    const logoColor = useMakerStore((s) => s.logoColor);
+    const rimColor = useMakerStore((s) => s.rimColor);
     const canvasSize = useMakerStore((s) => s.canvasSize);
 
     useEffect(() => {
@@ -35,6 +38,9 @@ export function Exporter() {
                 cornerRadiusMm,
                 mxStem,
                 backMount,
+                baseColor,
+                logoColor,
+                rimColor,
                 canvasSize,
             }));
             if (!blob) {
@@ -59,6 +65,9 @@ export function Exporter() {
         cornerRadiusMm,
         mxStem,
         backMount,
+        baseColor,
+        logoColor,
+        rimColor,
         canvasSize,
     ]);
 
