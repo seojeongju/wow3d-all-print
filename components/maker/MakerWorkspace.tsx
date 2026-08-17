@@ -19,6 +19,7 @@ import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
 import { MakerTemplatePicker } from '@/components/maker/MakerTemplatePicker';
+import { MakerSizeControl } from '@/components/maker/MakerSizeControl';
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export';
 import { getMakerTemplate, MAKER_LAYER_SWATCHES } from '@/lib/maker-templates';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -48,7 +49,7 @@ export function MakerWorkspace() {
         baseColor, setBaseColor,
         logoColor, setLogoColor,
         rimColor, setRimColor,
-        activeTemplateId, applyTemplate,
+        activeTemplateId, applyTemplate, clearTemplate,
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
         addImportedSvg,
@@ -119,6 +120,24 @@ export function MakerWorkspace() {
         });
         setPendingSvg(null);
         setActiveTab('3d');
+        showToast.success('로고 추가됨', '결과물(3D)에서 배지 위 돌출을 확인하세요.');
+    };
+
+    /** 변환 완료 시 바로 3D에 올려 배지 위에 보이도록 함 (별도 확인 버튼 불필요) */
+    const handleSvgConverted = (data: { name: string; svgContent: string }) => {
+        addImportedSvg({
+            id: crypto.randomUUID(),
+            name: data.name,
+            svgContent: data.svgContent,
+        });
+        setPendingSvg(null);
+        setActiveTab('3d');
+        showToast.success(
+            '로고를 배지에 올렸습니다',
+            basePlateType !== 'none'
+                ? '결과물(3D)에서 판 위 실루엣을 확인하세요.'
+                : '결과물(3D)에서 확인하세요. 템플릿을 고르면 배지 판이 붙습니다.'
+        );
     };
 
     const sceneInput = () => makerSceneInputFromState({
@@ -140,6 +159,15 @@ export function MakerWorkspace() {
     });
 
     const handleApplyTemplate = (id: Parameters<typeof applyTemplate>[0]) => {
+        if (activeTemplateId === id) {
+            clearTemplate();
+            const t = getMakerTemplate(id);
+            showToast.success(
+                t ? `${t.name} 해제` : '템플릿 해제',
+                '판형이 없음으로 돌아갔습니다. 스케치·로고는 그대로입니다.'
+            );
+            return;
+        }
         applyTemplate(id);
         const t = getMakerTemplate(id);
         setActiveTab('3d');
@@ -268,7 +296,7 @@ export function MakerWorkspace() {
                     <div className="w-6 md:w-8 h-px bg-white/10 my-1 md:my-2" />
                     <div className="w-full px-1.5 md:px-3 flex justify-center">
                         <ImageUploader
-                            onSvgConverted={(data) => setPendingSvg(data)}
+                            onSvgConverted={handleSvgConverted}
                             convertMode={convertMode}
                             useRemoveBg={useRemoveBg}
                             authHeaders={removeBgAuthHeaders()}
@@ -341,6 +369,13 @@ export function MakerWorkspace() {
                     </p>
 
                     <MakerTemplatePicker activeId={activeTemplateId} onApply={handleApplyTemplate} />
+
+                    <MakerSizeControl
+                        basePlateType={basePlateType}
+                        baseSizeMm={baseSizeMm}
+                        activeTemplateId={activeTemplateId}
+                        onChange={setBaseSizeMm}
+                    />
 
                     {/* 1. 이미지 또는 SVG 입력 */}
                     <div className="bg-teal-500/5 border border-teal-400/20 rounded-2xl p-5 shadow-xl">
@@ -542,7 +577,11 @@ export function MakerWorkspace() {
                             {basePlateType !== 'none' && (
                                 <>
                                     <MmControl
-                                        label="판 크기 (mm)"
+                                        label={
+                                            basePlateType === 'circle'
+                                                ? '판 지름 (mm) — 위와 동일'
+                                                : '판 한 변 (mm) — 위와 동일'
+                                        }
                                         value={baseSizeMm}
                                         min={10}
                                         max={80}

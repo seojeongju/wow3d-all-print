@@ -23,7 +23,7 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                 배지 · 키캡 템플릿
             </h3>
             <p className="text-[12px] text-white/80 font-bold leading-relaxed break-keep mb-4">
-                판 크기·레이어 높이·모따기를 한 번에 맞춥니다. 로고는 그대로 두고 판형만 바꿉니다.
+                선택 후 아래에서 크기를 바꿀 수 있습니다. 같은 항목을 다시 누르면 해제됩니다.
             </p>
             <div className="grid grid-cols-1 gap-2">
                 {MAKER_TEMPLATES.map((t) => {
@@ -34,6 +34,8 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                             key={t.id}
                             type="button"
                             onClick={() => onApply(t.id)}
+                            aria-pressed={active}
+                            title={active ? '다시 눌러 선택 해제' : `${t.name} 적용`}
                             className={cn(
                                 'text-left rounded-xl border px-3 py-2.5 transition-all',
                                 active
@@ -49,7 +51,18 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                                     <Icon className="w-4 h-4" />
                                 </span>
                                 <span className="min-w-0">
-                                    <span className="block text-[12px] font-black text-white">{t.name}</span>
+                                    <span className="block text-[12px] font-black text-white">
+                                        {t.name}
+                                        {active && (
+                                            <span className="ml-1.5 text-teal-300 font-bold">
+                                                {t.id === 'badge-circle'
+                                                    ? '· 크기 조절 ↓'
+                                                    : t.id === 'keycap-1u'
+                                                        ? '· 18mm 기준'
+                                                        : '· 크기 조절 ↓'}
+                                            </span>
+                                        )}
+                                    </span>
                                     <span className="block text-[11px] text-white/75 font-bold leading-relaxed break-keep mt-0.5">
                                         {t.description}
                                     </span>

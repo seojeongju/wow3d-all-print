@@ -2,6 +2,7 @@
 
 // @ts-ignore
 import ImageTracer from 'imagetracerjs';
+import { stripSvgBackgroundLayers } from '@/lib/svg-background-strip';
 
 const SVG_CONVERT_TIMEOUT_MS = 60000;
 
@@ -79,7 +80,13 @@ export async function convertImageToSVG(file: File, signal?: AbortSignal, mode: 
                         reject(new Error('No vector paths in image'));
                         return;
                     }
-                    resolve(svgstr);
+                    // 흰/밝은 배경 레이어를 제거해야 배지 위에 로고만 돌출됩니다.
+                    const cleaned = stripSvgBackgroundLayers(svgstr);
+                    if (!/<\s*path[\s>]/i.test(cleaned)) {
+                        reject(new Error('No vector paths after background strip'));
+                        return;
+                    }
+                    resolve(cleaned);
                 }, options as any);
             };
             img.onerror = () => reject(new Error('Image load failed'));

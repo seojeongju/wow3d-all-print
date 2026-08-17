@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Image as ImageIcon, Loader2, X, FileCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { convertImageToSVG, removeBackground, type ConvertMode } from '@/lib/image-processor';
+import { stripSvgBackgroundLayers } from '@/lib/svg-background-strip';
 import { showToast } from '@/lib/toast-helper';
 
 type Props = {
@@ -41,7 +42,8 @@ export function ImageUploader({
         reader.onload = () => {
             const text = reader.result as string;
             if (typeof text === 'string' && (text.includes('<svg') || text.includes('<SVG'))) {
-                onSvgConverted({ name: file.name, svgContent: text });
+                const cleaned = stripSvgBackgroundLayers(text);
+                onSvgConverted({ name: file.name, svgContent: cleaned });
             } else {
                 alert('유효한 SVG 파일이 아닙니다.');
             }

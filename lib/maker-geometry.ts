@@ -78,34 +78,44 @@ function getPathPoints(path: THREE.Path, divisions = 16): THREE.Vector2[] {
     return []
 }
 
-function holePathToShape(hole: THREE.Path): THREE.Shape {
-    const points = getPathPoints(hole, 12)
-    const shape = new THREE.Shape()
-    if (points.length === 0) return shape
-    shape.moveTo(points[0].x, points[0].y)
-    for (let i = 1; i < points.length; i++) shape.lineTo(points[i].x, points[i].y)
-    return shape
-}
-
 function flattenSvgShapes(data: { paths?: unknown[] }): THREE.Shape[] {
-    const allShapes: THREE.Shape[] = []
-    ;(data.paths || []).forEach((path: unknown) => {
-        try {
-            const created = SVGLoader.createShapes(path) as THREE.Shape[]
-            if (!created?.length) return
-            created.forEach((shape) => {
-                const holes = (shape as { holes?: THREE.Path[] }).holes
-                if (holes?.length) {
-                    holes.forEach((hole) => allShapes.push(holePathToShape(hole)))
-                } else {
-                    allShapes.push(shape)
+    const paths = data.paths || []
+    const build = (skipLightBg: boolean): THREE.Shape[] => {
+        const allShapes: THREE.Shape[] = []
+        paths.forEach((path: unknown) => {
+            try {
+                const p = path as {
+                    userData?: { style?: { fill?: string } }
                 }
-            })
-        } catch {
-            /* skip */
-        }
-    })
-    return allShapes
+                const fill = p.userData?.style?.fill
+                if (fill === 'none' || fill === 'transparent') return
+
+                if (skipLightBg && typeof fill === 'string') {
+                    try {
+                        const c = new THREE.Color(fill)
+                        const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+                        if (lum >= 0.82) return
+                    } catch {
+                        /* keep */
+                    }
+                }
+
+                const created = SVGLoader.createShapes(path) as THREE.Shape[]
+                if (!created?.length) return
+                created.forEach((shape) => {
+                    allShapes.push(shape)
+                })
+            } catch {
+                /* skip */
+            }
+        })
+        return allShapes
+    }
+
+    const filtered = build(true)
+    if (filtered.length > 0) return filtered
+    // 전부 밝은 색이면 필터 없이 재시도 (흰 로고 등)
+    return build(false)
 }
 
 function transformShape(
@@ -406,10 +416,15 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
 
     input.importedSvgs.forEach((svg) => {
         const shapes = parseSvgToSceneShapes(svg.svgContent, logoFit)
-        if (shapes.length === 0) return
+        if (shapes.length === 0) {
+            console.warn('[Maker] SVG에서 돌출할 path를 찾지 못했습니다. 배경만 있거나 변환에 실패했을 수 있습니다.')
+            return
+        }
         const logoMat = makeMaterial(mode, input.logoColor || '#4f46e5', { roughness: 0.3, metalness: 0.1 })
+        // 베이스 윗면보다 살짝 올려 림과 깊이 충돌을 줄임
+        const logoZ = topZ + (preview ? 0.002 : 0)
         shapes.forEach((shape) => {
-            addExtruded(group, shape, input.extrusionHeight, input.bevelMm, logoMat, topZ, preview)
+            addExtruded(group, shape, input.extrusionHeight, input.bevelMm, logoMat, logoZ, preview)
         })
     })
 

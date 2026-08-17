@@ -70,6 +70,8 @@ interface MakerState {
   setLogoColor: (color: string) => void;
   setRimColor: (color: string) => void;
   applyTemplate: (id: MakerTemplateId) => void;
+  /** 배지·키캡 템플릿 선택 해제 (판형 없음으로 복귀) */
+  clearTemplate: () => void;
   setShowGrid: (show: boolean) => void;
 
   addImportedSvg: (svg: ImportedSvg) => void;
@@ -141,9 +143,9 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   cornerRadiusMm: 4,
   mxStem: false,
   backMount: 'none',
-  baseColor: '#1f1f2e',
-  logoColor: '#4f46e5',
-  rimColor: '#334155',
+  baseColor: '#f4f4f5',
+  logoColor: '#0f172a',
+  rimColor: '#d4d4d8',
   activeTemplateId: null,
   showGrid: true,
 
@@ -233,8 +235,25 @@ export const useMakerStore = create<MakerState>((set, get) => ({
       cornerRadiusMm: t.cornerRadiusMm,
       mxStem: t.mxStem,
       backMount: t.backMount,
+      // 흰 배지 + 진한 로고로 대비를 맞춤
+      baseColor: '#f4f4f5',
+      logoColor: '#0f172a',
+      rimColor: '#d4d4d8',
     });
   },
+  clearTemplate: () => set({
+    activeTemplateId: null,
+    basePlateType: 'none',
+    baseHeight: 2,
+    bevelMm: 0,
+    rimHeightMm: 0,
+    baseSizeMm: 40,
+    cornerRadiusMm: 4,
+    mxStem: false,
+    backMount: 'none',
+    // 로고/스케치 돌출 높이만 기본값으로 — 스케치 내용은 유지
+    extrusionHeight: 5,
+  }),
   setShowGrid: (show) => set({ showGrid: show }),
   updateCanvasSize: (width, height) => set({ canvasSize: { width, height } })
 }));

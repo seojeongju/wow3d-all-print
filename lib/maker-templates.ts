@@ -72,8 +72,9 @@ export function getMakerTemplate(id: MakerTemplateId): MakerTemplate | undefined
 
 /** 미리보기용 레이어 색. STL은 형상만 저장되며, 실제 이색 출력은 소재·도색 공정으로 진행합니다. */
 export const MAKER_LAYER_SWATCHES = [
-    { id: 'ink', label: '잉크', value: '#1f1f2e' },
     { id: 'white', label: '화이트', value: '#f4f4f5' },
+    { id: 'ink', label: '잉크', value: '#0f172a' },
+    { id: 'slate', label: '슬레이트', value: '#64748b' },
     { id: 'teal', label: '틸', value: '#14b8a6' },
     { id: 'indigo', label: '인디고', value: '#4f46e5' },
     { id: 'red', label: '레드', value: '#e11d48' },
