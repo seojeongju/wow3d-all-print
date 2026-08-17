@@ -123,7 +123,7 @@ export function ImageUploader({
                     <Button
                         variant="ghost"
                         title="이미지 (PNG, JPEG) → SVG 변환"
-                        className="w-12 h-12 p-0 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 flex items-center justify-center transition-all duration-300"
+                        className="w-12 h-12 p-0 rounded-2xl bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 border border-teal-400/30 flex items-center justify-center transition-all duration-300"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isProcessing}
                     >
@@ -138,7 +138,7 @@ export function ImageUploader({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="w-9 h-9 p-0 rounded-xl text-white/60 hover:text-white hover:bg-red-500/20 border border-white/10"
+                            className="w-9 h-9 p-0 rounded-xl text-white/80 hover:text-white hover:bg-red-500/20 border border-white/20"
                             onClick={handleCancel}
                             title="변환 중단"
                         >
@@ -146,7 +146,7 @@ export function ImageUploader({
                         </Button>
                     )}
                 </div>
-                <span className="text-[9px] font-medium text-white/70 text-center">이미지</span>
+                <span className="text-[9px] font-bold text-white/85 text-center">이미지</span>
 
                 <div className="w-8 h-px bg-white/10" />
 
@@ -160,11 +160,11 @@ export function ImageUploader({
                     >
                         <FileCode className="w-5 h-5" />
                     </Button>
-                    <span className="text-[9px] font-medium text-white/70 text-center">SVG</span>
+                    <span className="text-[9px] font-bold text-white/85 text-center">SVG</span>
                 </div>
 
                 {isProcessing && (
-                    <span className="text-[10px] text-white/50">변환 중… × 로 중단</span>
+                    <span className="text-[10px] font-bold text-amber-200">변환 중… × 로 중단</span>
                 )}
             </div>
         </>

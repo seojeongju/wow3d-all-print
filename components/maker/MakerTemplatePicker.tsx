@@ -18,10 +18,11 @@ type Props = {
 export function MakerTemplatePicker({ activeId, onApply }: Props) {
     return (
         <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
-            <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-2">
+            <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-2 flex items-center gap-2">
+                <span className="inline-flex w-6 h-6 rounded-full bg-teal-500/30 text-teal-300 text-[11px] font-black items-center justify-center">1</span>
                 배지 · 키캡 템플릿
             </h3>
-            <p className="text-[11px] text-white/50 font-bold leading-relaxed break-keep mb-4">
+            <p className="text-[12px] text-white/80 font-bold leading-relaxed break-keep mb-4">
                 판 크기·레이어 높이·모따기를 한 번에 맞춥니다. 로고는 그대로 두고 판형만 바꿉니다.
             </p>
             <div className="grid grid-cols-1 gap-2">
@@ -43,13 +44,13 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                             <div className="flex items-start gap-2.5">
                                 <span className={cn(
                                     'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
-                                    active ? 'border-teal-400/40 bg-teal-500/20 text-teal-300' : 'border-white/10 bg-white/5 text-white/55'
+                                    active ? 'border-teal-400/40 bg-teal-500/20 text-teal-300' : 'border-white/20 bg-white/10 text-white/80'
                                 )}>
                                     <Icon className="w-4 h-4" />
                                 </span>
                                 <span className="min-w-0">
                                     <span className="block text-[12px] font-black text-white">{t.name}</span>
-                                    <span className="block text-[10px] text-white/45 font-bold leading-relaxed break-keep mt-0.5">
+                                    <span className="block text-[11px] text-white/75 font-bold leading-relaxed break-keep mt-0.5">
                                         {t.description}
                                     </span>
                                 </span>

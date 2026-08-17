@@ -125,9 +125,9 @@ export function Preview3D() {
                 <p className="text-sm font-medium text-white/80 text-center">
                     표시할 3D 모델이 없습니다
                 </p>
-                <p className="text-xs text-white/50 text-center max-w-[260px] break-keep">
-                    오른쪽에서 <strong className="text-white/70">배지·키캡 템플릿</strong>을 고르거나,
-                    <strong className="text-white/70"> 스케치·로고</strong>를 넣어 주세요.
+                <p className="text-xs text-white/80 text-center max-w-[260px] break-keep">
+                    오른쪽에서 <strong className="text-white">배지·키캡 템플릿</strong>을 고르거나,
+                    <strong className="text-white"> 스케치·로고</strong>를 넣어 주세요.
                     제품 실사 입체는{' '}
                     <a href="/quote?entry=photo" className="text-indigo-300 font-bold hover:underline">사진→AI 3D 견적</a>
                     을 이용하세요.
