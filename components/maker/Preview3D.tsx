@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, Center, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Center } from '@react-three/drei';
 import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { buildMakerSceneGroup, disposeObject3D, hasMakerSceneContent } from '@/lib/maker-geometry';
 import type { Group } from 'three';
@@ -188,19 +188,12 @@ function PreviewScene({
             <ContextLossHandler onContextLost={onContextLost} />
             <CameraViewController preset={viewPreset} presetTick={viewTick} autoRotate={autoRotate} />
 
-            <ambientLight intensity={0.75} />
-            <spotLight position={[20, 20, 28]} angle={0.25} penumbra={1} intensity={1.6} />
-            <pointLight position={[-16, -12, 18]} intensity={0.9} />
-            <directionalLight
-                position={[8, -10, 24]}
-                intensity={1.35}
-                castShadow
-                shadow-mapSize={1024}
-                shadow-camera-far={50}
-                shadow-bias={-0.0001}
-            />
-            {/* 흰 배지 가장자리가 보이도록 약한 림 라이트 */}
-            <directionalLight position={[-12, 8, 6]} intensity={0.45} />
+            <ambientLight intensity={1.05} />
+            <hemisphereLight args={['#e8eef7', '#2a2a35', 0.55]} />
+            <spotLight position={[16, -18, 26]} angle={0.35} penumbra={0.9} intensity={1.4} />
+            <pointLight position={[-14, 10, 16]} intensity={1.1} />
+            <directionalLight position={[6, -8, 22]} intensity={1.25} />
+            <directionalLight position={[-10, 6, 8]} intensity={0.55} />
 
             <OrbitControls
                 makeDefault
@@ -211,7 +204,6 @@ function PreviewScene({
                 panSpeed={0.4}
                 minDistance={4}
                 maxDistance={60}
-                // 전방향 360° 궤도 (윗면·아랫면까지)
                 minPolarAngle={0}
                 maxPolarAngle={Math.PI}
                 autoRotate={autoRotate}
@@ -219,25 +211,17 @@ function PreviewScene({
                 screenSpacePanning
             />
 
-            <Center top>
+            <Center>
                 <group name="export-target">
                     <MakerPreviewMeshes />
                 </group>
             </Center>
 
-            <ContactShadows
-                position={[0, 0, -0.05]}
-                opacity={0.35}
-                scale={20}
-                blur={2.5}
-                far={1.5}
-            />
-
             {showGrid && (
                 <gridHelper
-                    args={[50, 50, '#33334d', '#1a1a2e']}
+                    args={[50, 50, '#3a3a55', '#222236']}
                     rotation={[Math.PI / 2, 0, 0]}
-                    position={[0, 0, -0.1]}
+                    position={[0, 0, -0.15]}
                 />
             )}
         </>
@@ -307,15 +291,16 @@ export function Preview3D() {
     return (
         <div className="absolute inset-0">
             <Canvas
-                shadows
+                shadows={false}
                 camera={{ position: [12, -14, 11], fov: 40, up: [0, 0, 1] }}
-                onCreated={({ camera }) => {
+                onCreated={({ camera, scene }) => {
                     camera.up.set(0, 0, 1);
                     camera.lookAt(0, 0, 1.5);
+                    scene.background = new THREE.Color('#0f1118');
                 }}
                 gl={{
                     antialias: true,
-                    alpha: true,
+                    alpha: false,
                     powerPreference: 'low-power',
                     stencil: false,
                     depth: true,

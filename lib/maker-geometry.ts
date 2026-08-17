@@ -195,13 +195,13 @@ export function parseSvgToSceneShapes(svgContent: string, targetSizeScene: numbe
     }
 }
 
-/** 작은 글자 path가 있을 때 전체를 덮는 단순 사각형(통짜 판)을 제거 */
+/** 작은 글자 path가 있을 때 전체를 덮는 통짜 판(마스크)을 제거 */
 function dropCoveringPlateShapes(shapes: THREE.Shape[]): THREE.Shape[] {
     if (shapes.length <= 1) return shapes
 
-    type Meta = { shape: THREE.Shape; area: number; pts: number }
+    type Meta = { shape: THREE.Shape; area: number; pts: number; minX: number; minY: number; maxX: number; maxY: number }
     const metas: Meta[] = shapes.map((shape) => {
-        const pts = getPathPoints(shape, 20)
+        const pts = getPathPoints(shape, 24)
         let minX = Infinity
         let minY = Infinity
         let maxX = -Infinity
@@ -213,17 +213,37 @@ function dropCoveringPlateShapes(shapes: THREE.Shape[]): THREE.Shape[] {
             maxY = Math.max(maxY, p.y)
         })
         const area = Math.max(0, maxX - minX) * Math.max(0, maxY - minY)
-        return { shape, area, pts: pts.length }
+        return { shape, area, pts: pts.length, minX, minY, maxX, maxY }
     })
 
     const maxArea = Math.max(...metas.map((m) => m.area), 1)
-    const filtered = metas.filter((m) => {
-        const covers = m.area >= maxArea * 0.72
-        const simple = m.pts <= 10
-        if (covers && simple && metas.some((o) => o.area < m.area * 0.85)) return false
-        if (covers && metas.length >= 3 && m.area >= maxArea * 0.9) return false
+    const totalSmaller = metas
+        .filter((m) => m.area < maxArea * 0.85)
+        .reduce((s, m) => s + m.area, 0)
+
+    let filtered = metas.filter((m) => {
+        const covers = m.area >= maxArea * 0.55
+        const isLargest = m.area >= maxArea * 0.98
+        const aspect = (m.maxX - m.minX) / Math.max(0.001, m.maxY - m.minY)
+        const rectLike = aspect > 0.35 && aspect < 2.8
+
+        // 가장 큰 면이 나머지 합보다 훨씬 크면 = 배경 마스크 판
+        if (isLargest && totalSmaller > 0 && m.area >= totalSmaller * 1.15) return false
+        // 넓은 사각 판 + 다른 path 존재
+        if (covers && rectLike && metas.some((o) => o.area < m.area * 0.7)) return false
+        if (covers && m.pts <= 16 && metas.length >= 2) return false
+        if (covers && metas.length >= 3 && m.area >= maxArea * 0.85) return false
         return true
     })
+
+    // 한 장만 남고 그게 최대 판이면, 차순위 면적들만 사용
+    if (filtered.length <= 1 && metas.length > 1) {
+        const sorted = [...metas].sort((a, b) => b.area - a.area)
+        const rest = sorted.slice(1)
+        if (rest.length > 0 && sorted[0].area >= rest[0].area * 1.4) {
+            filtered = rest
+        }
+    }
 
     return filtered.length > 0 ? filtered.map((m) => m.shape) : shapes
 }
@@ -439,8 +459,8 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     const corner = mmToScene(Math.max(0.4, input.cornerRadiusMm))
     const topZ = plateTopZ(input.baseHeight, hasBase)
     const rimInset = size * 0.07
-    // 림 안쪽을 거의 채우도록 — 사용자가 크기 슬라이더로 줄일 수 있음
-    const logoFitBase = hasBase ? Math.max(0.05, size - rimInset * 2) * 0.98 : mmToScene(40)
+    // 림 안쪽의 85%에 맞춤 — 원형 배지에서 가장자리 잘림·마스크감 완화
+    const logoFitBase = hasBase ? Math.max(0.05, size - rimInset * 2) * 0.85 : mmToScene(40)
 
     if (hasBase) {
         const baseMat = makeMaterial(mode, input.baseColor || '#1f1f2e', { roughness: 0.45, metalness: 0.2 })

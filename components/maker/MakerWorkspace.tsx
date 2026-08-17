@@ -147,7 +147,7 @@ export function MakerWorkspace() {
             id,
             name: data.name,
             svgContent: data.svgContent,
-            scale: 1,
+            scale: 0.8,
             offsetXMm: 0,
             offsetYMm: 0,
             rotationDeg: 0,
@@ -426,6 +426,11 @@ export function MakerWorkspace() {
                         selectedId={selectedLogoId}
                         onSelect={setSelectedLogoId}
                         baseSizeMm={baseSizeMm}
+                        extrusionHeight={extrusionHeight}
+                        onExtrusionChange={(mm) => {
+                            setExtrusionHeight(mm)
+                            setActiveTab('3d')
+                        }}
                         onChange={(id, patch) => {
                             updateImportedSvg(id, patch)
                             setActiveTab('3d')

@@ -43,31 +43,29 @@ export function stripSvgBackgroundLayers(svgContent: string): string {
   const lightOnDark = avgLum < 0.45
 
   const keep = infos.filter((p) => {
-    const coversMost = p.areaHint >= maxArea * 0.55
-    const isSimplePlate = p.pointCount > 0 && p.pointCount <= 8 && coversMost
+    const coversMost = p.areaHint >= maxArea * 0.5
+    const isLargest = p.areaHint >= maxArea * 0.98
+    const isSimplePlate = p.pointCount > 0 && p.pointCount <= 12 && coversMost
+    const others = infos.filter((o) => o !== p)
+    const othersArea = others.reduce((s, o) => s + o.areaHint, 0)
 
-    // 거의 전체 화면을 덮는 단순 사각형 = 배경 판
+    // 거의 전체 화면을 덮는 단순 사각형 = 배경 마스크
     if (isSimplePlate && infos.length > 1) return false
-    if (coversMost && p.areaHint >= totalInkArea * 0.5 && infos.length > 1) {
-      // 큰 면이면서 다른 path보다 단순하면 배경
-      const othersMoreComplex = infos.some(
-        (o) => o !== p && o.pointCount > p.pointCount * 1.5
-      )
-      if (othersMoreComplex || p.pointCount <= 12) return false
+    if (isLargest && othersArea > 0 && p.areaHint >= othersArea * 1.1) return false
+    if (coversMost && p.areaHint >= totalInkArea * 0.45 && infos.length > 1) {
+      const othersMoreComplex = others.some((o) => o.pointCount > p.pointCount * 1.3)
+      if (othersMoreComplex || p.pointCount <= 16) return false
     }
 
     if (lightOnDark) {
-      // 어두운 배경 유지 X, 밝은 글자만
       if (p.lum < 0.55 && coversMost) return false
       if (p.lum < 0.35) return false
       return p.lum >= 0.5
     }
 
-    // 밝은 배경 + 어두운 잉크
+    // 밝은 배경 + 어두운 잉크 — 큰 어두운 판도 마스크로 제거
     if (p.lum >= 0.78) return false
-    if (coversMost && p.lum >= 0.4 && infos.some((o) => o.lum < 0.5 && o.areaHint < p.areaHint * 0.8)) {
-      return false
-    }
+    if (coversMost && infos.some((o) => o.areaHint < p.areaHint * 0.7 && o.lum < 0.75)) return false
     return true
   })
 
