@@ -10,13 +10,22 @@ import {
     type ModelTransform,
 } from '@/lib/model-transform'
 
+export type FileSourceKind = 'upload' | 'meshy-photo' | null
+
+export type FileSourceMeta = {
+    kind: FileSourceKind
+    meshyJobId?: number | null
+}
+
 interface FileState {
     file: File | null
     fileUrl: string | null
+    /** 업로드 출처 — AI 사진 생성 시 견적 화면 안내 */
+    fileSource: FileSourceMeta
     /** CPU/원본 메쉬 분석 (스케일·회전 미적용) */
     baseAnalysis: GeometryAnalysis | null
     transform: ModelTransform
-    setFile: (file: File) => void
+    setFile: (file: File, source?: FileSourceMeta) => void
     setAnalysis: (data: GeometryAnalysis) => void
     setScalePercent: (percent: number) => void
     rotateAxis90: (axis: 'x' | 'y' | 'z', delta?: number) => void
@@ -26,17 +35,21 @@ interface FileState {
     reset: () => void
 }
 
+const EMPTY_SOURCE: FileSourceMeta = { kind: null, meshyJobId: null }
+
 export const useFileStore = create<FileState>((set) => ({
     file: null,
     fileUrl: null,
+    fileSource: { ...EMPTY_SOURCE },
     baseAnalysis: null,
     transform: { ...DEFAULT_MODEL_TRANSFORM },
-    setFile: (file) => {
+    setFile: (file, source) => {
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
             return {
                 file,
                 fileUrl: URL.createObjectURL(file),
+                fileSource: source ?? { kind: 'upload', meshyJobId: null },
                 baseAnalysis: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
             }
@@ -81,6 +94,7 @@ export const useFileStore = create<FileState>((set) => ({
             return {
                 file: null,
                 fileUrl: null,
+                fileSource: { ...EMPTY_SOURCE },
                 baseAnalysis: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
             }

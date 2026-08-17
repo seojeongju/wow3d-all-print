@@ -30,7 +30,7 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 
 1. https://www.wow3dp.co.kr/quote 접속
 2. **3D 모델이 없어요** 선택
-3. JPG/PNG 업로드 → AI 생성 → 견적 설정으로 이동
+3. JPG/PNG 업로드 → AI 생성 → **이 모델로 견적 진행** → 견적 설정
 
 ## 한도
 
@@ -44,11 +44,27 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 
 ## API
 
+- `GET /api/meshy/quota` — 오늘 남은 횟수
+- `GET /api/meshy/jobs/active` — 오늘 진행·완료 작업 복구
 - `POST /api/meshy/jobs` — 이미지 업로드 + Meshy task 생성
 - `GET /api/meshy/jobs/:id` — 상태 폴링 (성공 시 STL을 R2 저장)
 - `GET /api/meshy/jobs/:id/model` — 생성된 STL 다운로드
 
-## 참고
+## 구현된 고도화
 
-- 생성물은 시제품·형상 확인용에 적합합니다. 정밀 치수는 파일 업로드 권장.
-- Phase 2: 멀티뷰 이미지, 유료 과금, printability repair 예정.
+### Phase A (신뢰)
+- 촬영 가이드(좋은 예 / 피하세요)
+- 남은 횟수 UI + KST 리셋 안내
+- 로그인·한도·실패 메시지 정리
+- 결과 확인 단계(자동 적용 대신 「이 모델로 견적 진행」)
+- 진행 중 job 복구(새로고침 후 폴링 재개)
+
+### Phase B (전환)
+- 클라이언트 전처리(대비·해상도)
+- 선택적 배경 제거(`/api/maker/remove-bg` 재사용)
+- 견적 화면 AI 생성 모델 안내 + mm 스케일 유도
+
+## 다음 (미구현)
+
+- Phase C: 유료 추가 생성, 히스토리, 관리자 통계
+- Phase D: 멀티뷰, 고품질 프리셋, printability repair
