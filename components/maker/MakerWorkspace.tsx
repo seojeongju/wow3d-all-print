@@ -359,32 +359,34 @@ export function MakerWorkspace() {
                         <div className="mt-4 space-y-3 pt-3 border-t border-white/10">
                             <label className="text-[12px] font-bold text-white/85 block">변환 모드</label>
                             <div className="grid grid-cols-2 gap-2">
-                                <Button
+                                <button
                                     type="button"
-                                    variant="outline"
-                                    size="sm"
                                     title="로고·단순 도형에 적합"
                                     onClick={() => setConvertMode('simple')}
-                                    className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${convertMode === 'simple'
-                                        ? 'bg-teal-500 border-2 border-teal-400 text-slate-950 font-semibold'
-                                        : 'bg-white/10 border border-white/25 text-white hover:bg-white/15 font-medium'}`}
+                                    className={cn(
+                                        'h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 inline-flex items-center justify-center gap-1.5 border transition-colors',
+                                        convertMode === 'simple'
+                                            ? 'bg-teal-500 border-teal-400 text-slate-950 font-semibold'
+                                            : 'bg-white/15 border-white/30 text-white font-medium hover:bg-white/25 hover:text-white'
+                                    )}
                                 >
                                     {convertMode === 'simple' && <Check className="w-3.5 h-3.5 shrink-0" />}
                                     간단(로고)
-                                </Button>
-                                <Button
+                                </button>
+                                <button
                                     type="button"
-                                    variant="outline"
-                                    size="sm"
                                     title="단순 실루엣이 필요한 사진용 — 입체 메시가 필요하면 견적 AI 사용"
                                     onClick={() => setConvertMode('detailed')}
-                                    className={`h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 flex items-center justify-center gap-1.5 ${convertMode === 'detailed'
-                                        ? 'bg-teal-500 border-2 border-teal-400 text-slate-950 font-semibold'
-                                        : 'bg-white/10 border border-white/25 text-white hover:bg-white/15 font-medium'}`}
+                                    className={cn(
+                                        'h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 inline-flex items-center justify-center gap-1.5 border transition-colors',
+                                        convertMode === 'detailed'
+                                            ? 'bg-teal-500 border-teal-400 text-slate-950 font-semibold'
+                                            : 'bg-white/15 border-white/30 text-white font-medium hover:bg-white/25 hover:text-white'
+                                    )}
                                 >
                                     {convertMode === 'detailed' && <Check className="w-3.5 h-3.5 shrink-0" />}
                                     상세(실루엣)
-                                </Button>
+                                </button>
                             </div>
                             {convertMode === 'detailed' && (
                                 <div className="rounded-xl border border-indigo-400/40 bg-indigo-500/15 p-3 space-y-2">
@@ -515,15 +517,19 @@ export function MakerWorkspace() {
                                         ['circle', '원형'],
                                         ['rounded', '라운드'],
                                     ] as const).map(([type, label]) => (
-                                        <Button
+                                        <button
                                             key={type}
-                                            variant="outline"
-                                            size="sm"
+                                            type="button"
                                             onClick={() => setBasePlateType(type)}
-                                            className={`text-[11px] font-bold h-9 border-white/20 transition-all rounded-xl ${basePlateType === type ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-lg shadow-teal-500/20' : 'bg-white/10 text-white hover:bg-white/15'}`}
+                                            className={cn(
+                                                'text-[11px] font-bold h-9 rounded-xl border transition-all',
+                                                basePlateType === type
+                                                    ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-lg shadow-teal-500/20'
+                                                    : 'bg-white/15 border-white/30 text-white hover:bg-white/25 hover:text-white'
+                                            )}
                                         >
                                             {label}
-                                        </Button>
+                                        </button>
                                     ))}
                                 </div>
                                 {basePlateType === 'none' && (
@@ -630,16 +636,19 @@ export function MakerWorkspace() {
                                                         ['magnet', '마그넷'],
                                                         ['pin', '옷핀'],
                                                     ] as const).map(([id, label]) => (
-                                                        <Button
+                                                        <button
                                                             key={id}
                                                             type="button"
-                                                            variant="outline"
-                                                            size="sm"
                                                             onClick={() => setBackMount(id)}
-                                                            className={`text-[11px] font-bold h-8 border-white/20 rounded-lg px-1 ${backMount === id ? 'bg-teal-500 text-slate-950 border-teal-400' : 'bg-white/10 text-white hover:bg-white/15'}`}
+                                                            className={cn(
+                                                                'text-[11px] font-bold h-8 rounded-lg border px-1 transition-colors',
+                                                                backMount === id
+                                                                    ? 'bg-teal-500 text-slate-950 border-teal-400'
+                                                                    : 'bg-white/15 border-white/30 text-white hover:bg-white/25 hover:text-white'
+                                                            )}
                                                         >
                                                             {label}
-                                                        </Button>
+                                                        </button>
                                                     ))}
                                                 </div>
                                                 <p className="text-[12px] text-white/75 mt-1.5 break-keep">
