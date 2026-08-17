@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { useMemo } from 'react'
 import type { GeometryAnalysis } from '@/lib/geometry'
+import { invalidateModelParseCache } from '@/lib/model-parse-cache'
+import { cancelModelAnalysisRun } from '@/lib/model-analysis-runner'
 import {
     applyTransformToAnalysis,
     clampScalePercent,
@@ -50,6 +52,8 @@ export const useFileStore = create<FileState>((set) => ({
     setFile: (file, source) => {
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
+            invalidateModelParseCache(state.file)
+            cancelModelAnalysisRun()
             return {
                 file,
                 fileUrl: URL.createObjectURL(file),
@@ -97,6 +101,8 @@ export const useFileStore = create<FileState>((set) => ({
     reset: () =>
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
+            invalidateModelParseCache(state.file)
+            cancelModelAnalysisRun()
             return {
                 file: null,
                 fileUrl: null,

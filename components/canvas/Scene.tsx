@@ -5,6 +5,8 @@ import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/d
 import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect } from 'react'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import * as THREE from 'three'
+import { getParsedModelGeometry } from '@/lib/model-parse-cache'
+import { ensureModelAnalysisForFile } from '@/lib/model-analysis-runner'
 import { parseModelArrayBuffer } from '@/lib/parseModelGeometry'
 import { useCpuModelAnalysis } from '@/hooks/useCpuModelAnalysis'
 import { Button } from '@/components/ui/button'
@@ -135,19 +137,20 @@ function Model({
             setError(null)
 
             try {
-                const arrayBuffer = fileRecord
-                    ? await fileRecord.arrayBuffer()
-                    : await (await fetch(url)).arrayBuffer()
+                let geo: THREE.BufferGeometry | null = null
+
+                if (fileRecord) {
+                    geo = await getParsedModelGeometry(fileRecord)
+                    if (!cancelled && geo) {
+                        void ensureModelAnalysisForFile(fileRecord)
+                    }
+                } else {
+                    const arrayBuffer = await (await fetch(url)).arrayBuffer()
+                    if (cancelled) return
+                    geo = await parseModelArrayBuffer('model.stl', arrayBuffer)
+                }
 
                 if (cancelled) return
-
-                const name = fileRecord?.name || 'model.stl'
-                const geo = await parseModelArrayBuffer(name, arrayBuffer)
-
-                if (cancelled) {
-                    geo?.dispose()
-                    return
-                }
 
                 if (!geo) {
                     setError('모델을 해석할 수 없습니다. 지원 형식(STL, OBJ, 3MF, PLY, STEP)인지 확인해 주세요.')
@@ -188,11 +191,8 @@ function Model({
 
         return () => {
             cancelled = true
-            const g = geometryRef.current
             geometryRef.current = null
-            if (g) {
-                try { g.dispose() } catch { /* context lost */ }
-            }
+            /* 공유 캐시 geometry — dispose는 reset/setFile 시에만 */
         }
     }, [url, fileRecord])
 

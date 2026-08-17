@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
 import { getModelFileFromDataTransfer } from "@/lib/model-file";
 import { cn } from "@/lib/utils";
+import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
 
 const quickQuoteFaqs = [
     {
@@ -44,8 +45,10 @@ const GUIDE_SOURCE_LABELS: Record<string, string> = {
 };
 
 function QuoteContent() {
+    useCpuModelAnalysis();
     const { file, baseAnalysis, analysisError, reset, setFile } = useFileStore();
     const analysis = baseAnalysis;
+    const showQuotePanel = Boolean(file && analysis);
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
     // 모바일: 기본은 업로드 패널(견적 설정). 'viewer'만 보이면 FileUpload가 숨겨져 업로드 불가 이슈 발생
     const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');
@@ -237,9 +240,38 @@ function QuoteContent() {
                     `}>
                         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-8 pb-24 lg:pb-10 space-y-8">
                             <AnimatePresence mode="wait">
-                                {step === 1 ? (
-                                    // 파일 있음 + 분석 대기
-                                    file && !analysis ? (
+                                {showQuotePanel ? (
+                                    <motion.div
+                                        key="quote-settings"
+                                        initial={{ opacity: 0, x: 30 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 30 }}
+                                        className="space-y-6 sm:space-y-8"
+                                    >
+                                        <div className="flex items-center justify-between px-1">
+                                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
+                                            <button
+                                                onClick={() => { reset(); setStep(1); setEntryMode(null); }}
+                                                className="px-3 py-1.5 rounded-lg bg-teal-400/20 border border-teal-400/30 text-[10px] sm:text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
+                                            >
+                                                <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
+                                                파일 교체
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            {analysisError ? (
+                                                <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-amber-100/90 leading-relaxed break-keep">
+                                                    {analysisError}
+                                                </div>
+                                            ) : null}
+                                            <QuotePanel
+                                                initialQuote={loadedQuote}
+                                                guideSource={guideSource}
+                                                guideTopic={guideTopic}
+                                            />
+                                        </div>
+                                    </motion.div>
+                                ) : file && !analysis ? (
                                         <motion.div
                                             key="analyzing"
                                             initial={{ opacity: 0, scale: 0.95 }}
@@ -281,7 +313,7 @@ function QuoteContent() {
                                                 </div>
                                             </div>
                                         </motion.div>
-                                    ) : !entryMode ? (
+                                ) : !entryMode ? (
                                         <motion.div
                                             key="chooser"
                                             initial={{ opacity: 0, x: -30 }}
@@ -310,7 +342,10 @@ function QuoteContent() {
                                         >
                                             <ImageTo3DPanel
                                                 onBack={() => setEntryMode(null)}
-                                                onModelReady={() => setActiveTab('settings')}
+                                                onModelReady={() => {
+                                                    setEntryMode(null);
+                                                    setActiveTab('settings');
+                                                }}
                                             />
                                         </motion.div>
                                     ) : (
@@ -394,38 +429,7 @@ function QuoteContent() {
                                                 ))}
                                             </div>
                                         </motion.div>
-                                    )
-                                ) : (
-                                    <motion.div
-                                        initial={{ opacity: 0, x: 30 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 30 }}
-                                        className="space-y-6 sm:space-y-8"
-                                    >
-                                        <div className="flex items-center justify-between px-1">
-                                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
-                                            <button
-                                                onClick={() => { reset(); setStep(1); setEntryMode(null); }}
-                                                className="px-3 py-1.5 rounded-lg bg-teal-400/20 border border-teal-400/30 text-[10px] sm:text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
-                                            >
-                                                <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                                                파일 교체
-                                            </button>
-                                        </div>
-                                        <div className="relative">
-                                            {analysisError ? (
-                                                <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-amber-100/90 leading-relaxed break-keep">
-                                                    {analysisError}
-                                                </div>
-                                            ) : null}
-                                            <QuotePanel
-                                                initialQuote={loadedQuote}
-                                                guideSource={guideSource}
-                                                guideTopic={guideTopic}
-                                            />
-                                        </div>
-                                    </motion.div>
-                                )}
+                                    )}
                             </AnimatePresence>
                         </div>
 
