@@ -4,19 +4,90 @@ import { requireAuthOrGuest } from '@/lib/api-utils'
 import { sanitizeR2FileName } from '@/lib/r2-quote-file'
 import {
     MESHY_IMAGE_MAX_BYTES,
-    MESHY_TODAY_KST_SQL,
-    MESHY_USER_DAILY_LIMIT,
     createMeshyImageTo3DTask,
     isAllowedMeshyImage,
     resolveMeshyApiKey,
     toDataUri,
 } from '@/lib/meshy'
+import {
+    consumeMeshyBonusCredit,
+    getMeshyQuotaSnapshot,
+    peekMeshySlot,
+} from '@/lib/meshy-quota'
+
+/**
+ * GET /api/meshy/jobs
+ * 내 생성 히스토리 (최신순)
+ */
+export async function GET(request: NextRequest) {
+    try {
+        const auth = await requireAuthOrGuest(request)
+        if (auth instanceof Response) return auth
+        if (auth.isGuest) {
+            return NextResponse.json(
+                { error: '로그인이 필요합니다', code: 'LOGIN_REQUIRED' },
+                { status: 401 }
+            )
+        }
+
+        const { env } = getCloudflareContext()
+        if (!env?.DB) {
+            return NextResponse.json({ error: 'DB를 사용할 수 없습니다' }, { status: 503 })
+        }
+
+        const limit = Math.min(50, Math.max(1, Number(request.nextUrl.searchParams.get('limit')) || 20))
+
+        type JobListRow = {
+            id: number
+            status: string
+            progress: number | null
+            thumbnail_url: string | null
+            result_file_name: string | null
+            result_file_key: string | null
+            source_file_name: string | null
+            error_message: string | null
+            credits_used: number | null
+            created_at: string
+            updated_at: string
+        }
+
+        const rows = await env.DB.prepare(
+            `SELECT id, status, progress, thumbnail_url, result_file_name, result_file_key,
+                    source_file_name, error_message, credits_used, created_at, updated_at
+             FROM meshy_jobs
+             WHERE user_id = ?
+             ORDER BY id DESC
+             LIMIT ?`
+        )
+            .bind(auth.userId, limit)
+            .all<JobListRow>()
+
+        const list: JobListRow[] = rows.results ?? []
+        const items = list.map((j: JobListRow) => ({
+            jobId: j.id,
+            status: j.status,
+            progress: j.progress || 0,
+            thumbnailUrl: j.thumbnail_url,
+            resultFileName: j.result_file_name,
+            sourceFileName: j.source_file_name,
+            modelReady: j.status === 'succeeded' && !!j.result_file_key,
+            error: j.error_message,
+            creditsUsed: j.credits_used,
+            createdAt: j.created_at,
+            updatedAt: j.updated_at,
+        }))
+
+        return NextResponse.json({ success: true, data: { items } })
+    } catch (e) {
+        console.error('GET /api/meshy/jobs', e)
+        return NextResponse.json({ error: '히스토리 조회 실패' }, { status: 500 })
+    }
+}
 
 /**
  * POST /api/meshy/jobs
  * FormData: image (jpg/png)
- * Image → Meshy Image-to-3D 작업 생성
- * 권한: 로그인 회원만, 계정당 한국 시간 기준 1일 1회
+ * 권한: 로그인 회원 · 일일 1회 + 관리자 보너스
  */
 export async function POST(request: NextRequest) {
     try {
@@ -62,26 +133,16 @@ export async function POST(request: NextRequest) {
         }
 
         const userId = auth.userId
-        const dailyLimit = MESHY_USER_DAILY_LIMIT
-
-        // 실패(failed)만 제외 — 진행 중·성공은 오늘 할당으로 집계
-        const r = await env.DB.prepare(
-            `SELECT COUNT(*) AS c FROM meshy_jobs
-             WHERE user_id = ?
-               AND ${MESHY_TODAY_KST_SQL}
-               AND status != 'failed'`
-        )
-            .bind(userId)
-            .first<{ c: number }>()
-        const usedToday = Number(r?.c) || 0
-
-        if (usedToday >= dailyLimit) {
+        const slot = await peekMeshySlot(env.DB, userId)
+        if (!slot) {
+            const snap = await getMeshyQuotaSnapshot(env.DB, userId)
             return NextResponse.json(
                 {
-                    error: '오늘 AI 모델링 이용 횟수(1회)를 모두 사용했습니다. 내일 다시 시도하거나 3D 파일을 직접 업로드해 주세요.',
+                    error: '오늘 AI 모델링 이용 횟수와 보너스 횟수를 모두 사용했습니다. 내일 다시 시도하거나 관리자에게 추가 횟수를 요청해 주세요.',
                     code: 'DAILY_LIMIT',
-                    limit: dailyLimit,
+                    limit: snap.limit,
                     remainingToday: 0,
+                    bonusRemaining: 0,
                 },
                 { status: 429 }
             )
@@ -127,6 +188,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: msg, jobId }, { status: 502 })
         }
 
+        // Meshy 성공 후에만 보너스 차감 (실패 시 일일·보너스 모두 미차감)
+        if (slot === 'bonus') {
+            const ok = await consumeMeshyBonusCredit(env.DB, userId)
+            if (!ok) {
+                await env.DB.prepare(
+                    `UPDATE meshy_jobs SET status = 'failed', error_message = ?, updated_at = datetime('now') WHERE id = ?`
+                )
+                    .bind('보너스 횟수 차감에 실패했습니다. 다시 시도해 주세요.', jobId)
+                    .run()
+                return NextResponse.json(
+                    { error: '보너스 횟수 차감에 실패했습니다. 다시 시도해 주세요.', jobId },
+                    { status: 409 }
+                )
+            }
+        }
+
         await env.DB.prepare(
             `UPDATE meshy_jobs
              SET status = 'queued', meshy_task_id = ?, progress = 1, updated_at = datetime('now')
@@ -135,13 +212,18 @@ export async function POST(request: NextRequest) {
             .bind(meshyTaskId, jobId)
             .run()
 
+        const snapAfter = await getMeshyQuotaSnapshot(env.DB, userId)
+
         return NextResponse.json({
             success: true,
             data: {
                 jobId,
                 status: 'queued',
                 progress: 1,
-                remainingToday: Math.max(0, dailyLimit - usedToday - 1),
+                slotUsed: slot,
+                remainingToday: snapAfter.remainingDaily,
+                bonusRemaining: snapAfter.bonusRemaining,
+                remainingTotal: snapAfter.remainingTotal,
             },
         })
     } catch (e) {

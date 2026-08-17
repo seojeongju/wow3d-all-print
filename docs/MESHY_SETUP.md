@@ -64,7 +64,11 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 - 선택적 배경 제거(`/api/maker/remove-bg` 재사용)
 - 견적 화면 AI 생성 모델 안내 + mm 스케일 유도
 
-## 다음 (미구현)
+### Phase C (수익 골격)
+- 내 생성 히스토리 (`GET /api/meshy/jobs`) · 과거 STL을 견적에 다시 넣기
+- 관리자 보너스 횟수 (`meshy_bonus_credits`) — 일일 1회 소진 후 추가 생성
+- 관리자 `/admin/meshy` — 오늘/7일 사용량·실패율·credits, userId로 보너스 부여
 
-- Phase C: 유료 추가 생성, 히스토리, 관리자 통계
-- Phase D: 멀티뷰, 고품질 프리셋, printability repair
+```bash
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_bonus.sql
+```

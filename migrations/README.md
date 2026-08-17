@@ -4,6 +4,7 @@
 
 ```bash
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_jobs.sql
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_bonus.sql
 npx wrangler secret put MESHY_API_KEY
 ```
 

@@ -42,8 +42,23 @@ type QuotaInfo = {
     limit: number
     usedToday: number
     remainingToday: number
+    remainingDaily?: number
+    bonusRemaining?: number
+    remainingTotal?: number
     resetsHint: string
     configured: boolean
+}
+
+type HistoryItem = {
+    jobId: number
+    status: string
+    progress: number
+    thumbnailUrl?: string | null
+    resultFileName?: string | null
+    sourceFileName?: string | null
+    modelReady?: boolean
+    error?: string | null
+    createdAt?: string
 }
 
 const LS_JOB_KEY = 'wow3d-meshy-active-job'
@@ -102,6 +117,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
     const [resultFileName, setResultFileName] = useState<string | null>(null)
     const [quota, setQuota] = useState<QuotaInfo | null>(null)
+    const [history, setHistory] = useState<HistoryItem[]>([])
     const [enhanceContrast, setEnhanceContrast] = useState(true)
     const [useRemoveBg, setUseRemoveBg] = useState(false)
     const [removeBgConfigured, setRemoveBgConfigured] = useState(false)
@@ -143,9 +159,29 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         }
     }, [authHeaders])
 
+    const refreshHistory = useCallback(async () => {
+        if (!token) {
+            setHistory([])
+            return
+        }
+        try {
+            const res = await fetch('/api/meshy/jobs?limit=8', {
+                headers: authHeaders(),
+                cache: 'no-store',
+            })
+            const json = await res.json()
+            if (res.ok && json.success) {
+                setHistory((json.data?.items as HistoryItem[]) || [])
+            }
+        } catch {
+            /* ignore */
+        }
+    }, [authHeaders, token])
+
     useEffect(() => {
         refreshQuota()
-    }, [refreshQuota, token])
+        refreshHistory()
+    }, [refreshQuota, refreshHistory, token])
 
     useEffect(() => {
         let cancelled = false
@@ -206,6 +242,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             clearActiveJob()
             setStatus('succeeded')
             await refreshQuota()
+            await refreshHistory()
             onModelReady?.()
         } finally {
             setApplying(false)
@@ -429,7 +466,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             setError('사진→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다.')
             return
         }
-        if (quota && !quota.loginRequired && quota.remainingToday <= 0) {
+        if (quota && !quota.loginRequired && (quota.remainingTotal ?? quota.remainingToday) <= 0) {
             setError(
                 `오늘 이용 횟수(${quota.limit}회)를 모두 사용했습니다. ${quota.resetsHint} 또는 3D 파일을 직접 업로드해 주세요.`
             )
@@ -476,13 +513,18 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             saveActiveJob(id)
             setStatus('queued')
             setProgress(5)
-            if (typeof json.data.remainingToday === 'number') {
+            if (typeof json.data.remainingTotal === 'number' || typeof json.data.remainingToday === 'number') {
                 setQuota((q) =>
                     q
                         ? {
                               ...q,
-                              remainingToday: json.data.remainingToday,
-                              usedToday: q.limit - json.data.remainingToday,
+                              remainingToday: json.data.remainingToday ?? q.remainingToday,
+                              remainingDaily: json.data.remainingToday ?? q.remainingDaily,
+                              bonusRemaining: json.data.bonusRemaining ?? q.bonusRemaining,
+                              remainingTotal:
+                                  json.data.remainingTotal ??
+                                  (json.data.remainingToday ?? 0) + (json.data.bonusRemaining ?? 0),
+                              usedToday: q.limit - (json.data.remainingToday ?? q.remainingToday),
                           }
                         : q
                 )
@@ -496,8 +538,9 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
     const busy = status === 'uploading' || status === 'queued' || status === 'processing'
     const showDrop = !selected && status !== 'ready' && !busy && !resuming
+    const remainingTotal = quota?.remainingTotal ?? quota?.remainingToday ?? 0
     const canGenerate =
-        status === 'idle' && !!selected && selected.size > 0 && (!quota || quota.remainingToday > 0)
+        status === 'idle' && !!selected && selected.size > 0 && (!quota || remainingTotal > 0)
 
     return (
         <div className="space-y-6 sm:space-y-8">
@@ -536,9 +579,9 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             <div
                 className={cn(
                     'flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-3',
-                    token && quota && quota.remainingToday > 0
+                    token && remainingTotal > 0
                         ? 'border-indigo-400/30 bg-indigo-500/10'
-                        : token && quota && quota.remainingToday <= 0
+                        : token && quota && remainingTotal <= 0
                           ? 'border-amber-400/30 bg-amber-500/10'
                           : 'border-white/10 bg-white/[0.03]'
                 )}
@@ -548,7 +591,11 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                         {!token
                             ? '로그인 후 이용'
                             : quota
-                              ? `오늘 남은 횟수 ${quota.remainingToday}/${quota.limit}`
+                              ? `오늘 남은 횟수 ${quota.remainingDaily ?? quota.remainingToday}/${quota.limit}${
+                                    (quota.bonusRemaining || 0) > 0
+                                        ? ` · 보너스 ${quota.bonusRemaining}회`
+                                        : ''
+                                }`
                               : '한도 확인 중…'}
                     </p>
                     <p className="text-[11px] font-bold text-white/50 mt-0.5 break-keep">
@@ -795,10 +842,57 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 </div>
             )}
 
+            {token && history.length > 0 && !busy && status !== 'ready' && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
+                        내 생성 기록
+                    </p>
+                    <ul className="space-y-2">
+                        {history.map((h) => (
+                            <li
+                                key={h.jobId}
+                                className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[12px] font-black text-white truncate">
+                                        #{h.jobId} · {h.sourceFileName || h.resultFileName || '모델'}
+                                    </p>
+                                    <p className="text-[10px] font-bold text-white/40">
+                                        {h.status}
+                                        {h.createdAt ? ` · ${h.createdAt}` : ''}
+                                    </p>
+                                </div>
+                                {h.modelReady && (
+                                    <button
+                                        type="button"
+                                        className="shrink-0 h-8 px-2.5 rounded-lg bg-teal-500/20 border border-teal-400/30 text-[11px] font-black text-teal-200"
+                                        onClick={async () => {
+                                            setError(null)
+                                            try {
+                                                await applyModel(
+                                                    h.jobId,
+                                                    h.resultFileName || `meshy-${h.jobId}.stl`
+                                                )
+                                            } catch (e) {
+                                                setError(
+                                                    e instanceof Error ? e.message : '모델 적용 실패'
+                                                )
+                                            }
+                                        }}
+                                    >
+                                        견적에 넣기
+                                    </button>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                 <p className="text-[11px] font-black uppercase tracking-widest text-white/40">안내</p>
                 <ul className="text-[12px] text-white/50 font-bold space-y-1.5 leading-relaxed break-keep">
-                    <li>· 로그인 회원 · 계정당 하루 {MESHY_USER_DAILY_LIMIT}회 (한국 시간)</li>
+                    <li>· 로그인 회원 · 계정당 하루 {MESHY_USER_DAILY_LIMIT}회 (한국 시간) + 관리자 보너스</li>
                     <li>· 생성 실패 시 횟수 미차감 · 성공·진행 중은 당일 1회로 집계</li>
                     <li>· 생성 후 「이 모델로 견적 진행」에서 확인하고 넘어갑니다</li>
                     <li>· 절대 치수는 견적 화면에서 mm 스케일로 조정하세요</li>

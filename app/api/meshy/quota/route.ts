@@ -1,28 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
-import {
-    MESHY_TODAY_KST_SQL,
-    MESHY_USER_DAILY_LIMIT,
-    resolveMeshyApiKey,
-} from '@/lib/meshy'
+import { MESHY_USER_DAILY_LIMIT, resolveMeshyApiKey } from '@/lib/meshy'
+import { getMeshyQuotaSnapshot } from '@/lib/meshy-quota'
 
 /**
  * GET /api/meshy/quota
- * 로그인 회원 기준 오늘(KST) 남은 AI 모델링 횟수
+ * 로그인 회원 기준 오늘(KST) 남은 횟수 + 보너스
  */
 export async function GET(request: NextRequest) {
     try {
         const auth = await requireAuthOrGuest(request)
-        const configured = !!resolveMeshyApiKey(
-            (() => {
-                try {
-                    return getCloudflareContext().env as unknown as Record<string, unknown>
-                } catch {
-                    return null
-                }
-            })()
-        )
+        let configured = false
+        try {
+            configured = !!resolveMeshyApiKey(
+                getCloudflareContext().env as unknown as Record<string, unknown>
+            )
+        } catch {
+            configured = !!resolveMeshyApiKey(null)
+        }
 
         if (auth instanceof Response) {
             return NextResponse.json({
@@ -33,7 +29,10 @@ export async function GET(request: NextRequest) {
                     limit: MESHY_USER_DAILY_LIMIT,
                     usedToday: 0,
                     remainingToday: 0,
-                    resetsHint: '매일 자정(한국 시간)에 초기화됩니다',
+                    remainingDaily: 0,
+                    bonusRemaining: 0,
+                    remainingTotal: 0,
+                    resetsHint: '매일 자정(한국 시간)에 일일 횟수가 초기화됩니다',
                 },
             })
         }
@@ -47,7 +46,10 @@ export async function GET(request: NextRequest) {
                     limit: MESHY_USER_DAILY_LIMIT,
                     usedToday: 0,
                     remainingToday: 0,
-                    resetsHint: '로그인 후 계정당 하루 1회 이용할 수 있습니다',
+                    remainingDaily: 0,
+                    bonusRemaining: 0,
+                    remainingTotal: 0,
+                    resetsHint: '로그인 후 계정당 하루 1회(+보너스) 이용할 수 있습니다',
                 },
             })
         }
@@ -57,27 +59,23 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'DB를 사용할 수 없습니다' }, { status: 503 })
         }
 
-        const r = await env.DB.prepare(
-            `SELECT COUNT(*) AS c FROM meshy_jobs
-             WHERE user_id = ?
-               AND ${MESHY_TODAY_KST_SQL}
-               AND status != 'failed'`
-        )
-            .bind(auth.userId)
-            .first<{ c: number }>()
-
-        const usedToday = Number(r?.c) || 0
-        const remainingToday = Math.max(0, MESHY_USER_DAILY_LIMIT - usedToday)
+        const snap = await getMeshyQuotaSnapshot(env.DB, auth.userId)
 
         return NextResponse.json({
             success: true,
             data: {
                 configured,
                 loginRequired: false,
-                limit: MESHY_USER_DAILY_LIMIT,
-                usedToday,
-                remainingToday,
-                resetsHint: '매일 자정(한국 시간)에 초기화됩니다',
+                limit: snap.limit,
+                usedToday: snap.usedToday,
+                remainingToday: snap.remainingDaily,
+                remainingDaily: snap.remainingDaily,
+                bonusRemaining: snap.bonusRemaining,
+                remainingTotal: snap.remainingTotal,
+                resetsHint:
+                    snap.bonusRemaining > 0
+                        ? `일일 ${snap.limit}회는 자정(KST) 초기화 · 보너스 ${snap.bonusRemaining}회 보유`
+                        : '매일 자정(한국 시간)에 일일 횟수가 초기화됩니다',
             },
         })
     } catch (e) {
