@@ -10,6 +10,7 @@ import {
 } from '@/lib/model-transform'
 import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
+import { cn } from '@/lib/utils'
 
 /**
  * 자동견적 뷰어용 모델 컨트롤
