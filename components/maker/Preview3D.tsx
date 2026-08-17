@@ -205,14 +205,17 @@ function PreviewScene({
             <OrbitControls
                 makeDefault
                 enableDamping
-                dampingFactor={0.12}
-                minDistance={2}
-                maxDistance={100}
+                dampingFactor={0.08}
+                rotateSpeed={0.35}
+                zoomSpeed={0.45}
+                panSpeed={0.4}
+                minDistance={4}
+                maxDistance={60}
                 // 전방향 360° 궤도 (윗면·아랫면까지)
                 minPolarAngle={0}
                 maxPolarAngle={Math.PI}
                 autoRotate={autoRotate}
-                autoRotateSpeed={1.2}
+                autoRotateSpeed={0.55}
                 screenSpacePanning
             />
 
