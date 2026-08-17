@@ -12,7 +12,7 @@ export const EXPORT_SCALE = 5
 /** mm → 씬 단위 (Z·판 크기·bevel) */
 export const MM_TO_SCENE = 1 / EXPORT_SCALE
 
-export const MAX_SHAPES_PER_SVG = 40
+export const MAX_SHAPES_PER_SVG = 120
 
 export type BasePlateType = 'none' | 'rect' | 'circle' | 'rounded'
 
@@ -149,8 +149,11 @@ export function parseSvgToSceneShapes(svgContent: string, targetSizeScene: numbe
     try {
         const loader = new SVGLoader()
         const data = loader.parse(svgContent)
-        const allShapes = flattenSvgShapes(data).slice(0, MAX_SHAPES_PER_SVG)
+        let allShapes = flattenSvgShapes(data).slice(0, MAX_SHAPES_PER_SVG)
         if (allShapes.length === 0) return []
+
+        // 통짜 큰 사각형이 글자 path를 덮지 않도록 제거
+        allShapes = dropCoveringPlateShapes(allShapes)
 
         let minX = Infinity
         let minY = Infinity
@@ -173,6 +176,39 @@ export function parseSvgToSceneShapes(svgContent: string, targetSizeScene: numbe
     } catch {
         return []
     }
+}
+
+/** 작은 글자 path가 있을 때 전체를 덮는 단순 사각형(통짜 판)을 제거 */
+function dropCoveringPlateShapes(shapes: THREE.Shape[]): THREE.Shape[] {
+    if (shapes.length <= 1) return shapes
+
+    type Meta = { shape: THREE.Shape; area: number; pts: number }
+    const metas: Meta[] = shapes.map((shape) => {
+        const pts = getPathPoints(shape, 20)
+        let minX = Infinity
+        let minY = Infinity
+        let maxX = -Infinity
+        let maxY = -Infinity
+        pts.forEach((p) => {
+            minX = Math.min(minX, p.x)
+            minY = Math.min(minY, p.y)
+            maxX = Math.max(maxX, p.x)
+            maxY = Math.max(maxY, p.y)
+        })
+        const area = Math.max(0, maxX - minX) * Math.max(0, maxY - minY)
+        return { shape, area, pts: pts.length }
+    })
+
+    const maxArea = Math.max(...metas.map((m) => m.area), 1)
+    const filtered = metas.filter((m) => {
+        const covers = m.area >= maxArea * 0.72
+        const simple = m.pts <= 10
+        if (covers && simple && metas.some((o) => o.area < m.area * 0.85)) return false
+        if (covers && metas.length >= 3 && m.area >= maxArea * 0.9) return false
+        return true
+    })
+
+    return filtered.length > 0 ? filtered.map((m) => m.shape) : shapes
 }
 
 /** 모서리 라운드 사각형 (중심 원점, XY 평면) */

@@ -17,7 +17,7 @@ type Props = {
 
 export function ImageUploader({
     onSvgConverted,
-    convertMode = 'detailed',
+    convertMode = 'simple',
     useRemoveBg = false,
     authHeaders,
     onRemoveBgDone,
@@ -124,7 +124,7 @@ export function ImageUploader({
                 <div className="flex items-center gap-1">
                     <Button
                         variant="ghost"
-                        title="이미지 (PNG, JPEG) → SVG 변환"
+                        title="이미지 (PNG, JPEG) → 글자·로고 실루엣 변환"
                         className="w-12 h-12 p-0 rounded-2xl bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 border border-teal-400/30 flex items-center justify-center transition-all duration-300"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isProcessing}

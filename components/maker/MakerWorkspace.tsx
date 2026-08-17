@@ -125,6 +125,7 @@ export function MakerWorkspace() {
 
     /** 변환 완료 시 바로 3D에 올려 배지 위에 보이도록 함 (별도 확인 버튼 불필요) */
     const handleSvgConverted = (data: { name: string; svgContent: string }) => {
+        const pathCount = (data.svgContent.match(/<\s*path\b/gi) || []).length;
         addImportedSvg({
             id: crypto.randomUUID(),
             name: data.name,
@@ -132,12 +133,19 @@ export function MakerWorkspace() {
         });
         setPendingSvg(null);
         setActiveTab('3d');
-        showToast.success(
-            '로고를 배지에 올렸습니다',
-            basePlateType !== 'none'
-                ? '결과물(3D)에서 판 위 실루엣을 확인하세요.'
-                : '결과물(3D)에서 확인하세요. 템플릿을 고르면 배지 판이 붙습니다.'
-        );
+        if (pathCount <= 1) {
+            showToast.error(
+                '실루엣이 단순합니다',
+                '통짜 사각형처럼 보일 수 있습니다. 「글자·로고」 모드로 다시 올리거나, 가능하면 SVG를 사용하세요.'
+            );
+        } else {
+            showToast.success(
+                '로고를 배지에 올렸습니다',
+                basePlateType !== 'none'
+                    ? `path ${pathCount}개 · 결과물(3D)에서 글자·마크 실루엣을 확인하세요.`
+                    : '결과물(3D)에서 확인하세요. 템플릿을 고르면 배지 판이 붙습니다.'
+            );
+        }
     };
 
     const sceneInput = () => makerSceneInputFromState({
@@ -384,19 +392,20 @@ export function MakerWorkspace() {
                             로고·SVG 입력
                         </h3>
                         <p className="text-[12px] text-white/80 leading-relaxed break-keep">
-                            <strong className="text-white">SVG</strong> 또는 단순 로고(PNG/JPEG)를 올려 실루엣을 돌출합니다.
-                            제품 실사·인물·입체 피규어 사진은 Maker보다{' '}
+                            <strong className="text-white">글자·로고</strong>는 <strong className="text-white">흰 배경 + 검정 선</strong> PNG/JPEG 또는{' '}
+                            <strong className="text-white">SVG</strong>가 가장 선명합니다.
+                            컬러 사진·그라데이션은 통짜 덩어리로 나올 수 있어요. 입체 피규어는{' '}
                             <Link href="/quote?entry=photo" className="text-indigo-300 font-black underline-offset-2 hover:underline">
                                 사진→AI 3D 견적
                             </Link>
-                            이 적합합니다.
+                            을 이용하세요.
                         </p>
                         <div className="mt-4 space-y-3 pt-3 border-t border-white/10">
                             <label className="text-[12px] font-bold text-white/85 block">변환 모드</label>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
-                                    title="로고·단순 도형에 적합"
+                                    title="글자·로고·아이콘 — 고대비 실루엣"
                                     onClick={() => setConvertMode('simple')}
                                     className={cn(
                                         'h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 inline-flex items-center justify-center gap-1.5 border transition-colors',
@@ -406,11 +415,11 @@ export function MakerWorkspace() {
                                     )}
                                 >
                                     {convertMode === 'simple' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                                    간단(로고)
+                                    글자·로고
                                 </button>
                                 <button
                                     type="button"
-                                    title="단순 실루엣이 필요한 사진용 — 입체 메시가 필요하면 견적 AI 사용"
+                                    title="복잡한 실루엣 — 디테일 유지"
                                     onClick={() => setConvertMode('detailed')}
                                     className={cn(
                                         'h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 inline-flex items-center justify-center gap-1.5 border transition-colors',
@@ -420,9 +429,14 @@ export function MakerWorkspace() {
                                     )}
                                 >
                                     {convertMode === 'detailed' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                                    상세(실루엣)
+                                    상세 실루엣
                                 </button>
                             </div>
+                            {convertMode === 'simple' && (
+                                <p className="text-[11px] font-bold text-teal-100/90 leading-relaxed break-keep rounded-lg bg-teal-500/10 border border-teal-400/25 px-3 py-2">
+                                    텍스트·마크 로고용입니다. 왼쪽 <strong className="text-white">이미지</strong>로 PNG를 올리거나, 가능하면 <strong className="text-white">SVG</strong>를 쓰세요.
+                                </p>
+                            )}
                             {convertMode === 'detailed' && (
                                 <div className="rounded-xl border border-indigo-400/40 bg-indigo-500/15 p-3 space-y-2">
                                     <p className="text-[12px] text-indigo-100 font-bold leading-relaxed break-keep">

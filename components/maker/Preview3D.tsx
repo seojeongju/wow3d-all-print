@@ -330,11 +330,11 @@ export function Preview3D() {
             </Canvas>
 
             {/* 뷰 프리셋 · 자동 회전 */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 p-3 sm:p-4">
-                <p className="pointer-events-none text-[10px] font-bold text-white/70 drop-shadow">
-                    드래그로 360° 회전 · 휠 확대
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 p-3 sm:p-4">
+                <p className="pointer-events-none text-[10px] font-bold text-white/80 drop-shadow-md">
+                    드래그로 360° 회전 · 휠 확대 · 아래 버튼으로 정면·측면·윗면
                 </p>
-                <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/20 bg-black/65 px-2 py-2 backdrop-blur-md shadow-xl">
+                <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/25 bg-black/75 px-2 py-2 backdrop-blur-md shadow-2xl">
                     {VIEW_BUTTONS.map((b) => (
                         <button
                             key={b.id}
