@@ -30,6 +30,32 @@ export function clampScalePercent(value: number): number {
     return Math.min(SCALE_PERCENT_MAX, Math.max(SCALE_PERCENT_MIN, Math.round(value)))
 }
 
+/** 스케일 100% 기준, 회전만 반영한 AABB (mm) */
+export function getRotatedBaseBox(
+    base: GeometryAnalysis,
+    transform: Pick<ModelTransform, 'rotX' | 'rotY' | 'rotZ'>
+): { x: number; y: number; z: number } {
+    return applyAxisRotations(base.boundingBox, transform.rotX, transform.rotY, transform.rotZ)
+}
+
+/**
+ * 특정 축 목표 치수(mm) → 균일 스케일 %.
+ * 균일 스케일이므로 X/Y/Z 중 하나를 바꾸면 전체가 비례 변경된다.
+ */
+export function scalePercentFromTargetMm(
+    base: GeometryAnalysis,
+    transform: ModelTransform,
+    axis: 'x' | 'y' | 'z',
+    targetMm: number
+): number {
+    const rotated = getRotatedBaseBox(base, transform)
+    const baseMm = rotated[axis]
+    if (!(baseMm > 0) || !Number.isFinite(targetMm) || targetMm <= 0) {
+        return transform.scalePercent
+    }
+    return clampScalePercent((targetMm / baseMm) * 100)
+}
+
 export function nextAxis90(current: Axis90, delta = 90): Axis90 {
     const n = ((current + delta) % 360 + 360) % 360
     return n as Axis90

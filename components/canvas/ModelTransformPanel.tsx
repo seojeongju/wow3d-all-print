@@ -1,17 +1,19 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
     SCALE_PERCENT_MAX,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
+    scalePercentFromTargetMm,
 } from '@/lib/model-transform'
 import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
  * 자동견적 뷰어용 모델 컨트롤
- * - 균일 스케일(%): 견적 부피·면적·치수 연동
+ * - 균일 스케일(%) + 치수(mm) 직접 입력
  * - 90° 축 회전 / 축 정렬(리셋)
  * - 바닥에 붙이기
  */
@@ -26,9 +28,44 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const resetTransform = useFileStore((s) => s.resetTransform)
     const effective = useEffectiveAnalysis()
 
+    const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
+    const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
+
+    useEffect(() => {
+        setScaleDraft(String(transform.scalePercent))
+    }, [transform.scalePercent])
+
+    useEffect(() => {
+        if (!effective) return
+        setDimDraft({
+            x: effective.boundingBox.x.toFixed(2),
+            y: effective.boundingBox.y.toFixed(2),
+            z: effective.boundingBox.z.toFixed(2),
+        })
+    }, [effective?.boundingBox.x, effective?.boundingBox.y, effective?.boundingBox.z])
+
     if (!file || !baseAnalysis || !effective) return null
 
     const box = effective.boundingBox
+
+    const commitScalePercent = (raw: string) => {
+        const n = Number(raw)
+        if (!Number.isFinite(n)) {
+            setScaleDraft(String(transform.scalePercent))
+            return
+        }
+        setScalePercent(n)
+    }
+
+    const commitAxisMm = (axis: 'x' | 'y' | 'z', raw: string) => {
+        const n = Number(raw)
+        if (!Number.isFinite(n) || n <= 0) {
+            setDimDraft((d) => ({ ...d, [axis]: box[axis].toFixed(2) }))
+            return
+        }
+        const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n)
+        setScalePercent(next)
+    }
 
     return (
         <div
@@ -57,9 +94,27 @@ export default function ModelTransformPanel({ className }: { className?: string 
 
             {/* 스케일 */}
             <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] font-bold">
+                <div className="flex items-center justify-between gap-2 text-[11px] font-bold">
                     <span className="text-white/55">균일 스케일</span>
-                    <span className="font-mono text-teal-300">{transform.scalePercent}%</span>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            min={SCALE_PERCENT_MIN}
+                            max={SCALE_PERCENT_MAX}
+                            step={SCALE_PERCENT_STEP}
+                            value={scaleDraft}
+                            onChange={(e) => setScaleDraft(e.target.value)}
+                            onBlur={() => commitScalePercent(scaleDraft)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.currentTarget.blur()
+                                }
+                            }}
+                            className="w-14 rounded-md border border-white/15 bg-black/40 px-1.5 py-0.5 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
+                            aria-label="스케일 퍼센트 직접 입력"
+                        />
+                        <span className="text-teal-300/80">%</span>
+                    </div>
                 </div>
                 <input
                     type="range"
@@ -88,6 +143,44 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         </button>
                     ))}
                 </div>
+            </div>
+
+            {/* 치수 mm 직접 입력 */}
+            <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-white/55">치수 직접 입력 (mm)</span>
+                    <span className="text-[9px] font-bold text-white/30">균일 스케일</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                    {(['x', 'y', 'z'] as const).map((axis) => (
+                        <label
+                            key={axis}
+                            className="rounded-xl border border-white/10 bg-white/5 px-1.5 py-1.5 focus-within:border-teal-400/40"
+                        >
+                            <div className="text-[8px] font-black text-teal-400/80 uppercase text-center mb-1">
+                                {axis}
+                            </div>
+                            <input
+                                type="number"
+                                min={0.1}
+                                step={0.1}
+                                value={dimDraft[axis]}
+                                onChange={(e) =>
+                                    setDimDraft((d) => ({ ...d, [axis]: e.target.value }))
+                                }
+                                onBlur={() => commitAxisMm(axis, dimDraft[axis])}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur()
+                                }}
+                                className="w-full bg-transparent text-center font-mono text-[11px] text-white/90 outline-none"
+                                aria-label={`${axis.toUpperCase()}축 치수(mm)`}
+                            />
+                        </label>
+                    ))}
+                </div>
+                <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
+                    한 축을 바꾸면 비율을 유지한 채 전체가 함께 커지거나 작아집니다.
+                </p>
             </div>
 
             {/* 90° 회전 */}
@@ -142,23 +235,14 @@ export default function ModelTransformPanel({ className }: { className?: string 
                 </button>
             </div>
 
-            <div className="rounded-xl bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white/45 space-y-1.5">
-                <div className="text-white/35 text-[9px] font-black uppercase tracking-wider">치수 · 스케일/회전 적용</div>
-                <div className="grid grid-cols-3 gap-1.5">
-                    <div className="rounded-lg bg-black/25 px-1.5 py-1.5 text-center">
-                        <div className="text-[8px] font-black text-teal-400/80 uppercase">X</div>
-                        <div className="font-mono text-white/85 text-[11px]">{box.x.toFixed(2)}</div>
-                    </div>
-                    <div className="rounded-lg bg-black/25 px-1.5 py-1.5 text-center">
-                        <div className="text-[8px] font-black text-teal-400/80 uppercase">Y</div>
-                        <div className="font-mono text-white/85 text-[11px]">{box.y.toFixed(2)}</div>
-                    </div>
-                    <div className="rounded-lg bg-black/25 px-1.5 py-1.5 text-center">
-                        <div className="text-[8px] font-black text-teal-400/80 uppercase">Z</div>
-                        <div className="font-mono text-white/85 text-[11px]">{box.z.toFixed(2)}</div>
-                    </div>
+            <div className="rounded-xl bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white/45 space-y-1">
+                <div className="flex justify-between gap-2">
+                    <span>적용 치수</span>
+                    <span className="font-mono text-white/75">
+                        {box.x.toFixed(1)} × {box.y.toFixed(1)} × {box.z.toFixed(1)} mm
+                    </span>
                 </div>
-                <div className="flex justify-between gap-2 pt-0.5">
+                <div className="flex justify-between gap-2">
                     <span>메쉬 부피</span>
                     <span className="font-mono text-white/75">{effective.volume.toFixed(2)} cm³</span>
                 </div>

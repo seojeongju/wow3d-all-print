@@ -57,7 +57,9 @@ export async function GET(
         const fileName = job.result_file_name || `meshy-${jobId}.stl`
         const headers = new Headers()
         headers.set('Content-Type', object.httpMetadata?.contentType || 'model/stl')
-        headers.set('Cache-Control', 'private, max-age=3600')
+        // 브라우저 디스크 캐시 쓰기 실패(ERR_CACHE_WRITE_FAILURE) 방지 — 바이너리 STL은 캐시하지 않음
+        headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+        headers.set('Pragma', 'no-cache')
         headers.set(
             'Content-Disposition',
             `attachment; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`

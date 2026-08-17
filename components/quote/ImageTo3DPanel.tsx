@@ -112,12 +112,18 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     })
 
     const applyModel = async (id: number, fileName: string) => {
-        const res = await fetch(`/api/meshy/jobs/${id}/model`, { headers: authHeaders() })
+        const res = await fetch(`/api/meshy/jobs/${id}/model`, {
+            headers: authHeaders(),
+            cache: 'no-store',
+        })
         if (!res.ok) {
             const j = await res.json().catch(() => ({}))
             throw new Error((j as { error?: string }).error || '모델 다운로드 실패')
         }
         const blob = await res.blob()
+        if (!blob.size) {
+            throw new Error('다운로드된 모델 파일이 비어 있습니다. 다시 시도해 주세요.')
+        }
         const file = new File([blob], fileName || `meshy-${id}.stl`, { type: 'model/stl' })
         setFile(file)
         onModelReady?.()
@@ -127,7 +133,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         clearPoll()
         pollRef.current = setInterval(async () => {
             try {
-                const res = await fetch(`/api/meshy/jobs/${id}`, { headers: authHeaders() })
+                const res = await fetch(`/api/meshy/jobs/${id}`, {
+                    headers: authHeaders(),
+                    cache: 'no-store',
+                })
                 const json = await res.json()
                 if (!res.ok || !json.success) {
                     setError(json.error || '상태 조회 실패')
