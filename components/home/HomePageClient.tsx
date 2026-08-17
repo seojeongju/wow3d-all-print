@@ -89,7 +89,7 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
                 <p className="text-[10px] font-black uppercase tracking-widest text-teal-400 mb-2">AI 3D Maker</p>
                 <h3 className="font-bold text-lg mb-2">로고 · 스케치 → 2.5D</h3>
                 <p className="text-sm text-foreground/60 break-keep leading-relaxed mb-4">
-                  펜으로 그리거나 SVG/로고를 올려 실루엣을 돌출합니다. 배지·키캡·간판에 적합합니다.
+                  원형·사각 배지, 키캡 1U 템플릿에 로고를 올려 레이어·bevel로 돌출합니다.
                 </p>
                 <Button asChild variant="outline" className="w-full border-teal-500/40 hover:bg-teal-500/10">
                   <a href="#ai-3d-maker">아래에서 Maker 사용</a>

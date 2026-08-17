@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { simplifyPoints, smoothPoints } from '@/lib/sketch-optimizer';
+import type { BasePlateType, MakerSceneInput } from '@/lib/maker-geometry';
+import { getMakerTemplate, type MakerTemplateId } from '@/lib/maker-templates';
 
 interface Point {
   x: number;
@@ -21,7 +23,6 @@ interface ImportedSvg {
 }
 
 interface MakerState {
-  // Canvas State
   paths: Path[];
   importedSvgs: ImportedSvg[];
   currentPath: Point[];
@@ -31,13 +32,16 @@ interface MakerState {
   strokeColor: string;
   canvasSize: { width: number; height: number };
 
-  // 3D Settings
-  extrusionHeight: number; // mm
-  basePlateType: 'none' | 'rect' | 'circle' | 'outline';
-  baseHeight: number; // mm
+  extrusionHeight: number;
+  basePlateType: BasePlateType;
+  baseHeight: number;
+  bevelMm: number;
+  rimHeightMm: number;
+  baseSizeMm: number;
+  cornerRadiusMm: number;
+  activeTemplateId: MakerTemplateId | null;
   showGrid: boolean;
 
-  // Actions
   startDrawing: (point: Point) => void;
   continueDrawing: (point: Point) => void;
   endDrawing: () => void;
@@ -49,20 +53,52 @@ interface MakerState {
   setStrokeWidth: (width: number) => void;
   setStrokeColor: (color: string) => void;
   setExtrusionHeight: (height: number) => void;
-  setBasePlateType: (type: 'none' | 'rect' | 'circle' | 'outline') => void;
+  setBasePlateType: (type: BasePlateType) => void;
   setBaseHeight: (height: number) => void;
+  setBevelMm: (mm: number) => void;
+  setRimHeightMm: (mm: number) => void;
+  setBaseSizeMm: (mm: number) => void;
+  setCornerRadiusMm: (mm: number) => void;
+  applyTemplate: (id: MakerTemplateId) => void;
   setShowGrid: (show: boolean) => void;
 
-  // Importer
   addImportedSvg: (svg: ImportedSvg) => void;
   removeImportedSvg: (id: string) => void;
 
-  // Export
   exportTrigger: number;
   triggerExport: () => void;
 
-  // Helpers
   updateCanvasSize: (width: number, height: number) => void;
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+export function makerSceneInputFromState(s: {
+  paths: Path[];
+  importedSvgs: ImportedSvg[];
+  extrusionHeight: number;
+  basePlateType: BasePlateType;
+  baseHeight: number;
+  bevelMm: number;
+  rimHeightMm: number;
+  baseSizeMm: number;
+  cornerRadiusMm: number;
+  canvasSize: { width: number; height: number };
+}): MakerSceneInput {
+  return {
+    paths: s.paths,
+    importedSvgs: s.importedSvgs,
+    extrusionHeight: s.extrusionHeight,
+    basePlateType: s.basePlateType,
+    baseHeight: s.baseHeight,
+    bevelMm: s.bevelMm,
+    rimHeightMm: s.rimHeightMm,
+    baseSizeMm: s.baseSizeMm,
+    cornerRadiusMm: s.cornerRadiusMm,
+    canvasSize: s.canvasSize,
+  };
 }
 
 export const useMakerStore = create<MakerState>((set, get) => ({
@@ -79,6 +115,11 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   extrusionHeight: 5,
   basePlateType: 'none',
   baseHeight: 2,
+  bevelMm: 0,
+  rimHeightMm: 0,
+  baseSizeMm: 40,
+  cornerRadiusMm: 4,
+  activeTemplateId: null,
   showGrid: true,
 
   startDrawing: (point) => set({
@@ -90,11 +131,10 @@ export const useMakerStore = create<MakerState>((set, get) => ({
     const { isDrawing, currentPath } = get();
     if (!isDrawing) return;
 
-    // Add point only if it's far enough from the last one (optimization)
     const lastPoint = currentPath[currentPath.length - 1];
     if (lastPoint) {
       const dist = Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y);
-      if (dist < 2) return; // 2px threshold
+      if (dist < 2) return;
     }
 
     set({ currentPath: [...currentPath, point] });
@@ -112,7 +152,7 @@ export const useMakerStore = create<MakerState>((set, get) => ({
     const newPath: Path = {
       id: crypto.randomUUID(),
       points: optimizedPoints,
-      color: tool === 'eraser' ? '#0f172a' : strokeColor, // Match canvas background
+      color: tool === 'eraser' ? '#0f172a' : strokeColor,
       width: strokeWidth
     };
 
@@ -142,9 +182,27 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   setTool: (tool) => set({ tool }),
   setStrokeWidth: (width) => set({ strokeWidth: width }),
   setStrokeColor: (color) => set({ strokeColor: color }),
-  setExtrusionHeight: (height) => set({ extrusionHeight: height }),
-  setBasePlateType: (type) => set({ basePlateType: type }),
-  setBaseHeight: (height) => set({ baseHeight: Math.max(0.5, Math.min(20, height)) }),
+  setExtrusionHeight: (height) => set({ extrusionHeight: clamp(height, 0.4, 50) }),
+  setBasePlateType: (type) => set({ basePlateType: type, activeTemplateId: null }),
+  setBaseHeight: (height) => set({ baseHeight: clamp(height, 0.5, 20) }),
+  setBevelMm: (mm) => set({ bevelMm: clamp(mm, 0, 3) }),
+  setRimHeightMm: (mm) => set({ rimHeightMm: clamp(mm, 0, 8) }),
+  setBaseSizeMm: (mm) => set({ baseSizeMm: clamp(mm, 10, 80) }),
+  setCornerRadiusMm: (mm) => set({ cornerRadiusMm: clamp(mm, 0.4, 16) }),
+  applyTemplate: (id) => {
+    const t = getMakerTemplate(id);
+    if (!t) return;
+    set({
+      activeTemplateId: t.id,
+      basePlateType: t.basePlateType,
+      baseSizeMm: t.baseSizeMm,
+      baseHeight: t.baseHeight,
+      extrusionHeight: t.extrusionHeight,
+      rimHeightMm: t.rimHeightMm,
+      bevelMm: t.bevelMm,
+      cornerRadiusMm: t.cornerRadiusMm,
+    });
+  },
   setShowGrid: (show) => set({ showGrid: show }),
   updateCanvasSize: (width, height) => set({ canvasSize: { width, height } })
 }));

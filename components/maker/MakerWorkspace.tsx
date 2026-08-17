@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMakerStore } from '@/store/useMakerStore';
+import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { useFileStore } from '@/store/useFileStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -18,7 +18,9 @@ import { ImageUploader } from '@/components/maker/ImageUploader';
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary';
 import { Exporter } from '@/components/maker/Exporter';
 import type { ConvertMode } from '@/lib/image-processor';
+import { MakerTemplatePicker } from '@/components/maker/MakerTemplatePicker';
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export';
+import { getMakerTemplate } from '@/lib/maker-templates';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { showToast } from '@/lib/toast-helper';
@@ -36,6 +38,11 @@ export function MakerWorkspace() {
         extrusionHeight, setExtrusionHeight,
         basePlateType, setBasePlateType,
         baseHeight, setBaseHeight,
+        bevelMm, setBevelMm,
+        rimHeightMm, setRimHeightMm,
+        baseSizeMm, setBaseSizeMm,
+        cornerRadiusMm, setCornerRadiusMm,
+        activeTemplateId, applyTemplate,
         showGrid, setShowGrid,
         undo, clearCanvas, triggerExport,
         addImportedSvg,
@@ -81,30 +88,37 @@ export function MakerWorkspace() {
         setActiveTab('3d');
     };
 
+    const sceneInput = () => makerSceneInputFromState({
+        paths,
+        importedSvgs,
+        extrusionHeight,
+        basePlateType,
+        baseHeight,
+        bevelMm,
+        rimHeightMm,
+        baseSizeMm,
+        cornerRadiusMm,
+        canvasSize,
+    });
+
+    const handleApplyTemplate = (id: Parameters<typeof applyTemplate>[0]) => {
+        applyTemplate(id);
+        const t = getMakerTemplate(id);
+        setActiveTab('3d');
+        showToast.success(
+            t ? `${t.name} 적용` : '템플릿 적용',
+            '결과물(3D)에서 판형을 확인한 뒤 로고를 올려 주세요.'
+        );
+    };
+
     const handleRequestQuote = async () => {
-        if (
-            !hasMakerExportContent({
-                paths,
-                importedSvgs,
-                extrusionHeight,
-                basePlateType,
-                baseHeight,
-                canvasSize,
-            })
-        ) {
-            showToast.error('견적 불가', '스케치를 그리거나 로고·SVG를 추가한 뒤 다시 시도해 주세요.');
+        if (!hasMakerExportContent(sceneInput())) {
+            showToast.error('견적 불가', '템플릿을 고르거나 스케치·로고를 추가한 뒤 다시 시도해 주세요.');
             return;
         }
         setIsQuoting(true);
         try {
-            const blob = buildMakerStlBlob({
-                paths,
-                importedSvgs,
-                extrusionHeight,
-                basePlateType,
-                baseHeight,
-                canvasSize,
-            });
+            const blob = buildMakerStlBlob(sceneInput());
             if (!blob) {
                 showToast.error('견적 불가', '3D 메시를 만들지 못했습니다. 결과물(3D) 탭에서 미리보기를 확인해 주세요.');
                 return;
@@ -275,6 +289,8 @@ export function MakerWorkspace() {
                         </button>
                     </div>
 
+                    <MakerTemplatePicker activeId={activeTemplateId} onApply={handleApplyTemplate} />
+
                     {/* 1. 이미지 또는 SVG 입력 */}
                     <div className="bg-teal-500/5 border border-teal-400/20 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-3">
@@ -345,93 +361,100 @@ export function MakerWorkspace() {
 
                     {/* 3D Properties */}
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 relative overflow-hidden group shadow-xl backdrop-blur-md">
-                        {/* Glow effect on hover */}
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none" />
 
-                        <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-6 relative">
+                        <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-2 relative">
                             <span className="inline-flex w-6 h-6 rounded-full bg-primary/30 text-primary text-[11px] font-black items-center justify-center">3</span>
                             <Layers className="w-4 h-4 text-primary" />
-                            3D 돌출 설정
+                            레이어 · 모따기
                         </h3>
+                        <p className="text-[10px] text-white/40 font-bold leading-relaxed break-keep mb-5 relative">
+                            1층 베이스 → 2층 로고 돌출 → 선택 3층 테두리. 수치는 실제 mm에 가깝게 반영됩니다.
+                        </p>
 
-                        <div className="space-y-8 relative">
-                            {/* Extrusion Height */}
+                        <div className="space-y-6 relative">
                             <div>
-                                <div className="flex justify-between items-center mb-4 gap-2">
-                                    <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">돌출 높이 (mm)</label>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={50}
-                                        step={0.5}
-                                        value={extrusionHeight}
-                                        onChange={(e) => {
-                                            const n = Number(e.target.value)
-                                            if (Number.isFinite(n)) setExtrusionHeight(Math.min(50, Math.max(1, n)))
-                                        }}
-                                        className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
-                                        aria-label="돌출 높이 mm"
-                                    />
-                                </div>
-                                <div className="px-1">
-                                    <Slider
-                                        value={[extrusionHeight]}
-                                        min={1} max={50} step={0.5}
-                                        onValueChange={([v]) => setExtrusionHeight(v)}
-                                        className="cursor-pointer"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="h-px bg-white/5" />
-
-                            {/* Base Plate Type */}
-                            <div>
-                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-4 block">바닥 판형 (Base Plate)</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {(['none', 'rect'] as const).map((type) => (
+                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-3 block">바닥 판형</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {([
+                                        ['none', '없음'],
+                                        ['rect', '사각'],
+                                        ['circle', '원형'],
+                                        ['rounded', '라운드'],
+                                    ] as const).map(([type, label]) => (
                                         <Button
                                             key={type}
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setBasePlateType(type)}
-                                            className={`text-[12px] font-bold h-10 border-white/10 transition-all rounded-xl ${basePlateType === type ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-lg shadow-teal-500/20' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                            className={`text-[11px] font-bold h-9 border-white/10 transition-all rounded-xl ${basePlateType === type ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-lg shadow-teal-500/20' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'}`}
                                         >
-                                            {type === 'none' ? '없음' : '사각형'}
+                                            {label}
                                         </Button>
                                     ))}
                                 </div>
-                                {basePlateType === 'rect' && (
-                                    <div className="mt-4">
-                                        <div className="flex justify-between items-center mb-3 gap-2">
-                                            <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">베이스 두께 (mm)</label>
-                                            <input
-                                                type="number"
-                                                min={0.5}
-                                                max={20}
-                                                step={0.5}
-                                                value={baseHeight}
-                                                onChange={(e) => {
-                                                    const n = Number(e.target.value)
-                                                    if (Number.isFinite(n)) setBaseHeight(n)
-                                                }}
-                                                className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
-                                                aria-label="베이스 두께 mm"
-                                            />
-                                        </div>
-                                        <Slider
-                                            value={[baseHeight]}
-                                            min={0.5} max={20} step={0.5}
-                                            onValueChange={([v]) => setBaseHeight(v)}
-                                            className="cursor-pointer"
-                                        />
-                                    </div>
-                                )}
                             </div>
+
+                            {basePlateType !== 'none' && (
+                                <>
+                                    <MmControl
+                                        label="판 크기 (mm)"
+                                        value={baseSizeMm}
+                                        min={10}
+                                        max={80}
+                                        step={1}
+                                        onChange={setBaseSizeMm}
+                                    />
+                                    {basePlateType === 'rounded' && (
+                                        <MmControl
+                                            label="모서리 라운드 (mm)"
+                                            value={cornerRadiusMm}
+                                            min={0.4}
+                                            max={16}
+                                            step={0.2}
+                                            onChange={setCornerRadiusMm}
+                                        />
+                                    )}
+                                    <MmControl
+                                        label="1층 · 베이스 두께 (mm)"
+                                        value={baseHeight}
+                                        min={0.5}
+                                        max={20}
+                                        step={0.5}
+                                        onChange={setBaseHeight}
+                                    />
+                                    <MmControl
+                                        label="3층 · 테두리 림 (mm)"
+                                        value={rimHeightMm}
+                                        min={0}
+                                        max={8}
+                                        step={0.2}
+                                        onChange={setRimHeightMm}
+                                    />
+                                </>
+                            )}
 
                             <div className="h-px bg-white/5" />
 
-                            {/* Grid Visibility */}
+                            <MmControl
+                                label="2층 · 로고/스케치 돌출 (mm)"
+                                value={extrusionHeight}
+                                min={0.4}
+                                max={50}
+                                step={0.2}
+                                onChange={setExtrusionHeight}
+                            />
+                            <MmControl
+                                label="모따기 bevel (mm)"
+                                value={bevelMm}
+                                min={0}
+                                max={3}
+                                step={0.1}
+                                onChange={setBevelMm}
+                            />
+
+                            <div className="h-px bg-white/5" />
+
                             <div className="flex items-center justify-between">
                                 <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">그리드 표시 (Grid)</label>
                                 <button
@@ -617,8 +640,8 @@ export function MakerWorkspace() {
                             <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                             <div className="text-xs text-white/60 leading-relaxed space-y-1">
                                 <span className="text-white/90 font-semibold block mb-1">작업 순서</span>
-                                <p><strong className="text-primary font-medium">1</strong> 이미지 또는 SVG 입력 → <strong className="text-primary font-medium">2</strong> SVG 미리보기 → <strong className="text-primary font-medium">3</strong> 3D 돌출(결과물 탭). <strong className="text-white/80">STL 저장</strong>으로 내보내기.</p>
-                                <p className="text-white/50">SVG 파일 직접 입력 시 변환 없이 사용해 가장 안정적입니다. 스케치(2D)는 그리면 결과물(3D)에서 바로 확인됩니다.</p>
+                                <p><strong className="text-primary font-medium">1</strong> 배지·키캡 템플릿(선택) → <strong className="text-primary font-medium">2</strong> 로고·SVG → <strong className="text-primary font-medium">3</strong> 결과물(3D)에서 레이어·bevel 확인. <strong className="text-white/80">STL 저장</strong> 또는 견적 의뢰.</p>
+                                <p className="text-white/50">실사 입체는 사진→AI 3D 견적, 로고 돌출은 Maker입니다.</p>
                             </div>
                         </div>
                     </div>
@@ -628,6 +651,53 @@ export function MakerWorkspace() {
         </div>
         </>
     );
+}
+
+function MmControl({
+    label,
+    value,
+    min,
+    max,
+    step,
+    onChange,
+}: {
+    label: string
+    value: number
+    min: number
+    max: number
+    step: number
+    onChange: (n: number) => void
+}) {
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-3 gap-2">
+                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">{label}</label>
+                <input
+                    type="number"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={value}
+                    onChange={(e) => {
+                        const n = Number(e.target.value)
+                        if (Number.isFinite(n)) onChange(n)
+                    }}
+                    className="w-16 rounded-lg border border-white/15 bg-black/40 px-2 py-1 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
+                    aria-label={label}
+                />
+            </div>
+            <div className="px-1">
+                <Slider
+                    value={[value]}
+                    min={min}
+                    max={max}
+                    step={step}
+                    onValueChange={([v]) => onChange(v)}
+                    className="cursor-pointer"
+                />
+            </div>
+        </div>
+    )
 }
 
 function ToolbarButton({ active, onClick, icon, label, className = '' }: any) {

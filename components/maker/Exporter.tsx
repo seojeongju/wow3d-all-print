@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useMakerStore } from '@/store/useMakerStore';
+import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { buildMakerStlBlob, downloadMakerStl } from '@/lib/maker-stl-export';
 
 export function Exporter() {
@@ -11,22 +11,30 @@ export function Exporter() {
     const extrusionHeight = useMakerStore((s) => s.extrusionHeight);
     const basePlateType = useMakerStore((s) => s.basePlateType);
     const baseHeight = useMakerStore((s) => s.baseHeight);
+    const bevelMm = useMakerStore((s) => s.bevelMm);
+    const rimHeightMm = useMakerStore((s) => s.rimHeightMm);
+    const baseSizeMm = useMakerStore((s) => s.baseSizeMm);
+    const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
     const canvasSize = useMakerStore((s) => s.canvasSize);
 
     useEffect(() => {
         if (exportTrigger === 0) return;
 
         try {
-            const blob = buildMakerStlBlob({
+            const blob = buildMakerStlBlob(makerSceneInputFromState({
                 paths,
                 importedSvgs,
                 extrusionHeight,
                 basePlateType,
                 baseHeight,
+                bevelMm,
+                rimHeightMm,
+                baseSizeMm,
+                cornerRadiusMm,
                 canvasSize,
-            });
+            }));
             if (!blob) {
-                alert('저장할 모델이 없습니다. 스케치를 그리거나 로고·SVG를 넣어 주세요.');
+                alert('저장할 모델이 없습니다. 템플릿을 고르거나 스케치·로고를 넣어 주세요.');
                 return;
             }
             downloadMakerStl(blob);
@@ -41,6 +49,10 @@ export function Exporter() {
         extrusionHeight,
         basePlateType,
         baseHeight,
+        bevelMm,
+        rimHeightMm,
+        baseSizeMm,
+        cornerRadiusMm,
         canvasSize,
     ]);
 
