@@ -44,7 +44,7 @@ const GUIDE_SOURCE_LABELS: Record<string, string> = {
 };
 
 function QuoteContent() {
-    const { file, baseAnalysis, reset, setFile } = useFileStore();
+    const { file, baseAnalysis, analysisError, reset, setFile } = useFileStore();
     const analysis = baseAnalysis;
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
     // 모바일: 기본은 업로드 패널(견적 설정). 'viewer'만 보이면 FileUpload가 숨겨져 업로드 불가 이슈 발생
@@ -260,6 +260,16 @@ function QuoteContent() {
                                                     <br className="hidden sm:block" />
                                                     최적의 견적을 산출하기 위해 잠시만 기다려 주세요.
                                                 </p>
+                                                {file.size >= 20 * 1024 * 1024 ? (
+                                                    <p className="text-amber-300/90 text-[11px] sm:text-xs font-bold break-keep px-6">
+                                                        대용량 AI 모델은 먼저 치수 근사값으로 견적 화면을 연 뒤, 백그라운드에서 정밀 분석을 이어갑니다.
+                                                    </p>
+                                                ) : null}
+                                                {analysisError ? (
+                                                    <p className="text-rose-300 text-[11px] sm:text-xs font-bold break-keep px-6">
+                                                        {analysisError}
+                                                    </p>
+                                                ) : null}
                                             </div>
                                             <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/10 border border-white/20 flex items-center gap-4 shadow-xl">
                                                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-teal-400/20 border border-teal-400/30 flex items-center justify-center text-teal-400 shrink-0">
@@ -403,6 +413,11 @@ function QuoteContent() {
                                             </button>
                                         </div>
                                         <div className="relative">
+                                            {analysisError ? (
+                                                <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-amber-100/90 leading-relaxed break-keep">
+                                                    {analysisError}
+                                                </div>
+                                            ) : null}
                                             <QuotePanel
                                                 initialQuote={loadedQuote}
                                                 guideSource={guideSource}

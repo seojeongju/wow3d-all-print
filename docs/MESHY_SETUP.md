@@ -67,7 +67,7 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 ### Phase C (수익 골격)
 - 내 생성 히스토리 (`GET /api/meshy/jobs`) · 과거 STL을 견적에 다시 넣기
 - 관리자 보너스 횟수 (`meshy_bonus_credits`) — 일일 1회 소진 후 추가 생성
-- 관리자 `/admin/meshy` — 오늘/7일 사용량·실패율·credits, userId로 보너스 부여
+- 관리자 `/admin/meshy` — 오늘/7일 사용량·실패율·credits, **회원 검색·선택** 후 보너스 부여
 
 ```bash
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_bonus.sql

@@ -24,9 +24,12 @@ interface FileState {
     fileSource: FileSourceMeta
     /** CPU/원본 메쉬 분석 (스케일·회전 미적용) */
     baseAnalysis: GeometryAnalysis | null
+    /** 분석 실패·근사 견적 안내 (null = 정상) */
+    analysisError: string | null
     transform: ModelTransform
     setFile: (file: File, source?: FileSourceMeta) => void
     setAnalysis: (data: GeometryAnalysis) => void
+    setAnalysisError: (message: string | null) => void
     setScalePercent: (percent: number) => void
     rotateAxis90: (axis: 'x' | 'y' | 'z', delta?: number) => void
     setSnapToBed: (snap: boolean) => void
@@ -42,6 +45,7 @@ export const useFileStore = create<FileState>((set) => ({
     fileUrl: null,
     fileSource: { ...EMPTY_SOURCE },
     baseAnalysis: null,
+    analysisError: null,
     transform: { ...DEFAULT_MODEL_TRANSFORM },
     setFile: (file, source) => {
         set((state) => {
@@ -51,11 +55,13 @@ export const useFileStore = create<FileState>((set) => ({
                 fileUrl: URL.createObjectURL(file),
                 fileSource: source ?? { kind: 'upload', meshyJobId: null },
                 baseAnalysis: null,
+                analysisError: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
             }
         })
     },
     setAnalysis: (data) => set({ baseAnalysis: data }),
+    setAnalysisError: (message) => set({ analysisError: message }),
     setScalePercent: (percent) =>
         set((state) => ({
             transform: {
@@ -96,6 +102,7 @@ export const useFileStore = create<FileState>((set) => ({
                 fileUrl: null,
                 fileSource: { ...EMPTY_SOURCE },
                 baseAnalysis: null,
+                analysisError: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
             }
         }),

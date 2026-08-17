@@ -1,12 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, Sparkles, Gift } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { showToast } from '@/lib/toast-helper'
+import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
+import { cn } from '@/lib/utils'
 
 type Stats = {
     today: { total: number; succeeded: number; failed: number; inProgress: number; credits: number }
@@ -26,14 +28,32 @@ type Stats = {
     }>
 }
 
+function recentToSuggestions(recent: Stats['recent']): MeshyUserOption[] {
+    const map = new Map<number, MeshyUserOption>()
+    for (const j of recent) {
+        if (j.user_id == null || map.has(j.user_id)) continue
+        map.set(j.user_id, {
+            id: j.user_id,
+            email: j.user_email || '',
+            name: j.user_name,
+        })
+    }
+    return Array.from(map.values())
+}
+
 export default function AdminMeshyPage() {
     const { token } = useAuthStore()
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState<Stats | null>(null)
-    const [userId, setUserId] = useState('')
+    const [selectedUser, setSelectedUser] = useState<MeshyUserOption | null>(null)
     const [amount, setAmount] = useState('1')
     const [note, setNote] = useState('')
     const [granting, setGranting] = useState(false)
+
+    const quickSuggestions = useMemo(
+        () => (stats ? recentToSuggestions(stats.recent) : []),
+        [stats]
+    )
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -60,10 +80,10 @@ export default function AdminMeshyPage() {
     }, [load])
 
     const grant = async () => {
-        const uid = Number(userId)
+        const uid = selectedUser?.id
         const n = Number(amount)
-        if (!Number.isInteger(uid) || uid < 1) {
-            showToast.error('보너스', '사용자 ID를 입력하세요')
+        if (!uid || !Number.isInteger(uid) || uid < 1) {
+            showToast.error('보너스', '부여할 회원을 검색해서 선택하세요')
             return
         }
         setGranting(true)
@@ -86,12 +106,28 @@ export default function AdminMeshyPage() {
                 `${json.data.user.email}에게 ${json.data.granted}회 추가 (잔여 보너스 ${json.data.quota.bonusRemaining})`
             )
             setNote('')
+            setSelectedUser({
+                ...selectedUser,
+                bonusRemaining: json.data.quota.bonusRemaining,
+                usedToday: json.data.quota.usedToday,
+                remainingDaily: json.data.quota.remainingDaily,
+                remainingTotal: json.data.quota.remainingTotal,
+            })
             await load()
         } catch {
             showToast.error('보너스', '네트워크 오류')
         } finally {
             setGranting(false)
         }
+    }
+
+    const pickFromRecent = (j: Stats['recent'][number]) => {
+        if (j.user_id == null) return
+        setSelectedUser({
+            id: j.user_id,
+            email: j.user_email || '',
+            name: j.user_name,
+        })
     }
 
     const failRate = (s: { total: number; failed: number }) =>
@@ -139,37 +175,50 @@ export default function AdminMeshyPage() {
                     </div>
 
                     <Card className="bg-white/5 border-white/10">
-                        <CardContent className="p-5 space-y-3">
+                        <CardContent className="p-5 space-y-4">
                             <h2 className="text-sm font-black text-white flex items-center gap-2">
                                 <Gift className="w-4 h-4 text-teal-300" />
                                 추가 생성 횟수 부여
                             </h2>
                             <p className="text-[12px] text-white/50 font-bold break-keep">
-                                일일 1회를 쓴 회원에게 보너스 횟수를 줍니다. 결제 연동 전까지 관리자가 수동
-                                지급합니다.
+                                일일 1회를 쓴 회원에게 보너스 횟수를 줍니다. 이메일·이름·연락처·회원 ID로
+                                검색하거나, 아래 최근 작업 목록에서 회원을 클릭해 선택할 수 있습니다.
                             </p>
-                            <div className="flex flex-wrap gap-2">
-                                <Input
-                                    placeholder="user ID"
-                                    value={userId}
-                                    onChange={(e) => setUserId(e.target.value)}
-                                    className="w-28 bg-black/40 border-white/15"
-                                />
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    max={100}
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    className="w-24 bg-black/40 border-white/15"
-                                />
-                                <Input
-                                    placeholder="메모 (선택)"
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    className="flex-1 min-w-[10rem] bg-black/40 border-white/15"
-                                />
-                                <Button type="button" onClick={grant} disabled={granting}>
+
+                            <AdminMeshyUserPicker
+                                token={token}
+                                value={selectedUser?.id ?? null}
+                                onChange={setSelectedUser}
+                                suggestions={quickSuggestions}
+                                disabled={granting}
+                            />
+
+                            <div className="flex flex-wrap items-end gap-2">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-white/40 px-0.5">
+                                        부여 횟수
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="w-24 bg-black/40 border-white/15"
+                                    />
+                                </div>
+                                <div className="space-y-1 flex-1 min-w-[10rem]">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-white/40 px-0.5">
+                                        메모 (선택)
+                                    </label>
+                                    <Input
+                                        placeholder="예: CS 요청 · 이벤트 당첨"
+                                        value={note}
+                                        onChange={(e) => setNote(e.target.value)}
+                                        className="bg-black/40 border-white/15"
+                                    />
+                                </div>
+                                <Button type="button" onClick={grant} disabled={granting || !selectedUser}>
                                     {granting ? <Loader2 className="w-4 h-4 animate-spin" /> : '부여'}
                                 </Button>
                             </div>
@@ -178,7 +227,10 @@ export default function AdminMeshyPage() {
 
                     <Card className="bg-white/5 border-white/10">
                         <CardContent className="p-5 overflow-x-auto">
-                            <h2 className="text-sm font-black text-white mb-3">최근 작업</h2>
+                            <h2 className="text-sm font-black text-white mb-1">최근 작업</h2>
+                            <p className="text-[11px] text-white/40 font-bold mb-3">
+                                행을 클릭하면 해당 회원이 보너스 부여 대상으로 선택됩니다.
+                            </p>
                             <table className="w-full text-left text-[12px]">
                                 <thead className="text-white/40 font-black">
                                     <tr>
@@ -190,27 +242,48 @@ export default function AdminMeshyPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {stats.recent.map((j) => (
-                                        <tr key={j.id} className="border-t border-white/5 text-white/80">
-                                            <td className="py-2 pr-3 font-mono">#{j.id}</td>
-                                            <td className="py-2 pr-3">
-                                                {j.user_name || j.user_email || j.user_id || '-'}
-                                                {j.user_id != null && (
-                                                    <span className="text-white/35 ml-1">#{j.user_id}</span>
+                                    {stats.recent.map((j) => {
+                                        const isSelected =
+                                            j.user_id != null && selectedUser?.id === j.user_id
+                                        return (
+                                            <tr
+                                                key={j.id}
+                                                role={j.user_id != null ? 'button' : undefined}
+                                                tabIndex={j.user_id != null ? 0 : undefined}
+                                                onClick={() => pickFromRecent(j)}
+                                                onKeyDown={(e) => {
+                                                    if (j.user_id != null && (e.key === 'Enter' || e.key === ' ')) {
+                                                        e.preventDefault()
+                                                        pickFromRecent(j)
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    'border-t border-white/5 text-white/80 transition-colors',
+                                                    j.user_id != null &&
+                                                        'cursor-pointer hover:bg-white/5 focus:bg-white/5 focus:outline-none',
+                                                    isSelected && 'bg-teal-500/10'
                                                 )}
-                                            </td>
-                                            <td className="py-2 pr-3">
-                                                {j.status}
-                                                {j.error_message ? (
-                                                    <span className="block text-red-300/80 max-w-xs truncate">
-                                                        {j.error_message}
-                                                    </span>
-                                                ) : null}
-                                            </td>
-                                            <td className="py-2 pr-3">{j.credits_used ?? '-'}</td>
-                                            <td className="py-2 pr-3 whitespace-nowrap">{j.created_at}</td>
-                                        </tr>
-                                    ))}
+                                            >
+                                                <td className="py-2 pr-3 font-mono">#{j.id}</td>
+                                                <td className="py-2 pr-3">
+                                                    {j.user_name || j.user_email || j.user_id || '-'}
+                                                    {j.user_id != null && (
+                                                        <span className="text-white/35 ml-1">#{j.user_id}</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-2 pr-3">
+                                                    {j.status}
+                                                    {j.error_message ? (
+                                                        <span className="block text-red-300/80 max-w-xs truncate">
+                                                            {j.error_message}
+                                                        </span>
+                                                    ) : null}
+                                                </td>
+                                                <td className="py-2 pr-3">{j.credits_used ?? '-'}</td>
+                                                <td className="py-2 pr-3 whitespace-nowrap">{j.created_at}</td>
+                                            </tr>
+                                        )
+                                    })}
                                 </tbody>
                             </table>
                             {stats.recent.length === 0 && (
