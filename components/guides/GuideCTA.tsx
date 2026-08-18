@@ -25,16 +25,16 @@ export default function GuideCTA({
     secondaryHref = '/contact',
     secondaryLabel = '1:1 문의하기',
 }: GuideCTAProps) {
-    const primaryLink =
-        trackingSource || trackingTopic
-            ? {
-                  pathname: primaryHref,
-                  query: {
-                      ...(trackingSource ? { guide_source: trackingSource } : {}),
-                      ...(trackingTopic ? { guide_topic: trackingTopic } : {}),
-                  },
-              }
-            : primaryHref;
+    const primaryLink = (() => {
+        if (!trackingSource && !trackingTopic) return primaryHref;
+
+        const [pathname, search = ''] = primaryHref.split('?');
+        const params = new URLSearchParams(search);
+        if (trackingSource) params.set('guide_source', trackingSource);
+        if (trackingTopic) params.set('guide_topic', trackingTopic);
+        const qs = params.toString();
+        return qs ? `${pathname}?${qs}` : pathname;
+    })();
 
     return (
         <div className="rounded-[2rem] border border-teal-400/20 bg-teal-400/5 p-8 md:p-10 space-y-5">
