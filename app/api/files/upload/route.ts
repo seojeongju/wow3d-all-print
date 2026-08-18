@@ -4,6 +4,7 @@ import { buildQuoteR2Key, sanitizeR2FileName } from '@/lib/r2-quote-file';
 import {
     copyMeshyJobResultToQuote,
     meshyJobOwnedBy,
+    parseMeshyJobIdFromFileName,
     type MeshyJobFileRow,
 } from '@/lib/meshy-r2';
 import { requireAuthOrGuest } from '@/lib/api-utils';
@@ -31,7 +32,11 @@ export async function POST(request: NextRequest) {
         const quoteIdParam = formData.get('quoteId');
         const meshyJobIdParam = formData.get('meshyJobId');
 
-        const meshyJobId = meshyJobIdParam ? parseInt(String(meshyJobIdParam), 10) : NaN;
+        let meshyJobId = meshyJobIdParam ? parseInt(String(meshyJobIdParam), 10) : NaN;
+        if (!Number.isInteger(meshyJobId) || meshyJobId <= 0) {
+            const fromName = file ? parseMeshyJobIdFromFileName(file.name) : null;
+            if (fromName) meshyJobId = fromName;
+        }
         const hasMeshyJob = Number.isInteger(meshyJobId) && meshyJobId > 0;
 
         if (!file && !hasMeshyJob) {
@@ -106,12 +111,24 @@ export async function POST(request: NextRequest) {
         const safeName = sanitizeR2FileName(file.name);
 
         const r2Key = buildQuoteR2Key(quoteId, safeName);
-        const arrayBuffer = await file.arrayBuffer();
-        await env.BUCKET.put(r2Key, arrayBuffer, {
-            httpMetadata: {
-                contentType: file.type || 'application/octet-stream',
-            },
-        });
+        try {
+            const payload =
+                typeof file.stream === 'function' ? file.stream() : await file.arrayBuffer();
+            await env.BUCKET.put(r2Key, payload, {
+                httpMetadata: {
+                    contentType: file.type || 'application/octet-stream',
+                },
+            });
+        } catch (e) {
+            console.error('[files/upload] R2 put failed', e);
+            return NextResponse.json(
+                {
+                    error: '모델 파일이 커서 업로드에 실패했습니다. 잠시 후 다시 시도하거나 관리자에게 문의해 주세요.',
+                    quoteId,
+                },
+                { status: 500 }
+            );
+        }
 
         await env.DB.prepare(
             'UPDATE quotes SET file_url = ?, file_name = COALESCE(?, file_name) WHERE id = ?'
@@ -128,7 +145,8 @@ export async function POST(request: NextRequest) {
             },
         });
     } catch (e) {
+        const message = e instanceof Error ? e.message : '파일 업로드 실패';
         console.error('POST /api/files/upload', e);
-        return NextResponse.json({ error: '파일 업로드 실패' }, { status: 500 });
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

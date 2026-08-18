@@ -1,8 +1,8 @@
 import { buildQuoteR2Key, sanitizeR2FileName } from '@/lib/r2-quote-file'
 
-/** meshy-123.stl 형식 파일명에서 Meshy job ID 추출 */
+/** meshy-123.stl / mesh-123.stl 형식 파일명에서 Meshy job ID 추출 */
 export function parseMeshyJobIdFromFileName(fileName?: string | null): number | null {
-    const m = (fileName || '').trim().match(/^meshy-(\d+)\.stl$/i)
+    const m = (fileName || '').trim().match(/^meshy?-(\d+)\.stl$/i)
     if (!m) return null
     const id = parseInt(m[1], 10)
     return Number.isInteger(id) && id > 0 ? id : null
@@ -77,16 +77,28 @@ export async function copyMeshyJobResultToQuote(
     }
 
     const source = await env.BUCKET.get(job.result_file_key)
-    if (!source?.body) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
+    if (!source) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
 
     const fileName = sanitizeR2FileName(preferredFileName || job.result_file_name || `meshy-${jobId}.stl`)
     const destKey = buildQuoteR2Key(quoteId, fileName)
 
-    await env.BUCKET.put(destKey, source.body, {
-        httpMetadata: {
-            contentType: source.httpMetadata?.contentType || 'model/stl',
-        },
-    })
+    try {
+        if (!source.body) {
+            return { error: 'Meshy 모델 파일 데이터가 비어 있습니다', status: 404 }
+        }
+        const payload = await new Response(source.body as BodyInit).arrayBuffer()
+        if (!payload.byteLength) {
+            return { error: 'Meshy 모델 파일 데이터가 비어 있습니다', status: 404 }
+        }
+        await env.BUCKET.put(destKey, payload, {
+            httpMetadata: {
+                contentType: source.httpMetadata?.contentType || 'model/stl',
+            },
+        })
+    } catch (e) {
+        console.error('[meshy-r2] copy to quote failed', e)
+        return { error: 'Meshy 모델을 견적 저장소로 복사하지 못했습니다', status: 500 }
+    }
 
     await env.DB.prepare(
         `UPDATE quotes SET file_url = ?, file_name = COALESCE(?, file_name) WHERE id = ?`

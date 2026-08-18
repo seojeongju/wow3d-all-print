@@ -15,6 +15,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
+import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
 import type { Quote, QuoteData } from '@/lib/types'
 import {
     calculateFdmQuote,
@@ -308,11 +309,18 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             let fileUrl: string | null = null;
             let currentQuoteId = uploadedQuoteId;
 
-            // 이미 업로드된 파일이 없고 새로 업로드해야 하는 경우
-            if (!currentQuoteId) {
+            const meshyJobId =
+                fileSource.meshyJobId ?? parseMeshyJobIdFromFileName(file.name) ?? null;
+            // Meshy는 서버 R2 복사 — quoteId가 있어도 file_url 없을 때 재시도 가능
+            const shouldUploadFile = !currentQuoteId || meshyJobId != null;
+
+            if (shouldUploadFile) {
                 try {
-                    if (fileSource.kind === 'meshy-photo' && fileSource.meshyJobId) {
-                        uploadFormData.append('meshyJobId', String(fileSource.meshyJobId));
+                    if (meshyJobId) {
+                        uploadFormData.append('meshyJobId', String(meshyJobId));
+                    }
+                    if (currentQuoteId) {
+                        uploadFormData.append('quoteId', String(currentQuoteId));
                     }
                     const uploadRes = await fetch('/api/files/upload', {
                         method: 'POST',
@@ -326,14 +334,23 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                         currentQuoteId = uploadData.data?.quoteId || null;
                         setUploadedQuoteId(currentQuoteId);
                     } else {
-                        const errBody = await uploadRes.json().catch(() => ({})) as { error?: string };
-                        console.warn('파일 업로드 실패, fileUrl 없이 견적 저장 진행', errBody.error);
-                        if (fileSource.kind === 'meshy-photo') {
-                            throw new Error(errBody.error || 'AI 3D 모델 파일 저장에 실패했습니다. 다시 시도해 주세요.');
+                        const errBody = await uploadRes.json().catch(() => ({})) as {
+                            error?: string
+                            quoteId?: number
+                        };
+                        if (errBody.quoteId && !currentQuoteId) {
+                            currentQuoteId = errBody.quoteId;
+                            setUploadedQuoteId(errBody.quoteId);
+                        }
+                        const msg = errBody.error || '파일 업로드 실패';
+                        console.warn('파일 업로드 실패', msg);
+                        if (fileSource.kind === 'meshy-photo' || meshyJobId) {
+                            throw new Error(msg || 'AI 3D 모델 파일 저장에 실패했습니다. 다시 시도해 주세요.');
                         }
                     }
                 } catch (uploadError) {
                     console.error('파일 업로드 중 오류:', uploadError);
+                    throw uploadError;
                 }
             }
 
