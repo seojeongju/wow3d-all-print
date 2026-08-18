@@ -6,6 +6,7 @@ import {
     parseMeshyJobIdFromFileName,
     resolveMeshyR2KeyCandidates,
 } from '@/lib/meshy-r2';
+import { bakeStlToTargetMm, parseModelTransformJson, quoteSizedFileName } from '@/lib/stl-bake';
 
 /**
  * GET /api/admin/orders/[id]/file - 주문 항목의 모델링 파일 다운로드 (관리자)
@@ -49,7 +50,8 @@ export async function GET(
     let quoteBindings: (string | number)[];
     if (quoteId) {
       quoteQuery = `
-                SELECT q.id as quote_id, q.file_url, q.file_name
+                SELECT q.id as quote_id, q.file_url, q.file_name,
+                       q.dimensions_x, q.dimensions_y, q.dimensions_z, q.model_transform
                 FROM order_items oi
                 JOIN quotes q ON oi.quote_id = q.id
                 WHERE oi.order_id = ? AND q.id = ?
@@ -58,7 +60,8 @@ export async function GET(
       quoteBindings = [numId, quoteId];
     } else {
       quoteQuery = `
-                SELECT q.id as quote_id, q.file_url, q.file_name
+                SELECT q.id as quote_id, q.file_url, q.file_name,
+                       q.dimensions_x, q.dimensions_y, q.dimensions_z, q.model_transform
                 FROM order_items oi
                 JOIN quotes q ON oi.quote_id = q.id
                 WHERE oi.order_id = ?
@@ -67,13 +70,21 @@ export async function GET(
       quoteBindings = [numId];
     }
 
-    const quote = (await env.DB.prepare(quoteQuery)
-      .bind(...quoteBindings)
-      .first()) as {
+    let quote: {
       quote_id?: number;
       file_url?: string | null;
       file_name?: string | null;
-    } | null;
+      dimensions_x?: number | null;
+      dimensions_y?: number | null;
+      dimensions_z?: number | null;
+      model_transform?: string | null;
+    } | null = null;
+    try {
+      quote = (await env.DB.prepare(quoteQuery).bind(...quoteBindings).first()) as typeof quote;
+    } catch {
+      const fallbackQuery = quoteQuery.replace(', q.model_transform', '');
+      quote = (await env.DB.prepare(fallbackQuery).bind(...quoteBindings).first()) as typeof quote;
+    }
 
     if (!quote?.quote_id) {
       return NextResponse.json({ error: '주문 항목을 찾을 수 없습니다' }, { status: 404 });
@@ -147,18 +158,36 @@ export async function GET(
       return NextResponse.json({ error: '파일 본문을 읽을 수 없습니다' }, { status: 500 });
     }
 
-    const fileName = quote.file_name || usedKey.split('/').pop() || 'model.stl';
+    const target = {
+      x: Number(quote.dimensions_x) || 0,
+      y: Number(quote.dimensions_y) || 0,
+      z: Number(quote.dimensions_z) || 0,
+    };
+    let outBody: BodyInit = fileBody as BodyInit;
+    let outLen = r2Object.size ?? r2Object.httpMetadata?.contentLength;
+    let fileName = quote.file_name || usedKey.split('/').pop() || 'model.stl';
+
+    if (target.x > 0.05 && target.y > 0.05 && target.z > 0.05) {
+      try {
+        const raw = await new Response(fileBody as BodyInit).arrayBuffer();
+        const baked = bakeStlToTargetMm(raw, target, parseModelTransformJson(quote.model_transform));
+        outBody = baked;
+        outLen = baked.byteLength;
+        fileName = quoteSizedFileName(quote.file_name || fileName, target);
+      } catch (e) {
+        console.warn('[admin/orders/file] STL bake failed, returning original', e);
+      }
+    }
+
     const headers = new Headers();
     headers.set('Content-Type', r2Object.httpMetadata?.contentType || 'application/octet-stream');
-    // RFC 5987: 한글·특수문자 파일명
     headers.set(
       'Content-Disposition',
       `attachment; filename="model.stl"; filename*=UTF-8''${encodeURIComponent(fileName)}`
     );
-    const size = r2Object.size ?? r2Object.httpMetadata?.contentLength;
-    if (size != null) headers.set('Content-Length', String(size));
+    if (outLen != null) headers.set('Content-Length', String(outLen));
 
-    return new NextResponse(fileBody, { headers });
+    return new NextResponse(outBody, { headers });
   } catch (e) {
     console.error('GET /api/admin/orders/[id]/file', e);
     return NextResponse.json({ error: '파일 다운로드 실패' }, { status: 500 });

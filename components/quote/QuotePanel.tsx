@@ -89,6 +89,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
     const setSavedQuoteId = useFileStore((s) => s.setSavedQuoteId)
+    const modelTransform = useFileStore((s) => s.transform)
     const rawAnalysis = useEffectiveAnalysis()
     const analysis = useMemo(
         () => (rawAnalysis ? sanitizeGeometryAnalysis(rawAnalysis) : null),
@@ -388,6 +389,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 estimatedTimeHours,
                 guideSource: guideSource || undefined,
                 guideTopic: guideTopic || undefined,
+                modelTransform,
             }
 
             // 설정값 변경 여부 확인용 키 생성
@@ -400,7 +402,14 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 resinType,
                 slaLayerHeight,
                 postProcessing,
-                totalPrice
+                totalPrice,
+                scalePercent: modelTransform.scalePercent,
+                rotX: modelTransform.rotX,
+                rotY: modelTransform.rotY,
+                rotZ: modelTransform.rotZ,
+                dx: analysis.boundingBox.x,
+                dy: analysis.boundingBox.y,
+                dz: analysis.boundingBox.z,
             });
             setLastSavedConfig(configKey);
 
@@ -464,7 +473,14 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             resinType,
             slaLayerHeight,
             postProcessing,
-            totalPrice
+            totalPrice,
+            scalePercent: modelTransform.scalePercent,
+            rotX: modelTransform.rotX,
+            rotY: modelTransform.rotY,
+            rotZ: modelTransform.rotZ,
+            dx: analysis.boundingBox.x,
+            dy: analysis.boundingBox.y,
+            dz: analysis.boundingBox.z,
         });
 
         let savedQuote;

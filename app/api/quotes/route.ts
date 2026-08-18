@@ -289,6 +289,23 @@ export async function POST(request: NextRequest) {
                 ? savedId
                 : (runResult.meta?.last_row_id ?? 0)
 
+            if (quoteId > 0 && body.modelTransform) {
+                try {
+                    const payload = JSON.stringify({
+                        scalePercent: Number(body.modelTransform.scalePercent) || 100,
+                        rotX: Number(body.modelTransform.rotX) || 0,
+                        rotY: Number(body.modelTransform.rotY) || 0,
+                        rotZ: Number(body.modelTransform.rotZ) || 0,
+                        snapToBed: body.modelTransform.snapToBed !== false,
+                    })
+                    await env.DB.prepare('UPDATE quotes SET model_transform = ? WHERE id = ?')
+                        .bind(payload, quoteId)
+                        .run()
+                } catch {
+                    /* model_transform 컬럼 없는 구 DB */
+                }
+            }
+
             return successResponse(
                 {
                     id: quoteId,

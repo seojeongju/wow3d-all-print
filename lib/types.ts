@@ -35,6 +35,15 @@ export interface QuoteData {
     // 가이드 유입 정보
     guideSource?: string;
     guideTopic?: string;
+
+    /** 뷰어에서 적용한 스케일·90° 회전 — 관리자 STL 다운로드 시 베이크 */
+    modelTransform?: {
+        scalePercent: number;
+        rotX: number;
+        rotY: number;
+        rotZ: number;
+        snapToBed?: boolean;
+    };
 }
 
 export interface Quote extends QuoteData {
