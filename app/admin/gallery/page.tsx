@@ -543,7 +543,26 @@ export default function AdminGalleryPage() {
 
                         <div className="grid gap-2">
                             <Label className="text-zinc-300">태그 (선택)</Label>
-                            <Input placeholder="쉼표(,)로 구분 (예: photo-to-3d, 시제품, 피규어)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
+                            <div className="flex gap-2">
+                                <Input placeholder="쉼표(,)로 구분 (예: photo-to-3d, 시제품, 피규어)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400 flex-1" />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="shrink-0 border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/10 text-xs whitespace-nowrap"
+                                    onClick={() => {
+                                        const hasTag = formData.tags.toLowerCase().includes('photo-to-3d');
+                                        if (hasTag) return;
+                                        setFormData({
+                                            ...formData,
+                                            tags: formData.tags.trim()
+                                                ? `${formData.tags.trim()}, photo-to-3d`
+                                                : 'photo-to-3d',
+                                        });
+                                    }}
+                                >
+                                    + photo-to-3d
+                                </Button>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>

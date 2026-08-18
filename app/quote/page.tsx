@@ -7,7 +7,7 @@ import QuotePanel from "@/components/quote/QuotePanel";
 import QuoteSourceChooser, { type QuoteEntryMode } from "@/components/quote/QuoteSourceChooser";
 import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, Suspense, useCallback, type DragEvent } from "react";
 import { useFileStore } from "@/store/useFileStore";
@@ -17,7 +17,7 @@ import { getModelFileFromDataTransfer } from "@/lib/model-file";
 import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
 
-const quickQuoteFaqs = [
+const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: string }[] = [
     {
         q: "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
         a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없다면 제품 사진으로 AI 모델링 후 견적할 수 있습니다.",
@@ -28,7 +28,9 @@ const quickQuoteFaqs = [
     },
     {
         q: "사진→AI 3D는 로그인·이용 한도가 있나요?",
-        a: "로그인 회원 기준 하루 1회(한국 시간)입니다. 생성에 실패하면 횟수가 차감되지 않습니다. 자세한 촬영 방법은 사진→3D 가이드를 참고하세요.",
+        a: "로그인 회원 기준 하루 1회(한국 시간)입니다. 생성에 실패하면 횟수가 차감되지 않습니다.",
+        guideHref: "/guides/photo-to-3d-printing-quote",
+        guideLabel: "사진→3D 촬영·견적 가이드",
     },
     {
         q: "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
@@ -39,6 +41,23 @@ const quickQuoteFaqs = [
         a: "일반적인 모델은 자동견적이 유효하지만, 복잡한 형상이나 특수 후가공이 필요한 경우에는 관리자 검토 후 수정견적으로 안내될 수 있습니다.",
     },
 ];
+
+function QuickQuoteFaqCard({ item }: { item: (typeof quickQuoteFaqs)[number] }) {
+    return (
+        <div className="p-4 sm:p-5 rounded-[1.25rem] bg-white/5 border border-white/10">
+            <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
+            <p className="mt-2 text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
+            {item.guideHref && item.guideLabel ? (
+                <Link
+                    href={item.guideHref}
+                    className="inline-flex items-center gap-1 mt-2.5 text-[11px] sm:text-xs font-black text-indigo-300 hover:text-indigo-200"
+                >
+                    {item.guideLabel} →
+                </Link>
+            ) : null}
+        </div>
+    );
+}
 
 const GUIDE_SOURCE_LABELS: Record<string, string> = {
     prototypes: '시제품용 소재 추천',
@@ -330,11 +349,22 @@ function QuoteContent() {
                                                     <h2 className="text-sm sm:text-base font-black text-white">자동견적 전에 많이 묻는 질문</h2>
                                                 </div>
                                                 {quickQuoteFaqs.map((item) => (
-                                                    <div key={item.q} className="p-4 sm:p-5 rounded-[1.25rem] bg-white/5 border border-white/10">
-                                                        <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
-                                                        <p className="mt-2 text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
-                                                    </div>
+                                                    <QuickQuoteFaqCard key={item.q} item={item} />
                                                 ))}
+                                                <Link
+                                                    href="/guides/photo-to-3d-printing-quote"
+                                                    className="flex items-start gap-4 p-5 rounded-[1.5rem] bg-indigo-500/10 border border-indigo-400/25 hover:border-indigo-400/40 transition-all"
+                                                >
+                                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
+                                                        <Camera className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진으로 견적</h3>
+                                                        <p className="text-[11px] sm:text-xs text-white/50 font-bold leading-relaxed break-keep mt-1">
+                                                            촬영 방법·한도·Maker와의 차이를 가이드에서 확인하세요.
+                                                        </p>
+                                                    </div>
+                                                </Link>
                                             </div>
                                         </motion.div>
                                     ) : entryMode === 'photo' ? (
@@ -426,11 +456,22 @@ function QuoteContent() {
                                                     <h2 className="text-sm sm:text-base font-black text-white">자동견적 전에 많이 묻는 질문</h2>
                                                 </div>
                                                 {quickQuoteFaqs.map((item) => (
-                                                    <div key={item.q} className="p-4 sm:p-5 rounded-[1.25rem] bg-white/5 border border-white/10">
-                                                        <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
-                                                        <p className="mt-2 text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
-                                                    </div>
+                                                    <QuickQuoteFaqCard key={item.q} item={item} />
                                                 ))}
+                                                <Link
+                                                    href="/guides/photo-to-3d-printing-quote"
+                                                    className="flex items-start gap-4 p-5 rounded-[1.5rem] bg-indigo-500/10 border border-indigo-400/25 hover:border-indigo-400/40 transition-all"
+                                                >
+                                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
+                                                        <Camera className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진으로 견적</h3>
+                                                        <p className="text-[11px] sm:text-xs text-white/50 font-bold leading-relaxed break-keep mt-1">
+                                                            촬영 방법·한도·Maker와의 차이를 가이드에서 확인하세요.
+                                                        </p>
+                                                    </div>
+                                                </Link>
                                             </div>
                                         </motion.div>
                                     )}

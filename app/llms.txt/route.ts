@@ -31,6 +31,8 @@ export function GET() {
         `- Print Methods: ${SITE_URL}/print-methods`,
         `- Materials: ${SITE_URL}/materials`,
         `- Gallery: ${SITE_URL}/gallery`,
+        `- Gallery Photo to 3D: ${absoluteUrl('/gallery?tag=photo-to-3d')}`,
+        `- Login (Photo quote): ${SITE_URL}/auth?return=${encodeURIComponent('/quote?entry=photo')}`,
         `- Expert / Showcase: ${SITE_URL}/expert`,
         `- FAQ: ${SITE_URL}/qna`,
         `- Contact: ${SITE_URL}/contact`,

@@ -24,6 +24,13 @@ MESHY_API_KEY=msy_xxxxxxxx
 
 ```bash
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_jobs.sql
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_gallery_source_image.sql
+```
+
+갤러리 Before/After(원본 사진) 쇼케이스 예시 데이터:
+
+```bash
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/seed_photo_to_3d_gallery.sql
 ```
 
 ## 4. 동작 확인
@@ -78,6 +85,24 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_mes
 - **멀티뷰**: 정면 + 선택 우측·뒷면·좌측 → Meshy Multi-Image to 3D
 - 생성 완료 시 정면·우·뒤·좌 썸네일 미리보기
 - 견적 화면 **출력 적합성 경고**(얇은 벽·작은 부피·오버행) — 자동 수리는 하지 않음
+
+## SEO · 쇼케이스 · 로그인 연동
+
+| 페이지 | URL |
+|--------|-----|
+| 사진→3D 견적 | `/quote?entry=photo` |
+| 사진→3D 가이드 | `/guides/photo-to-3d-printing-quote` |
+| 사진→3D 서비스 | `/services/photo-to-3d` |
+| 갤러리 Before/After | `/gallery?tag=photo-to-3d` |
+| 로그인 (사진 견적 유도) | `/auth?return=/quote?entry=photo` |
+
+### 갤러리 Before/After 등록 (`/admin/gallery`)
+
+1. **출력물·AI 3D 결과** + **원본 사진 Before** 업로드
+2. 태그에 `photo-to-3d` 포함
+3. 노출 ON → 가이드·서비스 쇼케이스·갤러리 필터에 자동 반영
+
+실제 Meshy 작업 사례가 생기면 위 형식으로 교체·추가하세요.
 
 ## 다음 (미구현)
 
