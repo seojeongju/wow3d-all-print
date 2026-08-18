@@ -10,6 +10,14 @@ export type QnAItem = {
 
 export const CURATED_AEO_QNAS: QnAItem[] = [
     {
+        id: -15,
+        question: '사진(이미지) 파일을 3D 모델링으로 변환할 수 있나요?',
+        answer:
+            '가능합니다. WOW3D에서는 JPG·PNG 제품 사진을 올리면 AI가 입체 3D 모델(STL)로 변환하고, 바로 3D 프린팅 자동견적·출력 주문까지 이어집니다. 자동견적에서 「3D 모델이 없어요」를 선택한 뒤 정면 사진을 업로드하면 됩니다. 우·뒤·좌 추가 사진을 함께 올리면 형상 정확도가 올라갈 수 있습니다. 로그인 회원 기준 하루 1회(한국 시간) 이용할 수 있으며, 조립 공차·정밀 치수가 중요한 부품은 STL 또는 STEP 업로드를 권장합니다.',
+        category: 'tech',
+        display_order: 0,
+    },
+    {
         id: -1,
         question: '3D 프린팅 견적은 어떤 기준으로 계산되나요?',
         answer:
@@ -83,9 +91,9 @@ export const CURATED_AEO_QNAS: QnAItem[] = [
     },
     {
         id: -10,
-        question: '사진으로 AI 3D 모델링은 어떤 사진이 좋나요?',
+        question: '사진 3D 모델링은 어떤 사진이 좋나요?',
         answer:
-            '물체가 화면 중앙에 크게, 단색·밝은 배경, 한 장에 한 물체, 그림자·반사가 적은 사진이 좋습니다. 우·뒤·좌 추가 사진을 올리면 형상 정확도가 올라갈 수 있습니다.',
+            '물체가 화면 중앙에 크게, 단색·밝은 배경, 한 장에 한 물체, 그림자·반사가 적은 사진이 좋습니다. JPG 또는 PNG(최대 8MB)를 지원하며, 우·뒤·좌 추가 사진을 올리면 형상 정확도가 올라갈 수 있습니다. 생성된 STL로 바로 자동견적·출력 주문을 진행할 수 있습니다.',
         category: 'tech',
         display_order: 10,
     },
@@ -150,4 +158,15 @@ export async function getPublishedQnas(): Promise<QnAItem[]> {
         console.warn('getPublishedQnas failed', e);
         return CURATED_AEO_QNAS;
     }
+}
+
+function isPhotoTo3DFaq(item: QnAItem) {
+    return /사진|이미지/.test(item.question) && /3D|3d/.test(item.question);
+}
+
+/** 홈·FAQ JSON-LD 상단에 사진→3D 항목이 빠지지 않도록 고정 */
+export function pickVisibleFaqItems(items: QnAItem[], limit: number): QnAItem[] {
+    const photo = items.filter(isPhotoTo3DFaq);
+    const rest = items.filter((item) => !isPhotoTo3DFaq(item));
+    return dedupeQnas([...photo.slice(0, 2), ...rest]).slice(0, limit);
 }
