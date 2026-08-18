@@ -98,6 +98,25 @@ export async function POST(request: NextRequest) {
             .bind(body.quoteId, userId ? parseInt(userId) : sessionId)
             .first();
 
+        // 같은 파일명의 다른 견적(FDM↔SLA 전환으로 ID가 갈라진 경우)은 장바구니에서 제거
+        try {
+            const ownerClause = userId ? 'user_id = ?' : 'session_id = ?';
+            const ownerVal = userId ? parseInt(userId) : sessionId;
+            await env.DB.prepare(
+                `DELETE FROM cart
+                 WHERE ${ownerClause}
+                   AND quote_id != ?
+                   AND quote_id IN (
+                     SELECT q.id FROM quotes q
+                     WHERE q.file_name = (SELECT file_name FROM quotes WHERE id = ?)
+                   )`
+            )
+                .bind(ownerVal, body.quoteId, body.quoteId)
+                .run();
+        } catch (e) {
+            console.warn('[cart] same-file dedupe skipped', e);
+        }
+
         if (existingItem) {
             const updateOnly = body.updateOnly === true;
             if (updateOnly) {

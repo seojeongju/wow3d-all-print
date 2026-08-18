@@ -22,6 +22,8 @@ export type FileSourceMeta = {
 interface FileState {
     file: File | null
     fileUrl: string | null
+    /** 현재 파일에 연결된 견적 ID — FDM/SLA 전환 시 같은 행을 덮어씀 */
+    savedQuoteId: number | null
     /** 업로드 출처 — AI 사진 생성 시 견적 화면 안내 */
     fileSource: FileSourceMeta
     /** CPU/원본 메쉬 분석 (스케일·회전 미적용) */
@@ -30,6 +32,7 @@ interface FileState {
     analysisError: string | null
     transform: ModelTransform
     setFile: (file: File, source?: FileSourceMeta) => void
+    setSavedQuoteId: (id: number | null) => void
     setAnalysis: (data: GeometryAnalysis) => void
     setAnalysisError: (message: string | null) => void
     setScalePercent: (percent: number) => void
@@ -45,6 +48,7 @@ const EMPTY_SOURCE: FileSourceMeta = { kind: null, meshyJobId: null }
 export const useFileStore = create<FileState>((set) => ({
     file: null,
     fileUrl: null,
+    savedQuoteId: null,
     fileSource: { ...EMPTY_SOURCE },
     baseAnalysis: null,
     analysisError: null,
@@ -57,6 +61,7 @@ export const useFileStore = create<FileState>((set) => ({
             return {
                 file,
                 fileUrl: URL.createObjectURL(file),
+                savedQuoteId: null,
                 fileSource: source ?? { kind: 'upload', meshyJobId: null },
                 baseAnalysis: null,
                 analysisError: null,
@@ -64,6 +69,7 @@ export const useFileStore = create<FileState>((set) => ({
             }
         })
     },
+    setSavedQuoteId: (id) => set({ savedQuoteId: id }),
     setAnalysis: (data) => set({ baseAnalysis: data }),
     setAnalysisError: (message) => set({ analysisError: message }),
     setScalePercent: (percent) =>
@@ -106,6 +112,7 @@ export const useFileStore = create<FileState>((set) => ({
             return {
                 file: null,
                 fileUrl: null,
+                savedQuoteId: null,
                 fileSource: { ...EMPTY_SOURCE },
                 baseAnalysis: null,
                 analysisError: null,

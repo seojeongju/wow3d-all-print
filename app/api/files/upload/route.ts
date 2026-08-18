@@ -57,6 +57,21 @@ export async function POST(request: NextRequest) {
               ? `meshy-${meshyJobId}.stl`
               : 'model.stl';
 
+        if (!quoteId && hasMeshyJob) {
+            try {
+                const linked = await env.DB.prepare(
+                    `SELECT quote_id FROM meshy_jobs WHERE id = ? AND quote_id IS NOT NULL`
+                )
+                    .bind(meshyJobId)
+                    .first<{ quote_id?: number | null }>();
+                if (linked?.quote_id && Number(linked.quote_id) > 0) {
+                    quoteId = Number(linked.quote_id);
+                }
+            } catch {
+                /* quote_id 컬럼 없는 구 DB */
+            }
+        }
+
         if (!quoteId) {
             const uid = auth.isGuest ? null : auth.userId;
             const sessionId = auth.isGuest ? auth.sessionId : null;

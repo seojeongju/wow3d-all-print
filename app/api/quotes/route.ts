@@ -284,9 +284,14 @@ export async function POST(request: NextRequest) {
             const r = runResult;
             if (r && r.success === false && r.error) throw new Error(r.error);
 
+            const savedId = body.id ? Number(body.id) : 0
+            const quoteId = savedId > 0
+                ? savedId
+                : (runResult.meta?.last_row_id ?? 0)
+
             return successResponse(
                 {
-                    id: runResult.meta?.last_row_id ?? 0,
+                    id: quoteId,
                     sessionId: sessionId || undefined,
                     totalPrice,
                     estimatedTimeHours,

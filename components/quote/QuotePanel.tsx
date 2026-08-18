@@ -86,11 +86,12 @@ const defaultQuoteDetail = {
 export default function QuotePanel({ embedded = false, initialQuote, guideSource, guideTopic }: QuotePanelProps) {
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
+    const savedQuoteId = useFileStore((s) => s.savedQuoteId)
+    const setSavedQuoteId = useFileStore((s) => s.setSavedQuoteId)
     const analysis = useEffectiveAnalysis()
     const { addToCart, items: cartItems } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
     const [isSaving, setIsSaving] = useState(false)
-    const [uploadedQuoteId, setUploadedQuoteId] = useState<number | null>(null)
     const [lastSavedConfig, setLastSavedConfig] = useState<string>('')
     const [printMethod, setPrintMethod] = useState<PrintMethod>('fdm')
     const [fdmMaterial, setFdmMaterial] = useState('')
@@ -110,6 +111,11 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     useEffect(() => {
         if (!initialQuote) return
 
+        const loadedId = Number((initialQuote as { id?: number }).id)
+        if (Number.isInteger(loadedId) && loadedId > 0) {
+            setSavedQuoteId(loadedId)
+        }
+
         if (initialQuote.print_method) setPrintMethod(initialQuote.print_method as PrintMethod)
 
         if (initialQuote.print_method === 'fdm') {
@@ -123,12 +129,6 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
         }
     }, [initialQuote])
-
-    // 새 파일·AI 3D 작업 시 이전 견적 ID 초기화
-    useEffect(() => {
-        setUploadedQuoteId(null)
-        setLastSavedConfig('')
-    }, [file?.name, file?.size, fileSource.meshyJobId])
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -307,7 +307,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             }
 
             let fileUrl: string | null = null;
-            let currentQuoteId = uploadedQuoteId;
+            let currentQuoteId = savedQuoteId;
 
             const meshyJobId =
                 fileSource.meshyJobId ?? parseMeshyJobIdFromFileName(file.name) ?? null;
@@ -332,7 +332,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                         const uploadData = await uploadRes.json() as UploadResponse;
                         fileUrl = uploadData.data?.fileUrl || null;
                         currentQuoteId = uploadData.data?.quoteId || null;
-                        setUploadedQuoteId(currentQuoteId);
+                        if (currentQuoteId) setSavedQuoteId(currentQuoteId);
                     } else {
                         const errBody = await uploadRes.json().catch(() => ({})) as {
                             error?: string
@@ -340,7 +340,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                         };
                         if (errBody.quoteId && !currentQuoteId) {
                             currentQuoteId = errBody.quoteId;
-                            setUploadedQuoteId(errBody.quoteId);
+                            setSavedQuoteId(errBody.quoteId);
                         }
                         const msg = errBody.error || '파일 업로드 실패';
                         console.warn('파일 업로드 실패', msg);
@@ -419,7 +419,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
 
             // data.id가 위에서 전달한 currentQuoteId와 같을 것입니다 (업데이트됨)
             const finalQuoteId = data.id || currentQuoteId;
-            if (finalQuoteId) setUploadedQuoteId(finalQuoteId);
+            if (finalQuoteId) setSavedQuoteId(finalQuoteId);
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {
@@ -461,8 +461,8 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
 
         let savedQuote;
         // 설정이 바뀌지 않았고 이미 저장된 ID가 있으면 재사용
-        if (uploadedQuoteId && configKey === lastSavedConfig) {
-            savedQuote = { id: uploadedQuoteId };
+        if (savedQuoteId && configKey === lastSavedConfig) {
+            savedQuote = { id: savedQuoteId };
         } else {
             savedQuote = await handleSaveQuote();
         }
@@ -479,7 +479,12 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 headers['X-Session-ID'] = sid || ''
             }
 
-            const alreadyInCart = cartItems.some((item) => item.quoteId === savedQuote.id)
+            const alreadyInCart = cartItems.some((item) => {
+                if (item.quoteId === savedQuote.id) return true
+                const existingName = (item.quote?.fileName || '').trim().toLowerCase()
+                const nextName = (file.name || '').trim().toLowerCase()
+                return Boolean(existingName && nextName && existingName === nextName)
+            })
             const resolvedTotalPrice =
                 typeof savedQuote.totalPrice === 'number' && savedQuote.totalPrice > 0
                     ? savedQuote.totalPrice

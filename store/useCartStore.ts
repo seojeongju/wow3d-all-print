@@ -25,20 +25,25 @@ export const useCartStore = create<CartState>()(
             items: [],
 
             addToCart: (quote, quantity = 1, mergeQuantity = true) => set((state) => {
-                // 이미 장바구니에 있는지 확인
-                const existingItemIndex = state.items.findIndex(
-                    item => item.quoteId === quote.id
-                );
+                const sameModelIndex = state.items.findIndex((item) => {
+                    if (item.quoteId === quote.id) return true
+                    const existingName = (item.quote?.fileName || '').trim().toLowerCase()
+                    const nextName = (quote.fileName || '').trim().toLowerCase()
+                    return Boolean(existingName && nextName && existingName === nextName)
+                })
 
-                if (existingItemIndex >= 0) {
+                if (sameModelIndex >= 0) {
                     const newItems = [...state.items];
-                    const existing = newItems[existingItemIndex];
-                    newItems[existingItemIndex] = {
+                    const existing = newItems[sameModelIndex];
+                    newItems[sameModelIndex] = {
                         ...existing,
+                        quoteId: quote.id,
                         quote,
-                        quantity: mergeQuantity
+                        quantity: mergeQuantity && existing.quoteId === quote.id
                             ? existing.quantity + quantity
-                            : Math.max(existing.quantity, quantity),
+                            : existing.quoteId === quote.id
+                                ? Math.max(existing.quantity, quantity)
+                                : quantity,
                     };
                     return { items: newItems };
                 }
