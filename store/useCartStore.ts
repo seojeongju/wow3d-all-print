@@ -5,11 +5,14 @@ import type { CartItem, Quote } from '@/lib/types';
 interface CartState {
     items: CartItem[];
 
-    addToCart: (quote: Quote, quantity?: number) => void;
+    /** mergeQuantity=false: 동일 quoteId는 견적 스냅샷만 갱신(출력 방식·금액 변경 반영) */
+    addToCart: (quote: Quote, quantity?: number, mergeQuantity?: boolean) => void;
     removeFromCart: (cartItemId: number) => void;
     removeFromCartByIds: (ids: number[]) => void;
     updateQuantity: (cartItemId: number, quantity: number) => void;
     setQuoteThumbnail: (cartItemId: number, thumbnailDataUrl: string) => void;
+    /** DB 견적 최신값으로 장바구니 스냅샷 갱신 (출력 방식·금액 불일치 방지) */
+    refreshQuoteSnapshots: (quotes: Quote[]) => void;
     clearCart: () => void;
     getTotalPrice: () => number;
     getTotalPriceForItems: (itemList: CartItem[]) => number;
@@ -21,18 +24,21 @@ export const useCartStore = create<CartState>()(
         (set, get) => ({
             items: [],
 
-            addToCart: (quote, quantity = 1) => set((state) => {
+            addToCart: (quote, quantity = 1, mergeQuantity = true) => set((state) => {
                 // 이미 장바구니에 있는지 확인
                 const existingItemIndex = state.items.findIndex(
                     item => item.quoteId === quote.id
                 );
 
                 if (existingItemIndex >= 0) {
-                    // 수량 업데이트
                     const newItems = [...state.items];
+                    const existing = newItems[existingItemIndex];
                     newItems[existingItemIndex] = {
-                        ...newItems[existingItemIndex],
-                        quantity: newItems[existingItemIndex].quantity + quantity
+                        ...existing,
+                        quote,
+                        quantity: mergeQuantity
+                            ? existing.quantity + quantity
+                            : Math.max(existing.quantity, quantity),
                     };
                     return { items: newItems };
                 }
@@ -76,6 +82,25 @@ export const useCartStore = create<CartState>()(
                         : item
                 ),
             })),
+
+            refreshQuoteSnapshots: (quotes) => set((state) => {
+                const byId = new Map(quotes.map((q) => [q.id, q]))
+                return {
+                    items: state.items.map((item) => {
+                        const fresh = byId.get(item.quoteId)
+                        if (!fresh) return item
+                        return {
+                            ...item,
+                            quote: {
+                                ...item.quote,
+                                ...fresh,
+                                thumbnailDataUrl:
+                                    item.quote?.thumbnailDataUrl ?? fresh.thumbnailDataUrl,
+                            },
+                        }
+                    }),
+                }
+            }),
 
             clearCart: () => set({ items: [] }),
 

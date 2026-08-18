@@ -71,7 +71,7 @@ export default function CartPage() {
 }
 
 function CartPageContent() {
-    const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems, addToCart } = useCartStore()
+    const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems, addToCart, refreshQuoteSnapshots } = useCartStore()
     const { isAuthenticated, sessionId, token, user } = useAuthStore()
     const searchParams = useSearchParams()
     const tabParam = searchParams.get('tab')
@@ -101,6 +101,34 @@ function CartPageContent() {
             return new Set(kept.length > 0 ? kept : items.map((i) => i.id))
         })
     }, [items])
+
+    // 장바구니 진입 시 DB 견적 금액·출력 방식 동기화 (FDM↔SLA 변경 반영)
+    useEffect(() => {
+        if (items.length === 0) return
+        const headers: HeadersInit = {}
+        if (token && user?.id) {
+            headers['Authorization'] = `Bearer ${token}`
+            headers['X-User-ID'] = String(user.id)
+        } else if (sessionId) {
+            headers['X-Session-ID'] = sessionId
+        } else {
+            return
+        }
+
+        const syncCartQuotes = async () => {
+            try {
+                const res = await fetch('/api/cart', { headers, cache: 'no-store' })
+                const data = await res.json()
+                const rows = Array.isArray(data?.data) ? (data.data as QuoteRow[]) : []
+                if (rows.length === 0) return
+                refreshQuoteSnapshots(rows.map(toQuote))
+            } catch (err) {
+                console.error('Failed to sync cart quotes:', err)
+            }
+        }
+
+        void syncCartQuotes()
+    }, [items.length, sessionId, token, user?.id, refreshQuoteSnapshots])
 
     // 저장된 견적 목록 불러오기
     useEffect(() => {

@@ -67,6 +67,9 @@ type UploadResponse = {
 type SaveQuoteResult = {
     id: number
     sessionId?: string
+    totalPrice?: number
+    estimatedTimeHours?: number
+    pricingSource?: string
 }
 
 const defaultQuoteDetail = {
@@ -83,7 +86,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
     const analysis = useEffectiveAnalysis()
-    const { addToCart } = useCartStore()
+    const { addToCart, items: cartItems } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
     const [isSaving, setIsSaving] = useState(false)
     const [uploadedQuoteId, setUploadedQuoteId] = useState<number | null>(null)
@@ -119,6 +122,12 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
         }
     }, [initialQuote])
+
+    // 새 파일·AI 3D 작업 시 이전 견적 ID 초기화
+    useEffect(() => {
+        setUploadedQuoteId(null)
+        setLastSavedConfig('')
+    }, [file?.name, file?.size, fileSource.meshyJobId])
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -401,7 +410,12 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             } else {
                 showToast.info('견적 저장됨', '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.');
             }
-            return { ...data, id: finalQuoteId };
+            return {
+                ...data,
+                id: finalQuoteId ?? data.id,
+                totalPrice: data.totalPrice ?? totalPrice,
+                estimatedTimeHours: data.estimatedTimeHours ?? estimatedTimeHours,
+            };
         } catch (error) {
             showToast.error('오류 발생', error);
             return null
@@ -448,11 +462,25 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 headers['X-Session-ID'] = sid || ''
             }
 
+            const alreadyInCart = cartItems.some((item) => item.quoteId === savedQuote.id)
+            const resolvedTotalPrice =
+                typeof savedQuote.totalPrice === 'number' && savedQuote.totalPrice > 0
+                    ? savedQuote.totalPrice
+                    : totalPrice
+            const resolvedEstimatedHours =
+                typeof savedQuote.estimatedTimeHours === 'number'
+                    ? savedQuote.estimatedTimeHours
+                    : estimatedTimeHours
+
             const [response, thumbnailDataUrl] = await Promise.all([
                 fetch('/api/cart', {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({ quoteId: savedQuote.id, quantity: 1 }),
+                    body: JSON.stringify({
+                        quoteId: savedQuote.id,
+                        quantity: 1,
+                        updateOnly: alreadyInCart,
+                    }),
                 }),
                 generateModelThumbnail(file, 256).catch(() => null),
             ])
@@ -470,15 +498,31 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 dimensionsY: analysis.boundingBox.y,
                 dimensionsZ: analysis.boundingBox.z,
                 printMethod,
-                ...(printMethod === 'fdm' ? { fdmMaterial: fdmMaterial.toUpperCase() } : { resinType: resinType.charAt(0).toUpperCase() + resinType.slice(1) }),
-                totalPrice,
-                estimatedTimeHours,
+                ...(printMethod === 'fdm'
+                    ? {
+                          fdmMaterial: fdmMaterial.toUpperCase() as Quote['fdmMaterial'],
+                          fdmInfill: infill,
+                          fdmLayerHeight: layerHeight,
+                          fdmSupport: supportEnabled,
+                      }
+                    : {
+                          resinType: resinType as Quote['resinType'],
+                          layerThickness: slaLayerHeight,
+                          postProcessing,
+                      }),
+                totalPrice: resolvedTotalPrice,
+                estimatedTimeHours: resolvedEstimatedHours,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 thumbnailDataUrl: thumbnailDataUrl || undefined,
             }
-            showToast.success('장바구니 추가', '제품이 장바구니에 담겼습니다.');
-            addToCart(quoteForCart as Quote, 1)
+            showToast.success(
+                alreadyInCart ? '장바구니 갱신' : '장바구니 추가',
+                alreadyInCart
+                    ? `${printMethod.toUpperCase()} 견적 금액이 반영되었습니다.`
+                    : '제품이 장바구니에 담겼습니다.'
+            );
+            addToCart(quoteForCart as Quote, 1, alreadyInCart ? false : true)
         } catch (error) {
             showToast.error('추가 실패', error);
         }

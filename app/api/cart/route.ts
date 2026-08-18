@@ -99,7 +99,14 @@ export async function POST(request: NextRequest) {
             .first();
 
         if (existingItem) {
-            // 수량 업데이트
+            const updateOnly = body.updateOnly === true;
+            if (updateOnly) {
+                return successResponse(
+                    { id: (existingItem as any).id },
+                    '장바구니 견적 정보가 갱신되었습니다'
+                );
+            }
+
             const updateQuery = 'UPDATE cart SET quantity = quantity + ? WHERE id = ?';
             await env.DB
                 .prepare(updateQuery)
