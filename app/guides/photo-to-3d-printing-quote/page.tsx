@@ -13,7 +13,10 @@ import {
     PHOTO_TO_3D_GUIDE_PATH,
     PHOTO_TO_3D_GUIDE_TITLE,
     PHOTO_TO_3D_QUOTE_PATH,
+    PHOTO_TO_3D_SHOWCASE,
+    buildPhotoTo3DShowcaseSchema,
 } from '@/lib/seo-photo-to-3d'
+import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
 import { Check, X } from 'lucide-react'
 
 export const metadata: Metadata = {
@@ -93,6 +96,7 @@ const faqSchema = {
 }
 
 const howToSchema = buildPhotoTo3DHowToSchema()
+const showcaseSchema = buildPhotoTo3DShowcaseSchema()
 
 export default function PhotoTo3DPrintingGuidePage() {
     return (
@@ -101,7 +105,7 @@ export default function PhotoTo3DPrintingGuidePage() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify([articleSchema, breadcrumbSchema, faqSchema, howToSchema]),
+                    __html: JSON.stringify([articleSchema, breadcrumbSchema, faqSchema, howToSchema, showcaseSchema]),
                 }}
             />
 
@@ -158,6 +162,8 @@ export default function PhotoTo3DPrintingGuidePage() {
                             ))}
                         </ol>
                     </article>
+
+                    <PhotoTo3DBeforeAfter items={PHOTO_TO_3D_SHOWCASE} />
 
                     <div className="grid md:grid-cols-2 gap-5">
                         <article className="rounded-2xl border border-teal-400/20 bg-teal-500/5 p-6 space-y-3">

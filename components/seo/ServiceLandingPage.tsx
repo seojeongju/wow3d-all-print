@@ -7,6 +7,8 @@ import { absoluteUrl } from '@/lib/site-url'
 import { buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import type { ServiceLandingConfig } from '@/lib/seo-service-pages'
 import type { QnAItem } from '@/lib/qna'
+import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
+import { PHOTO_TO_3D_SHOWCASE, buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
 
 export default function ServiceLandingPage({ config }: { config: ServiceLandingConfig }) {
     const faqItems: QnAItem[] = config.faqs.map((f, i) => ({
@@ -36,6 +38,7 @@ export default function ServiceLandingPage({ config }: { config: ServiceLandingC
             areaServed: 'KR',
             url: absoluteUrl(config.path),
         },
+        ...(config.slug === 'photo-to-3d' ? [buildPhotoTo3DShowcaseSchema()] : []),
     ]
 
     return (
@@ -92,6 +95,14 @@ export default function ServiceLandingPage({ config }: { config: ServiceLandingC
                             ))}
                         </ul>
                     </div>
+
+                    {config.slug === 'photo-to-3d' && (
+                        <PhotoTo3DBeforeAfter
+                            items={PHOTO_TO_3D_SHOWCASE}
+                            heading="변환·출력 흐름 예시"
+                            description="사진 업로드 → AI 3D 모델 → 자동견적·출력까지 WOW3D에서 한 번에 진행할 수 있습니다."
+                        />
+                    )}
 
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black mb-6">자주 묻는 질문</h2>

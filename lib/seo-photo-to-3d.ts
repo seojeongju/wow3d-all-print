@@ -65,6 +65,62 @@ export const MAKER_VS_PHOTO_ROWS = [
     },
 ] as const
 
+export type PhotoTo3DShowcaseItem = {
+    title: string
+    caption?: string
+    beforeSrc: string
+    beforeAlt: string
+    afterSrc: string
+    afterAlt: string
+    printMethod?: string
+    material?: string
+}
+
+/** 사진→3D Before/After 쇼케이스 (이미지는 `/public/images/photo-to-3d/`로 교체 가능) */
+export const PHOTO_TO_3D_SHOWCASE: readonly PhotoTo3DShowcaseItem[] = [
+    {
+        title: '피규어 · 캐릭터 형상 확인',
+        caption: '단색 배경 제품 사진에서 입체 메시를 생성한 뒤 SLA/DLP로 외관 시제품을 출력하는 흐름에 적합합니다.',
+        beforeSrc: '/images/expert/art.png',
+        beforeAlt: '피규어 제품 사진 예시 — 사진→AI 3D 입력',
+        afterSrc: '/thumbnail.png',
+        afterAlt: 'AI 3D 모델링 후 3D 프린팅 출력 결과 예시',
+        printMethod: 'SLA',
+        material: 'Standard Resin',
+    },
+    {
+        title: '시제품 · 부품 외관 검증',
+        caption: '실물·레퍼런스 사진으로 형상을 빠르게 확인하고 FDM·SLA 견적·출력까지 이어지는 사례 유형입니다.',
+        beforeSrc: '/images/expert/industrial.png',
+        beforeAlt: '산업용 부품 제품 사진 예시 — 사진→AI 3D 입력',
+        afterSrc: '/og-image-v2.jpg',
+        afterAlt: '3D 프린팅 시제품·출력물 결과 예시',
+        printMethod: 'FDM',
+        material: 'PLA',
+    },
+] as const
+
+export function buildPhotoTo3DShowcaseSchema() {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: '사진→AI 3D 변환·출력 사례',
+        description: '제품 사진에서 AI 3D 모델을 생성하고 3D 프린팅 출력까지 진행하는 WOW3D 워크플로 예시',
+        url: absoluteUrl(PHOTO_TO_3D_GUIDE_PATH),
+        itemListElement: PHOTO_TO_3D_SHOWCASE.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+                '@type': 'ImageObject',
+                name: item.title,
+                description: item.caption,
+                contentUrl: absoluteUrl(item.afterSrc),
+                thumbnailUrl: absoluteUrl(item.beforeSrc),
+            },
+        })),
+    }
+}
+
 export function buildPhotoTo3DHowToSchema() {
     return {
         '@context': 'https://schema.org',
