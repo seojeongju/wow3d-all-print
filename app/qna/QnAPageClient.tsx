@@ -88,7 +88,7 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <Link href="/guides/photo-to-3d-printing-quote" className="rounded-3xl border border-indigo-400/20 bg-indigo-500/[0.06] p-6 hover:bg-indigo-500/[0.1] transition-colors">
                             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-300 mb-2">Photo → 3D</p>
-                            <h2 className="text-xl font-black text-white mb-2">사진·이미지 3D 변환</h2>
+                            <h2 className="text-xl font-black text-white mb-2">사진(이미지) 3D 변환</h2>
                             <p className="text-sm text-white/55 break-keep">JPG·PNG만 있어도 AI가 입체 3D 모델(STL)을 만들고 자동견적·출력까지 이어집니다.</p>
                         </Link>
                         <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
@@ -109,7 +109,7 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
                         <Link href="/quote" className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 hover:bg-white/[0.05] transition-colors">
                             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Action</p>
                             <h2 className="text-xl font-black text-white mb-2">실시간 자동견적 받기</h2>
-                            <p className="text-sm text-white/55 break-keep">STL·OBJ 파일 또는 제품 사진(JPG/PNG)으로 실시간 출력 시간과 가격을 확인해 보세요.</p>
+                            <p className="text-sm text-white/55 break-keep">STL·OBJ 파일 또는 제품 사진(이미지)(JPG/PNG)으로 실시간 출력 시간과 가격을 확인해 보세요.</p>
                         </Link>
                     </section>
 

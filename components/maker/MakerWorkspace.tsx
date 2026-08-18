@@ -278,14 +278,14 @@ export function MakerWorkspace() {
             <div className="shrink-0 px-3 md:px-6 py-2.5 bg-gradient-to-r from-teal-500/10 via-transparent to-indigo-500/10 border-b border-white/5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <p className="text-[11px] md:text-[13px] text-white/85 font-bold leading-relaxed break-keep flex-1">
                     <span className="text-teal-300">Maker</span>는 로고·배지·키캡용 <strong className="text-white/85">실루엣 돌출(2.5D)</strong> 도구입니다.
-                    제품 <strong className="text-white/85">실사 사진 → 입체 3D</strong>는 자동견적 AI를 이용하세요.
+                    제품 <strong className="text-white/85">실사 사진(이미지) → 입체 3D</strong>는 자동견적 AI를 이용하세요.
                 </p>
                 <Link
                     href="/quote?entry=photo"
                     className="inline-flex items-center gap-1.5 shrink-0 rounded-lg border border-indigo-400/35 bg-indigo-500/15 px-3 py-1.5 text-[11px] font-black text-indigo-200 hover:bg-indigo-500/25 transition-colors"
                 >
                     <Sparkles className="w-3.5 h-3.5" />
-                    사진으로 입체 3D 만들기
+                    사진(이미지)으로 입체 3D 만들기
                 </Link>
             </div>
 
@@ -454,9 +454,9 @@ export function MakerWorkspace() {
                         <p className="text-[12px] text-white/80 leading-relaxed break-keep">
                             <strong className="text-white">글자·로고</strong>는 <strong className="text-white">흰 배경 + 검정 선</strong> PNG/JPEG 또는{' '}
                             <strong className="text-white">SVG</strong>가 가장 선명합니다.
-                            컬러 사진·그라데이션은 통짜 덩어리로 나올 수 있어요. 입체 피규어는{' '}
+                            컬러 사진(이미지)·그라데이션은 통짜 덩어리로 나올 수 있어요. 입체 피규어는{' '}
                             <Link href="/quote?entry=photo" className="text-indigo-300 font-black underline-offset-2 hover:underline">
-                                사진→AI 3D 견적
+                                사진(이미지)→AI 3D 견적
                             </Link>
                             을 이용하세요.
                         </p>
@@ -504,7 +504,7 @@ export function MakerWorkspace() {
                                     </p>
                                     <Link href="/quote?entry=photo" className="inline-flex items-center gap-1.5 text-[12px] font-black text-indigo-200 hover:text-white">
                                         <Sparkles className="w-3.5 h-3.5" />
-                                        자동견적 · 사진으로 3D 만들기
+                                        자동견적 · 사진(이미지)으로 3D 만들기
                                     </Link>
                                 </div>
                             )}
@@ -869,7 +869,7 @@ export function MakerWorkspace() {
                             <div className="text-xs text-white/85 leading-relaxed space-y-1">
                                 <span className="text-white font-semibold block mb-1">작업 순서</span>
                                 <p><strong className="text-teal-300 font-medium">1</strong> 배지·키캡 템플릿(선택) → <strong className="text-teal-300 font-medium">2</strong> 로고·SVG → <strong className="text-teal-300 font-medium">3</strong> 결과물(3D)에서 레이어·bevel 확인. <strong className="text-white">STL 저장</strong> 또는 견적 의뢰.</p>
-                                <p className="text-white/80">실사 입체는 사진→AI 3D 견적, 로고 돌출은 Maker입니다.</p>
+                                <p className="text-white/80">실사 입체는 사진(이미지)→AI 3D 견적, 로고 돌출은 Maker입니다.</p>
                             </div>
                         </div>
                     </div>

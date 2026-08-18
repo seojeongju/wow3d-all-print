@@ -43,7 +43,7 @@ const guideFaq = [
     },
     {
         q: '3D 모델 파일이 없어도 견적을 받을 수 있나요?',
-        a: '가능합니다. 제품 사진(JPG/PNG)으로 AI 3D 모델을 생성한 뒤 자동견적으로 이어집니다. 정밀 치수·조립 공차가 중요한 부품은 STL 또는 STEP 업로드를 권장합니다.',
+        a: '가능합니다. 제품 사진(이미지)(JPG/PNG)으로 AI 3D 모델을 생성한 뒤 자동견적으로 이어집니다. 정밀 치수·조립 공차가 중요한 부품은 STL 또는 STEP 업로드를 권장합니다.',
     },
 ];
 
@@ -175,7 +175,7 @@ export default function QuoteGuidePage() {
                         <div className="space-y-2">
                             <h2 className="text-2xl font-black">바로 자동견적 받아보기</h2>
                             <p className="text-white/70 break-keep">
-                                STL, OBJ, 3MF 파일을 업로드하거나, 3D 파일이 없으면 제품 사진으로 AI 3D 모델링 후 견적을 확인해 보세요.
+                                STL, OBJ, 3MF 파일을 업로드하거나, 3D 파일이 없으면 제품 사진(이미지)으로 AI 3D 모델링 후 견적을 확인해 보세요.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-3">
@@ -186,7 +186,7 @@ export default function QuoteGuidePage() {
                             </Link>
                             <Link href="/quote?entry=photo">
                                 <Button variant="outline" className="h-12 px-6 rounded-2xl border-indigo-400/30 bg-indigo-500/10 text-white hover:bg-indigo-500/20">
-                                    사진→3D 견적
+                                    사진(이미지)→3D 견적
                                 </Button>
                             </Link>
                             <Link href="/print-methods">

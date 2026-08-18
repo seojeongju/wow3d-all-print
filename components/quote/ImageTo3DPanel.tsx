@@ -305,7 +305,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     data.error ||
                         (data.status === 'canceled'
                             ? '작업이 취소되었습니다'
-                            : 'AI 모델링에 실패했습니다. 횟수는 차감되지 않았으니 다른 사진으로 다시 시도해 주세요.')
+                            : 'AI 모델링에 실패했습니다. 횟수는 차감되지 않았으니 다른 사진(이미지)으로 다시 시도해 주세요.')
                 )
                 await refreshQuota()
                 return
@@ -477,7 +477,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 const msg = (j as { error?: string }).error
                 // 한도 소진 등이면 전처리본으로 계속 진행하되 안내
                 if (msg) {
-                    setError(`${msg} 배경 없이 전처리된 사진으로 생성을 계속합니다.`)
+                    setError(`${msg} 배경 없이 전처리된 사진(이미지)으로 생성을 계속합니다.`)
                 }
             }
         }
@@ -486,11 +486,11 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
     const startGeneration = async () => {
         if (!selected || selected.size === 0) {
-            setError('사진을 다시 업로드해 주세요.')
+            setError('사진(이미지)을 다시 업로드해 주세요.')
             return
         }
         if (!token) {
-            setError('사진→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다.')
+            setError('사진(이미지)→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다.')
             return
         }
         if (quota && !quota.loginRequired && (quota.remainingTotal ?? quota.remainingToday) <= 0) {
@@ -598,10 +598,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     시작 방식 다시 선택
                 </button>
                 <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-[1.15]">
-                    사진으로 <span className="text-indigo-300">3D 만들기</span>
+                    사진(이미지)으로 <span className="text-indigo-300">3D 만들기</span>
                 </h1>
                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                    제품·피규어가 잘 보이는 JPG/PNG 실사 사진을 올려 주세요. AI가{' '}
+                    제품·피규어가 잘 보이는 JPG/PNG 실사 사진(이미지)을 올려 주세요. AI가{' '}
                     <strong className="text-white/90">입체 메시</strong>를 만든 뒤 자동견적으로 이어집니다.
                 </p>
                 <p className="text-[12px] text-white/40 font-bold leading-relaxed break-keep">
@@ -676,7 +676,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     <div className="w-16 h-16 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center mb-5">
                         <Upload className="w-7 h-7 text-indigo-300" />
                     </div>
-                    <h3 className="text-lg font-black text-white mb-2">제품 사진 업로드</h3>
+                    <h3 className="text-lg font-black text-white mb-2">제품 사진(이미지) 업로드</h3>
                     <p className="text-sm text-white/45 font-bold max-w-xs leading-relaxed">
                         JPG · PNG · 최대 8MB
                         <br />
@@ -726,7 +726,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                 멀티뷰 (선택)
                             </p>
                             <p className="text-[11px] font-bold text-white/50 leading-relaxed break-keep">
-                                같은 물체의 <strong className="text-white/70">우측·뒷면·좌측</strong> 사진을
+                                같은 물체의 <strong className="text-white/70">우측·뒷면·좌측</strong> 사진(이미지)을
                                 더하면 뒷면·옆면 품질이 좋아집니다. 정면만으로도 생성할 수 있습니다.
                             </p>
                             <div className="grid grid-cols-3 gap-2">
@@ -961,14 +961,14 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                 }}
                                 className="w-full h-12 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-black transition-all"
                             >
-                                같은 사진으로 다시 시도
+                                같은 사진(이미지)으로 다시 시도
                             </button>
                             <button
                                 type="button"
                                 onClick={resetLocal}
                                 className="w-full h-10 rounded-xl text-[12px] font-black text-white/50 hover:text-white"
                             >
-                                다른 사진 올리기
+                                다른 사진(이미지) 올리기
                             </button>
                         </div>
                     )}

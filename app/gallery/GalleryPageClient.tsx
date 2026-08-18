@@ -162,7 +162,7 @@ export default function GalleryPageClient({
                                     : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
                             }`}
                         >
-                            사진→3D Before/After
+                            사진(이미지)→3D Before/After
                         </button>
                     </div>
                 </div>

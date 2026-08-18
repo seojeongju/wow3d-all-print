@@ -28,8 +28,8 @@ const faqItems = [
         a: '가능합니다. STEP·STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 변환이 어렵거나 형상이 복잡한 경우 STL 또는 3MF로 함께 준비하시면 더 안정적입니다.',
     },
     {
-        q: '3D 파일이 없고 사진만 있을 때는 어떻게 하나요?',
-        a: '자동견적의 사진→AI 3D로 제품 사진(JPG/PNG)에서 입체 STL을 생성한 뒤 견적·주문까지 진행할 수 있습니다. 정밀 공차가 필요하면 3D 모델링 의뢰를 검토하세요.',
+        q: '3D 파일이 없고 사진(이미지)만 있을 때는 어떻게 하나요?',
+        a: '자동견적의 사진(이미지)→AI 3D로 제품 사진(이미지)(JPG/PNG)에서 입체 STL을 생성한 뒤 견적·주문까지 진행할 수 있습니다. 정밀 공차가 필요하면 3D 모델링 의뢰를 검토하세요.',
     },
 ];
 
@@ -132,21 +132,21 @@ export default function FilePreparationGuidePage() {
                     </article>
 
                     <article className="rounded-[2rem] border border-indigo-400/20 bg-indigo-500/5 p-8 md:p-10 space-y-5">
-                        <h2 className="text-2xl font-black">3D 파일이 없고 사진만 있을 때</h2>
+                        <h2 className="text-2xl font-black">3D 파일이 없고 사진(이미지)만 있을 때</h2>
                         <p className="text-white/70 leading-relaxed break-keep">
-                            STL·STEP 파일이 없어도 제품 사진(JPG/PNG)으로 AI 3D 모델을 생성한 뒤 자동견적·출력 주문까지
+                            STL·STEP 파일이 없어도 제품 사진(이미지)(JPG/PNG)으로 AI 3D 모델을 생성한 뒤 자동견적·출력 주문까지
                             진행할 수 있습니다. 형상 확인·시제품 검증에는 적합하지만, 조립 공차·정밀 치수가 중요한
                             부품은 CAD 기반 파일 업로드 또는 3D 모델링 의뢰를 권장합니다.
                         </p>
                         <div className="flex flex-wrap gap-3">
                             <Link href="/quote?entry=photo">
                                 <Button className="h-11 px-5 rounded-2xl bg-indigo-500 text-white hover:bg-indigo-400 font-black">
-                                    사진으로 3D 만들기 <ArrowRight className="w-4 h-4 ml-1" />
+                                    사진(이미지)으로 3D 만들기 <ArrowRight className="w-4 h-4 ml-1" />
                                 </Button>
                             </Link>
                             <Link href="/guides/photo-to-3d-printing-quote">
                                 <Button variant="outline" className="h-11 px-5 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10">
-                                    사진→3D 가이드
+                                    사진(이미지)→3D 가이드
                                 </Button>
                             </Link>
                         </div>

@@ -164,7 +164,7 @@ export default function Hero() {
                             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/30 backdrop-blur-md"
                         >
                             <ImageIcon className="w-3.5 h-3.5 text-indigo-300" />
-                            <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-indigo-200 uppercase">사진 → AI 3D</span>
+                            <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-indigo-200 uppercase">사진(이미지) → AI 3D</span>
                         </motion.div>
                     </div>
 
@@ -182,7 +182,7 @@ export default function Hero() {
                     <p className="text-base sm:text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed break-keep font-medium">
                         파일 업로드 → 가격·제작기간 확인 → 주문·결제.<br className="hidden sm:block" />
                         <span className="text-teal-400 font-bold">3D 파일</span>이 있으면 즉시 자동견적,{' '}
-                        <span className="text-indigo-300 font-bold">사진만</span> 있어도 AI가 3D 모델을 만들어 견적으로 이어집니다.
+                        <span className="text-indigo-300 font-bold">사진(이미지)만</span> 있어도 AI가 3D 모델을 만들어 견적으로 이어집니다.
                     </p>
 
                     {/* 모바일 전용 AI 견적 정보 카드 (Hidden on Desktop) */}
@@ -221,7 +221,7 @@ export default function Hero() {
                                     className="w-full h-14 sm:h-16 px-6 sm:px-8 text-[14px] sm:text-[16px] rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white shadow-[0_0_30px_rgba(99,102,241,0.35)] hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] transition-all gap-2.5 font-black relative overflow-hidden group"
                                 >
                                     <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
-                                    <span className="relative z-10">사진으로 3D 만들기</span>
+                                    <span className="relative z-10">사진(이미지)으로 3D 만들기</span>
                                     <ArrowRight className="w-5 h-5 shrink-0 relative z-10 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </Link>
@@ -350,7 +350,7 @@ export default function Hero() {
                                                 className="w-full h-11 xl:h-12 rounded-xl bg-indigo-500 text-white font-black text-[10px] xl:text-[11px] tracking-wide hover:bg-indigo-400 shadow-[0_0_24px_rgba(99,102,241,0.35)] active:scale-95 transition-all"
                                             >
                                                 <ImageIcon className="w-4 h-4 mr-2" />
-                                                사진으로 3D 만들기
+                                                사진(이미지)으로 3D 만들기
                                             </Button>
                                         </Link>
                                     </div>
@@ -378,9 +378,9 @@ export default function Hero() {
                             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] rounded-[2rem]" />
 
                             <div className="relative p-5 xl:p-7 pb-4 border-b border-white/5">
-                                <h3 className="text-lg xl:text-xl font-black text-white tracking-tight mb-2">파일 · 사진 모두 OK</h3>
+                                <h3 className="text-lg xl:text-xl font-black text-white tracking-tight mb-2">파일 · 사진(이미지) 모두 OK</h3>
                                 <p className="text-[12px] xl:text-[13px] font-bold text-white/60 leading-relaxed break-keep">
-                                    3D 파일은 즉시 자동견적, JPG/PNG 사진은 AI가 3D 모델로 변환한 뒤 견적으로 이어집니다.
+                                    3D 파일은 즉시 자동견적, JPG/PNG 사진(이미지)은 AI가 3D 모델로 변환한 뒤 견적으로 이어집니다.
                                 </p>
                                 <div className="mt-4 flex flex-wrap gap-1.5 xl:gap-2">
                                     {['STL', 'OBJ', '3MF', 'PLY', 'STEP', 'STP'].map((fmt) => (
@@ -422,7 +422,7 @@ export default function Hero() {
                                     </span>
                                 </div>
                                 <p className="mt-2 text-[10px] text-white/70 font-medium break-keep">
-                                    3D 파일 또는 제품 사진만으로도 미리보기와 상세 견적을 시작할 수 있습니다.
+                                    3D 파일 또는 제품 사진(이미지)만으로도 미리보기와 상세 견적을 시작할 수 있습니다.
                                 </p>
                             </div>
                         </motion.div>

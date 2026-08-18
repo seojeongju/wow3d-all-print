@@ -20,17 +20,17 @@ import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
 const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: string }[] = [
     {
         q: "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
-        a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없다면 제품 사진으로 AI 모델링 후 견적할 수 있습니다.",
+        a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없다면 제품 사진(이미지)으로 AI 모델링 후 견적할 수 있습니다.",
     },
     {
         q: "3D 모델 파일이 없어도 견적이 가능한가요?",
-        a: "가능합니다. 견적 시작 화면에서 「3D 모델이 없어요」를 선택한 뒤 제품 사진(JPG/PNG)을 올리면 AI가 3D 모델을 생성하고 자동견적으로 이어집니다. 정밀 치수·조립 공차가 필요한 부품은 STL/STEP 업로드를 권장합니다.",
+        a: "가능합니다. 견적 시작 화면에서 「3D 모델이 없어요」를 선택한 뒤 제품 사진(이미지)(JPG/PNG)을 올리면 AI가 3D 모델을 생성하고 자동견적으로 이어집니다. 정밀 치수·조립 공차가 필요한 부품은 STL/STEP 업로드를 권장합니다.",
     },
     {
-        q: "사진→AI 3D는 로그인·이용 한도가 있나요?",
+        q: "사진(이미지)→AI 3D는 로그인·이용 한도가 있나요?",
         a: "로그인 회원 기준 하루 1회(한국 시간)입니다. 생성에 실패하면 횟수가 차감되지 않습니다.",
         guideHref: "/guides/photo-to-3d-printing-quote",
-        guideLabel: "사진→3D 촬영·견적 가이드",
+        guideLabel: "사진(이미지)→3D 촬영·견적 가이드",
     },
     {
         q: "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
@@ -359,7 +359,7 @@ function QuoteContent() {
                                                         <Camera className="w-5 h-5" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진으로 견적</h3>
+                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진(이미지)으로 견적</h3>
                                                         <p className="text-[11px] sm:text-xs text-white/50 font-bold leading-relaxed break-keep mt-1">
                                                             촬영 방법·한도·Maker와의 차이를 가이드에서 확인하세요.
                                                         </p>
@@ -466,7 +466,7 @@ function QuoteContent() {
                                                         <Camera className="w-5 h-5" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진으로 견적</h3>
+                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진(이미지)으로 견적</h3>
                                                         <p className="text-[11px] sm:text-xs text-white/50 font-bold leading-relaxed break-keep mt-1">
                                                             촬영 방법·한도·Maker와의 차이를 가이드에서 확인하세요.
                                                         </p>

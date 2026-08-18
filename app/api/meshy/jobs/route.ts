@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         if (auth.isGuest) {
             return NextResponse.json(
                 {
-                    error: '사진→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다. 로그인 후 다시 시도해 주세요.',
+                    error: '사진(이미지)→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다. 로그인 후 다시 시도해 주세요.',
                     code: 'LOGIN_REQUIRED',
                 },
                 { status: 401 }
@@ -139,10 +139,10 @@ export async function POST(request: NextRequest) {
         }
         for (const extra of extraFiles) {
             if (!isAllowedMeshyImage(extra)) {
-                return NextResponse.json({ error: '추가 사진도 JPG 또는 PNG만 지원합니다' }, { status: 400 })
+                return NextResponse.json({ error: '추가 사진(이미지)도 JPG 또는 PNG만 지원합니다' }, { status: 400 })
             }
             if (extra.size > MESHY_IMAGE_MAX_BYTES) {
-                return NextResponse.json({ error: '추가 사진은 최대 8MB까지 가능합니다' }, { status: 400 })
+                return NextResponse.json({ error: '추가 사진(이미지)은 최대 8MB까지 가능합니다' }, { status: 400 })
             }
         }
 

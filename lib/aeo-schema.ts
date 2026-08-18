@@ -24,11 +24,11 @@ export function buildQuoteHowToSchema() {
         '@type': 'HowTo',
         name: '와우쓰리디 3D 프린팅 견적 받는 방법',
         description:
-            '3D 모델 파일 업로드 또는 제품 사진 AI 3D 모델링 후 자동견적 → 가격·예상 제작기간 확인 → 주문·결제로 진행하는 3D 프린팅 견적·주문 절차입니다.',
+            '3D 모델 파일 업로드 또는 제품 사진(이미지) AI 3D 모델링 후 자동견적 → 가격·예상 제작기간 확인 → 주문·결제로 진행하는 3D 프린팅 견적·주문 절차입니다.',
         totalTime: 'PT15M',
         supply: [
             { '@type': 'HowToSupply', name: '3D 모델 파일 (STL, OBJ, 3MF, PLY, STEP, STP)' },
-            { '@type': 'HowToSupply', name: '또는 제품 사진 (JPG, PNG)' },
+            { '@type': 'HowToSupply', name: '또는 제품 사진(이미지) (JPG, PNG)' },
         ],
         tool: [
             { '@type': 'HowToTool', name: '와우쓰리디 웹 자동견적 시스템' },
@@ -38,7 +38,7 @@ export function buildQuoteHowToSchema() {
                 '@type': 'HowToStep',
                 position: 1,
                 name: '파일 업로드 · 자동견적',
-                text: 'STL·OBJ·3MF·PLY는 즉시 자동견적, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없으면 제품 사진(JPG/PNG)으로 AI 3D 모델을 생성할 수 있습니다.',
+                text: 'STL·OBJ·3MF·PLY는 즉시 자동견적, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없으면 제품 사진(이미지)(JPG/PNG)으로 AI 3D 모델을 생성할 수 있습니다.',
                 url: absoluteUrl('/quote'),
             },
             {
@@ -251,7 +251,7 @@ export function buildBusinessSchemas() {
                     { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'SLA 출력 서비스' } },
                     { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'DLP 출력 서비스' } },
                     { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '시제품 제작' } },
-                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '사진 AI 3D 모델링 · 자동견적' } },
+                    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '사진(이미지) AI 3D 모델링 · 자동견적' } },
                 ],
             },
         },

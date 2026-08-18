@@ -85,14 +85,14 @@ export default function ModelUploadSection() {
                         파일이 있든 없든 <span className="text-teal-400">실시간 견적</span>
                     </h2>
                     <p className="text-white/95 text-lg max-w-2xl mx-auto font-medium">
-                        3D 모델 업로드 즉시 견적 · 사진만 있어도 AI 모델링 후 견적 · 회원가입 없이 확인 가능
+                        3D 모델 업로드 즉시 견적 · 사진(이미지)만 있어도 AI 모델링 후 견적 · 회원가입 없이 확인 가능
                     </p>
                     <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Button asChild className="h-12 px-6 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-bold">
                             <Link href="/quote?entry=file">3D 모델이 있어요</Link>
                         </Button>
                         <Button asChild variant="outline" className="h-12 px-6 rounded-xl border-white/25 bg-white/5 text-white hover:bg-white/10 font-bold">
-                            <Link href="/quote?entry=photo">3D 모델이 없어요 (사진 → AI)</Link>
+                            <Link href="/quote?entry=photo">3D 모델이 없어요 (사진(이미지) → AI)</Link>
                         </Button>
                     </div>
                 </motion.div>

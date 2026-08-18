@@ -23,12 +23,12 @@ export const metadata: Metadata = {
     title: PHOTO_TO_3D_GUIDE_TITLE,
     description: PHOTO_TO_3D_GUIDE_DESCRIPTION,
     keywords: [
-        '사진 3D 모델링',
+        '사진(이미지) 3D 모델링',
         '이미지 3D 변환',
-        '사진으로 3D 프린팅',
+        '사진(이미지)으로 3D 프린팅',
         '3D 파일 없이 견적',
         'AI 3D 모델링',
-        '제품 사진 3D 출력',
+        '제품 사진(이미지) 3D 출력',
     ],
     alternates: { canonical: absoluteUrl(PHOTO_TO_3D_GUIDE_PATH) },
     openGraph: {
@@ -41,12 +41,12 @@ export const metadata: Metadata = {
 
 const steps = [
     {
-        title: '로그인 · 사진 업로드',
-        body: '자동견적에서 「3D 모델이 없어요」를 선택합니다. 물체가 중앙에 크게 나온 JPG/PNG 정면 사진을 올리고, 가능하면 우·뒤·좌 추가 사진도 함께 업로드하세요.',
+        title: '로그인 · 사진(이미지) 업로드',
+        body: '자동견적에서 「3D 모델이 없어요」를 선택합니다. 물체가 중앙에 크게 나온 JPG/PNG 정면 사진(이미지)을 올리고, 가능하면 우·뒤·좌 추가 사진(이미지)도 함께 업로드하세요.',
     },
     {
         title: 'AI 3D 모델 생성',
-        body: 'AI가 사진을 분석해 입체 3D 메시(STL)를 생성합니다. 완료되면 3D 뷰어에서 형상·치수를 확인할 수 있습니다.',
+        body: 'AI가 사진(이미지)을 분석해 입체 3D 메시(STL)를 생성합니다. 완료되면 3D 뷰어에서 형상·치수를 확인할 수 있습니다.',
     },
     {
         title: '자동견적 · 옵션 선택',
@@ -73,7 +73,7 @@ const badPhoto = [
 ]
 
 const articleSchema = buildArticleSchema({
-    headline: '사진으로 3D 프린팅 견적 받는 방법',
+    headline: '사진(이미지)으로 3D 프린팅 견적 받는 방법',
     description: PHOTO_TO_3D_GUIDE_DESCRIPTION,
     path: PHOTO_TO_3D_GUIDE_PATH,
 })
@@ -81,7 +81,7 @@ const articleSchema = buildArticleSchema({
 const breadcrumbSchema = buildBreadcrumbSchema([
     { name: '홈', path: '/' },
     { name: '가이드', path: '/guides' },
-    { name: '사진→3D 프린팅 견적', path: PHOTO_TO_3D_GUIDE_PATH },
+    { name: '사진(이미지)→3D 프린팅 견적', path: PHOTO_TO_3D_GUIDE_PATH },
 ])
 
 const faqSchema = {
@@ -119,12 +119,12 @@ export default async function PhotoTo3DPrintingGuidePage() {
                         Photo → AI 3D
                     </div>
                     <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
-                        사진 한 장으로
+                        사진(이미지) 한 장으로
                         <br />
                         <span className="text-teal-400">3D 프린팅 견적</span>
                     </h1>
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
-                        STL·STEP 파일이 없어도 제품·피규어 사진(JPG/PNG)만으로 AI 3D 모델링 후 자동견적·출력
+                        STL·STEP 파일이 없어도 제품·피규어 사진(이미지)(JPG/PNG)만으로 AI 3D 모델링 후 자동견적·출력
                         주문까지 WOW3D에서 한 번에 진행할 수 있습니다. 형상 확인·시제품 검증용으로 적합하며,
                         정밀 치수·조립 공차가 필요한 부품은 CAD 파일 업로드를 권장합니다.
                     </p>
@@ -133,7 +133,7 @@ export default async function PhotoTo3DPrintingGuidePage() {
                             href={PHOTO_TO_3D_QUOTE_PATH}
                             className="inline-flex items-center rounded-2xl bg-teal-400 px-6 py-3 text-sm font-black text-slate-950 hover:bg-teal-300 transition-colors"
                         >
-                            사진으로 3D 견적 시작
+                            사진(이미지)으로 3D 견적 시작
                         </Link>
                         <Link
                             href="/guides/3d-printing-file-preparation"
@@ -171,7 +171,7 @@ export default async function PhotoTo3DPrintingGuidePage() {
 
                     <div className="grid md:grid-cols-2 gap-5">
                         <article className="rounded-2xl border border-teal-400/20 bg-teal-500/5 p-6 space-y-3">
-                            <h2 className="text-lg font-black text-teal-200">좋은 사진 예</h2>
+                            <h2 className="text-lg font-black text-teal-200">좋은 사진(이미지) 예</h2>
                             <ul className="space-y-2">
                                 {goodPhoto.map((t) => (
                                     <li key={t} className="flex items-start gap-2 text-sm text-white/75 break-keep">
@@ -182,7 +182,7 @@ export default async function PhotoTo3DPrintingGuidePage() {
                             </ul>
                         </article>
                         <article className="rounded-2xl border border-red-400/20 bg-red-500/5 p-6 space-y-3">
-                            <h2 className="text-lg font-black text-red-200">피해야 할 사진</h2>
+                            <h2 className="text-lg font-black text-red-200">피해야 할 사진(이미지)</h2>
                             <ul className="space-y-2">
                                 {badPhoto.map((t) => (
                                     <li key={t} className="flex items-start gap-2 text-sm text-white/75 break-keep">
@@ -195,9 +195,9 @@ export default async function PhotoTo3DPrintingGuidePage() {
                     </div>
 
                     <article className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8 md:p-10 space-y-5 overflow-x-auto">
-                        <h2 className="text-2xl font-black">AI 3D Maker vs 사진→AI 3D 견적</h2>
+                        <h2 className="text-2xl font-black">AI 3D Maker vs 사진(이미지)→AI 3D 견적</h2>
                         <p className="text-white/65 text-sm break-keep leading-relaxed">
-                            WOW3D에는 스케치·로고용 2.5D Maker와 실사 사진 기반 입체 3D 견적이 별도로 있습니다.
+                            WOW3D에는 스케치·로고용 2.5D Maker와 실사 사진(이미지) 기반 입체 3D 견적이 별도로 있습니다.
                             목적에 맞게 선택하세요.
                         </p>
                         <table className="w-full min-w-[480px] text-left text-sm">
@@ -205,7 +205,7 @@ export default async function PhotoTo3DPrintingGuidePage() {
                                 <tr className="border-b border-white/10 text-white/45">
                                     <th className="py-2 pr-4 font-black">구분</th>
                                     <th className="py-2 pr-4 font-black">AI 3D Maker</th>
-                                    <th className="py-2 font-black">사진→AI 3D 견적</th>
+                                    <th className="py-2 font-black">사진(이미지)→AI 3D 견적</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -223,7 +223,7 @@ export default async function PhotoTo3DPrintingGuidePage() {
                                 AI 3D Maker 보기
                             </Link>
                             <Link href={PHOTO_TO_3D_QUOTE_PATH} className="text-sm font-bold text-teal-300 hover:text-teal-200 underline-offset-2 hover:underline">
-                                사진→AI 3D 견적 시작
+                                사진(이미지)→AI 3D 견적 시작
                             </Link>
                         </div>
                     </article>
@@ -242,14 +242,14 @@ export default async function PhotoTo3DPrintingGuidePage() {
 
                     <GuideCTA
                         eyebrow="Photo to 3D Quote"
-                        title="사진으로 3D 프린팅 견적 받기"
-                        description="로그인 후 제품 사진을 업로드하면 AI 3D 모델 생성과 자동견적이 이어집니다. 하루 1회(한국 시간) 이용 가능합니다."
+                        title="사진(이미지)으로 3D 프린팅 견적 받기"
+                        description="로그인 후 제품 사진(이미지)을 업로드하면 AI 3D 모델 생성과 자동견적이 이어집니다. 하루 1회(한국 시간) 이용 가능합니다."
                         primaryHref={PHOTO_TO_3D_QUOTE_PATH}
-                        primaryLabel="사진 업로드 · AI 3D 시작"
+                        primaryLabel="사진(이미지) 업로드 · AI 3D 시작"
                         secondaryHref="/services/photo-to-3d"
                         secondaryLabel="서비스 소개 보기"
                         trackingSource="photo_to_3d"
-                        trackingTopic="사진→AI 3D 견적 가이드"
+                        trackingTopic="사진(이미지)→AI 3D 견적 가이드"
                     />
                 </div>
             </section>

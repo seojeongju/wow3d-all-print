@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 { title: '주문 관리', href: '/admin/orders', icon: ShoppingCart, match: (p: string) => p.startsWith('/admin/orders') },
                 { title: '견적 관리', href: '/admin/quotes', icon: FileText, match: (p: string) => p === '/admin/quotes' || p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics') },
                 { title: '견적 유입 분석', href: '/admin/quotes/analytics', icon: BarChart3, match: (p: string) => p.startsWith('/admin/quotes/analytics') },
-                { title: '사진→AI 3D', href: '/admin/meshy', icon: Sparkles, match: (p: string) => p.startsWith('/admin/meshy') },
+                { title: '사진(이미지)→AI 3D', href: '/admin/meshy', icon: Sparkles, match: (p: string) => p.startsWith('/admin/meshy') },
                 {
                     title: '문의 관리',
                     href: '/admin/inquiries',

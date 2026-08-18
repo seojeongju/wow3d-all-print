@@ -19,7 +19,7 @@ function mapGalleryRowToShowcase(row: GalleryShowcaseRow): PhotoTo3DShowcaseItem
         title: row.title,
         caption: row.description?.trim() || undefined,
         beforeSrc: resolveGalleryImageUrl(row.source_image_url),
-        beforeAlt: `${row.title} 원본 사진 — 사진→AI 3D 입력`,
+        beforeAlt: `${row.title} 원본 사진(이미지) — 사진(이미지)→AI 3D 입력`,
         afterSrc: resolveGalleryImageUrl(row.image_url),
         afterAlt: `${row.title} AI 3D·3D 프린팅 출력 결과`,
         printMethod: row.print_method?.trim() || undefined,

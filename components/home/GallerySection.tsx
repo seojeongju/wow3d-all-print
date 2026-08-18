@@ -236,13 +236,13 @@ export function DetailViewModal({
                             <div className="flex flex-1 flex-col md:flex-row min-h-0">
                                 <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-white/10 min-h-[180px]">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center py-2 shrink-0">
-                                        원본 사진
+                                        원본 사진(이미지)
                                     </p>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         key={item.source_image_url}
                                         src={resolveImageUrl(item.source_image_url)}
-                                        alt={`${item.title} 원본 사진`}
+                                        alt={`${item.title} 원본 사진(이미지)`}
                                         className="flex-1 w-full object-contain p-3 min-h-0"
                                     />
                                 </div>

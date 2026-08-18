@@ -138,7 +138,7 @@ export default function AdminMeshyPage() {
             <div>
                 <h1 className="text-2xl font-black text-white flex items-center gap-2">
                     <Sparkles className="w-6 h-6 text-indigo-400" />
-                    사진→AI 3D
+                    사진(이미지)→AI 3D
                 </h1>
                 <p className="text-sm text-white/50 font-bold mt-1">
                     사용량 · Meshy 크레딧 · 추가 생성 횟수 부여

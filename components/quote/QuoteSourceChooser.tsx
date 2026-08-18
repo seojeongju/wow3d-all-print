@@ -21,7 +21,7 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                     <span className="text-teal-400">견적을 시작할까요?</span>
                 </h1>
                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                    3D 파일이 있으면 바로 업로드하세요. 제품 실사 사진이면 AI가 입체 메시를 만듭니다.
+                    3D 파일이 있으면 바로 업로드하세요. 제품 실사 사진(이미지)이면 AI가 입체 메시를 만듭니다.
                     로고·스케치 돌출(2.5D)은 Maker를 이용하세요.
                 </p>
             </div>
@@ -82,10 +82,10 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                                 <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-indigo-300 group-hover:translate-x-0.5 transition-all shrink-0" />
                             </div>
                             <p className="text-[12px] sm:text-[13px] text-white/55 font-bold leading-relaxed break-keep">
-                                제품 사진(JPG/PNG)을 올리면 AI가 3D 모델을 만들고 견적으로 연결합니다
+                                제품 사진(이미지)(JPG/PNG)을 올리면 AI가 3D 모델을 만들고 견적으로 연결합니다
                             </p>
                             <span className="inline-flex mt-1 text-[10px] font-black uppercase tracking-widest text-indigo-300/80">
-                                사진 → 3D 모델링
+                                사진(이미지) → 3D 모델링
                             </span>
                         </div>
                     </div>

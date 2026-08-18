@@ -106,7 +106,7 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
                         <PhotoTo3DBeforeAfter
                             items={showcaseItems}
                             heading="변환·출력 흐름 예시"
-                            description="사진 업로드 → AI 3D 모델 → 자동견적·출력까지 WOW3D에서 한 번에 진행할 수 있습니다."
+                            description="사진(이미지) 업로드 → AI 3D 모델 → 자동견적·출력까지 WOW3D에서 한 번에 진행할 수 있습니다."
                         />
                     )}
 

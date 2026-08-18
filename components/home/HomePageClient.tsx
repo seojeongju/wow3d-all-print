@@ -97,15 +97,15 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
               </div>
               <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-5">
                 <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">자동견적 AI</p>
-                <h3 className="font-bold text-lg mb-2">사진 → 입체 3D</h3>
+                <h3 className="font-bold text-lg mb-2">사진(이미지) → 입체 3D</h3>
                 <p className="text-sm text-foreground/60 break-keep leading-relaxed mb-4">
-                  제품·피규어 실사 사진으로 입체 메시를 만든 뒤 바로 자동견적합니다.
+                  제품·피규어 실사 사진(이미지)으로 입체 메시를 만든 뒤 바로 자동견적합니다.
                 </p>
                 <Button asChild className="w-full bg-indigo-500 hover:bg-indigo-400 text-white">
-                  <Link href="/quote?entry=photo">사진으로 3D 만들기</Link>
+                  <Link href="/quote?entry=photo">사진(이미지)으로 3D 만들기</Link>
                 </Button>
                 <Link href="/guides/photo-to-3d-printing-quote" className="block text-center text-xs text-indigo-300/80 hover:text-indigo-200 mt-2 underline-offset-2 hover:underline">
-                  사진→3D 견적 가이드 보기
+                  사진(이미지)→3D 견적 가이드 보기
                 </Link>
               </div>
             </div>
@@ -132,12 +132,12 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
             <Link href="/services" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Services</p>
               <h3 className="text-xl font-bold mb-3">핵심 전환 서비스</h3>
-              <p className="text-sm text-foreground/65 break-keep">출력대행·사진→3D·시제품·FDM·SLA</p>
+              <p className="text-sm text-foreground/65 break-keep">출력대행·사진(이미지)→3D·시제품·FDM·SLA</p>
             </Link>
             <Link href="/guides/photo-to-3d-printing-quote" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Photo to 3D</p>
-              <h3 className="text-xl font-bold mb-3">사진→3D 견적</h3>
-              <p className="text-sm text-foreground/65 break-keep">3D 파일 없이 사진으로 AI 모델링·자동견적</p>
+              <h3 className="text-xl font-bold mb-3">사진(이미지)→3D 견적</h3>
+              <p className="text-sm text-foreground/65 break-keep">3D 파일 없이 사진(이미지)으로 AI 모델링·자동견적</p>
             </Link>
             <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Guide</p>

@@ -340,7 +340,7 @@ export default function AdminGalleryPage() {
                                             <td className="p-3">
                                                 <div className="flex gap-1.5">
                                                     {item.source_image_url && (
-                                                        <div className="w-14 h-14 rounded-lg bg-black/40 overflow-hidden border border-indigo-400/30 flex items-center justify-center shrink-0" title="원본 사진">
+                                                        <div className="w-14 h-14 rounded-lg bg-black/40 overflow-hidden border border-indigo-400/30 flex items-center justify-center shrink-0" title="원본 사진(이미지)">
                                                             <img
                                                                 src={resolveAdminImageUrl(item.source_image_url) || ''}
                                                                 alt="원본"
@@ -478,14 +478,14 @@ export default function AdminGalleryPage() {
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-zinc-300">원본 사진 Before (선택)</Label>
+                                <Label className="text-zinc-300">원본 사진(이미지) Before (선택)</Label>
                                 <div
                                     className="w-full h-40 rounded-xl border-2 border-dashed border-indigo-400/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
                                     onClick={() => sourceFileInputRef.current?.click()}
                                 >
                                     {sourcePreviewUrl ? (
                                         <>
-                                            <img src={sourcePreviewUrl} alt="원본 사진 미리보기" className="w-full h-full object-contain" />
+                                            <img src={sourcePreviewUrl} alt="원본 사진(이미지) 미리보기" className="w-full h-full object-contain" />
                                             <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity gap-2">
                                                 <span className="text-white text-sm font-medium">원본 변경</span>
                                             </div>
@@ -493,7 +493,7 @@ export default function AdminGalleryPage() {
                                     ) : (
                                         <>
                                             <ImageIcon className="w-8 h-8 text-indigo-300/50 mb-2" />
-                                            <span className="text-sm text-white/50 text-center px-2">사진→3D Before 이미지</span>
+                                            <span className="text-sm text-white/50 text-center px-2">사진(이미지)→3D Before 이미지</span>
                                         </>
                                     )}
                                 </div>
@@ -510,14 +510,14 @@ export default function AdminGalleryPage() {
                                             setFormData(prev => ({ ...prev, source_image: null }));
                                         }}
                                     >
-                                        원본 사진 제거
+                                        원본 사진(이미지) 제거
                                     </Button>
                                 )}
                             </div>
                         </div>
 
                         <p className="text-xs text-white/40 break-keep">
-                            사진→3D 쇼케이스에 노출하려면 태그에 <code className="text-indigo-300">photo-to-3d</code>를 포함하고 원본 사진을 함께 업로드하세요.
+                            사진(이미지)→3D 쇼케이스에 노출하려면 태그에 <code className="text-indigo-300">photo-to-3d</code>를 포함하고 원본 사진(이미지)을 함께 업로드하세요.
                         </p>
 
                         <div className="grid gap-2">
