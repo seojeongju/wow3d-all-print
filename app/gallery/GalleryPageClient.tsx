@@ -12,22 +12,26 @@ const ITEMS_PER_PAGE = 15;
 type GalleryPageClientProps = {
     initialItems: GalleryItem[];
     initialTotalPages: number;
+    initialTag?: 'all' | 'photo-to-3d';
 };
 
 export default function GalleryPageClient({
     initialItems,
     initialTotalPages,
+    initialTag = 'all',
 }: GalleryPageClientProps) {
     const [items, setItems] = useState<GalleryItem[]>(initialItems);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(initialTotalPages);
     const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+    const [galleryTag, setGalleryTag] = useState<'all' | 'photo-to-3d'>(initialTag);
 
-    const fetchGallery = async (p: number) => {
+    const fetchGallery = async (p: number, tag: 'all' | 'photo-to-3d' = galleryTag) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/gallery?page=${p}&limit=${ITEMS_PER_PAGE}`);
+            const tagQuery = tag === 'photo-to-3d' ? '&tag=photo-to-3d' : '';
+            const res = await fetch(`/api/gallery?page=${p}&limit=${ITEMS_PER_PAGE}${tagQuery}`);
             if (res.ok) {
                 const json = await res.json();
                 if (json.success) {
@@ -42,13 +46,24 @@ export default function GalleryPageClient({
     };
 
     useEffect(() => {
-        if (page === 1) {
+        if (page === 1 && galleryTag === initialTag) {
             setItems(initialItems);
             setTotalPages(initialTotalPages);
             return;
         }
-        fetchGallery(page);
-    }, [page, initialItems, initialTotalPages]);
+        fetchGallery(page, galleryTag);
+    }, [page, galleryTag, initialItems, initialTotalPages, initialTag]);
+
+    const handleTagChange = (tag: 'all' | 'photo-to-3d') => {
+        setGalleryTag(tag);
+        setPage(1);
+        if (tag === initialTag) {
+            setItems(initialItems);
+            setTotalPages(initialTotalPages);
+        } else {
+            fetchGallery(1, tag);
+        }
+    };
 
     // 하단 페이지네이션 렌더링 도우미 (최대 5개 노출)
     const renderPagination = () => {
@@ -126,6 +141,30 @@ export default function GalleryPageClient({
                     >
                         100여 종에 달하는 고품질 출력 레퍼런스를 한눈에 확인하세요.
                     </motion.p>
+                    <div className="flex justify-center gap-2 mt-8">
+                        <button
+                            type="button"
+                            onClick={() => handleTagChange('all')}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                galleryTag === 'all'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
+                            }`}
+                        >
+                            전체
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleTagChange('photo-to-3d')}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                galleryTag === 'photo-to-3d'
+                                    ? 'bg-indigo-500 text-white'
+                                    : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
+                            }`}
+                        >
+                            사진→3D Before/After
+                        </button>
+                    </div>
                 </div>
 
                 {/* 리스트 영역 */}

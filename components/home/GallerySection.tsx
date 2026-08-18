@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
 
 // ─────────────────────────────────────────────────────
 // 타입 정의
@@ -15,6 +16,7 @@ export interface GalleryItem {
     title: string;
     description?: string;
     image_url: string;
+    source_image_url?: string | null;
     material?: string | null;
     print_method?: string | null;
     tags?: string;
@@ -35,35 +37,9 @@ function MethodIcon({ method }: { method?: string | null }) {
 // 이미지 없음 플레이스홀더 (실제 파일 요청 없이 사용)
 const PLACEHOLDER_DATA_URI = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%231e1e2e"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%234d4d66" font-size="14" font-family="sans-serif">이미지 없음</text></svg>';
 
-// ─────────────────────────────────────────────────────
-// 이미지 URL 변환 (R2 key → API 엔드포인트)
-// ─────────────────────────────────────────────────────
+// 이미지 URL 변환 (R2 key → API 엔드포인트) — 하위 호환 re-export
 export function resolveImageUrl(url: string): string {
-    if (!url || typeof url !== 'string' || !url.trim()) return PLACEHOLDER_DATA_URI;
-    // placeholder 또는 존재하지 않는 정적 경로는 요청하지 않음
-    if (url === '/placeholder-3d.jpg' || url.endsWith('placeholder-3d.jpg') || url.includes('placeholder')) {
-        return '/placeholder-3d.svg';
-    }
-    
-    // 외부 절대 경로는 그대로 반환
-    if (url.startsWith('http')) return url;
-    
-    // GNUBoard 스타일의 경로 (/data/file/...) 처리
-    if (url.startsWith('/data/file/')) {
-        return `http://3dcookiehd.co.kr${url}`;
-    }
-    if (url.startsWith('data/file/')) {
-        return `http://3dcookiehd.co.kr/${url}`;
-    }
-
-    // 내부 경로(/로 시작)는 그대로 반환
-    if (url.startsWith('/')) return url;
-
-    // gallery/xxx.jpg → /api/gallery/image/xxx.jpg
-    if (url.startsWith('gallery/')) {
-        return `/api/gallery/image/${url.replace(/^gallery\//, '')}`;
-    }
-    return `/api/files/${url}`;
+    return resolveGalleryImageUrl(url);
 }
 
 // ─────────────────────────────────────────────────────
@@ -143,7 +119,12 @@ export function GalleryCard({
                 <div className="relative aspect-square overflow-hidden bg-slate-800">
                     <GalleryCardImage imageUrl={item.image_url} alt={item.title} />
 
-                    {/* 호버 오버레이 */}
+                    {/* 출력 방식 뱃지 */}
+                    {item.source_image_url && (
+                        <div className="absolute top-3 left-3 px-2 py-1 rounded-lg bg-indigo-500/90 text-[9px] font-black uppercase tracking-wider text-white">
+                            Before/After
+                        </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
                             <ZoomIn className="w-5 h-5 text-white" />
@@ -250,15 +231,46 @@ export function DetailViewModal({
                     </button>
 
                     {/* 좌측: 이미지 영역 */}
-                    <div className="md:w-3/5 bg-slate-950 relative group overflow-hidden flex items-center justify-center min-h-[300px] md:min-h-[500px]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            key={item.image_url}
-                            src={resolveImageUrl(item.image_url)}
-                            alt={item.title}
-                            className="w-full h-full object-contain"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+                    <div className="md:w-3/5 bg-slate-950 relative group overflow-hidden flex flex-col min-h-[300px] md:min-h-[500px]">
+                        {item.source_image_url ? (
+                            <div className="flex flex-1 flex-col md:flex-row min-h-0">
+                                <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-white/10 min-h-[180px]">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center py-2 shrink-0">
+                                        원본 사진
+                                    </p>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        key={item.source_image_url}
+                                        src={resolveImageUrl(item.source_image_url)}
+                                        alt={`${item.title} 원본 사진`}
+                                        className="flex-1 w-full object-contain p-3 min-h-0"
+                                    />
+                                </div>
+                                <div className="flex-1 flex flex-col min-h-[180px]">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-teal-400/80 text-center py-2 shrink-0">
+                                        AI 3D · 출력
+                                    </p>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        key={item.image_url}
+                                        src={resolveImageUrl(item.image_url)}
+                                        alt={item.title}
+                                        className="flex-1 w-full object-contain p-3 min-h-0"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    key={item.image_url}
+                                    src={resolveImageUrl(item.image_url)}
+                                    alt={item.title}
+                                    className="w-full h-full object-contain"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+                            </>
+                        )}
 
                         {/* 내비게이션 화살표 */}
                         {onPrev && (

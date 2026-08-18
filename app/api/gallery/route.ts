@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { getPublicGallery } from '@/lib/gallery-public';
+import { uploadGalleryImage } from '@/lib/gallery-upload';
 
 // ─────────────────────────────────────────────
 // GET /api/gallery?page=1&limit=8&store_id=1
@@ -14,8 +15,10 @@ export async function GET(request: NextRequest) {
         const limit = Math.min(50, Math.max(4, parseInt(url.searchParams.get('limit') || '8')));
         const storeIdParam = url.searchParams.get('store_id');
         const storeId = storeIdParam ? parseInt(storeIdParam) : null;
+        const tagParam = url.searchParams.get('tag');
+        const tag = tagParam === 'photo-to-3d' ? 'photo-to-3d' as const : null;
 
-        const result = await getPublicGallery({ page, limit, storeId });
+        const result = await getPublicGallery({ page, limit, storeId, tag });
 
         return NextResponse.json({
             success: true,
@@ -44,6 +47,7 @@ export async function POST(request: NextRequest) {
 
         const formData = await request.formData();
         const imageFile = formData.get('image') as File | null;
+        const sourceImageFile = formData.get('source_image') as File | null;
         const title = (formData.get('title') as string | null)?.trim() || '';
         const description = (formData.get('description') as string | null)?.trim() || '';
         const material = (formData.get('material') as string | null)?.trim() || '';
@@ -55,15 +59,14 @@ export async function POST(request: NextRequest) {
 
         let imageUrl = '';
         if (env.BUCKET) {
-            const ext = imageFile.name.split('.').pop() || 'jpg';
-            const r2Key = `gallery/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-            const buf = await imageFile.arrayBuffer();
-            await env.BUCKET.put(r2Key, buf, {
-                httpMetadata: { contentType: imageFile.type || 'image/jpeg' },
-            });
-            imageUrl = r2Key;
+            imageUrl = await uploadGalleryImage(env.BUCKET, imageFile);
         } else {
             return NextResponse.json({ error: 'R2 BUCKET이 없습니다' }, { status: 503 });
+        }
+
+        let sourceImageUrl: string | null = null;
+        if (sourceImageFile && env.BUCKET) {
+            sourceImageUrl = await uploadGalleryImage(env.BUCKET, sourceImageFile, 'gallery/source');
         }
 
         let result: any;
@@ -71,11 +74,16 @@ export async function POST(request: NextRequest) {
 
         try {
             result = await env.DB.prepare(
-                `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags, created_by_user_id)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-            ).bind(storeIdToUse, title, description, imageUrl, material, printMethod, tagsRaw, admin.userId).run();
+                `INSERT INTO gallery_items (store_id, title, description, image_url, source_image_url, material, print_method, tags, created_by_user_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(storeIdToUse, title, description, imageUrl, sourceImageUrl, material, printMethod, tagsRaw, admin.userId).run();
         } catch (colErr: any) {
-            if (colErr.message?.includes('created_by_user_id') || colErr.message?.includes('no such column')) {
+            if (colErr.message?.includes('source_image_url') || colErr.message?.includes('no such column')) {
+                result = await env.DB.prepare(
+                    `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags, created_by_user_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+                ).bind(storeIdToUse, title, description, imageUrl, material, printMethod, tagsRaw, admin.userId).run();
+            } else if (colErr.message?.includes('created_by_user_id') || colErr.message?.includes('no such column')) {
                 result = await env.DB.prepare(
                     `INSERT INTO gallery_items (store_id, title, description, image_url, material, print_method, tags)
                      VALUES (?, ?, ?, ?, ?, ?, ?)`

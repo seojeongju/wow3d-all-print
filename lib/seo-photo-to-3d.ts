@@ -65,6 +65,10 @@ export const MAKER_VS_PHOTO_ROWS = [
     },
 ] as const
 
+function schemaImageUrl(src: string) {
+    return src.startsWith('http') ? src : absoluteUrl(src)
+}
+
 export type PhotoTo3DShowcaseItem = {
     title: string
     caption?: string
@@ -100,22 +104,22 @@ export const PHOTO_TO_3D_SHOWCASE: readonly PhotoTo3DShowcaseItem[] = [
     },
 ] as const
 
-export function buildPhotoTo3DShowcaseSchema() {
+export function buildPhotoTo3DShowcaseSchema(items: readonly PhotoTo3DShowcaseItem[] = PHOTO_TO_3D_SHOWCASE) {
     return {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
         name: '사진→AI 3D 변환·출력 사례',
         description: '제품 사진에서 AI 3D 모델을 생성하고 3D 프린팅 출력까지 진행하는 WOW3D 워크플로 예시',
         url: absoluteUrl(PHOTO_TO_3D_GUIDE_PATH),
-        itemListElement: PHOTO_TO_3D_SHOWCASE.map((item, index) => ({
+        itemListElement: items.map((item, index) => ({
             '@type': 'ListItem',
             position: index + 1,
             item: {
                 '@type': 'ImageObject',
                 name: item.title,
                 description: item.caption,
-                contentUrl: absoluteUrl(item.afterSrc),
-                thumbnailUrl: absoluteUrl(item.beforeSrc),
+                contentUrl: schemaImageUrl(item.afterSrc),
+                thumbnailUrl: schemaImageUrl(item.beforeSrc),
             },
         })),
     }

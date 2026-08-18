@@ -1,10 +1,12 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { isPhotoTo3DGalleryTag } from '@/lib/photo-to-3d-showcase';
 
 export type PublicGalleryItem = {
     id: string | number;
     title: string;
     description?: string;
     image_url: string;
+    source_image_url?: string | null;
     material?: string | null;
     print_method?: string | null;
     tags?: string;
@@ -82,6 +84,7 @@ export async function getPublicGallery(options?: {
     page?: number;
     limit?: number;
     storeId?: number | null;
+    tag?: 'photo-to-3d' | null;
 }): Promise<PublicGalleryResult> {
     const page = Math.max(1, options?.page ?? 1);
     const limit = Math.min(50, Math.max(4, options?.limit ?? 8));
@@ -121,9 +124,19 @@ export async function getPublicGallery(options?: {
         console.error('Local DB gallery fetch error:', dbErr);
     }
 
-    const remoteItems = await fetchRemoteGalleryItems();
+    const remoteItems = options?.tag === 'photo-to-3d'
+        ? []
+        : await fetchRemoteGalleryItems();
     const localIds = new Set(localItems.map((it) => String(it.id)));
-    const merged = [...localItems, ...remoteItems.filter((r) => !localIds.has(String(r.id)))];
+    let merged = [...localItems, ...remoteItems.filter((r) => !localIds.has(String(r.id)))];
+
+    if (options?.tag === 'photo-to-3d') {
+        merged = merged.filter(
+            (item) =>
+                isPhotoTo3DGalleryTag(item.tags) &&
+                Boolean(item.source_image_url?.trim())
+        );
+    }
 
     merged.sort((a, b) => {
         const ta = a.created_at ? String(a.created_at).replace(' ', 'T') : '0';

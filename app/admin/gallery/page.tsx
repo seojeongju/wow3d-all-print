@@ -22,6 +22,7 @@ type GalleryItem = {
     title: string;
     description: string;
     image_url: string;
+    source_image_url?: string | null;
     material: string;
     print_method: string;
     tags: string;
@@ -29,6 +30,12 @@ type GalleryItem = {
     sort_order: number;
     created_at: string;
 };
+
+function resolveAdminImageUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('/')) return url;
+    return `/api/gallery/image/${url.replace(/^gallery\//, '')}`;
+}
 
 export default function AdminGalleryPage() {
     const { toast } = useToast();
@@ -49,7 +56,10 @@ export default function AdminGalleryPage() {
 
     // Add / Edit Form 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const sourceFileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [sourcePreviewUrl, setSourcePreviewUrl] = useState<string | null>(null);
+    const [clearSourceImage, setClearSourceImage] = useState(false);
     const [editId, setEditId] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({
@@ -58,7 +68,8 @@ export default function AdminGalleryPage() {
         material: '',
         print_method: '',
         tags: '',
-        image: null as File | null
+        image: null as File | null,
+        source_image: null as File | null,
     });
 
     const fetchGallery = async (p = 1) => {
@@ -109,8 +120,10 @@ export default function AdminGalleryPage() {
 
     const openAddModal = () => {
         setEditId(null);
-        setFormData({ title: '', description: '', material: '', print_method: '', tags: '', image: null });
+        setFormData({ title: '', description: '', material: '', print_method: '', tags: '', image: null, source_image: null });
         setPreviewUrl(null);
+        setSourcePreviewUrl(null);
+        setClearSourceImage(false);
         setIsAddOpen(true);
     };
 
@@ -132,16 +145,22 @@ export default function AdminGalleryPage() {
             material: item.material || '',
             print_method: item.print_method || '',
             tags: tagsStr,
-            image: null
+            image: null,
+            source_image: null,
         });
-        setPreviewUrl(
-            item.image_url 
-                ? (item.image_url.startsWith('http') || item.image_url.startsWith('/') 
-                    ? item.image_url 
-                    : `/api/gallery/image/${item.image_url.replace('gallery/', '')}`) 
-                : null
-        );
+        setPreviewUrl(resolveAdminImageUrl(item.image_url));
+        setSourcePreviewUrl(resolveAdminImageUrl(item.source_image_url));
+        setClearSourceImage(false);
         setIsAddOpen(true);
+    };
+
+    const handleSourceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setFormData(prev => ({ ...prev, source_image: file }));
+            setSourcePreviewUrl(URL.createObjectURL(file));
+            setClearSourceImage(false);
+        }
     };
 
     const handleAddOrEditSubmit = async () => {
@@ -172,6 +191,12 @@ export default function AdminGalleryPage() {
 
             if (formData.image) {
                 data.append('image', formData.image);
+            }
+            if (formData.source_image) {
+                data.append('source_image', formData.source_image);
+            }
+            if (editId && clearSourceImage) {
+                data.append('clear_source_image', '1');
             }
 
             const url = editId ? `/api/gallery/${editId}` : '/api/gallery';
@@ -301,7 +326,7 @@ export default function AdminGalleryPage() {
                             <table className="w-full text-sm text-left">
                                 <thead>
                                     <tr className="border-b border-white/10 bg-white/5">
-                                        <th className="p-4 font-medium text-white/70 w-24">이미지</th>
+                                        <th className="p-4 font-medium text-white/70 w-28">이미지</th>
                                         <th className="p-4 font-medium text-white/70">제목</th>
                                         <th className="p-4 font-medium text-white/70">소재 / 방식</th>
                                         <th className="p-4 font-medium text-white/70">태그</th>
@@ -313,19 +338,27 @@ export default function AdminGalleryPage() {
                                     {items.map((item) => (
                                         <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                                             <td className="p-3">
-                                                <div className="w-16 h-16 rounded-lg bg-black/40 overflow-hidden border border-white/10 flex items-center justify-center">
-                                                    {item.image_url ? (
-                                                        <img 
-                                                            src={item.image_url.startsWith('http') || item.image_url.startsWith('/') 
-                                                                ? item.image_url 
-                                                                : `/api/gallery/image/${item.image_url.replace('gallery/', '')}`
-                                                            } 
-                                                            alt={item.title} 
-                                                            className="w-full h-full object-cover" 
-                                                        />
-                                                    ) : (
-                                                        <ImageIcon className="w-6 h-6 text-white/20" />
+                                                <div className="flex gap-1.5">
+                                                    {item.source_image_url && (
+                                                        <div className="w-14 h-14 rounded-lg bg-black/40 overflow-hidden border border-indigo-400/30 flex items-center justify-center shrink-0" title="원본 사진">
+                                                            <img
+                                                                src={resolveAdminImageUrl(item.source_image_url) || ''}
+                                                                alt="원본"
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </div>
                                                     )}
+                                                    <div className="w-14 h-14 rounded-lg bg-black/40 overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
+                                                        {item.image_url ? (
+                                                            <img
+                                                                src={resolveAdminImageUrl(item.image_url) || ''}
+                                                                alt={item.title}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <ImageIcon className="w-6 h-6 text-white/20" />
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="p-4">
@@ -421,27 +454,71 @@ export default function AdminGalleryPage() {
                         <DialogTitle className="text-white">출력물 갤러리 {editId ? '정보 수정' : '업로드'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
-                        <div className="flex flex-col items-center justify-center gap-4">
-                            <div
-                                className="w-full h-48 rounded-xl border-2 border-dashed border-white/20 bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                {previewUrl ? (
-                                    <>
-                                        <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
-                                            <span className="text-white text-sm font-medium">사진 변경하기</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <ImageIcon className="w-8 h-8 text-white/40 mb-2" />
-                                        <span className="text-sm text-white/50">클릭하여 이미지 업로드 (JPG, PNG)</span>
-                                    </>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-zinc-300">출력물 · AI 3D 결과 (필수)</Label>
+                                <div
+                                    className="w-full h-40 rounded-xl border-2 border-dashed border-white/20 bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    {previewUrl ? (
+                                        <>
+                                            <img src={previewUrl} alt="출력물 미리보기" className="w-full h-full object-contain" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <span className="text-white text-sm font-medium">출력물 변경</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ImageIcon className="w-8 h-8 text-white/40 mb-2" />
+                                            <span className="text-sm text-white/50 text-center px-2">출력물·3D 결과 이미지</span>
+                                        </>
+                                    )}
+                                </div>
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-zinc-300">원본 사진 Before (선택)</Label>
+                                <div
+                                    className="w-full h-40 rounded-xl border-2 border-dashed border-indigo-400/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
+                                    onClick={() => sourceFileInputRef.current?.click()}
+                                >
+                                    {sourcePreviewUrl ? (
+                                        <>
+                                            <img src={sourcePreviewUrl} alt="원본 사진 미리보기" className="w-full h-full object-contain" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity gap-2">
+                                                <span className="text-white text-sm font-medium">원본 변경</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ImageIcon className="w-8 h-8 text-indigo-300/50 mb-2" />
+                                            <span className="text-sm text-white/50 text-center px-2">사진→3D Before 이미지</span>
+                                        </>
+                                    )}
+                                </div>
+                                <input type="file" ref={sourceFileInputRef} className="hidden" accept="image/*" onChange={handleSourceFileChange} />
+                                {editId && sourcePreviewUrl && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full border-red-400/30 text-red-300 hover:bg-red-500/10"
+                                        onClick={() => {
+                                            setClearSourceImage(true);
+                                            setSourcePreviewUrl(null);
+                                            setFormData(prev => ({ ...prev, source_image: null }));
+                                        }}
+                                    >
+                                        원본 사진 제거
+                                    </Button>
                                 )}
                             </div>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         </div>
+
+                        <p className="text-xs text-white/40 break-keep">
+                            사진→3D 쇼케이스에 노출하려면 태그에 <code className="text-indigo-300">photo-to-3d</code>를 포함하고 원본 사진을 함께 업로드하세요.
+                        </p>
 
                         <div className="grid gap-2">
                             <Label className="text-zinc-300">제목 (필수)</Label>
@@ -466,7 +543,7 @@ export default function AdminGalleryPage() {
 
                         <div className="grid gap-2">
                             <Label className="text-zinc-300">태그 (선택)</Label>
-                            <Input placeholder="쉼표(,)로 구분 (예: 시제품,산업용,부품)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
+                            <Input placeholder="쉼표(,)로 구분 (예: photo-to-3d, 시제품, 피규어)" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} className="bg-white/5 border-white/10 text-white placeholder:text-zinc-400" />
                         </div>
                     </div>
                     <DialogFooter>

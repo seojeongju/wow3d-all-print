@@ -8,9 +8,13 @@ import { buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import type { ServiceLandingConfig } from '@/lib/seo-service-pages'
 import type { QnAItem } from '@/lib/qna'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
-import { PHOTO_TO_3D_SHOWCASE, buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
+import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
+import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
 
-export default function ServiceLandingPage({ config }: { config: ServiceLandingConfig }) {
+export default async function ServiceLandingPage({ config }: { config: ServiceLandingConfig }) {
+    const showcaseItems =
+        config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems() : null
+
     const faqItems: QnAItem[] = config.faqs.map((f, i) => ({
         id: i + 1,
         question: f.q,
@@ -38,7 +42,9 @@ export default function ServiceLandingPage({ config }: { config: ServiceLandingC
             areaServed: 'KR',
             url: absoluteUrl(config.path),
         },
-        ...(config.slug === 'photo-to-3d' ? [buildPhotoTo3DShowcaseSchema()] : []),
+        ...(config.slug === 'photo-to-3d' && showcaseItems
+            ? [buildPhotoTo3DShowcaseSchema(showcaseItems)]
+            : []),
     ]
 
     return (
@@ -96,9 +102,9 @@ export default function ServiceLandingPage({ config }: { config: ServiceLandingC
                         </ul>
                     </div>
 
-                    {config.slug === 'photo-to-3d' && (
+                    {config.slug === 'photo-to-3d' && showcaseItems && (
                         <PhotoTo3DBeforeAfter
-                            items={PHOTO_TO_3D_SHOWCASE}
+                            items={showcaseItems}
                             heading="변환·출력 흐름 예시"
                             description="사진 업로드 → AI 3D 모델 → 자동견적·출력까지 WOW3D에서 한 번에 진행할 수 있습니다."
                         />
