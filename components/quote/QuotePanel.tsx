@@ -81,6 +81,7 @@ const defaultQuoteDetail = {
 
 export default function QuotePanel({ embedded = false, initialQuote, guideSource, guideTopic }: QuotePanelProps) {
     const file = useFileStore((s) => s.file)
+    const fileSource = useFileStore((s) => s.fileSource)
     const analysis = useEffectiveAnalysis()
     const { addToCart } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
@@ -301,6 +302,9 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             // 이미 업로드된 파일이 없고 새로 업로드해야 하는 경우
             if (!currentQuoteId) {
                 try {
+                    if (fileSource.kind === 'meshy-photo' && fileSource.meshyJobId) {
+                        uploadFormData.append('meshyJobId', String(fileSource.meshyJobId));
+                    }
                     const uploadRes = await fetch('/api/files/upload', {
                         method: 'POST',
                         headers: uploadHeaders,
@@ -313,7 +317,11 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                         currentQuoteId = uploadData.data?.quoteId || null;
                         setUploadedQuoteId(currentQuoteId);
                     } else {
-                        console.warn('파일 업로드 실패, fileUrl 없이 견적 저장 진행');
+                        const errBody = await uploadRes.json().catch(() => ({})) as { error?: string };
+                        console.warn('파일 업로드 실패, fileUrl 없이 견적 저장 진행', errBody.error);
+                        if (fileSource.kind === 'meshy-photo') {
+                            throw new Error(errBody.error || 'AI 3D 모델 파일 저장에 실패했습니다. 다시 시도해 주세요.');
+                        }
                     }
                 } catch (uploadError) {
                     console.error('파일 업로드 중 오류:', uploadError);

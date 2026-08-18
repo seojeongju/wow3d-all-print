@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { resolveQuoteR2KeyCandidates } from '@/lib/r2-quote-file';
+import {
+    parseMeshyJobIdFromFileName,
+    resolveMeshyR2KeyCandidates,
+} from '@/lib/meshy-r2';
 
 /**
  * GET /api/admin/orders/[id]/file - 주문 항목의 모델링 파일 다운로드 (관리자)
@@ -80,6 +84,30 @@ export async function GET(
       quoteId: quote.quote_id,
       fileName: quote.file_name,
     });
+
+    const meshyJobIdFromName = parseMeshyJobIdFromFileName(quote.file_name);
+    let meshyResultKey: string | null = null;
+    try {
+      const meshyJob = await env.DB.prepare(
+        `SELECT result_file_key, result_file_name FROM meshy_jobs
+         WHERE quote_id = ? OR id = ?
+         ORDER BY CASE WHEN quote_id = ? THEN 0 ELSE 1 END, id DESC
+         LIMIT 1`
+      )
+        .bind(quote.quote_id, meshyJobIdFromName ?? -1, quote.quote_id)
+        .first<{ result_file_key?: string | null; result_file_name?: string | null }>();
+      meshyResultKey = meshyJob?.result_file_key ?? null;
+    } catch {
+      /* meshy_jobs 없음 */
+    }
+
+    for (const key of resolveMeshyR2KeyCandidates({
+      fileUrl: quote.file_url,
+      fileName: quote.file_name,
+      resultFileKey: meshyResultKey,
+    })) {
+      if (!candidates.includes(key)) candidates.push(key);
+    }
 
     if (candidates.length === 0) {
       return NextResponse.json({ error: '파일 경로를 찾을 수 없습니다' }, { status: 404 });
