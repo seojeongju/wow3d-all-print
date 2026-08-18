@@ -27,6 +27,7 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
         eyebrow: 'Printing Service',
         bullets: [
             'STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환',
+            '3D 파일 없으면 제품 사진→AI 3D→자동견적 연계',
             'FDM·SLA·DLP 출력 방식과 30종+ 소재 선택',
             '주문 확정 후 제작·검수·발송, 평균 3~7일 내 수령',
         ],
@@ -259,12 +260,61 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
                 q: '모델링 없이 출력만 가능한가요?',
                 a: '파일이 이미 있다면 자동견적에서 바로 업로드해 출력대행을 진행하면 됩니다.',
             },
+            {
+                q: '3D 모델링 의뢰와 사진→AI 3D 중 무엇을 선택해야 하나요?',
+                a: '정밀 치수·조립 공차·도면 기반 제품은 3D 모델링 의뢰가 적합합니다. 형상 확인·시제품·피규어 아이디어 검증처럼 빠른 입체 확인이 목적이면 사진→AI 3D 자동견적을 권장합니다.',
+            },
+            {
+                q: '사진만 있는데 모델링 의뢰 없이 견적을 받을 수 있나요?',
+                a: '가능합니다. 자동견적의 사진→AI 3D로 입체 메시를 생성한 뒤 바로 견적·주문까지 진행할 수 있습니다. 정밀 공차가 필요하면 모델링 의뢰를 검토하세요.',
+            },
         ],
         primaryCta: { label: '모델링 문의하기', href: '/expert' },
-        secondaryCta: { label: '파일이 있으면 자동견적', href: '/quote' },
+        secondaryCta: { label: '사진→AI 3D 견적', href: '/quote?entry=photo' },
         relatedGuides: [
             { href: '/guides/3d-printing-file-preparation', title: '파일 준비 가이드' },
+            { href: '/guides/photo-to-3d-printing-quote', title: '사진→3D 견적 가이드' },
             { href: '/guides/fixing-stl-file-errors', title: 'STL 오류 해결' },
+        ],
+    },
+    {
+        slug: 'photo-to-3d',
+        path: '/services/photo-to-3d',
+        title: '사진 3D 모델링 · AI 3D 변환 · 사진으로 3D 프린팅',
+        h1: '사진→AI 3D',
+        h1Accent: '프린팅 견적',
+        description:
+            '3D 파일 없이 제품 사진(JPG/PNG)만으로 AI 3D 모델링 후 STL 자동견적·출력 주문까지 WOW3D에서 한 번에 진행하세요.',
+        keywords: ['사진 3D 모델링', '이미지 3D 변환', '사진으로 3D 프린팅', 'AI 3D 모델링', '3D 파일 없이 견적'],
+        eyebrow: 'Photo to 3D',
+        bullets: [
+            'JPG·PNG 제품 사진 → AI 입체 STL 생성',
+            '생성 직후 3D 뷰어·자동견적·주문 연계',
+            '로그인 회원 하루 1회(한국 시간), 멀티뷰 추가 사진 지원',
+        ],
+        faqs: [
+            {
+                q: '3D 파일 없이 3D 프린팅 견적을 받을 수 있나요?',
+                a: '가능합니다. 자동견적에서 「3D 모델이 없어요」를 선택하고 제품 사진을 업로드하면 AI가 STL을 생성한 뒤 견적으로 이어집니다.',
+            },
+            {
+                q: '사진 3D 모델링은 어떤 사진이 좋나요?',
+                a: '물체가 중앙에 크게, 단색·밝은 배경, 그림자·반사가 적은 사진이 좋습니다. 우·뒤·좌 추가 사진을 올리면 형상 정확도가 올라갈 수 있습니다.',
+            },
+            {
+                q: '사진→AI 3D와 AI 3D Maker의 차이는?',
+                a: 'Maker는 스케치·로고의 2.5D 돌출용이고, 사진→AI 3D는 실사 사진 기반 입체 메시 생성 후 즉시 출력 견적·주문으로 이어집니다.',
+            },
+            {
+                q: '정밀 치수 부품도 사진으로 가능한가요?',
+                a: '형상 확인·시제품 검증에는 적합하지만, 조립 공차·정밀 치수가 중요한 부품은 STL 또는 STEP 업로드를 권장합니다.',
+            },
+        ],
+        primaryCta: { label: '사진으로 3D 만들기', href: '/quote?entry=photo' },
+        secondaryCta: { label: '사진→3D 가이드', href: '/guides/photo-to-3d-printing-quote' },
+        relatedGuides: [
+            { href: '/guides/photo-to-3d-printing-quote', title: '사진→3D 견적 가이드' },
+            { href: '/guides/3d-printing-quote-guide', title: '견적 계산 방식' },
         ],
     },
 ]

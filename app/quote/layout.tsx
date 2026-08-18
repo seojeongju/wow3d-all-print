@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { buildBreadcrumbSchema, buildCollectionPageSchema, buildQuoteHowToSchema } from "@/lib/aeo-schema";
+import { buildBreadcrumbSchema, buildCollectionPageSchema, buildQuoteHowToSchema, buildPhotoTo3DHowToSchema } from "@/lib/aeo-schema";
 import { absoluteUrl, buildOgImages, OG_IMAGE_PATH, SITE_URL } from "@/lib/site-url";
 
 const quoteTitle = "3D프린팅 자동견적 | 3D프린팅 견적 · 3D프린터 출력 가격";
@@ -32,7 +32,7 @@ export default function QuoteLayout({
     buildCollectionPageSchema({
       name: "3D 프린팅 자동 견적",
       description:
-        "STL, OBJ, 3MF 파일 업로드 후 출력 방식, 레이어 높이, 인필, 소재를 선택해 실시간 견적을 확인하는 페이지입니다.",
+        "STL, OBJ, 3MF, PLY 파일 업로드 또는 제품 사진 AI 3D 모델링 후 출력 방식, 레이어 높이, 인필, 소재를 선택해 실시간 견적을 확인하는 페이지입니다.",
       path: "/quote",
     }),
     buildBreadcrumbSchema([
@@ -40,6 +40,7 @@ export default function QuoteLayout({
       { name: "자동 견적", path: "/quote" },
     ]),
     buildQuoteHowToSchema(),
+    buildPhotoTo3DHowToSchema(),
   ];
 
   return (

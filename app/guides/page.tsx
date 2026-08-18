@@ -19,6 +19,7 @@ const guideSections = [
     {
         title: '기본 가이드',
         items: [
+            { href: '/guides/photo-to-3d-printing-quote', title: '사진으로 3D 프린팅 견적', desc: '3D 파일 없이 사진→AI 3D→자동견적·주문 절차' },
             { href: '/guides/3d-printing-quote-guide', title: '3D프린팅 비용 계산 방법', desc: '견적 산출 기준과 가격·시간에 영향을 주는 요소' },
             { href: '/guides/how-to-reduce-3d-printing-cost', title: '3D프린팅 가격을 줄이는 방법', desc: '레이어·인필·서포트·소재로 비용 절감' },
             { href: '/guides/fdm-vs-sla-vs-dlp', title: 'FDM과 SLA 차이', desc: 'FDM vs SLA vs DLP 출력 방식 비교' },

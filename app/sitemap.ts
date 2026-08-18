@@ -30,6 +30,7 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/qna", priority: 0.88, changeFrequency: "weekly" },
   { path: "/gallery", priority: 0.85, changeFrequency: "weekly" },
   { path: "/guides", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/guides/photo-to-3d-printing-quote", priority: 0.92, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-quote-guide", priority: 0.92, changeFrequency: "weekly" },
   { path: "/guides/fdm-vs-sla-vs-dlp", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-file-preparation", priority: 0.9, changeFrequency: "weekly" },

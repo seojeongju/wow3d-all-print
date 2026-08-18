@@ -104,6 +104,9 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
                 <Button asChild className="w-full bg-indigo-500 hover:bg-indigo-400 text-white">
                   <Link href="/quote?entry=photo">사진으로 3D 만들기</Link>
                 </Button>
+                <Link href="/guides/photo-to-3d-printing-quote" className="block text-center text-xs text-indigo-300/80 hover:text-indigo-200 mt-2 underline-offset-2 hover:underline">
+                  사진→3D 견적 가이드 보기
+                </Link>
               </div>
             </div>
           </div>
@@ -129,7 +132,12 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
             <Link href="/services" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Services</p>
               <h3 className="text-xl font-bold mb-3">핵심 전환 서비스</h3>
-              <p className="text-sm text-foreground/65 break-keep">출력대행·시제품·FDM·SLA·졸업작품·소량생산</p>
+              <p className="text-sm text-foreground/65 break-keep">출력대행·사진→3D·시제품·FDM·SLA</p>
+            </Link>
+            <Link href="/guides/photo-to-3d-printing-quote" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Photo to 3D</p>
+              <h3 className="text-xl font-bold mb-3">사진→3D 견적</h3>
+              <p className="text-sm text-foreground/65 break-keep">3D 파일 없이 사진으로 AI 모델링·자동견적</p>
             </Link>
             <Link href="/guides/3d-printing-quote-guide" className="rounded-3xl border border-border bg-card/40 p-6 hover:bg-card transition-colors">
               <p className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-2">Guide</p>

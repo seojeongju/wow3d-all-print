@@ -41,6 +41,10 @@ const guideFaq = [
         q: '자동견적 금액과 실제 제작 금액이 달라질 수 있나요?',
         a: '대부분의 일반적인 모델은 자동견적으로 빠르게 확인할 수 있지만, 복잡한 형상, 특수 소재, 후가공 요구, 파일 오류 여부에 따라 관리자가 추가 검토 후 수정견적을 안내할 수 있습니다.',
     },
+    {
+        q: '3D 모델 파일이 없어도 견적을 받을 수 있나요?',
+        a: '가능합니다. 제품 사진(JPG/PNG)으로 AI 3D 모델을 생성한 뒤 자동견적으로 이어집니다. 정밀 치수·조립 공차가 중요한 부품은 STL 또는 STEP 업로드를 권장합니다.',
+    },
 ];
 
 const faqSchema = {
@@ -171,13 +175,18 @@ export default function QuoteGuidePage() {
                         <div className="space-y-2">
                             <h2 className="text-2xl font-black">바로 자동견적 받아보기</h2>
                             <p className="text-white/70 break-keep">
-                                STL, OBJ, 3MF 파일을 업로드하고 FDM / SLA / DLP 옵션을 바꿔 실제 견적을 확인해 보세요.
+                                STL, OBJ, 3MF 파일을 업로드하거나, 3D 파일이 없으면 제품 사진으로 AI 3D 모델링 후 견적을 확인해 보세요.
                             </p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap gap-3">
                             <Link href="/quote">
                                 <Button className="h-12 px-6 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black">
                                     견적 받기 <ArrowRight className="w-4 h-4 ml-1" />
+                                </Button>
+                            </Link>
+                            <Link href="/quote?entry=photo">
+                                <Button variant="outline" className="h-12 px-6 rounded-2xl border-indigo-400/30 bg-indigo-500/10 text-white hover:bg-indigo-500/20">
+                                    사진→3D 견적
                                 </Button>
                             </Link>
                             <Link href="/print-methods">
