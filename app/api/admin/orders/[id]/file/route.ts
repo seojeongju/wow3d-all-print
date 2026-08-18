@@ -70,7 +70,7 @@ export async function GET(
       quoteBindings = [numId];
     }
 
-    let quote: {
+    type QuoteFileRow = {
       quote_id?: number;
       file_url?: string | null;
       file_name?: string | null;
@@ -78,12 +78,13 @@ export async function GET(
       dimensions_y?: number | null;
       dimensions_z?: number | null;
       model_transform?: string | null;
-    } | null = null;
+    };
+    let quote: QuoteFileRow | null = null;
     try {
-      quote = (await env.DB.prepare(quoteQuery).bind(...quoteBindings).first()) as typeof quote;
+      quote = (await env.DB.prepare(quoteQuery).bind(...quoteBindings).first()) as QuoteFileRow | null;
     } catch {
       const fallbackQuery = quoteQuery.replace(', q.model_transform', '');
-      quote = (await env.DB.prepare(fallbackQuery).bind(...quoteBindings).first()) as typeof quote;
+      quote = (await env.DB.prepare(fallbackQuery).bind(...quoteBindings).first()) as QuoteFileRow | null;
     }
 
     if (!quote?.quote_id) {
