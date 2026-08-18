@@ -203,6 +203,8 @@ function CheckoutContent() {
             }
 
             const body: Record<string, unknown> = {
+                ordererName: formData.ordererName,
+                ordererPhone: formData.ordererPhone,
                 recipientName: formData.recipientName,
                 recipientPhone: formData.recipientPhone,
                 shippingAddress: `${formData.shippingAddress} ${detailAddress}`.trim(),

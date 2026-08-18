@@ -163,31 +163,52 @@ export async function POST(request: NextRequest) {
             return errorResponse(resolved.error, resolved.status);
         }
 
+        const ordererName = String(body.ordererName ?? '').trim() || null
+        const ordererPhone = String(body.ordererPhone ?? '').trim() || null
+
         const orderNumber = generateOrderNumber();
         const totalAmount = normalizeAmountBeforeSave(resolved.totalAmount);
         const viewToken = crypto.randomUUID();
-        const orderResult = await env.DB
-            .prepare(`
+        const insertArgs = [
+            isGuest ? null : auth.userId,
+            isGuest ? auth.sessionId : null,
+            isGuest ? String(body.guestEmail).trim() : null,
+            orderNumber,
+            body.recipientName,
+            body.recipientPhone,
+            body.shippingAddress,
+            body.shippingPostalCode || null,
+            totalAmount,
+            body.customerNote || null,
+            viewToken,
+        ] as const
+
+        let orderResult: { meta?: { last_row_id?: number; lastRowId?: number } }
+        try {
+            orderResult = await env.DB
+                .prepare(`
+        INSERT INTO orders (
+          user_id, session_id, guest_email, order_number,
+          recipient_name, recipient_phone, shipping_address, shipping_postal_code,
+          total_amount, customer_note, view_token, orderer_name, orderer_phone
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+                .bind(...insertArgs, ordererName, ordererPhone)
+                .run();
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : ''
+            if (!/no such column|orderer_name|orderer_phone/i.test(msg)) throw e
+            orderResult = await env.DB
+                .prepare(`
         INSERT INTO orders (
           user_id, session_id, guest_email, order_number,
           recipient_name, recipient_phone, shipping_address, shipping_postal_code,
           total_amount, customer_note, view_token
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-            .bind(
-                isGuest ? null : auth.userId,
-                isGuest ? auth.sessionId : null,
-                isGuest ? String(body.guestEmail).trim() : null,
-                orderNumber,
-                body.recipientName,
-                body.recipientPhone,
-                body.shippingAddress,
-                body.shippingPostalCode || null,
-                totalAmount,
-                body.customerNote || null,
-                viewToken
-            )
-            .run();
+                .bind(...insertArgs)
+                .run();
+        }
 
         const orderId = orderResult.meta?.last_row_id || orderResult.meta?.lastRowId;
         if (!orderId) {

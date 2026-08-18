@@ -46,7 +46,7 @@ export async function GET(
         let order: Record<string, unknown> | null = null;
         try {
             order = await env.DB.prepare(`
-                SELECT o.*, u.name as user_name, u.email as user_email
+                SELECT o.*, u.name as user_name, u.email as user_email, u.phone as user_phone
                 FROM orders o
                 LEFT JOIN users u ON o.user_id = u.id
                 WHERE o.id = ? AND o.store_id = ?
@@ -57,7 +57,7 @@ export async function GET(
                     o.shipping_address, o.shipping_postal_code, o.total_amount, o.status,
                     o.payment_method, o.payment_status, o.customer_note, o.admin_note,
                     o.created_at, o.updated_at,
-                    u.name as user_name, u.email as user_email
+                    u.name as user_name, u.email as user_email, u.phone as user_phone
                 FROM orders o
                 LEFT JOIN users u ON o.user_id = u.id
                 WHERE o.id = ?

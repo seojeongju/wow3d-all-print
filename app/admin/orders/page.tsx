@@ -3,6 +3,7 @@
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate } from '@/lib/date-utils';
 import { formatQuoteGuideContext, formatQuotePrintSettings } from '@/lib/quote-print-settings';
+import { resolveOrdererPhone, stripOrdererInfoFromNote } from '@/lib/orderer-contact';
 import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -79,7 +80,10 @@ type AdminOrderDetail = Record<string, unknown> & {
     user_id?: number | null;
     user_name?: string | null;
     user_email?: string | null;
+    user_phone?: string | null;
     guest_email?: string | null;
+    orderer_name?: string | null;
+    orderer_phone?: string | null;
     shipping_address?: string;
     shipping_postal_code?: string | null;
     recipient_phone?: string;
@@ -890,17 +894,23 @@ function OrderListInner() {
                                     <div className="col-span-2">
                                         <span className="text-[10px] font-bold text-white/40 uppercase">주문자 (회원)</span>
                                         <p className="text-white/90">{String(detailData.order.user_name ?? '-')} ({String(detailData.order.user_email ?? '')})</p>
+                                        <p className="text-white/70 mt-0.5">
+                                            연락처 {resolveOrdererPhone(detailData.order) || '-'}
+                                        </p>
                                     </div>
                                 ) : (
                                     <div className="col-span-2">
                                         <span className="text-[10px] font-bold text-white/40 uppercase">주문자 (비회원)</span>
                                         <p className="text-amber-400/90">비회원 · {String(detailData.order.guest_email ?? '-')}</p>
+                                        <p className="text-white/70 mt-0.5">
+                                            연락처 {resolveOrdererPhone(detailData.order) || '-'}
+                                        </p>
                                     </div>
                                 )}
                                 <div className="col-span-2">
                                     <span className="text-[10px] font-bold text-white/40 uppercase">배송지</span>
                                     <p className="text-white">{String(detailData.order.shipping_address)} {detailData.order.shipping_postal_code ? `(${detailData.order.shipping_postal_code})` : ''}</p>
-                                    <p className="text-white/70">{String(detailData.order.recipient_phone)}</p>
+                                    <p className="text-white/70">수령인 연락처 {String(detailData.order.recipient_phone || '-')}</p>
                                 </div>
                                 <div>
                                     <span className="text-[10px] font-bold text-white/40 uppercase">총 금액</span>
@@ -927,7 +937,7 @@ function OrderListInner() {
                                 </div>
                                 <div>
                                     <span className="text-[10px] font-bold text-white/40 uppercase">고객 메모</span>
-                                    <p className="text-white/80">{String(detailData.order.customer_note || '-')}</p>
+                                    <p className="text-white/80">{stripOrdererInfoFromNote(String(detailData.order.customer_note || '')) || '-'}</p>
                                 </div>
                                 {detailData.order.quotation_sent_at && (
                                     <div className="col-span-2">
