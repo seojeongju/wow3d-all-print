@@ -84,11 +84,11 @@ export type PhotoTo3DShowcaseItem = {
 export const PHOTO_TO_3D_SHOWCASE: readonly PhotoTo3DShowcaseItem[] = [
     {
         title: '피규어 · 캐릭터 형상 확인',
-        caption: '단색 배경 제품 사진에서 입체 메시를 생성한 뒤 SLA/DLP로 외관 시제품을 출력하는 흐름에 적합합니다.',
-        beforeSrc: '/images/expert/art.png',
-        beforeAlt: '피규어 제품 사진 예시 — 사진→AI 3D 입력',
-        afterSrc: '/thumbnail.png',
-        afterAlt: 'AI 3D 모델링 후 3D 프린팅 출력 결과 예시',
+        caption: '단색 배경 캐릭터 사진에서 입체 메시를 생성한 뒤 SLA/DLP로 키캡·피규어 외관 시제품을 출력하는 흐름에 적합합니다.',
+        beforeSrc: '/images/photo-to-3d/keycap-golden-retriever.png',
+        beforeAlt: '골든 리트리버 키캡 사진 예시 — 사진→AI 3D 입력',
+        afterSrc: '/images/photo-to-3d/keycap-golden-retriever-mesh.png',
+        afterAlt: 'AI 3D 모델링된 키캡 메시 예시',
         printMethod: 'SLA',
         material: 'Standard Resin',
     },
