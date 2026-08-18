@@ -8,6 +8,7 @@ import {
     SCALE_PERCENT_STEP,
     scalePercentFromTargetMm,
 } from '@/lib/model-transform'
+import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
 import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
 import { cn } from '@/lib/utils'
@@ -28,11 +29,17 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const setSnapToBed = useFileStore((s) => s.setSnapToBed)
     const alignAxes = useFileStore((s) => s.alignAxes)
     const resetTransform = useFileStore((s) => s.resetTransform)
+    const meshyFitScalePercent = useFileStore((s) => s.meshyFitScalePercent)
     const effective = useEffectiveAnalysis()
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
     const isAiPhoto = fileSource.kind === 'meshy-photo'
+
+    useEffect(() => {
+        if (!isAiPhoto || !baseAnalysis) return
+        maybeAutoFitMeshyScale()
+    }, [isAiPhoto, baseAnalysis])
 
     useEffect(() => {
         setScaleDraft(String(transform.scalePercent))
@@ -101,6 +108,12 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         AI 사진 생성 모델입니다. 아래 <strong className="text-amber-50">치수(mm)</strong>로
                         실제 길이에 맞추세요. 정밀 공차는 STL 직접 업로드를 권장합니다.
                     </p>
+                    {meshyFitScalePercent != null && (
+                        <p className="text-teal-100">
+                            · 원본이 너무 커서 최장축을 약 150mm로 맞춰 두었습니다 ({meshyFitScalePercent}%).
+                            실물 크기로 다시 입력해 주세요.
+                        </p>
+                    )}
                     {assessPrintability(effective).map((w) => (
                         <p
                             key={w.message}

@@ -30,6 +30,9 @@ export const FDM_DEFAULT_DENSITY = 1.24
 export const FDM_DEFAULT_LABOR_KRW = 6500
 export const FDM_DEFAULT_SUPPORT_PER_CM2_KRW = 26
 export const FDM_DEFAULT_HOURLY_RATE_KRW = 5000
+/** 고폴리 오버행 폭주 시 서포트비 상한 (재료비 대비) */
+export const FDM_SUPPORT_COST_TO_MATERIAL_MAX = 3
+export const FDM_SUPPORT_COST_FLOOR_KRW = 5_000
 
 /**
  * 트리/오가닉 서포트 채움 밀도 근사 (Bambu tree ~희소).
@@ -66,7 +69,11 @@ export function estimateFdmWeightGrams(input: {
     const effectiveInfill = clampFdmInfillPercent(input.infillPercent)
     const density = Math.max(0, Number(input.density) || 0)
     const volumeCm3 = Math.max(0, Number(input.volumeCm3) || 0)
-    const surfaceAreaCm2 = Math.max(0, Number(input.surfaceAreaCm2) || 0)
+    const rawSurface = Math.max(0, Number(input.surfaceAreaCm2) || 0)
+    // 비밀폐·고폴리 메쉬의 표면적 폭주 방지 (구 표면의 여유 배수)
+    const rCm = volumeCm3 > 0 ? Math.cbrt((3 * volumeCm3) / (4 * Math.PI)) : 0
+    const maxSurfaceCm2 = Math.max(50, 4 * Math.PI * rCm * rCm * 12)
+    const surfaceAreaCm2 = Math.min(rawSurface, maxSurfaceCm2)
     const shellThicknessMm = Math.max(0.2, Number(input.shellThicknessMm) || FDM_SHELL_THICKNESS_MM)
     const shellCm = shellThicknessMm / 10
 
@@ -162,9 +169,15 @@ function machineRateAfterVolumeDiscount(hours: number, rateKr: number): number {
 
 /** FDM 견적 일괄 산출 */
 export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQuoteResult {
+    const volumeCm3 = Math.max(0, Number(input.volumeCm3) || 0)
+    const rawSurface = Math.max(0, Number(input.surfaceAreaCm2) || 0)
+    const rCm = volumeCm3 > 0 ? Math.cbrt((3 * volumeCm3) / (4 * Math.PI)) : 0
+    const maxSurfaceCm2 = Math.max(50, 4 * Math.PI * rCm * rCm * 12)
+    const surfaceAreaCm2 = Math.min(rawSurface, maxSurfaceCm2)
+
     const weight = estimateFdmWeightGrams({
-        volumeCm3: input.volumeCm3,
-        surfaceAreaCm2: input.surfaceAreaCm2,
+        volumeCm3,
+        surfaceAreaCm2,
         density: input.density,
         infillPercent: input.infillPercent,
         shellThicknessMm: input.shellThicknessMm,
@@ -173,11 +186,17 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
     const materialCost = Math.max(0, Number(input.pricePerGramKr) || 0) * weight.weightGrams
 
     const supportPerCm2 = input.fdmSupportPerCm2Krw ?? FDM_DEFAULT_SUPPORT_PER_CM2_KRW
-    const overhang =
+    const rawOverhang =
         input.overhangAreaCm2 != null && Number.isFinite(Number(input.overhangAreaCm2))
             ? Math.max(0, Number(input.overhangAreaCm2))
-            : Math.max(0, Number(input.surfaceAreaCm2) || 0) * FDM_DEFAULT_OVERHANG_SURFACE_RATIO
-    const supportCost = input.supportEnabled ? supportPerCm2 * overhang : 0
+            : surfaceAreaCm2 * FDM_DEFAULT_OVERHANG_SURFACE_RATIO
+    const overhang = Math.min(rawOverhang, surfaceAreaCm2 * 0.55)
+    const rawSupportCost = input.supportEnabled ? supportPerCm2 * overhang : 0
+    const supportCostCap = Math.max(
+        materialCost * FDM_SUPPORT_COST_TO_MATERIAL_MAX,
+        FDM_SUPPORT_COST_FLOOR_KRW
+    )
+    const supportCost = input.supportEnabled ? Math.min(rawSupportCost, supportCostCap) : 0
 
     const supportGrams = estimateFdmSupportGrams({
         supportEnabled: input.supportEnabled,
@@ -192,7 +211,7 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
     const timeDetail = estimateFdmPrintTimeHours({
         weightGrams: weight.weightGrams,
         heightMm: input.heightMm,
-        surfaceAreaCm2: input.surfaceAreaCm2,
+        surfaceAreaCm2,
         layerHeightMm: input.layerHeightMm,
         fdmLayerHoursFactor: input.fdmLayerHoursFactor,
         infillPercent: weight.effectiveInfill,

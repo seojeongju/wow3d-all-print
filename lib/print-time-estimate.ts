@@ -127,7 +127,10 @@ export function estimateFdmPrintTimeHours(input: FdmTimeEstimateInput): FdmTimeE
         supportGrams > 0 || overhangAreaCm2 > 0
             ? overhangAreaCm2 * FDM_SUPPORT_TRAVEL_HOURS_PER_CM2 * speedModifier
             : 0
-    const surfaceTime = perimeterTime + supportTravelTime
+    let surfaceTime = perimeterTime + supportTravelTime
+    // 고폴리 내부면으로 표면 시간이 압출 시간을 수십 배 넘는 것을 방지
+    const maxSurfaceTime = Math.max(volumeTime * 1.5, movementTime * 3, 0.75)
+    surfaceTime = Math.min(surfaceTime, maxSurfaceTime)
 
     const hours = Math.max(FDM_MIN_TIME_HOURS, volumeTime + movementTime + surfaceTime)
 

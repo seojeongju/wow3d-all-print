@@ -2,6 +2,28 @@ import * as THREE from 'three'
 import { useFileStore } from '@/store/useFileStore'
 import { analyzeGeometryBoundingBox, analyzeGeometryProgressive } from '@/lib/geometry'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
+import { meshyAutoFitScalePercent } from '@/lib/model-transform'
+
+export function maybeAutoFitMeshyScale(): void {
+    const state = useFileStore.getState()
+    if (state.fileSource.kind !== 'meshy-photo') return
+    if (state.meshyAutoFitted) return
+    if (state.transform.scalePercent !== 100) {
+        state.markMeshyAutoFitted()
+        return
+    }
+    const box = state.baseAnalysis?.boundingBox
+    if (!box) return
+    const longest = Math.max(box.x, box.y, box.z)
+    const next = meshyAutoFitScalePercent(longest)
+    if (next == null) {
+        state.markMeshyAutoFitted()
+        return
+    }
+    state.setScalePercent(next)
+    state.setMeshyFitScalePercent(next)
+    state.markMeshyAutoFitted()
+}
 
 let analysisGeneration = 0
 const ensurePromises = new WeakMap<File, Promise<void>>()
@@ -26,6 +48,7 @@ export function runAnalysisFromGeometry(
         if (!isCurrentRun(gen)) return
         setAnalysis(quick)
         setAnalysisError(null)
+        maybeAutoFitMeshyScale()
     } catch (e) {
         console.error('bbox analysis:', e)
         if (isCurrentRun(gen)) {
@@ -43,6 +66,7 @@ export function runAnalysisFromGeometry(
             if (isCurrentRun(gen)) {
                 useFileStore.getState().setAnalysis(refined)
                 useFileStore.getState().setAnalysisError(null)
+                maybeAutoFitMeshyScale()
             }
         } catch (e) {
             console.error('refined analysis:', e)

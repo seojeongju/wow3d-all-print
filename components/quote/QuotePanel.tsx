@@ -26,6 +26,7 @@ import {
 } from '@/lib/fdm-quote'
 import { calculateResinQuote } from '@/lib/resin-quote'
 import { formatEstimatedPrintTime } from '@/lib/print-time-estimate'
+import { sanitizeGeometryAnalysis } from '@/lib/geometry'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -88,7 +89,11 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
     const setSavedQuoteId = useFileStore((s) => s.setSavedQuoteId)
-    const analysis = useEffectiveAnalysis()
+    const rawAnalysis = useEffectiveAnalysis()
+    const analysis = useMemo(
+        () => (rawAnalysis ? sanitizeGeometryAnalysis(rawAnalysis) : null),
+        [rawAnalysis]
+    )
     const { addToCart, items: cartItems } = useCartStore()
     const { sessionId, token, user, setSessionId } = useAuthStore()
     const [isSaving, setIsSaving] = useState(false)

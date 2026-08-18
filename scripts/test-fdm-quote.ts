@@ -11,6 +11,8 @@ import {
     FDM_INFILL_PRESETS,
 } from '../lib/fdm-quote'
 import { formatEstimatedPrintTime } from '../lib/print-time-estimate'
+import { sanitizeGeometryAnalysis } from '../lib/geometry'
+import { applyTransformToAnalysis, meshyAutoFitScalePercent } from '../lib/model-transform'
 
 const base = {
     volumeCm3: 10,
@@ -90,6 +92,68 @@ const sg = estimateFdmSupportGrams({
     density: 1.24,
 })
 assert.equal(sg, 0)
+
+// 고폴리 내부면으로 표면/오버행이 폭주해도 서포트비가 수억 원이 되면 안 됨
+const inflatedTiny = calculateFdmQuote({
+    volumeCm3: 2000,
+    surfaceAreaCm2: 24_000_000,
+    heightMm: 500,
+    density: 1.24,
+    pricePerGramKr: 50,
+    infillPercent: 20,
+    layerHeightMm: 0.2,
+    supportEnabled: true,
+    overhangAreaCm2: 7_300_000,
+    hourlyRateKr: 5000,
+    fdmLaborCostKrw: 6500,
+    applyVat: true,
+    minPriceKr: 0,
+})
+assert.ok(
+    inflatedTiny.total < 2_000_000,
+    `inflated surface on ~1kg model should not explode, got ₩${Math.round(inflatedTiny.total)}`
+)
+assert.ok(
+    inflatedTiny.costBreakdown.support <= inflatedTiny.costBreakdown.material * 3 + 5_000 + 1,
+    'support cost capped vs material'
+)
+
+const screenshotGeo = sanitizeGeometryAnalysis({
+    volume: 81833.71,
+    surfaceArea: 24_473_147,
+    overhangArea: 7_341_944,
+    boundingBox: { x: 655.25, y: 812.35, z: 500 },
+})
+const fitPct = meshyAutoFitScalePercent(
+    Math.max(screenshotGeo.boundingBox.x, screenshotGeo.boundingBox.y, screenshotGeo.boundingBox.z)
+)
+assert.ok(fitPct != null && fitPct < 30, `auto-fit scale expected ~18%, got ${fitPct}`)
+const fittedGeo = applyTransformToAnalysis(screenshotGeo, {
+    scalePercent: fitPct!,
+    rotX: 0,
+    rotY: 0,
+    rotZ: 0,
+    snapToBed: true,
+})
+const fittedQuote = calculateFdmQuote({
+    volumeCm3: fittedGeo.volume,
+    surfaceAreaCm2: fittedGeo.surfaceArea,
+    heightMm: fittedGeo.boundingBox.z,
+    density: 1.24,
+    pricePerGramKr: 50,
+    infillPercent: 20,
+    layerHeightMm: 0.2,
+    supportEnabled: true,
+    overhangAreaCm2: fittedGeo.overhangArea,
+    hourlyRateKr: 5000,
+    fdmLaborCostKrw: 6500,
+    applyVat: true,
+    minPriceKr: 0,
+})
+assert.ok(
+    fittedQuote.total < 250_000,
+    `auto-fitted screenshot model quote too high, got ₩${Math.round(fittedQuote.total)}`
+)
 
 console.log('OK fdm-quote tests passed')
 console.log(

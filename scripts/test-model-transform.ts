@@ -4,6 +4,7 @@
 import {
     applyTransformToAnalysis,
     DEFAULT_MODEL_TRANSFORM,
+    meshyAutoFitScalePercent,
     nextAxis90,
     type ModelTransform,
 } from '../lib/model-transform'
@@ -36,5 +37,10 @@ assert(Math.abs(rx.boundingBox.z - 10) < 1e-9, 'rotX z←y')
 
 assert(nextAxis90(270, 90) === 0, 'nextAxis90 wrap')
 assert(nextAxis90(0, -90) === 270, 'nextAxis90 negative')
+
+assert(meshyAutoFitScalePercent(150) == null, 'small model no autofit')
+assert(meshyAutoFitScalePercent(280) == null, 'at trigger no autofit')
+const fit812 = meshyAutoFitScalePercent(812.35)
+assert(fit812 != null && fit812 >= 17 && fit812 <= 20, `812mm → ~18% got ${fit812}`)
 
 console.log('test-model-transform: ok')

@@ -14,8 +14,47 @@ export interface GeometryAnalysis {
 /** 전체 삼각형 루프 없이 즉시 치수만 산출 (대용량·AI 메쉬 1차 통과용) */
 export const LARGE_MESH_TRIANGLE_THRESHOLD = 120_000;
 export const ANALYSIS_SAMPLE_TARGET = 48_000;
+/** 유기적 형상의 AABB 표면 대비 최대 배수 (내부면·샘플링 폭주 방지) */
+export const MAX_SURFACE_TO_AABB_RATIO = 3;
+export const MAX_OVERHANG_TO_SURFACE_RATIO = 0.55;
 
 const OVERHANG_THRESHOLD = -0.7071;
+
+export function aabbVolumeCm3(box: { x: number; y: number; z: number }): number {
+    const x = Math.max(0, Number(box.x) || 0);
+    const y = Math.max(0, Number(box.y) || 0);
+    const z = Math.max(0, Number(box.z) || 0);
+    return (x * y * z) / 1000;
+}
+
+export function aabbSurfaceCm2(box: { x: number; y: number; z: number }): number {
+    const x = Math.max(0, Number(box.x) || 0);
+    const y = Math.max(0, Number(box.y) || 0);
+    const z = Math.max(0, Number(box.z) || 0);
+    return (2 * (x * y + y * z + x * z)) / 100;
+}
+
+/**
+ * 고폴리·비밀폐 메쉬에서 삼각형 합·샘플 보간이 부피/표면을 수천 배로 부풀리는 것을 막습니다.
+ */
+export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAnalysis {
+    const box = analysis.boundingBox;
+    const maxVol = aabbVolumeCm3(box);
+    const aabbSurf = aabbSurfaceCm2(box);
+    const maxSurf = aabbSurf > 0 ? aabbSurf * MAX_SURFACE_TO_AABB_RATIO : Math.max(0, analysis.surfaceArea);
+
+    const volume =
+        maxVol > 0 ? Math.min(Math.max(0, analysis.volume), maxVol) : Math.max(0, analysis.volume);
+    const surfaceArea =
+        maxSurf > 0 ? Math.min(Math.max(0, analysis.surfaceArea), maxSurf) : Math.max(0, analysis.surfaceArea);
+    const maxOverhang = surfaceArea * MAX_OVERHANG_TO_SURFACE_RATIO;
+    const overhangArea =
+        analysis.overhangArea == null
+            ? undefined
+            : Math.min(Math.max(0, analysis.overhangArea), maxOverhang);
+
+    return { ...analysis, volume, surfaceArea, overhangArea };
+}
 
 export function getTriangleCount(geometry: THREE.BufferGeometry): number {
     if (!geometry.attributes.position) return 0;
@@ -43,7 +82,7 @@ export function analyzeGeometryBoundingBox(geometry: THREE.BufferGeometry): Geom
     const bboxVolumeMm3 = size.x * size.y * size.z;
     const approxFill = 0.38;
 
-    return {
+    return sanitizeGeometryAnalysis({
         volume: (bboxVolumeMm3 * approxFill) / 1000,
         surfaceArea: (2 * (size.x * size.y + size.y * size.z + size.x * size.z)) / 100,
         overhangArea: 0,
@@ -52,7 +91,7 @@ export function analyzeGeometryBoundingBox(geometry: THREE.BufferGeometry): Geom
             y: size.y,
             z: size.z,
         },
-    };
+    });
 }
 
 type AnalyzeOptions = {
@@ -131,7 +170,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     const scale = sampleStride;
     const size = getBoundingBoxSize(geometry);
 
-    return {
+    return sanitizeGeometryAnalysis({
         volume: (Math.abs(volume) * scale) / 1000,
         surfaceArea: (surfaceArea * scale) / 100,
         overhangArea: includeOverhang ? overhangArea * scale / 100 : undefined,
@@ -140,7 +179,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
             y: size.y,
             z: size.z,
         },
-    };
+    });
 }
 
 export const analyzeGeometry = (geometry: THREE.BufferGeometry): GeometryAnalysis => {

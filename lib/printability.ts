@@ -26,6 +26,12 @@ export function assessPrintability(analysis: GeometryAnalysis): PrintabilityWarn
             message: '모델이 매우 작습니다. 견적 화면에서 실제 길이(mm)로 스케일을 키워 주세요.',
         })
     }
+    if (maxAxis > 280) {
+        warnings.push({
+            level: 'warn',
+            message: `최장축이 ${maxAxis.toFixed(0)}mm입니다. 일반 FDM 베드(약 220mm)를 넘습니다. 치수(mm)를 실제 크기에 맞춰 주세요.`,
+        })
+    }
     if (fillRatio > 0 && fillRatio < 0.08) {
         warnings.push({
             level: 'warn',

@@ -24,6 +24,10 @@ interface FileState {
     fileUrl: string | null
     /** 현재 파일에 연결된 견적 ID — FDM/SLA 전환 시 같은 행을 덮어씀 */
     savedQuoteId: number | null
+    /** 사진→3D 초기 치수 자동 맞춤을 이미 수행했는지 */
+    meshyAutoFitted: boolean
+    /** 자동 맞춤 때 적용한 스케일 % — 초기화 시 여기로 되돌림 */
+    meshyFitScalePercent: number | null
     /** 업로드 출처 — AI 사진 생성 시 견적 화면 안내 */
     fileSource: FileSourceMeta
     /** CPU/원본 메쉬 분석 (스케일·회전 미적용) */
@@ -33,6 +37,8 @@ interface FileState {
     transform: ModelTransform
     setFile: (file: File, source?: FileSourceMeta) => void
     setSavedQuoteId: (id: number | null) => void
+    markMeshyAutoFitted: () => void
+    setMeshyFitScalePercent: (percent: number | null) => void
     setAnalysis: (data: GeometryAnalysis) => void
     setAnalysisError: (message: string | null) => void
     setScalePercent: (percent: number) => void
@@ -49,6 +55,8 @@ export const useFileStore = create<FileState>((set) => ({
     file: null,
     fileUrl: null,
     savedQuoteId: null,
+    meshyAutoFitted: false,
+    meshyFitScalePercent: null,
     fileSource: { ...EMPTY_SOURCE },
     baseAnalysis: null,
     analysisError: null,
@@ -62,6 +70,8 @@ export const useFileStore = create<FileState>((set) => ({
                 file,
                 fileUrl: URL.createObjectURL(file),
                 savedQuoteId: null,
+                meshyAutoFitted: false,
+                meshyFitScalePercent: null,
                 fileSource: source ?? { kind: 'upload', meshyJobId: null },
                 baseAnalysis: null,
                 analysisError: null,
@@ -70,6 +80,8 @@ export const useFileStore = create<FileState>((set) => ({
         })
     },
     setSavedQuoteId: (id) => set({ savedQuoteId: id }),
+    markMeshyAutoFitted: () => set({ meshyAutoFitted: true }),
+    setMeshyFitScalePercent: (percent) => set({ meshyFitScalePercent: percent }),
     setAnalysis: (data) => set({ baseAnalysis: data }),
     setAnalysisError: (message) => set({ analysisError: message }),
     setScalePercent: (percent) =>
@@ -103,7 +115,13 @@ export const useFileStore = create<FileState>((set) => ({
                 rotZ: 0,
             },
         })),
-    resetTransform: () => set({ transform: { ...DEFAULT_MODEL_TRANSFORM } }),
+    resetTransform: () =>
+        set((state) => ({
+            transform: {
+                ...DEFAULT_MODEL_TRANSFORM,
+                scalePercent: state.meshyFitScalePercent ?? 100,
+            },
+        })),
     reset: () =>
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
@@ -113,6 +131,8 @@ export const useFileStore = create<FileState>((set) => ({
                 file: null,
                 fileUrl: null,
                 savedQuoteId: null,
+                meshyAutoFitted: false,
+                meshyFitScalePercent: null,
                 fileSource: { ...EMPTY_SOURCE },
                 baseAnalysis: null,
                 analysisError: null,

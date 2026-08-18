@@ -1,4 +1,4 @@
-import type { GeometryAnalysis } from '@/lib/geometry'
+import { sanitizeGeometryAnalysis, type GeometryAnalysis } from '@/lib/geometry'
 
 /** 90° 단위 모델 변환 — 자동견적 뷰어용 */
 export type Axis90 = 0 | 90 | 180 | 270
@@ -21,13 +21,26 @@ export const DEFAULT_MODEL_TRANSFORM: ModelTransform = {
     snapToBed: true,
 }
 
-export const SCALE_PERCENT_MIN = 10
+export const SCALE_PERCENT_MIN = 1
 export const SCALE_PERCENT_MAX = 400
 export const SCALE_PERCENT_STEP = 1
+
+/** 사진→AI 3D: Meshy STL이 미터급으로 나오면 최장축을 이 길이(mm)에 맞춤 */
+export const MESHY_AUTOFIT_TARGET_MM = 150
+export const MESHY_AUTOFIT_TRIGGER_MM = 280
 
 export function clampScalePercent(value: number): number {
     if (!Number.isFinite(value)) return 100
     return Math.min(SCALE_PERCENT_MAX, Math.max(SCALE_PERCENT_MIN, Math.round(value)))
+}
+
+/**
+ * 사진→3D 모델이 베드보다 훨씬 크면 최장축 150mm 기준 스케일 %.
+ * 이미 출력 가능한 크기면 null.
+ */
+export function meshyAutoFitScalePercent(longestMm: number): number | null {
+    if (!(longestMm > MESHY_AUTOFIT_TRIGGER_MM)) return null
+    return clampScalePercent((MESHY_AUTOFIT_TARGET_MM / longestMm) * 100)
 }
 
 /** 스케일 100% 기준, 회전만 반영한 AABB (mm) */
@@ -113,13 +126,13 @@ export function applyTransformToAnalysis(
         transform.rotZ
     )
 
-    return {
+    return sanitizeGeometryAnalysis({
         volume: base.volume * s3,
         surfaceArea: base.surfaceArea * s2,
         overhangArea:
             base.overhangArea !== undefined ? base.overhangArea * s2 : undefined,
         boundingBox,
-    }
+    })
 }
 
 export function degreesToRadians(deg: number): number {
