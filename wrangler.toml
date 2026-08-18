@@ -54,6 +54,10 @@ GOOGLE_REDIRECT_URI = "https://www.wow3dp.co.kr/api/auth/google/callback"
 NEXT_PUBLIC_NAVER_TALKTALK_ID = "wowi7tu"
 NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL = "https://talk.naver.com/profile/wowi7tu"
 
+# R2 대용량 Meshy STL 복사·업로드 시 CPU 한도 여유
+[limits]
+cpu_ms = 60000
+
 # 매일 00:00 KST(UTC 15:00) — 배송중→배송완료(5일), 배송완료→완료됨(2일) 자동 전환
 [triggers]
 crons = ["0 15 * * *"]

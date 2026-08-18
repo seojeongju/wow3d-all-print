@@ -299,10 +299,6 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
 
         setIsSaving(true)
         try {
-            // 먼저 파일을 R2에 업로드
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', file);
-
             const uploadHeaders: HeadersInit = {};
             if (token) {
                 uploadHeaders['Authorization'] = `Bearer ${token}`;
@@ -316,13 +312,16 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
 
             const meshyJobId =
                 fileSource.meshyJobId ?? parseMeshyJobIdFromFileName(file.name) ?? null;
-            // Meshy는 서버 R2 복사 — quoteId가 있어도 file_url 없을 때 재시도 가능
+            // Meshy는 서버 R2 연결 — 클라이언트에서 STL을 다시 올리면 Worker 메모리 초과(503)
             const shouldUploadFile = !currentQuoteId || meshyJobId != null;
 
             if (shouldUploadFile) {
                 try {
+                    const uploadFormData = new FormData();
                     if (meshyJobId) {
                         uploadFormData.append('meshyJobId', String(meshyJobId));
+                    } else {
+                        uploadFormData.append('file', file);
                     }
                     if (currentQuoteId) {
                         uploadFormData.append('quoteId', String(currentQuoteId));
@@ -347,10 +346,14 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                             currentQuoteId = errBody.quoteId;
                             setSavedQuoteId(errBody.quoteId);
                         }
-                        const msg = errBody.error || '파일 업로드 실패';
-                        console.warn('파일 업로드 실패', msg);
-                        if (fileSource.kind === 'meshy-photo' || meshyJobId) {
-                            throw new Error(msg || 'AI 3D 모델 파일 저장에 실패했습니다. 다시 시도해 주세요.');
+                        const gateway = [502, 503, 504, 413].includes(uploadRes.status)
+                        const msg = errBody.error
+                            || (gateway
+                                ? '모델 파일이 커서 저장에 실패했습니다. 새로고침 후 다시 시도해 주세요.'
+                                : '파일 업로드 실패');
+                        console.warn('파일 업로드 실패', uploadRes.status, msg);
+                        if (fileSource.kind === 'meshy-photo' || meshyJobId || gateway) {
+                            throw new Error(msg);
                         }
                     }
                 } catch (uploadError) {

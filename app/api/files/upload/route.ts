@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 사진→AI 3D: R2 meshy/ 경로에서 quotes/ 로 서버 복사 (클라이언트 재업로드 실패 방지)
+        // 사진→AI 3D: 이미 R2 meshy/ 에 있으므로 클라이언트 STL 재업로드 없이 연결
         if (hasMeshyJob) {
             const job = await env.DB.prepare(
                 `SELECT id, user_id, session_id, status, result_file_key, result_file_name FROM meshy_jobs WHERE id = ?`

@@ -34,6 +34,7 @@ type CopyMeshyEnv = {
         }
     }
     BUCKET: {
+        head?: (key: string) => Promise<{ size?: number } | null>
         get: (key: string) => Promise<{
             body: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob
             httpMetadata?: { contentType?: string; contentLength?: number }
@@ -45,6 +46,14 @@ type CopyMeshyEnv = {
             options?: { httpMetadata?: { contentType?: string } }
         ) => Promise<unknown>
     }
+}
+
+/** Worker 128MB 한도 안에서 안전하게 복사할 수 있는 최대 크기 */
+export const MESHY_QUOTE_COPY_MAX_BYTES = 8 * 1024 * 1024
+
+export function shouldInlineCopyMeshyObject(size?: number | null): boolean {
+    const n = Number(size) || 0
+    return n > 0 && n <= MESHY_QUOTE_COPY_MAX_BYTES
 }
 
 /** Meshy job 소유자 확인 (회원·비회원) */
@@ -76,34 +85,46 @@ export async function copyMeshyJobResultToQuote(
         return { error: 'AI 3D 모델이 아직 준비되지 않았습니다', status: 409 }
     }
 
-    const source = await env.BUCKET.get(job.result_file_key)
-    if (!source) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
-
+    const sourceKey = job.result_file_key
     const fileName = sanitizeR2FileName(preferredFileName || job.result_file_name || `meshy-${jobId}.stl`)
     const destKey = buildQuoteR2Key(quoteId, fileName)
 
+    let objectSize = 0
     try {
-        if (!source.body) {
-            return { error: 'Meshy 모델 파일 데이터가 비어 있습니다', status: 404 }
+        const meta = env.BUCKET.head ? await env.BUCKET.head(sourceKey) : null
+        objectSize = meta?.size ?? 0
+    } catch {
+        objectSize = 0
+    }
+
+    let fileUrl = sourceKey
+    if (shouldInlineCopyMeshyObject(objectSize)) {
+        const source = await env.BUCKET.get(sourceKey)
+        if (!source?.body) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
+        try {
+            const payload = await new Response(source.body as BodyInit).arrayBuffer()
+            if (!payload.byteLength) {
+                return { error: 'Meshy 모델 파일 데이터가 비어 있습니다', status: 404 }
+            }
+            await env.BUCKET.put(destKey, payload, {
+                httpMetadata: {
+                    contentType: source.httpMetadata?.contentType || 'model/stl',
+                },
+            })
+            fileUrl = destKey
+        } catch (e) {
+            console.error('[meshy-r2] copy to quote failed, linking meshy key', e)
+            fileUrl = sourceKey
         }
-        const payload = await new Response(source.body as BodyInit).arrayBuffer()
-        if (!payload.byteLength) {
-            return { error: 'Meshy 모델 파일 데이터가 비어 있습니다', status: 404 }
-        }
-        await env.BUCKET.put(destKey, payload, {
-            httpMetadata: {
-                contentType: source.httpMetadata?.contentType || 'model/stl',
-            },
-        })
-    } catch (e) {
-        console.error('[meshy-r2] copy to quote failed', e)
-        return { error: 'Meshy 모델을 견적 저장소로 복사하지 못했습니다', status: 500 }
+    } else if (objectSize === 0) {
+        const source = await env.BUCKET.get(sourceKey)
+        if (!source) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
     }
 
     await env.DB.prepare(
         `UPDATE quotes SET file_url = ?, file_name = COALESCE(?, file_name) WHERE id = ?`
     )
-        .bind(destKey, fileName, quoteId)
+        .bind(fileUrl, fileName, quoteId)
         .run()
 
     try {
@@ -116,7 +137,7 @@ export async function copyMeshyJobResultToQuote(
         /* quote_id 컬럼 없는 구 DB */
     }
 
-    return { fileUrl: destKey, fileName }
+    return { fileUrl, fileName }
 }
 
 /** 관리자 다운로드용 Meshy R2 키 후보 */
