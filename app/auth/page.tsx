@@ -18,6 +18,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Printer,
+  Camera,
+  ImageIcon,
 } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
 import { safeAuthReturnPath } from '@/lib/auth-session'
@@ -44,6 +46,8 @@ function AuthContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = safeAuthReturnPath(searchParams.get('return'), '') || undefined
+  const isPhotoQuoteReturn = Boolean(returnTo?.includes('entry=photo'))
+  const photoQuoteReturn = returnTo?.includes('entry=photo') ? returnTo : '/quote?entry=photo'
   const tokenFromUrl = searchParams.get('token')
   const returnPath = safeAuthReturnPath(searchParams.get('return'), '/')
   const authError = searchParams.get('error')
@@ -241,12 +245,13 @@ function AuthContent() {
               3D 프린팅 자동 견적
             </p>
             <h1 className="text-4xl xl:text-[2.75rem] font-extrabold leading-[1.2] tracking-tight text-white">
-              파일 올리면,
+              파일·사진만으로,
               <br />
               <span className="text-teal-300">견적까지 바로.</span>
             </h1>
-            <p className="text-white/50 text-[15px] leading-relaxed max-w-sm">
-              STL·OBJ·STEP 업로드만으로 실시간 견적을 확인하고, 산업용 품질로 제작까지 이어가세요.
+            <p className="text-white/50 text-[15px] leading-relaxed max-w-sm break-keep">
+              STL·OBJ·STEP 업로드 또는 제품 사진(JPG/PNG)만으로 AI 3D 모델링 후 실시간 견적·주문까지
+              이어집니다. 로그인 회원은 사진→AI 3D를 하루 1회(한국 시간) 이용할 수 있습니다.
             </p>
           </div>
 
@@ -279,7 +284,30 @@ function AuthContent() {
                 <p className="text-xs text-white/40">용도에 맞는 공정 선택</p>
               </div>
             </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+              className="flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center">
+                <Camera className="w-5 h-5 text-indigo-300" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white/90">3D 파일 없어도 OK</p>
+                <p className="text-xs text-white/40 break-keep">사진 업로드 → AI 3D → 자동견적</p>
+              </div>
+            </motion.div>
           </div>
+
+          <Link
+            href="/guides/photo-to-3d-printing-quote"
+            className="inline-flex items-center gap-2 text-xs font-bold text-indigo-300/90 hover:text-indigo-200 transition-colors"
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            사진→3D 견적 가이드 보기
+            <ArrowRight className="w-3 h-3" />
+          </Link>
         </motion.div>
       </div>
 
@@ -306,11 +334,23 @@ function AuthContent() {
               <p className="font-black text-lg leading-none">
                 WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
               </p>
-              <p className="text-[10px] text-white/45 mt-1">3D 프린팅 자동 견적</p>
+              <p className="text-[10px] text-white/45 mt-1">파일·사진 AI 3D 자동 견적</p>
             </div>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-6 sm:p-8 shadow-2xl shadow-black/40">
+            {isPhotoQuoteReturn && (
+              <div className="mb-6 rounded-2xl border border-indigo-400/25 bg-indigo-500/10 px-4 py-3.5 space-y-1">
+                <p className="text-sm font-bold text-indigo-100 break-keep">
+                  사진→AI 3D 견적은 로그인 후 이용 가능합니다
+                </p>
+                <p className="text-xs text-white/55 leading-relaxed break-keep">
+                  제품 사진(JPG/PNG)만 업로드하면 AI가 입체 3D 모델(STL)을 만들고 자동견적으로 이어집니다.
+                  회원당 하루 1회(한국 시간)입니다.
+                </p>
+              </div>
+            )}
+
             <div className="flex p-1 rounded-2xl bg-black/30 border border-white/5 mb-8">
               <button
                 type="button"
@@ -486,6 +526,30 @@ function AuthContent() {
                 </a>
               </div>
             </form>
+
+            <div className="mt-6 rounded-2xl border border-indigo-400/20 bg-indigo-500/[0.07] p-4 space-y-2">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <Camera className="w-4 h-4 text-indigo-300" />
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-bold text-white/90 break-keep">
+                    3D 파일 없이 사진만으로 AI 3D 모델링
+                  </p>
+                  <p className="text-xs text-white/50 leading-relaxed break-keep">
+                    로그인 후 자동견적에서 「3D 모델이 없어요」를 선택하고 제품 사진을 올리면 AI 3D 생성 →
+                    견적·주문까지 진행할 수 있습니다.
+                  </p>
+                  <Link
+                    href={photoQuoteReturn}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-300 hover:text-indigo-200 pt-1"
+                  >
+                    사진→3D 견적 바로가기
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
 
           <p className="mt-6 text-center text-[12px] text-white/40">
