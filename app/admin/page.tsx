@@ -5,11 +5,12 @@ import Link from 'next/link';
 import {
     Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
-import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings, ChevronRight } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Activity, Loader2, TrendingUp, FileText, MessageSquare, Settings } from 'lucide-react';
 import DashboardStatCard from '@/components/admin/DashboardStatCard';
 import SalesTrendPanel from '@/components/admin/SalesTrendPanel';
 import VisitorTrendPanel from '@/components/admin/VisitorTrendPanel';
 import QuoteFunnelTrendPanel from '@/components/admin/QuoteFunnelTrendPanel';
+import TrafficSourcePanel from '@/components/admin/TrafficSourcePanel';
 import { type SalesTrendPoint } from '@/lib/sales-trend';
 import { type VisitorTrendPoint } from '@/lib/visitor-trend';
 import { type QuoteFunnelTrendPoint, type QuoteFunnelSummary, type QuoteTrafficSource } from '@/lib/quote-funnel-trend';
@@ -135,8 +136,6 @@ export default function AdminDashboard() {
         trafficSources: [],
     };
     const s: Stats = stats ?? emptyStats;
-
-    const totalTrafficCount = s.trafficSources.reduce((acc, curr) => acc + curr.count, 0);
 
     return (
         <div className="space-y-8 pb-12">
@@ -407,56 +406,7 @@ export default function AdminDashboard() {
 
             {/* Traffic Tracking Section */}
             <div className="grid gap-6 lg:grid-cols-12">
-                {/* Traffic Source Pie-like Chart */}
-                <Card className="lg:col-span-5 bg-[#0f0f0f] border-white/5 group/traffic">
-                    <CardHeader>
-                        <Link
-                            href="/admin/quotes/analytics"
-                            className="block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            aria-label="견적 유입 분석 보기"
-                        >
-                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2 group-hover/traffic:text-primary transition-colors">
-                                유입 경로 분석
-                                <ChevronRight className="w-4 h-4 text-white/30" />
-                                <span className="text-[10px] font-medium text-white/40 bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-widest ml-auto">Last 30 Days</span>
-                            </CardTitle>
-                            <p className="text-xs text-white/40 mt-1">클릭 시 견적 유입 분석</p>
-                        </Link>
-                    </CardHeader>
-                    <CardContent className="h-[320px] flex flex-col justify-center">
-                        {s.trafficSources.length > 0 ? (
-                            <div className="space-y-5">
-                                {s.trafficSources.slice(0, 5).map((ts, idx) => {
-                                    const percent = totalTrafficCount > 0 ? Math.round((ts.count / totalTrafficCount) * 100) : 0;
-                                    const colors = ['bg-primary', 'bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500'];
-                                    return (
-                                        <div key={ts.source} className="space-y-1.5">
-                                            <div className="flex justify-between text-xs font-bold">
-                                                <span className="text-white/60 flex items-center gap-2 capitalize">
-                                                    <span className={`w-2 h-2 rounded-full ${colors[idx % colors.length]}`} />
-                                                    {ts.source}
-                                                </span>
-                                                <span className="text-white">{percent}% <span className="text-white/30 font-medium ml-1">({ts.count.toLocaleString()})</span></span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-1000`} 
-                                                    style={{ width: `${percent}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center text-white/20 gap-3 h-full border border-dashed border-white/5 rounded-2xl">
-                                <Users className="w-8 h-8 opacity-20" />
-                                <span className="text-sm">없음</span>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
+                <TrafficSourcePanel sources={s.trafficSources} token={token} dayCount={30} />
                 <VisitorTrendPanel data={s.visitorTrend ?? []} dayCount={14} />
             </div>
         </div>
