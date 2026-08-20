@@ -54,6 +54,39 @@ export function formatQuotePrintSettings(q: QuotePrintSettings | null | undefine
     return ''
 }
 
+/** 저장 견적함·장바구니 등 칩 UI용 라벨 목록 */
+export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefined): string[] {
+    if (!q) return []
+    const method = String(q.print_method || '').toLowerCase()
+
+    if (method === 'fdm') {
+        const chips: string[] = []
+        const mat = q.fdm_material_name || q.fdm_material
+        if (mat) chips.push(String(mat))
+        if (q.fdm_infill != null && Number.isFinite(Number(q.fdm_infill))) {
+            chips.push(`채움 ${Number(q.fdm_infill)}%`)
+        }
+        if (q.fdm_layer_height != null && Number.isFinite(Number(q.fdm_layer_height))) {
+            chips.push(`레이어 ${Number(q.fdm_layer_height)}mm`)
+        }
+        chips.push(asBool(q.fdm_support) ? '서포트' : '서포트 없음')
+        return chips
+    }
+
+    if (method === 'sla' || method === 'dlp') {
+        const chips: string[] = []
+        const resin = q.resin_type_name || q.resin_type
+        if (resin) chips.push(String(resin))
+        if (q.layer_thickness != null && Number.isFinite(Number(q.layer_thickness))) {
+            chips.push(`레이어 ${Number(q.layer_thickness)}mm`)
+        }
+        chips.push(asBool(q.post_processing) ? '후가공' : '후가공 없음')
+        return chips
+    }
+
+    return []
+}
+
 export function formatQuoteGuideContext(q: QuotePrintSettings | null | undefined): string {
     if (!q) return ''
     const topic = String(q.guide_topic || '').trim()

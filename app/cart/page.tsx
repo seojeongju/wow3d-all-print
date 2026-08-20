@@ -13,7 +13,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ModelThumbnail from '@/components/ModelThumbnail'
+import QuotePrintSettingsChips from '@/components/quote/QuotePrintSettingsChips'
 import type { Quote, Order } from '@/lib/types'
+import type { QuotePrintSettings } from '@/lib/quote-print-settings'
 import {
     calculateShippingFee,
     DEFAULT_SHIPPING_SETTINGS,
@@ -34,11 +36,33 @@ type QuoteRow = {
     dimensions_z: number
     print_method: string
     fdm_material?: string
+    fdm_material_name?: string
+    fdm_infill?: number
+    fdm_layer_height?: number
+    fdm_support?: number | boolean
     resin_type?: string
+    resin_type_name?: string
+    layer_thickness?: number
+    post_processing?: number | boolean
     total_price: number
     estimated_time_hours: number
     created_at: string
     updated_at: string
+}
+
+function quoteRowPrintSettings(row: QuoteRow): QuotePrintSettings {
+    return {
+        print_method: row.print_method,
+        fdm_material: row.fdm_material,
+        fdm_material_name: row.fdm_material_name,
+        fdm_infill: row.fdm_infill,
+        fdm_layer_height: row.fdm_layer_height,
+        fdm_support: row.fdm_support,
+        resin_type: row.resin_type,
+        resin_type_name: row.resin_type_name,
+        layer_thickness: row.layer_thickness,
+        post_processing: row.post_processing,
+    }
 }
 
 function toQuote(r: QuoteRow): Quote {
@@ -549,14 +573,24 @@ function CartPageContent() {
                                                             <h3 className="text-xl font-bold text-white truncate">{row.file_name}</h3>
                                                             <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">생성일 {new Date(row.created_at).toLocaleDateString()}</p>
                                                         </div>
-                                                        <div className="flex flex-wrap gap-4">
-                                                            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.print_method?.toUpperCase()}</div>
-                                                            <div className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">{row.volume_cm3?.toFixed(1)}cm³</div>
-                                                            <div className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[11px] font-black text-teal-400 uppercase tracking-widest">
-                                                                ₩{Math.round(row.total_price).toLocaleString()}
-                                                                <span className="text-[8px] ml-1.5 opacity-60 font-black">VAT 포함</span>
-                                                            </div>
-                                                        </div>
+                                                        <QuotePrintSettingsChips
+                                                            settings={quoteRowPrintSettings(row)}
+                                                            className="gap-3"
+                                                            trailing={
+                                                                <>
+                                                                    <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">
+                                                                        {row.print_method?.toUpperCase()}
+                                                                    </span>
+                                                                    <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-black text-white/60 uppercase tracking-widest">
+                                                                        {row.volume_cm3?.toFixed(1)}cm³
+                                                                    </span>
+                                                                    <span className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[11px] font-black text-teal-400 uppercase tracking-widest">
+                                                                        ₩{Math.round(row.total_price).toLocaleString()}
+                                                                        <span className="text-[8px] ml-1.5 opacity-60 font-black">VAT 포함</span>
+                                                                    </span>
+                                                                </>
+                                                            }
+                                                        />
                                                     </div>
                                                     <div className="flex gap-4 w-full md:w-auto">
                                                         <Button

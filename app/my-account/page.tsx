@@ -29,6 +29,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModelThumbnail from '@/components/ModelThumbnail';
+import QuotePrintSettingsChips from '@/components/quote/QuotePrintSettingsChips';
+import type { QuotePrintSettings } from '@/lib/quote-print-settings';
 import { useCartStore } from '@/store/useCartStore';
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
@@ -60,6 +62,19 @@ function mapQuoteFromApi(row: any): Quote {
         sessionId: row.sessionId ?? row.session_id ?? undefined,
         createdAt: row.createdAt ?? row.created_at ?? '',
         updatedAt: row.updatedAt ?? row.updated_at ?? '',
+    };
+}
+
+function quoteToPrintSettings(quote: Quote): QuotePrintSettings {
+    return {
+        print_method: quote.printMethod,
+        fdm_material: quote.fdmMaterial,
+        fdm_infill: quote.fdmInfill,
+        fdm_layer_height: quote.fdmLayerHeight,
+        fdm_support: quote.fdmSupport,
+        resin_type: quote.resinType,
+        layer_thickness: quote.layerThickness,
+        post_processing: quote.postProcessing,
     };
 }
 
@@ -935,10 +950,18 @@ export default function MyAccountPage() {
                                                     <h3 className="text-lg font-black truncate text-white mb-2" title={quote.fileName}>
                                                         {quote.fileName}
                                                     </h3>
-                                                    <div className="flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                                                    <div className="flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3">
                                                         <span>{new Date(quote.createdAt).toLocaleDateString('ko-KR')}</span>
                                                         <span>{(quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>
                                                     </div>
+                                                    <QuotePrintSettingsChips
+                                                        settings={quoteToPrintSettings(quote)}
+                                                        trailing={
+                                                            <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-white/50 uppercase tracking-widest">
+                                                                {quote.volumeCm3?.toFixed(1)} cm³
+                                                            </span>
+                                                        }
+                                                    />
                                                 </div>
                                                 <div className="flex items-center justify-between mb-8">
                                                     <div className="text-2xl font-black text-teal-400">

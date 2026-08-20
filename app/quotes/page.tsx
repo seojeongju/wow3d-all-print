@@ -11,7 +11,9 @@ import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
 import ModelThumbnail from '@/components/ModelThumbnail'
+import QuotePrintSettingsChips from '@/components/quote/QuotePrintSettingsChips'
 import type { Quote } from '@/lib/types'
+import type { QuotePrintSettings } from '@/lib/quote-print-settings'
 
 type QuoteRow = {
     id: number
@@ -25,11 +27,33 @@ type QuoteRow = {
     dimensions_z: number
     print_method: string
     fdm_material?: string
+    fdm_material_name?: string
+    fdm_infill?: number
+    fdm_layer_height?: number
+    fdm_support?: number | boolean
     resin_type?: string
+    resin_type_name?: string
+    layer_thickness?: number
+    post_processing?: number | boolean
     total_price: number
     estimated_time_hours: number
     created_at: string
     updated_at: string
+}
+
+function quoteRowPrintSettings(row: QuoteRow): QuotePrintSettings {
+    return {
+        print_method: row.print_method,
+        fdm_material: row.fdm_material,
+        fdm_material_name: row.fdm_material_name,
+        fdm_infill: row.fdm_infill,
+        fdm_layer_height: row.fdm_layer_height,
+        fdm_support: row.fdm_support,
+        resin_type: row.resin_type,
+        resin_type_name: row.resin_type_name,
+        layer_thickness: row.layer_thickness,
+        post_processing: row.post_processing,
+    }
 }
 
 function toQuote(r: QuoteRow): Quote {
@@ -238,15 +262,22 @@ export default function SavedQuotesPage() {
                                         <h3 className="text-2xl font-black text-white group-hover:text-teal-400 transition-colors truncate">
                                             {row.file_name}
                                         </h3>
-                                        <div className="flex flex-wrap items-center gap-4">
-                                            <div className="flex items-center gap-2 text-[13px] font-bold text-white/60 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
-                                                <div className="w-2 h-2 rounded-full bg-teal-400" />
-                                                {row.print_method?.toUpperCase()}
-                                            </div>
-                                            <div className="flex items-center gap-2 text-[13px] font-bold text-white/60 bg-white/5 border border-white/10 px-4 py-2 rounded-xl">
-                                                <div className="w-2 h-2 rounded-full bg-indigo-400" />
-                                                {row.volume_cm3?.toFixed(1)} cm³
-                                            </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <QuotePrintSettingsChips
+                                                settings={quoteRowPrintSettings(row)}
+                                                trailing={
+                                                    <>
+                                                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[13px] font-bold text-white/60">
+                                                            <span className="w-2 h-2 rounded-full bg-teal-400" />
+                                                            {row.print_method?.toUpperCase()}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[13px] font-bold text-white/60">
+                                                            <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                                                            {row.volume_cm3?.toFixed(1)} cm³
+                                                        </span>
+                                                    </>
+                                                }
+                                            />
                                         </div>
                                     </div>
 
