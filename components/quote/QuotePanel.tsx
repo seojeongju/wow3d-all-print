@@ -945,26 +945,42 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 </div>
 
                 <div className="space-y-4">
-                    <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[11px] sm:text-[12px] text-teal-400 hover:text-teal-300 font-black tracking-tight transition-all active:scale-95 px-1">
-                        <FileText className="w-3.5 h-3.5 sm:w-4 h-4" /> 산출 내역 상세 보기
+                    <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[12px] sm:text-[13px] text-teal-300 hover:text-teal-200 font-black tracking-tight transition-all active:scale-95 px-1">
+                        <FileText className="w-4 h-4" /> 산출 내역 상세 보기
                     </button>
                     
-                    <div className={`grid gap-3 ${embedded ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-[1fr_2fr]'}`}>
+                    <div className={`grid gap-3 ${embedded ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]'}`}>
                         {!embedded && (
-                            <Button disabled={!analysis || isSaving} variant="ghost" size="lg" className="rounded-xl sm:rounded-2xl border border-white/10 hover:bg-white/10 text-white transition-all active:scale-95 h-12 sm:h-16" onClick={handleSaveQuote}>
+                            <Button
+                                disabled={!analysis || isSaving}
+                                variant="ghost"
+                                size="lg"
+                                className="rounded-xl sm:rounded-2xl bg-white/10 border border-white/25 hover:bg-white/16 hover:border-white/40 text-white font-black gap-2 h-12 sm:h-16 text-[13px] sm:text-[15px] tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all active:scale-[0.98]"
+                                onClick={handleSaveQuote}
+                            >
                                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                                저장
                             </Button>
                         )}
-                        <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl sm:rounded-2xl bg-white text-slate-950 hover:bg-white/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.1)] h-12 sm:h-16 ${embedded ? 'text-[13px] font-black' : 'text-sm sm:text-[15px] font-black uppercase tracking-widest'} ${embedded ? 'col-span-1' : 'col-span-1'}`} onClick={handleAddToCart}>
+                        <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl sm:rounded-2xl bg-white text-slate-950 hover:bg-white/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.12)] h-12 sm:h-16 ${embedded ? 'text-[13px] font-black' : 'text-sm sm:text-[15px] font-black tracking-tight'}`} onClick={handleAddToCart}>
                             <ShoppingCart className="w-4.5 h-4.5 sm:w-5 h-5 text-slate-950" /> 장바구니에 담기
                         </Button>
                     </div>
                 </div>
                 {!embedded && (
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 pt-1 border-t border-white/5 mt-2">
-                        <Link href="/quotes" className="text-[11px] text-white/30 hover:text-teal-400 font-bold flex items-center gap-1.5 transition-colors"><List className="w-3.5 h-3.5" /> 견적 보관함</Link>
-                        <span className="hidden sm:inline text-white/10 font-thin">|</span>
-                        <Link href="/cart" className="text-[11px] text-white/30 hover:text-teal-400 font-bold flex items-center gap-1.5 transition-colors"><ArrowRight className="w-3.5 h-3.5" /> 장바구니 이동</Link>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10 mt-1">
+                        <Link
+                            href="/quotes"
+                            className="h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-teal-400/12 border border-teal-400/30 hover:bg-teal-400/20 hover:border-teal-400/50 text-teal-100 font-black text-[13px] sm:text-[14px] flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                        >
+                            <List className="w-4 h-4" /> 견적 보관함
+                        </Link>
+                        <Link
+                            href="/cart"
+                            className="h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/25 hover:bg-white/16 hover:border-white/40 text-white font-black text-[13px] sm:text-[14px] flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                        >
+                            장바구니 이동 <ArrowRight className="w-4 h-4" />
+                        </Link>
                     </div>
                 )}
                 {!embedded && (
