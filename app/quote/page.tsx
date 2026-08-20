@@ -120,6 +120,7 @@ function QuoteContent() {
 
                     // Fetch and set file if URL exists
                     if (q.file_url) {
+                        useFileStore.getState().setSavedFileR2Url(String(q.file_url))
                         const fileRes = await fetch(q.file_url);
                         const blob = await fileRes.blob();
                         const newFile = new File([blob], q.file_name, { type: blob.type });

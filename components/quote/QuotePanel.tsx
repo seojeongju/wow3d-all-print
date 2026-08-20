@@ -74,6 +74,39 @@ type SaveQuoteResult = {
     pricingSource?: string
 }
 
+function buildQuoteConfigKey(input: {
+    printMethod: PrintMethod
+    fdmMaterial: string
+    infill: number
+    layerHeight: number
+    supportEnabled: boolean
+    resinType: string
+    slaLayerHeight: number
+    postProcessing: boolean
+    totalPrice: number
+    modelTransform: { scalePercent: number; rotX: number; rotY: number; rotZ: number }
+    dimensions: { x: number; y: number; z: number }
+}) {
+    return JSON.stringify({
+        printMethod: input.printMethod,
+        fdmMaterial: input.fdmMaterial,
+        infill: input.infill,
+        layerHeight: input.layerHeight,
+        supportEnabled: input.supportEnabled,
+        resinType: input.resinType,
+        slaLayerHeight: input.slaLayerHeight,
+        postProcessing: input.postProcessing,
+        totalPrice: input.totalPrice,
+        scalePercent: input.modelTransform.scalePercent,
+        rotX: input.modelTransform.rotX,
+        rotY: input.modelTransform.rotY,
+        rotZ: input.modelTransform.rotZ,
+        dx: input.dimensions.x,
+        dy: input.dimensions.y,
+        dz: input.dimensions.z,
+    })
+}
+
 const defaultQuoteDetail = {
     total: 0,
     time: 0,
@@ -88,7 +121,9 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
+    const savedFileR2Url = useFileStore((s) => s.savedFileR2Url)
     const setSavedQuoteId = useFileStore((s) => s.setSavedQuoteId)
+    const setSavedFileR2Url = useFileStore((s) => s.setSavedFileR2Url)
     const modelTransform = useFileStore((s) => s.transform)
     const rawAnalysis = useEffectiveAnalysis()
     const analysis = useMemo(
@@ -121,6 +156,12 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
         if (Number.isInteger(loadedId) && loadedId > 0) {
             setSavedQuoteId(loadedId)
         }
+        const loadedFileUrl =
+            (initialQuote as { file_url?: string | null; fileUrl?: string | null }).file_url
+            ?? (initialQuote as { fileUrl?: string | null }).fileUrl
+        if (loadedFileUrl?.trim()) {
+            setSavedFileR2Url(loadedFileUrl.trim())
+        }
 
         if (initialQuote.print_method) setPrintMethod(initialQuote.print_method as PrintMethod)
 
@@ -134,7 +175,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             if (initialQuote.layer_thickness) setSlaLayerHeight(initialQuote.layer_thickness)
             if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
         }
-    }, [initialQuote])
+    }, [initialQuote, setSavedQuoteId, setSavedFileR2Url])
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -308,13 +349,29 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 uploadHeaders['X-Session-ID'] = sessionId || '';
             }
 
-            let fileUrl: string | null = null;
-            let currentQuoteId = savedQuoteId;
+            const configKey = buildQuoteConfigKey({
+                printMethod,
+                fdmMaterial,
+                infill,
+                layerHeight,
+                supportEnabled,
+                resinType,
+                slaLayerHeight,
+                postProcessing,
+                totalPrice,
+                modelTransform,
+                dimensions: analysis.boundingBox,
+            })
+
+            // 동일 설정 → 기존 행 UPDATE, 조건 변경 → 새 행 INSERT
+            const reuseExistingQuote = savedQuoteId != null && configKey === lastSavedConfig
+            let quoteIdForPost: number | null = reuseExistingQuote ? savedQuoteId : null
+            let fileUrl: string | null = null
 
             const meshyJobId =
                 fileSource.meshyJobId ?? parseMeshyJobIdFromFileName(file.name) ?? null;
-            // Meshy는 서버 R2 연결 — 클라이언트에서 STL을 다시 올리면 Worker 메모리 초과(503)
-            const shouldUploadFile = !currentQuoteId || meshyJobId != null;
+            // R2에 파일이 없을 때만 업로드(최초 1회). 조건 변경 시에는 savedFileR2Url로 새 견적에 연결
+            const shouldUploadFile = !savedFileR2Url
 
             if (shouldUploadFile) {
                 try {
@@ -324,8 +381,8 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                     } else {
                         uploadFormData.append('file', file);
                     }
-                    if (currentQuoteId) {
-                        uploadFormData.append('quoteId', String(currentQuoteId));
+                    if (quoteIdForPost) {
+                        uploadFormData.append('quoteId', String(quoteIdForPost));
                     }
                     const uploadRes = await fetch('/api/files/upload', {
                         method: 'POST',
@@ -336,16 +393,16 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                     if (uploadRes.ok) {
                         const uploadData = await uploadRes.json() as UploadResponse;
                         fileUrl = uploadData.data?.fileUrl || null;
-                        currentQuoteId = uploadData.data?.quoteId || null;
-                        if (currentQuoteId) setSavedQuoteId(currentQuoteId);
+                        if (fileUrl) setSavedFileR2Url(fileUrl)
+                        const uploadedQuoteId = uploadData.data?.quoteId || null;
+                        if (uploadedQuoteId) quoteIdForPost = uploadedQuoteId;
                     } else {
                         const errBody = await uploadRes.json().catch(() => ({})) as {
                             error?: string
                             quoteId?: number
                         };
-                        if (errBody.quoteId && !currentQuoteId) {
-                            currentQuoteId = errBody.quoteId;
-                            setSavedQuoteId(errBody.quoteId);
+                        if (errBody.quoteId && !quoteIdForPost) {
+                            quoteIdForPost = errBody.quoteId;
                         }
                         const gateway = [502, 503, 504, 413].includes(uploadRes.status)
                         const msg = errBody.error
@@ -363,12 +420,14 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 }
             }
 
+            const linkedFileUrl = fileUrl || savedFileR2Url
+            const createdNewVariant = !reuseExistingQuote && !!savedFileR2Url
+
             const quoteData: QuoteData = {
-                id: currentQuoteId ?? undefined,
+                id: quoteIdForPost ?? undefined,
                 fileName: file.name,
                 fileSize: file.size,
-                // 재저장 시 fileUrl을 보내지 않음 → 서버에서 기존 file_url 유지 (COALESCE)
-                ...(fileUrl ? { fileUrl } : {}),
+                ...(linkedFileUrl ? { fileUrl: linkedFileUrl } : {}),
                 volumeCm3,
                 surfaceAreaCm2,
                 dimensionsX: analysis.boundingBox.x,
@@ -392,27 +451,6 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 modelTransform,
             }
 
-            // 설정값 변경 여부 확인용 키 생성
-            const configKey = JSON.stringify({
-                printMethod,
-                fdmMaterial,
-                infill,
-                layerHeight,
-                supportEnabled,
-                resinType,
-                slaLayerHeight,
-                postProcessing,
-                totalPrice,
-                scalePercent: modelTransform.scalePercent,
-                rotX: modelTransform.rotX,
-                rotY: modelTransform.rotY,
-                rotZ: modelTransform.rotZ,
-                dx: analysis.boundingBox.x,
-                dy: analysis.boundingBox.y,
-                dz: analysis.boundingBox.z,
-            });
-            setLastSavedConfig(configKey);
-
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`
@@ -434,15 +472,25 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             }
             const data = result.data as SaveQuoteResult
 
-            // data.id가 위에서 전달한 currentQuoteId와 같을 것입니다 (업데이트됨)
-            const finalQuoteId = data.id || currentQuoteId;
+            const finalQuoteId = data.id || quoteIdForPost;
             if (finalQuoteId) setSavedQuoteId(finalQuoteId);
+            setLastSavedConfig(configKey);
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {
-                showToast.success('견적 저장됨', '회원: 내 견적함에 저장되었습니다.');
+                showToast.success(
+                    '견적 저장됨',
+                    createdNewVariant
+                        ? '조건이 다른 새 견적로 저장되었습니다. 내 견적함에서 확인하세요.'
+                        : '회원: 내 견적함에 저장되었습니다.'
+                );
             } else {
-                showToast.info('견적 저장됨', '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.');
+                showToast.info(
+                    '견적 저장됨',
+                    createdNewVariant
+                        ? '조건이 다른 새 견적로 저장되었습니다.'
+                        : '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.'
+                );
             }
             return {
                 ...data,
@@ -464,7 +512,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             return;
         }
 
-        const configKey = JSON.stringify({
+        const configKey = buildQuoteConfigKey({
             printMethod,
             fdmMaterial,
             infill,
@@ -474,13 +522,8 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             slaLayerHeight,
             postProcessing,
             totalPrice,
-            scalePercent: modelTransform.scalePercent,
-            rotX: modelTransform.rotX,
-            rotY: modelTransform.rotY,
-            rotZ: modelTransform.rotZ,
-            dx: analysis.boundingBox.x,
-            dy: analysis.boundingBox.y,
-            dz: analysis.boundingBox.z,
+            modelTransform,
+            dimensions: analysis.boundingBox,
         });
 
         let savedQuote;

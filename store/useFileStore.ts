@@ -22,8 +22,10 @@ export type FileSourceMeta = {
 interface FileState {
     file: File | null
     fileUrl: string | null
-    /** 현재 파일에 연결된 견적 ID — FDM/SLA 전환 시 같은 행을 덮어씀 */
+    /** 마지막으로 저장한 견적 ID — 동일 설정 재저장 시 UPDATE */
     savedQuoteId: number | null
+    /** R2에 저장된 모델 파일 키 — 조건 변경 후 새 견적 INSERT 시 재업로드 없이 연결 */
+    savedFileR2Url: string | null
     /** 사진→3D 초기 치수 자동 맞춤을 이미 수행했는지 */
     meshyAutoFitted: boolean
     /** 자동 맞춤 때 적용한 스케일 % — 초기화 시 여기로 되돌림 */
@@ -37,6 +39,7 @@ interface FileState {
     transform: ModelTransform
     setFile: (file: File, source?: FileSourceMeta) => void
     setSavedQuoteId: (id: number | null) => void
+    setSavedFileR2Url: (url: string | null) => void
     markMeshyAutoFitted: () => void
     setMeshyFitScalePercent: (percent: number | null) => void
     setAnalysis: (data: GeometryAnalysis) => void
@@ -55,6 +58,7 @@ export const useFileStore = create<FileState>((set) => ({
     file: null,
     fileUrl: null,
     savedQuoteId: null,
+    savedFileR2Url: null,
     meshyAutoFitted: false,
     meshyFitScalePercent: null,
     fileSource: { ...EMPTY_SOURCE },
@@ -70,6 +74,7 @@ export const useFileStore = create<FileState>((set) => ({
                 file,
                 fileUrl: URL.createObjectURL(file),
                 savedQuoteId: null,
+                savedFileR2Url: null,
                 meshyAutoFitted: false,
                 meshyFitScalePercent: null,
                 fileSource: source ?? { kind: 'upload', meshyJobId: null },
@@ -80,6 +85,7 @@ export const useFileStore = create<FileState>((set) => ({
         })
     },
     setSavedQuoteId: (id) => set({ savedQuoteId: id }),
+    setSavedFileR2Url: (url) => set({ savedFileR2Url: url }),
     markMeshyAutoFitted: () => set({ meshyAutoFitted: true }),
     setMeshyFitScalePercent: (percent) => set({ meshyFitScalePercent: percent }),
     setAnalysis: (data) => set({ baseAnalysis: data }),
@@ -131,6 +137,7 @@ export const useFileStore = create<FileState>((set) => ({
                 file: null,
                 fileUrl: null,
                 savedQuoteId: null,
+                savedFileR2Url: null,
                 meshyAutoFitted: false,
                 meshyFitScalePercent: null,
                 fileSource: { ...EMPTY_SOURCE },
