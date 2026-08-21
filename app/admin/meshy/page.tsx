@@ -8,6 +8,7 @@ import { Loader2, Sparkles, Gift } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { showToast } from '@/lib/toast-helper'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
+import AdminMeshyJobsPanel from '@/components/admin/AdminMeshyJobsPanel'
 import { cn } from '@/lib/utils'
 
 type Stats = {
@@ -141,9 +142,11 @@ export default function AdminMeshyPage() {
                     사진(이미지)→AI 3D
                 </h1>
                 <p className="text-sm text-white/50 font-bold mt-1">
-                    사용량 · Meshy 크레딧 · 추가 생성 횟수 부여
+                    사용량 · 생성 모델 확인 · Meshy 크레딧 · 추가 생성 횟수 부여
                 </p>
             </div>
+
+            <AdminMeshyJobsPanel token={token} />
 
             {loading && !stats ? (
                 <div className="flex items-center gap-2 text-white/50">
