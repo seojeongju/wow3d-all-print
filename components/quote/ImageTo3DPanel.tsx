@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import { useFileStore } from '@/store/useFileStore'
 import { MESHY_IMAGE_MAX_BYTES, MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
+import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
 import { preprocessMeshyImage } from '@/lib/meshy-client-preprocess'
 import { PhotoTo3DGuide } from '@/components/quote/PhotoTo3DGuide'
 import { cn } from '@/lib/utils'
@@ -889,6 +890,12 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                     )}
                                 </div>
                             )}
+                            <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-50">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-300" />
+                                <p className="text-[12px] font-bold leading-relaxed break-keep">
+                                    {MESHY_AI_DISCLAIMER}
+                                </p>
+                            </div>
                             <button
                                 type="button"
                                 disabled={applying || !jobId}
@@ -1036,6 +1043,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     <li>· 생성 실패 시 횟수 미차감 · 성공·진행 중은 당일 1회로 집계</li>
                     <li>· 생성 후 「이 모델로 견적 진행」에서 확인하고 넘어갑니다</li>
                     <li>· 절대 치수는 견적 화면에서 mm 스케일로 조정하세요</li>
+                    <li className="text-amber-200/80">· {MESHY_AI_DISCLAIMER_SHORT}</li>
                 </ul>
             </div>
         </div>

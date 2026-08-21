@@ -23,6 +23,8 @@ import {
     formatFreeShippingHint,
     parseShippingSettings,
 } from '@/lib/shipping-settings'
+import { MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
+import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
 
 type QuoteRow = {
     id: number
@@ -769,9 +771,18 @@ function CartPageContent() {
                             </div>
 
                             <div className="pt-10 space-y-6 relative z-10 border-t border-white/5">
-                                <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-white/5 text-[11px] text-white/40 leading-relaxed font-bold">
+                                <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-white/5 text-[11px] text-white/40 leading-relaxed font-bold space-y-2">
                                     <span className="font-black text-teal-400 block mb-2 uppercase tracking-widest">※ Guide</span>
-                                    자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출 후 최종 견적서가 발송됩니다.
+                                    <p>
+                                        자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출 후 최종 견적서가 발송됩니다.
+                                    </p>
+                                    {items.some(
+                                        (i) => parseMeshyJobIdFromFileName(i.quote?.fileName || '') != null
+                                    ) && (
+                                        <p className="text-amber-100/90 bg-amber-500/10 border border-amber-400/20 rounded-xl px-3 py-2.5">
+                                            {MESHY_AI_DISCLAIMER_SHORT}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="flex items-start gap-4 px-2">
                                     <ShieldCheck className="w-6 h-6 text-teal-400/40 shrink-0" />

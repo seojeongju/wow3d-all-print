@@ -21,6 +21,8 @@ import {
     formatFreeShippingHint,
     parseShippingSettings,
 } from '@/lib/shipping-settings'
+import { MESHY_AI_DISCLAIMER_CHECKOUT } from '@/lib/meshy-disclaimer'
+import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
 
 declare global {
     interface Window {
@@ -53,6 +55,9 @@ function CheckoutContent() {
     const idsParam = searchParams.get('ids')
     const orderItemIds = idsParam ? idsParam.split(',').map((s) => parseInt(s, 10)).filter((n) => !Number.isNaN(n)) : []
     const orderItems = orderItemIds.length > 0 ? items.filter((i) => orderItemIds.includes(i.id)) : items
+    const hasMeshyAiModel = orderItems.some(
+        (i) => parseMeshyJobIdFromFileName(i.quote?.fileName || '') != null
+    )
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isAddressScriptLoaded, setIsAddressScriptLoaded] = useState(false)
@@ -522,9 +527,16 @@ function CheckoutContent() {
                                         </div>
                                     </div>
 
-                                    <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary/90 leading-relaxed font-medium">
-                                        <span className="font-bold block mb-0.5">※ 결제 안내</span>
-                                        현재 주문 단계에서는 결제가 이루어지지 않습니다. 전문가의 모델링 검토 및 시뮬레이션을 통해 산출된 <b>최종 견적서(배송비/옵션 확정)</b>를 메일로 받으신 후 실제 결제가 진행됩니다.
+                                    <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary/90 leading-relaxed font-medium space-y-1.5">
+                                        <span className="font-bold block">※ 결제 안내</span>
+                                        <p>
+                                            현재 주문 단계에서는 결제가 이루어지지 않습니다. 전문가의 모델링 검토 및 시뮬레이션을 통해 산출된 <b>최종 견적서(배송비/옵션 확정)</b>를 메일로 받으신 후 실제 결제가 진행됩니다.
+                                        </p>
+                                        {hasMeshyAiModel && (
+                                            <p className="text-amber-100/95 bg-amber-500/15 border border-amber-400/25 rounded-lg px-2.5 py-2">
+                                                {MESHY_AI_DISCLAIMER_CHECKOUT}
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* 약관 동의 영역 */}

@@ -11,6 +11,7 @@ import {
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
 import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
+import { MESHY_AI_DISCLAIMER } from '@/lib/meshy-disclaimer'
 import { cn } from '@/lib/utils'
 
 /**
@@ -104,9 +105,10 @@ export default function ModelTransformPanel({ className }: { className?: string 
 
             {isAiPhoto && (
                 <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2 text-[10px] font-bold text-amber-100/90 leading-relaxed break-keep space-y-1.5">
+                    <p className="text-amber-50">{MESHY_AI_DISCLAIMER}</p>
                     <p>
-                        AI 사진 생성 모델입니다. 아래 <strong className="text-amber-50">치수(mm)</strong>로
-                        실제 길이에 맞추세요. 정밀 공차는 STL 직접 업로드를 권장합니다.
+                        아래 <strong className="text-amber-50">치수(mm)</strong>로 실제 길이에 맞추세요.
+                        정밀 공차는 STL 직접 업로드를 권장합니다.
                     </p>
                     {meshyFitScalePercent != null && (
                         <p className="text-teal-100">

@@ -30,6 +30,7 @@ import { sanitizeGeometryAnalysis } from '@/lib/geometry'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
+import { MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
 
 type PrintSpecs = {
     fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
@@ -948,6 +949,15 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                     <button type="button" onClick={() => setDetailModalOpen(true)} className="flex items-center gap-2 text-[12px] sm:text-[13px] text-teal-300 hover:text-teal-200 font-black tracking-tight transition-all active:scale-95 px-1">
                         <FileText className="w-4 h-4" /> 산출 내역 상세 보기
                     </button>
+
+                    {fileSource.kind === 'meshy-photo' && (
+                        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-400/25 text-amber-50">
+                            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-300" />
+                            <p className="text-[11px] sm:text-[12px] font-bold leading-relaxed break-keep">
+                                {MESHY_AI_DISCLAIMER_SHORT}
+                            </p>
+                        </div>
+                    )}
                     
                     <div className={`grid gap-3 ${embedded ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]'}`}>
                         {!embedded && (
