@@ -41,10 +41,13 @@ export const showToast = {
             finalTitle = "네트워크 연결 오류";
             description = "서버와의 연결이 원활하지 않습니다. 인터넷 환경을 확인해 주세요.";
         }
-        // 인증 오류 친화적 변환
-        else if (description.toLowerCase().includes("unauthorized") ||
-            description.toLowerCase().includes("인증이 필요합니다") ||
-            description.includes("401") || description.includes("403")) {
+        // 인증 오류 친화적 변환 (견적 ID 403 등 본문 숫자와 혼동되지 않도록 문구 위주로 판별)
+        else if (
+            description.toLowerCase().includes("unauthorized") ||
+            description.includes("인증이 필요합니다") ||
+            description.includes("유효하지 않은 토큰") ||
+            description.includes("세션이 만료")
+        ) {
             finalTitle = "권한 또는 세션 오류";
             description = "세션이 만료되었거나 접근 권한이 없습니다. 다시 로그인해 보세요.";
         }

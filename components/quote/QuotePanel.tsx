@@ -482,15 +482,15 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                 showToast.success(
                     '견적 저장됨',
                     createdNewVariant
-                        ? '조건이 다른 새 견적로 저장되었습니다. 내 견적함에서 확인하세요.'
-                        : '회원: 내 견적함에 저장되었습니다.'
+                        ? '조건이 다른 새 견적으로 저장되었습니다. 주문하려면 ‘장바구니에 담기’를 눌러 주세요.'
+                        : '견적함에 저장되었습니다. 주문하려면 ‘장바구니에 담기’를 눌러 주세요.'
                 );
             } else {
                 showToast.info(
                     '견적 저장됨',
                     createdNewVariant
-                        ? '조건이 다른 새 견적로 저장되었습니다.'
-                        : '비회원: 이 기기에서만 보관됩니다. 주문 시 이어서 진행할 수 있습니다.'
+                        ? '조건이 다른 새 견적으로 저장되었습니다. 주문하려면 ‘장바구니에 담기’를 눌러 주세요.'
+                        : '이 기기에만 보관됩니다. 주문하려면 ‘장바구니에 담기’를 눌러 주세요.'
                 );
             }
             return {
@@ -986,12 +986,17 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
                             <List className="w-4 h-4" /> 견적 보관함
                         </Link>
                         <Link
-                            href="/cart"
+                            href="/cart?tab=saved"
                             className="h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/25 hover:bg-white/16 hover:border-white/40 text-white font-black text-[13px] sm:text-[14px] flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                         >
                             장바구니 이동 <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
+                )}
+                {!embedded && (
+                    <p className="text-[11px] text-white/35 font-bold text-center leading-relaxed break-keep pt-1">
+                        저장만으로는 주문되지 않습니다. ‘장바구니에 담기’ 후 주문을 진행해 주세요.
+                    </p>
                 )}
                 {!embedded && (
                     <div className="flex items-center justify-center gap-2 text-[9px] text-white/20 font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] pt-2">

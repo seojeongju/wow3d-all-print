@@ -734,8 +734,10 @@ function CartPageContent() {
                             <div className="space-y-4 pt-4 relative z-10">
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">Step 02: 결제하기</span>
                                 {selectedCount === 0 && (
-                                    <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[11px] font-black uppercase tracking-widest text-center">
-                                        주문할 항목을 선택해 주세요
+                                    <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-200/95 text-[12px] font-bold leading-relaxed text-center break-keep">
+                                        {activeTab === 'saved' || (items.length === 0 && savedQuotes.length > 0)
+                                            ? '저장된 항목에서 장바구니에 담은 뒤, 장바구니 탭에서 선택해 주문해 주세요.'
+                                            : '주문할 항목을 장바구니에서 선택해 주세요.'}
                                     </div>
                                 )}
                                 

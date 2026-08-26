@@ -85,7 +85,8 @@ export async function resolveOrderLinesFromDb(
         if (!row) {
             return {
                 ok: false,
-                error: `견적(${quoteId})이 장바구니에 없거나 주문 권한이 없습니다.`,
+                error:
+                    '이 견적은 아직 장바구니에 없습니다. 저장된 견적에서 ‘장바구니에 담기’ 후 주문해 주세요.',
                 status: 403,
             }
         }
