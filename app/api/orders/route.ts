@@ -4,6 +4,7 @@ import type { Env } from '@/env';
 import { errorResponse, successResponse, requireAuth, requireAuthOrGuest, generateOrderNumber } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { resolveOrderLinesFromDb } from '@/lib/resolve-order-quote-prices';
+import { ensureCartRowsForOrder } from '@/lib/ensure-order-cart';
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
 import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
 import { absoluteUrl } from '@/lib/site-url';
@@ -145,22 +146,33 @@ export async function POST(request: NextRequest) {
             return errorResponse('유효한 주문 항목이 없습니다. 장바구니를 다시 확인해 주세요.', 400);
         }
 
-        const isGuest = auth.isGuest;
-        const resolved = await resolveOrderLinesFromDb(
-            env.DB,
-            validCartItems.map((item) => ({
-                quoteId: Number(item.quoteId),
-                quantity: Number(item.quantity),
-                totalPrice: item.totalPrice != null ? Number(item.totalPrice) : undefined,
-            })),
-            {
-                isGuest,
-                userId: isGuest ? undefined : auth.userId,
-                sessionId: isGuest ? auth.sessionId : undefined,
-            }
-        );
+        const isGuest = auth.isGuest
+        const clientSessionId = request.headers.get('X-Session-ID')?.trim() || null
+        const sessionIdForCart = isGuest ? auth.sessionId : clientSessionId || null
+
+        const orderItems = validCartItems.map((item) => ({
+            quoteId: Number(item.quoteId),
+            quantity: Number(item.quantity),
+            totalPrice: item.totalPrice != null ? Number(item.totalPrice) : undefined,
+        }))
+
+        // 로컬(브라우저) 장바구니와 DB cart 불일치 보정 — 화면엔 있는데 주문만 실패하는 경우 방지
+        const ensured = await ensureCartRowsForOrder(env.DB, orderItems, {
+            isGuest,
+            userId: isGuest ? undefined : auth.userId,
+            sessionId: sessionIdForCart,
+        })
+        if (!ensured.ok) {
+            return errorResponse(ensured.error, ensured.status)
+        }
+
+        const resolved = await resolveOrderLinesFromDb(env.DB, orderItems, {
+            isGuest,
+            userId: isGuest ? undefined : auth.userId,
+            sessionId: sessionIdForCart,
+        })
         if (!resolved.ok) {
-            return errorResponse(resolved.error, resolved.status);
+            return errorResponse(resolved.error, resolved.status)
         }
 
         const ordererName = String(body.ordererName ?? '').trim() || null
@@ -228,7 +240,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 2. 장바구니 삭제
+        // 2. 장바구니 삭제 (회원 cart + 동일 세션 cart)
         const quoteIds = [...new Set(resolved.lines.map((l) => l.quoteId))];
         if (quoteIds.length > 0) {
             const placeholders = quoteIds.map(() => '?').join(',');
@@ -236,6 +248,12 @@ export async function POST(request: NextRequest) {
                 statements.push(
                     env.DB.prepare(`DELETE FROM cart WHERE session_id = ? AND quote_id IN (${placeholders})`)
                         .bind(auth.sessionId, ...quoteIds)
+                );
+            } else if (sessionIdForCart) {
+                statements.push(
+                    env.DB.prepare(
+                        `DELETE FROM cart WHERE quote_id IN (${placeholders}) AND (user_id = ? OR session_id = ?)`
+                    ).bind(...quoteIds, auth.userId, sessionIdForCart)
                 );
             } else {
                 statements.push(

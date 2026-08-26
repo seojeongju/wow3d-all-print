@@ -198,8 +198,32 @@ function CheckoutContent() {
             const authState = useAuthStore.getState()
             if (authState.isAuthenticated && authState.token) {
                 headers['Authorization'] = `Bearer ${authState.token}`
-            } else if (authState.sessionId) {
+            }
+            if (authState.sessionId) {
                 headers['X-Session-ID'] = authState.sessionId
+            }
+            if (authState.user?.id) {
+                headers['X-User-ID'] = String(authState.user.id)
+            }
+
+            // 브라우저 장바구니 → DB cart 동기화 (로컬만 있고 DB에 없어 주문이 거절되던 문제 방지)
+            for (const item of orderItems) {
+                const syncRes = await fetch('/api/cart', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        quoteId: item.quoteId,
+                        quantity: item.quantity,
+                        updateOnly: true,
+                    }),
+                })
+                if (!syncRes.ok) {
+                    const syncErr = await syncRes.json().catch(() => ({}))
+                    throw new Error(
+                        (syncErr as { error?: string })?.error ||
+                            '장바구니 동기화에 실패했습니다. 장바구니에 다시 담아 주세요.'
+                    )
+                }
             }
 
             let finalNote = formData.customerNote || '';

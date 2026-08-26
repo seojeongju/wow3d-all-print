@@ -1,7 +1,38 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
-import { errorResponse, successResponse, generateSessionId } from '@/lib/api-utils';
+import {
+    errorResponse,
+    successResponse,
+    generateSessionId,
+    extractToken,
+    verifyToken,
+} from '@/lib/api-utils';
+
+async function resolveCartOwner(request: NextRequest): Promise<{
+    userId: number | null;
+    sessionId: string | null;
+}> {
+    const token = extractToken(request);
+    if (token) {
+        const user = await verifyToken(token);
+        if (user && !('error' in user)) {
+            return {
+                userId: user.userId,
+                sessionId: request.headers.get('X-Session-ID')?.trim() || null,
+            };
+        }
+    }
+
+    const headerUserId = request.headers.get('X-User-ID');
+    const parsed = headerUserId ? parseInt(headerUserId, 10) : NaN;
+    const sessionId = request.headers.get('X-Session-ID')?.trim() || null;
+
+    return {
+        userId: Number.isInteger(parsed) && parsed > 0 ? parsed : null,
+        sessionId,
+    };
+}
 
 /**
  * GET /api/cart - 장바구니 조회
@@ -14,8 +45,8 @@ export async function GET(request: NextRequest) {
         } catch {
             env = undefined;
         }
-        const sessionId = request.headers.get('X-Session-ID');
-        const userId = request.headers.get('X-User-ID');
+
+        const { userId, sessionId } = await resolveCartOwner(request);
 
         if (!sessionId && !userId) {
             return successResponse([], '인증 정보 없음');
@@ -25,30 +56,39 @@ export async function GET(request: NextRequest) {
             return successResponse([]);
         }
 
-        let query: string;
-        let bindings: any[];
-
-        if (userId) {
-            query = `
-        SELECT c.*, q.* 
-        FROM cart c 
-        JOIN quotes q ON c.quote_id = q.id 
-        WHERE c.user_id = ? 
-        ORDER BY c.created_at DESC
-      `;
-            bindings = [parseInt(userId)];
+        let result;
+        if (userId && sessionId) {
+            result = await env.DB.prepare(
+                `SELECT c.*, q.*
+                 FROM cart c
+                 JOIN quotes q ON c.quote_id = q.id
+                 WHERE c.user_id = ? OR c.session_id = ?
+                 ORDER BY c.created_at DESC`
+            )
+                .bind(userId, sessionId)
+                .all();
+        } else if (userId) {
+            result = await env.DB.prepare(
+                `SELECT c.*, q.*
+                 FROM cart c
+                 JOIN quotes q ON c.quote_id = q.id
+                 WHERE c.user_id = ?
+                 ORDER BY c.created_at DESC`
+            )
+                .bind(userId)
+                .all();
         } else {
-            query = `
-        SELECT c.*, q.* 
-        FROM cart c 
-        JOIN quotes q ON c.quote_id = q.id 
-        WHERE c.session_id = ? 
-        ORDER BY c.created_at DESC
-      `;
-            bindings = [sessionId];
+            result = await env.DB.prepare(
+                `SELECT c.*, q.*
+                 FROM cart c
+                 JOIN quotes q ON c.quote_id = q.id
+                 WHERE c.session_id = ?
+                 ORDER BY c.created_at DESC`
+            )
+                .bind(sessionId)
+                .all();
         }
 
-        const result = await env.DB.prepare(query).bind(...bindings).all();
         return successResponse(result.results || []);
     } catch (error: any) {
         console.error('GET /api/cart error:', error);
@@ -74,8 +114,7 @@ export async function POST(request: NextRequest) {
             return errorResponse('견적 ID가 필요합니다', 400);
         }
 
-        let sessionId = request.headers.get('X-Session-ID');
-        const userId = request.headers.get('X-User-ID');
+        let { userId, sessionId } = await resolveCartOwner(request);
 
         if (!sessionId && !userId) {
             sessionId = generateSessionId();
@@ -88,76 +127,99 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 이미 장바구니에 있는지 확인
-        const checkQuery = userId
-            ? 'SELECT * FROM cart WHERE quote_id = ? AND user_id = ?'
-            : 'SELECT * FROM cart WHERE quote_id = ? AND session_id = ?';
+        const quoteId = Number(body.quoteId);
 
-        const existingItem = await env.DB
-            .prepare(checkQuery)
-            .bind(body.quoteId, userId ? parseInt(userId) : sessionId)
-            .first();
+        // 회원: user cart 또는 동일 세션 cart 조회 후 승계
+        let existingItem: Record<string, unknown> | null = null;
+        if (userId && sessionId) {
+            existingItem = await env.DB.prepare(
+                `SELECT * FROM cart
+                 WHERE quote_id = ? AND (user_id = ? OR session_id = ?)
+                 ORDER BY CASE WHEN user_id = ? THEN 0 ELSE 1 END
+                 LIMIT 1`
+            )
+                .bind(quoteId, userId, sessionId, userId)
+                .first();
+        } else if (userId) {
+            existingItem = await env.DB.prepare(
+                `SELECT * FROM cart WHERE quote_id = ? AND user_id = ?`
+            )
+                .bind(quoteId, userId)
+                .first();
+        } else {
+            existingItem = await env.DB.prepare(
+                `SELECT * FROM cart WHERE quote_id = ? AND session_id = ?`
+            )
+                .bind(quoteId, sessionId)
+                .first();
+        }
 
         // 같은 파일명의 다른 견적(FDM↔SLA 전환으로 ID가 갈라진 경우)은 장바구니에서 제거
         try {
-            const ownerClause = userId ? 'user_id = ?' : 'session_id = ?';
-            const ownerVal = userId ? parseInt(userId) : sessionId;
-            await env.DB.prepare(
-                `DELETE FROM cart
-                 WHERE ${ownerClause}
-                   AND quote_id != ?
-                   AND quote_id IN (
-                     SELECT q.id FROM quotes q
-                     WHERE q.file_name = (SELECT file_name FROM quotes WHERE id = ?)
-                   )`
-            )
-                .bind(ownerVal, body.quoteId, body.quoteId)
-                .run();
+            if (userId && sessionId) {
+                await env.DB.prepare(
+                    `DELETE FROM cart
+                     WHERE (user_id = ? OR session_id = ?)
+                       AND quote_id != ?
+                       AND quote_id IN (
+                         SELECT q.id FROM quotes q
+                         WHERE q.file_name = (SELECT file_name FROM quotes WHERE id = ?)
+                       )`
+                )
+                    .bind(userId, sessionId, quoteId, quoteId)
+                    .run();
+            } else {
+                const ownerClause = userId ? 'user_id = ?' : 'session_id = ?';
+                const ownerVal = userId ?? sessionId;
+                await env.DB.prepare(
+                    `DELETE FROM cart
+                     WHERE ${ownerClause}
+                       AND quote_id != ?
+                       AND quote_id IN (
+                         SELECT q.id FROM quotes q
+                         WHERE q.file_name = (SELECT file_name FROM quotes WHERE id = ?)
+                       )`
+                )
+                    .bind(ownerVal, quoteId, quoteId)
+                    .run();
+            }
         } catch (e) {
             console.warn('[cart] same-file dedupe skipped', e);
         }
 
         if (existingItem) {
             const updateOnly = body.updateOnly === true;
-            if (updateOnly) {
-                return successResponse(
-                    { id: (existingItem as any).id },
-                    '장바구니 견적 정보가 갱신되었습니다'
-                );
+            const cartId = (existingItem as { id: number }).id;
+
+            // 세션 cart → 회원 cart 승계
+            if (userId && (existingItem as { user_id?: number | null }).user_id == null) {
+                await env.DB.prepare(`UPDATE cart SET user_id = ? WHERE id = ?`)
+                    .bind(userId, cartId)
+                    .run();
             }
 
-            const updateQuery = 'UPDATE cart SET quantity = quantity + ? WHERE id = ?';
-            await env.DB
-                .prepare(updateQuery)
-                .bind(body.quantity || 1, (existingItem as any).id)
+            if (updateOnly) {
+                return successResponse({ id: cartId }, '장바구니 견적 정보가 갱신되었습니다');
+            }
+
+            await env.DB.prepare('UPDATE cart SET quantity = quantity + ? WHERE id = ?')
+                .bind(body.quantity || 1, cartId)
                 .run();
 
-            return successResponse(
-                { id: (existingItem as any).id },
-                '수량이 업데이트되었습니다'
-            );
+            return successResponse({ id: cartId }, '수량이 업데이트되었습니다');
         }
 
-        // 새로 추가
-        const insertQuery = `
-      INSERT INTO cart (user_id, session_id, quote_id, quantity)
-      VALUES (?, ?, ?, ?)
-    `;
-
-        const result = await env.DB
-            .prepare(insertQuery)
-            .bind(
-                userId ? parseInt(userId) : null,
-                sessionId,
-                body.quoteId,
-                body.quantity || 1
-            )
+        const result = await env.DB.prepare(
+            `INSERT INTO cart (user_id, session_id, quote_id, quantity)
+             VALUES (?, ?, ?, ?)`
+        )
+            .bind(userId, sessionId, quoteId, body.quantity || 1)
             .run();
 
         return successResponse(
             {
                 id: result.meta.last_row_id,
-                sessionId: sessionId || undefined
+                sessionId: sessionId || undefined,
             },
             '장바구니에 추가되었습니다'
         );
@@ -173,29 +235,29 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     try {
         const { env } = getCloudflareContext();
-        const sessionId = request.headers.get('X-Session-ID');
-        const userId = request.headers.get('X-User-ID');
+        const { userId, sessionId } = await resolveCartOwner(request);
 
         if (!sessionId && !userId) {
             return errorResponse('세션 ID 또는 사용자 ID가 필요합니다', 400);
         }
 
         if (!env?.DB) {
-            return successResponse({}, '장바구니가 비워졌습니다 (개발 모드)');
+            return successResponse(null, '장바구니가 비워졌습니다');
         }
 
-        const query = userId
-            ? 'DELETE FROM cart WHERE user_id = ?'
-            : 'DELETE FROM cart WHERE session_id = ?';
+        if (userId && sessionId) {
+            await env.DB.prepare(`DELETE FROM cart WHERE user_id = ? OR session_id = ?`)
+                .bind(userId, sessionId)
+                .run();
+        } else if (userId) {
+            await env.DB.prepare('DELETE FROM cart WHERE user_id = ?').bind(userId).run();
+        } else {
+            await env.DB.prepare('DELETE FROM cart WHERE session_id = ?').bind(sessionId).run();
+        }
 
-        await env.DB
-            .prepare(query)
-            .bind(userId ? parseInt(userId) : sessionId)
-            .run();
-
-        return successResponse({}, '장바구니가 비워졌습니다');
+        return successResponse(null, '장바구니가 비워졌습니다');
     } catch (error: any) {
         console.error('DELETE /api/cart error:', error);
-        return errorResponse(error.message || '장바구니 비우기 실패', 500);
+        return errorResponse(error.message || '장바구니 삭제 실패', 500);
     }
 }

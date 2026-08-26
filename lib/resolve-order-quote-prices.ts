@@ -36,8 +36,21 @@ export type ResolveOrderLinesResult =
     | { ok: true; lines: ResolvedOrderLine[]; totalAmount: number }
     | { ok: false; error: string; status: number }
 
-function quoteOwnershipClause(isGuest: boolean): string {
-    return isGuest ? 'c.session_id = ?' : 'c.user_id = ?'
+function quoteOwnershipClause(auth: {
+    isGuest: boolean
+    userId?: number
+    sessionId?: string | null
+}): { sql: string; binds: (string | number)[] } {
+    if (auth.isGuest) {
+        return { sql: 'c.session_id = ?', binds: [String(auth.sessionId)] }
+    }
+    const userId = Number(auth.userId)
+    const sessionId = auth.sessionId?.trim()
+    if (sessionId) {
+        // 회원 cart + 로그인 전 세션 cart 모두 허용
+        return { sql: '(c.user_id = ? OR c.session_id = ?)', binds: [userId, sessionId] }
+    }
+    return { sql: 'c.user_id = ?', binds: [userId] }
 }
 
 /**
@@ -46,7 +59,7 @@ function quoteOwnershipClause(isGuest: boolean): string {
 export async function resolveOrderLinesFromDb(
     db: D1Like,
     items: OrderCartItemInput[],
-    auth: { isGuest: boolean; userId?: number; sessionId?: string }
+    auth: { isGuest: boolean; userId?: number; sessionId?: string | null }
 ): Promise<ResolveOrderLinesResult> {
     const quoteIds = [...new Set(items.map((i) => Number(i.quoteId)).filter((id) => Number.isInteger(id) && id > 0))]
     if (!quoteIds.length) {
@@ -61,16 +74,16 @@ export async function resolveOrderLinesFromDb(
     }
 
     const placeholders = quoteIds.map(() => '?').join(',')
-    const ownerBind = auth.isGuest ? auth.sessionId : auth.userId
+    const owner = quoteOwnershipClause(auth)
 
     const { results } = await db
         .prepare(
             `SELECT q.id, q.total_price, q.volume_cm3, c.quantity AS cart_quantity
              FROM quotes q
              INNER JOIN cart c ON c.quote_id = q.id
-             WHERE q.id IN (${placeholders}) AND ${quoteOwnershipClause(auth.isGuest)}`
+             WHERE q.id IN (${placeholders}) AND ${owner.sql}`
         )
-        .bind(...quoteIds, ownerBind)
+        .bind(...quoteIds, ...owner.binds)
         .all<QuoteCartRow>()
 
     const rowMap = new Map((results ?? []).map((r) => [r.id, r]))
