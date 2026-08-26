@@ -550,7 +550,7 @@ function CheckoutContent() {
                                         <label className="flex items-start gap-2.5 cursor-pointer group">
                                             <input type="checkbox" className="w-[14px] h-[14px] mt-0.5 rounded border-white/20 bg-black/50 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer" checked={agreedToPrivacy} onChange={(e) => setAgreedToPrivacy(e.target.checked)} />
                                             <div className="text-[11px] text-white/60 leading-tight group-hover:text-white transition-colors">
-                                                <span className="text-emerald-500/80 font-bold">[필수]</span> 개인정보 수집 및 제3자 제공에 동의합니다.
+                                                <span className="text-emerald-500/80 font-bold">[필수]</span> 개인정보 수집에 동의합니다.
                                             </div>
                                         </label>
                                     </div>
