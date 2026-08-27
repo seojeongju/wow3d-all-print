@@ -464,12 +464,15 @@ export default function AdminInquiriesPage() {
       </Card>
 
       <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
-        <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg" showCloseButton>
-          <DialogHeader>
+        <DialogContent
+          className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg max-h-[90dvh] flex flex-col overflow-hidden gap-4"
+          showCloseButton
+        >
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="text-white">문의 상세</DialogTitle>
           </DialogHeader>
           {detail && (
-            <div className="space-y-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 pr-1 -mr-1">
               <div>
                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">제목</span>
                 <p className="text-sm text-white/90">{String(detail.subject || '-')}</p>
@@ -547,7 +550,7 @@ export default function AdminInquiriesPage() {
               </div>
             </div>
           )}
-          <DialogFooter showCloseButton={false} className="flex-col sm:flex-row gap-2">
+          <DialogFooter showCloseButton={false} className="shrink-0 flex-col sm:flex-row gap-2 border-t border-white/10 pt-4">
             <Button
               type="button"
               variant="outline"
