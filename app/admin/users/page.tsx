@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Loader2, Users, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { showToast } from '@/lib/toast-helper';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -64,6 +64,7 @@ export default function AdminUsersPage() {
     const prevDebouncedRef = useRef('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
+    const [exporting, setExporting] = useState(false);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -123,6 +124,55 @@ export default function AdminUsersPage() {
         }, SEARCH_DEBOUNCE_MS);
         return () => clearTimeout(t);
     }, [searchQuery]);
+
+    const handleExcelDownload = async () => {
+        setExporting(true);
+        try {
+            const params = new URLSearchParams();
+            if (debouncedSearch) params.set('q', debouncedSearch);
+            if (roleFilter && roleFilter !== 'all') params.set('role', roleFilter);
+
+            const res = await fetch(`/api/admin/users/export?${params}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                cache: 'no-store',
+            });
+
+            if (res.status === 401) {
+                showToast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+                return;
+            }
+            if (!res.ok) {
+                let msg = '엑셀 다운로드 실패';
+                try {
+                    const json = (await res.json()) as { error?: string };
+                    if (json.error) msg = json.error;
+                } catch {
+                    /* ignore */
+                }
+                showToast.error('엑셀 다운로드', msg);
+                return;
+            }
+
+            const blob = await res.blob();
+            const cd = res.headers.get('Content-Disposition') || '';
+            const m = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(cd);
+            const fileName = m
+                ? decodeURIComponent(m[1] || m[2] || '')
+                : `wow3d-users-${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast.success('엑셀 다운로드', '사용자 목록 파일을 저장했습니다.');
+        } catch (e) {
+            showToast.error('엑셀 다운로드 실패', e);
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const handleRoleChange = async (userId: number, newRole: string) => {
         if (userId === currentUser?.id) {
@@ -209,7 +259,7 @@ export default function AdminUsersPage() {
                 </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap items-stretch sm:items-center">
                 <div className="relative flex-1 min-w-[200px] max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                     <Input
@@ -238,6 +288,20 @@ export default function AdminUsersPage() {
                         ))}
                     </SelectContent>
                 </Select>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleExcelDownload()}
+                    disabled={exporting || total === 0}
+                    className="bg-white/5 border-white/10 text-white hover:bg-white/10 gap-2 shrink-0"
+                >
+                    {exporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <Download className="w-4 h-4" />
+                    )}
+                    엑셀 다운로드
+                </Button>
             </div>
 
             <Card className="bg-white/[0.03] border-white/10 overflow-hidden">
