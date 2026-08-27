@@ -578,14 +578,17 @@ export default function AdminInquiriesPage() {
       </Dialog>
 
       <Dialog open={faqDraftOpen} onOpenChange={setFaqDraftOpen}>
-        <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-xl" showCloseButton>
-          <DialogHeader>
+        <DialogContent
+          className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-xl max-h-[90dvh] flex flex-col overflow-hidden gap-4"
+          showCloseButton
+        >
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="text-white flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-400" />
               FAQ 초안 검수
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 pr-1 -mr-1">
             <p className="text-xs text-white/45 leading-relaxed">
               AI/규칙 기반 초안입니다. 개인정보가 없는지 확인한 뒤 <strong className="text-white/70">미게시</strong>로 저장하고,
               FAQ 관리에서 공개하세요.
@@ -656,7 +659,7 @@ export default function AdminInquiriesPage() {
               </div>
             ) : null}
           </div>
-          <DialogFooter showCloseButton={false}>
+          <DialogFooter showCloseButton={false} className="shrink-0 border-t border-white/10 pt-4">
             <Button variant="outline" className="border-white/10 text-white" onClick={() => setFaqDraftOpen(false)}>
               닫기
             </Button>
