@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Center, Bounds } from '@react-three/drei'
+import { Canvas, useThree } from '@react-three/fiber'
+import { TrackballControls, Center, Bounds } from '@react-three/drei'
 import * as THREE from 'three'
 import { STLLoader } from 'three-stdlib'
 import { Loader2 } from 'lucide-react'
@@ -26,6 +26,26 @@ function StlMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
     )
     useEffect(() => () => material.dispose(), [material])
     return <mesh geometry={geometry} material={material} />
+}
+
+/** OrbitControls는 극점(상·하)에서 막혀 180°처럼 느껴짐 → Trackball로 전방향 회전 */
+function FreeTrackballControls() {
+    const domElement = useThree((s) => s.gl.domElement)
+    return (
+        <TrackballControls
+            makeDefault
+            domElement={domElement}
+            staticMoving
+            rotateSpeed={2.2}
+            zoomSpeed={0.9}
+            panSpeed={0.6}
+            minDistance={0.1}
+            maxDistance={2000}
+            noPan={false}
+            noZoom={false}
+            noRotate={false}
+        />
+    )
 }
 
 export default function AdminMeshyStlPreview({ buffer, loading, error }: Props) {
@@ -96,12 +116,12 @@ export default function AdminMeshyStlPreview({ buffer, loading, error }: Props) 
                 <ambientLight intensity={0.55} />
                 <directionalLight position={[40, 80, 40]} intensity={1.1} />
                 <directionalLight position={[-30, -20, -40]} intensity={0.35} />
-                <Bounds fit clip observe margin={1.35}>
+                <Bounds fit clip margin={1.35}>
                     <Center>
                         <StlMesh geometry={geometry} />
                     </Center>
                 </Bounds>
-                <OrbitControls makeDefault enableDamping dampingFactor={0.08} />
+                <FreeTrackballControls />
             </Canvas>
         </div>
     )
