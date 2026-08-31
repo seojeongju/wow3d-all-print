@@ -16,7 +16,9 @@ import type { Quote } from "@/lib/types";
 import { getModelFileFromDataTransfer } from "@/lib/model-file";
 import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
-import { buildFileSourceFromFileName, resolveQuoteReloadTransform } from "@/lib/quote-reload";
+import { buildFileSourceFromFileName, buildQuoteModelAuthHeaders, fetchQuoteModelFile, resolveQuoteReloadTransform } from "@/lib/quote-reload";
+import { useAuthStore } from "@/store/useAuthStore";
+import { showToast } from "@/lib/toast-helper";
 
 const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: string }[] = [
     {
@@ -78,6 +80,7 @@ function QuoteContent() {
     const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');
     const searchParams = useSearchParams();
     const loadQuoteId = searchParams.get('load_quote_id');
+    const { token, sessionId, user } = useAuthStore();
     const guideSource = searchParams.get('guide_source') || '';
     const guideTopic = searchParams.get('guide_topic') || '';
     const entryParam = searchParams.get('entry');
@@ -126,12 +129,23 @@ function QuoteContent() {
                     const fileSource = buildFileSourceFromFileName(q.file_name);
                     const restoredTransform = resolveQuoteReloadTransform(q.model_transform);
                     const store = useFileStore.getState();
+                    const authHeaders = buildQuoteModelAuthHeaders({
+                        token,
+                        sessionId,
+                        userId: user?.id ?? null,
+                    });
 
-                    if (q.file_url) {
-                        store.setSavedFileR2Url(String(q.file_url));
-                        const fileRes = await fetch(q.file_url);
-                        const blob = await fileRes.blob();
-                        const newFile = new File([blob], q.file_name, {
+                    try {
+                        const { blob, fileName } = await fetchQuoteModelFile({
+                            fileUrl: q.file_url,
+                            fileName: q.file_name || 'model.stl',
+                            meshyJobId: fileSource.meshyJobId,
+                            authHeaders,
+                        })
+                        if (q.file_url) {
+                            store.setSavedFileR2Url(String(q.file_url));
+                        }
+                        const newFile = new File([blob], fileName, {
                             type: blob.type || 'model/stl',
                         });
                         setFile(newFile, fileSource);
@@ -142,15 +156,24 @@ function QuoteContent() {
                             userOverride: Boolean(q.model_transform) || fileSource.kind === 'meshy-photo',
                         });
                         setActiveTab('viewer');
+                    } catch (e) {
+                        console.error('Failed to load quote model:', e);
+                        showToast.error(
+                            '모델 불러오기 실패',
+                            e instanceof Error
+                                ? e.message
+                                : '저장된 3D 파일을 열 수 없습니다. 잠시 후 다시 시도해 주세요.'
+                        );
                     }
                 }
             } catch (error) {
                 console.error("Failed to load quote:", error);
+                showToast.error('견적 불러오기 실패', '저장된 견적 정보를 가져오지 못했습니다.');
             }
         };
 
-        load();
-    }, [loadQuoteId, setFile]);
+        void load();
+    }, [loadQuoteId, setFile, token, sessionId, user?.id]);
 
     const handleViewerDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
         if (!e.dataTransfer?.types?.includes('Files')) return;

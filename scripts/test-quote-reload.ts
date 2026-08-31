@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
     buildFileSourceFromFileName,
     parseStoredModelTransform,
+    resolveQuoteFileFetchUrl,
     resolveQuoteReloadTransform,
 } from '../lib/quote-reload'
 
@@ -17,5 +18,12 @@ assert.equal(buildFileSourceFromFileName('meshy-42.stl').meshyJobId, 42)
 assert.equal(buildFileSourceFromFileName('model.stl').kind, 'upload')
 
 assert.equal(resolveQuoteReloadTransform(null).scalePercent, 100)
+
+assert.equal(resolveQuoteFileFetchUrl('quotes/12/meshy-36.stl'), '/api/files/quotes/12/meshy-36.stl')
+assert.equal(resolveQuoteFileFetchUrl('meshy/36/meshy-36.stl'), '/api/files/meshy/36/meshy-36.stl')
+assert.equal(
+    resolveQuoteFileFetchUrl('https://cdn.example.com/quotes/1/a.stl'),
+    'https://cdn.example.com/quotes/1/a.stl'
+)
 
 console.log('test-quote-reload: ok')
