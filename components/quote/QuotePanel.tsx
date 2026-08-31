@@ -27,6 +27,7 @@ import {
 import { calculateResinQuote } from '@/lib/resin-quote'
 import { formatEstimatedPrintTime } from '@/lib/print-time-estimate'
 import { sanitizeGeometryAnalysis } from '@/lib/geometry'
+import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -126,6 +127,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const setSavedQuoteId = useFileStore((s) => s.setSavedQuoteId)
     const setSavedFileR2Url = useFileStore((s) => s.setSavedFileR2Url)
     const modelTransform = useFileStore((s) => s.transform)
+    const setPrintContextForFit = useFileStore((s) => s.setPrintContextForFit)
     const rawAnalysis = useEffectiveAnalysis()
     const analysis = useMemo(
         () => (rawAnalysis ? sanitizeGeometryAnalysis(rawAnalysis) : null),
@@ -177,6 +179,19 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
         }
     }, [initialQuote, setSavedQuoteId, setSavedFileR2Url])
+
+    // 사진→3D: 출력 방식·장비 최대 치수를 autofit에 반영 (방식 전환 시 중간 크기로 재맞춤)
+    useEffect(() => {
+        const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+        const max = printSpecs?.[key]?.max
+        setPrintContextForFit(
+            printMethod,
+            max ? { x: max.x, y: max.y, z: max.z } : null
+        )
+        if (fileSource.kind === 'meshy-photo') {
+            maybeAutoFitMeshyScale()
+        }
+    }, [printMethod, printSpecs, setPrintContextForFit, fileSource.kind])
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {

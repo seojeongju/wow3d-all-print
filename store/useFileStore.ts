@@ -9,7 +9,9 @@ import {
     DEFAULT_MODEL_TRANSFORM,
     nextAxis90,
     type Axis90,
+    type BedMaxMm,
     type ModelTransform,
+    type PrintMethodKey,
 } from '@/lib/model-transform'
 
 export type FileSourceKind = 'upload' | 'meshy-photo' | null
@@ -26,10 +28,17 @@ interface FileState {
     savedQuoteId: number | null
     /** R2에 저장된 모델 파일 키 — 조건 변경 후 새 견적 INSERT 시 재업로드 없이 연결 */
     savedFileR2Url: string | null
-    /** 사진→3D 초기 치수 자동 맞춤을 이미 수행했는지 */
-    meshyAutoFitted: boolean
+    /** 사진→3D 자동 맞춤을 적용한 출력 방식 */
+    meshyFittedForMethod: PrintMethodKey | null
     /** 자동 맞춤 때 적용한 스케일 % — 초기화 시 여기로 되돌림 */
     meshyFitScalePercent: number | null
+    /** 자동 맞춤 목표 최장축(mm) — UI 안내 */
+    meshyFitTargetMm: number | null
+    /** 사용자가 스케일·치수를 직접 바꿈 → 방식 전환 시 강제 재맞춤하지 않음(오버플로만) */
+    meshyScaleUserOverride: boolean
+    /** 견적 패널에서 동기화한 출력 방식·베드 (Meshy autofit용) */
+    printMethodForFit: PrintMethodKey
+    bedMaxForFit: BedMaxMm | null
     /** 업로드 출처 — AI 사진 생성 시 견적 화면 안내 */
     fileSource: FileSourceMeta
     /** CPU/원본 메쉬 분석 (스케일·회전 미적용) */
@@ -40,11 +49,13 @@ interface FileState {
     setFile: (file: File, source?: FileSourceMeta) => void
     setSavedQuoteId: (id: number | null) => void
     setSavedFileR2Url: (url: string | null) => void
-    markMeshyAutoFitted: () => void
+    setPrintContextForFit: (method: PrintMethodKey, bedMax: BedMaxMm | null) => void
+    markMeshyFitted: (method: PrintMethodKey, scalePercent: number, targetMm: number) => void
     setMeshyFitScalePercent: (percent: number | null) => void
     setAnalysis: (data: GeometryAnalysis) => void
     setAnalysisError: (message: string | null) => void
-    setScalePercent: (percent: number) => void
+    /** fromUser: 사용자가 직접 조절한 경우 재자동맞춤 억제 */
+    setScalePercent: (percent: number, opts?: { fromUser?: boolean }) => void
     rotateAxis90: (axis: 'x' | 'y' | 'z', delta?: number) => void
     setSnapToBed: (snap: boolean) => void
     alignAxes: () => void
@@ -59,8 +70,12 @@ export const useFileStore = create<FileState>((set) => ({
     fileUrl: null,
     savedQuoteId: null,
     savedFileR2Url: null,
-    meshyAutoFitted: false,
+    meshyFittedForMethod: null,
     meshyFitScalePercent: null,
+    meshyFitTargetMm: null,
+    meshyScaleUserOverride: false,
+    printMethodForFit: 'fdm',
+    bedMaxForFit: null,
     fileSource: { ...EMPTY_SOURCE },
     baseAnalysis: null,
     analysisError: null,
@@ -75,8 +90,10 @@ export const useFileStore = create<FileState>((set) => ({
                 fileUrl: URL.createObjectURL(file),
                 savedQuoteId: null,
                 savedFileR2Url: null,
-                meshyAutoFitted: false,
+                meshyFittedForMethod: null,
                 meshyFitScalePercent: null,
+                meshyFitTargetMm: null,
+                meshyScaleUserOverride: false,
                 fileSource: source ?? { kind: 'upload', meshyJobId: null },
                 baseAnalysis: null,
                 analysisError: null,
@@ -86,16 +103,24 @@ export const useFileStore = create<FileState>((set) => ({
     },
     setSavedQuoteId: (id) => set({ savedQuoteId: id }),
     setSavedFileR2Url: (url) => set({ savedFileR2Url: url }),
-    markMeshyAutoFitted: () => set({ meshyAutoFitted: true }),
+    setPrintContextForFit: (method, bedMax) =>
+        set({ printMethodForFit: method, bedMaxForFit: bedMax }),
+    markMeshyFitted: (method, scalePercent, targetMm) =>
+        set({
+            meshyFittedForMethod: method,
+            meshyFitScalePercent: scalePercent,
+            meshyFitTargetMm: targetMm,
+        }),
     setMeshyFitScalePercent: (percent) => set({ meshyFitScalePercent: percent }),
     setAnalysis: (data) => set({ baseAnalysis: data }),
     setAnalysisError: (message) => set({ analysisError: message }),
-    setScalePercent: (percent) =>
+    setScalePercent: (percent, opts) =>
         set((state) => ({
             transform: {
                 ...state.transform,
                 scalePercent: clampScalePercent(percent),
             },
+            ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
         })),
     rotateAxis90: (axis, delta = 90) =>
         set((state) => {
@@ -127,6 +152,7 @@ export const useFileStore = create<FileState>((set) => ({
                 ...DEFAULT_MODEL_TRANSFORM,
                 scalePercent: state.meshyFitScalePercent ?? 100,
             },
+            meshyScaleUserOverride: false,
         })),
     reset: () =>
         set((state) => {
@@ -138,8 +164,12 @@ export const useFileStore = create<FileState>((set) => ({
                 fileUrl: null,
                 savedQuoteId: null,
                 savedFileR2Url: null,
-                meshyAutoFitted: false,
+                meshyFittedForMethod: null,
                 meshyFitScalePercent: null,
+                meshyFitTargetMm: null,
+                meshyScaleUserOverride: false,
+                printMethodForFit: 'fdm',
+                bedMaxForFit: null,
                 fileSource: { ...EMPTY_SOURCE },
                 baseAnalysis: null,
                 analysisError: null,

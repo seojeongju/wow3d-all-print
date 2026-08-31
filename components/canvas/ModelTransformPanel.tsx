@@ -31,6 +31,9 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const alignAxes = useFileStore((s) => s.alignAxes)
     const resetTransform = useFileStore((s) => s.resetTransform)
     const meshyFitScalePercent = useFileStore((s) => s.meshyFitScalePercent)
+    const meshyFitTargetMm = useFileStore((s) => s.meshyFitTargetMm)
+    const printMethodForFit = useFileStore((s) => s.printMethodForFit)
+    const bedMaxForFit = useFileStore((s) => s.bedMaxForFit)
     const effective = useEffectiveAnalysis()
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
@@ -40,7 +43,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     useEffect(() => {
         if (!isAiPhoto || !baseAnalysis) return
         maybeAutoFitMeshyScale()
-    }, [isAiPhoto, baseAnalysis])
+    }, [isAiPhoto, baseAnalysis, printMethodForFit, bedMaxForFit])
 
     useEffect(() => {
         setScaleDraft(String(transform.scalePercent))
@@ -65,7 +68,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
             setScaleDraft(String(transform.scalePercent))
             return
         }
-        setScalePercent(n)
+        setScalePercent(n, { fromUser: true })
     }
 
     const commitAxisMm = (axis: 'x' | 'y' | 'z', raw: string) => {
@@ -75,7 +78,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
             return
         }
         const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n)
-        setScalePercent(next)
+        setScalePercent(next, { fromUser: true })
     }
 
     return (
@@ -110,10 +113,11 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         아래 <strong className="text-amber-50">치수(mm)</strong>로 실제 길이에 맞추세요.
                         정밀 공차는 STL 직접 업로드를 권장합니다.
                     </p>
-                    {meshyFitScalePercent != null && (
+                    {meshyFitScalePercent != null && meshyFitTargetMm != null && (
                         <p className="text-teal-100">
-                            · 원본이 너무 커서 최장축을 약 150mm로 맞춰 두었습니다 ({meshyFitScalePercent}%).
-                            실물 크기로 다시 입력해 주세요.
+                            · 기본 참고 크기: {printMethodForFit.toUpperCase()} 최대 출력의 약 절반(최장축 ≈{' '}
+                            {meshyFitTargetMm}mm, {meshyFitScalePercent}%)으로 맞춰 두었습니다. 견적·실물 크기는
+                            mm로 다시 조절해 주세요.
                         </p>
                     )}
                     {assessPrintability(effective).map((w) => (
@@ -159,7 +163,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     max={SCALE_PERCENT_MAX}
                     step={SCALE_PERCENT_STEP}
                     value={transform.scalePercent}
-                    onChange={(e) => setScalePercent(Number(e.target.value))}
+                    onChange={(e) => setScalePercent(Number(e.target.value), { fromUser: true })}
                     className="w-full accent-teal-400 h-1.5 cursor-pointer"
                     aria-label="모델 균일 스케일"
                 />
@@ -168,7 +172,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         <button
                             key={p}
                             type="button"
-                            onClick={() => setScalePercent(p)}
+                            onClick={() => setScalePercent(p, { fromUser: true })}
                             className={cn(
                                 'rounded-md px-2 py-0.5 text-[10px] font-black transition-colors',
                                 transform.scalePercent === p

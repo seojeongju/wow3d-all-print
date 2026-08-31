@@ -2,27 +2,49 @@ import * as THREE from 'three'
 import { useFileStore } from '@/store/useFileStore'
 import { analyzeGeometryBoundingBox, analyzeGeometryProgressive } from '@/lib/geometry'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
-import { meshyAutoFitScalePercent } from '@/lib/model-transform'
+import {
+    meshyAutoFitScalePercent,
+    meshyAutoFitTargetMm,
+    resolveBedMaxForMethod,
+    type PrintMethodKey,
+} from '@/lib/model-transform'
 
-export function maybeAutoFitMeshyScale(): void {
+/**
+ * 사진→3D: 현재 출력 방식 베드 중간 크기로 스케일 맞춤.
+ * - 사용자 수동 조절 후에는 베드 초과 시에만 축소
+ * - 출력 방식 변경 시(수동 아님) 해당 방식 기준으로 다시 맞춤
+ */
+export function maybeAutoFitMeshyScale(opts?: { force?: boolean }): void {
     const state = useFileStore.getState()
     if (state.fileSource.kind !== 'meshy-photo') return
-    if (state.meshyAutoFitted) return
-    if (state.transform.scalePercent !== 100) {
-        state.markMeshyAutoFitted()
-        return
-    }
+
+    const method: PrintMethodKey = state.printMethodForFit || 'fdm'
+    const bed = resolveBedMaxForMethod(method, state.bedMaxForFit)
     const box = state.baseAnalysis?.boundingBox
     if (!box) return
+
     const longest = Math.max(box.x, box.y, box.z)
-    const next = meshyAutoFitScalePercent(longest)
-    if (next == null) {
-        state.markMeshyAutoFitted()
-        return
+    if (!(longest > 0)) return
+
+    const targetMm = meshyAutoFitTargetMm(bed)
+    const next = meshyAutoFitScalePercent(longest, bed)
+    if (next == null) return
+
+    const alreadyForMethod =
+        state.meshyFittedForMethod === method &&
+        state.meshyFitScalePercent === state.transform.scalePercent
+
+    if (!opts?.force && alreadyForMethod) return
+
+    if (state.meshyScaleUserOverride && !opts?.force) {
+        const currentLongest = longest * (state.transform.scalePercent / 100)
+        const bedLimit = Math.min(bed.x, bed.y, bed.z)
+        // 수동 조절 유지: 베드를 넘을 때만 중간 크기로 축소
+        if (!(currentLongest > bedLimit)) return
     }
+
     state.setScalePercent(next)
-    state.setMeshyFitScalePercent(next)
-    state.markMeshyAutoFitted()
+    state.markMeshyFitted(method, next, targetMm)
 }
 
 let analysisGeneration = 0
@@ -48,7 +70,7 @@ export function runAnalysisFromGeometry(
         if (!isCurrentRun(gen)) return
         setAnalysis(quick)
         setAnalysisError(null)
-        maybeAutoFitMeshyScale()
+        maybeAutoFitMeshyScale({ force: true })
     } catch (e) {
         console.error('bbox analysis:', e)
         if (isCurrentRun(gen)) {

@@ -125,9 +125,10 @@ const screenshotGeo = sanitizeGeometryAnalysis({
     boundingBox: { x: 655.25, y: 812.35, z: 500 },
 })
 const fitPct = meshyAutoFitScalePercent(
-    Math.max(screenshotGeo.boundingBox.x, screenshotGeo.boundingBox.y, screenshotGeo.boundingBox.z)
+    Math.max(screenshotGeo.boundingBox.x, screenshotGeo.boundingBox.y, screenshotGeo.boundingBox.z),
+    'fdm'
 )
-assert.ok(fitPct != null && fitPct < 30, `auto-fit scale expected ~18%, got ${fitPct}`)
+assert.ok(fitPct != null && fitPct < 30, `auto-fit scale expected ~14%, got ${fitPct}`)
 const fittedGeo = applyTransformToAnalysis(screenshotGeo, {
     scalePercent: fitPct!,
     rotX: 0,

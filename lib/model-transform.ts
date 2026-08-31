@@ -13,6 +13,10 @@ export type ModelTransform = {
     snapToBed: boolean
 }
 
+export type PrintMethodKey = 'fdm' | 'sla' | 'dlp'
+
+export type BedMaxMm = { x: number; y: number; z: number }
+
 export const DEFAULT_MODEL_TRANSFORM: ModelTransform = {
     scalePercent: 100,
     rotX: 0,
@@ -25,22 +29,59 @@ export const SCALE_PERCENT_MIN = 1
 export const SCALE_PERCENT_MAX = 400
 export const SCALE_PERCENT_STEP = 1
 
-/** 사진→AI 3D: Meshy STL이 미터급으로 나오면 최장축을 이 길이(mm)에 맞춤 */
-export const MESHY_AUTOFIT_TARGET_MM = 150
-export const MESHY_AUTOFIT_TRIGGER_MM = 280
+/** 사진→AI 3D: 출력 방식 최대 치수(제한축)의 중간(50%)으로 최장축 맞춤 */
+export const MESHY_AUTOFIT_BED_FRACTION = 0.5
+/** 너무 작은 타깃 방지 */
+export const MESHY_AUTOFIT_TARGET_MIN_MM = 20
+
+export const DEFAULT_BED_MAX: Record<PrintMethodKey, BedMaxMm> = {
+    fdm: { x: 220, y: 220, z: 250 },
+    sla: { x: 145, y: 145, z: 175 },
+    dlp: { x: 120, y: 68, z: 200 },
+}
+
+/** @deprecated 호환용 — 신규 코드는 meshyAutoFitTargetMm(bed) 사용 */
+export const MESHY_AUTOFIT_TARGET_MM = 110
+/** @deprecated 항상 맞춤으로 변경됨 */
+export const MESHY_AUTOFIT_TRIGGER_MM = 0
 
 export function clampScalePercent(value: number): number {
     if (!Number.isFinite(value)) return 100
     return Math.min(SCALE_PERCENT_MAX, Math.max(SCALE_PERCENT_MIN, Math.round(value)))
 }
 
+/** 해당 방식 베드에서 가장 짧은 축 × 50% = 기본 참고 최장축(mm) */
+export function meshyAutoFitTargetMm(bed: BedMaxMm): number {
+    const limiting = Math.min(bed.x, bed.y, bed.z)
+    if (!(limiting > 0)) return MESHY_AUTOFIT_TARGET_MM
+    return Math.max(MESHY_AUTOFIT_TARGET_MIN_MM, Math.round(limiting * MESHY_AUTOFIT_BED_FRACTION))
+}
+
+export function resolveBedMaxForMethod(
+    method: PrintMethodKey,
+    bed?: BedMaxMm | null
+): BedMaxMm {
+    if (bed && bed.x > 0 && bed.y > 0 && bed.z > 0) return bed
+    return DEFAULT_BED_MAX[method]
+}
+
 /**
- * 사진→3D 모델이 베드보다 훨씬 크면 최장축 150mm 기준 스케일 %.
- * 이미 출력 가능한 크기면 null.
+ * 사진→3D: 최장축을 출력 방식 최대 치수(제한축)의 중간 크기로 맞추는 스케일 %.
+ * 원본이 작으면 키우고, 크면 줄인다.
  */
-export function meshyAutoFitScalePercent(longestMm: number): number | null {
-    if (!(longestMm > MESHY_AUTOFIT_TRIGGER_MM)) return null
-    return clampScalePercent((MESHY_AUTOFIT_TARGET_MM / longestMm) * 100)
+export function meshyAutoFitScalePercent(
+    longestMm: number,
+    bedOrMethod?: BedMaxMm | PrintMethodKey | null
+): number | null {
+    if (!(longestMm > 0) || !Number.isFinite(longestMm)) return null
+    let bed: BedMaxMm = DEFAULT_BED_MAX.fdm
+    if (typeof bedOrMethod === 'string') {
+        bed = DEFAULT_BED_MAX[bedOrMethod]
+    } else if (bedOrMethod) {
+        bed = resolveBedMaxForMethod('fdm', bedOrMethod)
+    }
+    const target = meshyAutoFitTargetMm(bed)
+    return clampScalePercent((target / longestMm) * 100)
 }
 
 /** 스케일 100% 기준, 회전만 반영한 AABB (mm) */

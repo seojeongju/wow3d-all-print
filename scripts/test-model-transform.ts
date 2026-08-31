@@ -3,8 +3,10 @@
  */
 import {
     applyTransformToAnalysis,
+    DEFAULT_BED_MAX,
     DEFAULT_MODEL_TRANSFORM,
     meshyAutoFitScalePercent,
+    meshyAutoFitTargetMm,
     nextAxis90,
     type ModelTransform,
 } from '../lib/model-transform'
@@ -38,9 +40,17 @@ assert(Math.abs(rx.boundingBox.z - 10) < 1e-9, 'rotX z←y')
 assert(nextAxis90(270, 90) === 0, 'nextAxis90 wrap')
 assert(nextAxis90(0, -90) === 270, 'nextAxis90 negative')
 
-assert(meshyAutoFitScalePercent(150) == null, 'small model no autofit')
-assert(meshyAutoFitScalePercent(280) == null, 'at trigger no autofit')
-const fit812 = meshyAutoFitScalePercent(812.35)
-assert(fit812 != null && fit812 >= 17 && fit812 <= 20, `812mm → ~18% got ${fit812}`)
+assert(meshyAutoFitTargetMm(DEFAULT_BED_MAX.fdm) === 110, 'FDM mid target 110')
+assert(meshyAutoFitTargetMm(DEFAULT_BED_MAX.sla) === 73, 'SLA mid target ~72.5→73')
+assert(meshyAutoFitTargetMm(DEFAULT_BED_MAX.dlp) === 34, 'DLP mid target 34')
+
+const fitSmall = meshyAutoFitScalePercent(150, 'fdm')
+assert(fitSmall != null && fitSmall >= 70 && fitSmall <= 75, `150mm FDM → ~73% got ${fitSmall}`)
+
+const fit812 = meshyAutoFitScalePercent(812.35, 'fdm')
+assert(fit812 != null && fit812 >= 12 && fit812 <= 15, `812mm FDM → ~14% got ${fit812}`)
+
+const fitSla = meshyAutoFitScalePercent(812.35, 'sla')
+assert(fitSla != null && fitSla < (fit812 as number), 'SLA mid smaller than FDM')
 
 console.log('test-model-transform: ok')
