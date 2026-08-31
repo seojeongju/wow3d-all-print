@@ -11,7 +11,7 @@ import {
     ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
@@ -28,6 +28,7 @@ import { calculateResinQuote } from '@/lib/resin-quote'
 import { formatEstimatedPrintTime } from '@/lib/print-time-estimate'
 import { sanitizeGeometryAnalysis } from '@/lib/geometry'
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
+import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -46,6 +47,8 @@ type PrintMethod = 'fdm' | 'sla' | 'dlp'
 type QuotePanelProps = {
     embedded?: boolean
     initialQuote?: InitialQuoteData | null
+    /** load_quote_id로 진입한 견적 — 장바구니 연동용 */
+    reloadQuoteId?: number | null
     guideSource?: string
     guideTopic?: string
 }
@@ -59,6 +62,7 @@ type InitialQuoteData = Partial<Quote> & {
     resin_type?: string | null
     layer_thickness?: number | null
     post_processing?: boolean | number | null
+    model_transform?: string | null
 }
 
 type UploadResponse = {
@@ -119,7 +123,7 @@ const defaultQuoteDetail = {
     costBreakdown: { material: 0, other: 0, machine: 0, labor: 0 },
 }
 
-export default function QuotePanel({ embedded = false, initialQuote, guideSource, guideTopic }: QuotePanelProps) {
+export default function QuotePanel({ embedded = false, initialQuote, reloadQuoteId, guideSource, guideTopic }: QuotePanelProps) {
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
@@ -150,6 +154,7 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
     const [priceRoundMode] = useState<PriceRoundMode>('round')
     const [detailModalOpen, setDetailModalOpen] = useState(false)
+    const initialConfigSeeded = useRef(false)
 
     // Initial Data Effect
     useEffect(() => {
@@ -177,6 +182,11 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             if (initialQuote.resin_type) setResinType(initialQuote.resin_type)
             if (initialQuote.layer_thickness) setSlaLayerHeight(initialQuote.layer_thickness)
             if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
+        }
+
+        const storedTransform = parseStoredModelTransform(initialQuote.model_transform)
+        if (storedTransform) {
+            useFileStore.getState().setTransformFull(storedTransform, { userOverride: true })
         }
     }, [initialQuote, setSavedQuoteId, setSavedFileR2Url])
 
@@ -352,8 +362,169 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
     const totalPrice = roundTo100(baseAmount * 1.1, priceRoundMode)
     const estimatedTimeHours = quoteDetail.time
 
+    // 저장 견적 재로드 시 lastSavedConfig 시드 — 동일 설정이면 UPDATE 유지
+    useEffect(() => {
+        if (!initialQuote || !analysis || initialConfigSeeded.current) return
+        initialConfigSeeded.current = true
+        setLastSavedConfig(
+            buildQuoteConfigKey({
+                printMethod,
+                fdmMaterial,
+                infill,
+                layerHeight,
+                supportEnabled,
+                resinType,
+                slaLayerHeight,
+                postProcessing,
+                totalPrice,
+                modelTransform,
+                dimensions: analysis.boundingBox,
+            })
+        )
+    }, [
+        initialQuote,
+        analysis,
+        printMethod,
+        fdmMaterial,
+        infill,
+        layerHeight,
+        supportEnabled,
+        resinType,
+        slaLayerHeight,
+        postProcessing,
+        totalPrice,
+        modelTransform,
+    ])
+
+    const buildQuoteForCart = useCallback(
+        (quoteId: number, price: number, hours: number, thumbnailDataUrl?: string | null): Quote => ({
+            id: quoteId,
+            fileName: file!.name,
+            fileSize: file!.size,
+            fileUrl: savedFileR2Url || undefined,
+            volumeCm3,
+            surfaceAreaCm2,
+            dimensionsX: analysis!.boundingBox.x,
+            dimensionsY: analysis!.boundingBox.y,
+            dimensionsZ: analysis!.boundingBox.z,
+            printMethod,
+            ...(printMethod === 'fdm'
+                ? {
+                      fdmMaterial: fdmMaterial.toUpperCase() as Quote['fdmMaterial'],
+                      fdmInfill: infill,
+                      fdmLayerHeight: layerHeight,
+                      fdmSupport: supportEnabled,
+                  }
+                : {
+                      resinType: resinType as Quote['resinType'],
+                      layerThickness: slaLayerHeight,
+                      postProcessing,
+                  }),
+            totalPrice: price,
+            estimatedTimeHours: hours,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            thumbnailDataUrl: thumbnailDataUrl || undefined,
+        }),
+        [
+            analysis,
+            file,
+            fdmMaterial,
+            infill,
+            layerHeight,
+            postProcessing,
+            printMethod,
+            resinType,
+            savedFileR2Url,
+            slaLayerHeight,
+            supportEnabled,
+            surfaceAreaCm2,
+            volumeCm3,
+        ]
+    )
+
+    const syncCartIfLinked = useCallback(
+        async (
+            finalQuoteId: number,
+            resolvedTotalPrice: number,
+            resolvedEstimatedHours: number,
+            previousQuoteId?: number | null
+        ) => {
+            if (!file || !analysis) return
+
+            const linkIds = new Set<number>()
+            if (reloadQuoteId) linkIds.add(reloadQuoteId)
+            if (previousQuoteId) linkIds.add(previousQuoteId)
+            if (savedQuoteId) linkIds.add(savedQuoteId)
+            linkIds.add(finalQuoteId)
+
+            const fileKey = file.name.trim().toLowerCase()
+            const linked = cartItems.some((item) => {
+                if (linkIds.has(item.quoteId)) return true
+                const existingName = (item.quote?.fileName || '').trim().toLowerCase()
+                return Boolean(fileKey && existingName && existingName === fileKey)
+            })
+            if (!linked) return
+
+            const headers: HeadersInit = { 'Content-Type': 'application/json' }
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`
+                if (user?.id) headers['X-User-ID'] = String(user.id)
+            } else {
+                headers['X-Session-ID'] = sessionId || ''
+            }
+
+            const prevId =
+                previousQuoteId && previousQuoteId !== finalQuoteId ? previousQuoteId : undefined
+
+            try {
+                const res = await fetch('/api/cart', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        quoteId: finalQuoteId,
+                        quantity: 1,
+                        updateOnly: true,
+                        ...(prevId ? { previousQuoteId: prevId } : {}),
+                    }),
+                })
+                if (!res.ok) return
+
+                const quoteForCart = buildQuoteForCart(
+                    finalQuoteId,
+                    resolvedTotalPrice,
+                    resolvedEstimatedHours
+                )
+                addToCart(quoteForCart, 1, false)
+                showToast.success('장바구니 갱신', '수정한 견적 금액·옵션이 장바구니에 반영되었습니다.')
+            } catch {
+                /* 로컬만 갱신 */
+                const quoteForCart = buildQuoteForCart(
+                    finalQuoteId,
+                    resolvedTotalPrice,
+                    resolvedEstimatedHours
+                )
+                addToCart(quoteForCart, 1, false)
+            }
+        },
+        [
+            addToCart,
+            analysis,
+            buildQuoteForCart,
+            cartItems,
+            file,
+            reloadQuoteId,
+            savedQuoteId,
+            sessionId,
+            token,
+            user?.id,
+        ]
+    )
+
     const handleSaveQuote = async () => {
         if (!analysis || !file) return
+
+        const quoteIdBeforeSave = savedQuoteId
 
         setIsSaving(true)
         try {
@@ -491,6 +662,20 @@ export default function QuotePanel({ embedded = false, initialQuote, guideSource
             const finalQuoteId = data.id || quoteIdForPost;
             if (finalQuoteId) setSavedQuoteId(finalQuoteId);
             setLastSavedConfig(configKey);
+
+            const resolvedTotalPrice =
+                typeof data.totalPrice === 'number' && data.totalPrice > 0 ? data.totalPrice : totalPrice
+            const resolvedEstimatedHours =
+                typeof data.estimatedTimeHours === 'number' ? data.estimatedTimeHours : estimatedTimeHours
+
+            if (finalQuoteId) {
+                await syncCartIfLinked(
+                    finalQuoteId,
+                    resolvedTotalPrice,
+                    resolvedEstimatedHours,
+                    quoteIdBeforeSave ?? reloadQuoteId ?? null
+                )
+            }
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
             if (token && user?.id) {

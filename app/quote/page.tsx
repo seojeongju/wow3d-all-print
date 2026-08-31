@@ -16,6 +16,7 @@ import type { Quote } from "@/lib/types";
 import { getModelFileFromDataTransfer } from "@/lib/model-file";
 import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
+import { buildFileSourceFromFileName, resolveQuoteReloadTransform } from "@/lib/quote-reload";
 
 const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: string }[] = [
     {
@@ -84,6 +85,7 @@ function QuoteContent() {
         entryParam === 'file' || entryParam === 'photo' ? entryParam : null
     );
     const [loadedQuote, setLoadedQuote] = useState<Quote | null>(null); // DB quote data
+    const [reloadQuoteId, setReloadQuoteId] = useState<number | null>(null);
     const [isViewerDragging, setIsViewerDragging] = useState(false);
     const guideLabel = guideTopic || GUIDE_SOURCE_LABELS[guideSource] || '';
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
@@ -110,22 +112,36 @@ function QuoteContent() {
 
         const load = async () => {
             try {
-                // Fetch quote data
                 const res = await fetch(`/api/quotes/${loadQuoteId}`);
                 const json = await res.json();
 
                 if (json.success && json.data) {
                     const q = json.data;
                     setLoadedQuote(q);
+                    const quoteId = Number(q.id);
+                    if (Number.isInteger(quoteId) && quoteId > 0) {
+                        setReloadQuoteId(quoteId);
+                    }
 
-                    // Fetch and set file if URL exists
+                    const fileSource = buildFileSourceFromFileName(q.file_name);
+                    const restoredTransform = resolveQuoteReloadTransform(q.model_transform);
+                    const store = useFileStore.getState();
+
                     if (q.file_url) {
-                        useFileStore.getState().setSavedFileR2Url(String(q.file_url))
+                        store.setSavedFileR2Url(String(q.file_url));
                         const fileRes = await fetch(q.file_url);
                         const blob = await fileRes.blob();
-                        const newFile = new File([blob], q.file_name, { type: blob.type });
-                        setFile(newFile);
-                        // setStep(2) will be triggered by the existing useEffect when analysis is complete
+                        const newFile = new File([blob], q.file_name, {
+                            type: blob.type || 'model/stl',
+                        });
+                        setFile(newFile, fileSource);
+                        if (Number.isInteger(quoteId) && quoteId > 0) {
+                            store.setSavedQuoteId(quoteId);
+                        }
+                        store.setTransformFull(restoredTransform, {
+                            userOverride: Boolean(q.model_transform) || fileSource.kind === 'meshy-photo',
+                        });
+                        setActiveTab('viewer');
                     }
                 }
             } catch (error) {
@@ -282,6 +298,11 @@ function QuoteContent() {
                                                 파일 교체
                                             </button>
                                         </div>
+                                        {loadQuoteId ? (
+                                            <div className="rounded-2xl border border-teal-400/25 bg-teal-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-teal-100/90 leading-relaxed break-keep">
+                                                저장·장바구니에서 불러온 견적입니다. 3D 뷰어에서 크기·회전을 조정한 뒤 저장하면 장바구니 금액도 함께 갱신됩니다.
+                                            </div>
+                                        ) : null}
                                         <div className="relative">
                                             {analysisError ? (
                                                 <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-amber-100/90 leading-relaxed break-keep">
@@ -290,6 +311,7 @@ function QuoteContent() {
                                             ) : null}
                                             <QuotePanel
                                                 initialQuote={loadedQuote}
+                                                reloadQuoteId={reloadQuoteId}
                                                 guideSource={guideSource}
                                                 guideTopic={guideTopic}
                                             />
@@ -379,7 +401,7 @@ function QuoteContent() {
                                                 onBack={() => setEntryMode(null)}
                                                 onModelReady={() => {
                                                     setEntryMode(null);
-                                                    setActiveTab('settings');
+                                                    setActiveTab('viewer');
                                                 }}
                                             />
                                         </motion.div>

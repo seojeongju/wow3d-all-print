@@ -4,9 +4,9 @@ import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2, Package } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2, Package, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -97,6 +97,7 @@ export default function CartPage() {
 }
 
 function CartPageContent() {
+    const router = useRouter()
     const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems, addToCart, refreshQuoteSnapshots } = useCartStore()
     const { isAuthenticated, sessionId, token, user } = useAuthStore()
     const searchParams = useSearchParams()
@@ -317,6 +318,10 @@ function CartPageContent() {
 
     const inCart = (quoteId: number) => items.some((i) => i.quoteId === quoteId)
 
+    const handleEditQuote = (quoteId: number) => {
+        router.push(`/quote?load_quote_id=${quoteId}`)
+    }
+
     const hasOrders = isAuthenticated && orders.length > 0
     const maybeHasOrders = isAuthenticated && isLoadingOrders
     if (items.length === 0 && savedQuotes.length === 0 && !isLoadingSaved && !hasOrders && !maybeHasOrders) {
@@ -527,11 +532,25 @@ function CartPageContent() {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex flex-wrap items-center justify-between pt-6 border-t border-white/5">
+                                                            <div className="flex flex-wrap items-center justify-between pt-6 border-t border-white/5 gap-3">
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    {item.quoteId ? (
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            onClick={() => handleEditQuote(item.quoteId)}
+                                                                            className="h-10 rounded-xl border-white/15 bg-white/5 text-white/80 hover:bg-teal-500/15 hover:text-teal-200 font-black text-[11px] gap-1.5"
+                                                                        >
+                                                                            <RotateCcw className="w-3.5 h-3.5" />
+                                                                            크기·옵션 수정
+                                                                        </Button>
+                                                                    ) : null}
                                                                 <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-2xl p-1.5 px-3">
                                                                     <button onClick={() => handleQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/40 active:scale-90 disabled:opacity-20 transition-all"><Minus className="w-4 h-4" /></button>
                                                                     <span className="w-10 text-center font-black text-white text-lg">{item.quantity}</span>
                                                                     <button onClick={() => handleQuantityChange(item.id, item.quantity + 1)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-white/40 active:scale-90 transition-all"><Plus className="w-4 h-4" /></button>
+                                                                </div>
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">소계 (VAT 포함)</p>
@@ -594,7 +613,16 @@ function CartPageContent() {
                                                             }
                                                         />
                                                     </div>
-                                                    <div className="flex gap-4 w-full md:w-auto">
+                                                    <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => handleEditQuote(row.id)}
+                                                            className="h-14 px-5 rounded-2xl border-white/15 bg-white/5 text-white/80 hover:bg-teal-500/15 hover:text-teal-200 font-black text-xs gap-2"
+                                                        >
+                                                            <RotateCcw className="w-4 h-4" />
+                                                            크기·옵션 수정
+                                                        </Button>
                                                         <Button
                                                             onClick={() => handleAddToCartFromSaved(row)}
                                                             disabled={addingId === row.id || inCart(row.id)}

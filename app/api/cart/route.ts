@@ -128,6 +128,34 @@ export async function POST(request: NextRequest) {
         }
 
         const quoteId = Number(body.quoteId);
+        const previousQuoteId = body.previousQuoteId ? Number(body.previousQuoteId) : null;
+
+        // 견적 재저장으로 quote_id가 바뀐 경우 장바구니 행 연결 갱신
+        if (
+            Number.isInteger(previousQuoteId) &&
+            previousQuoteId! > 0 &&
+            previousQuoteId !== quoteId
+        ) {
+            if (userId && sessionId) {
+                await env.DB.prepare(
+                    `UPDATE cart SET quote_id = ? WHERE quote_id = ? AND (user_id = ? OR session_id = ?)`
+                )
+                    .bind(quoteId, previousQuoteId, userId, sessionId)
+                    .run();
+            } else if (userId) {
+                await env.DB.prepare(
+                    `UPDATE cart SET quote_id = ? WHERE quote_id = ? AND user_id = ?`
+                )
+                    .bind(quoteId, previousQuoteId, userId)
+                    .run();
+            } else if (sessionId) {
+                await env.DB.prepare(
+                    `UPDATE cart SET quote_id = ? WHERE quote_id = ? AND session_id = ?`
+                )
+                    .bind(quoteId, previousQuoteId, sessionId)
+                    .run();
+            }
+        }
 
         // 회원: user cart 또는 동일 세션 cart 조회 후 승계
         let existingItem: Record<string, unknown> | null = null;

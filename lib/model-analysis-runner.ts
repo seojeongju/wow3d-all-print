@@ -34,12 +34,11 @@ export function maybeAutoFitMeshyScale(opts?: { force?: boolean }): void {
         state.meshyFittedForMethod === method &&
         state.meshyFitScalePercent === state.transform.scalePercent
 
-    if (!opts?.force && alreadyForMethod) return
+    if (alreadyForMethod) return
 
-    if (state.meshyScaleUserOverride && !opts?.force) {
+    if (state.meshyScaleUserOverride) {
         const currentLongest = longest * (state.transform.scalePercent / 100)
         const bedLimit = Math.min(bed.x, bed.y, bed.z)
-        // 수동 조절 유지: 베드를 넘을 때만 중간 크기로 축소
         if (!(currentLongest > bedLimit)) return
     }
 

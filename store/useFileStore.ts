@@ -60,6 +60,8 @@ interface FileState {
     setSnapToBed: (snap: boolean) => void
     alignAxes: () => void
     resetTransform: () => void
+    /** 저장 견적 재로드 시 스케일·회전 복원 */
+    setTransformFull: (transform: ModelTransform, opts?: { userOverride?: boolean }) => void
     reset: () => void
 }
 
@@ -154,6 +156,28 @@ export const useFileStore = create<FileState>((set) => ({
             },
             meshyScaleUserOverride: false,
         })),
+    setTransformFull: (transform, opts) =>
+        set((state) => {
+            const scalePercent = clampScalePercent(transform.scalePercent)
+            return {
+                transform: {
+                    scalePercent,
+                    rotX: transform.rotX,
+                    rotY: transform.rotY,
+                    rotZ: transform.rotZ,
+                    snapToBed: transform.snapToBed !== false,
+                },
+                ...(opts?.userOverride
+                    ? {
+                          meshyScaleUserOverride: true,
+                          meshyFitScalePercent: scalePercent,
+                      }
+                    : {}),
+                ...(opts?.userOverride && state.fileSource.kind === 'meshy-photo'
+                    ? { meshyFittedForMethod: state.printMethodForFit }
+                    : {}),
+            }
+        }),
     reset: () =>
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)

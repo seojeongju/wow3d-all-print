@@ -3,9 +3,14 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { MESHY_TODAY_KST_SQL } from '@/lib/meshy'
 
+const RECENT_SUGGESTIONS_LIMIT = 40
+const RECENT_DEFAULT_LIMIT = 20
+const RECENT_MAX_LIMIT = 50
+
 /**
  * GET /api/admin/meshy/stats
  * 사진→AI 3D 사용량·실패율 (KST 오늘 + 최근 7일)
+ * Query: recentPage, recentLimit — 최근 작업 목록 페이지네이션
  */
 export async function GET(req: NextRequest) {
     const { env } = getCloudflareContext()
@@ -13,6 +18,12 @@ export async function GET(req: NextRequest) {
 
     const auth = await requireAdminAuth(req, env.DB)
     if (auth instanceof Response) return auth
+
+    const sp = req.nextUrl.searchParams
+    const recentPage = Math.max(1, parseInt(sp.get('recentPage') || '1', 10) || 1)
+    const recentLimitRaw = parseInt(sp.get('recentLimit') || String(RECENT_DEFAULT_LIMIT), 10) || RECENT_DEFAULT_LIMIT
+    const recentLimit = Math.min(RECENT_MAX_LIMIT, Math.max(1, recentLimitRaw))
+    const recentOffset = (recentPage - 1) * recentLimit
 
     try {
         const today = await env.DB.prepare(
@@ -47,14 +58,31 @@ export async function GET(req: NextRequest) {
             credits: number
         }>()
 
+        const recentCountRow = await env.DB.prepare(`SELECT COUNT(*) AS c FROM meshy_jobs`).first<{ c: number }>()
+        const recentTotal = Number(recentCountRow?.c) || 0
+        const recentTotalPages = Math.max(1, Math.ceil(recentTotal / recentLimit))
+
         const recent = await env.DB.prepare(
             `SELECT j.id, j.user_id, j.status, j.progress, j.credits_used, j.error_message,
                     j.source_file_name, j.created_at, u.email AS user_email, u.name AS user_name
              FROM meshy_jobs j
              LEFT JOIN users u ON u.id = j.user_id
              ORDER BY j.id DESC
-             LIMIT 40`
-        ).all()
+             LIMIT ? OFFSET ?`
+        )
+            .bind(recentLimit, recentOffset)
+            .all()
+
+        const recentSuggestions = await env.DB.prepare(
+            `SELECT j.id, j.user_id, j.status, j.progress, j.credits_used, j.error_message,
+                    j.source_file_name, j.created_at, u.email AS user_email, u.name AS user_name
+             FROM meshy_jobs j
+             LEFT JOIN users u ON u.id = j.user_id
+             ORDER BY j.id DESC
+             LIMIT ?`
+        )
+            .bind(RECENT_SUGGESTIONS_LIMIT)
+            .all()
 
         let bonusOutstanding = 0
         try {
@@ -84,6 +112,13 @@ export async function GET(req: NextRequest) {
                 },
                 bonusOutstanding,
                 recent: recent.results || [],
+                recentSuggestions: recentSuggestions.results || [],
+                recentPagination: {
+                    page: recentPage,
+                    limit: recentLimit,
+                    total: recentTotal,
+                    totalPages: recentTotalPages,
+                },
             },
         })
     } catch (e) {

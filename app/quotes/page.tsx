@@ -292,10 +292,12 @@ export default function SavedQuotesPage() {
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-12 w-12 rounded-2xl bg-white/5 text-white/40 hover:text-teal-400 hover:bg-teal-400/10 transition-all active:scale-90"
+                                                className="h-12 px-4 rounded-2xl bg-white/5 text-white/40 hover:text-teal-400 hover:bg-teal-400/10 transition-all active:scale-90 font-black text-[11px] gap-1.5"
                                                 onClick={() => handleRequote(row.id)}
+                                                title="크기·옵션 수정"
                                             >
                                                 <RotateCcw className="w-5 h-5" />
+                                                수정
                                             </Button>
                                             <Button
                                                 size="sm"

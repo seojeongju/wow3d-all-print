@@ -4,32 +4,40 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, Sparkles, Gift } from 'lucide-react'
+import { Loader2, Sparkles, Gift, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { showToast } from '@/lib/toast-helper'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
 import AdminMeshyJobsPanel from '@/components/admin/AdminMeshyJobsPanel'
 import { cn } from '@/lib/utils'
 
+type RecentJob = {
+    id: number
+    user_id: number | null
+    status: string
+    progress: number | null
+    credits_used: number | null
+    error_message: string | null
+    source_file_name: string | null
+    created_at: string
+    user_email: string | null
+    user_name: string | null
+}
+
+type RecentPagination = { page: number; limit: number; total: number; totalPages: number }
+
 type Stats = {
     today: { total: number; succeeded: number; failed: number; inProgress: number; credits: number }
     week: { total: number; succeeded: number; failed: number; credits: number }
     bonusOutstanding: number
-    recent: Array<{
-        id: number
-        user_id: number | null
-        status: string
-        progress: number | null
-        credits_used: number | null
-        error_message: string | null
-        source_file_name: string | null
-        created_at: string
-        user_email: string | null
-        user_name: string | null
-    }>
+    recent: RecentJob[]
+    recentSuggestions?: RecentJob[]
+    recentPagination?: RecentPagination
 }
 
-function recentToSuggestions(recent: Stats['recent']): MeshyUserOption[] {
+const RECENT_PAGE_SIZE = 20
+
+function recentToSuggestions(recent: RecentJob[]): MeshyUserOption[] {
     const map = new Map<number, MeshyUserOption>()
     for (const j of recent) {
         if (j.user_id == null || map.has(j.user_id)) continue
@@ -50,16 +58,25 @@ export default function AdminMeshyPage() {
     const [amount, setAmount] = useState('1')
     const [note, setNote] = useState('')
     const [granting, setGranting] = useState(false)
+    const [recentPage, setRecentPage] = useState(1)
 
     const quickSuggestions = useMemo(
-        () => (stats ? recentToSuggestions(stats.recent) : []),
+        () => (stats ? recentToSuggestions(stats.recentSuggestions ?? stats.recent) : []),
         [stats]
     )
 
-    const load = useCallback(async () => {
+    const recentPagination = stats?.recentPagination
+    const recentTotalPages = recentPagination?.totalPages ?? 1
+    const recentTotal = recentPagination?.total ?? stats?.recent.length ?? 0
+
+    const load = useCallback(async (page: number) => {
         setLoading(true)
         try {
-            const res = await fetch('/api/admin/meshy/stats', {
+            const qs = new URLSearchParams({
+                recentPage: String(page),
+                recentLimit: String(RECENT_PAGE_SIZE),
+            })
+            const res = await fetch(`/api/admin/meshy/stats?${qs}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 cache: 'no-store',
             })
@@ -77,8 +94,8 @@ export default function AdminMeshyPage() {
     }, [token])
 
     useEffect(() => {
-        void load()
-    }, [load])
+        void load(recentPage)
+    }, [load, recentPage])
 
     const grant = async () => {
         const uid = selectedUser?.id
@@ -114,7 +131,7 @@ export default function AdminMeshyPage() {
                 remainingDaily: json.data.quota.remainingDaily,
                 remainingTotal: json.data.quota.remainingTotal,
             })
-            await load()
+            await load(recentPage)
         } catch {
             showToast.error('보너스', '네트워크 오류')
         } finally {
@@ -122,7 +139,7 @@ export default function AdminMeshyPage() {
         }
     }
 
-    const pickFromRecent = (j: Stats['recent'][number]) => {
+    const pickFromRecent = (j: RecentJob) => {
         if (j.user_id == null) return
         setSelectedUser({
             id: j.user_id,
@@ -229,7 +246,12 @@ export default function AdminMeshyPage() {
                     </Card>
 
                     <Card className="bg-white/5 border-white/10">
-                        <CardContent className="p-5 overflow-x-auto">
+                        <CardContent className="p-5 overflow-x-auto relative">
+                            {loading && stats && (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-[1px] rounded-lg">
+                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                </div>
+                            )}
                             <h2 className="text-sm font-black text-white mb-1">최근 작업</h2>
                             <p className="text-[11px] text-white/40 font-bold mb-3">
                                 행을 클릭하면 해당 회원이 보너스 부여 대상으로 선택됩니다.
@@ -289,15 +311,55 @@ export default function AdminMeshyPage() {
                                     })}
                                 </tbody>
                             </table>
-                            {stats.recent.length === 0 && (
+                            {stats.recent.length === 0 && !loading && (
                                 <p className="text-white/40 text-sm">아직 작업이 없습니다.</p>
+                            )}
+                            {recentTotal > 0 && (
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-white/10">
+                                    <p className="text-xs text-white/40 font-medium">
+                                        총{' '}
+                                        <span className="text-white/70 font-bold">
+                                            {recentTotal.toLocaleString()}
+                                        </span>
+                                        건 · {recentPage}/{recentTotalPages} 페이지
+                                    </p>
+                                    {recentTotalPages > 1 && (
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={recentPage <= 1 || loading}
+                                                onClick={() => setRecentPage((p) => Math.max(1, p - 1))}
+                                                aria-label="이전 페이지"
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <span className="text-[12px] font-bold text-white/50 min-w-[4rem] text-center">
+                                                {recentPage} / {recentTotalPages}
+                                            </span>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={recentPage >= recentTotalPages || loading}
+                                                onClick={() =>
+                                                    setRecentPage((p) => Math.min(recentTotalPages, p + 1))
+                                                }
+                                                aria-label="다음 페이지"
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </CardContent>
                     </Card>
                 </>
             ) : null}
 
-            <Button variant="outline" type="button" onClick={() => void load()} disabled={loading}>
+            <Button variant="outline" type="button" onClick={() => void load(recentPage)} disabled={loading}>
                 새로고침
             </Button>
         </div>

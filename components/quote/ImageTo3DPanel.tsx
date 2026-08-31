@@ -143,6 +143,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     const [resuming, setResuming] = useState(true)
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const resumeDone = useRef(false)
+    const autoApplyJobRef = useRef<number | null>(null)
 
     const authHeaders = useCallback((): HeadersInit => {
         const h: HeadersInit = {}
@@ -246,34 +247,57 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         })
         if (previewUrl) URL.revokeObjectURL(previewUrl)
         setPreviewUrl(null)
+        autoApplyJobRef.current = null
     }
 
-    const applyModel = async (id: number, fileName: string) => {
-        setApplying(true)
-        try {
-            const res = await fetch(`/api/meshy/jobs/${id}/model`, {
-                headers: authHeaders(),
-                cache: 'no-store',
-            })
-            if (!res.ok) {
-                const j = await res.json().catch(() => ({}))
-                throw new Error((j as { error?: string }).error || '모델 다운로드 실패')
+    const applyModel = useCallback(
+        async (id: number, fileName: string) => {
+            setApplying(true)
+            try {
+                const res = await fetch(`/api/meshy/jobs/${id}/model`, {
+                    headers: authHeaders(),
+                    cache: 'no-store',
+                })
+                if (!res.ok) {
+                    const j = await res.json().catch(() => ({}))
+                    throw new Error((j as { error?: string }).error || '모델 다운로드 실패')
+                }
+                const blob = await res.blob()
+                if (!blob.size) {
+                    throw new Error('다운로드된 모델 파일이 비어 있습니다. 다시 시도해 주세요.')
+                }
+                const file = new File([blob], fileName || `meshy-${id}.stl`, { type: 'model/stl' })
+                setFile(file, { kind: 'meshy-photo', meshyJobId: id })
+                clearActiveJob()
+                setStatus('succeeded')
+                await refreshQuota()
+                await refreshHistory()
+                onModelReady?.()
+            } finally {
+                setApplying(false)
             }
-            const blob = await res.blob()
-            if (!blob.size) {
-                throw new Error('다운로드된 모델 파일이 비어 있습니다. 다시 시도해 주세요.')
+        },
+        [authHeaders, onModelReady, refreshHistory, refreshQuota, setFile]
+    )
+
+    const tryAutoApplyWhenReady = useCallback(
+        async (id: number, fileName: string) => {
+            if (autoApplyJobRef.current === id) return
+            autoApplyJobRef.current = id
+            setJobId(id)
+            setProgress(100)
+            setStatus('ready')
+            setError(null)
+            try {
+                await applyModel(id, fileName || `meshy-${id}.stl`)
+            } catch (e) {
+                autoApplyJobRef.current = null
+                setStatus('ready')
+                setError(e instanceof Error ? e.message : '모델 적용 실패')
             }
-            const file = new File([blob], fileName || `meshy-${id}.stl`, { type: 'model/stl' })
-            setFile(file, { kind: 'meshy-photo', meshyJobId: id })
-            clearActiveJob()
-            setStatus('succeeded')
-            await refreshQuota()
-            await refreshHistory()
-            onModelReady?.()
-        } finally {
-            setApplying(false)
-        }
-    }
+        },
+        [applyModel]
+    )
 
     const handleJobPayload = useCallback(
         async (data: {
@@ -294,8 +318,16 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
             if (data.status === 'succeeded' && data.modelReady) {
                 clearPoll()
-                setProgress(100)
-                setStatus('ready')
+                const id = data.jobId
+                if (id) {
+                    await tryAutoApplyWhenReady(
+                        id,
+                        data.resultFileName || `meshy-${id}.stl`
+                    )
+                } else {
+                    setProgress(100)
+                    setStatus('ready')
+                }
                 return
             }
             if (data.status === 'failed' || data.status === 'canceled') {
@@ -313,7 +345,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             }
             setStatus(mapped === 'ready' ? 'processing' : mapped)
         },
-        [refreshQuota]
+        [refreshQuota, tryAutoApplyWhenReady]
     )
 
     const pollJob = useCallback(
@@ -389,8 +421,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     }
 
                     if (active.status === 'succeeded' && active.modelReady) {
-                        setStatus('ready')
-                        setProgress(100)
+                        await tryAutoApplyWhenReady(
+                            active.jobId,
+                            active.resultFileName || `meshy-${active.jobId}.stl`
+                        )
                     } else if (
                         active.status === 'uploading' ||
                         active.status === 'queued' ||
@@ -504,6 +538,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         setError(null)
         setStatus('uploading')
         setProgress(2)
+        autoApplyJobRef.current = null
         try {
             const prepared = await prepareImage(selected)
             if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -855,12 +890,19 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     {status === 'ready' && (
                         <div className="space-y-3">
                             <div className="flex items-start gap-3 p-4 rounded-2xl bg-teal-400/10 border border-teal-400/25 text-teal-100">
-                                <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                                {applying ? (
+                                    <Loader2 className="w-5 h-5 shrink-0 mt-0.5 animate-spin" />
+                                ) : (
+                                    <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                                )}
                                 <div>
-                                    <p className="text-sm font-black">모델 생성 완료</p>
+                                    <p className="text-sm font-black">
+                                        {applying ? '모델 생성 완료 · 3D 뷰어 연결 중…' : '모델 생성 완료'}
+                                    </p>
                                     <p className="text-[12px] font-bold text-teal-200/80 mt-1 leading-relaxed break-keep">
-                                        미리보기를 확인한 뒤 견적으로 진행하세요. 치수는 다음 화면에서 mm로
-                                        맞출 수 있습니다.
+                                        {applying
+                                            ? '생성된 모델을 불러와 오른쪽 3D 뷰어와 견적 화면을 자동으로 엽니다. 잠시만 기다려 주세요.'
+                                            : '미리보기를 확인한 뒤 견적으로 진행하세요. 치수는 다음 화면에서 mm로 맞출 수 있습니다.'}
                                     </p>
                                 </div>
                             </div>
@@ -902,6 +944,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                 onClick={async () => {
                                     if (!jobId) return
                                     setError(null)
+                                    autoApplyJobRef.current = null
                                     try {
                                         await applyModel(jobId, resultFileName || `meshy-${jobId}.stl`)
                                     } catch (e) {
@@ -915,7 +958,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                 ) : (
                                     <CheckCircle2 className="w-4 h-4" />
                                 )}
-                                이 모델로 견적 진행
+                                {applying ? '뷰어 연결 중…' : '이 모델로 견적 진행'}
                             </button>
                             <button
                                 type="button"
@@ -1041,7 +1084,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 <ul className="text-[12px] text-white/50 font-bold space-y-1.5 leading-relaxed break-keep">
                     <li>· 로그인 회원 · 계정당 하루 {MESHY_USER_DAILY_LIMIT}회 (한국 시간) + 관리자 보너스</li>
                     <li>· 생성 실패 시 횟수 미차감 · 성공·진행 중은 당일 1회로 집계</li>
-                    <li>· 생성 후 「이 모델로 견적 진행」에서 확인하고 넘어갑니다</li>
+                    <li>· 생성이 끝나면 3D 뷰어와 견적 화면이 자동으로 열립니다</li>
                     <li>· 절대 치수는 견적 화면에서 mm 스케일로 조정하세요</li>
                     <li className="text-amber-200/80">· {MESHY_AI_DISCLAIMER_SHORT}</li>
                 </ul>
