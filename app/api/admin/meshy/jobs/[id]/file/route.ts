@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 
+import { buildMeshyThumbnailR2Key } from '@/lib/meshy-r2'
+
 type JobFileRow = {
     id: number
     status: string
@@ -9,10 +11,11 @@ type JobFileRow = {
     source_file_name: string | null
     result_file_key: string | null
     result_file_name: string | null
+    thumbnail_url: string | null
 }
 
 /**
- * GET /api/admin/meshy/jobs/[id]/file?type=source|model
+ * GET /api/admin/meshy/jobs/[id]/file?type=source|model|thumbnail
  * 관리자: 원본 사진 또는 결과 STL 스트리밍
  */
 export async function GET(
@@ -35,12 +38,15 @@ export async function GET(
         }
 
         const type = (req.nextUrl.searchParams.get('type') || 'model').trim()
-        if (type !== 'source' && type !== 'model') {
-            return NextResponse.json({ error: 'type은 source 또는 model 이어야 합니다' }, { status: 400 })
+        if (type !== 'source' && type !== 'model' && type !== 'thumbnail') {
+            return NextResponse.json(
+                { error: 'type은 source, model, thumbnail 이어야 합니다' },
+                { status: 400 }
+            )
         }
 
         const job = await env.DB.prepare(
-            `SELECT id, status, source_image_key, source_file_name, result_file_key, result_file_name
+            `SELECT id, status, source_image_key, source_file_name, result_file_key, result_file_name, thumbnail_url
              FROM meshy_jobs WHERE id = ?`
         )
             .bind(jobId)
@@ -64,6 +70,45 @@ export async function GET(
                 `inline; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
             )
             return new NextResponse(object.body as BodyInit, { headers })
+        }
+
+        if (type === 'thumbnail') {
+            const keyCandidates: string[] = []
+            const pushKey = (k?: string | null) => {
+                const t = (k || '').trim()
+                if (t.startsWith('meshy/') && !keyCandidates.includes(t)) keyCandidates.push(t)
+            }
+            pushKey(job.thumbnail_url)
+            pushKey(buildMeshyThumbnailR2Key(jobId, 'jpg'))
+            pushKey(buildMeshyThumbnailR2Key(jobId, 'png'))
+            pushKey(buildMeshyThumbnailR2Key(jobId, 'webp'))
+
+            for (const key of keyCandidates) {
+                const object = await env.BUCKET.get(key)
+                if (!object?.body) continue
+                const headers = new Headers()
+                headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg')
+                headers.set('Cache-Control', 'private, max-age=300')
+                headers.set('Content-Disposition', `inline; filename="meshy-${jobId}-thumb"`)
+                return new NextResponse(object.body as BodyInit, { headers })
+            }
+
+            if (job.source_image_key) {
+                const object = await env.BUCKET.get(job.source_image_key)
+                if (object?.body) {
+                    const fileName = job.source_file_name || `meshy-${jobId}-source`
+                    const headers = new Headers()
+                    headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg')
+                    headers.set('Cache-Control', 'private, max-age=300')
+                    headers.set(
+                        'Content-Disposition',
+                        `inline; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
+                    )
+                    return new NextResponse(object.body as BodyInit, { headers })
+                }
+            }
+
+            return NextResponse.json({ error: '썸네일이 없습니다' }, { status: 404 })
         }
 
         if (job.status !== 'succeeded' || !job.result_file_key) {

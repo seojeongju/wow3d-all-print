@@ -181,3 +181,48 @@ export function resolveMeshyR2KeyCandidates(opts: {
 
     return out
 }
+
+export function buildMeshyThumbnailR2Key(jobId: number, ext: 'jpg' | 'png' | 'webp' = 'jpg'): string {
+    return `meshy/${jobId}/thumbnail.${ext}`
+}
+
+type ThumbnailBucket = {
+    put: (
+        key: string,
+        value: ArrayBuffer,
+        options?: { httpMetadata?: { contentType?: string } }
+    ) => Promise<unknown>
+}
+
+/** Tripo/Meshy CDN 썸네일을 R2에 저장하고 키를 반환 (URL 만료 방지) */
+export async function persistMeshyJobThumbnail(
+    bucket: ThumbnailBucket,
+    jobId: number,
+    thumbnailUrl: string | null | undefined
+): Promise<string | null> {
+    const url = (thumbnailUrl || '').trim()
+    if (!url) return null
+    if (url.startsWith('meshy/')) return url
+
+    if (!url.startsWith('http')) return null
+
+    try {
+        const res = await fetch(url, { cache: 'no-store' })
+        if (!res.ok) return null
+        const buf = await res.arrayBuffer()
+        if (!buf.byteLength) return null
+
+        const ct = (res.headers.get('content-type') || 'image/jpeg').toLowerCase()
+        const ext: 'jpg' | 'png' | 'webp' = ct.includes('png')
+            ? 'png'
+            : ct.includes('webp')
+              ? 'webp'
+              : 'jpg'
+        const key = buildMeshyThumbnailR2Key(jobId, ext)
+        await bucket.put(key, buf, { httpMetadata: { contentType: ct.split(';')[0] || 'image/jpeg' } })
+        return key
+    } catch (e) {
+        console.error('[meshy-r2] persist thumbnail failed', jobId, e)
+        return null
+    }
+}

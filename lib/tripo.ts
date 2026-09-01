@@ -129,6 +129,8 @@ function generationBody(quality: TripoQualityPreset, env?: Record<string, unknow
         auto_size: true,
         face_limit: faceLimitForQuality(quality),
         export_uv: false,
+        /** v3: output.rendered_image_url 미리보기 생성 */
+        render_image: true,
     }
     if (model !== TRIPO_MODEL_FAST) {
         body.geometry_quality = quality === 'fast' ? 'standard' : 'detailed'
@@ -332,12 +334,29 @@ export function extractTripoDownloadUrl(output?: Record<string, unknown> | null)
 
 export function extractTripoThumbnailUrl(output?: Record<string, unknown> | null): string | null {
     if (!output || typeof output !== 'object') return null
-    const keys = ['rendered_image_url', 'rendered_image', 'thumbnail', 'preview']
+    const keys = [
+        'rendered_image_url',
+        'rendered_image',
+        'generated_image_url',
+        'generated_image',
+        'thumbnail_url',
+        'thumbnail',
+        'preview_url',
+        'preview',
+    ]
     for (const key of keys) {
         const v = output[key]
         if (typeof v === 'string' && v.startsWith('http')) return v
         if (v && typeof v === 'object' && typeof (v as { url?: string }).url === 'string') {
-            return (v as { url: string }).url
+            const url = (v as { url: string }).url
+            if (url.startsWith('http')) return url
+        }
+    }
+    const multiview = output.multiview_preview as Record<string, unknown> | undefined
+    if (multiview && typeof multiview === 'object') {
+        for (const key of ['front_view_url', 'front', 'rendered_image_url']) {
+            const v = multiview[key]
+            if (typeof v === 'string' && v.startsWith('http')) return v
         }
     }
     return null

@@ -117,6 +117,69 @@ function downloadBlob(blob: Blob, fileName: string) {
     URL.revokeObjectURL(url)
 }
 
+function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string | null }) {
+    const [url, setUrl] = useState<string | null>(null)
+    const [failed, setFailed] = useState(false)
+
+    useEffect(() => {
+        let objectUrl: string | null = null
+        let cancelled = false
+
+        const load = async () => {
+            setFailed(false)
+            if (job.thumbnailUrl?.startsWith('http')) {
+                setUrl(job.thumbnailUrl)
+                return
+            }
+
+            if (!job.thumbnailUrl?.startsWith('meshy/') && !job.hasSource) {
+                setUrl(null)
+                return
+            }
+
+            try {
+                const { blob } = await fetchAuthedBlob(
+                    `/api/admin/meshy/jobs/${job.id}/file?type=thumbnail`,
+                    token
+                )
+                if (cancelled) return
+                objectUrl = URL.createObjectURL(blob)
+                setUrl(objectUrl)
+            } catch {
+                if (!cancelled) {
+                    setUrl(null)
+                    setFailed(true)
+                }
+            }
+        }
+
+        void load()
+        return () => {
+            cancelled = true
+            if (objectUrl) URL.revokeObjectURL(objectUrl)
+        }
+    }, [job.id, job.thumbnailUrl, job.hasSource, token])
+
+    if (url) {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={url}
+                alt={`AI 3D #${job.id}`}
+                className="absolute inset-0 h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+            />
+        )
+    }
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white/30">
+            <Box className="w-8 h-8" />
+            <span className="text-[10px] font-bold">{failed && job.hasSource ? '미리보기 로드 실패' : '썸네일 없음'}</span>
+        </div>
+    )
+}
+
 export default function AdminMeshyJobsPanel({ token }: Props) {
     const [status, setStatus] = useState<StatusFilter>('succeeded')
     const [page, setPage] = useState(1)
@@ -348,20 +411,7 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                     className="rounded-xl border border-white/10 bg-black/25 overflow-hidden flex flex-col"
                                 >
                                     <div className="relative aspect-[4/3] bg-black/50">
-                                        {j.thumbnailUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img
-                                                src={j.thumbnailUrl}
-                                                alt={`Meshy #${j.id}`}
-                                                className="absolute inset-0 h-full w-full object-cover"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                        ) : (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white/30">
-                                                <Box className="w-8 h-8" />
-                                                <span className="text-[10px] font-bold">썸네일 없음</span>
-                                            </div>
-                                        )}
+                                        <AdminJobThumbnail job={j} token={token} />
                                         <span
                                             className={cn(
                                                 'absolute left-2 top-2 rounded px-2 py-0.5 text-[10px] font-black',

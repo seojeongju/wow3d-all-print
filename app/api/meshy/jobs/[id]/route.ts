@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
-import { buildAiPhotoResultFileName, resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
+import { buildAiPhotoResultFileName, persistMeshyJobThumbnail, resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
 import {
     parseImageTo3DProvider,
     pollImageTo3DTask,
@@ -119,10 +119,14 @@ export async function GET(
         })
 
         if (polled.newAuxTaskId) {
+            const thumbStored = polled.thumbnailUrl
+                ? await persistMeshyJobThumbnail(env.BUCKET, jobId, polled.thumbnailUrl)
+                : null
             await env.DB.prepare(
-                `UPDATE meshy_jobs SET aux_task_id = ?, status = 'processing', progress = ?, updated_at = datetime('now') WHERE id = ?`
+                `UPDATE meshy_jobs SET aux_task_id = ?, status = 'processing', progress = ?,
+                 thumbnail_url = COALESCE(?, thumbnail_url), updated_at = datetime('now') WHERE id = ?`
             )
-                .bind(polled.newAuxTaskId, polled.progress, jobId)
+                .bind(polled.newAuxTaskId, polled.progress, thumbStored, jobId)
                 .run()
 
             return NextResponse.json({
@@ -131,7 +135,7 @@ export async function GET(
                     jobId,
                     status: polled.status,
                     progress: polled.progress,
-                    thumbnailUrl: polled.thumbnailUrl || null,
+                    thumbnailUrl: thumbStored || polled.thumbnailUrl || null,
                     modelReady: false,
                     message: '모델 파일을 준비 중입니다…',
                 },
@@ -160,6 +164,10 @@ export async function GET(
                 httpMetadata: { contentType: 'model/stl' },
             })
 
+            const thumbStored = polled.thumbnailUrl
+                ? await persistMeshyJobThumbnail(env.BUCKET, jobId, polled.thumbnailUrl)
+                : null
+
             await env.DB.prepare(
                 `UPDATE meshy_jobs
                  SET status = 'succeeded', progress = 100, result_file_key = ?, result_file_name = ?,
@@ -169,7 +177,7 @@ export async function GET(
                 .bind(
                     resultKey,
                     resultName,
-                    polled.thumbnailUrl || null,
+                    thumbStored || polled.thumbnailUrl || null,
                     polled.creditsUsed ?? null,
                     jobId
                 )
@@ -183,7 +191,7 @@ export async function GET(
                     progress: 100,
                     resultFileKey: resultKey,
                     resultFileName: resultName,
-                    thumbnailUrl: polled.thumbnailUrl || null,
+                    thumbnailUrl: thumbStored || polled.thumbnailUrl || null,
                     modelReady: true,
                 },
             })
@@ -211,10 +219,15 @@ export async function GET(
             })
         }
 
+        const thumbStored = polled.thumbnailUrl
+            ? await persistMeshyJobThumbnail(env.BUCKET, jobId, polled.thumbnailUrl)
+            : null
+
         await env.DB.prepare(
-            `UPDATE meshy_jobs SET status = ?, progress = ?, updated_at = datetime('now') WHERE id = ?`
+            `UPDATE meshy_jobs SET status = ?, progress = ?,
+             thumbnail_url = COALESCE(?, thumbnail_url), updated_at = datetime('now') WHERE id = ?`
         )
-            .bind(polled.status, polled.progress, jobId)
+            .bind(polled.status, polled.progress, thumbStored, jobId)
             .run()
 
         return NextResponse.json({
@@ -223,7 +236,7 @@ export async function GET(
                 jobId,
                 status: polled.status,
                 progress: polled.progress,
-                thumbnailUrl: polled.thumbnailUrl || null,
+                thumbnailUrl: thumbStored || polled.thumbnailUrl || null,
                 modelReady: false,
             },
         })

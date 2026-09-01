@@ -319,11 +319,20 @@ async function pollTripoTask(
             if (!stlUrl) {
                 return { status: 'failed', progress: 100, error: 'STL 결과 URL이 없습니다.' }
             }
+            let thumbnailUrl = extractTripoThumbnailUrl(convertTask.output)
+            if (!thumbnailUrl) {
+                try {
+                    const mainTask = await getTripoTask(apiKey, mainTaskId)
+                    thumbnailUrl = extractTripoThumbnailUrl(mainTask.output)
+                } catch {
+                    /* 메인 작업 썸네일 조회 실패 시 무시 */
+                }
+            }
             return {
                 status: 'succeeded',
                 progress: 100,
                 stlUrl,
-                thumbnailUrl: extractTripoThumbnailUrl(convertTask.output),
+                thumbnailUrl,
             }
         }
 
