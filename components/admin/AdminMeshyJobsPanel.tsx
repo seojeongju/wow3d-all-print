@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -23,6 +23,7 @@ import {
     ExternalLink,
 } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
+import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { cn } from '@/lib/utils'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
 
@@ -118,64 +119,119 @@ function downloadBlob(blob: Blob, fileName: string) {
 }
 
 function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string | null }) {
+    const rootRef = useRef<HTMLDivElement>(null)
     const [url, setUrl] = useState<string | null>(null)
     const [failed, setFailed] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [visible, setVisible] = useState(false)
 
     useEffect(() => {
+        const el = rootRef.current
+        if (!el) return
+        const io = new IntersectionObserver(
+            ([entry]) => {
+                if (entry?.isIntersecting) setVisible(true)
+            },
+            { rootMargin: '120px' }
+        )
+        io.observe(el)
+        return () => io.disconnect()
+    }, [])
+
+    useEffect(() => {
+        if (!visible) return
+
         let objectUrl: string | null = null
         let cancelled = false
 
-        const load = async () => {
-            setFailed(false)
+        const loadProviderThumbnail = async (): Promise<string | null> => {
             if (job.thumbnailUrl?.startsWith('http')) {
-                setUrl(job.thumbnailUrl)
-                return
+                return job.thumbnailUrl
             }
-
-            if (!job.thumbnailUrl?.startsWith('meshy/') && !job.hasSource) {
-                setUrl(null)
-                return
-            }
-
+            if (!job.thumbnailUrl?.startsWith('meshy/')) return null
             try {
                 const { blob } = await fetchAuthedBlob(
                     `/api/admin/meshy/jobs/${job.id}/file?type=thumbnail`,
                     token
                 )
-                if (cancelled) return
                 objectUrl = URL.createObjectURL(blob)
-                setUrl(objectUrl)
+                return objectUrl
             } catch {
-                if (!cancelled) {
-                    setUrl(null)
-                    setFailed(true)
-                }
+                return null
             }
         }
 
-        void load()
+        const load = async () => {
+            setFailed(false)
+            setLoading(true)
+            setUrl(null)
+
+            if (job.hasModel) {
+                try {
+                    const { blob, fileName } = await fetchAuthedBlob(
+                        `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
+                        token
+                    )
+                    if (cancelled) return
+                    const stlName =
+                        fileName || job.resultFileName || `ai-photo-${job.id}.stl`
+                    const file = new File([await blob.arrayBuffer()], stlName, {
+                        type: 'model/stl',
+                    })
+                    const dataUrl = await generateModelThumbnail(file, 384)
+                    if (cancelled) return
+                    if (dataUrl) {
+                        setUrl(dataUrl)
+                        return
+                    }
+                } catch {
+                    /* STL 썸네일 실패 → Tripo/Meshy CDN 썸네일 시도 */
+                }
+            }
+
+            const providerThumb = await loadProviderThumbnail()
+            if (cancelled) return
+            if (providerThumb) {
+                setUrl(providerThumb)
+                return
+            }
+
+            setUrl(null)
+            setFailed(true)
+        }
+
+        void load().finally(() => {
+            if (!cancelled) setLoading(false)
+        })
+
         return () => {
             cancelled = true
             if (objectUrl) URL.revokeObjectURL(objectUrl)
         }
-    }, [job.id, job.thumbnailUrl, job.hasSource, token])
-
-    if (url) {
-        return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-                src={url}
-                alt={`AI 3D #${job.id}`}
-                className="absolute inset-0 h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-            />
-        )
-    }
+    }, [visible, job.id, job.hasModel, job.thumbnailUrl, job.resultFileName, token])
 
     return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white/30">
-            <Box className="w-8 h-8" />
-            <span className="text-[10px] font-bold">{failed && job.hasSource ? '미리보기 로드 실패' : '썸네일 없음'}</span>
+        <div ref={rootRef} className="absolute inset-0 bg-black/50">
+            {url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                    src={url}
+                    alt={`AI 3D #${job.id}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                />
+            ) : loading ? (
+                <div className="absolute inset-0 flex items-center justify-center text-white/40">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+            ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white/30">
+                    <Box className="w-8 h-8" />
+                    <span className="text-[10px] font-bold">
+                        {failed ? '3D 미리보기 생성 실패' : '썸네일 없음'}
+                    </span>
+                </div>
+            )}
         </div>
     )
 }

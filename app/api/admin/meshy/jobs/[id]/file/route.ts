@@ -93,21 +93,6 @@ export async function GET(
                 return new NextResponse(object.body as BodyInit, { headers })
             }
 
-            if (job.source_image_key) {
-                const object = await env.BUCKET.get(job.source_image_key)
-                if (object?.body) {
-                    const fileName = job.source_file_name || `meshy-${jobId}-source`
-                    const headers = new Headers()
-                    headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg')
-                    headers.set('Cache-Control', 'private, max-age=300')
-                    headers.set(
-                        'Content-Disposition',
-                        `inline; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
-                    )
-                    return new NextResponse(object.body as BodyInit, { headers })
-                }
-            }
-
             return NextResponse.json({ error: '썸네일이 없습니다' }, { status: 404 })
         }
 
