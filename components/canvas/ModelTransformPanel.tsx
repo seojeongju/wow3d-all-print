@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
     aiPhotoSliderMaxPercent,
@@ -40,7 +40,11 @@ export default function ModelTransformPanel({ className }: { className?: string 
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
+    const [sliderRangeMax, setSliderRangeMax] = useState(SCALE_PERCENT_MAX)
+    /** 드래그 중에는 max를 고정하지 않으면 값 변경마다 막대 범위가 바뀌어 썸이 점프한다 */
+    const [dragSliderMax, setDragSliderMax] = useState<number | null>(null)
     const isAiPhoto = fileSource.kind === 'meshy-photo'
+    const scaleMax = getScalePercentMax(fileSource.kind)
 
     useEffect(() => {
         if (!isAiPhoto || !baseAnalysis) return
@@ -52,6 +56,19 @@ export default function ModelTransformPanel({ className }: { className?: string 
     }, [transform.scalePercent])
 
     useEffect(() => {
+        if (dragSliderMax !== null) return
+        if (!isAiPhoto) {
+            setSliderRangeMax(SCALE_PERCENT_MAX)
+            return
+        }
+        setSliderRangeMax(aiPhotoSliderMaxPercent(transform.scalePercent, scaleMax))
+    }, [dragSliderMax, isAiPhoto, transform.scalePercent, scaleMax])
+
+    useEffect(() => {
+        setDragSliderMax(null)
+    }, [file])
+
+    useEffect(() => {
         if (!effective) return
         setDimDraft({
             x: effective.boundingBox.x.toFixed(2),
@@ -60,13 +77,24 @@ export default function ModelTransformPanel({ className }: { className?: string 
         })
     }, [effective?.boundingBox.x, effective?.boundingBox.y, effective?.boundingBox.z])
 
+    const beginSliderDrag = useCallback(() => {
+        window.getSelection()?.removeAllRanges()
+        document.body.classList.add('select-none')
+        if (isAiPhoto) {
+            setDragSliderMax(aiPhotoSliderMaxPercent(transform.scalePercent, scaleMax))
+        }
+    }, [isAiPhoto, transform.scalePercent, scaleMax])
+
+    const endSliderDrag = useCallback(() => {
+        document.body.classList.remove('select-none')
+        setDragSliderMax(null)
+    }, [])
+
     if (!file || !baseAnalysis || !effective) return null
 
     const box = effective.boundingBox
-    const scaleMax = getScalePercentMax(fileSource.kind)
-    const sliderMax = isAiPhoto
-        ? aiPhotoSliderMaxPercent(transform.scalePercent, scaleMax)
-        : SCALE_PERCENT_MAX
+    const sliderMax = isAiPhoto ? (dragSliderMax ?? sliderRangeMax) : SCALE_PERCENT_MAX
+    const sliderValue = Math.min(transform.scalePercent, sliderMax)
     const scalePresets = isAiPhoto && meshyFitScalePercent
         ? [...new Set([50, 100, 150, 200, meshyFitScalePercent].filter((p) => p <= scaleMax))].sort(
               (a, b) => a - b
@@ -175,10 +203,16 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     min={SCALE_PERCENT_MIN}
                     max={sliderMax}
                     step={SCALE_PERCENT_STEP}
-                    value={transform.scalePercent}
+                    value={sliderValue}
+                    onPointerDown={beginSliderDrag}
+                    onPointerUp={endSliderDrag}
+                    onPointerCancel={endSliderDrag}
                     onChange={(e) => setScalePercent(Number(e.target.value), { fromUser: true })}
-                    className="w-full accent-teal-400 h-1.5 cursor-pointer"
+                    className="w-full accent-teal-400 h-1.5 cursor-pointer touch-none select-none"
                     aria-label="모델 균일 스케일"
+                    aria-valuemin={SCALE_PERCENT_MIN}
+                    aria-valuemax={sliderMax}
+                    aria-valuenow={sliderValue}
                 />
                 <div className="flex flex-wrap gap-1.5">
                     {scalePresets.map((p) => (
