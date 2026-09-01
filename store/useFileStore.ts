@@ -8,6 +8,7 @@ import {
     applyTransformToAnalysis,
     clampScalePercent,
     DEFAULT_MODEL_TRANSFORM,
+    getScalePercentMax,
     nextAxis90,
     type Axis90,
     type BedMaxMm,
@@ -121,7 +122,7 @@ export const useFileStore = create<FileState>((set) => ({
         set((state) => ({
             transform: {
                 ...state.transform,
-                scalePercent: clampScalePercent(percent),
+                scalePercent: clampScalePercent(percent, getScalePercentMax(state.fileSource.kind)),
             },
             ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
         })),
@@ -159,7 +160,10 @@ export const useFileStore = create<FileState>((set) => ({
         })),
     setTransformFull: (transform, opts) =>
         set((state) => {
-            const scalePercent = clampScalePercent(transform.scalePercent)
+            const scalePercent = clampScalePercent(
+                transform.scalePercent,
+                getScalePercentMax(state.fileSource.kind)
+            )
             return {
                 transform: {
                     scalePercent,

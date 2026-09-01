@@ -3,6 +3,7 @@ import { useFileStore } from '@/store/useFileStore'
 import { analyzeGeometryBoundingBox, analyzeGeometryProgressive } from '@/lib/geometry'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
 import {
+    getScalePercentMax,
     meshyAutoFitScalePercent,
     meshyAutoFitTargetMm,
     resolveBedMaxForMethod,
@@ -27,7 +28,8 @@ export function maybeAutoFitMeshyScale(opts?: { force?: boolean }): void {
     if (!(longest > 0)) return
 
     const targetMm = meshyAutoFitTargetMm(bed)
-    const next = meshyAutoFitScalePercent(longest, bed)
+    const scaleMax = getScalePercentMax(state.fileSource.kind)
+    const next = meshyAutoFitScalePercent(longest, bed, scaleMax)
     if (next == null) return
 
     const alreadyForMethod =

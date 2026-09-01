@@ -53,4 +53,7 @@ assert(fit812 != null && fit812 >= 12 && fit812 <= 15, `812mm FDM → ~14% got $
 const fitSla = meshyAutoFitScalePercent(812.35, 'sla')
 assert(fitSla != null && fitSla < (fit812 as number), 'SLA mid smaller than FDM')
 
+const fitTiny = meshyAutoFitScalePercent(0.8, 'fdm')
+assert(fitTiny != null && fitTiny > 400 && fitTiny <= 15000, `tiny model autofit expected >400 got ${fitTiny}`)
+
 console.log('test-model-transform: ok')

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
+    getScalePercentMax,
     SCALE_PERCENT_MAX,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
@@ -61,6 +62,18 @@ export default function ModelTransformPanel({ className }: { className?: string 
     if (!file || !baseAnalysis || !effective) return null
 
     const box = effective.boundingBox
+    const scaleMax = getScalePercentMax(fileSource.kind)
+    const sliderMax = isAiPhoto
+        ? Math.min(
+              scaleMax,
+              Math.max(400, transform.scalePercent, meshyFitScalePercent ?? 400)
+          )
+        : SCALE_PERCENT_MAX
+    const scalePresets = isAiPhoto && meshyFitScalePercent
+        ? [...new Set([50, 100, 150, 200, meshyFitScalePercent].filter((p) => p <= scaleMax))].sort(
+              (a, b) => a - b
+          )
+        : [50, 100, 150, 200]
 
     const commitScalePercent = (raw: string) => {
         const n = Number(raw)
@@ -77,7 +90,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
             setDimDraft((d) => ({ ...d, [axis]: box[axis].toFixed(2) }))
             return
         }
-        const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n)
+        const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n, scaleMax)
         setScalePercent(next, { fromUser: true })
     }
 
@@ -141,7 +154,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         <input
                             type="number"
                             min={SCALE_PERCENT_MIN}
-                            max={SCALE_PERCENT_MAX}
+                            max={scaleMax}
                             step={SCALE_PERCENT_STEP}
                             value={scaleDraft}
                             onChange={(e) => setScaleDraft(e.target.value)}
@@ -160,7 +173,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                 <input
                     type="range"
                     min={SCALE_PERCENT_MIN}
-                    max={SCALE_PERCENT_MAX}
+                    max={sliderMax}
                     step={SCALE_PERCENT_STEP}
                     value={transform.scalePercent}
                     onChange={(e) => setScalePercent(Number(e.target.value), { fromUser: true })}
@@ -168,7 +181,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     aria-label="모델 균일 스케일"
                 />
                 <div className="flex flex-wrap gap-1.5">
-                    {[50, 100, 150, 200].map((p) => (
+                    {scalePresets.map((p) => (
                         <button
                             key={p}
                             type="button"
