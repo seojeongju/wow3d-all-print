@@ -1,11 +1,23 @@
 import { buildQuoteR2Key, sanitizeR2FileName } from '@/lib/r2-quote-file'
 
-/** meshy-123.stl / mesh-123.stl 형식 파일명에서 Meshy job ID 추출 */
+/** ai-photo-123.stl / meshy-123.stl / mesh-123.stl — AI 사진→3D job ID 추출 */
 export function parseMeshyJobIdFromFileName(fileName?: string | null): number | null {
-    const m = (fileName || '').trim().match(/^meshy?-(\d+)\.stl$/i)
+    const m = (fileName || '').trim().match(/^(?:ai-photo|meshy?)-(\d+)\.stl$/i)
     if (!m) return null
     const id = parseInt(m[1], 10)
     return Number.isInteger(id) && id > 0 ? id : null
+}
+
+/** 사용자에게 보이는 AI 사진→3D 결과 파일명 */
+export function buildAiPhotoResultFileName(jobId: number): string {
+    return `ai-photo-${jobId}.stl`
+}
+
+/** DB/R2에 meshy-* 등으로 저장된 경우 사용자용 ai-photo-* 로 변환 */
+export function resolveUserAiPhotoFileName(jobId: number, storedName?: string | null): string {
+    const name = (storedName || '').trim()
+    if (/^ai-photo-\d+\.stl$/i.test(name)) return name
+    return buildAiPhotoResultFileName(jobId)
 }
 
 /** Meshy 결과 STL의 기본 R2 키 */
@@ -80,13 +92,17 @@ export async function copyMeshyJobResultToQuote(
         .bind(jobId)
         .first<Pick<MeshyJobFileRow, 'id' | 'status' | 'result_file_key' | 'result_file_name'>>()
 
-    if (!job) return { error: 'Meshy 작업을 찾을 수 없습니다', status: 404 }
+    if (!job) return { error: 'AI 3D 작업을 찾을 수 없습니다', status: 404 }
     if (job.status !== 'succeeded' || !job.result_file_key) {
         return { error: 'AI 3D 모델이 아직 준비되지 않았습니다', status: 409 }
     }
 
     const sourceKey = job.result_file_key
-    const fileName = sanitizeR2FileName(preferredFileName || job.result_file_name || `meshy-${jobId}.stl`)
+    const legacyMeshyName = /^meshy?-\d+\.stl$/i.test(job.result_file_name || '')
+    const fileName = sanitizeR2FileName(
+        preferredFileName ||
+            (job.result_file_name && !legacyMeshyName ? job.result_file_name : buildAiPhotoResultFileName(jobId))
+    )
     const destKey = buildQuoteR2Key(quoteId, fileName)
 
     let objectSize = 0
@@ -100,11 +116,11 @@ export async function copyMeshyJobResultToQuote(
     let fileUrl = sourceKey
     if (shouldInlineCopyMeshyObject(objectSize)) {
         const source = await env.BUCKET.get(sourceKey)
-        if (!source?.body) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
+        if (!source?.body) return { error: 'AI 3D 모델 파일을 찾을 수 없습니다', status: 404 }
         try {
             const payload = await new Response(source.body as BodyInit).arrayBuffer()
             if (!payload.byteLength) {
-                return { error: 'Meshy 모델 파일 데이터가 비어 있습니다', status: 404 }
+                return { error: 'AI 3D 모델 파일 데이터가 비어 있습니다', status: 404 }
             }
             await env.BUCKET.put(destKey, payload, {
                 httpMetadata: {
@@ -118,7 +134,7 @@ export async function copyMeshyJobResultToQuote(
         }
     } else if (objectSize === 0) {
         const source = await env.BUCKET.get(sourceKey)
-        if (!source) return { error: 'Meshy 모델 파일을 R2에서 찾을 수 없습니다', status: 404 }
+        if (!source) return { error: 'AI 3D 모델 파일을 찾을 수 없습니다', status: 404 }
     }
 
     await env.DB.prepare(

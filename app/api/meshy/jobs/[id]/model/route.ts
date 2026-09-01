@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
+import { resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
 
 type JobRow = {
     id: number
@@ -54,7 +55,7 @@ export async function GET(
         const object = await env.BUCKET.get(job.result_file_key)
         if (!object) return NextResponse.json({ error: '모델 파일을 찾을 수 없습니다' }, { status: 404 })
 
-        const fileName = job.result_file_name || `meshy-${jobId}.stl`
+        const fileName = resolveUserAiPhotoFileName(jobId, job.result_file_name)
         const headers = new Headers()
         headers.set('Content-Type', object.httpMetadata?.contentType || 'model/stl')
         // 브라우저 디스크 캐시 쓰기 실패(ERR_CACHE_WRITE_FAILURE) 방지 — 바이너리 STL은 캐시하지 않음

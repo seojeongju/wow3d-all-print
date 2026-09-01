@@ -1,4 +1,4 @@
-import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
+import { parseMeshyJobIdFromFileName, buildAiPhotoResultFileName } from '@/lib/meshy-r2'
 import {
     clampScalePercent,
     DEFAULT_MODEL_TRANSFORM,
@@ -150,21 +150,21 @@ export async function fetchQuoteModelFile(opts: {
             if (!res.ok) {
                 const j = await res.json().catch(() => ({}))
                 errors.push(
-                    (j as { error?: string }).error || `Meshy 모델 HTTP ${res.status}`
+                    (j as { error?: string }).error || `AI 3D 모델 HTTP ${res.status}`
                 )
             } else {
                 const blob = await res.blob()
                 if (await isLikelyModelBlob(blob, opts.fileName)) {
                     return {
                         blob,
-                        fileName: opts.fileName || `meshy-${meshyId}.stl`,
+                        fileName: opts.fileName || buildAiPhotoResultFileName(meshyId),
                         source: 'meshy_api',
                     }
                 }
-                errors.push('Meshy API 응답이 유효한 STL이 아닙니다')
+                errors.push('AI 3D 모델 응답이 유효한 STL이 아닙니다')
             }
         } catch {
-            errors.push('Meshy API 네트워크 오류')
+            errors.push('AI 3D 모델 네트워크 오류')
         }
     }
 

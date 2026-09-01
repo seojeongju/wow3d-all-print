@@ -5,6 +5,7 @@ import {
     copyMeshyJobResultToQuote,
     meshyJobOwnedBy,
     parseMeshyJobIdFromFileName,
+    buildAiPhotoResultFileName,
     type MeshyJobFileRow,
 } from '@/lib/meshy-r2';
 import { requireAuthOrGuest } from '@/lib/api-utils';
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
         const preferredName = file
             ? sanitizeR2FileName(file.name)
             : hasMeshyJob
-              ? `meshy-${meshyJobId}.stl`
+              ? buildAiPhotoResultFileName(meshyJobId)
               : 'model.stl';
 
         if (!quoteId && hasMeshyJob) {
@@ -95,10 +96,10 @@ export async function POST(request: NextRequest) {
                 .first<MeshyJobFileRow>();
 
             if (!job) {
-                return NextResponse.json({ error: 'Meshy 작업을 찾을 수 없습니다' }, { status: 404 });
+                return NextResponse.json({ error: 'AI 3D 작업을 찾을 수 없습니다' }, { status: 404 });
             }
             if (!meshyJobOwnedBy(job, auth)) {
-                return NextResponse.json({ error: 'Meshy 작업 권한이 없습니다' }, { status: 403 });
+                return NextResponse.json({ error: 'AI 3D 작업 권한이 없습니다' }, { status: 403 });
             }
 
             const copied = await copyMeshyJobResultToQuote(env, meshyJobId, quoteId, preferredName);

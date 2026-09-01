@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import type { GeometryAnalysis } from '@/lib/geometry'
 import { invalidateModelParseCache } from '@/lib/model-parse-cache'
 import { cancelModelAnalysisRun } from '@/lib/model-analysis-runner'
+import { clearMeshyActiveJob } from '@/lib/meshy-active-job'
 import {
     applyTransformToAnalysis,
     clampScalePercent,
@@ -183,6 +184,7 @@ export const useFileStore = create<FileState>((set) => ({
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
             invalidateModelParseCache(state.file)
             cancelModelAnalysisRun()
+            clearMeshyActiveJob()
             return {
                 file: null,
                 fileUrl: null,

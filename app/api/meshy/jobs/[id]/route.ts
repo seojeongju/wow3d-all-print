@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
+import { buildAiPhotoResultFileName, resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
 import {
-    getMeshyImageTo3DTask,
-    mapMeshyStatusToJob,
-    resolveMeshyApiKey,
-} from '@/lib/meshy'
+    parseImageTo3DProvider,
+    pollImageTo3DTask,
+    sanitizeImageTo3DUserMessage,
+} from '@/lib/image-to-3d-provider'
 
 type JobRow = {
     id: number
     user_id: number | null
     session_id: string | null
     status: string
+    provider: string | null
     meshy_task_id: string | null
+    aux_task_id: string | null
     source_image_key: string | null
     result_file_key: string | null
     result_file_name: string | null
@@ -30,9 +33,13 @@ function canAccessJob(
     return !!job.session_id && job.session_id === auth.sessionId
 }
 
+function userResultFileName(job: JobRow): string {
+    return resolveUserAiPhotoFileName(job.id, job.result_file_name)
+}
+
 /**
  * GET /api/meshy/jobs/[id]
- * Meshy 상태 폴링. 성공 시 STL을 R2에 저장.
+ * AI 3D 작업 상태 폴링. 성공 시 STL을 R2에 저장.
  */
 export async function GET(
     request: NextRequest,
@@ -62,6 +69,8 @@ export async function GET(
             return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 })
         }
 
+        const provider = parseImageTo3DProvider(job.provider)
+
         if (job.status === 'succeeded' && job.result_file_key) {
             return NextResponse.json({
                 success: true,
@@ -70,10 +79,8 @@ export async function GET(
                     status: 'succeeded',
                     progress: 100,
                     resultFileKey: job.result_file_key,
-                    resultFileName: job.result_file_name || 'meshy-model.stl',
+                    resultFileName: userResultFileName(job),
                     thumbnailUrl: job.thumbnail_url,
-                    thumbnailUrls: undefined,
-                    creditsUsed: job.credits_used,
                     modelReady: true,
                 },
             })
@@ -86,14 +93,13 @@ export async function GET(
                     jobId: job.id,
                     status: job.status,
                     progress: job.progress || 0,
-                    error: job.error_message || '작업이 실패했습니다',
+                    error: sanitizeImageTo3DUserMessage(job.error_message || '작업이 실패했습니다'),
                     modelReady: false,
                 },
             })
         }
 
-        const apiKey = resolveMeshyApiKey(env as unknown as Record<string, unknown>)
-        if (!apiKey || !job.meshy_task_id) {
+        if (!job.meshy_task_id) {
             return NextResponse.json({
                 success: true,
                 data: {
@@ -105,38 +111,42 @@ export async function GET(
             })
         }
 
-        const task = await getMeshyImageTo3DTask(apiKey, job.meshy_task_id)
-        const mapped = mapMeshyStatusToJob(task.status)
-        const progress = Math.max(0, Math.min(100, Number(task.progress) || 0))
+        const envRecord = env as unknown as Record<string, unknown>
+        const polled = await pollImageTo3DTask(provider, envRecord, {
+            provider,
+            externalTaskId: job.meshy_task_id,
+            auxTaskId: job.aux_task_id,
+        })
 
-        if (mapped === 'succeeded') {
-            const stlUrl = task.model_urls?.stl
-            if (!stlUrl) {
-                await env.DB.prepare(
-                    `UPDATE meshy_jobs SET status = 'failed', error_message = ?, updated_at = datetime('now') WHERE id = ?`
-                )
-                    .bind('STL 결과 URL이 없습니다', jobId)
-                    .run()
-                return NextResponse.json({
-                    success: true,
-                    data: {
-                        jobId,
-                        status: 'failed',
-                        progress: 100,
-                        error: 'STL 결과 URL이 없습니다',
-                        modelReady: false,
-                    },
-                })
-            }
+        if (polled.newAuxTaskId) {
+            await env.DB.prepare(
+                `UPDATE meshy_jobs SET aux_task_id = ?, status = 'processing', progress = ?, updated_at = datetime('now') WHERE id = ?`
+            )
+                .bind(polled.newAuxTaskId, polled.progress, jobId)
+                .run()
 
-            const stlRes = await fetch(stlUrl)
+            return NextResponse.json({
+                success: true,
+                data: {
+                    jobId,
+                    status: polled.status,
+                    progress: polled.progress,
+                    thumbnailUrl: polled.thumbnailUrl || null,
+                    modelReady: false,
+                    message: '모델 파일을 준비 중입니다…',
+                },
+            })
+        }
+
+        if (polled.status === 'succeeded' && polled.stlUrl) {
+            const stlRes = await fetch(polled.stlUrl)
             if (!stlRes.ok) {
                 return NextResponse.json({
                     success: true,
                     data: {
                         jobId,
                         status: 'processing',
-                        progress: Math.max(progress, 90),
+                        progress: Math.max(polled.progress, 90),
                         modelReady: false,
                         message: '모델 파일을 준비 중입니다…',
                     },
@@ -144,7 +154,7 @@ export async function GET(
             }
 
             const stlBuf = await stlRes.arrayBuffer()
-            const resultName = `meshy-${jobId}.stl`
+            const resultName = buildAiPhotoResultFileName(jobId)
             const resultKey = `meshy/${jobId}/${resultName}`
             await env.BUCKET.put(resultKey, stlBuf, {
                 httpMetadata: { contentType: 'model/stl' },
@@ -159,8 +169,8 @@ export async function GET(
                 .bind(
                     resultKey,
                     resultName,
-                    task.thumbnail_url || null,
-                    task.credits_used ?? null,
+                    polled.thumbnailUrl || null,
+                    polled.creditsUsed ?? null,
                     jobId
                 )
                 .run()
@@ -173,30 +183,28 @@ export async function GET(
                     progress: 100,
                     resultFileKey: resultKey,
                     resultFileName: resultName,
-                    thumbnailUrl: task.thumbnail_url || null,
-                    thumbnailUrls: task.thumbnail_urls || null,
-                    creditsUsed: task.credits_used ?? null,
+                    thumbnailUrl: polled.thumbnailUrl || null,
                     modelReady: true,
                 },
             })
         }
 
-        if (mapped === 'failed' || mapped === 'canceled') {
-            const errMsg = task.task_error?.message || 'AI 모델링에 실패했습니다'
+        if (polled.status === 'failed' || polled.status === 'canceled') {
+            const errMsg = sanitizeImageTo3DUserMessage(polled.error || 'AI 모델링에 실패했습니다')
             await env.DB.prepare(
                 `UPDATE meshy_jobs
                  SET status = ?, progress = ?, error_message = ?, credits_used = ?, updated_at = datetime('now')
                  WHERE id = ?`
             )
-                .bind(mapped, progress, errMsg, task.credits_used ?? null, jobId)
+                .bind(polled.status, polled.progress, errMsg, polled.creditsUsed ?? null, jobId)
                 .run()
 
             return NextResponse.json({
                 success: true,
                 data: {
                     jobId,
-                    status: mapped,
-                    progress,
+                    status: polled.status,
+                    progress: polled.progress,
                     error: errMsg,
                     modelReady: false,
                 },
@@ -206,15 +214,16 @@ export async function GET(
         await env.DB.prepare(
             `UPDATE meshy_jobs SET status = ?, progress = ?, updated_at = datetime('now') WHERE id = ?`
         )
-            .bind(mapped, progress, jobId)
+            .bind(polled.status, polled.progress, jobId)
             .run()
 
         return NextResponse.json({
             success: true,
             data: {
                 jobId,
-                status: mapped,
-                progress,
+                status: polled.status,
+                progress: polled.progress,
+                thumbnailUrl: polled.thumbnailUrl || null,
                 modelReady: false,
             },
         })

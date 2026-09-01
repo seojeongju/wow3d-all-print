@@ -8,23 +8,35 @@
 2. API 페이지에서 API Key 발급
 3. 크레딧 충전 (Image to 3D mesh ≈ 20 credits / 회, 텍스처 OFF 기준)
 
-## 2. Cloudflare Secret
+## 2. API 키 (Cloudflare Secret)
+
+**Meshy**
 
 ```bash
 npx wrangler secret put MESHY_API_KEY
+```
+
+**Tripo3D** (선택 — 관리자에서 Meshy/Tripo 전환 가능)
+
+```bash
+npx wrangler secret put TRIPO_API_KEY
 ```
 
 로컬 `.dev.vars`:
 
 ```
 MESHY_API_KEY=msy_xxxxxxxx
+TRIPO_API_KEY=tsk_xxxxxxxx
 ```
+
+(`TRIPO3D_API_KEY` 이름도 지원합니다.)
 
 ## 3. D1 마이그레이션
 
 ```bash
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_jobs.sql
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_gallery_source_image.sql
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_provider.sql
 ```
 
 갤러리 Before/After(원본 사진) 쇼케이스 예시 데이터:
@@ -38,6 +50,11 @@ npx wrangler d1 execute wow3d-production --remote --file=./migrations/seed_photo
 1. https://www.wow3dp.co.kr/quote 접속
 2. **3D 모델이 없어요** 선택
 3. JPG/PNG 업로드 → AI 생성 → **이 모델로 견적 진행** → 견적 설정
+
+### AI 엔진 선택 (관리자)
+
+`/admin/meshy` → **AI 3D 엔진 선택**에서 Meshy 또는 Tripo3D를 선택합니다.  
+신규 생성만 변경되며, 진행 중 작업은 생성 당시 엔진으로 완료됩니다.
 
 ## 한도
 

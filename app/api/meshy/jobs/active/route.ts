@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
 import { MESHY_TODAY_KST_SQL } from '@/lib/meshy'
+import { resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
+import { sanitizeImageTo3DUserMessage } from '@/lib/image-to-3d-provider'
 
 type JobRow = {
     id: number
@@ -51,6 +53,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, data: { job: null } })
         }
 
+        const displayName = resolveUserAiPhotoFileName(job.id, job.result_file_name)
+
         return NextResponse.json({
             success: true,
             data: {
@@ -59,10 +63,10 @@ export async function GET(request: NextRequest) {
                     status: job.status,
                     progress: job.progress || 0,
                     thumbnailUrl: job.thumbnail_url,
-                    resultFileName: job.result_file_name || `meshy-${job.id}.stl`,
+                    resultFileName: displayName,
                     sourceFileName: job.source_file_name,
                     modelReady: job.status === 'succeeded' && !!job.result_file_key,
-                    error: job.error_message,
+                    error: sanitizeImageTo3DUserMessage(job.error_message),
                 },
             },
         })

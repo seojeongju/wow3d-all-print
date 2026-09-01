@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { MESHY_TODAY_KST_SQL } from '@/lib/meshy'
+import {
+    getImageTo3DProviderSetting,
+    getProviderAvailability,
+    providerDisplayName,
+} from '@/lib/image-to-3d-provider'
 
 const RECENT_SUGGESTIONS_LIMIT = 40
 const RECENT_DEFAULT_LIMIT = 20
@@ -64,7 +69,8 @@ export async function GET(req: NextRequest) {
 
         const recent = await env.DB.prepare(
             `SELECT j.id, j.user_id, j.status, j.progress, j.credits_used, j.error_message,
-                    j.source_file_name, j.created_at, u.email AS user_email, u.name AS user_name
+                    j.source_file_name, j.created_at, j.provider,
+                    u.email AS user_email, u.name AS user_name
              FROM meshy_jobs j
              LEFT JOIN users u ON u.id = j.user_id
              ORDER BY j.id DESC
@@ -75,7 +81,8 @@ export async function GET(req: NextRequest) {
 
         const recentSuggestions = await env.DB.prepare(
             `SELECT j.id, j.user_id, j.status, j.progress, j.credits_used, j.error_message,
-                    j.source_file_name, j.created_at, u.email AS user_email, u.name AS user_name
+                    j.source_file_name, j.created_at, j.provider,
+                    u.email AS user_email, u.name AS user_name
              FROM meshy_jobs j
              LEFT JOIN users u ON u.id = j.user_id
              ORDER BY j.id DESC
@@ -94,9 +101,17 @@ export async function GET(req: NextRequest) {
             bonusOutstanding = 0
         }
 
+        const availability = getProviderAvailability(env as unknown as Record<string, unknown>)
+        const activeProvider = await getImageTo3DProviderSetting(env.DB, auth.storeId)
+
         return NextResponse.json({
             success: true,
             data: {
+                provider: {
+                    active: activeProvider,
+                    activeLabel: providerDisplayName(activeProvider),
+                    availability,
+                },
                 today: {
                     total: Number(today?.total) || 0,
                     succeeded: Number(today?.succeeded) || 0,

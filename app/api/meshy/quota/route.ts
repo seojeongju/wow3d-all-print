@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
-import { MESHY_USER_DAILY_LIMIT, resolveMeshyApiKey } from '@/lib/meshy'
+import { MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
+import { getProviderAvailability } from '@/lib/image-to-3d-provider'
 import { getMeshyQuotaSnapshot } from '@/lib/meshy-quota'
 
 /**
@@ -13,11 +14,12 @@ export async function GET(request: NextRequest) {
         const auth = await requireAuthOrGuest(request)
         let configured = false
         try {
-            configured = !!resolveMeshyApiKey(
+            const availability = getProviderAvailability(
                 getCloudflareContext().env as unknown as Record<string, unknown>
             )
+            configured = availability.meshy || availability.tripo
         } catch {
-            configured = !!resolveMeshyApiKey(null)
+            configured = false
         }
 
         if (auth instanceof Response) {

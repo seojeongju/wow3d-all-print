@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, Sparkles, Gift, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, Sparkles, Gift, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { showToast } from '@/lib/toast-helper'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
@@ -20,13 +20,21 @@ type RecentJob = {
     error_message: string | null
     source_file_name: string | null
     created_at: string
+    provider: string | null
     user_email: string | null
     user_name: string | null
+}
+
+type ProviderInfo = {
+    active: 'meshy' | 'tripo'
+    activeLabel: string
+    availability: { meshy: boolean; tripo: boolean }
 }
 
 type RecentPagination = { page: number; limit: number; total: number; totalPages: number }
 
 type Stats = {
+    provider?: ProviderInfo
     today: { total: number; succeeded: number; failed: number; inProgress: number; credits: number }
     week: { total: number; succeeded: number; failed: number; credits: number }
     bonusOutstanding: number
@@ -59,6 +67,14 @@ export default function AdminMeshyPage() {
     const [note, setNote] = useState('')
     const [granting, setGranting] = useState(false)
     const [recentPage, setRecentPage] = useState(1)
+    const [providerSaving, setProviderSaving] = useState(false)
+    const [selectedProvider, setSelectedProvider] = useState<'meshy' | 'tripo'>('meshy')
+    const [tripoInfo, setTripoInfo] = useState<{
+        apiVersion?: string
+        modelVersion?: string
+        balance?: { balance: number; frozen: number } | null
+        balanceError?: string | null
+    } | null>(null)
 
     const quickSuggestions = useMemo(
         () => (stats ? recentToSuggestions(stats.recentSuggestions ?? stats.recent) : []),
@@ -68,6 +84,22 @@ export default function AdminMeshyPage() {
     const recentPagination = stats?.recentPagination
     const recentTotalPages = recentPagination?.totalPages ?? 1
     const recentTotal = recentPagination?.total ?? stats?.recent.length ?? 0
+
+    const loadProvider = useCallback(async () => {
+        try {
+            const res = await fetch('/api/admin/meshy/provider', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                cache: 'no-store',
+            })
+            const json = await res.json()
+            if (res.ok && json.success) {
+                if (json.data?.provider) setSelectedProvider(json.data.provider)
+                if (json.data?.tripo) setTripoInfo(json.data.tripo)
+            }
+        } catch {
+            /* ignore */
+        }
+    }, [token])
 
     const load = useCallback(async (page: number) => {
         setLoading(true)
@@ -86,6 +118,9 @@ export default function AdminMeshyPage() {
                 return
             }
             setStats(json.data)
+            if (json.data?.provider?.active) {
+                setSelectedProvider(json.data.provider.active)
+            }
         } catch {
             showToast.error('통계', '네트워크 오류')
         } finally {
@@ -95,7 +130,35 @@ export default function AdminMeshyPage() {
 
     useEffect(() => {
         void load(recentPage)
-    }, [load, recentPage])
+        void loadProvider()
+    }, [load, loadProvider, recentPage])
+
+    const saveProvider = async (next: 'meshy' | 'tripo') => {
+        setProviderSaving(true)
+        try {
+            const res = await fetch('/api/admin/meshy/provider', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ provider: next }),
+            })
+            const json = await res.json()
+            if (!res.ok || !json.success) {
+                showToast.error('AI 엔진', json.error || '저장 실패')
+                return
+            }
+            setSelectedProvider(next)
+            showToast.success('AI 엔진', `${json.data.providerLabel}로 변경되었습니다`)
+            await load(recentPage)
+            await loadProvider()
+        } catch {
+            showToast.error('AI 엔진', '네트워크 오류')
+        } finally {
+            setProviderSaving(false)
+        }
+    }
 
     const grant = async () => {
         const uid = selectedUser?.id
@@ -132,6 +195,7 @@ export default function AdminMeshyPage() {
                 remainingTotal: json.data.quota.remainingTotal,
             })
             await load(recentPage)
+            await loadProvider()
         } catch {
             showToast.error('보너스', '네트워크 오류')
         } finally {
@@ -159,9 +223,64 @@ export default function AdminMeshyPage() {
                     사진(이미지)→AI 3D
                 </h1>
                 <p className="text-sm text-white/50 font-bold mt-1">
-                    사용량 · 생성 모델 확인 · Meshy 크레딧 · 추가 생성 횟수 부여
+                    사용량 · 생성 모델 확인 · AI 엔진 선택 · 추가 생성 횟수 부여
                 </p>
             </div>
+
+            {stats?.provider && (
+                <Card className="bg-white/5 border-white/10">
+                    <CardContent className="p-5 space-y-4">
+                        <h2 className="text-sm font-black text-white flex items-center gap-2">
+                            <Settings2 className="w-4 h-4 text-indigo-300" />
+                            AI 3D 엔진 선택
+                        </h2>
+                        <p className="text-[12px] text-white/50 font-bold break-keep">
+                            신규 생성 요청에 사용할 API를 선택합니다. 진행 중인 작업은 생성 당시 엔진으로
+                            완료됩니다.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {(['meshy', 'tripo'] as const).map((p) => {
+                                const ready =
+                                    p === 'meshy'
+                                        ? stats.provider?.availability.meshy
+                                        : stats.provider?.availability.tripo
+                                const label = p === 'meshy' ? 'Meshy' : 'Tripo3D'
+                                const active = selectedProvider === p
+                                return (
+                                    <Button
+                                        key={p}
+                                        type="button"
+                                        variant={active ? 'default' : 'outline'}
+                                        disabled={providerSaving || !ready}
+                                        onClick={() => void saveProvider(p)}
+                                        className={cn(!ready && 'opacity-50')}
+                                    >
+                                        {providerSaving && active ? (
+                                            <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                                        ) : null}
+                                        {label}
+                                        {!ready ? ' (키 없음)' : active ? ' · 사용 중' : ''}
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                        <p className="text-[11px] text-white/40 font-bold">
+                            Meshy: MESHY_API_KEY · Tripo: TRIPO_API_KEY (v3 API)
+                        </p>
+                        {tripoInfo && (
+                            <p className="text-[11px] text-white/50 font-bold">
+                                Tripo API {tripoInfo.apiVersion || 'v3'} · 모델{' '}
+                                {tripoInfo.modelVersion || 'v3.1-20260211'}
+                                {tripoInfo.balance != null
+                                    ? ` · API 크레딧 ${tripoInfo.balance.balance.toLocaleString()} (동결 ${tripoInfo.balance.frozen.toLocaleString()})`
+                                    : tripoInfo.balanceError
+                                      ? ` · 잔액 조회 실패: ${tripoInfo.balanceError}`
+                                      : ''}
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             <AdminMeshyJobsPanel token={token} />
 
@@ -177,7 +296,7 @@ export default function AdminMeshyPage() {
                             { label: '오늘 요청', value: stats.today.total },
                             { label: '오늘 성공', value: stats.today.succeeded },
                             { label: '오늘 실패율', value: `${failRate(stats.today)}%` },
-                            { label: '오늘 Meshy credits', value: stats.today.credits },
+                            { label: '오늘 credits', value: stats.today.credits },
                             { label: '7일 요청', value: stats.week.total },
                             { label: '7일 성공', value: stats.week.succeeded },
                             { label: '7일 실패율', value: `${failRate(stats.week)}%` },
@@ -261,6 +380,7 @@ export default function AdminMeshyPage() {
                                     <tr>
                                         <th className="py-2 pr-3">ID</th>
                                         <th className="py-2 pr-3">회원</th>
+                                        <th className="py-2 pr-3">엔진</th>
                                         <th className="py-2 pr-3">상태</th>
                                         <th className="py-2 pr-3">credits</th>
                                         <th className="py-2 pr-3">시각</th>
@@ -295,6 +415,9 @@ export default function AdminMeshyPage() {
                                                     {j.user_id != null && (
                                                         <span className="text-white/35 ml-1">#{j.user_id}</span>
                                                     )}
+                                                </td>
+                                                <td className="py-2 pr-3 uppercase text-[10px] font-black text-white/50">
+                                                    {j.provider === 'tripo' ? 'Tripo' : 'Meshy'}
                                                 </td>
                                                 <td className="py-2 pr-3">
                                                     {j.status}

@@ -5,13 +5,20 @@
 import assert from 'node:assert/strict'
 import {
     MESHY_QUOTE_COPY_MAX_BYTES,
+    buildAiPhotoResultFileName,
     parseMeshyJobIdFromFileName,
+    resolveUserAiPhotoFileName,
     shouldInlineCopyMeshyObject,
 } from '../lib/meshy-r2'
 
 assert.equal(parseMeshyJobIdFromFileName('meshy-19.stl'), 19)
 assert.equal(parseMeshyJobIdFromFileName('mesh-10.stl'), 10)
+assert.equal(parseMeshyJobIdFromFileName('ai-photo-42.stl'), 42)
 assert.equal(parseMeshyJobIdFromFileName('model.stl'), null)
+
+assert.equal(buildAiPhotoResultFileName(7), 'ai-photo-7.stl')
+assert.equal(resolveUserAiPhotoFileName(19, 'meshy-19.stl'), 'ai-photo-19.stl')
+assert.equal(resolveUserAiPhotoFileName(19, 'ai-photo-19.stl'), 'ai-photo-19.stl')
 
 assert.equal(shouldInlineCopyMeshyObject(0), false)
 assert.equal(shouldInlineCopyMeshyObject(null), false)

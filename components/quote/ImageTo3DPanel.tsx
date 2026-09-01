@@ -20,6 +20,12 @@ import { useFileStore } from '@/store/useFileStore'
 import { MESHY_IMAGE_MAX_BYTES, MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
 import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
 import { preprocessMeshyImage } from '@/lib/meshy-client-preprocess'
+import { buildAiPhotoResultFileName } from '@/lib/meshy-r2'
+import {
+    clearMeshyActiveJob,
+    readMeshyActiveJobId,
+    saveMeshyActiveJob,
+} from '@/lib/meshy-active-job'
 import { PhotoTo3DGuide } from '@/components/quote/PhotoTo3DGuide'
 import { cn } from '@/lib/utils'
 
@@ -60,34 +66,6 @@ type HistoryItem = {
     modelReady?: boolean
     error?: string | null
     createdAt?: string
-}
-
-const LS_JOB_KEY = 'wow3d-meshy-active-job'
-
-function saveActiveJob(jobId: number) {
-    try {
-        localStorage.setItem(LS_JOB_KEY, String(jobId))
-    } catch {
-        /* ignore */
-    }
-}
-
-function clearActiveJob() {
-    try {
-        localStorage.removeItem(LS_JOB_KEY)
-    } catch {
-        /* ignore */
-    }
-}
-
-function readActiveJobId(): number | null {
-    try {
-        const v = localStorage.getItem(LS_JOB_KEY)
-        const n = Number(v)
-        return Number.isInteger(n) && n > 0 ? n : null
-    } catch {
-        return null
-    }
 }
 
 function mapApiStatus(s: string): JobStatus {
@@ -141,8 +119,8 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     const [removeBgConfigured, setRemoveBgConfigured] = useState(false)
     const [applying, setApplying] = useState(false)
     const [resuming, setResuming] = useState(true)
+    const [authHydrated, setAuthHydrated] = useState(false)
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-    const resumeDone = useRef(false)
     const autoApplyJobRef = useRef<number | null>(null)
 
     const authHeaders = useCallback((): HeadersInit => {
@@ -198,6 +176,12 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     }, [authHeaders, token])
 
     useEffect(() => {
+        const unsub = useAuthStore.persist.onFinishHydration(() => setAuthHydrated(true))
+        if (useAuthStore.persist.hasHydrated()) setAuthHydrated(true)
+        return () => unsub()
+    }, [])
+
+    useEffect(() => {
         refreshQuota()
         refreshHistory()
     }, [refreshQuota, refreshHistory, token])
@@ -228,7 +212,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
     const resetLocal = () => {
         clearPoll()
-        clearActiveJob()
+        clearMeshyActiveJob()
         setSelected(null)
         setError(null)
         setStatus('idle')
@@ -266,9 +250,9 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 if (!blob.size) {
                     throw new Error('다운로드된 모델 파일이 비어 있습니다. 다시 시도해 주세요.')
                 }
-                const file = new File([blob], fileName || `meshy-${id}.stl`, { type: 'model/stl' })
+                const file = new File([blob], fileName || buildAiPhotoResultFileName(id), { type: 'model/stl' })
                 setFile(file, { kind: 'meshy-photo', meshyJobId: id })
-                clearActiveJob()
+                clearMeshyActiveJob()
                 setStatus('succeeded')
                 await refreshQuota()
                 await refreshHistory()
@@ -289,7 +273,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             setStatus('ready')
             setError(null)
             try {
-                await applyModel(id, fileName || `meshy-${id}.stl`)
+                await applyModel(id, fileName || buildAiPhotoResultFileName(id))
             } catch (e) {
                 autoApplyJobRef.current = null
                 setStatus('ready')
@@ -322,7 +306,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 if (id) {
                     await tryAutoApplyWhenReady(
                         id,
-                        data.resultFileName || `meshy-${id}.stl`
+                        data.resultFileName || buildAiPhotoResultFileName(id)
                     )
                 } else {
                     setProgress(100)
@@ -332,7 +316,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             }
             if (data.status === 'failed' || data.status === 'canceled') {
                 clearPoll()
-                clearActiveJob()
+                clearMeshyActiveJob()
                 setStatus(data.status === 'canceled' ? 'canceled' : 'failed')
                 setError(
                     data.error ||
@@ -377,20 +361,24 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
 
     // 진행 중·완료 job 복구
     useEffect(() => {
-        if (resumeDone.current) return
-        resumeDone.current = true
+        if (!authHydrated) return
+
+        if (!token) {
+            setResuming(false)
+            return
+        }
 
         let cancelled = false
         ;(async () => {
-            if (!token) {
-                setResuming(false)
-                return
-            }
             try {
+                const controller = new AbortController()
+                const timeoutId = window.setTimeout(() => controller.abort(), 15000)
                 const res = await fetch('/api/meshy/jobs/active', {
                     headers: authHeaders(),
                     cache: 'no-store',
+                    signal: controller.signal,
                 })
+                window.clearTimeout(timeoutId)
                 const json = await res.json()
                 if (cancelled) return
 
@@ -407,24 +395,38 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                       }
                     | null
 
-                const lsId = readActiveJobId()
-                const active = job || (lsId ? { jobId: lsId, status: 'processing', progress: 5 } : null)
+                const lsId = readMeshyActiveJobId()
+
+                // 완료 job은 LS에 남아 있을 때만 복구(모델 삭제·적용 후에는 LS 비움 → 새 업로드)
+                const active = (() => {
+                    if (job) {
+                        const inProgress = ['uploading', 'queued', 'processing'].includes(job.status)
+                        const resumeSucceeded =
+                            job.status === 'succeeded' && !!job.modelReady && lsId === job.jobId
+                        if (inProgress || resumeSucceeded) return job
+                        return null
+                    }
+                    if (lsId) {
+                        return {
+                            jobId: lsId,
+                            status: 'processing',
+                            progress: 5,
+                            modelReady: false,
+                        }
+                    }
+                    return null
+                })()
 
                 if (active?.jobId) {
                     setJobId(active.jobId)
-                    saveActiveJob(active.jobId)
+                    saveMeshyActiveJob(active.jobId)
                     setProgress(active.progress || 5)
                     if (active.thumbnailUrl) setThumbnailUrl(active.thumbnailUrl)
                     if (active.resultFileName) setResultFileName(active.resultFileName)
-                    if (active.sourceFileName && !selected) {
-                        setSelected(new File([], active.sourceFileName || `job-${active.jobId}.jpg`))
-                    }
 
                     if (active.status === 'succeeded' && active.modelReady) {
-                        await tryAutoApplyWhenReady(
-                            active.jobId,
-                            active.resultFileName || `meshy-${active.jobId}.stl`
-                        )
+                        setProgress(100)
+                        setStatus('ready')
                     } else if (
                         active.status === 'uploading' ||
                         active.status === 'queued' ||
@@ -432,10 +434,13 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                     ) {
                         setStatus(mapApiStatus(active.status))
                         pollJob(active.jobId)
+                    } else if (lsId && !job) {
+                        setStatus('processing')
+                        pollJob(active.jobId)
                     }
                 }
             } catch {
-                /* ignore */
+                /* ignore — UI는 업로드 가능 상태로 전환 */
             } finally {
                 if (!cancelled) setResuming(false)
             }
@@ -444,8 +449,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         return () => {
             cancelled = true
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once per token
-    }, [token])
+    }, [authHydrated, token, authHeaders, pollJob])
 
     const onDrop = useCallback(
         (accepted: File[], rejections: FileRejection[]) => {
@@ -462,7 +466,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             if (!accepted[0]) return
             if (previewUrl) URL.revokeObjectURL(previewUrl)
             clearPoll()
-            clearActiveJob()
+            clearMeshyActiveJob()
             setSelected(accepted[0])
             setPreviewUrl(URL.createObjectURL(accepted[0]))
             setStatus('idle')
@@ -573,7 +577,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                         (json as { error?: string }).error ||
                             '오늘 이용 횟수(1회)를 모두 사용했습니다. 내일(한국 시간 자정 이후) 다시 시도하거나 3D 파일을 직접 업로드해 주세요.'
                     )
-                } else if (code === 'MESHY_NOT_CONFIGURED') {
+                } else if (code === 'IMAGE_TO_3D_NOT_CONFIGURED' || code === 'MESHY_NOT_CONFIGURED') {
                     setError('AI 모델링 서비스가 아직 준비되지 않았습니다. 관리자에게 문의해 주세요.')
                 } else {
                     setError(json.error || 'AI 모델링 요청에 실패했습니다')
@@ -584,7 +588,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
             }
             const id = Number(json.data.jobId)
             setJobId(id)
-            saveActiveJob(id)
+            saveMeshyActiveJob(id)
             setStatus('queued')
             setProgress(5)
             if (typeof json.data.remainingTotal === 'number' || typeof json.data.remainingToday === 'number') {
@@ -611,10 +615,11 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
     }
 
     const busy = status === 'uploading' || status === 'queued' || status === 'processing'
-    const showDrop = !selected && status !== 'ready' && !busy && !resuming
+    const hasSelectedImage = !!selected && selected.size > 0
+    const showDrop = !hasSelectedImage && status !== 'ready' && !busy && !resuming
     const remainingTotal = quota?.remainingTotal ?? quota?.remainingToday ?? 0
     const canGenerate =
-        status === 'idle' && !!selected && selected.size > 0 && (!quota || remainingTotal > 0)
+        status === 'idle' && hasSelectedImage && (!quota || remainingTotal > 0)
 
     return (
         <div className="space-y-6 sm:space-y-8">
@@ -721,9 +726,9 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 </div>
             )}
 
-            {(selected || status === 'ready' || busy) && !resuming && (
+            {(hasSelectedImage || status === 'ready' || busy) && !resuming && (
                 <div className="space-y-4">
-                    {(previewUrl || thumbnailUrl) && (
+                            {(previewUrl || thumbnailUrl) && (
                         <div className="relative rounded-[1.75rem] overflow-hidden border border-white/15 bg-black/30">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -731,6 +736,16 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                 alt="업로드 미리보기"
                                 className="w-full max-h-64 object-contain bg-black/40"
                             />
+                            {!busy && status === 'ready' && (
+                                <button
+                                    type="button"
+                                    onClick={resetLocal}
+                                    className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 text-white/70 hover:text-white border border-white/10"
+                                    aria-label="다른 사진으로 새로 시작"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
                             {!busy && status !== 'ready' && status !== 'succeeded' && (
                                 <button
                                     type="button"
@@ -946,7 +961,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                     setError(null)
                                     autoApplyJobRef.current = null
                                     try {
-                                        await applyModel(jobId, resultFileName || `meshy-${jobId}.stl`)
+                                        await applyModel(jobId, resultFileName || buildAiPhotoResultFileName(jobId))
                                     } catch (e) {
                                         setError(e instanceof Error ? e.message : '모델 적용 실패')
                                     }
@@ -966,7 +981,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                 onClick={resetLocal}
                                 className="w-full h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 text-[12px] font-black"
                             >
-                                닫기 (오늘 횟수는 이미 사용됨)
+                                다른 사진(이미지)으로 새로 시작
                             </button>
                         </div>
                     )}
@@ -1061,7 +1076,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                                             try {
                                                 await applyModel(
                                                     h.jobId,
-                                                    h.resultFileName || `meshy-${h.jobId}.stl`
+                                                    h.resultFileName || buildAiPhotoResultFileName(h.jobId)
                                                 )
                                             } catch (e) {
                                                 setError(
