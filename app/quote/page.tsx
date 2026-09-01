@@ -7,9 +7,9 @@ import QuotePanel from "@/components/quote/QuotePanel";
 import QuoteSourceChooser, { type QuoteEntryMode } from "@/components/quote/QuoteSourceChooser";
 import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw, Camera } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw, Camera, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, Suspense, useCallback, type DragEvent } from "react";
+import { useState, useEffect, Suspense, useCallback, useId, type DragEvent } from "react";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
@@ -46,18 +46,52 @@ const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: s
 ];
 
 function QuickQuoteFaqCard({ item }: { item: (typeof quickQuoteFaqs)[number] }) {
+    const [open, setOpen] = useState(false);
+    const panelId = useId();
+
     return (
-        <div className="p-4 sm:p-5 rounded-[1.25rem] bg-white/5 border border-white/10">
-            <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
-            <p className="mt-2 text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
-            {item.guideHref && item.guideLabel ? (
-                <Link
-                    href={item.guideHref}
-                    className="inline-flex items-center gap-1 mt-2.5 text-[11px] sm:text-xs font-black text-indigo-300 hover:text-indigo-200"
-                >
-                    {item.guideLabel} →
-                </Link>
-            ) : null}
+        <div className="rounded-[1.25rem] bg-white/5 border border-white/10 overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setOpen((prev) => !prev)}
+                aria-expanded={open}
+                aria-controls={panelId}
+                className="w-full flex items-start justify-between gap-3 p-4 sm:p-5 text-left hover:bg-white/[0.03] transition-colors"
+            >
+                <h3 className="text-xs sm:text-sm font-black text-white leading-relaxed break-keep">{item.q}</h3>
+                <ChevronDown
+                    className={cn(
+                        "w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-white/40 mt-0.5 transition-transform duration-200",
+                        open && "rotate-180"
+                    )}
+                    aria-hidden
+                />
+            </button>
+            <AnimatePresence initial={false}>
+                {open ? (
+                    <motion.div
+                        id={panelId}
+                        role="region"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-0">
+                            <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold break-keep">{item.a}</p>
+                            {item.guideHref && item.guideLabel ? (
+                                <Link
+                                    href={item.guideHref}
+                                    className="inline-flex items-center gap-1 mt-2.5 text-[11px] sm:text-xs font-black text-indigo-300 hover:text-indigo-200"
+                                >
+                                    {item.guideLabel} →
+                                </Link>
+                            ) : null}
+                        </div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
         </div>
     );
 }

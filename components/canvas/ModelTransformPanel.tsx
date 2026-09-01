@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
+    aiPhotoSliderMaxPercent,
     getScalePercentMax,
     SCALE_PERCENT_MAX,
     SCALE_PERCENT_MIN,
@@ -64,10 +65,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const box = effective.boundingBox
     const scaleMax = getScalePercentMax(fileSource.kind)
     const sliderMax = isAiPhoto
-        ? Math.min(
-              scaleMax,
-              Math.max(400, transform.scalePercent, meshyFitScalePercent ?? 400)
-          )
+        ? aiPhotoSliderMaxPercent(transform.scalePercent, scaleMax)
         : SCALE_PERCENT_MAX
     const scalePresets = isAiPhoto && meshyFitScalePercent
         ? [...new Set([50, 100, 150, 200, meshyFitScalePercent].filter((p) => p <= scaleMax))].sort(
