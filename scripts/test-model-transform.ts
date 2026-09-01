@@ -2,7 +2,6 @@
  * model-transform smoke: 균일 스케일·90° 축 회전 AABB 순열
  */
 import {
-    aiPhotoSliderMaxPercent,
     applyTransformToAnalysis,
     DEFAULT_BED_MAX,
     DEFAULT_MODEL_TRANSFORM,
@@ -56,16 +55,5 @@ assert(fitSla != null && fitSla < (fit812 as number), 'SLA mid smaller than FDM'
 
 const fitTiny = meshyAutoFitScalePercent(0.8, 'fdm')
 assert(fitTiny != null && fitTiny > 400 && fitTiny <= 15000, `tiny model autofit expected >400 got ${fitTiny}`)
-
-assert(aiPhotoSliderMaxPercent(100) === 500, 'slider max at 100% with headroom')
-assert(aiPhotoSliderMaxPercent(1395) === 1650, '1395% → slider max 1650 not autofit 11234')
-assert(
-    1395 / aiPhotoSliderMaxPercent(1395) > 0.8,
-    '1395% thumb should sit near right side of bar'
-)
-assert(
-    aiPhotoSliderMaxPercent(11234) >= 11234,
-    'autofit preset value still reachable on slider'
-)
 
 console.log('test-model-transform: ok')

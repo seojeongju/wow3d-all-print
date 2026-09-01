@@ -1,11 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
-    aiPhotoSliderMaxPercent,
     getScalePercentMax,
-    SCALE_PERCENT_MAX,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
     scalePercentFromTargetMm,
@@ -18,7 +16,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * 자동견적 뷰어용 모델 컨트롤
- * - 균일 스케일(%) + 치수(mm) 직접 입력
+ * - 균일 스케일(%) 직접 입력 + 치수(mm) 직접 입력
  * - 90° 축 회전 / 축 정렬(리셋)
  * - 바닥에 붙이기
  */
@@ -40,9 +38,6 @@ export default function ModelTransformPanel({ className }: { className?: string 
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
-    const [sliderRangeMax, setSliderRangeMax] = useState(SCALE_PERCENT_MAX)
-    /** 드래그 중에는 max를 고정하지 않으면 값 변경마다 막대 범위가 바뀌어 썸이 점프한다 */
-    const [dragSliderMax, setDragSliderMax] = useState<number | null>(null)
     const isAiPhoto = fileSource.kind === 'meshy-photo'
     const scaleMax = getScalePercentMax(fileSource.kind)
 
@@ -56,19 +51,6 @@ export default function ModelTransformPanel({ className }: { className?: string 
     }, [transform.scalePercent])
 
     useEffect(() => {
-        if (dragSliderMax !== null) return
-        if (!isAiPhoto) {
-            setSliderRangeMax(SCALE_PERCENT_MAX)
-            return
-        }
-        setSliderRangeMax(aiPhotoSliderMaxPercent(transform.scalePercent, scaleMax))
-    }, [dragSliderMax, isAiPhoto, transform.scalePercent, scaleMax])
-
-    useEffect(() => {
-        setDragSliderMax(null)
-    }, [file])
-
-    useEffect(() => {
         if (!effective) return
         setDimDraft({
             x: effective.boundingBox.x.toFixed(2),
@@ -77,29 +59,9 @@ export default function ModelTransformPanel({ className }: { className?: string 
         })
     }, [effective?.boundingBox.x, effective?.boundingBox.y, effective?.boundingBox.z])
 
-    const beginSliderDrag = useCallback(() => {
-        window.getSelection()?.removeAllRanges()
-        document.body.classList.add('select-none')
-        if (isAiPhoto) {
-            setDragSliderMax(aiPhotoSliderMaxPercent(transform.scalePercent, scaleMax))
-        }
-    }, [isAiPhoto, transform.scalePercent, scaleMax])
-
-    const endSliderDrag = useCallback(() => {
-        document.body.classList.remove('select-none')
-        setDragSliderMax(null)
-    }, [])
-
     if (!file || !baseAnalysis || !effective) return null
 
     const box = effective.boundingBox
-    const sliderMax = isAiPhoto ? (dragSliderMax ?? sliderRangeMax) : SCALE_PERCENT_MAX
-    const sliderValue = Math.min(transform.scalePercent, sliderMax)
-    const scalePresets = isAiPhoto && meshyFitScalePercent
-        ? [...new Set([50, 100, 150, 200, meshyFitScalePercent].filter((p) => p <= scaleMax))].sort(
-              (a, b) => a - b
-          )
-        : [50, 100, 150, 200]
 
     const commitScalePercent = (raw: string) => {
         const n = Number(raw)
@@ -172,10 +134,10 @@ export default function ModelTransformPanel({ className }: { className?: string 
                 </div>
             )}
 
-            {/* 스케일 */}
-            <div className="space-y-2">
+            {/* 스케일 % 직접 입력 */}
+            <div className="space-y-1.5">
                 <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                    <span className="text-[11px] font-bold text-white/55 shrink-0">균일 스케일</span>
+                    <span className="text-[11px] font-bold text-white/55 shrink-0">균일 스케일 (%)</span>
                     <div className="flex items-center gap-1.5 shrink-0">
                         <input
                             type="text"
@@ -198,40 +160,9 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         <span className="text-teal-300/80 text-[11px] font-bold">%</span>
                     </div>
                 </div>
-                <input
-                    type="range"
-                    min={SCALE_PERCENT_MIN}
-                    max={sliderMax}
-                    step={SCALE_PERCENT_STEP}
-                    value={sliderValue}
-                    onPointerDown={beginSliderDrag}
-                    onPointerUp={endSliderDrag}
-                    onPointerCancel={endSliderDrag}
-                    onChange={(e) => setScalePercent(Number(e.target.value), { fromUser: true })}
-                    className="w-full accent-teal-400 h-1.5 cursor-pointer touch-none select-none"
-                    aria-label="모델 균일 스케일"
-                    aria-valuemin={SCALE_PERCENT_MIN}
-                    aria-valuemax={sliderMax}
-                    aria-valuenow={sliderValue}
-                />
-                <div className="flex flex-wrap gap-1.5">
-                    {scalePresets.map((p) => (
-                        <button
-                            key={p}
-                            type="button"
-                            onClick={() => setScalePercent(p, { fromUser: true })}
-                            className={cn(
-                                'rounded-md px-2 py-0.5 text-[10px] font-black transition-colors tabular-nums',
-                                p >= 1000 && 'text-[9px] px-1.5',
-                                transform.scalePercent === p
-                                    ? 'bg-teal-500 text-slate-950'
-                                    : 'bg-white/5 text-white/45 hover:bg-white/10 hover:text-white/80'
-                            )}
-                        >
-                            {p}%
-                        </button>
-                    ))}
-                </div>
+                <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
+                    100%는 원본 크기입니다. AI 모델은 mm 입력으로 맞추는 것을 권장합니다.
+                </p>
             </div>
 
             {/* 치수 mm 직접 입력 */}

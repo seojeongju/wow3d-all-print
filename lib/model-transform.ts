@@ -57,20 +57,6 @@ export function clampScalePercent(value: number, maxPercent = SCALE_PERCENT_MAX)
     return Math.min(max, Math.max(SCALE_PERCENT_MIN, Math.round(value)))
 }
 
-/**
- * 사진→AI 3D용 range 슬라이더 상한.
- * autofit 프리셋(예: 11234%)을 max에 넣으면 현재 값(예: 1395%)이 막대 왼쪽에 몰리므로,
- * 현재 스케일 기준으로만 여유(15%)를 두고 50% 단위로 올림한다.
- */
-export function aiPhotoSliderMaxPercent(
-    scalePercent: number,
-    absoluteMax = AI_PHOTO_SCALE_PERCENT_MAX
-): number {
-    const floor = SCALE_PERCENT_MAX
-    const withHeadroom = Math.ceil((Math.max(floor, scalePercent) * 1.15) / 50) * 50
-    return Math.min(absoluteMax, Math.max(floor, withHeadroom))
-}
-
 /** 해당 방식 베드에서 가장 짧은 축 × 50% = 기본 참고 최장축(mm) */
 export function meshyAutoFitTargetMm(bed: BedMaxMm): number {
     const limiting = Math.min(bed.x, bed.y, bed.z)
