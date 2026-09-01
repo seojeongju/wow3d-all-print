@@ -457,7 +457,7 @@ export default function Scene({ compact = false }: SceneProps) {
 
                 {/* 모델 변환 컨트롤 (견적/체험 뷰어) */}
                 {!compact && fileUrl && (
-                    <div className="absolute left-3 bottom-20 sm:left-4 sm:bottom-28 z-20 pointer-events-none max-w-[calc(100%-5.5rem)]">
+                    <div className="absolute left-3 bottom-20 sm:left-4 sm:bottom-28 z-30 pointer-events-none max-w-[min(100%,340px)] sm:max-w-[min(calc(100%-5.5rem),340px)]">
                         <ModelTransformPanel />
                     </div>
                 )}

@@ -97,7 +97,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     return (
         <div
             className={cn(
-                'pointer-events-auto w-[min(100%,320px)] rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl p-3 sm:p-4 space-y-3',
+                'pointer-events-auto w-[min(100%,340px)] rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl p-3 sm:p-4 space-y-3',
                 className
             )}
         >
@@ -147,27 +147,29 @@ export default function ModelTransformPanel({ className }: { className?: string 
             )}
 
             {/* 스케일 */}
-            <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2 text-[11px] font-bold">
-                    <span className="text-white/55">균일 스케일</span>
-                    <div className="flex items-center gap-1">
+            <div className="space-y-2">
+                <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <span className="text-[11px] font-bold text-white/55 shrink-0">균일 스케일</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             min={SCALE_PERCENT_MIN}
                             max={scaleMax}
                             step={SCALE_PERCENT_STEP}
                             value={scaleDraft}
-                            onChange={(e) => setScaleDraft(e.target.value)}
+                            onChange={(e) => setScaleDraft(e.target.value.replace(/[^\d]/g, ''))}
                             onBlur={() => commitScalePercent(scaleDraft)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     e.currentTarget.blur()
                                 }
                             }}
-                            className="w-14 rounded-md border border-white/15 bg-black/40 px-1.5 py-0.5 text-right font-mono text-[11px] text-teal-300 outline-none focus:border-teal-400/50"
+                            className="min-w-[5.5rem] w-[6.5rem] rounded-lg border border-white/15 bg-black/40 px-2.5 py-1 text-right font-mono text-[12px] tabular-nums text-teal-300 outline-none focus:border-teal-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             aria-label="스케일 퍼센트 직접 입력"
                         />
-                        <span className="text-teal-300/80">%</span>
+                        <span className="text-teal-300/80 text-[11px] font-bold">%</span>
                     </div>
                 </div>
                 <input
@@ -187,7 +189,8 @@ export default function ModelTransformPanel({ className }: { className?: string 
                             type="button"
                             onClick={() => setScalePercent(p, { fromUser: true })}
                             className={cn(
-                                'rounded-md px-2 py-0.5 text-[10px] font-black transition-colors',
+                                'rounded-md px-2 py-0.5 text-[10px] font-black transition-colors tabular-nums',
+                                p >= 1000 && 'text-[9px] px-1.5',
                                 transform.scalePercent === p
                                     ? 'bg-teal-500 text-slate-950'
                                     : 'bg-white/5 text-white/45 hover:bg-white/10 hover:text-white/80'
@@ -215,18 +218,20 @@ export default function ModelTransformPanel({ className }: { className?: string 
                                 {axis}
                             </div>
                             <input
-                                type="number"
-                                min={0.1}
-                                step={0.1}
+                                type="text"
+                                inputMode="decimal"
                                 value={dimDraft[axis]}
                                 onChange={(e) =>
-                                    setDimDraft((d) => ({ ...d, [axis]: e.target.value }))
+                                    setDimDraft((d) => ({
+                                        ...d,
+                                        [axis]: e.target.value.replace(/[^\d.]/g, ''),
+                                    }))
                                 }
                                 onBlur={() => commitAxisMm(axis, dimDraft[axis])}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') e.currentTarget.blur()
                                 }}
-                                className="w-full bg-transparent text-center font-mono text-[11px] text-white/90 outline-none"
+                                className="w-full min-w-0 bg-transparent text-center font-mono text-[11px] tabular-nums text-white/90 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 aria-label={`${axis.toUpperCase()}축 치수(mm)`}
                             />
                         </label>

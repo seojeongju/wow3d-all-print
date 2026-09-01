@@ -561,13 +561,15 @@ function QuoteContent() {
                                 </div>
                             ) : null}
 
-                            {/* Viewer HUD */}
-                            <div className="absolute top-6 left-6 sm:top-10 sm:left-10 flex flex-col gap-4 z-20 pointer-events-none">
-                                <div className="px-4 py-2 sm:px-6 sm:py-3 rounded-[1rem] sm:rounded-[1.25rem] bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[11px] font-black tracking-[0.15em] sm:tracking-[0.25em] uppercase text-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 sm:gap-3">
-                                    <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-teal-400" />
-                                    3D Viewer Engine V3.5
+                            {/* Viewer HUD — 모델 로드 시 Model Adjust 패널과 겹치지 않도록 숨김 */}
+                            {!file && (
+                                <div className="absolute top-6 left-6 sm:top-10 sm:left-10 flex flex-col gap-4 z-20 pointer-events-none">
+                                    <div className="px-4 py-2 sm:px-6 sm:py-3 rounded-[1rem] sm:rounded-[1.25rem] bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[11px] font-black tracking-[0.15em] sm:tracking-[0.25em] uppercase text-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 sm:gap-3">
+                                        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-teal-400" />
+                                        3D Viewer Engine V3.5
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {!file && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-5">
