@@ -5,12 +5,12 @@ import { absoluteUrl } from '@/lib/site-url';
 export const metadata: Metadata = {
     title: 'FDM, SLA, DLP 3D 프린팅 방식 비교',
     description:
-        'FDM, SLA, DLP 3D 프린팅 출력 방식의 차이, 추천 용도, 소재, 표면 품질, 비용 특성을 비교해 어떤 공정이 적합한지 안내합니다.',
+        'WOW3D 제공 FDM·SLA·DLP와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 등 3D 프린팅 공정의 차이, 추천 용도, 소재, 표면 품질을 비교 안내합니다.',
     alternates: { canonical: absoluteUrl('/print-methods') },
     openGraph: {
         title: 'FDM, SLA, DLP 3D 프린팅 방식 비교',
         description:
-            '기능성 시제품, 정밀 모델, 외관 품질에 따라 어떤 3D 프린팅 방식이 맞는지 WOW3D가 비교 안내합니다.',
+            'FDM·SLA·DLP 제작 공정과 SLS/SLM/DMLS, PolyJet/MJP 등 업계 주요 3D 프린팅 방식을 WOW3D가 비교 안내합니다.',
         url: absoluteUrl('/print-methods'),
     },
 };
@@ -20,7 +20,7 @@ export default function PrintMethodsLayout({ children }: { children: React.React
         buildCollectionPageSchema({
             name: 'FDM, SLA, DLP 3D 프린팅 방식 비교',
             description:
-                'FDM, SLA, DLP 3D 프린팅 공정의 차이, 추천 용도, 표면 품질, 소재와 비용 특성을 비교하는 안내 페이지입니다.',
+                'WOW3D 제공 FDM·SLA·DLP와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 등 3D 프린팅 공정의 차이와 추천 용도를 비교하는 안내 페이지입니다.',
             path: '/print-methods',
         }),
         buildBreadcrumbSchema([

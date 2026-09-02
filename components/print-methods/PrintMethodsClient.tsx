@@ -22,7 +22,9 @@ import {
     PRINT_METHOD_FEATURED,
     PRINT_METHOD_JOURNEY,
     PRINT_METHOD_STATS,
-    PRINT_METHODS,
+    REFERENCE_METHOD_COMPARE_ROWS,
+    REFERENCE_PRINT_METHODS,
+    WOW3D_PRINT_METHODS,
     type PrintMethod,
 } from '@/lib/print-methods-data'
 
@@ -48,6 +50,7 @@ function FloatingIcon({
 
 function MethodQuickCard({ method, index }: { method: PrintMethod; index: number }) {
     const Icon = method.icon
+    const isWow3d = method.category === 'wow3d'
     return (
         <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -59,6 +62,11 @@ function MethodQuickCard({ method, index }: { method: PrintMethod; index: number
                 href={`#method-${method.id}`}
                 className={`group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br ${method.gradient} p-6 transition-all hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_60px_-20px_rgba(20,184,166,0.2)]`}
             >
+                {!isWow3d && (
+                    <span className="absolute right-4 top-4 rounded-full border border-white/15 bg-black/30 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white/50">
+                        정보 안내
+                    </span>
+                )}
                 <div className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border ${method.iconBg} ${method.accent}`}>
                     <Icon className="h-7 w-7 transition-transform group-hover:scale-110" />
                 </div>
@@ -77,6 +85,7 @@ function MethodQuickCard({ method, index }: { method: PrintMethod; index: number
 
 function MethodDetailCard({ method, index }: { method: PrintMethod; index: number }) {
     const Icon = method.icon
+    const isWow3d = method.category === 'wow3d'
     return (
         <motion.article
             id={`method-${method.id}`}
@@ -96,27 +105,64 @@ function MethodDetailCard({ method, index }: { method: PrintMethod; index: numbe
                             <Icon className="h-8 w-8" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-white">{method.name}</h2>
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <h2 className="text-3xl font-black text-white">{method.name}</h2>
+                                <span
+                                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                                        isWow3d
+                                            ? 'border border-teal-400/30 bg-teal-400/15 text-teal-300'
+                                            : 'border border-white/15 bg-black/30 text-white/50'
+                                    }`}
+                                >
+                                    {isWow3d ? 'WOW3D 제공' : '참고 정보'}
+                                </span>
+                            </div>
                             <p className="text-sm text-white/50">
                                 {method.fullName} · {method.nameKo}
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <Link
-                            href={method.serviceHref}
-                            className="rounded-full border border-white/15 bg-black/20 px-4 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                        >
-                            서비스 보기
-                        </Link>
-                        <Link
-                            href={method.guideHref}
-                            className="rounded-full border border-teal-400/25 bg-teal-400/10 px-4 py-2 text-xs font-bold text-teal-300 transition-colors hover:bg-teal-400/20"
-                        >
-                            비교 가이드
-                        </Link>
+                        {isWow3d && method.serviceHref && (
+                            <Link
+                                href={method.serviceHref}
+                                className="rounded-full border border-white/15 bg-black/20 px-4 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                            >
+                                서비스 보기
+                            </Link>
+                        )}
+                        {isWow3d && method.guideHref && (
+                            <Link
+                                href={method.guideHref}
+                                className="rounded-full border border-teal-400/25 bg-teal-400/10 px-4 py-2 text-xs font-bold text-teal-300 transition-colors hover:bg-teal-400/20"
+                            >
+                                비교 가이드
+                            </Link>
+                        )}
+                        {!isWow3d && (
+                            <Link
+                                href="/contact"
+                                className="rounded-full border border-teal-400/25 bg-teal-400/10 px-4 py-2 text-xs font-bold text-teal-300 transition-colors hover:bg-teal-400/20"
+                            >
+                                유사 제작 상담
+                            </Link>
+                        )}
                     </div>
                 </div>
+
+                {method.subtypes && method.subtypes.length > 0 && (
+                    <div className="mb-8 grid gap-3 sm:grid-cols-3">
+                        {method.subtypes.map((sub) => (
+                            <div
+                                key={sub.name}
+                                className="rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm"
+                            >
+                                <p className="mb-2 text-sm font-black text-white">{sub.name}</p>
+                                <p className="text-xs leading-relaxed text-white/60 break-keep">{sub.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {method.specs.map((spec) => {
@@ -234,8 +280,8 @@ export default function PrintMethodsClient() {
                                 </span>
                             </h1>
                             <p className="max-w-xl text-lg leading-relaxed text-white/65 break-keep">
-                                FDM·SLA·DLP의 원리, 소재, 장단점, 추천 용도를 한눈에 비교하고
-                                프로젝트에 맞는 공정을 빠르게 선택하세요.
+                                WOW3D가 제공하는 FDM·SLA·DLP와 함께, 업계에서 널리 쓰이는
+                                분말 소결(SLS/SLM/DMLS)·재료 분사(PolyJet/MJP) 공정도 비교해 보세요.
                             </p>
                             <div className="flex flex-wrap gap-3">
                                 <Link href="/quote">
@@ -357,11 +403,44 @@ export default function PrintMethodsClient() {
                 </div>
             </section>
 
-            {/* Quick cards */}
+            {/* WOW3D 제공 — Quick cards */}
+            <section className="relative z-10 pb-4">
+                <div className="container mx-auto max-w-6xl px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mb-5"
+                    >
+                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400">WOW3D 제공</p>
+                        <h2 className="mt-1 text-xl font-black text-white md:text-2xl">바로 견적·제작 가능한 공정</h2>
+                    </motion.div>
+                    <div className="grid gap-5 md:grid-cols-3">
+                        {WOW3D_PRINT_METHODS.map((m, i) => (
+                            <MethodQuickCard key={m.id} method={m} index={i} />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* 참고 공정 — Quick cards */}
             <section className="relative z-10 pb-8">
                 <div className="container mx-auto max-w-6xl px-6">
-                    <div className="grid gap-5 md:grid-cols-3">
-                        {PRINT_METHODS.map((m, i) => (
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mb-5"
+                    >
+                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/40">Reference</p>
+                        <h2 className="mt-1 text-xl font-black text-white md:text-2xl">다른 3D 프린팅 방식 알아보기</h2>
+                        <p className="mt-2 text-sm text-white/50 break-keep">
+                            아래 공정은 WOW3D에서 직접 제공하지 않으며, 업계 비교·이해를 위한 참고 정보입니다.
+                            유사 요구사항은 FDM·SLA·DLP 대안 또는 제작 상담으로 안내해 드립니다.
+                        </p>
+                    </motion.div>
+                    <div className="grid gap-5 md:grid-cols-2">
+                        {REFERENCE_PRINT_METHODS.map((m, i) => (
                             <MethodQuickCard key={m.id} method={m} index={i} />
                         ))}
                     </div>
@@ -378,8 +457,8 @@ export default function PrintMethodsClient() {
                         className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03]"
                     >
                         <div className="border-b border-white/10 bg-gradient-to-r from-teal-500/10 to-indigo-500/10 px-6 py-5 md:px-8">
-                            <h2 className="text-xl font-black md:text-2xl">한눈에 보는 공정 비교</h2>
-                            <p className="mt-1 text-sm text-white/50">프로젝트 목적에 따라 빠르게 비교하세요</p>
+                            <h2 className="text-xl font-black md:text-2xl">WOW3D 제공 공정 비교</h2>
+                            <p className="mt-1 text-sm text-white/50">FDM · SLA · DLP</p>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[640px] text-left text-sm">
@@ -410,7 +489,51 @@ export default function PrintMethodsClient() {
                 </div>
             </section>
 
-            {/* Method details */}
+            {/* Reference compare table */}
+            <section className="relative z-10 py-6">
+                <div className="container mx-auto max-w-6xl px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03]"
+                    >
+                        <div className="border-b border-white/10 bg-gradient-to-r from-rose-500/10 to-sky-500/10 px-6 py-5 md:px-8">
+                            <h2 className="text-xl font-black md:text-2xl">참고 공정 비교</h2>
+                            <p className="mt-1 text-sm text-white/50">분말 소결 · 재료 분사</p>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[520px] text-left text-sm">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-[11px] font-black uppercase tracking-widest text-white/40">
+                                        <th className="px-6 py-4 md:px-8">항목</th>
+                                        <th className="px-4 py-4 text-rose-300">SLS / SLM / DMLS</th>
+                                        <th className="px-4 py-4 text-sky-300">PolyJet / MJP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {REFERENCE_METHOD_COMPARE_ROWS.map((row, i) => (
+                                        <tr
+                                            key={row.label}
+                                            className={
+                                                i < REFERENCE_METHOD_COMPARE_ROWS.length - 1
+                                                    ? 'border-b border-white/5'
+                                                    : ''
+                                            }
+                                        >
+                                            <td className="px-6 py-4 font-bold text-white/70 md:px-8">{row.label}</td>
+                                            <td className="px-4 py-4 text-white/60">{row.powder}</td>
+                                            <td className="px-4 py-4 text-white/60">{row.jetting}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Method details — WOW3D */}
             <section className="relative z-10 py-12 md:py-16">
                 <div className="container mx-auto max-w-6xl space-y-10 px-6">
                     <motion.div
@@ -419,10 +542,32 @@ export default function PrintMethodsClient() {
                         viewport={{ once: true }}
                         className="text-center"
                     >
-                        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/35">Deep dive</p>
-                        <h2 className="mt-2 text-2xl font-black md:text-3xl">공정별 상세 안내</h2>
+                        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-teal-400/80">WOW3D</p>
+                        <h2 className="mt-2 text-2xl font-black md:text-3xl">제공 공정 상세 안내</h2>
                     </motion.div>
-                    {PRINT_METHODS.map((m, i) => (
+                    {WOW3D_PRINT_METHODS.map((m, i) => (
+                        <MethodDetailCard key={m.id} method={m} index={i} />
+                    ))}
+                </div>
+            </section>
+
+            {/* Method details — Reference */}
+            <section className="relative z-10 pb-12 md:pb-16">
+                <div className="container mx-auto max-w-6xl space-y-10 px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-center"
+                    >
+                        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/35">Reference</p>
+                        <h2 className="mt-2 text-2xl font-black md:text-3xl">기타 3D 프린팅 방식</h2>
+                        <p className="mx-auto mt-2 max-w-2xl text-sm text-white/50 break-keep">
+                            산업 현장에서 자주 언급되는 공정입니다. WOW3D는 FDM·SLA·DLP 중심으로 제작을 지원하며,
+                            아래 공정이 필요한 경우 대안 소재·공정 또는 파트너 연계를 상담해 드립니다.
+                        </p>
+                    </motion.div>
+                    {REFERENCE_PRINT_METHODS.map((m, i) => (
                         <MethodDetailCard key={m.id} method={m} index={i} />
                     ))}
                 </div>
@@ -443,7 +588,7 @@ export default function PrintMethodsClient() {
                             </p>
                             <h2 className="mt-2 text-2xl font-black md:text-3xl">출력 방식 선택 전 자주 묻는 질문</h2>
                             <p className="mt-2 text-white/55 break-keep">
-                                FDM, SLA, DLP 중 무엇이 맞는지 고민할 때 가장 많이 받는 질문을 정리했습니다.
+                                FDM·SLA·DLP 선택부터 분말 소결·재료 분사 공정 이해까지, 자주 받는 질문을 정리했습니다.
                             </p>
                         </div>
                         <div className="grid gap-4">
