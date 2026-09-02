@@ -1,7 +1,9 @@
 import { Suspense } from 'react'
-import { getPublicGallery } from '@/lib/gallery-public'
+import { getPublicGallery, getPublicGalleryItemById } from '@/lib/gallery-public'
 import type { GalleryItem } from '@/components/home/GallerySection'
 import GalleryPageClient from './GalleryPageClient'
+
+export const dynamic = 'force-dynamic'
 
 const ITEMS_PER_PAGE = 15
 
@@ -19,7 +21,6 @@ export default async function GalleryPage({ searchParams }: Props) {
     // id가 1페이지에 없으면 단건 조회로 상세 시드 (홈 슬라이더 → 상세 진입)
     let seedItems = result.items as GalleryItem[]
     if (initialItemId && !seedItems.some((i) => String(i.id) === String(initialItemId))) {
-        const { getPublicGalleryItemById } = await import('@/lib/gallery-public')
         const one = await getPublicGalleryItemById(initialItemId)
         if (one) seedItems = [one as GalleryItem, ...seedItems]
     }

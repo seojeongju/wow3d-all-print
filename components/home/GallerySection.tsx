@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, useMemo, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
+import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────
 // 타입 정의
@@ -93,56 +93,48 @@ function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) 
 export function GalleryCard({
     item,
     onClick,
-    className
+    className,
+    href,
 }: {
     item: GalleryItem;
     onClick?: (item: GalleryItem) => void;
     className?: string;
+    /** 지정 시 카드 전체가 이 경로로 이동 (클릭 안정성) */
+    href?: string;
 }) {
     const tags: string[] = (() => {
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
 
-    return (
-        <div
-            role="button"
-            tabIndex={0}
-            className={className || "group relative flex-shrink-0 w-72 md:w-80 cursor-pointer"}
-            onClick={(e) => {
-                e.stopPropagation();
-                if (onClick) onClick(item);
-            }}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (onClick) onClick(item);
-                }
-            }}
-        >
-            {/* 카드 글로우 */}
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/30 via-transparent to-violet-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+    const handleActivate = (e: ReactMouseEvent | ReactKeyboardEvent) => {
+        e.stopPropagation();
+        if (href) return; // Link가 네비게이션 담당
+        if (onClick) onClick(item);
+    };
+
+    const inner = (
+        <>
+            {/* 카드 글로우 — 클릭 가로채기 방지 */}
+            <div className="pointer-events-none absolute -inset-0.5 bg-gradient-to-br from-primary/30 via-transparent to-violet-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
 
             <div className="relative bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-full flex flex-col">
                 {/* 이미지 영역 */}
                 <div className="relative aspect-square overflow-hidden bg-slate-800">
                     <GalleryCardImage imageUrl={item.image_url} alt={item.title} />
 
-                    {/* 출력 방식 뱃지 */}
                     {item.source_image_url && (
-                        <div className="absolute top-3 left-3 px-2 py-1 rounded-lg bg-indigo-500/90 text-[9px] font-black uppercase tracking-wider text-white">
+                        <div className="pointer-events-none absolute top-3 left-3 px-2 py-1 rounded-lg bg-indigo-500/90 text-[9px] font-black uppercase tracking-wider text-white">
                             Before/After
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
                             <ZoomIn className="w-5 h-5 text-white" />
                         </div>
                     </div>
 
-                    {/* 출력 방식 배지 */}
                     {item.print_method && (
-                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-sm border border-white/20 rounded-full text-white text-[10px] font-semibold">
+                        <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-sm border border-white/20 rounded-full text-white text-[10px] font-semibold">
                             <MethodIcon method={item.print_method} />
                             {item.print_method.toUpperCase()}
                         </div>
@@ -159,14 +151,12 @@ export function GalleryCard({
                     )}
 
                     <div className="mt-auto pt-2 flex items-center justify-between">
-                        {/* 소재 */}
                         {item.material && (
                             <span className="text-[10px] text-primary/80 bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full font-medium">
                                 {item.material}
                             </span>
                         )}
 
-                        {/* 태그 */}
                         {tags.length > 0 && (
                             <div className="flex gap-1 flex-wrap justify-end">
                                 {tags.slice(0, 2).map((tag, i) => (
@@ -179,6 +169,41 @@ export function GalleryCard({
                     </div>
                 </div>
             </div>
+        </>
+    );
+
+    const shellClass = cn(
+        'group relative flex-shrink-0 cursor-pointer',
+        className || 'w-72 md:w-80',
+    );
+
+    if (href) {
+        return (
+            <Link
+                href={href}
+                className={shellClass}
+                onClick={(e) => e.stopPropagation()}
+                prefetch
+            >
+                {inner}
+            </Link>
+        );
+    }
+
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            className={shellClass}
+            onClick={handleActivate}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleActivate(e);
+                }
+            }}
+        >
+            {inner}
         </div>
     );
 }
@@ -397,7 +422,6 @@ function SkeletonCard({ className }: { className?: string }) {
 // 메인 갤러리 섹션: 자동 좌측 슬라이드 + 좌·우 버튼 수동 탐색
 // ─────────────────────────────────────────────────────
 export default function GallerySection() {
-    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const pausedRef = useRef(false);
     const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -435,14 +459,6 @@ export default function GallerySection() {
             manualPauseTimerRef.current = null;
         }, ms);
     }, []);
-
-    const goToGalleryDetail = useCallback(
-        (item: GalleryItem) => {
-            pauseAutoScroll(800);
-            router.push(`/gallery?id=${encodeURIComponent(String(item.id))}`);
-        },
-        [pauseAutoScroll, router],
-    );
 
     const scrollGallery = useCallback(
         (direction: 'left' | 'right') => {
@@ -665,12 +681,12 @@ export default function GallerySection() {
                                         <div
                                             key={`${item.id}-${i}`}
                                             data-gallery-card
-                                            className="w-64 sm:w-80 flex-shrink-0"
+                                            className="relative z-10 w-64 sm:w-80 flex-shrink-0"
                                         >
                                             <GalleryCard
                                                 item={item}
-                                                onClick={(clicked) => goToGalleryDetail(clicked)}
-                                                className="w-full cursor-pointer active:scale-[0.98] transition-transform"
+                                                href={`/gallery?id=${encodeURIComponent(String(item.id))}`}
+                                                className="block w-full active:scale-[0.98] transition-transform"
                                             />
                                         </div>
                                     ))}

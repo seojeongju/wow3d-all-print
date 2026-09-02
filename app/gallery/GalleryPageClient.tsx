@@ -260,7 +260,7 @@ export default function GalleryPageClient({
                                         onClick={(clicked) => {
                                             openItem(clicked);
                                         }}
-                                        className="group relative w-full cursor-pointer"
+                                        className="w-full"
                                     />
                                 </motion.div>
                             ))}
