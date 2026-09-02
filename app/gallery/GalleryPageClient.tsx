@@ -29,7 +29,10 @@ export default function GalleryPageClient({
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(initialTotalPages);
-    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(() => {
+        if (!initialItemId) return null;
+        return initialItems.find((i) => String(i.id) === String(initialItemId)) ?? null;
+    });
     const [galleryTag, setGalleryTag] = useState<'all' | 'photo-to-3d'>(initialTag);
 
     const fetchGallery = async (p: number, tag: 'all' | 'photo-to-3d' = galleryTag) => {
@@ -90,6 +93,7 @@ export default function GalleryPageClient({
         router.replace(qs ? `/gallery?${qs}` : '/gallery', { scroll: false });
     }, [router, searchParams]);
 
+    // 홈 갤러리 등에서 /gallery?id= 로 진입 시 상세 모달 자동 오픈
     useEffect(() => {
         const idFromUrl = searchParams.get('id') || initialItemId;
         if (!idFromUrl) {
@@ -100,6 +104,11 @@ export default function GalleryPageClient({
         const inList = items.find((i) => String(i.id) === String(idFromUrl));
         if (inList) {
             setSelectedItem(inList);
+            return;
+        }
+
+        // 이미 같은 id 모달이 열려 있으면 재요청 생략
+        if (selectedItem && String(selectedItem.id) === String(idFromUrl)) {
             return;
         }
 
@@ -119,6 +128,8 @@ export default function GalleryPageClient({
         return () => {
             cancelled = true;
         };
+        // selectedItem는 의도적으로 deps에서 제외 (재오픈 루프 방지)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams, initialItemId, items]);
 
     // 하단 페이지네이션 렌더링 도우미 (최대 5개 노출)
@@ -289,11 +300,11 @@ export default function GalleryPageClient({
                         item={selectedItem} 
                         onClose={closeItem}
                         onPrev={() => {
-                            const idx = items.findIndex(i => i.id === selectedItem.id);
+                            const idx = items.findIndex((i) => String(i.id) === String(selectedItem.id));
                             if (idx > 0) openItem(items[idx - 1]);
                         }}
                         onNext={() => {
-                            const idx = items.findIndex(i => i.id === selectedItem.id);
+                            const idx = items.findIndex((i) => String(i.id) === String(selectedItem.id));
                             if (idx >= 0 && idx < items.length - 1) openItem(items[idx + 1]);
                         }}
                     />

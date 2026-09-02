@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -396,14 +397,12 @@ function SkeletonCard({ className }: { className?: string }) {
 // 메인 갤러리 섹션: 자동 좌측 슬라이드 + 좌·우 버튼 수동 탐색
 // ─────────────────────────────────────────────────────
 export default function GallerySection() {
+    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const pausedRef = useRef(false);
     const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const selectedItemRef = useRef<GalleryItem | null>(null);
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
-    selectedItemRef.current = selectedItem;
 
     const displayItems = useMemo(
         () => (items.length > 0 ? [...items, ...items] : []),
@@ -432,43 +431,18 @@ export default function GallerySection() {
         pausedRef.current = true;
         if (manualPauseTimerRef.current) clearTimeout(manualPauseTimerRef.current);
         manualPauseTimerRef.current = setTimeout(() => {
-            // 상세 모달이 열려 있으면 자동 슬라이드를 재개하지 않음
-            if (!selectedItemRef.current) {
-                pausedRef.current = false;
-            }
+            pausedRef.current = false;
             manualPauseTimerRef.current = null;
         }, ms);
     }, []);
 
-    const openDetail = useCallback((item: GalleryItem) => {
-        pausedRef.current = true;
-        if (manualPauseTimerRef.current) {
-            clearTimeout(manualPauseTimerRef.current);
-            manualPauseTimerRef.current = null;
-        }
-        setSelectedItem(item);
-    }, []);
-
-    const closeDetail = useCallback(() => {
-        setSelectedItem(null);
-        pausedRef.current = false;
-    }, []);
-
-    const selectedIndex = selectedItem
-        ? items.findIndex((i) => String(i.id) === String(selectedItem.id))
-        : -1;
-
-    const goPrevDetail = useCallback(() => {
-        if (items.length === 0 || selectedIndex < 0) return;
-        const next = items[(selectedIndex - 1 + items.length) % items.length];
-        setSelectedItem(next);
-    }, [items, selectedIndex]);
-
-    const goNextDetail = useCallback(() => {
-        if (items.length === 0 || selectedIndex < 0) return;
-        const next = items[(selectedIndex + 1) % items.length];
-        setSelectedItem(next);
-    }, [items, selectedIndex]);
+    const goToGalleryDetail = useCallback(
+        (item: GalleryItem) => {
+            pauseAutoScroll(800);
+            router.push(`/gallery?id=${encodeURIComponent(String(item.id))}`);
+        },
+        [pauseAutoScroll, router],
+    );
 
     const scrollGallery = useCallback(
         (direction: 'left' | 'right') => {
@@ -484,15 +458,6 @@ export default function GallerySection() {
         },
         [getScrollStep, normalizeInfiniteScroll, pauseAutoScroll]
     );
-
-    useEffect(() => {
-        if (!selectedItem) return;
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prev;
-        };
-    }, [selectedItem]);
 
     useEffect(() => {
         async function fetchGallery() {
@@ -558,20 +523,6 @@ export default function GallerySection() {
 
     return (
         <>
-            <AnimatePresence>
-                {selectedItem && (
-                    <DetailViewModal
-                        key={`home-gallery-modal-${selectedItem.id}`}
-                        item={selectedItem}
-                        onClose={closeDetail}
-                        onPrev={items.length > 1 ? goPrevDetail : undefined}
-                        onNext={items.length > 1 ? goNextDetail : undefined}
-                        currentIndex={selectedIndex >= 0 ? selectedIndex : undefined}
-                        totalCount={items.length}
-                    />
-                )}
-            </AnimatePresence>
-
             <section className="py-16 sm:py-20 relative overflow-hidden">
                 {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
@@ -703,9 +654,7 @@ export default function GallerySection() {
                                         pausedRef.current = true;
                                     }}
                                     onMouseLeave={() => {
-                                        if (!manualPauseTimerRef.current && !selectedItemRef.current) {
-                                            pausedRef.current = false;
-                                        }
+                                        if (!manualPauseTimerRef.current) pausedRef.current = false;
                                     }}
                                     onTouchStart={() => {
                                         pausedRef.current = true;
@@ -720,7 +669,7 @@ export default function GallerySection() {
                                         >
                                             <GalleryCard
                                                 item={item}
-                                                onClick={(clicked) => openDetail(clicked)}
+                                                onClick={(clicked) => goToGalleryDetail(clicked)}
                                                 className="w-full cursor-pointer active:scale-[0.98] transition-transform"
                                             />
                                         </div>
