@@ -23,6 +23,11 @@ import {
 } from '@/lib/shipping-settings'
 import { MESHY_AI_DISCLAIMER_CHECKOUT } from '@/lib/meshy-disclaimer'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
+import {
+    CHECKOUT_CONVERSION_EVENTS,
+    CONVERSION_EVENT_CATEGORY,
+} from '@/lib/conversion-events'
+import { trackConversionEventOnce } from '@/lib/track-conversion-event'
 
 declare global {
     interface Window {
@@ -82,6 +87,16 @@ function CheckoutContent() {
     useEffect(() => {
         if (items.length === 0 || orderItems.length === 0) router.push('/cart')
     }, [items.length, orderItems.length, router])
+
+    useEffect(() => {
+        if (orderItems.length === 0) return
+        trackConversionEventOnce('wow3d_checkout_start', {
+            eventName: CHECKOUT_CONVERSION_EVENTS.START,
+            category: CONVERSION_EVENT_CATEGORY.CHECKOUT,
+            userId: user?.id ?? null,
+            metadata: { itemCount: orderItems.length },
+        })
+    }, [orderItems.length, user?.id])
 
     useEffect(() => {
         const fetchSettings = async () => {

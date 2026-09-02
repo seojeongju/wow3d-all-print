@@ -3,10 +3,16 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { requireAdminAuth } from '@/lib/api-utils';
 import {
+    ALL_FUNNEL_EVENT_LABELS,
+    buildConversionFunnelTrend,
     buildHeroFunnelSummary,
+    buildQuoteFunnelSummary,
     HERO_EVENT_LABELS,
-    type HeroFunnelEventRow,
+    QUOTE_EVENT_LABELS,
+    type ConversionFunnelTrendPoint,
+    type FunnelEventRow,
     type HeroFunnelSummary,
+    type QuoteFunnelSummary as QuoteConversionSummary,
 } from '@/lib/conversion-events';
 
 const STORE_ORDERS = '(o.store_id = ? OR o.store_id IS NULL)';
@@ -469,7 +475,7 @@ export async function GET(req: NextRequest) {
             quoteTrafficSources = [];
         }
 
-        let heroFunnelEvents: HeroFunnelEventRow[] = [];
+        let heroFunnelEvents: FunnelEventRow[] = [];
         let heroFunnelSummary: HeroFunnelSummary = {
             views: 0,
             fileIntent: 0,
@@ -478,6 +484,19 @@ export async function GET(req: NextRequest) {
             fileIntentRate: 0,
             photoIntentRate: 0,
         };
+        let quoteConversionEvents: FunnelEventRow[] = [];
+        let quoteConversionSummary: QuoteConversionSummary = {
+            pageViews: 0,
+            fileEntries: 0,
+            photoEntries: 0,
+            fileUploaded: 0,
+            analysisComplete: 0,
+            estimateView: 0,
+            addToCart: 0,
+            estimateRate: 0,
+            cartRate: 0,
+        };
+        let conversionFunnelTrend: ConversionFunnelTrendPoint[] = [];
 
         try {
             const { results: heroRows } = await env.DB.prepare(
@@ -503,8 +522,64 @@ export async function GET(req: NextRequest) {
                 sessions: Number(r.session_cnt ?? 0),
             }));
             heroFunnelSummary = buildHeroFunnelSummary(heroFunnelEvents);
+
+            const { results: quoteConvRows } = await env.DB.prepare(
+                `
+                SELECT
+                    event_name,
+                    COUNT(*) AS cnt,
+                    COUNT(DISTINCT session_id) AS session_cnt
+                FROM conversion_events
+                WHERE event_category IN ('quote', 'checkout')
+                  AND created_at >= date('now', '-13 days')
+                GROUP BY event_name
+                ORDER BY cnt DESC
+            `,
+            ).all() as {
+                results?: Array<{ event_name: string; cnt: number; session_cnt: number }>;
+            };
+
+            quoteConversionEvents = (quoteConvRows || []).map((r) => ({
+                eventName: r.event_name,
+                label: ALL_FUNNEL_EVENT_LABELS[r.event_name] ?? QUOTE_EVENT_LABELS[r.event_name] ?? r.event_name,
+                count: Number(r.cnt ?? 0),
+                sessions: Number(r.session_cnt ?? 0),
+            }));
+            quoteConversionSummary = buildQuoteFunnelSummary(
+                quoteConversionEvents.filter((r) => r.eventName.startsWith('quote_')),
+            );
+
+            const { results: dailyRows } = await env.DB.prepare(
+                `
+                SELECT date(created_at) AS d, event_name, COUNT(*) AS cnt
+                FROM conversion_events
+                WHERE created_at >= date('now', '-13 days')
+                  AND event_name IN (
+                    'hero_view',
+                    'quote_page_view',
+                    'quote_estimate_view',
+                    'quote_add_to_cart',
+                    'order_complete'
+                  )
+                GROUP BY d, event_name
+                ORDER BY d ASC
+            `,
+            ).all() as {
+                results?: Array<{ d: string; event_name: string; cnt: number }>;
+            };
+
+            conversionFunnelTrend = buildConversionFunnelTrend(
+                (dailyRows || []).map((r) => ({
+                    date: r.d,
+                    eventName: r.event_name,
+                    count: Number(r.cnt ?? 0),
+                })),
+                14,
+            );
         } catch {
             heroFunnelEvents = [];
+            quoteConversionEvents = [];
+            conversionFunnelTrend = [];
         }
 
         return NextResponse.json({
@@ -530,6 +605,9 @@ export async function GET(req: NextRequest) {
                 quoteTrafficSources,
                 heroFunnelEvents,
                 heroFunnelSummary,
+                quoteConversionEvents,
+                quoteConversionSummary,
+                conversionFunnelTrend,
             },
         });
     } catch (e) {

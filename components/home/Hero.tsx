@@ -30,6 +30,7 @@ import { MESHY_IMAGE_MAX_BYTES } from '@/lib/meshy';
 import { cn } from '@/lib/utils';
 import { HERO_CONVERSION_EVENTS } from '@/lib/conversion-events';
 import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conversion-event';
+import { usePhotoHandoffStore } from '@/store/usePhotoHandoffStore';
 import { useAuthStore } from '@/store/useAuthStore';
 
 /** 파일 없을 때 Drop Zone에 표시하는 샘플 견적 (FDM·인필 20% 기준 안내용) */
@@ -165,10 +166,11 @@ export default function Hero() {
     );
 
     const handlePhotoUpload = useCallback(
-        (_photo: File) => {
+        (photo: File) => {
             clearSampleIfPresent();
             trackHero(HERO_CONVERSION_EVENTS.DROP_PHOTO);
-            router.push('/quote?entry=photo');
+            usePhotoHandoffStore.getState().setPendingPhoto(photo);
+            router.push('/quote?entry=photo&handoff=1');
         },
         [router, trackHero],
     );

@@ -9,6 +9,11 @@ import { CheckCircle2, Package, Clock, Loader2, PartyPopper, ChevronRight, Arrow
 import Link from 'next/link'
 import type { Order } from '@/lib/types'
 import { motion } from 'framer-motion'
+import {
+    CHECKOUT_CONVERSION_EVENTS,
+    CONVERSION_EVENT_CATEGORY,
+} from '@/lib/conversion-events'
+import { trackConversionEventOnce } from '@/lib/track-conversion-event'
 
 function OrderCompleteContent() {
     const searchParams = useSearchParams()
@@ -20,6 +25,20 @@ function OrderCompleteContent() {
 
     const [order, setOrder] = useState<Order | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        if (orderId || orderNumber) {
+            trackConversionEventOnce('wow3d_order_complete', {
+                eventName: CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE,
+                category: CONVERSION_EVENT_CATEGORY.CHECKOUT,
+                metadata: {
+                    orderId: orderId ?? '',
+                    orderNumber: orderNumber ?? '',
+                    guest: isGuest,
+                },
+            })
+        }
+    }, [orderId, orderNumber, isGuest])
 
     useEffect(() => {
         if (orderId && token && !isGuest) {

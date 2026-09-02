@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
 import { buildFileSourceFromFileName, buildQuoteModelAuthHeaders, fetchQuoteModelFile, resolveQuoteReloadTransform } from "@/lib/quote-reload";
 import { useAuthStore } from "@/store/useAuthStore";
+import { usePhotoHandoffStore } from "@/store/usePhotoHandoffStore";
+import { useQuoteFunnelTracking } from "@/hooks/useQuoteFunnelTracking";
 import { showToast } from "@/lib/toast-helper";
 
 const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: string }[] = [
@@ -124,12 +126,30 @@ function QuoteContent() {
     const [loadedQuote, setLoadedQuote] = useState<Quote | null>(null); // DB quote data
     const [reloadQuoteId, setReloadQuoteId] = useState<number | null>(null);
     const [isViewerDragging, setIsViewerDragging] = useState(false);
+    const [handoffPhoto, setHandoffPhoto] = useState<File | null>(null);
+    const [showQuoteFaqs, setShowQuoteFaqs] = useState(false);
+    const consumePendingPhoto = usePhotoHandoffStore((s) => s.consumePendingPhoto);
     const guideLabel = guideTopic || GUIDE_SOURCE_LABELS[guideSource] || '';
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
 
     useEffect(() => {
         if (entryParam === 'file' || entryParam === 'photo') setEntryMode(entryParam);
     }, [entryParam]);
+
+    useEffect(() => {
+        if (entryParam !== 'photo') return;
+        const photo = consumePendingPhoto();
+        if (photo) setHandoffPhoto(photo);
+    }, [entryParam, consumePendingPhoto]);
+
+    useQuoteFunnelTracking({
+        entryMode,
+        entryParam,
+        file,
+        hasAnalysis: Boolean(analysis),
+        showQuotePanel,
+        userId: user?.id ?? null,
+    });
 
     // 저장된 견적 로드 시에는 선택 화면 건너뛰기
     useEffect(() => {
@@ -424,27 +444,35 @@ function QuoteContent() {
                                             exit={{ opacity: 0, x: -30 }}
                                         >
                                             <QuoteSourceChooser onSelect={setEntryMode} />
-                                            <div className="space-y-3 pt-8">
-                                                <div className="px-1">
-                                                    <h2 className="text-sm sm:text-base font-black text-white">자동견적 전에 많이 묻는 질문</h2>
-                                                </div>
-                                                {quickQuoteFaqs.map((item) => (
-                                                    <QuickQuoteFaqCard key={item.q} item={item} />
-                                                ))}
-                                                <Link
-                                                    href="/guides/photo-to-3d-printing-quote"
-                                                    className="flex items-start gap-4 p-5 rounded-[1.5rem] bg-indigo-500/10 border border-indigo-400/25 hover:border-indigo-400/40 transition-all"
+                                            <div className="pt-6">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowQuoteFaqs((v) => !v)}
+                                                    className="text-xs font-black text-white/45 hover:text-teal-300 transition-colors"
                                                 >
-                                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
-                                                        <Camera className="w-5 h-5" />
+                                                    {showQuoteFaqs ? 'FAQ 접기' : '자주 묻는 질문 보기'}
+                                                </button>
+                                                {showQuoteFaqs ? (
+                                                    <div className="mt-4 space-y-3">
+                                                        {quickQuoteFaqs.map((item) => (
+                                                            <QuickQuoteFaqCard key={item.q} item={item} />
+                                                        ))}
+                                                        <Link
+                                                            href="/guides/photo-to-3d-printing-quote"
+                                                            className="flex items-start gap-4 rounded-[1.5rem] border border-indigo-400/25 bg-indigo-500/10 p-5 hover:border-indigo-400/40 transition-all"
+                                                        >
+                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-400/30 bg-indigo-500/20 text-indigo-300">
+                                                                <Camera className="h-5 w-5" />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <h3 className="text-sm font-black text-white">사진(이미지)→3D 견적 가이드</h3>
+                                                                <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/50 break-keep">
+                                                                    촬영 방법·한도·Maker와의 차이
+                                                                </p>
+                                                            </div>
+                                                        </Link>
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진(이미지)으로 견적</h3>
-                                                        <p className="text-[11px] sm:text-xs text-white/50 font-bold leading-relaxed break-keep mt-1">
-                                                            촬영 방법·한도·Maker와의 차이를 가이드에서 확인하세요.
-                                                        </p>
-                                                    </div>
-                                                </Link>
+                                                ) : null}
                                             </div>
                                         </motion.div>
                                     ) : entryMode === 'photo' ? (
@@ -455,6 +483,7 @@ function QuoteContent() {
                                             exit={{ opacity: 0, x: -30 }}
                                         >
                                             <ImageTo3DPanel
+                                                initialPhoto={handoffPhoto}
                                                 onBack={() => setEntryMode(null)}
                                                 onModelReady={() => {
                                                     setEntryMode(null);
@@ -468,9 +497,9 @@ function QuoteContent() {
                                             initial={{ opacity: 0, x: -30 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -30 }}
-                                            className="space-y-8 sm:space-y-10"
+                                            className="space-y-6 sm:space-y-8"
                                         >
-                                            <div className="space-y-3 sm:space-y-4">
+                                            <div className="space-y-3">
                                                 <button
                                                     type="button"
                                                     onClick={() => setEntryMode(null)}
@@ -480,79 +509,36 @@ function QuoteContent() {
                                                     시작 방식 다시 선택
                                                 </button>
                                                 {guideLabel ? (
-                                                    <div className="rounded-[1.5rem] border border-teal-400/20 bg-teal-400/10 px-5 py-4">
-                                                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300 mb-2">Guide Context</p>
-                                                        <p className="text-sm sm:text-[15px] font-bold text-white/85 break-keep">
-                                                            현재 <span className="text-teal-300">{guideLabel}</span> 가이드에서 들어오셨습니다.
-                                                            업로드 후 해당 용도에 맞는 소재와 옵션으로 바로 견적을 확인해 보세요.
+                                                    <div className="rounded-2xl border border-teal-400/20 bg-teal-400/10 px-4 py-3">
+                                                        <p className="text-xs font-bold text-white/80 break-keep">
+                                                            <span className="text-teal-300">{guideLabel}</span> 가이드에서 들어오셨습니다.
                                                         </p>
                                                     </div>
                                                 ) : null}
-                                                <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-[1.15]">
-                                                    3D 모델 <br />
-                                                    <span className="text-teal-400">업로드</span>
+                                                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                                                    3D 파일 <span className="text-teal-400">업로드</span>
                                                 </h1>
-                                                <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                                                    STL·OBJ·3MF·PLY는 즉시 견적, STEP·STP는 자동 변환 후 견적을 제공합니다. <br />
-                                                    지능형 분석 엔진이 실시간으로 비용을 산출합니다.
+                                                <p className="text-sm text-white/60 font-medium break-keep">
+                                                    STL·OBJ·3MF·PLY 즉시 견적 · STEP·STP 자동 변환
                                                 </p>
                                             </div>
-                                            <div className="p-1 rounded-[2.5rem] sm:rounded-[3rem] bg-white/10 border border-white/20 overflow-hidden shadow-2xl relative group">
-                                                <div className="absolute inset-0 bg-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                            <div className="rounded-[2rem] border border-white/20 bg-white/10 p-1 shadow-2xl">
                                                 <FileUpload variant="dark" />
                                             </div>
-
-                                            <div className="pt-2 grid gap-3 sm:gap-4">
-                                                <div className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/10 border border-white/20 group hover:border-teal-400/40 transition-all hover:bg-teal-400/5">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-teal-400/20 border border-teal-400/30 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform shrink-0">
-                                                        <CheckCircle2 className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">정밀 견적 분석</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">부피, 표면적, 예상 소요 시간을 99% 정확도로 분석합니다.</p>
-                                                    </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowQuoteFaqs((v) => !v)}
+                                                className="text-xs font-black text-white/45 hover:text-teal-300"
+                                            >
+                                                {showQuoteFaqs ? 'FAQ 접기' : '업로드 전 FAQ 보기'}
+                                            </button>
+                                            {showQuoteFaqs ? (
+                                                <div className="space-y-3">
+                                                    {quickQuoteFaqs.slice(0, 3).map((item) => (
+                                                        <QuickQuoteFaqCard key={item.q} item={item} />
+                                                    ))}
                                                 </div>
-                                                <div className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/10 border border-white/20 group hover:border-indigo-500/40 transition-all hover:bg-indigo-500/5">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform shrink-0">
-                                                        <Info className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">강력한 파일 보호</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">업로드된 자산은 AES-256 암호화되어 안전하게 처리됩니다.</p>
-                                                    </div>
-                                                </div>
-                                                <Link href="/guides/3d-printing-file-preparation" className="flex items-start gap-4 sm:gap-5 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white/8 border border-white/15 hover:border-white/30 transition-all hover:bg-white/10">
-                                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white shrink-0">
-                                                        <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
-                                                    </div>
-                                                    <div className="space-y-1 sm:space-y-1.5 pt-0.5 sm:pt-1">
-                                                        <h3 className="text-sm sm:text-[15px] font-black text-white">파일 준비 가이드 보기</h3>
-                                                        <p className="text-[11px] sm:text-[13px] text-white/50 leading-relaxed font-bold">STL, OBJ, 3MF 업로드 전 두께, 단위, 메쉬 오류를 체크하는 방법을 확인하세요.</p>
-                                                    </div>
-                                                </Link>
-                                            </div>
-                                            <div className="space-y-3 pt-2">
-                                                <div className="px-1">
-                                                    <h2 className="text-sm sm:text-base font-black text-white">자동견적 전에 많이 묻는 질문</h2>
-                                                </div>
-                                                {quickQuoteFaqs.map((item) => (
-                                                    <QuickQuoteFaqCard key={item.q} item={item} />
-                                                ))}
-                                                <Link
-                                                    href="/guides/photo-to-3d-printing-quote"
-                                                    className="flex items-start gap-4 p-5 rounded-[1.5rem] bg-indigo-500/10 border border-indigo-400/25 hover:border-indigo-400/40 transition-all"
-                                                >
-                                                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
-                                                        <Camera className="w-5 h-5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <h3 className="text-sm font-black text-white">3D 파일 없이 사진(이미지)으로 견적</h3>
-                                                        <p className="text-[11px] sm:text-xs text-white/50 font-bold leading-relaxed break-keep mt-1">
-                                                            촬영 방법·한도·Maker와의 차이를 가이드에서 확인하세요.
-                                                        </p>
-                                                    </div>
-                                                </Link>
-                                            </div>
+                                            ) : null}
                                         </motion.div>
                                     )}
                             </AnimatePresence>

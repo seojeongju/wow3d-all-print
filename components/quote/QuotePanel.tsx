@@ -28,6 +28,11 @@ import { calculateResinQuote } from '@/lib/resin-quote'
 import { formatEstimatedPrintTime } from '@/lib/print-time-estimate'
 import { sanitizeGeometryAnalysis } from '@/lib/geometry'
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
+import {
+    CONVERSION_EVENT_CATEGORY,
+    QUOTE_CONVERSION_EVENTS,
+} from '@/lib/conversion-events'
+import { trackConversionEvent } from '@/lib/track-conversion-event'
 import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -813,6 +818,16 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     : '제품이 장바구니에 담겼습니다.'
             );
             addToCart(quoteForCart as Quote, 1, alreadyInCart ? false : true)
+            trackConversionEvent({
+                eventName: QUOTE_CONVERSION_EVENTS.ADD_TO_CART,
+                category: CONVERSION_EVENT_CATEGORY.QUOTE,
+                userId: u?.id ?? null,
+                metadata: {
+                    printMethod,
+                    quoteId: savedQuote.id,
+                    alreadyInCart,
+                },
+            })
         } catch (error) {
             showToast.error('추가 실패', error);
         }

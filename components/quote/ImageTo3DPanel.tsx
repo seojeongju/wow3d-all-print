@@ -32,6 +32,8 @@ import { cn } from '@/lib/utils'
 type Props = {
     onBack: () => void
     onModelReady?: () => void
+    /** Hero 등에서 넘겨받은 사진 — Drop Zone에 자동 반영 */
+    initialPhoto?: File | null
 }
 
 type JobStatus =
@@ -84,7 +86,7 @@ function mapApiStatus(s: string): JobStatus {
     return 'idle'
 }
 
-export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
+export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: Props) {
     const { token, sessionId, user } = useAuthStore()
     const setFile = useFileStore((s) => s.setFile)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -451,6 +453,24 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
         }
     }, [authHydrated, token, authHeaders, pollJob])
 
+    const applyPhotoFile = useCallback(
+        (file: File) => {
+            setPreviewUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev)
+                return URL.createObjectURL(file)
+            })
+            clearPoll()
+            clearMeshyActiveJob()
+            setSelected(file)
+            setStatus('idle')
+            setProgress(0)
+            setJobId(null)
+            setThumbnailUrl(null)
+            setResultFileName(null)
+        },
+        [clearPoll],
+    )
+
     const onDrop = useCallback(
         (accepted: File[], rejections: FileRejection[]) => {
             setError(null)
@@ -464,19 +484,15 @@ export default function ImageTo3DPanel({ onBack, onModelReady }: Props) {
                 return
             }
             if (!accepted[0]) return
-            if (previewUrl) URL.revokeObjectURL(previewUrl)
-            clearPoll()
-            clearMeshyActiveJob()
-            setSelected(accepted[0])
-            setPreviewUrl(URL.createObjectURL(accepted[0]))
-            setStatus('idle')
-            setProgress(0)
-            setJobId(null)
-            setThumbnailUrl(null)
-            setResultFileName(null)
+            applyPhotoFile(accepted[0])
         },
-        [previewUrl]
+        [applyPhotoFile],
     )
+
+    useEffect(() => {
+        if (!initialPhoto) return
+        applyPhotoFile(initialPhoto)
+    }, [initialPhoto, applyPhotoFile])
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,

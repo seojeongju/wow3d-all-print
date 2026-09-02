@@ -13,8 +13,13 @@ import QuoteFunnelTrendPanel from '@/components/admin/QuoteFunnelTrendPanel';
 import TrafficSourcePanel from '@/components/admin/TrafficSourcePanel';
 import { type SalesTrendPoint } from '@/lib/sales-trend';
 import { type VisitorTrendPoint } from '@/lib/visitor-trend';
-import HeroFunnelPanel from '@/components/admin/HeroFunnelPanel';
-import { type HeroFunnelEventRow, type HeroFunnelSummary } from '@/lib/conversion-events';
+import ConversionFunnelPanel from '@/components/admin/ConversionFunnelPanel';
+import {
+    type FunnelEventRow,
+    type HeroFunnelSummary,
+    type QuoteFunnelSummary as QuoteConversionSummary,
+    type ConversionFunnelTrendPoint,
+} from '@/lib/conversion-events';
 import {
     type QuoteFunnelTrendPoint,
     type QuoteFunnelSummary,
@@ -76,8 +81,11 @@ type Stats = {
     quoteTrafficSources: QuoteTrafficSource[];
     recentOrders: RecentOrder[];
     trafficSources: TrafficSource[];
-    heroFunnelEvents: HeroFunnelEventRow[];
+    heroFunnelEvents: FunnelEventRow[];
     heroFunnelSummary: HeroFunnelSummary;
+    quoteConversionEvents: FunnelEventRow[];
+    quoteConversionSummary: QuoteConversionSummary;
+    conversionFunnelTrend: ConversionFunnelTrendPoint[];
 };
 
 export default function AdminDashboard() {
@@ -151,6 +159,19 @@ export default function AdminDashboard() {
             fileIntentRate: 0,
             photoIntentRate: 0,
         },
+        quoteConversionEvents: [],
+        quoteConversionSummary: {
+            pageViews: 0,
+            fileEntries: 0,
+            photoEntries: 0,
+            fileUploaded: 0,
+            analysisComplete: 0,
+            estimateView: 0,
+            addToCart: 0,
+            estimateRate: 0,
+            cartRate: 0,
+        },
+        conversionFunnelTrend: [],
     };
     const s: Stats = stats ?? emptyStats;
 
@@ -421,9 +442,9 @@ export default function AdminDashboard() {
                 dayCount={14}
             />
 
-            <HeroFunnelPanel
-                rows={s.heroFunnelEvents ?? []}
-                summary={
+            <ConversionFunnelPanel
+                heroRows={s.heroFunnelEvents ?? []}
+                heroSummary={
                     s.heroFunnelSummary ?? {
                         views: 0,
                         fileIntent: 0,
@@ -433,6 +454,21 @@ export default function AdminDashboard() {
                         photoIntentRate: 0,
                     }
                 }
+                quoteRows={s.quoteConversionEvents ?? []}
+                quoteSummary={
+                    s.quoteConversionSummary ?? {
+                        pageViews: 0,
+                        fileEntries: 0,
+                        photoEntries: 0,
+                        fileUploaded: 0,
+                        analysisComplete: 0,
+                        estimateView: 0,
+                        addToCart: 0,
+                        estimateRate: 0,
+                        cartRate: 0,
+                    }
+                }
+                trend={s.conversionFunnelTrend ?? []}
                 dayCount={14}
             />
 
