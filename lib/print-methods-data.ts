@@ -269,12 +269,82 @@ export const REFERENCE_METHOD_COMPARE_ROWS = [
     { label: 'WOW3D', powder: '정보 안내', jetting: '정보 안내' },
 ]
 
+/** 가이드 페이지용 5개 공정 통합 비교 */
+export const ALL_PRINT_METHOD_COMPARE_ROWS = [
+    {
+        label: '추천 용도',
+        fdm: '기능 시제품·조립',
+        sla: '외관·정밀 모형',
+        dlp: '소형 정밀·반복',
+        powder: '금속·복잡 형상·소량 양산',
+        jetting: '고해상도 외관·멀티컬러',
+    },
+    {
+        label: '표면 품질',
+        fdm: '보통 (층선 가능)',
+        sla: '매우 높음',
+        dlp: '매우 높음',
+        powder: '소재·후처리별',
+        jetting: '최상',
+    },
+    {
+        label: '기계적 강도',
+        fdm: '높음',
+        sla: '소재별',
+        dlp: '소재별',
+        powder: '매우 높음 (금속 가능)',
+        jetting: '용도별 (제한적)',
+    },
+    {
+        label: '서포트',
+        fdm: '필요',
+        sla: '필요',
+        dlp: '필요',
+        powder: '불필요',
+        jetting: '필요',
+    },
+    {
+        label: '비용 효율',
+        fdm: '우수',
+        sla: '보통',
+        dlp: '보통',
+        powder: '높음',
+        jetting: '높음',
+    },
+    {
+        label: 'WOW3D 제공',
+        fdm: '제공',
+        sla: '제공',
+        dlp: '제공',
+        powder: '참고 안내',
+        jetting: '참고 안내',
+    },
+] as const
+
+export const GUIDE_PRINT_METHOD_SUMMARIES = [
+    ...WOW3D_PRINT_METHODS.map((m) => ({
+        id: m.id,
+        name: m.name,
+        nameKo: m.nameKo,
+        category: m.category as 'wow3d',
+        summary: m.principle,
+    })),
+    ...REFERENCE_PRINT_METHODS.map((m) => ({
+        id: m.id,
+        name: m.name,
+        nameKo: m.nameKo,
+        category: m.category as 'reference',
+        summary: m.principle,
+        subtypes: m.subtypes,
+    })),
+]
+
 export const PRINT_METHOD_FEATURED = [
     {
         href: '/guides/fdm-vs-sla-vs-dlp',
         eyebrow: 'Guide',
-        title: 'FDM vs SLA vs DLP 비교 가이드',
-        desc: '기능성 시제품, 외관 모델, 정밀 부품에 어떤 공정이 맞는지 질문형으로 정리했습니다.',
+        title: '3D 프린팅 공정 비교 가이드',
+        desc: 'FDM·SLA·DLP와 SLS/SLM/DMLS, PolyJet/MJP 등 주요 공정의 차이와 추천 용도를 정리했습니다.',
         icon: BookOpen,
     },
     {

@@ -71,7 +71,7 @@ export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
             { href: '/guides/photo-to-3d-printing-quote', title: '사진(이미지)으로 3D 프린팅 견적', desc: '3D 파일 없이 사진(이미지)→AI 3D→자동견적·주문 절차', icon: Camera, accent: 'text-indigo-400', readMin: 5 },
             { href: '/guides/3d-printing-quote-guide', title: '3D프린팅 비용 계산 방법', desc: '견적 산출 기준과 가격·시간에 영향을 주는 요소', icon: Calculator, accent: 'text-teal-400', readMin: 4 },
             { href: '/guides/how-to-reduce-3d-printing-cost', title: '3D프린팅 가격을 줄이는 방법', desc: '레이어·인필·서포트·소재로 비용 절감', icon: TrendingDown, accent: 'text-emerald-400', readMin: 5 },
-            { href: '/guides/fdm-vs-sla-vs-dlp', title: 'FDM과 SLA 차이', desc: 'FDM vs SLA vs DLP 출력 방식 비교', icon: Box, accent: 'text-blue-400', readMin: 6 },
+            { href: '/guides/fdm-vs-sla-vs-dlp', title: '3D 프린팅 공정 비교', desc: 'FDM·SLA·DLP·SLS·PolyJet 등 출력 방식 비교', icon: Box, accent: 'text-blue-400', readMin: 8 },
             { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA와 PETG 차이', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
             { href: '/guides/3d-printing-file-preparation', title: '파일 준비 가이드', desc: '업로드 전 형식, 단위, 메쉬 오류 점검', icon: FileCheck, accent: 'text-sky-400', readMin: 4 },
             { href: '/guides/3d-printing-turnaround-time', title: '시제품 제작 기간', desc: '출력·후처리·검수·배송 납기 안내', icon: Clock, accent: 'text-violet-400', readMin: 3 },
