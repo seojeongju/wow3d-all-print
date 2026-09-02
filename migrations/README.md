@@ -1,5 +1,3 @@
-# 마이그레이션
-
 ## Meshy AI 이미지→3D (사진 견적)
 
 ```bash
@@ -11,6 +9,14 @@ npx wrangler secret put TRIPO_API_KEY
 ```
 
 설정 상세: `docs/MESHY_SETUP.md`
+
+## 메인 히어로 전환 이벤트 (conversion_events)
+
+관리자 대시보드 **메인 히어로 전환 추적** 패널용 테이블입니다.
+
+```bash
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_conversion_events.sql
+```
 
 ## 수정견적 금액이 견적 관리 목록에 안 나오거나 저장이 안 될 때
 

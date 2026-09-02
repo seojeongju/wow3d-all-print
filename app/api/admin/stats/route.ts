@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { requireAdminAuth } from '@/lib/api-utils';
+import {
+    buildHeroFunnelSummary,
+    HERO_EVENT_LABELS,
+    type HeroFunnelEventRow,
+    type HeroFunnelSummary,
+} from '@/lib/conversion-events';
 
 const STORE_ORDERS = '(o.store_id = ? OR o.store_id IS NULL)';
 const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
@@ -463,6 +469,44 @@ export async function GET(req: NextRequest) {
             quoteTrafficSources = [];
         }
 
+        let heroFunnelEvents: HeroFunnelEventRow[] = [];
+        let heroFunnelSummary: HeroFunnelSummary = {
+            views: 0,
+            fileIntent: 0,
+            photoIntent: 0,
+            sampleTry: 0,
+            fileIntentRate: 0,
+            photoIntentRate: 0,
+        };
+
+        try {
+            const { results: heroRows } = await env.DB.prepare(
+                `
+                SELECT
+                    event_name,
+                    COUNT(*) AS cnt,
+                    COUNT(DISTINCT session_id) AS session_cnt
+                FROM conversion_events
+                WHERE event_category = 'hero'
+                  AND created_at >= date('now', '-13 days')
+                GROUP BY event_name
+                ORDER BY cnt DESC
+            `,
+            ).all() as {
+                results?: Array<{ event_name: string; cnt: number; session_cnt: number }>;
+            };
+
+            heroFunnelEvents = (heroRows || []).map((r) => ({
+                eventName: r.event_name,
+                label: HERO_EVENT_LABELS[r.event_name] ?? r.event_name,
+                count: Number(r.cnt ?? 0),
+                sessions: Number(r.session_cnt ?? 0),
+            }));
+            heroFunnelSummary = buildHeroFunnelSummary(heroFunnelEvents);
+        } catch {
+            heroFunnelEvents = [];
+        }
+
         return NextResponse.json({
             success: true,
             data: {
@@ -484,6 +528,8 @@ export async function GET(req: NextRequest) {
                 quoteFunnelTrend,
                 quoteFunnelSummary,
                 quoteTrafficSources,
+                heroFunnelEvents,
+                heroFunnelSummary,
             },
         });
     } catch (e) {

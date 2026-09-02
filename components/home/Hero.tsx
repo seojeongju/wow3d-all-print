@@ -28,6 +28,9 @@ import {
 } from '@/lib/model-file';
 import { MESHY_IMAGE_MAX_BYTES } from '@/lib/meshy';
 import { cn } from '@/lib/utils';
+import { HERO_CONVERSION_EVENTS } from '@/lib/conversion-events';
+import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conversion-event';
+import { useAuthStore } from '@/store/useAuthStore';
 
 /** 파일 없을 때 Drop Zone에 표시하는 샘플 견적 (FDM·인필 20% 기준 안내용) */
 const HERO_DEMO_ESTIMATE_KRW = 12_800;
@@ -63,6 +66,7 @@ function isPhotoFile(file: File): boolean {
 
 export default function Hero() {
     const router = useRouter();
+    const { user } = useAuthStore();
     const { setFile, file, baseAnalysis, reset } = useFileStore();
     const analysis = useEffectiveAnalysis() ?? baseAnalysis;
 
@@ -78,6 +82,24 @@ export default function Hero() {
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const photoInputRef = useRef<HTMLInputElement>(null);
+
+    const trackHero = useCallback(
+        (eventName: string, metadata?: Record<string, string>) => {
+            trackConversionEvent({
+                eventName,
+                metadata,
+                userId: user?.id ?? null,
+            });
+        },
+        [user?.id],
+    );
+
+    useEffect(() => {
+        trackConversionEventOnce('wow3d_hero_view_tracked', {
+            eventName: HERO_CONVERSION_EVENTS.VIEW,
+            userId: user?.id ?? null,
+        });
+    }, [user?.id]);
 
     useEffect(() => {
         fetch('/api/print-specs')
@@ -135,18 +157,20 @@ export default function Hero() {
     const handleModelUpload = useCallback(
         (model: File) => {
             clearSampleIfPresent();
+            trackHero(HERO_CONVERSION_EVENTS.DROP_FILE);
             setFile(model);
             router.push('/quote?entry=file');
         },
-        [router, setFile],
+        [router, setFile, trackHero],
     );
 
     const handlePhotoUpload = useCallback(
         (_photo: File) => {
             clearSampleIfPresent();
+            trackHero(HERO_CONVERSION_EVENTS.DROP_PHOTO);
             router.push('/quote?entry=photo');
         },
-        [router],
+        [router, trackHero],
     );
 
     const validateAndUploadModel = useCallback(
@@ -241,6 +265,7 @@ export default function Hero() {
     };
 
     const handleTrySample = async () => {
+        trackHero(HERO_CONVERSION_EVENTS.SAMPLE_TRY);
         setIsLoadingSample(true);
         try {
             const res = await fetch('/test_cube.stl');
@@ -318,6 +343,7 @@ export default function Hero() {
                             onClick={() => {
                                 clearSampleIfPresent();
                                 setUploadMode('file');
+                                trackHero(HERO_CONVERSION_EVENTS.FORK_FILE);
                             }}
                             className="group rounded-2xl border border-teal-400/25 bg-teal-400/10 p-5 transition-all hover:-translate-y-0.5 hover:border-teal-400/40 hover:bg-teal-400/15"
                         >
@@ -338,6 +364,7 @@ export default function Hero() {
                             onClick={() => {
                                 clearSampleIfPresent();
                                 setUploadMode('photo');
+                                trackHero(HERO_CONVERSION_EVENTS.FORK_PHOTO);
                             }}
                             className="group rounded-2xl border border-indigo-400/25 bg-indigo-500/10 p-5 transition-all hover:-translate-y-0.5 hover:border-indigo-400/40 hover:bg-indigo-500/15"
                         >
@@ -356,7 +383,7 @@ export default function Hero() {
 
                     {/* Primary CTA (모바일에서도 크게) */}
                     <div className="mb-5 flex flex-col gap-3 sm:flex-row">
-                        <Link href="/quote?entry=file" className="flex-1" onClick={clearSampleIfPresent}>
+                        <Link href="/quote?entry=file" className="flex-1" onClick={() => { clearSampleIfPresent(); trackHero(HERO_CONVERSION_EVENTS.CTA_FILE); }}>
                             <Button
                                 size="lg"
                                 className="h-14 w-full rounded-2xl bg-teal-400 text-[15px] font-black text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.3)] hover:bg-teal-300"
@@ -366,7 +393,7 @@ export default function Hero() {
                                 <ArrowRight className="ml-1 h-4 w-4" />
                             </Button>
                         </Link>
-                        <Link href="/quote?entry=photo" className="flex-1" onClick={clearSampleIfPresent}>
+                        <Link href="/quote?entry=photo" className="flex-1" onClick={() => { clearSampleIfPresent(); trackHero(HERO_CONVERSION_EVENTS.CTA_PHOTO); }}>
                             <Button
                                 size="lg"
                                 className="h-14 w-full rounded-2xl bg-indigo-500 text-[15px] font-black text-white shadow-[0_0_30px_rgba(99,102,241,0.35)] hover:bg-indigo-400"
@@ -379,15 +406,15 @@ export default function Hero() {
 
                     {/* Tertiary — 텍스트 링크만 */}
                     <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-white/45">
-                        <Link href="/print-methods" className="transition-colors hover:text-teal-300">
+                        <Link href="/print-methods" className="transition-colors hover:text-teal-300" onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}>
                             출력방식
                         </Link>
                         <span className="text-white/20">·</span>
-                        <Link href="/materials" className="transition-colors hover:text-teal-300">
+                        <Link href="/materials" className="transition-colors hover:text-teal-300" onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}>
                             소재
                         </Link>
                         <span className="text-white/20">·</span>
-                        <Link href="/#ai-3d-maker" className="transition-colors hover:text-teal-300">
+                        <Link href="/#ai-3d-maker" className="transition-colors hover:text-teal-300" onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}>
                             로고 Maker
                         </Link>
                         <span className="text-white/20">·</span>
@@ -466,9 +493,15 @@ export default function Hero() {
                                     (uploadMode === 'file' ? fileInputRef : photoInputRef).current?.click();
                                 }
                             }}
-                            onClick={() =>
-                                (uploadMode === 'file' ? fileInputRef : photoInputRef).current?.click()
-                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                trackHero(
+                                    uploadMode === 'file'
+                                        ? HERO_CONVERSION_EVENTS.DROP_ZONE_CLICK_FILE
+                                        : HERO_CONVERSION_EVENTS.DROP_ZONE_CLICK_PHOTO,
+                                );
+                                (uploadMode === 'file' ? fileInputRef : photoInputRef).current?.click();
+                            }}
                             onDragEnter={handleDragOver}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
@@ -587,7 +620,14 @@ export default function Hero() {
 
                             <Link
                                 href={uploadMode === 'file' ? '/quote?entry=file' : '/quote?entry=photo'}
-                                onClick={clearSampleIfPresent}
+                                onClick={() => {
+                                    clearSampleIfPresent();
+                                    trackHero(
+                                        uploadMode === 'file'
+                                            ? HERO_CONVERSION_EVENTS.PANEL_CTA_FILE
+                                            : HERO_CONVERSION_EVENTS.PANEL_CTA_PHOTO,
+                                    );
+                                }}
                                 className="block"
                             >
                                 <Button

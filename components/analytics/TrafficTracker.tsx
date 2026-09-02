@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getOrCreateSessionId } from '@/lib/session-id';
 
 /**
  * 사용자 유입 경로 추적 컴포넌트
@@ -50,11 +51,7 @@ export default function TrafficTracker() {
         if (isTracked && !utmSource) return;
 
         // 세션 ID 관리 (localStorage에 저장하여 유지)
-        let sessionId = localStorage.getItem('wow3d_session_id');
-        if (!sessionId) {
-            sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-            localStorage.setItem('wow3d_session_id', sessionId);
-        }
+        const sessionId = getOrCreateSessionId();
 
         // 서버로 전송
         const recordTraffic = async () => {

@@ -13,7 +13,13 @@ import QuoteFunnelTrendPanel from '@/components/admin/QuoteFunnelTrendPanel';
 import TrafficSourcePanel from '@/components/admin/TrafficSourcePanel';
 import { type SalesTrendPoint } from '@/lib/sales-trend';
 import { type VisitorTrendPoint } from '@/lib/visitor-trend';
-import { type QuoteFunnelTrendPoint, type QuoteFunnelSummary, type QuoteTrafficSource } from '@/lib/quote-funnel-trend';
+import HeroFunnelPanel from '@/components/admin/HeroFunnelPanel';
+import { type HeroFunnelEventRow, type HeroFunnelSummary } from '@/lib/conversion-events';
+import {
+    type QuoteFunnelTrendPoint,
+    type QuoteFunnelSummary,
+    type QuoteTrafficSource,
+} from '@/lib/quote-funnel-trend';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -70,6 +76,8 @@ type Stats = {
     quoteTrafficSources: QuoteTrafficSource[];
     recentOrders: RecentOrder[];
     trafficSources: TrafficSource[];
+    heroFunnelEvents: HeroFunnelEventRow[];
+    heroFunnelSummary: HeroFunnelSummary;
 };
 
 export default function AdminDashboard() {
@@ -134,6 +142,15 @@ export default function AdminDashboard() {
         quoteTrafficSources: [],
         recentOrders: [],
         trafficSources: [],
+        heroFunnelEvents: [],
+        heroFunnelSummary: {
+            views: 0,
+            fileIntent: 0,
+            photoIntent: 0,
+            sampleTry: 0,
+            fileIntentRate: 0,
+            photoIntentRate: 0,
+        },
     };
     const s: Stats = stats ?? emptyStats;
 
@@ -401,6 +418,21 @@ export default function AdminDashboard() {
                 trend={s.quoteFunnelTrend ?? []}
                 summary={s.quoteFunnelSummary}
                 sources={s.quoteTrafficSources ?? []}
+                dayCount={14}
+            />
+
+            <HeroFunnelPanel
+                rows={s.heroFunnelEvents ?? []}
+                summary={
+                    s.heroFunnelSummary ?? {
+                        views: 0,
+                        fileIntent: 0,
+                        photoIntent: 0,
+                        sampleTry: 0,
+                        fileIntentRate: 0,
+                        photoIntentRate: 0,
+                    }
+                }
                 dayCount={14}
             />
 
