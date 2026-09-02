@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -385,36 +385,62 @@ function SkeletonCard({ className }: { className?: string }) {
 }
 
 // ─────────────────────────────────────────────────────
-// 메인 갤러리 섹션: 좌·우 탐색 가능한 가로 슬라이더
+// 메인 갤러리 섹션: 자동 좌측 슬라이드 + 좌·우 버튼 수동 탐색
 // ─────────────────────────────────────────────────────
 export default function GallerySection() {
     const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
+    const pausedRef = useRef(false);
+    const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [canScrollLeft, setCanScrollLeft] = useState(false);
-    const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const updateScrollButtons = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-        const { scrollLeft, scrollWidth, clientWidth } = el;
-        setCanScrollLeft(scrollLeft > 4);
-        setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
-    }, []);
+    const displayItems = useMemo(
+        () => (items.length > 0 ? [...items, ...items] : []),
+        [items]
+    );
 
-    const scrollGallery = useCallback((direction: 'left' | 'right') => {
+    const getScrollStep = useCallback(() => {
         const el = scrollRef.current;
-        if (!el) return;
+        if (!el) return 300;
         const firstCard = el.querySelector<HTMLElement>('[data-gallery-card]');
         const gap = window.innerWidth >= 640 ? 20 : 16;
-        const step = firstCard ? firstCard.offsetWidth + gap : 280;
         const cardsPerStep = window.innerWidth >= 1280 ? 2 : 1;
-        el.scrollBy({
-            left: direction === 'left' ? -step * cardsPerStep : step * cardsPerStep,
-            behavior: 'smooth',
-        });
+        return (firstCard ? firstCard.offsetWidth + gap : 280) * cardsPerStep;
     }, []);
+
+    const normalizeInfiniteScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el || items.length === 0) return;
+        const half = el.scrollWidth / 2;
+        if (half <= 0) return;
+        if (el.scrollLeft >= half) el.scrollLeft -= half;
+        if (el.scrollLeft < 0) el.scrollLeft += half;
+    }, [items.length]);
+
+    const pauseAutoScroll = useCallback((ms = 1200) => {
+        pausedRef.current = true;
+        if (manualPauseTimerRef.current) clearTimeout(manualPauseTimerRef.current);
+        manualPauseTimerRef.current = setTimeout(() => {
+            pausedRef.current = false;
+            manualPauseTimerRef.current = null;
+        }, ms);
+    }, []);
+
+    const scrollGallery = useCallback(
+        (direction: 'left' | 'right') => {
+            const el = scrollRef.current;
+            if (!el) return;
+            pauseAutoScroll(1400);
+            const step = getScrollStep();
+            el.scrollBy({
+                left: direction === 'left' ? -step : step,
+                behavior: 'smooth',
+            });
+            window.setTimeout(normalizeInfiniteScroll, 450);
+        },
+        [getScrollStep, normalizeInfiniteScroll, pauseAutoScroll]
+    );
 
     useEffect(() => {
         async function fetchGallery() {
@@ -436,25 +462,45 @@ export default function GallerySection() {
         fetchGallery();
     }, []);
 
+    // 자동 좌측 슬라이드 (무한 루프)
     useEffect(() => {
         if (loading || items.length === 0) return;
-        updateScrollButtons();
+
+        let raf = 0;
+        let last = performance.now();
+
+        const tick = (now: number) => {
+            const el = scrollRef.current;
+            if (el && !pausedRef.current) {
+                const half = el.scrollWidth / 2;
+                const durationSec = Math.max(25, items.length * 6);
+                const speed = half > 0 ? half / durationSec : 50;
+                const dt = Math.min((now - last) / 1000, 0.05);
+                el.scrollLeft += speed * dt;
+                if (half > 0 && el.scrollLeft >= half) {
+                    el.scrollLeft -= half;
+                }
+            }
+            last = now;
+            raf = requestAnimationFrame(tick);
+        };
+
+        raf = requestAnimationFrame(tick);
+        return () => {
+            cancelAnimationFrame(raf);
+            if (manualPauseTimerRef.current) clearTimeout(manualPauseTimerRef.current);
+        };
+    }, [items.length, loading]);
+
+    useEffect(() => {
+        if (loading || items.length === 0) return;
         const el = scrollRef.current;
         if (!el) return;
 
-        const onScroll = () => updateScrollButtons();
+        const onScroll = () => normalizeInfiniteScroll();
         el.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', updateScrollButtons);
-
-        const ro = new ResizeObserver(updateScrollButtons);
-        ro.observe(el);
-
-        return () => {
-            el.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', updateScrollButtons);
-            ro.disconnect();
-        };
-    }, [items.length, loading, updateScrollButtons]);
+        return () => el.removeEventListener('scroll', onScroll);
+    }, [items.length, loading, normalizeInfiniteScroll]);
 
     const isEmpty = !loading && items.length === 0;
 
@@ -571,18 +617,16 @@ export default function GallerySection() {
                                         <button
                                             type="button"
                                             onClick={() => scrollGallery('left')}
-                                            disabled={!canScrollLeft}
                                             aria-label="이전 갤러리 항목"
-                                            className="absolute left-0 sm:left-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100 shadow-lg"
+                                            className="absolute left-0 sm:left-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 shadow-lg"
                                         >
                                             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => scrollGallery('right')}
-                                            disabled={!canScrollRight}
                                             aria-label="다음 갤러리 항목"
-                                            className="absolute right-0 sm:right-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100 shadow-lg"
+                                            className="absolute right-0 sm:right-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 shadow-lg"
                                         >
                                             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                                         </button>
@@ -590,13 +634,23 @@ export default function GallerySection() {
                                 )}
                                 <div
                                     ref={scrollRef}
-                                    className="flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 min-h-[340px] sm:min-h-[380px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                                    className="flex gap-4 sm:gap-5 overflow-x-hidden pb-2 min-h-[340px] sm:min-h-[380px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                                    onMouseEnter={() => {
+                                        pausedRef.current = true;
+                                    }}
+                                    onMouseLeave={() => {
+                                        if (!manualPauseTimerRef.current) pausedRef.current = false;
+                                    }}
+                                    onTouchStart={() => {
+                                        pausedRef.current = true;
+                                    }}
+                                    onTouchEnd={() => pauseAutoScroll(1500)}
                                 >
-                                    {items.map((item) => (
+                                    {displayItems.map((item, i) => (
                                         <div
-                                            key={item.id}
+                                            key={`${item.id}-${i}`}
                                             data-gallery-card
-                                            className="w-64 sm:w-80 flex-shrink-0 snap-start"
+                                            className="w-64 sm:w-80 flex-shrink-0"
                                         >
                                             <GalleryCard
                                                 item={item}
