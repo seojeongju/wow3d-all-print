@@ -222,13 +222,13 @@ export default function Hero() {
                 <div className="absolute bottom-0 right-0 h-[600px] w-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
             </div>
 
-            <div className="container relative z-10 mx-auto grid items-center gap-10 px-4 lg:grid-cols-2 lg:gap-12 xl:gap-14">
-                {/* ── Left: 짧은 카피 + 2갈래 선택 ── */}
+            <div className="container relative z-10 mx-auto grid items-stretch gap-10 px-4 lg:grid-cols-2 lg:gap-12 xl:gap-14">
+                {/* ── Left: 카피 + CTA (하단을 드롭존과 맞춤) ── */}
                 <motion.div
                     initial={{ opacity: 0, x: -32 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.7, ease: 'easeOut' }}
-                    className="text-left"
+                    className="flex h-full min-h-0 flex-col text-left"
                 >
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
@@ -264,7 +264,7 @@ export default function Hero() {
                         </span>
                     </h1>
 
-                    <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-white/65 break-keep sm:text-lg">
+                    <p className="mb-6 max-w-lg text-base font-medium leading-relaxed text-white/65 break-keep sm:mb-8 sm:text-lg">
                         파일 업로드 → 가격·제작기간 확인 → 주문·결제.
                         <br />
                         <span className="font-bold text-white/90">3D 파일</span>
@@ -273,8 +273,8 @@ export default function Hero() {
                         만 있어도 AI가 3D 모델을 만들어 견적으로 이어집니다.
                     </p>
 
-                    {/* 2갈래 Fork 카드 */}
-                    <div className="mb-6 grid gap-3 sm:grid-cols-2">
+                    {/* 2갈래 Fork 카드 — 드롭존 외곽과 동일 radius */}
+                    <div className="mb-5 grid gap-3 sm:grid-cols-2">
                         <Link
                             href="/quote?entry=file"
                             onClick={() => {
@@ -318,7 +318,7 @@ export default function Hero() {
                         </Link>
                     </div>
 
-                    {/* Primary CTA (모바일에서도 크게) */}
+                    {/* Primary CTA */}
                     <div className="mb-5 flex flex-col gap-3 sm:flex-row">
                         <Link href="/quote?entry=file" className="flex-1" onClick={() => { clearSampleIfPresent(); trackHero(HERO_CONVERSION_EVENTS.CTA_FILE); }}>
                             <Button
@@ -341,40 +341,7 @@ export default function Hero() {
                         </Link>
                     </div>
 
-                    {/* Tertiary — 동일 크기 박스 */}
-                    <div className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <Link
-                            href="/print-methods"
-                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:h-12 sm:text-[13px]"
-                        >
-                            출력방식
-                        </Link>
-                        <Link
-                            href="/materials"
-                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:h-12 sm:text-[13px]"
-                        >
-                            소재
-                        </Link>
-                        <Link
-                            href="/#ai-3d-maker"
-                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:h-12 sm:text-[13px]"
-                        >
-                            로고 Maker
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={handleTrySample}
-                            disabled={isLoadingSample}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:text-[13px]"
-                        >
-                            {isLoadingSample ? '불러오는 중…' : '샘플견적체험'}
-                        </button>
-                    </div>
-
-                    <div className="flex items-center gap-5 text-white/50">
+                    <div className="mb-5 flex items-center gap-5 text-white/50">
                         <div className="flex -space-x-3">
                             {[1, 2, 3, 4].map((i) => (
                                 <div
@@ -392,6 +359,39 @@ export default function Hero() {
                             </p>
                         </div>
                     </div>
+
+                    {/* Tertiary — 드롭존 하단과 동일 선상 */}
+                    <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <Link
+                            href="/print-methods"
+                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
+                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
+                        >
+                            출력방식
+                        </Link>
+                        <Link
+                            href="/materials"
+                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
+                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
+                        >
+                            소재
+                        </Link>
+                        <Link
+                            href="/#ai-3d-maker"
+                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
+                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
+                        >
+                            로고 Maker
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={handleTrySample}
+                            disabled={isLoadingSample}
+                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
+                        >
+                            {isLoadingSample ? '불러오는 중…' : '샘플견적체험'}
+                        </button>
+                    </div>
                 </motion.div>
 
                 {/* ── Right: 통합 Drop Zone ── */}
@@ -399,23 +399,25 @@ export default function Hero() {
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.1 }}
-                    className="w-full"
+                    className="flex h-full w-full min-h-[420px] sm:min-h-[480px]"
                 >
-                    <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f172a]/90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 backdrop-blur-2xl sm:min-h-[480px] xl:rounded-[2.5rem]">
-                        {/* 탭 */}
-                        <div className="flex shrink-0 border-b border-white/10 p-2">
+                    <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a]/90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 backdrop-blur-2xl">
+                        {/* 탭 — 외곽 radius에 맞춰 상단 모서리 일치 */}
+                        <div className="flex shrink-0 border-b border-white/10">
                             {(
                                 [
                                     { id: 'file' as const, label: '3D 파일', icon: FileBox },
                                     { id: 'photo' as const, label: '사진(이미지)', icon: ImageIcon },
                                 ] as const
-                            ).map(({ id, label, icon: Icon }) => (
+                            ).map(({ id, label, icon: Icon }, index) => (
                                 <button
                                     key={id}
                                     type="button"
                                     onClick={() => setUploadMode(id)}
                                     className={cn(
-                                        'flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-xs font-black transition-all sm:text-sm',
+                                        'flex flex-1 items-center justify-center gap-2 py-3.5 text-xs font-black transition-all sm:text-sm',
+                                        index === 0 && 'rounded-tl-2xl',
+                                        index === 1 && 'rounded-tr-2xl',
                                         uploadMode === id
                                             ? id === 'file'
                                                 ? 'bg-teal-400/15 text-teal-300'
@@ -551,7 +553,7 @@ export default function Hero() {
                                 <Button
                                     size="lg"
                                     className={cn(
-                                        'h-14 w-full rounded-xl text-sm font-black sm:text-base',
+                                        'h-14 w-full rounded-2xl text-sm font-black sm:text-base',
                                         uploadMode === 'file'
                                             ? 'bg-teal-400 text-slate-950 hover:bg-teal-300'
                                             : 'bg-indigo-500 text-white hover:bg-indigo-400',
