@@ -4,7 +4,6 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Hero from "@/components/home/Hero";
 import Marquee from "@/components/home/Marquee";
-import ModelUploadSection from "@/components/home/ModelUploadSection";
 import CoreJourneySection from "@/components/home/CoreJourneySection";
 import ServicesSection from "@/components/home/ServicesSection";
 import QuickProcessSteps from "@/components/home/QuickProcessSteps";
@@ -36,7 +35,7 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
       <Header />
 
-      {/* ─── 상단 3구역: 업로드 → 가격·납기 → 주문 ─── */}
+      {/* ─── 전환(히어로) → 사례(신뢰) ─── */}
       <Hero />
       <Marquee />
 
@@ -63,11 +62,9 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
         </div>
       </section>
 
-      <ModelUploadSection />
-      <CoreJourneySection />
-
-      {/* ─── 이후: 신뢰·서비스·대체 경로·FAQ ─── */}
+      {/* ─── 전환 직후: 시제품 갤러리(신뢰) → 여정·서비스 ─── */}
       <GallerySection />
+      <CoreJourneySection />
       <ServicesSection />
 
       <QuickProcessSteps />
