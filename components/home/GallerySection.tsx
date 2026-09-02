@@ -654,8 +654,11 @@ export default function GallerySection() {
                                         >
                                             <GalleryCard
                                                 item={item}
-                                                onClick={() => {
-                                                    router.push('/gallery');
+                                                onClick={(clicked) => {
+                                                    pauseAutoScroll(400);
+                                                    router.push(
+                                                        `/gallery?id=${encodeURIComponent(String(clicked.id))}`
+                                                    );
                                                 }}
                                                 className="w-full active:scale-[0.98] transition-transform"
                                             />

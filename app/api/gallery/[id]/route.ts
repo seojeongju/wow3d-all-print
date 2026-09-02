@@ -2,8 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { uploadGalleryImage } from '@/lib/gallery-upload';
+import { getPublicGalleryItemById } from '@/lib/gallery-public';
 
 type Params = { params: Promise<{ id: string }> };
+
+/** GET /api/gallery/[id] — 공개 갤러리 단일 항목 */
+export async function GET(_request: NextRequest, { params }: Params) {
+    try {
+        const { id } = await params;
+        const item = await getPublicGalleryItemById(decodeURIComponent(id));
+        if (!item) {
+            return NextResponse.json({ error: '갤러리 항목을 찾을 수 없습니다' }, { status: 404 });
+        }
+        return NextResponse.json({ success: true, data: item });
+    } catch (e) {
+        console.error('GET /api/gallery/[id]', e);
+        return NextResponse.json({ error: '갤러리 조회 실패' }, { status: 500 });
+    }
+}
 
 // PUT /api/gallery/[id]  (Admin)
 export async function PUT(request: NextRequest, { params }: Params) {

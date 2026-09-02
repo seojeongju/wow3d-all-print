@@ -150,3 +150,33 @@ export async function getPublicGallery(options?: {
         pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     };
 }
+
+/** 공개 갤러리 단일 항목 (딥링크·홈 슬라이더 클릭용) */
+export async function getPublicGalleryItemById(
+    id: string | number
+): Promise<PublicGalleryItem | null> {
+    const idStr = String(id).trim();
+    if (!idStr) return null;
+
+    try {
+        const { env } = await getCloudflareContext({ async: true });
+        if (env?.DB && /^\d+$/.test(idStr)) {
+            const row = await env.DB.prepare(
+                `SELECT * FROM gallery_items WHERE id = ? AND is_visible = 1`
+            )
+                .bind(Number(idStr))
+                .first<PublicGalleryItem>();
+            if (row) return row;
+        }
+    } catch (dbErr) {
+        console.error('getPublicGalleryItemById DB error:', dbErr);
+    }
+
+    if (idStr.startsWith('remote_')) {
+        const remoteItems = await fetchRemoteGalleryItems();
+        return remoteItems.find((r) => String(r.id) === idStr) ?? null;
+    }
+
+    const all = await getPublicGallery({ page: 1, limit: 50 });
+    return all.items.find((item) => String(item.id) === idStr) ?? null;
+}

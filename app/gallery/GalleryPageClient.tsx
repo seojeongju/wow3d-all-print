@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Grid3X3, Loader2, Box, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import Link from 'next/link';
@@ -13,13 +14,17 @@ type GalleryPageClientProps = {
     initialItems: GalleryItem[];
     initialTotalPages: number;
     initialTag?: 'all' | 'photo-to-3d';
+    initialItemId?: string | null;
 };
 
 export default function GalleryPageClient({
     initialItems,
     initialTotalPages,
     initialTag = 'all',
+    initialItemId = null,
 }: GalleryPageClientProps) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [items, setItems] = useState<GalleryItem[]>(initialItems);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
@@ -57,6 +62,11 @@ export default function GalleryPageClient({
     const handleTagChange = (tag: 'all' | 'photo-to-3d') => {
         setGalleryTag(tag);
         setPage(1);
+        setSelectedItem(null);
+        const params = new URLSearchParams();
+        if (tag === 'photo-to-3d') params.set('tag', 'photo-to-3d');
+        const qs = params.toString();
+        router.replace(qs ? `/gallery?${qs}` : '/gallery', { scroll: false });
         if (tag === initialTag) {
             setItems(initialItems);
             setTotalPages(initialTotalPages);
@@ -64,6 +74,52 @@ export default function GalleryPageClient({
             fetchGallery(1, tag);
         }
     };
+
+    const openItem = useCallback((item: GalleryItem) => {
+        setSelectedItem(item);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('id', String(item.id));
+        router.replace(`/gallery?${params.toString()}`, { scroll: false });
+    }, [router, searchParams]);
+
+    const closeItem = useCallback(() => {
+        setSelectedItem(null);
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('id');
+        const qs = params.toString();
+        router.replace(qs ? `/gallery?${qs}` : '/gallery', { scroll: false });
+    }, [router, searchParams]);
+
+    useEffect(() => {
+        const idFromUrl = searchParams.get('id') || initialItemId;
+        if (!idFromUrl) {
+            setSelectedItem(null);
+            return;
+        }
+
+        const inList = items.find((i) => String(i.id) === String(idFromUrl));
+        if (inList) {
+            setSelectedItem(inList);
+            return;
+        }
+
+        let cancelled = false;
+        void (async () => {
+            try {
+                const res = await fetch(`/api/gallery/${encodeURIComponent(idFromUrl)}`);
+                const json = await res.json();
+                if (!cancelled && res.ok && json.success && json.data) {
+                    setSelectedItem(json.data as GalleryItem);
+                }
+            } catch {
+                /* ignore */
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [searchParams, initialItemId, items]);
 
     // 하단 페이지네이션 렌더링 도우미 (최대 5개 노출)
     const renderPagination = () => {
@@ -191,7 +247,7 @@ export default function GalleryPageClient({
                                     <GalleryCard
                                         item={item}
                                         onClick={(clicked) => {
-                                            setSelectedItem(clicked);
+                                            openItem(clicked);
                                         }}
                                         className="group relative w-full cursor-pointer"
                                     />
@@ -231,14 +287,14 @@ export default function GalleryPageClient({
                     <DetailViewModal 
                         key={`full-modal-${selectedItem.id}`}
                         item={selectedItem} 
-                        onClose={() => setSelectedItem(null)}
+                        onClose={closeItem}
                         onPrev={() => {
                             const idx = items.findIndex(i => i.id === selectedItem.id);
-                            if (idx > 0) setSelectedItem(items[idx - 1]);
+                            if (idx > 0) openItem(items[idx - 1]);
                         }}
                         onNext={() => {
                             const idx = items.findIndex(i => i.id === selectedItem.id);
-                            if (idx >= 0 && idx < items.length - 1) setSelectedItem(items[idx + 1]);
+                            if (idx >= 0 && idx < items.length - 1) openItem(items[idx + 1]);
                         }}
                     />
                 )}
