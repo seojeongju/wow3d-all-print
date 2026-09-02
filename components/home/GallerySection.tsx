@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
@@ -385,19 +385,36 @@ function SkeletonCard({ className }: { className?: string }) {
 }
 
 // ─────────────────────────────────────────────────────
-// 메인 갤러리 섹션: 4장 고정 뷰, 한 장씩 자연스럽게 왼쪽으로 흐르는 연속 마키
+// 메인 갤러리 섹션: 좌·우 탐색 가능한 가로 슬라이더
 // ─────────────────────────────────────────────────────
-const CARD_SLOT_PX = 340; // 카드 너비 + 간격 (한 장 기준)
-const MARQUEE_CYCLE_SEC = 45; // 한 사이클(전체 한 바퀴) 초
-
 export default function GallerySection() {
     const router = useRouter();
+    const scrollRef = useRef<HTMLDivElement>(null);
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
 
-    const itemCount = items.length;
-    // 끊김 없이 한 장씩 흐르도록 아이템 2벌 연결
-    const displayItems = useMemo(() => (itemCount > 0 ? [...items, ...items] : []), [items, itemCount]);
+    const updateScrollButtons = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        setCanScrollLeft(scrollLeft > 4);
+        setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+    }, []);
+
+    const scrollGallery = useCallback((direction: 'left' | 'right') => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const firstCard = el.querySelector<HTMLElement>('[data-gallery-card]');
+        const gap = window.innerWidth >= 640 ? 20 : 16;
+        const step = firstCard ? firstCard.offsetWidth + gap : 280;
+        const cardsPerStep = window.innerWidth >= 1280 ? 2 : 1;
+        el.scrollBy({
+            left: direction === 'left' ? -step * cardsPerStep : step * cardsPerStep,
+            behavior: 'smooth',
+        });
+    }, []);
 
     useEffect(() => {
         async function fetchGallery() {
@@ -418,6 +435,26 @@ export default function GallerySection() {
         }
         fetchGallery();
     }, []);
+
+    useEffect(() => {
+        if (loading || items.length === 0) return;
+        updateScrollButtons();
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const onScroll = () => updateScrollButtons();
+        el.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', updateScrollButtons);
+
+        const ro = new ResizeObserver(updateScrollButtons);
+        ro.observe(el);
+
+        return () => {
+            el.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', updateScrollButtons);
+            ro.disconnect();
+        };
+    }, [items.length, loading, updateScrollButtons]);
 
     const isEmpty = !loading && items.length === 0;
 
@@ -497,15 +534,15 @@ export default function GallerySection() {
                     </motion.div>
                 </div>
 
-                {/* 마키 컨테이너 */}
-                <div className="w-full overflow-hidden flex justify-center pb-8 pt-4">
-                    <div className="w-full relative px-4 xl:px-0 flex flex-col items-center">
+                {/* 갤러리 슬라이더 */}
+                <div className="w-full flex justify-center pb-8 pt-4">
+                    <div className="w-full max-w-[1400px] relative px-4 xl:px-6 flex flex-col items-center">
                         {loading ? (
-                            <div className="flex gap-4 sm:gap-5 w-full overflow-hidden px-4 justify-center">
+                            <div className="flex gap-4 sm:gap-5 w-full overflow-hidden justify-center">
                                 {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} className="w-64 sm:w-80 flex-shrink-0" />)}
                             </div>
                         ) : isEmpty ? (
-                            <div className="flex gap-4 sm:gap-5 w-full overflow-hidden px-4 justify-center">
+                            <div className="flex gap-4 sm:gap-5 w-full overflow-hidden justify-center">
                                 {Array.from({ length: 4 }).map((_, i) => (
                                     <div key={i} className="w-64 sm:w-80 h-[340px] sm:h-[380px] flex-shrink-0">
                                         <div className="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden h-full flex flex-col">
@@ -520,22 +557,55 @@ export default function GallerySection() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="w-full overflow-hidden min-h-[340px] sm:min-h-[380px]">
-                                <div 
-                                    className="flex gap-4 sm:gap-5 animate-marquee"
-                                    style={{ 
-                                        '--marquee-duration': `${Math.max(25, items.length * 6)}s` 
-                                    } as React.CSSProperties}
-                                >
-                                    {displayItems.map((item, i) => (
-                                        <GalleryCard
-                                            key={`marquee-${i}-${item.id}`}
-                                            item={item}
-                                            onClick={() => {
-                                                router.push('/gallery');
-                                            }}
-                                            className="w-64 sm:w-80 flex-shrink-0 active:scale-[0.98] transition-transform"
+                            <div className="relative w-full group/gallery" role="region" aria-label="시제품 제작 갤러리">
+                                {items.length > 1 && (
+                                    <>
+                                        <div
+                                            className="pointer-events-none absolute inset-y-0 left-0 z-20 w-10 sm:w-16 bg-gradient-to-r from-[#111827] via-[#111827]/80 to-transparent"
+                                            aria-hidden
                                         />
+                                        <div
+                                            className="pointer-events-none absolute inset-y-0 right-0 z-20 w-10 sm:w-16 bg-gradient-to-l from-[#1f2937] via-[#1f2937]/80 to-transparent"
+                                            aria-hidden
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => scrollGallery('left')}
+                                            disabled={!canScrollLeft}
+                                            aria-label="이전 갤러리 항목"
+                                            className="absolute left-0 sm:left-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100 shadow-lg"
+                                        >
+                                            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => scrollGallery('right')}
+                                            disabled={!canScrollRight}
+                                            aria-label="다음 갤러리 항목"
+                                            className="absolute right-0 sm:right-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 disabled:opacity-30 disabled:pointer-events-none disabled:scale-100 shadow-lg"
+                                        >
+                                            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        </button>
+                                    </>
+                                )}
+                                <div
+                                    ref={scrollRef}
+                                    className="flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 min-h-[340px] sm:min-h-[380px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                                >
+                                    {items.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            data-gallery-card
+                                            className="w-64 sm:w-80 flex-shrink-0 snap-start"
+                                        >
+                                            <GalleryCard
+                                                item={item}
+                                                onClick={() => {
+                                                    router.push('/gallery');
+                                                }}
+                                                className="w-full active:scale-[0.98] transition-transform"
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             </div>
