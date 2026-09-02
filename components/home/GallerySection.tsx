@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -105,10 +104,19 @@ export function GalleryCard({
 
     return (
         <div
+            role="button"
+            tabIndex={0}
             className={className || "group relative flex-shrink-0 w-72 md:w-80 cursor-pointer"}
             onClick={(e) => {
                 e.stopPropagation();
                 if (onClick) onClick(item);
+            }}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (onClick) onClick(item);
+                }
             }}
         >
             {/* 카드 글로우 */}
@@ -388,12 +396,14 @@ function SkeletonCard({ className }: { className?: string }) {
 // 메인 갤러리 섹션: 자동 좌측 슬라이드 + 좌·우 버튼 수동 탐색
 // ─────────────────────────────────────────────────────
 export default function GallerySection() {
-    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement>(null);
     const pausedRef = useRef(false);
     const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const selectedItemRef = useRef<GalleryItem | null>(null);
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+    selectedItemRef.current = selectedItem;
 
     const displayItems = useMemo(
         () => (items.length > 0 ? [...items, ...items] : []),
@@ -422,10 +432,43 @@ export default function GallerySection() {
         pausedRef.current = true;
         if (manualPauseTimerRef.current) clearTimeout(manualPauseTimerRef.current);
         manualPauseTimerRef.current = setTimeout(() => {
-            pausedRef.current = false;
+            // 상세 모달이 열려 있으면 자동 슬라이드를 재개하지 않음
+            if (!selectedItemRef.current) {
+                pausedRef.current = false;
+            }
             manualPauseTimerRef.current = null;
         }, ms);
     }, []);
+
+    const openDetail = useCallback((item: GalleryItem) => {
+        pausedRef.current = true;
+        if (manualPauseTimerRef.current) {
+            clearTimeout(manualPauseTimerRef.current);
+            manualPauseTimerRef.current = null;
+        }
+        setSelectedItem(item);
+    }, []);
+
+    const closeDetail = useCallback(() => {
+        setSelectedItem(null);
+        pausedRef.current = false;
+    }, []);
+
+    const selectedIndex = selectedItem
+        ? items.findIndex((i) => String(i.id) === String(selectedItem.id))
+        : -1;
+
+    const goPrevDetail = useCallback(() => {
+        if (items.length === 0 || selectedIndex < 0) return;
+        const next = items[(selectedIndex - 1 + items.length) % items.length];
+        setSelectedItem(next);
+    }, [items, selectedIndex]);
+
+    const goNextDetail = useCallback(() => {
+        if (items.length === 0 || selectedIndex < 0) return;
+        const next = items[(selectedIndex + 1) % items.length];
+        setSelectedItem(next);
+    }, [items, selectedIndex]);
 
     const scrollGallery = useCallback(
         (direction: 'left' | 'right') => {
@@ -441,6 +484,15 @@ export default function GallerySection() {
         },
         [getScrollStep, normalizeInfiniteScroll, pauseAutoScroll]
     );
+
+    useEffect(() => {
+        if (!selectedItem) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = prev;
+        };
+    }, [selectedItem]);
 
     useEffect(() => {
         async function fetchGallery() {
@@ -506,7 +558,19 @@ export default function GallerySection() {
 
     return (
         <>
-            {/* 전체화면 갤러리 모달 제거됨 (Link로 우회) */}
+            <AnimatePresence>
+                {selectedItem && (
+                    <DetailViewModal
+                        key={`home-gallery-modal-${selectedItem.id}`}
+                        item={selectedItem}
+                        onClose={closeDetail}
+                        onPrev={items.length > 1 ? goPrevDetail : undefined}
+                        onNext={items.length > 1 ? goNextDetail : undefined}
+                        currentIndex={selectedIndex >= 0 ? selectedIndex : undefined}
+                        totalCount={items.length}
+                    />
+                )}
+            </AnimatePresence>
 
             <section className="py-16 sm:py-20 relative overflow-hidden">
                 {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
@@ -639,7 +703,9 @@ export default function GallerySection() {
                                         pausedRef.current = true;
                                     }}
                                     onMouseLeave={() => {
-                                        if (!manualPauseTimerRef.current) pausedRef.current = false;
+                                        if (!manualPauseTimerRef.current && !selectedItemRef.current) {
+                                            pausedRef.current = false;
+                                        }
                                     }}
                                     onTouchStart={() => {
                                         pausedRef.current = true;
@@ -654,13 +720,8 @@ export default function GallerySection() {
                                         >
                                             <GalleryCard
                                                 item={item}
-                                                onClick={(clicked) => {
-                                                    pauseAutoScroll(400);
-                                                    router.push(
-                                                        `/gallery?id=${encodeURIComponent(String(clicked.id))}`
-                                                    );
-                                                }}
-                                                className="w-full active:scale-[0.98] transition-transform"
+                                                onClick={(clicked) => openDetail(clicked)}
+                                                className="w-full cursor-pointer active:scale-[0.98] transition-transform"
                                             />
                                         </div>
                                     ))}
