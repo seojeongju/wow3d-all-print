@@ -319,23 +319,43 @@ export default function Hero() {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur-md"
+                        className="mb-5 flex flex-wrap items-center gap-2"
                     >
-                        <Sparkles className="h-3.5 w-3.5 text-teal-400" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80 sm:text-xs">
-                            실시간 자동견적 · AI 3D 변환
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur-md">
+                            <Sparkles className="h-3.5 w-3.5 text-teal-400" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80 sm:text-xs">
+                                NEXT-GEN 3D PRINTING
+                            </span>
+                        </span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/15 px-3 py-1 backdrop-blur-md">
+                            <ImageIcon className="h-3.5 w-3.5 text-indigo-300" />
+                            <span className="text-[10px] font-semibold tracking-wide text-indigo-200/90 sm:text-xs">
+                                사진(이미지) → AI 3D
+                            </span>
                         </span>
                     </motion.div>
 
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-teal-400 sm:text-xs">
+                        WOW3D PRO
+                    </p>
+
                     <h1 className="mb-4 text-[1.85rem] font-black leading-[1.15] tracking-tight text-white sm:text-4xl md:text-[2.6rem] lg:text-[2.85rem] break-keep">
-                        3D 파일·사진만으로
+                        3D프린팅출력 ·
                         <br />
-                        <span className="text-teal-400">시제품 견적</span>
+                        3D프린터출력
+                        <br />
+                        <span className="text-teal-400 underline decoration-teal-400/40 decoration-2 underline-offset-[6px]">
+                            시제품제작 서비스
+                        </span>
                     </h1>
 
                     <p className="mb-8 max-w-lg text-base font-medium leading-relaxed text-white/65 break-keep sm:text-lg">
-                        업로드 → 가격·납기 확인 → 주문.
-                        <span className="hidden sm:inline"> 30초 안에 시작할 수 있습니다.</span>
+                        파일 업로드 → 가격·제작기간 확인 → 주문·결제.
+                        <br />
+                        <span className="font-bold text-white/90">3D 파일</span>
+                        이 있으면 즉시 자동견적,{' '}
+                        <span className="font-bold text-white/90">사진(이미지)</span>
+                        만 있어도 AI가 3D 모델을 만들어 견적으로 이어집니다.
                     </p>
 
                     {/* 2갈래 Fork 카드 */}
