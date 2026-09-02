@@ -23,6 +23,12 @@ import {
     ExternalLink,
 } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
+import {
+    getCachedAdminJobThumbnail,
+    runAdminThumbnailTask,
+    setCachedAdminJobThumbnail,
+    withThumbnailTimeout,
+} from '@/lib/admin-meshy-thumbnail-cache'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { cn } from '@/lib/utils'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
@@ -118,11 +124,26 @@ function downloadBlob(blob: Blob, fileName: string) {
     URL.revokeObjectURL(url)
 }
 
+async function persistAdminJobThumbnail(
+    jobId: number,
+    dataUrl: string,
+    token: string | null
+): Promise<void> {
+    await fetch(`/api/admin/meshy/jobs/${jobId}/thumbnail`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ dataUrl }),
+    })
+}
+
 function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string | null }) {
     const rootRef = useRef<HTMLDivElement>(null)
-    const [url, setUrl] = useState<string | null>(null)
+    const [url, setUrl] = useState<string | null>(() => getCachedAdminJobThumbnail(job.id) ?? null)
     const [failed, setFailed] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(() => !getCachedAdminJobThumbnail(job.id))
     const [visible, setVisible] = useState(false)
 
     useEffect(() => {
@@ -132,7 +153,7 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
             ([entry]) => {
                 if (entry?.isIntersecting) setVisible(true)
             },
-            { rootMargin: '120px' }
+            { rootMargin: '80px' }
         )
         io.observe(el)
         return () => io.disconnect()
@@ -141,18 +162,26 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
     useEffect(() => {
         if (!visible) return
 
+        const cached = getCachedAdminJobThumbnail(job.id)
+        if (cached) {
+            setUrl(cached)
+            setLoading(false)
+            setFailed(false)
+            return
+        }
+
         let objectUrl: string | null = null
         let cancelled = false
 
-        const loadProviderThumbnail = async (): Promise<string | null> => {
+        const loadStoredThumbnail = async (): Promise<string | null> => {
             if (job.thumbnailUrl?.startsWith('http')) {
                 return job.thumbnailUrl
             }
-            if (!job.thumbnailUrl?.startsWith('meshy/')) return null
+            if (!job.thumbnailUrl?.startsWith('meshy/') && !job.hasModel) return null
             try {
-                const { blob } = await fetchAuthedBlob(
-                    `/api/admin/meshy/jobs/${job.id}/file?type=thumbnail`,
-                    token
+                const { blob } = await withThumbnailTimeout(
+                    fetchAuthedBlob(`/api/admin/meshy/jobs/${job.id}/file?type=thumbnail`, token),
+                    8_000
                 )
                 objectUrl = URL.createObjectURL(blob)
                 return objectUrl
@@ -161,39 +190,48 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
             }
         }
 
+        const loadStlThumbnail = async (): Promise<string | null> => {
+            if (!job.hasModel) return null
+            return runAdminThumbnailTask(async () => {
+                const { blob, fileName } = await withThumbnailTimeout(
+                    fetchAuthedBlob(
+                        `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
+                        token
+                    ),
+                    15_000
+                )
+                if (cancelled) return null
+                const stlName = fileName || job.resultFileName || `ai-photo-${job.id}.stl`
+                const file = new File([await blob.arrayBuffer()], stlName, {
+                    type: 'model/stl',
+                })
+                return withThumbnailTimeout(generateModelThumbnail(file, 256), 12_000)
+            })
+        }
+
         const load = async () => {
             setFailed(false)
             setLoading(true)
-            setUrl(null)
 
-            if (job.hasModel) {
-                try {
-                    const { blob, fileName } = await fetchAuthedBlob(
-                        `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
-                        token
-                    )
-                    if (cancelled) return
-                    const stlName =
-                        fileName || job.resultFileName || `ai-photo-${job.id}.stl`
-                    const file = new File([await blob.arrayBuffer()], stlName, {
-                        type: 'model/stl',
-                    })
-                    const dataUrl = await generateModelThumbnail(file, 384)
-                    if (cancelled) return
-                    if (dataUrl) {
-                        setUrl(dataUrl)
-                        return
-                    }
-                } catch {
-                    /* STL 썸네일 실패 → Tripo/Meshy CDN 썸네일 시도 */
-                }
+            const stored = await loadStoredThumbnail()
+            if (cancelled) return
+            if (stored) {
+                setCachedAdminJobThumbnail(job.id, stored)
+                setUrl(stored)
+                return
             }
 
-            const providerThumb = await loadProviderThumbnail()
-            if (cancelled) return
-            if (providerThumb) {
-                setUrl(providerThumb)
-                return
+            try {
+                const dataUrl = await loadStlThumbnail()
+                if (cancelled) return
+                if (dataUrl) {
+                    setCachedAdminJobThumbnail(job.id, dataUrl)
+                    setUrl(dataUrl)
+                    void persistAdminJobThumbnail(job.id, dataUrl, token).catch(() => {})
+                    return
+                }
+            } catch {
+                /* STL 렌더 실패 */
             }
 
             setUrl(null)
@@ -206,9 +244,50 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
 
         return () => {
             cancelled = true
-            if (objectUrl) URL.revokeObjectURL(objectUrl)
+            if (objectUrl && getCachedAdminJobThumbnail(job.id) !== objectUrl) {
+                URL.revokeObjectURL(objectUrl)
+            }
         }
     }, [visible, job.id, job.hasModel, job.thumbnailUrl, job.resultFileName, token])
+
+    const handleImgError = () => {
+        const cached = getCachedAdminJobThumbnail(job.id)
+        if (url && url.startsWith('http') && url !== cached) {
+            setUrl(null)
+            setLoading(true)
+            setFailed(false)
+            void (async () => {
+                try {
+                    const dataUrl = await runAdminThumbnailTask(() =>
+                        withThumbnailTimeout(
+                            (async () => {
+                                const { blob, fileName } = await fetchAuthedBlob(
+                                    `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
+                                    token
+                                )
+                                const stlName =
+                                    fileName || job.resultFileName || `ai-photo-${job.id}.stl`
+                                const file = new File([await blob.arrayBuffer()], stlName, {
+                                    type: 'model/stl',
+                                })
+                                return generateModelThumbnail(file, 256)
+                            })(),
+                            20_000
+                        )
+                    )
+                    if (dataUrl) {
+                        setCachedAdminJobThumbnail(job.id, dataUrl)
+                        setUrl(dataUrl)
+                        void persistAdminJobThumbnail(job.id, dataUrl, token).catch(() => {})
+                    } else setFailed(true)
+                } catch {
+                    setFailed(true)
+                } finally {
+                    setLoading(false)
+                }
+            })()
+        }
+    }
 
     return (
         <div ref={rootRef} className="absolute inset-0 bg-black/50">
@@ -217,16 +296,17 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
                 <img
                     src={url}
                     alt={`AI 3D #${job.id}`}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover bg-slate-900"
                     referrerPolicy="no-referrer"
+                    onError={handleImgError}
                 />
             ) : loading ? (
                 <div className="absolute inset-0 flex items-center justify-center text-white/40">
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                 </div>
             ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-white/30">
-                    <Box className="w-8 h-8" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 text-white/30">
+                    <Box className="w-6 h-6" />
                     <span className="text-[10px] font-bold">
                         {failed ? '3D 미리보기 생성 실패' : '썸네일 없음'}
                     </span>
@@ -264,7 +344,7 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
             const params = new URLSearchParams({
                 status,
                 page: String(page),
-                limit: '12',
+                limit: '15',
             })
             if (qApplied) params.set('q', qApplied)
             if (filterUser?.id) params.set('userId', String(filterUser.id))
@@ -460,17 +540,17 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                     ) : jobs.length === 0 ? (
                         <p className="text-white/40 text-sm py-8 text-center">조건에 맞는 작업이 없습니다.</p>
                     ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                             {jobs.map((j) => (
                                 <div
                                     key={j.id}
-                                    className="rounded-xl border border-white/10 bg-black/25 overflow-hidden flex flex-col"
+                                    className="rounded-lg border border-white/10 bg-black/25 overflow-hidden flex flex-col"
                                 >
-                                    <div className="relative aspect-[4/3] bg-black/50">
+                                    <div className="relative aspect-square bg-black/50">
                                         <AdminJobThumbnail job={j} token={token} />
                                         <span
                                             className={cn(
-                                                'absolute left-2 top-2 rounded px-2 py-0.5 text-[10px] font-black',
+                                                'absolute left-1.5 top-1.5 rounded px-1.5 py-0.5 text-[9px] font-black',
                                                 statusBadgeClass(j.status)
                                             )}
                                         >
@@ -483,31 +563,31 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                         </span>
                                     </div>
 
-                                    <div className="p-3 space-y-2 flex-1 flex flex-col">
-                                        <div className="flex items-baseline justify-between gap-2">
-                                            <span className="font-mono text-[12px] font-black text-white">
+                                    <div className="p-2 space-y-1 flex-1 flex flex-col min-w-0">
+                                        <div className="flex items-baseline justify-between gap-1">
+                                            <span className="font-mono text-[11px] font-black text-white">
                                                 #{j.id}
                                             </span>
-                                            <span className="text-[10px] text-white/40 whitespace-nowrap">
+                                            <span className="text-[9px] text-white/40 whitespace-nowrap">
                                                 {j.createdAt}
                                             </span>
                                         </div>
-                                        <p className="text-[12px] font-bold text-white/80 truncate">
+                                        <p className="text-[10px] font-bold text-white/80 truncate">
                                             {userLabel(j)}
                                             {j.userId != null && (
-                                                <span className="text-white/35 ml-1">#{j.userId}</span>
+                                                <span className="text-white/35 ml-0.5">#{j.userId}</span>
                                             )}
                                         </p>
-                                        <p className="text-[11px] text-white/45 truncate">
+                                        <p className="text-[10px] text-white/45 truncate">
                                             {j.sourceFileName || j.resultFileName || '—'}
                                         </p>
                                         {j.errorMessage && (
-                                            <p className="text-[11px] text-red-300/80 line-clamp-2">
+                                            <p className="text-[10px] text-red-300/80 line-clamp-1">
                                                 {j.errorMessage}
                                             </p>
                                         )}
 
-                                        <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                                        <div className="flex flex-wrap gap-1 text-[9px] font-bold">
                                             {j.quoteId != null ? (
                                                 <span className="rounded bg-white/8 px-1.5 py-0.5 text-white/60">
                                                     견적 #{j.quoteId}
@@ -533,16 +613,16 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                             )}
                                         </div>
 
-                                        <div className="mt-auto pt-2 flex flex-wrap gap-1.5">
+                                        <div className="mt-auto pt-1.5 flex flex-wrap gap-1">
                                             <Button
                                                 type="button"
                                                 size="sm"
                                                 variant="outline"
                                                 disabled={!j.hasSource || sourceLoading}
                                                 onClick={() => void openSource(j)}
-                                                className="h-8 text-[11px]"
+                                                className="h-7 px-2 text-[10px]"
                                             >
-                                                <ImageIcon className="w-3.5 h-3.5 mr-1" />
+                                                <ImageIcon className="w-3 h-3 mr-0.5" />
                                                 원본
                                             </Button>
                                             <Button
@@ -551,9 +631,9 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                                 variant="outline"
                                                 disabled={!j.hasModel || previewLoading}
                                                 onClick={() => void openPreview(j)}
-                                                className="h-8 text-[11px]"
+                                                className="h-7 px-2 text-[10px]"
                                             >
-                                                <Box className="w-3.5 h-3.5 mr-1" />
+                                                <Box className="w-3 h-3 mr-0.5" />
                                                 미리보기
                                             </Button>
                                             <Button
@@ -561,12 +641,12 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                                 size="sm"
                                                 disabled={!j.hasModel || busyId === j.id}
                                                 onClick={() => void downloadModel(j)}
-                                                className="h-8 text-[11px]"
+                                                className="h-7 px-2 text-[10px]"
                                             >
                                                 {busyId === j.id ? (
-                                                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                                                    <Loader2 className="w-3 h-3 animate-spin mr-0.5" />
                                                 ) : (
-                                                    <Download className="w-3.5 h-3.5 mr-1" />
+                                                    <Download className="w-3 h-3 mr-0.5" />
                                                 )}
                                                 STL
                                             </Button>
