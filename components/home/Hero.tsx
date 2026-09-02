@@ -341,27 +341,36 @@ export default function Hero() {
                         </Link>
                     </div>
 
-                    {/* Tertiary — 텍스트 링크만 */}
-                    <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-white/45">
-                        <Link href="/print-methods" className="transition-colors hover:text-teal-300" onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}>
+                    {/* Tertiary — 동일 크기 박스 */}
+                    <div className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <Link
+                            href="/print-methods"
+                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:h-12 sm:text-[13px]"
+                        >
                             출력방식
                         </Link>
-                        <span className="text-white/20">·</span>
-                        <Link href="/materials" className="transition-colors hover:text-teal-300" onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}>
+                        <Link
+                            href="/materials"
+                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:h-12 sm:text-[13px]"
+                        >
                             소재
                         </Link>
-                        <span className="text-white/20">·</span>
-                        <Link href="/#ai-3d-maker" className="transition-colors hover:text-teal-300" onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}>
+                        <Link
+                            href="/#ai-3d-maker"
+                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:h-12 sm:text-[13px]"
+                        >
                             로고 Maker
                         </Link>
-                        <span className="text-white/20">·</span>
                         <button
                             type="button"
                             onClick={handleTrySample}
                             disabled={isLoadingSample}
-                            className="transition-colors hover:text-teal-300 disabled:opacity-50"
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:text-[13px]"
                         >
-                            {isLoadingSample ? '샘플 불러오는 중…' : '샘플 견적 체험'}
+                            {isLoadingSample ? '불러오는 중…' : '샘플견적체험'}
                         </button>
                     </div>
 
@@ -473,6 +482,33 @@ export default function Hero() {
                             </div>
 
                             <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-6 py-14 text-center sm:min-h-[340px] sm:py-16">
+                                {/* AI 신뢰 배지 */}
+                                <div className="mb-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0b1220]/85 px-3.5 py-2.5 shadow-lg backdrop-blur-md">
+                                    <div
+                                        className={cn(
+                                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
+                                            uploadMode === 'file'
+                                                ? 'border-teal-400/25 bg-teal-400/10 text-teal-300'
+                                                : 'border-indigo-400/25 bg-indigo-500/10 text-indigo-300',
+                                        )}
+                                    >
+                                        <Sparkles className="h-[18px] w-[18px]" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-black leading-tight text-white">
+                                            {uploadMode === 'file' ? 'AI 견적 분석' : 'AI 3D 변환'}
+                                        </p>
+                                        <p
+                                            className={cn(
+                                                'mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em]',
+                                                uploadMode === 'file' ? 'text-teal-400/80' : 'text-indigo-300/80',
+                                            )}
+                                        >
+                                            {uploadMode === 'file' ? 'Ready · 즉시 분석' : 'Ready · 자동 견적'}
+                                        </p>
+                                    </div>
+                                </div>
+
                                 <div
                                     className={cn(
                                         'mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border sm:h-[4.5rem] sm:w-[4.5rem]',
