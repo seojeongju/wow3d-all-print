@@ -5,22 +5,17 @@ import { Button } from '@/components/ui/button';
 import {
     ArrowRight,
     Sparkles,
-    Loader2,
     ImageIcon,
     FileBox,
     Upload,
     ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect, useMemo, useCallback, useRef, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore';
+import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import LandingHeroScene from './LandingHeroScene';
-import {
-    calculateFdmQuote,
-    FDM_INFILL_DEFAULT,
-} from '@/lib/fdm-quote';
 import {
     getModelFileFromDataTransfer,
     hasModelFileExtension,
@@ -33,25 +28,7 @@ import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conv
 import { usePhotoHandoffStore } from '@/store/usePhotoHandoffStore';
 import { useAuthStore } from '@/store/useAuthStore';
 
-/** 파일 없을 때 Drop Zone에 표시하는 샘플 견적 (FDM·인필 20% 기준 안내용) */
-const HERO_DEMO_ESTIMATE_KRW = 12_800;
-
 type UploadMode = 'file' | 'photo';
-
-type PrintSpecs = {
-    fdm?: {
-        max?: { x?: number; y?: number; z?: number };
-        layerCosts?: Record<string, number>;
-        hourlyRate?: number;
-        fdm_layer_hours_factor?: number;
-        fdm_labor_cost_krw?: number;
-        fdm_support_per_cm2_krw?: number;
-        minPriceKr?: number;
-    };
-    sla?: unknown;
-    dlp?: unknown;
-};
-type ApiMaterial = { type: string; name?: string; price_per_gram?: number; density?: number };
 
 function isPhotoFile(file: File): boolean {
     const name = file.name.toLowerCase();
@@ -68,8 +45,7 @@ function isPhotoFile(file: File): boolean {
 export default function Hero() {
     const router = useRouter();
     const { user } = useAuthStore();
-    const { setFile, file, baseAnalysis, reset } = useFileStore();
-    const analysis = useEffectiveAnalysis() ?? baseAnalysis;
+    const { setFile, file, reset } = useFileStore();
 
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl'];
     const clearSampleIfPresent = () => {
@@ -77,8 +53,6 @@ export default function Hero() {
     };
     const { toast } = useToast();
     const [isLoadingSample, setIsLoadingSample] = useState(false);
-    const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null);
-    const [materials, setMaterials] = useState<ApiMaterial[]>([]);
     const [uploadMode, setUploadMode] = useState<UploadMode>('file');
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,59 +75,6 @@ export default function Hero() {
             userId: user?.id ?? null,
         });
     }, [user?.id]);
-
-    useEffect(() => {
-        fetch('/api/print-specs')
-            .then((r) => r.json())
-            .then((d) => d?.data && setPrintSpecs(d.data))
-            .catch(() => {});
-        fetch('/api/materials')
-            .then((r) => r.json())
-            .then((d) => Array.isArray(d?.data) && setMaterials(d.data))
-            .catch(() => {});
-    }, []);
-
-    const heroEstimate = useMemo(() => {
-        if (!analysis || !printSpecs?.fdm) return null;
-        const spec = printSpecs.fdm;
-        const max = spec.max || { x: 220, y: 220, z: 250 };
-        const bx = analysis.boundingBox?.x ?? 0;
-        const by = analysis.boundingBox?.y ?? 0;
-        const bz = analysis.boundingBox?.z ?? 0;
-        const overflow = bx > (max.x ?? 220) || by > (max.y ?? 220) || bz > (max.z ?? 250);
-
-        const mat = materials.find((m) => m.type === 'FDM');
-        const density = mat?.density ?? 1.24;
-        const pricePerGramKr = mat && typeof mat.price_per_gram === 'number' ? mat.price_per_gram : 0;
-        const volumeCm3 = analysis.volume || 0;
-        const surfaceAreaCm2 = analysis.surfaceArea || 0;
-        const heightMm = bz;
-        const layerHeight = 0.2;
-        const rateKRW = spec.layerCosts?.['0.2'] ?? spec.hourlyRate ?? 5000;
-
-        const q = calculateFdmQuote({
-            volumeCm3,
-            surfaceAreaCm2,
-            heightMm,
-            density,
-            pricePerGramKr,
-            infillPercent: FDM_INFILL_DEFAULT,
-            layerHeightMm: layerHeight,
-            supportEnabled: false,
-            hourlyRateKr: rateKRW,
-            fdmLaborCostKrw: spec.fdm_labor_cost_krw,
-            fdmSupportPerCm2Krw: spec.fdm_support_per_cm2_krw,
-            fdmLayerHoursFactor: spec.fdm_layer_hours_factor,
-            applyVat: false,
-            minPriceKr: spec.minPriceKr,
-        });
-
-        return {
-            total: q.total,
-            printability: overflow ? 85 : 100,
-            overflow,
-        };
-    }, [analysis, printSpecs, materials]);
 
     const handleModelUpload = useCallback(
         (model: File) => {
@@ -286,12 +207,6 @@ export default function Hero() {
             setIsLoadingSample(false);
         }
     };
-
-    const showLiveEstimate = Boolean(file && analysis && heroEstimate);
-    const showAnalyzing = Boolean(file && !analysis);
-    const displayAmount = showLiveEstimate
-        ? Math.round(heroEstimate!.total)
-        : HERO_DEMO_ESTIMATE_KRW;
 
     return (
         <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 sm:pt-32 pb-16 sm:pb-20">
@@ -470,16 +385,16 @@ export default function Hero() {
                     </div>
                 </motion.div>
 
-                {/* ── Right: 통합 Drop Zone + 견적 미리보기 ── */}
+                {/* ── Right: 통합 Drop Zone ── */}
                 <motion.div
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.1 }}
                     className="w-full"
                 >
-                    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f172a]/90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 backdrop-blur-2xl xl:rounded-[2.5rem]">
+                    <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f172a]/90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 backdrop-blur-2xl sm:min-h-[480px] xl:rounded-[2.5rem]">
                         {/* 탭 */}
-                        <div className="flex border-b border-white/10 p-2">
+                        <div className="flex shrink-0 border-b border-white/10 p-2">
                             {(
                                 [
                                     { id: 'file' as const, label: '3D 파일', icon: FileBox },
@@ -505,7 +420,7 @@ export default function Hero() {
                             ))}
                         </div>
 
-                        {/* Drop Zone */}
+                        {/* Drop Zone — 확대 */}
                         <div
                             role="button"
                             tabIndex={0}
@@ -529,7 +444,7 @@ export default function Hero() {
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                             className={cn(
-                                'relative mx-4 mt-4 cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300',
+                                'relative mx-4 mt-4 flex flex-1 cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300',
                                 isDragging
                                     ? uploadMode === 'file'
                                         ? 'border-teal-400 bg-teal-400/10 ring-2 ring-teal-400/30'
@@ -557,89 +472,34 @@ export default function Hero() {
                                 <LandingHeroScene />
                             </div>
 
-                            <div className="relative flex min-h-[200px] flex-col items-center justify-center px-6 py-10 text-center sm:min-h-[220px]">
+                            <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-6 py-14 text-center sm:min-h-[340px] sm:py-16">
                                 <div
                                     className={cn(
-                                        'mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border',
+                                        'mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border sm:h-[4.5rem] sm:w-[4.5rem]',
                                         uploadMode === 'file'
                                             ? 'border-teal-400/30 bg-teal-400/15 text-teal-300'
                                             : 'border-indigo-400/30 bg-indigo-500/15 text-indigo-300',
                                     )}
                                 >
-                                    <Upload className="h-7 w-7" />
+                                    <Upload className="h-8 w-8 sm:h-9 sm:w-9" />
                                 </div>
-                                <p className="text-base font-black text-white sm:text-lg">
+                                <p className="text-lg font-black text-white sm:text-xl">
                                     {uploadMode === 'file'
                                         ? '3D 파일을 여기에 놓으세요'
                                         : '제품 사진(이미지)을 여기에 놓으세요'}
                                 </p>
-                                <p className="mt-2 max-w-xs text-xs leading-relaxed text-white/50 break-keep sm:text-sm">
+                                <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/50 break-keep sm:text-sm">
                                     {uploadMode === 'file'
                                         ? 'STL · OBJ · 3MF · PLY · STEP · STP · 최대 100MB'
                                         : 'JPG · PNG · 최대 8MB · AI 3D 변환 후 견적'}
                                 </p>
-                                <p className="mt-4 text-[11px] font-black uppercase tracking-widest text-white/35">
-                                    클릭하여 파일 선택
+                                <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-white/35">
+                                    클릭하여 파일 선택 · 업로드 후 견적 페이지로 이동합니다
                                 </p>
                             </div>
                         </div>
 
-                        {/* 견적 미리보기 */}
-                        <div className="space-y-4 p-4 sm:p-5">
-                            <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
-                                <div className="mb-3 flex items-center justify-between gap-2">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-                                        {showLiveEstimate ? 'Estimate (FDM)' : '샘플 미리보기 (FDM)'}
-                                    </span>
-                                    {showAnalyzing && (
-                                        <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-400">
-                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                            Analyzing
-                                        </span>
-                                    )}
-                                    {showLiveEstimate && heroEstimate?.overflow && (
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                                            Size check
-                                        </span>
-                                    )}
-                                </div>
-
-                                {!showAnalyzing && (
-                                    <div
-                                        className={cn(
-                                            'text-3xl font-black tracking-tight sm:text-4xl',
-                                            showLiveEstimate ? 'text-white' : 'text-white/90',
-                                        )}
-                                    >
-                                        ₩ {displayAmount.toLocaleString('ko-KR')}
-                                    </div>
-                                )}
-                                {showAnalyzing && (
-                                    <div className="text-3xl font-black tracking-tight text-white/20 sm:text-4xl">
-                                        ₩ —
-                                    </div>
-                                )}
-
-                                <p className="mt-2 text-[11px] leading-relaxed text-white/45 break-keep sm:text-xs">
-                                    {showLiveEstimate
-                                        ? `인필 ${FDM_INFILL_DEFAULT}% · 지지대 미포함 · VAT 별도. 상세 옵션은 자동견적에서 조정하세요.`
-                                        : '파일을 올리면 실제 견적이 바로 표시됩니다. (샘플 기준 미리보기)'}
-                                </p>
-
-                                {showLiveEstimate && (
-                                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                                        <motion.div
-                                            className={cn(
-                                                'h-full rounded-full',
-                                                heroEstimate?.overflow ? 'bg-amber-400' : 'bg-teal-400',
-                                            )}
-                                            initial={false}
-                                            animate={{ width: `${heroEstimate?.printability ?? 100}%` }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
+                        <div className="shrink-0 p-4 sm:p-5">
                             <Link
                                 href={uploadMode === 'file' ? '/quote?entry=file' : '/quote?entry=photo'}
                                 onClick={() => {
