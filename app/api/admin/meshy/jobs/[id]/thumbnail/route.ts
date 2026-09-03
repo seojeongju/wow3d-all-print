@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
-import { buildMeshyThumbnailR2Key } from '@/lib/meshy-r2'
+import { buildMeshyStlThumbnailR2Key } from '@/lib/meshy-r2'
 
 function parseDataUrl(dataUrl: string): { buffer: ArrayBuffer; contentType: string } | null {
     const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl.trim())
@@ -20,7 +20,7 @@ function parseDataUrl(dataUrl: string): { buffer: ArrayBuffer; contentType: stri
 
 /**
  * POST /api/admin/meshy/jobs/[id]/thumbnail
- * 클라이언트 STL 렌더 썸네일을 R2에 저장 (목록 재방문 시 빠른 로드)
+ * 클라이언트 STL 렌더 썸네일을 R2에 저장 (Tripo 미리보기와 별도 키)
  */
 export async function POST(
     req: NextRequest,
@@ -47,22 +47,11 @@ export async function POST(
             return NextResponse.json({ error: '유효한 이미지 데이터가 아닙니다' }, { status: 400 })
         }
 
-        const ext = parsed.contentType.includes('png')
-            ? 'png'
-            : parsed.contentType.includes('webp')
-              ? 'webp'
-              : 'jpg'
-        const key = buildMeshyThumbnailR2Key(jobId, ext)
+        const key = buildMeshyStlThumbnailR2Key(jobId)
 
         await env.BUCKET.put(key, parsed.buffer, {
-            httpMetadata: { contentType: parsed.contentType },
+            httpMetadata: { contentType: 'image/png' },
         })
-
-        await env.DB.prepare(
-            `UPDATE meshy_jobs SET thumbnail_url = ?, updated_at = datetime('now') WHERE id = ?`
-        )
-            .bind(key, jobId)
-            .run()
 
         return NextResponse.json({ success: true, data: { thumbnailKey: key } })
     } catch (e) {

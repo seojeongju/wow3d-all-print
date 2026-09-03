@@ -6,6 +6,12 @@ import { ChevronRight, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
+    AdminChartTooltip,
+    ChartDayHitArea,
+    formatChartTooltipDate,
+    useAdminChartHover,
+} from '@/components/admin/AdminChartTooltip';
+import {
     type VisitorTrendPoint,
     fillVisitorTrend,
     sumVisitorTrend,
@@ -43,6 +49,7 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
         memberSessions: true,
         quotePageViews: true,
     });
+    const chartHover = useAdminChartHover();
 
     const points = useMemo(() => fillVisitorTrend(data, dayCount), [data, dayCount]);
     const totals = useMemo(() => sumVisitorTrend(points), [points]);
@@ -153,9 +160,9 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                         <div className="w-full overflow-x-auto">
                             <svg
                                 viewBox={`0 0 ${innerW + PAD.left + PAD.right} ${CHART_H}`}
-                                className="w-full min-w-[520px] h-[220px]"
+                                className="h-[220px] w-full min-w-[520px]"
                                 role="img"
-                                aria-label="일별 방문자 추이 차트"
+                                aria-label="일별 방문자 추이 차트. 날짜 위에 포인터를 올리면 값이 표시됩니다."
                             >
                                 {[0, 1, 2, 3, 4].map((i) => {
                                     const y = PAD.top + (innerH / 4) * i;
@@ -226,9 +233,8 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                                                         fill={b.color}
                                                         rx={2}
                                                         opacity={0.85}
-                                                    >
-                                                        <title>{`${formatTrendDateLabel(p.date)} ${SERIES.find((s) => s.key === b.key)?.label}: ${Math.round(b.value).toLocaleString()}회`}</title>
-                                                    </rect>
+                                                        pointerEvents="none"
+                                                    />
                                                 );
                                             })}
                                             <text
@@ -258,9 +264,15 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                                             const y = PAD.top + innerH - (p.quotePageViews / maxLine) * innerH;
                                             return (
                                                 <g key={`dot-${p.date}`}>
-                                                    <circle cx={x} cy={y} r={4} fill="#a855f7" stroke="#0f0f0f" strokeWidth={2}>
-                                                        <title>{`${formatTrendDateLabel(p.date)} 견적·체험 ${p.quotePageViews}회`}</title>
-                                                    </circle>
+                                                    <circle
+                                                        cx={x}
+                                                        cy={y}
+                                                        r={4}
+                                                        fill="#a855f7"
+                                                        stroke="#0f0f0f"
+                                                        strokeWidth={2}
+                                                        pointerEvents="none"
+                                                    />
                                                     <text
                                                         x={x}
                                                         y={y - 8}
@@ -287,7 +299,39 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                                         견적
                                     </text>
                                 )}
+                                {points.map((p, i) => (
+                                    <ChartDayHitArea
+                                        key={`hit-${p.date}`}
+                                        x={PAD.left + groupW * i}
+                                        y={PAD.top}
+                                        width={groupW}
+                                        height={innerH}
+                                        active={chartHover.hover?.index === i}
+                                        onMove={(e) => chartHover.fromPointer(i, e)}
+                                        onLeave={chartHover.hide}
+                                    />
+                                ))}
                             </svg>
+                            <AdminChartTooltip
+                                hover={chartHover.hover}
+                                title={
+                                    chartHover.hover
+                                        ? formatChartTooltipDate(points[chartHover.hover.index]?.date ?? '')
+                                        : ''
+                                }
+                                rows={
+                                    chartHover.hover
+                                        ? SERIES.filter((s) => visible[s.key]).map((s) => {
+                                              const raw = points[chartHover.hover!.index]?.[s.key] ?? 0;
+                                              return {
+                                                  label: s.label,
+                                                  color: s.color,
+                                                  value: `${Math.round(raw).toLocaleString('ko-KR')}회`,
+                                              };
+                                          })
+                                        : []
+                                }
+                            />
                         </div>
 
                         <div className="rounded-xl border border-white/10 overflow-hidden">

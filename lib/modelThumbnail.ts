@@ -118,32 +118,38 @@ function renderGeometryToDataUrl(geometry: THREE.BufferGeometry, size: number): 
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    alpha: true,
+    alpha: false,
     antialias: true,
     preserveDrawingBuffer: true,
   })
   renderer.setSize(size, size)
-  renderer.setClearColor(0x000000, 0)
+  renderer.setPixelRatio(1)
+  renderer.setClearColor(0x0b1220, 1)
+  renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.05
 
   const scene = new THREE.Scene()
 
-  // 조명 추가 (썸네일 모델이 선명하게 보이도록)
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
-  scene.add(ambientLight)
+  // 낮은 앰비언트 + 키/필/림 — 흰 실루엣으로 날아가지 않고 윤곽이 살아나도록
+  scene.add(new THREE.HemisphereLight(0xc5d4ff, 0x1a2030, 0.5))
 
-  const mainLight = new THREE.DirectionalLight(0xffffff, 1.5)
-  mainLight.position.set(10, 20, 10)
-  scene.add(mainLight)
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.05)
+  keyLight.position.set(1.4, 1.8, 1.1)
+  scene.add(keyLight)
 
-  const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
-  fillLight.position.set(-10, 0, -10)
+  const fillLight = new THREE.DirectionalLight(0x9bb7ff, 0.32)
+  fillLight.position.set(-1.6, 0.35, 0.5)
   scene.add(fillLight)
 
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000)
+  const rimLight = new THREE.DirectionalLight(0xe8f0ff, 0.95)
+  rimLight.position.set(-0.55, 0.7, -1.5)
+  scene.add(rimLight)
+
   const material = new THREE.MeshStandardMaterial({
-    color: 0x6366f1,
-    roughness: 0.2,
-    metalness: 0.6,
+    color: 0x7c8cff,
+    roughness: 0.42,
+    metalness: 0.22,
     side: THREE.DoubleSide,
   })
   const mesh = new THREE.Mesh(geometry, material)
@@ -153,7 +159,10 @@ function renderGeometryToDataUrl(geometry: THREE.BufferGeometry, size: number): 
   const s = new THREE.Vector3()
   box.getSize(s)
   const maxDim = Math.max(s.x, s.y, s.z, 1)
-  camera.position.set(maxDim, maxDim, maxDim)
+  const dist = maxDim * 1.7
+
+  const camera = new THREE.PerspectiveCamera(42, 1, maxDim / 200, maxDim * 20)
+  camera.position.set(dist * 0.82, dist * 0.52, dist * 1.08)
   camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
 

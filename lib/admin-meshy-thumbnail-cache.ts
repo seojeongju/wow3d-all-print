@@ -1,16 +1,21 @@
 /** 관리자 AI 3D 목록 — STL 썸네일 생성 동시 실행 제한 + 세션 캐시 */
 
-const sessionCache = new Map<number, string>()
+const CACHE_VERSION = 'stl-v2'
+const sessionCache = new Map<string, string>()
 let activeTasks = 0
 const waitQueue: Array<() => void> = []
 const MAX_CONCURRENT_STL_THUMBNAILS = 2
 
+function cacheKey(jobId: number): string {
+    return `${CACHE_VERSION}:${jobId}`
+}
+
 export function getCachedAdminJobThumbnail(jobId: number): string | undefined {
-    return sessionCache.get(jobId)
+    return sessionCache.get(cacheKey(jobId))
 }
 
 export function setCachedAdminJobThumbnail(jobId: number, url: string): void {
-    sessionCache.set(jobId, url)
+    sessionCache.set(cacheKey(jobId), url)
 }
 
 export function runAdminThumbnailTask<T>(fn: () => Promise<T>): Promise<T> {

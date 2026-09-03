@@ -186,6 +186,11 @@ export function buildMeshyThumbnailR2Key(jobId: number, ext: 'jpg' | 'png' | 'we
     return `meshy/${jobId}/thumbnail.${ext}`
 }
 
+/** 관리자 목록용 STL WebGL 렌더 썸네일 (Tripo 미리보기와 분리) */
+export function buildMeshyStlThumbnailR2Key(jobId: number): string {
+    return `meshy/${jobId}/stl-thumbnail.png`
+}
+
 type ThumbnailBucket = {
     put: (
         key: string,

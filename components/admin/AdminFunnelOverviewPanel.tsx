@@ -3,6 +3,12 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
+    AdminChartTooltip,
+    ChartDayHitArea,
+    formatChartTooltipDate,
+    useAdminChartHover,
+} from '@/components/admin/AdminChartTooltip';
+import {
     ChevronDown,
     ChevronRight,
     Database,
@@ -100,6 +106,7 @@ export default function AdminFunnelOverviewPanel({
     const [visibleSeries, setVisibleSeries] = useState<Record<string, boolean>>(() =>
         Object.fromEntries(TREND_SERIES.map((s) => [s.key, true])),
     );
+    const chartHover = useAdminChartHover();
 
     const orderComplete =
         quoteRows.find((r) => r.eventName === CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE)?.count ?? 0;
@@ -285,7 +292,7 @@ export default function AdminFunnelOverviewPanel({
                                     viewBox={`0 0 ${chart.width + PAD.left + PAD.right} ${CHART_H}`}
                                     className="h-[200px] w-full min-w-[480px]"
                                     role="img"
-                                    aria-label="전환 퍼널 일별 추이"
+                                    aria-label="전환 퍼널 일별 추이. 날짜 위에 포인터를 올리면 값이 표시됩니다."
                                 >
                                     {[0, 1, 2, 3].map((i) => {
                                         const innerH = CHART_H - PAD.top - PAD.bottom;
@@ -322,11 +329,11 @@ export default function AdminFunnelOverviewPanel({
                                         const gx = PAD.left + groupW * i + groupW / 2;
                                         const activeSeries = TREND_SERIES.filter((s) => visibleSeries[s.key]);
                                         const barW = Math.min(8, Math.max(3, groupW / (activeSeries.length + 2)));
+                                        const innerH = CHART_H - PAD.top - PAD.bottom;
 
                                         return (
                                             <g key={col.date}>
                                                 {activeSeries.map((s, bi) => {
-                                                    const innerH = CHART_H - PAD.top - PAD.bottom;
                                                     const h =
                                                         chart.max > 0
                                                             ? (col.values[s.key] / chart.max) * innerH
@@ -344,9 +351,8 @@ export default function AdminFunnelOverviewPanel({
                                                             fill={s.color}
                                                             rx={2}
                                                             opacity={0.9}
-                                                        >
-                                                            <title>{`${formatFunnelDateLabel(col.date)} ${s.label}: ${col.values[s.key]}`}</title>
-                                                        </rect>
+                                                            pointerEvents="none"
+                                                        />
                                                     );
                                                 })}
                                                 <text
@@ -360,7 +366,42 @@ export default function AdminFunnelOverviewPanel({
                                             </g>
                                         );
                                     })}
+                                    {chart.columns.map((col, i) => {
+                                        const groupW = chart.width / chart.columns.length;
+                                        const innerH = CHART_H - PAD.top - PAD.bottom;
+                                        return (
+                                            <ChartDayHitArea
+                                                key={`hit-${col.date}`}
+                                                x={PAD.left + groupW * i}
+                                                y={PAD.top}
+                                                width={groupW}
+                                                height={innerH}
+                                                active={chartHover.hover?.index === i}
+                                                onMove={(e) => chartHover.fromPointer(i, e)}
+                                                onLeave={chartHover.hide}
+                                            />
+                                        );
+                                    })}
                                 </svg>
+                                <AdminChartTooltip
+                                    hover={chartHover.hover}
+                                    title={
+                                        chartHover.hover
+                                            ? formatChartTooltipDate(chart.columns[chartHover.hover.index]?.date ?? '')
+                                            : ''
+                                    }
+                                    rows={
+                                        chartHover.hover
+                                            ? TREND_SERIES.filter((s) => visibleSeries[s.key]).map((s) => ({
+                                                  label: s.label,
+                                                  color: s.color,
+                                                  value: (
+                                                      chart.columns[chartHover.hover!.index]?.values[s.key] ?? 0
+                                                  ).toLocaleString('ko-KR'),
+                                              }))
+                                            : []
+                                    }
+                                />
                             </div>
                         )}
                     </div>

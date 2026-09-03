@@ -139,6 +139,22 @@ async function persistAdminJobThumbnail(
     })
 }
 
+async function renderStlThumbnailFromJob(
+    job: AdminMeshyJob,
+    token: string | null
+): Promise<string | null> {
+    if (!job.hasModel) return null
+    const { blob, fileName } = await fetchAuthedBlob(
+        `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
+        token
+    )
+    const stlName = fileName || job.resultFileName || `ai-photo-${job.id}.stl`
+    const file = new File([await blob.arrayBuffer()], stlName, {
+        type: 'model/stl',
+    })
+    return generateModelThumbnail(file, 320)
+}
+
 function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string | null }) {
     const rootRef = useRef<HTMLDivElement>(null)
     const [url, setUrl] = useState<string | null>(() => getCachedAdminJobThumbnail(job.id) ?? null)
@@ -173,14 +189,13 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
         let objectUrl: string | null = null
         let cancelled = false
 
-        const loadStoredThumbnail = async (): Promise<string | null> => {
-            if (job.thumbnailUrl?.startsWith('http')) {
-                return job.thumbnailUrl
-            }
-            if (!job.thumbnailUrl?.startsWith('meshy/') && !job.hasModel) return null
+        const loadStoredStlThumbnail = async (): Promise<string | null> => {
             try {
                 const { blob } = await withThumbnailTimeout(
-                    fetchAuthedBlob(`/api/admin/meshy/jobs/${job.id}/file?type=thumbnail`, token),
+                    fetchAuthedBlob(
+                        `/api/admin/meshy/jobs/${job.id}/file?type=thumbnail&kind=stl`,
+                        token
+                    ),
                     8_000
                 )
                 objectUrl = URL.createObjectURL(blob)
@@ -191,21 +206,9 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
         }
 
         const loadStlThumbnail = async (): Promise<string | null> => {
-            if (!job.hasModel) return null
             return runAdminThumbnailTask(async () => {
-                const { blob, fileName } = await withThumbnailTimeout(
-                    fetchAuthedBlob(
-                        `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
-                        token
-                    ),
-                    15_000
-                )
                 if (cancelled) return null
-                const stlName = fileName || job.resultFileName || `ai-photo-${job.id}.stl`
-                const file = new File([await blob.arrayBuffer()], stlName, {
-                    type: 'model/stl',
-                })
-                return withThumbnailTimeout(generateModelThumbnail(file, 256), 12_000)
+                return withThumbnailTimeout(renderStlThumbnailFromJob(job, token), 18_000)
             })
         }
 
@@ -213,7 +216,7 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
             setFailed(false)
             setLoading(true)
 
-            const stored = await loadStoredThumbnail()
+            const stored = await loadStoredStlThumbnail()
             if (cancelled) return
             if (stored) {
                 setCachedAdminJobThumbnail(job.id, stored)
@@ -248,55 +251,43 @@ function AdminJobThumbnail({ job, token }: { job: AdminMeshyJob; token: string |
                 URL.revokeObjectURL(objectUrl)
             }
         }
-    }, [visible, job.id, job.hasModel, job.thumbnailUrl, job.resultFileName, token])
+    }, [visible, job.id, job.hasModel, job.resultFileName, token])
 
     const handleImgError = () => {
-        const cached = getCachedAdminJobThumbnail(job.id)
-        if (url && url.startsWith('http') && url !== cached) {
+        if (!job.hasModel) {
+            setFailed(true)
             setUrl(null)
-            setLoading(true)
-            setFailed(false)
-            void (async () => {
-                try {
-                    const dataUrl = await runAdminThumbnailTask(() =>
-                        withThumbnailTimeout(
-                            (async () => {
-                                const { blob, fileName } = await fetchAuthedBlob(
-                                    `/api/admin/meshy/jobs/${job.id}/file?type=model&disposition=inline`,
-                                    token
-                                )
-                                const stlName =
-                                    fileName || job.resultFileName || `ai-photo-${job.id}.stl`
-                                const file = new File([await blob.arrayBuffer()], stlName, {
-                                    type: 'model/stl',
-                                })
-                                return generateModelThumbnail(file, 256)
-                            })(),
-                            20_000
-                        )
-                    )
-                    if (dataUrl) {
-                        setCachedAdminJobThumbnail(job.id, dataUrl)
-                        setUrl(dataUrl)
-                        void persistAdminJobThumbnail(job.id, dataUrl, token).catch(() => {})
-                    } else setFailed(true)
-                } catch {
-                    setFailed(true)
-                } finally {
-                    setLoading(false)
-                }
-            })()
+            return
         }
+        setUrl(null)
+        setLoading(true)
+        setFailed(false)
+        void (async () => {
+            try {
+                const dataUrl = await runAdminThumbnailTask(() =>
+                    withThumbnailTimeout(renderStlThumbnailFromJob(job, token), 20_000)
+                )
+                if (dataUrl) {
+                    setCachedAdminJobThumbnail(job.id, dataUrl)
+                    setUrl(dataUrl)
+                    void persistAdminJobThumbnail(job.id, dataUrl, token).catch(() => {})
+                } else setFailed(true)
+            } catch {
+                setFailed(true)
+            } finally {
+                setLoading(false)
+            }
+        })()
     }
 
     return (
-        <div ref={rootRef} className="absolute inset-0 bg-black/50">
+        <div ref={rootRef} className="absolute inset-0 bg-[#0b1220]">
             {url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                     src={url}
                     alt={`AI 3D #${job.id}`}
-                    className="absolute inset-0 h-full w-full object-cover bg-slate-900"
+                    className="absolute inset-0 h-full w-full object-contain bg-[#0b1220]"
                     referrerPolicy="no-referrer"
                     onError={handleImgError}
                 />

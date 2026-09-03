@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 
-import { buildMeshyThumbnailR2Key } from '@/lib/meshy-r2'
+import { buildMeshyStlThumbnailR2Key, buildMeshyThumbnailR2Key } from '@/lib/meshy-r2'
 
 type JobFileRow = {
     id: number
@@ -73,15 +73,20 @@ export async function GET(
         }
 
         if (type === 'thumbnail') {
+            const kind = (req.nextUrl.searchParams.get('kind') || '').trim()
             const keyCandidates: string[] = []
             const pushKey = (k?: string | null) => {
                 const t = (k || '').trim()
                 if (t.startsWith('meshy/') && !keyCandidates.includes(t)) keyCandidates.push(t)
             }
-            pushKey(job.thumbnail_url)
-            pushKey(buildMeshyThumbnailR2Key(jobId, 'jpg'))
-            pushKey(buildMeshyThumbnailR2Key(jobId, 'png'))
-            pushKey(buildMeshyThumbnailR2Key(jobId, 'webp'))
+            if (kind === 'stl') {
+                pushKey(buildMeshyStlThumbnailR2Key(jobId))
+            } else {
+                pushKey(job.thumbnail_url)
+                pushKey(buildMeshyThumbnailR2Key(jobId, 'jpg'))
+                pushKey(buildMeshyThumbnailR2Key(jobId, 'png'))
+                pushKey(buildMeshyThumbnailR2Key(jobId, 'webp'))
+            }
 
             for (const key of keyCandidates) {
                 const object = await env.BUCKET.get(key)
