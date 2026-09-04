@@ -177,10 +177,10 @@ export default function AdminGalleryPage() {
         setIsSaving(true);
         try {
             const data = new FormData();
-            if (formData.title) data.append('title', formData.title);
-            if (formData.description) data.append('description', formData.description);
-            if (formData.material) data.append('material', formData.material);
-            if (formData.print_method) data.append('print_method', formData.print_method);
+            data.append('title', formData.title);
+            data.append('description', formData.description ?? '');
+            data.append('material', formData.material ?? '');
+            data.append('print_method', formData.print_method ?? '');
 
             // # 붙은 태그들을 JSON 배열로 변환해서 저장
             const tagsArray = formData.tags
@@ -208,15 +208,25 @@ export default function AdminGalleryPage() {
                 body: data
             });
 
-            const json = await res.json();
-            if (json.success) {
+            let json: { success?: boolean; error?: string } = {};
+            try {
+                json = await res.json();
+            } catch {
+                json = { error: `서버 응답 오류 (${res.status})` };
+            }
+
+            if (res.ok && json.success) {
                 toast({ title: `갤러리 정보가 ${editId ? '수정' : '추가'}되었습니다.` });
                 setIsAddOpen(false);
                 fetchGallery(page);
             } else {
-                toast({ title: json.error || '저장 실패', variant: 'destructive' });
+                toast({
+                    title: json.error || `저장 실패 (${res.status})`,
+                    variant: 'destructive',
+                });
             }
         } catch (e) {
+            console.error('gallery save failed', e);
             toast({ title: '오류가 발생했습니다.', variant: 'destructive' });
         } finally {
             setIsSaving(false);

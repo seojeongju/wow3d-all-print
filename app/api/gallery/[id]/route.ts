@@ -90,40 +90,56 @@ export async function PUT(request: NextRequest, { params }: Params) {
             const isVisibleStr = formData.get('is_visible') as string;
             const isVisible = isVisibleStr ? parseInt(isVisibleStr, 10) : null;
 
-            const imageFile = formData.get('image') as File | null;
-            const sourceImageFile = formData.get('source_image') as File | null;
+            const imageFile = formData.get('image');
+            const sourceImageFile = formData.get('source_image');
             const clearSourceImage = formData.get('clear_source_image') === '1';
 
-            let imageUrl = null;
-            if (imageFile && env.BUCKET) {
+            const isUploadable = (f: FormDataEntryValue | null): f is File =>
+                typeof File !== 'undefined' && f instanceof File && f.size > 0;
+
+            let imageUrl: string | null = null;
+            if (isUploadable(imageFile) && env.BUCKET) {
                 imageUrl = await uploadGalleryImage(env.BUCKET, imageFile);
             }
 
-            let sourceImageUrl: string | null | undefined = undefined;
+            // D1 bind는 undefined 불가 — 원본 미변경 시 null + 플래그로 유지
+            let clearSourceFlag = 0;
+            let replaceSourceFlag = 0;
+            let sourceImageUrl: string | null = null;
             if (clearSourceImage) {
-                sourceImageUrl = null;
-            } else if (sourceImageFile && env.BUCKET) {
+                clearSourceFlag = 1;
+            } else if (isUploadable(sourceImageFile) && env.BUCKET) {
                 sourceImageUrl = await uploadGalleryImage(env.BUCKET, sourceImageFile, 'gallery/source');
+                replaceSourceFlag = 1;
             }
 
             try {
                 await env.DB.prepare(
                     `UPDATE gallery_items SET title=COALESCE(?,title), description=COALESCE(?,description),
                      image_url=COALESCE(?,image_url),
-                     source_image_url=CASE WHEN ? = 1 THEN NULL WHEN ? IS NOT NULL THEN ? ELSE source_image_url END,
+                     source_image_url=CASE
+                       WHEN ? = 1 THEN NULL
+                       WHEN ? = 1 THEN ?
+                       ELSE source_image_url
+                     END,
                      material=COALESCE(?,material), print_method=COALESCE(?,print_method),
                      tags=COALESCE(?,tags), is_visible=COALESCE(?,is_visible),
                      sort_order=COALESCE(?,sort_order), updated_at=datetime('now')
                      WHERE id=? AND store_id=?`
                 ).bind(
-                    title, description, imageUrl,
-                    clearSourceImage ? 1 : 0,
+                    title,
+                    description,
+                    imageUrl,
+                    clearSourceFlag,
+                    replaceSourceFlag,
                     sourceImageUrl,
-                    sourceImageUrl,
-                    material, printMethod, tagsRaw,
-                    Number.isNaN(isVisible) ? null : isVisible,
-                    Number.isNaN(sortOrder) ? null : sortOrder,
-                    parseInt(id), admin.storeId
+                    material,
+                    printMethod,
+                    tagsRaw,
+                    Number.isNaN(isVisible as number) ? null : isVisible,
+                    Number.isNaN(sortOrder as number) ? null : sortOrder,
+                    parseInt(id),
+                    admin.storeId
                 ).run();
             } catch (colErr: any) {
                 if (colErr.message?.includes('source_image_url') || colErr.message?.includes('no such column')) {
@@ -135,23 +151,36 @@ export async function PUT(request: NextRequest, { params }: Params) {
                          sort_order=COALESCE(?,sort_order), updated_at=datetime('now')
                          WHERE id=? AND store_id=?`
                     ).bind(
-                        title, description, imageUrl, material, printMethod, tagsRaw,
-                        Number.isNaN(isVisible) ? null : isVisible,
-                        Number.isNaN(sortOrder) ? null : sortOrder,
-                        parseInt(id), admin.storeId
+                        title,
+                        description,
+                        imageUrl,
+                        material,
+                        printMethod,
+                        tagsRaw,
+                        Number.isNaN(isVisible as number) ? null : isVisible,
+                        Number.isNaN(sortOrder as number) ? null : sortOrder,
+                        parseInt(id),
+                        admin.storeId
                     ).run();
                 } else {
                     throw colErr;
                 }
             }
 
-            return NextResponse.json({ success: true, ...(imageUrl && { data: { imageUrl } }) });
+            return NextResponse.json({
+                success: true,
+                data: {
+                    ...(imageUrl ? { imageUrl } : {}),
+                    ...(sourceImageUrl ? { sourceImageUrl } : {}),
+                },
+            });
         } else {
             return NextResponse.json({ error: '지원하지 않는 Content-Type' }, { status: 400 });
         }
     } catch (e) {
         console.error('PUT /api/gallery/[id]', e);
-        return NextResponse.json({ error: '수정 실패' }, { status: 500 });
+        const message = e instanceof Error ? e.message : '수정 실패';
+        return NextResponse.json({ error: `수정 실패: ${message}` }, { status: 500 });
     }
 }
 
