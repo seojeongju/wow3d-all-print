@@ -10,13 +10,17 @@ import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
 import {
   absoluteUrl,
   buildOgImages,
+  OG_IMAGE_ALT,
+  OG_IMAGE_HEIGHT,
   OG_IMAGE_PATH,
+  OG_IMAGE_WIDTH,
   SITE_DESCRIPTION,
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site-url";
 import {
   buildBusinessSchemas,
+  buildWebPageSchema,
   buildWebSiteSearchActionSchema,
 } from "@/lib/aeo-schema";
 
@@ -31,6 +35,7 @@ const geistMono = Geist_Mono({
 });
 
 const ogImages = buildOgImages();
+const primaryImage = absoluteUrl(OG_IMAGE_PATH);
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -64,7 +69,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [absoluteUrl(OG_IMAGE_PATH)],
+    images: [primaryImage],
   },
   robots: {
     index: true,
@@ -93,15 +98,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const businessSchemas = buildBusinessSchemas();
-  const primaryImage = absoluteUrl(OG_IMAGE_PATH);
 
   return (
     <html lang="ko" className="dark">
       <head>
         <meta name="naver-site-verification" content={NAVER_SITE_VERIFICATION} />
-        {/* 네이버·구형 크롤러용 대표 이미지 힌트 */}
+        {/* 네이버·구형 크롤러용 대표 이미지 힌트 (절대 URL 명시) */}
         <link rel="image_src" href={primaryImage} />
+        <meta property="og:image" content={primaryImage} />
+        <meta property="og:image:secure_url" content={primaryImage} />
         <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
+        <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
+        <meta property="og:image:alt" content={OG_IMAGE_ALT} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -111,6 +120,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
               buildWebSiteSearchActionSchema(),
+              buildWebPageSchema(),
               ...businessSchemas,
             ]),
           }}

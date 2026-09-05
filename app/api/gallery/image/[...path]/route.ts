@@ -19,7 +19,7 @@ export async function GET(
         const object = await env.BUCKET.get(r2Key);
         if (!object) {
             // 404 콘솔 오류 방지: R2에 실제 이미지가 없는 경우 기본 이미지(OG image)로 우회합니다.
-            return NextResponse.redirect(new URL('/og-image-v2.jpg', _request.url));
+            return NextResponse.redirect(new URL('/og-naver-v2.jpg', _request.url));
         }
 
         const headers = new Headers();

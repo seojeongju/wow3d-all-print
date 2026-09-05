@@ -1,5 +1,13 @@
 import type { QnAItem } from '@/lib/qna';
-import { absoluteUrl, SITE_URL } from '@/lib/site-url';
+import {
+    absoluteUrl,
+    OG_IMAGE_ALT,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_PATH,
+    OG_IMAGE_WIDE_PATH,
+    OG_IMAGE_WIDTH,
+    SITE_URL,
+} from '@/lib/site-url';
 
 export function buildFaqPageSchema(items: QnAItem[], pagePath = '/qna') {
     return {
@@ -72,7 +80,7 @@ export function buildWebSiteSearchActionSchema() {
         name: '(주)와우쓰리디',
         alternateName: ['와우쓰리디', 'WOW3D', '와우3D'],
         url: SITE_URL,
-        image: absoluteUrl('/og-naver-v1.jpg'),
+        image: absoluteUrl(OG_IMAGE_PATH),
         publisher: {
             '@type': 'Organization',
             name: '(주)와우쓰리디',
@@ -89,8 +97,18 @@ export function buildWebPageSchema(input?: {
     name?: string;
     description?: string;
     path?: string;
+    imagePath?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    imageCaption?: string;
 }) {
     const path = input?.path ?? '/';
+    const imagePath = input?.imagePath ?? OG_IMAGE_PATH;
+    const imageUrl = absoluteUrl(imagePath);
+    const width = input?.imageWidth ?? OG_IMAGE_WIDTH;
+    const height = input?.imageHeight ?? OG_IMAGE_HEIGHT;
+    const caption = input?.imageCaption ?? OG_IMAGE_ALT;
+
     return {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -102,12 +120,12 @@ export function buildWebPageSchema(input?: {
         isPartOf: { '@type': 'WebSite', url: SITE_URL, name: '(주)와우쓰리디' },
         primaryImageOfPage: {
             '@type': 'ImageObject',
-            url: absoluteUrl('/og-naver-v1.jpg'),
-            width: 1200,
-            height: 1200,
-            caption: '와우쓰리디 WOW3D 3D프린팅출력·3D프린터출력 시제품·산업용 부품',
+            url: imageUrl,
+            width,
+            height,
+            caption,
         },
-        image: absoluteUrl('/og-naver-v1.jpg'),
+        image: imageUrl,
         inLanguage: 'ko-KR',
     };
 }
@@ -129,13 +147,20 @@ export function buildCollectionPageSchema(input: {
     name: string;
     description: string;
     path: string;
+    imagePath?: string;
 }) {
+    const imageUrl = absoluteUrl(input.imagePath ?? OG_IMAGE_PATH);
     return {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         name: input.name,
         description: input.description,
         url: absoluteUrl(input.path),
+        image: imageUrl,
+        primaryImageOfPage: {
+            '@type': 'ImageObject',
+            url: imageUrl,
+        },
     };
 }
 
@@ -172,8 +197,8 @@ export function buildBusinessSchemas() {
             url: SITE_URL,
             logo: absoluteUrl('/thumbnail.png'),
             image: [
-                absoluteUrl('/og-naver-v1.jpg'),
-                absoluteUrl('/og-image-v2.jpg'),
+                absoluteUrl(OG_IMAGE_PATH),
+                absoluteUrl(OG_IMAGE_WIDE_PATH),
             ],
             email: 'wow3d16@naver.com',
             telephone: '02-3144-3137',
@@ -201,8 +226,8 @@ export function buildBusinessSchemas() {
                 '(주)와우쓰리디는 3D프린팅출력, 3D프린터출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 기반 업체입니다.',
             url: SITE_URL,
             image: [
-                absoluteUrl('/og-naver-v1.jpg'),
-                absoluteUrl('/og-image-v2.jpg'),
+                absoluteUrl(OG_IMAGE_PATH),
+                absoluteUrl(OG_IMAGE_WIDE_PATH),
             ],
             email: 'wow3d16@naver.com',
             telephone: '02-3144-3137',
