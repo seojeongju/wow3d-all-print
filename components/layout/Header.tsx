@@ -125,8 +125,8 @@ export default function Header() {
                                 onMouseEnter={() => setOpenDropdown(item.label)}
                                 onMouseLeave={() => setOpenDropdown(null)}
                             >
-                                <button
-                                    type="button"
+                                <Link
+                                    href={item.href}
                                     className={`inline-flex items-center gap-1 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
                                         isPastHero
                                             ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
@@ -134,6 +134,7 @@ export default function Header() {
                                     }`}
                                     aria-expanded={openDropdown === item.label}
                                     aria-haspopup="true"
+                                    onClick={() => setOpenDropdown(null)}
                                 >
                                     {item.label}
                                     <ChevronDown
@@ -141,7 +142,7 @@ export default function Header() {
                                             openDropdown === item.label ? 'rotate-180' : ''
                                         }`}
                                     />
-                                </button>
+                                </Link>
                                 {openDropdown === item.label && (
                                     <div
                                         className={`absolute left-0 top-full z-50 min-w-[260px] pt-2`}
@@ -332,25 +333,36 @@ export default function Header() {
                                 <motion.div key={item.label} variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
                                     {item.children?.length ? (
                                         <div className="mb-2 space-y-2">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setMobileExpanded((prev) =>
-                                                        prev === item.label ? null : item.label
-                                                    )
-                                                }
-                                                className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group w-full shadow-lg shadow-black/20"
-                                            >
-                                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
-                                                    <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
-                                                </div>
-                                                <span className="tracking-tight">{item.label}</span>
-                                                <ChevronDown
-                                                    className={`w-5 h-5 ml-auto text-white/20 transition-transform ${
-                                                        mobileExpanded === item.label ? 'rotate-180 text-teal-400' : ''
-                                                    }`}
-                                                />
-                                            </button>
+                                            <div className="flex items-stretch gap-2">
+                                                <Link
+                                                    href={item.href}
+                                                    onClick={() => setMobileOpen(false)}
+                                                    className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group flex-1 shadow-lg shadow-black/20"
+                                                >
+                                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
+                                                        <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
+                                                    </div>
+                                                    <span className="tracking-tight">{item.label}</span>
+                                                    <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
+                                                </Link>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setMobileExpanded((prev) =>
+                                                            prev === item.label ? null : item.label
+                                                        )
+                                                    }
+                                                    className="w-14 shrink-0 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 flex items-center justify-center"
+                                                    aria-expanded={mobileExpanded === item.label}
+                                                    aria-label={`${item.label} 하위 메뉴`}
+                                                >
+                                                    <ChevronDown
+                                                        className={`w-5 h-5 transition-transform ${
+                                                            mobileExpanded === item.label ? 'rotate-180 text-teal-400' : ''
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
                                             {mobileExpanded === item.label && (
                                                 <div className="ml-4 space-y-1.5 border-l border-white/10 pl-3">
                                                     {item.children.map((child) => (
