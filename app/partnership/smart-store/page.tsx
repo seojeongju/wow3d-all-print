@@ -147,7 +147,7 @@ export default function SmartStoreSupportPage() {
                                     </Button>
                                 </Link>
                                 <a
-                                    href="https://www.sbiz.or.kr/smst/"
+                                    href="https://www.sbiz.or.kr/smst/index.do"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -225,7 +225,7 @@ export default function SmartStoreSupportPage() {
                             ※ 지원 한도·보조율·모집 일정은 연도별 공고에 따라 달라집니다.
                             최신 내용은{' '}
                             <a
-                                href="https://www.sbiz.or.kr/smst/"
+                                href="https://www.sbiz.or.kr/smst/index.do"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-teal-400/80 underline-offset-2 hover:underline"
