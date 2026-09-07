@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  CalendarDays,
   Edit2,
   Eye,
   EyeOff,
@@ -71,23 +72,73 @@ const emptyForm = (): FormState => ({
   link_url: '',
   start_at: '',
   end_at: '',
-  is_visible: false,
+  is_visible: true,
   sort_order: 0,
   dismiss_days: 1,
   image: null,
   clear_image: false,
 })
 
-/** datetime-local 입력용 */
-function toLocalInput(value: string | null | undefined): string {
+/** date input 값 (YYYY-MM-DD) */
+function toDateInput(value: string | null | undefined): string {
   if (!value) return ''
-  const d = new Date(value.includes('T') ? value : value.replace(' ', 'T') + 'Z')
-  if (Number.isNaN(d.getTime())) {
-    // SQLite datetime already local-ish
-    return value.slice(0, 16).replace(' ', 'T')
-  }
+  const raw = value.trim()
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10)
+  const d = new Date(raw.includes('T') ? raw : raw.replace(' ', 'T'))
+  if (Number.isNaN(d.getTime())) return ''
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function DatePickerField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  const openPicker = () => {
+    const el = ref.current
+    if (!el) return
+    try {
+      el.showPicker?.()
+    } catch {
+      el.focus()
+      el.click()
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input
+          ref={ref}
+          id={id}
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onClick={openPicker}
+          onFocus={openPicker}
+          className="cursor-pointer border-white/10 bg-white/5 pr-10 text-white [color-scheme:dark]"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={openPicker}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+          aria-label={`${label} 달력 열기`}
+        >
+          <CalendarDays className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default function AdminPopupsPage() {
@@ -189,9 +240,9 @@ export default function AdminPopupsPage() {
       title: item.title,
       body: item.body || '',
       link_url: item.link_url || '',
-      start_at: toLocalInput(item.start_at),
-      end_at: toLocalInput(item.end_at),
-      is_visible: Boolean(item.is_visible),
+      start_at: toDateInput(item.start_at),
+      end_at: toDateInput(item.end_at),
+      is_visible: Boolean(Number(item.is_visible)),
       sort_order: Number(item.sort_order || 0),
       dismiss_days: Number(item.dismiss_days ?? 1),
       image: null,
@@ -218,8 +269,8 @@ export default function AdminPopupsPage() {
     data.append('title', form.title.trim())
     data.append('body', form.body)
     data.append('link_url', form.link_url)
-    data.append('start_at', form.start_at ? form.start_at.replace('T', ' ') : '')
-    data.append('end_at', form.end_at ? form.end_at.replace('T', ' ') : '')
+    data.append('start_at', form.start_at ? `${form.start_at} 00:00:00` : '')
+    data.append('end_at', form.end_at ? `${form.end_at} 23:59:59` : '')
     data.append('is_visible', form.is_visible ? '1' : '0')
     data.append('sort_order', String(form.sort_order))
     data.append('dismiss_days', String(form.dismiss_days))
@@ -257,6 +308,36 @@ export default function AdminPopupsPage() {
       showToast.error('오류', '저장 중 오류가 발생했습니다.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleToggleVisible = async (item: PopupItem) => {
+    if (!token) return
+    const next = !Boolean(Number(item.is_visible))
+    try {
+      const data = new FormData()
+      data.append('title', item.title)
+      data.append('body', item.body || '')
+      data.append('link_url', item.link_url || '')
+      data.append('start_at', item.start_at || '')
+      data.append('end_at', item.end_at || '')
+      data.append('is_visible', next ? '1' : '0')
+      data.append('sort_order', String(item.sort_order ?? 0))
+      data.append('dismiss_days', String(item.dismiss_days ?? 1))
+      const res = await fetch(`/api/admin/popups/${item.id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        showToast.error('노출 변경 실패', json.error || '저장에 실패했습니다.')
+        return
+      }
+      showToast.success(next ? '사이트에 노출됩니다.' : '사이트 노출이 해제되었습니다.')
+      fetchList()
+    } catch {
+      showToast.error('오류', '노출 상태 변경 중 오류가 발생했습니다.')
     }
   }
 
@@ -378,7 +459,27 @@ export default function AdminPopupsPage() {
                   {item.link_url ? ` · 링크: ${item.link_url}` : ''}
                 </p>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-10 rounded-xl border ${
+                    item.is_visible
+                      ? 'border-teal-400/30 text-teal-300 hover:bg-teal-500/10'
+                      : 'border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                  }`}
+                  onClick={() => handleToggleVisible(item)}
+                >
+                  {item.is_visible ? (
+                    <>
+                      <Eye className="mr-1.5 h-4 w-4" /> 노출중
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="mr-1.5 h-4 w-4" /> 숨김
+                    </>
+                  )}
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -490,26 +591,18 @@ export default function AdminPopupsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="popup-start">시작일시</Label>
-                <Input
-                  id="popup-start"
-                  type="datetime-local"
-                  value={form.start_at}
-                  onChange={(e) => setForm((f) => ({ ...f, start_at: e.target.value }))}
-                  className="border-white/10 bg-white/5 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="popup-end">종료일시</Label>
-                <Input
-                  id="popup-end"
-                  type="datetime-local"
-                  value={form.end_at}
-                  onChange={(e) => setForm((f) => ({ ...f, end_at: e.target.value }))}
-                  className="border-white/10 bg-white/5 text-white"
-                />
-              </div>
+              <DatePickerField
+                id="popup-start"
+                label="시작일"
+                value={form.start_at}
+                onChange={(v) => setForm((f) => ({ ...f, start_at: v }))}
+              />
+              <DatePickerField
+                id="popup-end"
+                label="종료일"
+                value={form.end_at}
+                onChange={(v) => setForm((f) => ({ ...f, end_at: v }))}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -544,14 +637,19 @@ export default function AdminPopupsPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl border border-teal-400/25 bg-teal-400/5 px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-white">사이트에 노출</p>
-                <p className="text-xs text-white/40">켜면 기간 내 방문자에게 팝업이 표시됩니다</p>
+                <p className="text-xs text-white/50">
+                  {form.is_visible
+                    ? '저장 후 메인 등 공개 페이지에 팝업이 표시됩니다'
+                    : '꺼져 있으면 메인에 표시되지 않습니다 — 켜고 저장하세요'}
+                </p>
               </div>
               <Switch
                 checked={form.is_visible}
                 onCheckedChange={(v) => setForm((f) => ({ ...f, is_visible: v }))}
+                className="data-[state=checked]:bg-teal-400 data-[state=unchecked]:bg-white/25"
               />
             </div>
           </div>

@@ -28,12 +28,19 @@ export async function GET(request: NextRequest) {
         .bind(storeId)
         .all()
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          items: ((results || []) as PopupRow[]).map(toPublicPopup),
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            items: ((results || []) as PopupRow[]).map(toPublicPopup),
+          },
         },
-      })
+        {
+          headers: {
+            'Cache-Control': 'no-store, max-age=0',
+          },
+        }
+      )
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg.includes('no such table')) {
