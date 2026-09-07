@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight, Printer, HelpCircle, Sparkles, Handshake, ChevronDown } from "lucide-react";
+import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight, Printer, HelpCircle, Sparkles, Handshake, ChevronDown, MapPin } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
@@ -21,8 +21,14 @@ const NAV_ITEMS: {
     { label: '제품소개', href: '/hardware/3d-printer' },
     { label: '제품개발 및 문의', href: '/expert' },
     { label: '주문조회', href: '/my-account' },
-    { label: 'FAQ', href: '/qna' },
-    { label: '문의하기', href: '/contact' },
+    {
+        label: '고객지원',
+        href: '/contact',
+        children: [
+            { label: 'FAQ', href: '/qna', desc: '자주 묻는 질문' },
+            { label: '1:1 문의', href: '/contact', desc: '문의 폼으로 연락하기' },
+        ],
+    },
     {
         label: '제작센터',
         href: '/makerspace',
@@ -349,7 +355,13 @@ export default function Header() {
                                                     className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group flex-1 shadow-lg shadow-black/20"
                                                 >
                                                     <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
-                                                        <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
+                                                        {item.label === '고객지원' ? (
+                                                            <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
+                                                        ) : item.label === '제작센터' ? (
+                                                            <MapPin className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
+                                                        ) : (
+                                                            <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
+                                                        )}
                                                     </div>
                                                     <span className="tracking-tight">{item.label}</span>
                                                     <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
@@ -376,7 +388,7 @@ export default function Header() {
                                                 <div className="ml-4 space-y-1.5 border-l border-white/10 pl-3">
                                                     {item.children.map((child) => (
                                                         <Link
-                                                            key={child.href}
+                                                            key={`${item.label}-${child.href}-${child.label}`}
                                                             href={child.href}
                                                             onClick={() => setMobileOpen(false)}
                                                             className="block rounded-xl bg-white/[0.04] border border-white/10 px-4 py-3.5 hover:bg-teal-500/15 hover:border-teal-500/25"
@@ -408,8 +420,9 @@ export default function Header() {
                                                 {item.label === '제품소개' && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                                 {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                                 {item.label === '주문조회' && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === 'FAQ' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === '문의하기' && <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '고객지원' && <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '제작센터' && <MapPin className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '대리점 모집' && <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                             </div>
                                             <span className="group-hover:translate-x-1 transition-transform tracking-tight">{item.label}</span>
                                             <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
