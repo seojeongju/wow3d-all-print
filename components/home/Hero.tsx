@@ -402,33 +402,46 @@ export default function Hero() {
                     className="flex h-full w-full min-h-[420px] sm:min-h-[480px]"
                 >
                     <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a]/90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 backdrop-blur-2xl">
-                        {/* 탭 — 외곽 radius에 맞춰 상단 모서리 일치 */}
-                        <div className="flex shrink-0 border-b border-white/10">
+                        {/* 탭 — 활성/비활성 대비를 높인 세그먼트 컨트롤 */}
+                        <div
+                            role="tablist"
+                            aria-label="업로드 방식 선택"
+                            className="flex shrink-0 gap-1.5 border-b border-white/10 bg-black/35 p-2"
+                        >
                             {(
                                 [
                                     { id: 'file' as const, label: '3D 파일', icon: FileBox },
                                     { id: 'photo' as const, label: '사진(이미지)', icon: ImageIcon },
                                 ] as const
-                            ).map(({ id, label, icon: Icon }, index) => (
-                                <button
-                                    key={id}
-                                    type="button"
-                                    onClick={() => setUploadMode(id)}
-                                    className={cn(
-                                        'flex flex-1 items-center justify-center gap-2 py-3.5 text-xs font-black transition-all sm:text-sm',
-                                        index === 0 && 'rounded-tl-2xl',
-                                        index === 1 && 'rounded-tr-2xl',
-                                        uploadMode === id
-                                            ? id === 'file'
-                                                ? 'bg-teal-400/15 text-teal-300'
-                                                : 'bg-indigo-500/15 text-indigo-300'
-                                            : 'text-white/45 hover:bg-white/5 hover:text-white/70',
-                                    )}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    {label}
-                                </button>
-                            ))}
+                            ).map(({ id, label, icon: Icon }) => {
+                                const isActive = uploadMode === id;
+                                return (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={isActive}
+                                        onClick={() => setUploadMode(id)}
+                                        className={cn(
+                                            'flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-extrabold tracking-tight transition-all sm:text-[15px]',
+                                            isActive
+                                                ? id === 'file'
+                                                    ? 'bg-teal-400 text-slate-950 shadow-[0_0_0_1px_rgba(45,212,191,0.55)]'
+                                                    : 'bg-indigo-300 text-slate-950 shadow-[0_0_0_1px_rgba(165,180,252,0.55)]'
+                                                : 'border border-white/15 bg-white/[0.04] text-white/85 hover:border-white/25 hover:bg-white/[0.08] hover:text-white',
+                                        )}
+                                    >
+                                        <Icon
+                                            className={cn(
+                                                'h-4 w-4 shrink-0',
+                                                isActive ? 'opacity-100' : 'opacity-90',
+                                            )}
+                                            aria-hidden
+                                        />
+                                        <span>{label}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Drop Zone — 확대 */}
