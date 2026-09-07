@@ -16,8 +16,39 @@ function isExcludedPath(pathname: string | null): boolean {
   )
 }
 
-function isExternalUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url)
+/** 절대 URL이 현재 사이트(동일 origin)인지 */
+function isSameOriginUrl(url: string): boolean {
+  if (!/^https?:\/\//i.test(url)) return true
+  if (typeof window === 'undefined') return false
+  try {
+    return new URL(url, window.location.origin).origin === window.location.origin
+  } catch {
+    return false
+  }
+}
+
+/** 팝업 링크에서 pathname 추출 (/partnership/smart-store) */
+function pathFromLinkUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    if (/^https?:\/\//i.test(url)) {
+      const u = new URL(url)
+      return u.pathname.replace(/\/$/, '') || '/'
+    }
+    const path = url.split('?')[0].split('#')[0]
+    if (!path.startsWith('/')) return `/${path}`.replace(/\/$/, '') || '/'
+    return path.replace(/\/$/, '') || '/'
+  } catch {
+    return null
+  }
+}
+
+function isOnLinkedPage(pathname: string | null, linkUrl: string | null | undefined): boolean {
+  if (!pathname || !linkUrl) return false
+  const target = pathFromLinkUrl(linkUrl)
+  if (!target) return false
+  const current = pathname.replace(/\/$/, '') || '/'
+  return current === target || current.startsWith(`${target}/`)
 }
 
 function PopupLink({
@@ -31,15 +62,21 @@ function PopupLink({
   className?: string
   children: ReactNode
 }) {
-  if (isExternalUrl(href)) {
+  const sameOrigin = isSameOriginUrl(href)
+  const internalHref = sameOrigin
+    ? pathFromLinkUrl(href) || href
+    : href
+
+  if (!sameOrigin) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className}>
         {children}
       </a>
     )
   }
+
   return (
-    <Link href={href} onClick={onClick} className={className}>
+    <Link href={internalHref} onClick={onClick} className={className}>
       {children}
     </Link>
   )
@@ -52,14 +89,24 @@ export default function SitePopup() {
 
   const close = useCallback(() => setOpen(false), [])
 
+  /** 자세히 보기 등 링크 이동 시 — 닫고 재노출 방지 */
+  const closeAndDismiss = useCallback(() => {
+    if (popup) {
+      const days = Math.max(1, Number(popup.dismissDays) || 1)
+      dismissPopup(popup.id, days)
+    }
+    setOpen(false)
+  }, [popup])
+
   const dismissForDays = useCallback(() => {
-    if (popup) dismissPopup(popup.id, popup.dismissDays)
+    if (popup) dismissPopup(popup.id, Math.max(1, popup.dismissDays))
     setOpen(false)
   }, [popup])
 
   useEffect(() => {
     if (isExcludedPath(pathname)) {
       setOpen(false)
+      setPopup(null)
       return
     }
 
@@ -69,7 +116,11 @@ export default function SitePopup() {
         const res = await fetch('/api/popups/active?store_id=1', { cache: 'no-store' })
         const json = await res.json()
         const items: PublicPopup[] = json?.data?.items || []
-        const next = items.find((p) => !isPopupDismissed(p.id)) || null
+        const next =
+          items.find(
+            (p) =>
+              !isPopupDismissed(p.id) && !isOnLinkedPage(pathname, p.linkUrl)
+          ) || null
         if (cancelled) return
         setPopup(next)
         setOpen(Boolean(next))
@@ -121,7 +172,7 @@ export default function SitePopup() {
       {popup.imageUrl && (
         <div className="relative bg-black/40">
           {popup.linkUrl ? (
-            <PopupLink href={popup.linkUrl} onClick={close} className="block">
+            <PopupLink href={popup.linkUrl} onClick={closeAndDismiss} className="block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={popup.imageUrl}
@@ -150,7 +201,7 @@ export default function SitePopup() {
           {popup.linkUrl && (
             <PopupLink
               href={popup.linkUrl}
-              onClick={close}
+              onClick={closeAndDismiss}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-300 hover:text-teal-200"
             >
               자세히 보기
