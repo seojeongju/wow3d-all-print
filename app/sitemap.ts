@@ -54,10 +54,30 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return PUBLIC_PAGES.map(({ path, priority = 0.8, changeFrequency = "weekly" }) => ({
-    url: `${SITE_URL}${path === "/" ? "" : path}`,
-    lastModified: new Date(),
-    changeFrequency,
-    priority,
-  }));
+  const entries: MetadataRoute.Sitemap = []
+
+  for (const { path, priority = 0.8, changeFrequency = "weekly" } of PUBLIC_PAGES) {
+    const koPath = path === "/" ? "" : path
+    const enPath = path === "/" ? "/en" : `/en${path}`
+    const koUrl = `${SITE_URL}${koPath}`
+    const enUrl = `${SITE_URL}${enPath}`
+    const lastModified = new Date()
+
+    entries.push({
+      url: koUrl,
+      lastModified,
+      changeFrequency,
+      priority,
+      alternates: { languages: { ko: koUrl, en: enUrl } },
+    })
+    entries.push({
+      url: enUrl,
+      lastModified,
+      changeFrequency,
+      priority: Math.max(0.4, (priority ?? 0.8) - 0.05),
+      alternates: { languages: { ko: koUrl, en: enUrl } },
+    })
+  }
+
+  return entries
 }

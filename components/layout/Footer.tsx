@@ -1,12 +1,15 @@
 'use client';
 
-import Link from 'next/link'
-import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown, MessageCircle } from 'lucide-react'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
+import { Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
 import { MAKERSPACES } from '@/lib/makerspaces'
 
 export default function Footer() {
+    const t = useTranslations('Footer')
+    const tCommon = useTranslations('Common')
     const [mounted, setMounted] = useState(false)
     const talkUrl = getNaverTalkTalkChatUrl()
 
@@ -38,17 +41,16 @@ export default function Footer() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-black text-lg sm:text-xl tracking-tighter text-white leading-none">
-                                    WOW3D<span className="text-teal-400 font-light ml-0.5">PRO</span>
+                                    {tCommon('brand')}<span className="text-teal-400 font-light ml-0.5">{tCommon('brandPro')}</span>
                                 </span>
                                 <span className="text-[10px] font-bold text-white/70 leading-tight mt-1.5">
-                                    (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
+                                    {tCommon('company')} / <span className="text-teal-400 font-semibold">{tCommon('cookieBrand')}</span>
                                 </span>
                             </div>
                         </Link>
 
-                        <p className="text-[13px] sm:text-sm text-white/40 leading-relaxed font-medium max-w-sm">
-                            AI 기반 3D 프린팅 자동견적 시스템과 산업용 제작 인프라를 바탕으로
-                            3D 프린터 출력, 시제품제작 서비스, 소량 양산 서비스를 제공합니다.
+                        <p className="text-[13px] sm:text-sm text-white/40 leading-relaxed font-medium max-w-sm break-keep">
+                            {t('tagline')}
                         </p>
 
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -72,12 +74,12 @@ export default function Footer() {
                     <div className="lg:col-span-5 grid grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-4 sm:space-y-6">
                             <div className="flex items-center justify-between gap-2">
-                                <h3 className="text-[9px] sm:text-[10px] font-black uppercase text-teal-400 tracking-[0.2em] sm:tracking-[0.3em]">제작 센터</h3>
+                                <h3 className="text-[9px] sm:text-[10px] font-black uppercase text-teal-400 tracking-[0.2em] sm:tracking-[0.3em]">{t('centers')}</h3>
                                 <Link
                                     href="/makerspace"
                                     className="text-[9px] sm:text-[10px] font-bold text-white/35 hover:text-teal-400 transition-colors"
                                 >
-                                    찾아오는길
+                                    {t('directions')}
                                 </Link>
                             </div>
                             <ul className="space-y-3 sm:space-y-4">
@@ -98,27 +100,27 @@ export default function Footer() {
                             </ul>
                         </div>
                         <div className="space-y-4 sm:space-y-6">
-                            <h3 className="text-[9px] sm:text-[10px] font-black uppercase text-white/30 tracking-[0.2em] sm:tracking-[0.3em]">고객 지원</h3>
+                            <h3 className="text-[9px] sm:text-[10px] font-black uppercase text-white/30 tracking-[0.2em] sm:tracking-[0.3em]">{t('support')}</h3>
                             <ul className="space-y-3 sm:space-y-4">
                                 <li>
-                                    <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">대표 전화</div>
+                                    <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">{t('phone')}</div>
                                     <p className="text-[10px] text-white/30 font-bold">02-3144-3137</p>
                                     <p className="text-[10px] text-white/30 font-bold">054-464-3144</p>
                                 </li>
                                 <li>
-                                    <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">이메일 문의</div>
+                                    <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">{t('email')}</div>
                                     <a href="mailto:wow3d16@naver.com" className="text-[10px] text-teal-400 font-bold hover:underline">wow3d16@naver.com</a>
                                 </li>
                                 {talkUrl ? (
                                     <li>
-                                        <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">실시간 상담</div>
+                                        <div className="text-[10px] sm:text-[11px] font-black text-white/50 uppercase tracking-widest mb-1 sm:mb-1.5">{t('liveChat')}</div>
                                         <a
                                             href={talkUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-[10px] text-[#03C75A] font-bold hover:underline"
                                         >
-                                            네이버 톡톡 상담하기
+                                            {t('naverTalk')}
                                         </a>
                                     </li>
                                 ) : null}
@@ -129,12 +131,12 @@ export default function Footer() {
                     {/* Newsletter / CTA */}
                     <div className="lg:col-span-3 space-y-6">
                         <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/8">
-                            <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4 text-white/70">소식 받기</h3>
-                            <p className="text-[9px] sm:text-[10px] text-white/25 font-medium mb-4 italic leading-relaxed">적층 제조 워크숍·신규 소재 소식을 가장 먼저 받아보세요.</p>
+                            <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4 text-white/70">{t('newsletter')}</h3>
+                            <p className="text-[9px] sm:text-[10px] text-white/25 font-medium mb-4 italic leading-relaxed">{t('newsletterDesc')}</p>
                             <div className="flex gap-2">
                                 <input
                                     type="email"
-                                    placeholder="이메일 주소"
+                                    placeholder={t('emailPlaceholder')}
                                     className="flex-1 h-9 sm:h-10 bg-white/5 border border-white/10 rounded-xl px-3 text-[10px] sm:text-xs font-bold text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-teal-400 transition-all"
                                 />
                                 <button className="w-9 sm:w-10 h-9 sm:h-10 rounded-xl bg-teal-500 flex items-center justify-center text-white hover:bg-teal-400 transition-all active:scale-95">
@@ -149,12 +151,12 @@ export default function Footer() {
                 {/* Bottom Bar */}
                 <div className="mt-16 sm:mt-24 pt-6 sm:pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="text-[9px] sm:text-[10px] font-bold text-white/10 sm:text-white/20 uppercase tracking-[0.15em] sm:tracking-[0.2em] text-center sm:text-left">
-                        {mounted ? `© ${new Date().getFullYear()} WOW3D PRO. (주)와우쓰리디 / 3D쿠키홍대. All rights reserved.` : '© WOW3D PRO.'}
+                        {mounted ? `© ${new Date().getFullYear()} WOW3D PRO. ${tCommon('company')} / ${tCommon('cookieBrand')}. ${t('rights')}` : '© WOW3D PRO.'}
                     </div>
                     <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/25 sm:text-white/30">
-                        <Link href="/terms" className="hover:text-teal-400 transition-colors">이용약관</Link>
-                        <Link href="/privacy" className="hover:text-teal-400 transition-colors">개인정보처리방침</Link>
-                        <Link href="/materials/safety" className="hover:text-teal-400 transition-colors">소재 안전 정보</Link>
+                        <Link href="/terms" className="hover:text-teal-400 transition-colors">{t('terms')}</Link>
+                        <Link href="/privacy" className="hover:text-teal-400 transition-colors">{t('privacy')}</Link>
+                        <Link href="/materials/safety" className="hover:text-teal-400 transition-colors">{t('materialsSafety')}</Link>
                     </div>
                 </div>
             </div>

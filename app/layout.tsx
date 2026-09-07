@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
@@ -24,7 +25,7 @@ import {
   buildWebPageSchema,
   buildWebSiteSearchActionSchema,
 } from "@/lib/aeo-schema";
-
+import { routing } from "@/i18n/routing";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -93,15 +94,21 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const businessSchemas = buildBusinessSchemas();
+  let locale: string = routing.defaultLocale;
+  try {
+    locale = await getLocale();
+  } catch {
+    locale = routing.defaultLocale;
+  }
 
   return (
-    <html lang="ko" className="dark">
+    <html lang={locale} className="dark" suppressHydrationWarning>
       <head>
         <meta name="naver-site-verification" content={NAVER_SITE_VERIFICATION} />
         {/* 네이버·구형 크롤러용 대표 이미지 힌트 (절대 URL 명시) */}
