@@ -7,6 +7,7 @@ import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
+import SitePopup from "@/components/popup/SitePopup";
 import {
   absoluteUrl,
   buildOgImages,
@@ -133,6 +134,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <EducationQuickMenu />
+        <SitePopup />
       </body>
     </html>
   );

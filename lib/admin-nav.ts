@@ -15,6 +15,7 @@ import {
     Sparkles,
     BarChart3,
     Mail,
+    Megaphone,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -96,6 +97,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 href: '/admin/showcase',
                 icon: Sparkles,
                 match: (p) => p.startsWith('/admin/showcase'),
+            },
+            {
+                title: '팝업 관리',
+                href: '/admin/popups',
+                icon: Megaphone,
+                match: (p) => p.startsWith('/admin/popups'),
             },
             {
                 title: 'FAQ 관리',
