@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useDropzone, type FileRejection } from 'react-dropzone'
 import {
     ImageIcon,
@@ -18,7 +19,6 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import { useFileStore } from '@/store/useFileStore'
 import { MESHY_IMAGE_MAX_BYTES, MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
-import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
 import { preprocessMeshyImage } from '@/lib/meshy-client-preprocess'
 import { buildAiPhotoResultFileName } from '@/lib/meshy-r2'
 import {
@@ -87,6 +87,7 @@ function mapApiStatus(s: string): JobStatus {
 }
 
 export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: Props) {
+    const t = useTranslations('ImageTo3D')
     const { token, sessionId, user } = useAuthStore()
     const setFile = useFileStore((s) => s.setFile)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -246,11 +247,11 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 })
                 if (!res.ok) {
                     const j = await res.json().catch(() => ({}))
-                    throw new Error((j as { error?: string }).error || '모델 다운로드 실패')
+                    throw new Error((j as { error?: string }).error || t('errDownload'))
                 }
                 const blob = await res.blob()
                 if (!blob.size) {
-                    throw new Error('다운로드된 모델 파일이 비어 있습니다. 다시 시도해 주세요.')
+                    throw new Error(t('errEmpty'))
                 }
                 const file = new File([blob], fileName || buildAiPhotoResultFileName(id), { type: 'model/stl' })
                 setFile(file, { kind: 'meshy-photo', meshyJobId: id })
@@ -263,7 +264,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 setApplying(false)
             }
         },
-        [authHeaders, onModelReady, refreshHistory, refreshQuota, setFile]
+        [authHeaders, onModelReady, refreshHistory, refreshQuota, setFile, t]
     )
 
     const tryAutoApplyWhenReady = useCallback(
@@ -279,10 +280,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             } catch (e) {
                 autoApplyJobRef.current = null
                 setStatus('ready')
-                setError(e instanceof Error ? e.message : '모델 적용 실패')
+                setError(e instanceof Error ? e.message : t('errApply'))
             }
         },
-        [applyModel]
+        [applyModel, t]
     )
 
     const handleJobPayload = useCallback(
@@ -322,16 +323,14 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 setStatus(data.status === 'canceled' ? 'canceled' : 'failed')
                 setError(
                     data.error ||
-                        (data.status === 'canceled'
-                            ? '작업이 취소되었습니다'
-                            : 'AI 모델링에 실패했습니다. 횟수는 차감되지 않았으니 다른 사진(이미지)으로 다시 시도해 주세요.')
+                        (data.status === 'canceled' ? t('errCanceled') : t('errFailed'))
                 )
                 await refreshQuota()
                 return
             }
             setStatus(mapped === 'ready' ? 'processing' : mapped)
         },
-        [refreshQuota, tryAutoApplyWhenReady]
+        [refreshQuota, tryAutoApplyWhenReady, t]
     )
 
     const pollJob = useCallback(
@@ -345,20 +344,20 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     })
                     const json = await res.json()
                     if (!res.ok || !json.success) {
-                        setError(json.error || '상태 조회 실패')
+                        setError(json.error || t('errStatus'))
                         setStatus('failed')
                         clearPoll()
                         return
                     }
                     await handleJobPayload(json.data)
                 } catch {
-                    setError('네트워크 오류로 상태를 확인하지 못했습니다. 잠시 후 자동으로 다시 확인합니다.')
+                    setError(t('errNetwork'))
                 }
             }
             void tick()
             pollRef.current = setInterval(tick, 3000)
         },
-        [authHeaders, handleJobPayload]
+        [authHeaders, handleJobPayload, t]
     )
 
     // 진행 중·완료 job 복구
@@ -476,17 +475,13 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             setError(null)
             if (rejections.length) {
                 const code = rejections[0]?.errors?.[0]?.code
-                setError(
-                    code === 'file-too-large'
-                        ? '이미지는 최대 8MB까지 가능합니다.'
-                        : 'JPG 또는 PNG 이미지만 업로드할 수 있습니다.'
-                )
+                setError(code === 'file-too-large' ? t('errTooLarge') : t('errType'))
                 return
             }
             if (!accepted[0]) return
             applyPhotoFile(accepted[0])
         },
-        [applyPhotoFile],
+        [applyPhotoFile, t],
     )
 
     useEffect(() => {
@@ -532,7 +527,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 const msg = (j as { error?: string }).error
                 // 한도 소진 등이면 전처리본으로 계속 진행하되 안내
                 if (msg) {
-                    setError(`${msg} 배경 없이 전처리된 사진(이미지)으로 생성을 계속합니다.`)
+                    setError(t('errRemoveBgContinue', { msg }))
                 }
             }
         }
@@ -541,16 +536,16 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
 
     const startGeneration = async () => {
         if (!selected || selected.size === 0) {
-            setError('사진(이미지)을 다시 업로드해 주세요.')
+            setError(t('errReupload'))
             return
         }
         if (!token) {
-            setError('사진(이미지)→AI 3D는 로그인 후 하루 1회 이용할 수 있습니다.')
+            setError(t('errNeedLogin'))
             return
         }
         if (quota && !quota.loginRequired && (quota.remainingTotal ?? quota.remainingToday) <= 0) {
             setError(
-                `오늘 이용 횟수(${quota.limit}회)를 모두 사용했습니다. ${quota.resetsHint} 또는 3D 파일을 직접 업로드해 주세요.`
+                t('errQuotaUsed', { limit: quota.limit, hint: quota.resetsHint || '' })
             )
             return
         }
@@ -587,16 +582,13 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             if (!res.ok || !json.success) {
                 const code = (json as { code?: string }).code
                 if (code === 'LOGIN_REQUIRED') {
-                    setError('로그인 후 하루 1회 이용할 수 있습니다. 아래 로그인 버튼을 이용해 주세요.')
+                    setError(t('errLoginButton'))
                 } else if (code === 'DAILY_LIMIT') {
-                    setError(
-                        (json as { error?: string }).error ||
-                            '오늘 이용 횟수(1회)를 모두 사용했습니다. 내일(한국 시간 자정 이후) 다시 시도하거나 3D 파일을 직접 업로드해 주세요.'
-                    )
+                    setError((json as { error?: string }).error || t('errQuotaUsedFixed'))
                 } else if (code === 'IMAGE_TO_3D_NOT_CONFIGURED' || code === 'MESHY_NOT_CONFIGURED') {
-                    setError('AI 모델링 서비스가 아직 준비되지 않았습니다. 관리자에게 문의해 주세요.')
+                    setError(t('errNotReady'))
                 } else {
-                    setError(json.error || 'AI 모델링 요청에 실패했습니다')
+                    setError(json.error || t('errRequest'))
                 }
                 setStatus('failed')
                 await refreshQuota()
@@ -625,7 +617,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             }
             pollJob(id)
         } catch {
-            setError('AI 모델링 요청 중 오류가 발생했습니다')
+            setError(t('errRequestCatch'))
             setStatus('failed')
         }
     }
@@ -652,21 +644,22 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     className="inline-flex items-center gap-1.5 text-[12px] font-black text-white/50 hover:text-white transition-colors disabled:opacity-40"
                 >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    시작 방식 다시 선택
+                    {t('reselectMode')}
                 </button>
                 <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-[1.15]">
-                    사진(이미지)으로 <span className="text-indigo-300">3D 만들기</span>
+                    {t('title')} <span className="text-indigo-300">{t('titleAccent')}</span>
                 </h1>
                 <p className="text-white/70 text-[13px] sm:text-[15px] font-bold leading-relaxed break-keep">
-                    제품·피규어가 잘 보이는 JPG/PNG 실사 사진(이미지)을 올려 주세요. AI가{' '}
-                    <strong className="text-white/90">입체 메시</strong>를 만든 뒤 자동견적으로 이어집니다.
+                    {t('subtitleBefore')}{' '}
+                    <strong className="text-white/90">{t('subtitleMesh')}</strong>
+                    {t('subtitleAfter')}
                 </p>
                 <p className="text-[12px] text-white/40 font-bold leading-relaxed break-keep">
-                    로고·배지·키캡처럼 실루엣만 돌출하려면{' '}
-                    <a href="/#ai-3d-maker" className="text-teal-400 hover:underline">
+                    {t('makerHintBefore')}{' '}
+                    <Link href="/#ai-3d-maker" className="text-teal-400 hover:underline">
                         AI 3D Maker(2.5D)
-                    </a>
-                    를 이용하세요.
+                    </Link>
+                    {t('makerHintAfter')}
                 </p>
             </div>
 
@@ -684,18 +677,20 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 <div>
                     <p className="text-[12px] font-black text-white">
                         {!token
-                            ? '로그인 후 이용'
+                            ? t('loginRequired')
                             : quota
-                              ? `오늘 남은 횟수 ${quota.remainingDaily ?? quota.remainingToday}/${quota.limit}${
-                                    (quota.bonusRemaining || 0) > 0
-                                        ? ` · 보너스 ${quota.bonusRemaining}회`
-                                        : ''
-                                }`
-                              : '한도 확인 중…'}
+                              ? t('remainingToday', {
+                                    remaining: quota.remainingDaily ?? quota.remainingToday,
+                                    limit: quota.limit,
+                                }) +
+                                ((quota.bonusRemaining || 0) > 0
+                                    ? t('bonus', { count: quota.bonusRemaining ?? 0 })
+                                    : '')
+                              : t('checkingQuota')}
                     </p>
                     <p className="text-[11px] font-bold text-white/50 mt-0.5 break-keep">
                         {quota?.resetsHint ||
-                            `계정당 하루 ${MESHY_USER_DAILY_LIMIT}회 · 한국 시간 기준 · 실패 시 미차감`}
+                            t('quotaDefault', { limit: MESHY_USER_DAILY_LIMIT })}
                     </p>
                 </div>
                 {!token && (
@@ -704,7 +699,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                         className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-[12px] font-black text-white"
                     >
                         <LogIn className="w-3.5 h-3.5" />
-                        로그인
+                        {t('login')}
                     </Link>
                 )}
             </div>
@@ -714,7 +709,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             {resuming && (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 text-white/60">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <p className="text-[13px] font-bold">이전 작업을 확인하는 중…</p>
+                    <p className="text-[13px] font-bold">{t('resuming')}</p>
                 </div>
             )}
 
@@ -733,11 +728,11 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     <div className="w-16 h-16 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center mb-5">
                         <Upload className="w-7 h-7 text-indigo-300" />
                     </div>
-                    <h3 className="text-lg font-black text-white mb-2">제품 사진(이미지) 업로드</h3>
+                    <h3 className="text-lg font-black text-white mb-2">{t('uploadTitle')}</h3>
                     <p className="text-sm text-white/45 font-bold max-w-xs leading-relaxed">
-                        JPG · PNG · 최대 8MB
+                        {t('uploadHint')}
                         <br />
-                        위 가이드를 참고하면 품질이 좋아집니다
+                        {t('uploadHint2')}
                     </p>
                 </div>
             )}
@@ -749,7 +744,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={thumbnailUrl || previewUrl || ''}
-                                alt="업로드 미리보기"
+                                alt={t('previewAlt')}
                                 className="w-full max-h-64 object-contain bg-black/40"
                             />
                             {!busy && status === 'ready' && (
@@ -757,7 +752,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                     type="button"
                                     onClick={resetLocal}
                                     className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 text-white/70 hover:text-white border border-white/10"
-                                    aria-label="다른 사진으로 새로 시작"
+                                    aria-label={t('ariaRestart')}
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -767,7 +762,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                     type="button"
                                     onClick={resetLocal}
                                     className="absolute top-3 right-3 p-2 rounded-xl bg-black/60 text-white/70 hover:text-white border border-white/10"
-                                    aria-label="이미지 제거"
+                                    aria-label={t('ariaRemove')}
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -790,18 +785,17 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     {status === 'idle' && token && selected && selected.size > 0 && (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
                             <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
-                                멀티뷰 (선택)
+                                {t('multiview')}
                             </p>
                             <p className="text-[11px] font-bold text-white/50 leading-relaxed break-keep">
-                                같은 물체의 <strong className="text-white/70">우측·뒷면·좌측</strong> 사진(이미지)을
-                                더하면 뒷면·옆면 품질이 좋아집니다. 정면만으로도 생성할 수 있습니다.
+                                {t('multiviewHint')}
                             </p>
                             <div className="grid grid-cols-3 gap-2">
                                 {(
                                     [
-                                        { id: 'right' as const, label: '우측' },
-                                        { id: 'back' as const, label: '뒷면' },
-                                        { id: 'left' as const, label: '좌측' },
+                                        { id: 'right' as const, label: t('viewRight') },
+                                        { id: 'back' as const, label: t('viewBack') },
+                                        { id: 'left' as const, label: t('viewLeft') },
                                     ]
                                 ).map((v) => (
                                     <label
@@ -841,13 +835,13 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     {status === 'idle' && token && (
                         <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                             <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
-                                품질 · 전처리
+                                {t('qualityTitle')}
                             </p>
                             <div className="flex gap-1.5">
                                 {(
                                     [
-                                        { id: 'fast' as const, label: '빠름' },
-                                        { id: 'standard' as const, label: '표준' },
+                                        { id: 'fast' as const, label: t('qualityFast') },
+                                        { id: 'standard' as const, label: t('qualityStandard') },
                                     ]
                                 ).map((q) => (
                                     <button
@@ -866,7 +860,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 ))}
                             </div>
                             <p className="text-[10px] font-bold text-white/40 break-keep">
-                                표준은 메시가 더 촘촘합니다. 텍스처는 견적용 STL에 포함되지 않습니다.
+                                {t('qualityHint')}
                             </p>
                             <label className="flex items-center gap-2.5 text-[12px] font-bold text-white/80 cursor-pointer">
                                 <input
@@ -875,7 +869,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                     onChange={(e) => setEnhanceContrast(e.target.checked)}
                                     className="rounded border-white/30"
                                 />
-                                대비 강화 · 해상도 정규화 (권장)
+                                {t('enhanceContrast')}
                             </label>
                             {removeBgConfigured && (
                                 <label className="flex items-center gap-2.5 text-[12px] font-bold text-white/80 cursor-pointer">
@@ -886,7 +880,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                         className="rounded border-white/30"
                                     />
                                     <Eraser className="w-3.5 h-3.5 text-teal-300" />
-                                    배경 제거 후 생성 (별도 일일 한도)
+                                    {t('removeBg')}
                                 </label>
                             )}
                         </div>
@@ -898,12 +892,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 <Loader2 className="w-5 h-5 text-indigo-300 animate-spin" />
                                 <div>
                                     <p className="text-sm font-black text-white">
-                                        {status === 'uploading'
-                                            ? '이미지 준비·업로드 중…'
-                                            : 'AI가 3D 모델을 생성 중…'}
+                                        {status === 'uploading' ? t('uploading') : t('generating')}
                                     </p>
                                     <p className="text-[11px] text-white/45 font-bold">
-                                        보통 1~3분 · 페이지를 새로고침해도 이어서 확인할 수 있습니다
+                                        {t('generatingHint')}
                                         {jobId ? ` · #${jobId}` : ''}
                                     </p>
                                 </div>
@@ -928,12 +920,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 )}
                                 <div>
                                     <p className="text-sm font-black">
-                                        {applying ? '모델 생성 완료 · 3D 뷰어 연결 중…' : '모델 생성 완료'}
+                                        {applying ? t('readyApplying') : t('readyDone')}
                                     </p>
                                     <p className="text-[12px] font-bold text-teal-200/80 mt-1 leading-relaxed break-keep">
-                                        {applying
-                                            ? '생성된 모델을 불러와 오른쪽 3D 뷰어와 견적 화면을 자동으로 엽니다. 잠시만 기다려 주세요.'
-                                            : '미리보기를 확인한 뒤 견적으로 진행하세요. 치수는 다음 화면에서 mm로 맞출 수 있습니다.'}
+                                        {applying ? t('readyApplyingDesc') : t('readyDoneDesc')}
                                     </p>
                                 </div>
                             </div>
@@ -941,10 +931,10 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 <div className="grid grid-cols-4 gap-1.5">
                                     {(
                                         [
-                                            ['front', '정면'],
-                                            ['right', '우측'],
-                                            ['back', '뒷면'],
-                                            ['left', '좌측'],
+                                            ['front', t('viewFront')],
+                                            ['right', t('viewRight')],
+                                            ['back', t('viewBack')],
+                                            ['left', t('viewLeft')],
                                         ] as const
                                     ).map(([k, label]) =>
                                         previewThumbs[k] ? (
@@ -966,7 +956,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                             <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-50">
                                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-300" />
                                 <p className="text-[12px] font-bold leading-relaxed break-keep">
-                                    {MESHY_AI_DISCLAIMER}
+                                    {t('disclaimer')}
                                 </p>
                             </div>
                             <button
@@ -979,7 +969,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                     try {
                                         await applyModel(jobId, resultFileName || buildAiPhotoResultFileName(jobId))
                                     } catch (e) {
-                                        setError(e instanceof Error ? e.message : '모델 적용 실패')
+                                        setError(e instanceof Error ? e.message : t('errApply'))
                                     }
                                 }}
                                 className="w-full h-12 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black flex items-center justify-center gap-2 transition-all disabled:opacity-50"
@@ -989,7 +979,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 ) : (
                                     <CheckCircle2 className="w-4 h-4" />
                                 )}
-                                {applying ? '뷰어 연결 중…' : '이 모델로 견적 진행'}
+                                {applying ? t('connectingViewer') : t('continueQuote')}
                             </button>
                             <button
                                 type="button"
@@ -997,7 +987,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 onClick={resetLocal}
                                 className="w-full h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 text-[12px] font-black"
                             >
-                                다른 사진(이미지)으로 새로 시작
+                                {t('restartOtherPhoto')}
                             </button>
                         </div>
                     )}
@@ -1005,7 +995,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     {status === 'succeeded' && (
                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-teal-400/10 border border-teal-400/25 text-teal-200">
                             <CheckCircle2 className="w-5 h-5 shrink-0" />
-                            <p className="text-sm font-bold">견적 화면으로 이동합니다…</p>
+                            <p className="text-sm font-bold">{t('goingToQuote')}</p>
                         </div>
                     )}
 
@@ -1018,7 +1008,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                AI로 3D 모델 생성하기
+                                {t('generateCta')}
                             </button>
                         ) : (
                             <Link
@@ -1026,7 +1016,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black flex items-center justify-center gap-2 transition-all"
                             >
                                 <LogIn className="w-4 h-4" />
-                                로그인 후 생성하기
+                                {t('loginThenGenerate')}
                             </Link>
                         )
                     )}
@@ -1042,14 +1032,14 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 }}
                                 className="w-full h-12 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-black transition-all"
                             >
-                                같은 사진(이미지)으로 다시 시도
+                                {t('retrySame')}
                             </button>
                             <button
                                 type="button"
                                 onClick={resetLocal}
                                 className="w-full h-10 rounded-xl text-[12px] font-black text-white/50 hover:text-white"
                             >
-                                다른 사진(이미지) 올리기
+                                {t('uploadOther')}
                             </button>
                         </div>
                     )}
@@ -1066,7 +1056,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             {token && history.length > 0 && !busy && status !== 'ready' && (
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
                     <p className="text-[11px] font-black uppercase tracking-widest text-white/40">
-                        내 생성 기록
+                        {t('history')}
                     </p>
                     <ul className="space-y-2">
                         {history.map((h) => (
@@ -1076,7 +1066,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                             >
                                 <div className="min-w-0 flex-1">
                                     <p className="text-[12px] font-black text-white truncate">
-                                        #{h.jobId} · {h.sourceFileName || h.resultFileName || '모델'}
+                                        #{h.jobId} · {h.sourceFileName || h.resultFileName || t('modelFallback')}
                                     </p>
                                     <p className="text-[10px] font-bold text-white/40">
                                         {h.status}
@@ -1096,12 +1086,12 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                                 )
                                             } catch (e) {
                                                 setError(
-                                                    e instanceof Error ? e.message : '모델 적용 실패'
+                                                    e instanceof Error ? e.message : t('errApply')
                                                 )
                                             }
                                         }}
                                     >
-                                        견적에 넣기
+                                        {t('applyToQuote')}
                                     </button>
                                 )}
                             </li>
@@ -1111,13 +1101,13 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             )}
 
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <p className="text-[11px] font-black uppercase tracking-widest text-white/40">안내</p>
+                <p className="text-[11px] font-black uppercase tracking-widest text-white/40">{t('notesTitle')}</p>
                 <ul className="text-[12px] text-white/50 font-bold space-y-1.5 leading-relaxed break-keep">
-                    <li>· 로그인 회원 · 계정당 하루 {MESHY_USER_DAILY_LIMIT}회 (한국 시간) + 관리자 보너스</li>
-                    <li>· 생성 실패 시 횟수 미차감 · 성공·진행 중은 당일 1회로 집계</li>
-                    <li>· 생성이 끝나면 3D 뷰어와 견적 화면이 자동으로 열립니다</li>
-                    <li>· 절대 치수는 견적 화면에서 mm 스케일로 조정하세요</li>
-                    <li className="text-amber-200/80">· {MESHY_AI_DISCLAIMER_SHORT}</li>
+                    <li>{t('note1', { limit: MESHY_USER_DAILY_LIMIT })}</li>
+                    <li>{t('note2')}</li>
+                    <li>{t('note3')}</li>
+                    <li>{t('note4')}</li>
+                    <li className="text-amber-200/80">· {t('disclaimerShort')}</li>
                 </ul>
             </div>
         </div>
