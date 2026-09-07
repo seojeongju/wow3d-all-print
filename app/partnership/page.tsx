@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { BadgeCheck, BarChart3, Building2, ChevronRight, Globe, Handshake, MessageSquare, Rocket, ShieldCheck, Users, Zap } from 'lucide-react'
+import { BadgeCheck, BarChart3, Building2, ChevronRight, Globe, Handshake, MessageSquare, Rocket, ShieldCheck, Store, Users, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Header from '@/components/layout/Header'
@@ -110,6 +110,37 @@ export default function PartnershipPage() {
                                 </Link>
                             </motion.div>
                         </div>
+                    </div>
+                </section>
+
+                {/* 스마트상점 지원사업 안내 */}
+                <section className="pb-8 relative">
+                    <div className="container mx-auto px-6">
+                        <Link
+                            href="/partnership/smart-store"
+                            className="group mx-auto flex max-w-4xl flex-col gap-4 rounded-[2rem] border border-teal-400/25 bg-gradient-to-r from-teal-400/10 via-white/[0.03] to-indigo-400/10 p-6 md:flex-row md:items-center md:justify-between md:p-8 transition-all hover:border-teal-400/50 hover:bg-teal-400/[0.08]"
+                        >
+                            <div className="flex items-start gap-4 md:items-center">
+                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-teal-400/30 bg-teal-400/10 text-teal-400">
+                                    <Store className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400">
+                                        소상공인시장진흥공단
+                                    </p>
+                                    <h2 className="mt-1 text-xl font-black tracking-tight text-white md:text-2xl">
+                                        스마트상점 지원사업 · MSLA-DLP 공식 공급
+                                    </h2>
+                                    <p className="mt-2 text-sm font-bold leading-relaxed text-white/40 break-keep">
+                                        (주)와우쓰리디 — P7 Pro · P10 Pro · P13 Pro 제품 공식 공급업체 소개 페이지
+                                    </p>
+                                </div>
+                            </div>
+                            <span className="inline-flex items-center gap-2 self-start rounded-xl bg-teal-400 px-5 py-3 text-sm font-black text-slate-950 transition-transform group-hover:translate-x-1 md:self-center">
+                                자세히 보기
+                                <ChevronRight className="h-4 w-4" />
+                            </span>
+                        </Link>
                     </div>
                 </section>
 

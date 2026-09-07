@@ -3,13 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight, Printer, HelpCircle, Sparkles } from "lucide-react";
+import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Layers, Search, MessageSquare, ChevronRight, Printer, HelpCircle, Sparkles, Handshake, ChevronDown } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: {
+    label: string
+    href: string
+    children?: { label: string; href: string; desc?: string }[]
+}[] = [
     { label: '서비스', href: '/services' },
     { label: '자동견적', href: '/quote' },
     { label: '공정', href: '/print-methods' },
@@ -19,7 +23,18 @@ const NAV_ITEMS = [
     { label: '주문조회', href: '/my-account' },
     { label: 'FAQ', href: '/qna' },
     { label: '문의하기', href: '/contact' },
-    { label: '대리점 모집', href: '/partnership' },
+    {
+        label: '대리점 모집',
+        href: '/partnership',
+        children: [
+            { label: '파트너십·대리점', href: '/partnership', desc: '하드웨어·AI 견적 제휴' },
+            {
+                label: '스마트상점 지원사업',
+                href: '/partnership/smart-store',
+                desc: 'MSLA-DLP P시리즈 공식 공급',
+            },
+        ],
+    },
 ];
 
 export default function Header() {
@@ -32,6 +47,8 @@ export default function Header() {
     const [isPastHero, setIsPastHero] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
     const [mounted, setMounted] = useState(false)
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+    const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
 
     const navItems = mounted
         ? NAV_ITEMS.map((item) =>
@@ -100,19 +117,89 @@ export default function Header() {
                         ? 'bg-slate-50/80 border border-slate-200 shadow-sm'
                         : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
                 }`}>
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
-                                isPastHero
-                                    ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
-                                    : 'text-white/90 hover:text-white hover:bg-white/15'
-                            }`}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
+                    {navItems.map((item) =>
+                        item.children?.length ? (
+                            <div
+                                key={item.label}
+                                className="relative"
+                                onMouseEnter={() => setOpenDropdown(item.label)}
+                                onMouseLeave={() => setOpenDropdown(null)}
+                            >
+                                <button
+                                    type="button"
+                                    className={`inline-flex items-center gap-1 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
+                                        isPastHero
+                                            ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
+                                            : 'text-white/90 hover:text-white hover:bg-white/15'
+                                    }`}
+                                    aria-expanded={openDropdown === item.label}
+                                    aria-haspopup="true"
+                                >
+                                    {item.label}
+                                    <ChevronDown
+                                        className={`w-3.5 h-3.5 transition-transform ${
+                                            openDropdown === item.label ? 'rotate-180' : ''
+                                        }`}
+                                    />
+                                </button>
+                                {openDropdown === item.label && (
+                                    <div
+                                        className={`absolute left-0 top-full z-50 min-w-[260px] pt-2`}
+                                    >
+                                        <div
+                                            className={`rounded-2xl border p-2 shadow-xl ${
+                                                isPastHero
+                                                    ? 'border-slate-200 bg-white'
+                                                    : 'border-white/10 bg-[#0d1117]/95 backdrop-blur-xl'
+                                            }`}
+                                        >
+                                            {item.children.map((child) => (
+                                                <Link
+                                                    key={child.href}
+                                                    href={child.href}
+                                                    className={`block rounded-xl px-4 py-3 transition-colors ${
+                                                        isPastHero
+                                                            ? 'hover:bg-teal-50'
+                                                            : 'hover:bg-white/10'
+                                                    }`}
+                                                    onClick={() => setOpenDropdown(null)}
+                                                >
+                                                    <span
+                                                        className={`block text-[13px] font-bold ${
+                                                            isPastHero ? 'text-slate-800' : 'text-white'
+                                                        }`}
+                                                    >
+                                                        {child.label}
+                                                    </span>
+                                                    {child.desc && (
+                                                        <span
+                                                            className={`mt-0.5 block text-[11px] font-medium ${
+                                                                isPastHero ? 'text-slate-500' : 'text-white/45'
+                                                            }`}
+                                                        >
+                                                            {child.desc}
+                                                        </span>
+                                                    )}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link
+                                key={item.label}
+                                href={item.href}
+                                className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
+                                    isPastHero
+                                        ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
+                                        : 'text-white/90 hover:text-white hover:bg-white/15'
+                                }`}
+                            >
+                                {item.label}
+                            </Link>
+                        )
+                    )}
                 </nav>
 
                 {/* Actions — 모바일에서 아이콘 영역 축소 */}
@@ -243,25 +330,70 @@ export default function Header() {
 
                             {navItems.map((item) => (
                                 <motion.div key={item.label} variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
-                                    <Link
-                                        href={item.href}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group mb-2 shadow-lg shadow-black/20"
-                                    >
-                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
-                                            {item.label === '서비스' && <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '자동견적' && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '공정' && <Layers className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '가이드' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '제품소개' && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '주문조회' && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === 'FAQ' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                            {item.label === '문의하기' && <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                    {item.children?.length ? (
+                                        <div className="mb-2 space-y-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setMobileExpanded((prev) =>
+                                                        prev === item.label ? null : item.label
+                                                    )
+                                                }
+                                                className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group w-full shadow-lg shadow-black/20"
+                                            >
+                                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
+                                                    <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
+                                                </div>
+                                                <span className="tracking-tight">{item.label}</span>
+                                                <ChevronDown
+                                                    className={`w-5 h-5 ml-auto text-white/20 transition-transform ${
+                                                        mobileExpanded === item.label ? 'rotate-180 text-teal-400' : ''
+                                                    }`}
+                                                />
+                                            </button>
+                                            {mobileExpanded === item.label && (
+                                                <div className="ml-4 space-y-1.5 border-l border-white/10 pl-3">
+                                                    {item.children.map((child) => (
+                                                        <Link
+                                                            key={child.href}
+                                                            href={child.href}
+                                                            onClick={() => setMobileOpen(false)}
+                                                            className="block rounded-xl bg-white/[0.04] border border-white/10 px-4 py-3.5 hover:bg-teal-500/15 hover:border-teal-500/25"
+                                                        >
+                                                            <span className="block text-[15px] font-bold text-white/90">
+                                                                {child.label}
+                                                            </span>
+                                                            {child.desc && (
+                                                                <span className="mt-0.5 block text-[11px] text-white/40">
+                                                                    {child.desc}
+                                                                </span>
+                                                            )}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                        <span className="group-hover:translate-x-1 transition-transform tracking-tight">{item.label}</span>
-                                        <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
-                                    </Link>
+                                    ) : (
+                                        <Link
+                                            href={item.href}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group mb-2 shadow-lg shadow-black/20"
+                                        >
+                                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
+                                                {item.label === '서비스' && <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '자동견적' && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '공정' && <Layers className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '가이드' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '제품소개' && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '제품개발 및 문의' && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '주문조회' && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === 'FAQ' && <HelpCircle className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === '문의하기' && <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                            </div>
+                                            <span className="group-hover:translate-x-1 transition-transform tracking-tight">{item.label}</span>
+                                            <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
+                                        </Link>
+                                    )}
                                 </motion.div>
                             ))}
 
