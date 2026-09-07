@@ -89,13 +89,14 @@ export default function Header() {
         `}
             style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}
         >
-            {/* 상단 바: 모바일에서 오버레이보다 위에 표시되도록 z-[101] */}
-            <div className="relative z-[101] container mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 min-w-0 max-w-full overflow-hidden">
+            {/* 상단 바: 모바일에서 오버레이보다 위에 표시되도록 z-[101]
+                overflow-hidden 금지 — 대리점 모집 등 데스크톱 드롭다운이 잘림 */}
+            <div className="relative z-[101] container mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 min-w-0 max-w-full">
                 {/* Logo — 클릭 시 메뉴 닫고 메인으로 */}
                 <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 sm:gap-3 min-w-0 shrink max-w-[calc(100%-11rem)] sm:max-w-[50%] lg:max-w-none"
+                    className="flex items-center gap-2 sm:gap-3 min-w-0 shrink max-w-[calc(100%-11rem)] sm:max-w-[50%] lg:max-w-none overflow-hidden"
                     aria-label="WOW3D PRO 메인으로 이동"
                 >
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/25 shrink-0">
@@ -112,7 +113,7 @@ export default function Header() {
                 </Link>
 
                 {/* Desktop Nav - 가독성 중심 */}
-                <nav className={`hidden lg:flex items-center gap-0.5 rounded-2xl p-1.5 transition-all ${
+                <nav className={`relative z-[110] hidden lg:flex items-center gap-0.5 rounded-2xl p-1.5 transition-all ${
                     isPastHero
                         ? 'bg-slate-50/80 border border-slate-200 shadow-sm'
                         : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
@@ -134,21 +135,19 @@ export default function Header() {
                                     }`}
                                     aria-expanded={openDropdown === item.label}
                                     aria-haspopup="true"
-                                    onClick={() => setOpenDropdown(null)}
                                 >
                                     {item.label}
                                     <ChevronDown
                                         className={`w-3.5 h-3.5 transition-transform ${
                                             openDropdown === item.label ? 'rotate-180' : ''
                                         }`}
+                                        aria-hidden
                                     />
                                 </Link>
                                 {openDropdown === item.label && (
-                                    <div
-                                        className={`absolute left-0 top-full z-50 min-w-[260px] pt-2`}
-                                    >
+                                    <div className="absolute left-0 top-full z-[120] min-w-[280px] pt-2">
                                         <div
-                                            className={`rounded-2xl border p-2 shadow-xl ${
+                                            className={`rounded-2xl border p-2 shadow-2xl ${
                                                 isPastHero
                                                     ? 'border-slate-200 bg-white'
                                                     : 'border-white/10 bg-[#0d1117]/95 backdrop-blur-xl'
