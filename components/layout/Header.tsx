@@ -171,7 +171,7 @@ export default function Header() {
                                         >
                                             {item.children.map((child) => (
                                                 <Link
-                                                    key={child.href}
+                                                    key={`${item.label}-${child.href}-${child.label}`}
                                                     href={child.href}
                                                     className={`block rounded-xl px-4 py-3 transition-colors ${
                                                         isPastHero
