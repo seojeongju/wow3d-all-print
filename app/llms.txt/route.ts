@@ -36,6 +36,7 @@ export function GET() {
         `- Expert / Showcase: ${SITE_URL}/expert`,
         `- FAQ: ${SITE_URL}/qna`,
         `- Contact: ${SITE_URL}/contact`,
+        `- Makerspace / Directions: ${SITE_URL}/makerspace`,
         `- Partnership: ${SITE_URL}/partnership`,
         `- Smart Store Technology Supply Program (MSLA-DLP official supply): ${SITE_URL}/partnership/smart-store`,
         `- Guide Hub: ${absoluteUrl('/guides')}`,

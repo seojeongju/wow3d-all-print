@@ -24,6 +24,16 @@ const NAV_ITEMS: {
     { label: 'FAQ', href: '/qna' },
     { label: '문의하기', href: '/contact' },
     {
+        label: '제작센터',
+        href: '/makerspace',
+        children: [
+            { label: '찾아오는길', href: '/makerspace', desc: '홍대·구미·전주 카카오맵' },
+            { label: '홍대센터', href: '/makerspace#hongdae', desc: '서울 마포구 독막로 93' },
+            { label: '구미센터', href: '/makerspace#gumi', desc: '경북 구미시 산호대로 253' },
+            { label: '전주센터', href: '/makerspace#jeonju', desc: '전북 전주시 반룡로 109' },
+        ],
+    },
+    {
         label: '대리점 모집',
         href: '/partnership',
         children: [

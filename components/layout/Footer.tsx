@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { MapPin, Phone, Mail, Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
+import { MAKERSPACES } from '@/lib/makerspaces'
 
 export default function Footer() {
     const [mounted, setMounted] = useState(false)
@@ -70,19 +71,25 @@ export default function Footer() {
                     {/* Navigation - Center Links */}
                     <div className="lg:col-span-5 grid grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-4 sm:space-y-6">
-                            <h3 className="text-[9px] sm:text-[10px] font-black uppercase text-teal-400 tracking-[0.2em] sm:tracking-[0.3em]">제작 센터</h3>
+                            <div className="flex items-center justify-between gap-2">
+                                <h3 className="text-[9px] sm:text-[10px] font-black uppercase text-teal-400 tracking-[0.2em] sm:tracking-[0.3em]">제작 센터</h3>
+                                <Link
+                                    href="/makerspace"
+                                    className="text-[9px] sm:text-[10px] font-bold text-white/35 hover:text-teal-400 transition-colors"
+                                >
+                                    찾아오는길
+                                </Link>
+                            </div>
                             <ul className="space-y-3 sm:space-y-4">
-                                {[
-                                    { name: '홍대센터', address: '서울시 마포구 독막로 93' },
-                                    { name: '구미센터', address: '경북 구미시 산호대로 253' },
-                                    { name: '전주센터', address: '전북 전주시 반룡로 109' },
-                                ].map((item) => (
-                                    <li key={item.name} className="group cursor-pointer">
-                                        <div className="text-[10px] sm:text-[11px] font-black text-white/50 group-hover:text-teal-400 transition-colors flex items-center gap-1">
-                                            {item.name}
-                                            <ArrowUpRight className="w-2 sm:w-2.5 h-2 sm:h-2.5 opacity-0 group-hover:opacity-100 transition-all" />
-                                        </div>
-                                        <p className="text-[9px] sm:text-[10px] text-white/20 mt-0.5 font-medium">{item.address}</p>
+                                {MAKERSPACES.map((item) => (
+                                    <li key={item.id}>
+                                        <Link href={`/makerspace#${item.id}`} className="group block">
+                                            <div className="text-[10px] sm:text-[11px] font-black text-white/50 group-hover:text-teal-400 transition-colors flex items-center gap-1">
+                                                {item.name}
+                                                <ArrowUpRight className="w-2 sm:w-2.5 h-2 sm:h-2.5 opacity-0 group-hover:opacity-100 transition-all" />
+                                            </div>
+                                            <p className="text-[9px] sm:text-[10px] text-white/20 mt-0.5 font-medium">{item.address}</p>
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>

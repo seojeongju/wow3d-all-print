@@ -17,4 +17,9 @@ interface CloudflareEnv {
 	TRIPO_API_KEY?: string;
 	/** 선택: Workers AI 미사용 시 FAQ 초안용 */
 	OPENAI_API_KEY?: string;
+	/** 카카오 로그인 REST 키 */
+	KAKAO_REST_API_KEY?: string;
+	/** 카카오맵 JavaScript 키 (인터랙티브 지도, 공개용) */
+	KAKAO_MAP_JS_KEY?: string;
+	NEXT_PUBLIC_KAKAO_MAP_APP_KEY?: string;
 }

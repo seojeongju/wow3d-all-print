@@ -37,6 +37,9 @@ const nextConfig: NextConfig = {
     /** 카카오 비즈 채널 검색용 ID (pf.kakao.com/_xxx). 빌드 시 주입 → 견적 페이지 FAB */
     NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID:
       process.env.NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID || "",
+    /** 카카오맵 JavaScript 키 (없으면 정적지도 REST 폴백) */
+    NEXT_PUBLIC_KAKAO_MAP_APP_KEY:
+      process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY || "",
     /** 네이버 톡톡 프로필/채팅 코드 (예: wowi7tu) */
     NEXT_PUBLIC_NAVER_TALKTALK_ID:
       process.env.NEXT_PUBLIC_NAVER_TALKTALK_ID || "wowi7tu",
