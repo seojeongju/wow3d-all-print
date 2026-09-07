@@ -88,7 +88,10 @@ export default function Footer() {
                                                 {item.name}
                                                 <ArrowUpRight className="w-2 sm:w-2.5 h-2 sm:h-2.5 opacity-0 group-hover:opacity-100 transition-all" />
                                             </div>
-                                            <p className="text-[9px] sm:text-[10px] text-white/20 mt-0.5 font-medium">{item.address}</p>
+                                            <p className="text-[9px] sm:text-[10px] text-white/20 mt-0.5 font-medium">
+                                                {item.address}
+                                                {item.addressDetail ? ` ${item.addressDetail}` : ''}
+                                            </p>
                                         </Link>
                                     </li>
                                 ))}
