@@ -29,7 +29,7 @@ const NAV_ITEMS: {
         children: [
             { label: '파트너십·대리점', href: '/partnership', desc: '하드웨어·AI 견적 제휴' },
             {
-                label: '스마트상점 지원사업',
+                label: '스마트상점 기술보급 사업',
                 href: '/partnership/smart-store',
                 desc: 'MSLA-DLP P시리즈 공식 공급',
             },

@@ -37,7 +37,7 @@ export function GET() {
         `- FAQ: ${SITE_URL}/qna`,
         `- Contact: ${SITE_URL}/contact`,
         `- Partnership: ${SITE_URL}/partnership`,
-        `- Smart Store Support (MSLA-DLP official supply): ${SITE_URL}/partnership/smart-store`,
+        `- Smart Store Technology Supply Program (MSLA-DLP official supply): ${SITE_URL}/partnership/smart-store`,
         `- Guide Hub: ${absoluteUrl('/guides')}`,
         `- Cost Calculation Guide: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
         `- Reduce Cost Guide: ${absoluteUrl('/guides/how-to-reduce-3d-printing-cost')}`,

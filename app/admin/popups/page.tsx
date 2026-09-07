@@ -563,7 +563,7 @@ export default function AdminPopupsPage() {
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 className="border-white/10 bg-white/5 text-white"
-                placeholder="예: 스마트상점 지원사업 안내"
+                placeholder="예: 스마트상점 기술보급 사업 안내"
               />
             </div>
 

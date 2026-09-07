@@ -113,7 +113,7 @@ export default function PartnershipPage() {
                     </div>
                 </section>
 
-                {/* 스마트상점 지원사업 안내 */}
+                {/* 스마트상점 기술보급 사업 안내 */}
                 <section className="pb-8 relative">
                     <div className="container mx-auto px-6">
                         <Link
@@ -129,7 +129,7 @@ export default function PartnershipPage() {
                                         소상공인시장진흥공단
                                     </p>
                                     <h2 className="mt-1 text-xl font-black tracking-tight text-white md:text-2xl">
-                                        스마트상점 지원사업 · MSLA-DLP 공식 공급
+                                        스마트상점 기술보급 사업 · MSLA-DLP 공식 공급
                                     </h2>
                                     <p className="mt-2 text-sm font-bold leading-relaxed text-white/40 break-keep">
                                         (주)와우쓰리디 — P7 Pro · P10 Pro · P13 Pro 제품 공식 공급업체 소개 페이지
