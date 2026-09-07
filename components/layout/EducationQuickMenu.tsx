@@ -141,15 +141,15 @@ export default function EducationQuickMenu() {
     const pathname = usePathname();
     const talkUrl = getNaverTalkTalkChatUrl();
     const isAdmin = pathname?.startsWith('/admin');
+    const isQuotePage =
+        pathname === '/quote' || pathname?.startsWith('/quote/');
 
     /** 3D 뷰어 우측 메뉴(스크린샷·치수·뷰 프리셋·팔레트)와 겹치는 페이지 */
     const isViewerPage =
-        pathname === '/quote' ||
-        pathname?.startsWith('/quote/') ||
-        pathname === '/experience' ||
-        pathname?.startsWith('/experience/');
+        pathname === '/experience' || pathname?.startsWith('/experience/');
 
-    if (isAdmin) return null;
+    // 견적 받기 페이지에서는 사이트 연결 아이콘 비표시
+    if (isAdmin || isQuotePage) return null;
 
     const dock: DockMode = isViewerPage ? 'corner' : 'right';
 
