@@ -116,16 +116,10 @@ export default function SitePopup() {
   const panelRef = useRef<HTMLDivElement>(null)
   const dragOffset = useRef({ x: 0, y: 0 })
 
+  /** 단순 닫기 — 새로고침 시 다시 표시됨 */
   const close = useCallback(() => setOpen(false), [])
 
-  const closeAndDismiss = useCallback(() => {
-    if (popup) {
-      const days = Math.max(1, Number(popup.dismissDays) || 1)
-      dismissPopup(popup.id, days)
-    }
-    setOpen(false)
-  }, [popup])
-
+  /** 「오늘 하루 보지 않기」만 localStorage에 저장 */
   const dismissForDays = useCallback(() => {
     if (popup) dismissPopup(popup.id, Math.max(1, popup.dismissDays))
     setOpen(false)
@@ -247,7 +241,6 @@ export default function SitePopup() {
           }`}
           style={{ left: pos.x, top: pos.y }}
         >
-          {/* 드래그 핸들(헤더) — 배경은 그대로 사용 가능 */}
           <div
             onPointerDown={onDragStart}
             onPointerMove={onDragMove}
@@ -276,7 +269,7 @@ export default function SitePopup() {
             {popup.imageUrl && (
               <div className="relative bg-black/30">
                 {popup.linkUrl ? (
-                  <PopupLink href={popup.linkUrl} onClick={closeAndDismiss} className="block">
+                  <PopupLink href={popup.linkUrl} onClick={close} className="block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={popup.imageUrl}
@@ -307,7 +300,7 @@ export default function SitePopup() {
                 {popup.linkUrl && (
                   <PopupLink
                     href={popup.linkUrl}
-                    onClick={closeAndDismiss}
+                    onClick={close}
                     className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-300 hover:text-teal-200"
                   >
                     자세히 보기
