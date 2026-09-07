@@ -100,5 +100,91 @@
     "bottomTitle": "지금 바로 견적을 확인해 보세요",
     "bottomDesc": "회원가입 없이도 파일 업로드와 가격 확인이 가능합니다.",
     "bottomContact": "1:1 문의"
+  },
+  "Quote": {
+    "eyebrow": "자동견적 시작",
+    "titleLine1": "3D 파일·사진으로",
+    "titleAccent": "실시간 견적",
+    "subtitle": "파일이 있으면 즉시 분석, 사진만 있으면 AI가 3D 모델을 만든 뒤 견적으로 이어집니다.",
+    "hasFile": "3D 파일이 있어요",
+    "hasFileDesc": "STL · OBJ · STEP 등 즉시 자동견적",
+    "uploadCta": "업로드하기",
+    "hasPhoto": "사진만 있어요",
+    "hasPhotoDesc": "JPG · PNG → AI 3D → 견적",
+    "make3dCta": "3D 만들기",
+    "makerHintBefore": "로고·2.5D 배지는 ",
+    "makerHintAfter": "를 이용해 주세요.",
+    "stepUpload": "업로드",
+    "stepConfigure": "견적 설정",
+    "settingsTitle": "견적 세부 설정",
+    "faqToggle": "자주 묻는 질문 보기",
+    "faqHide": "FAQ 접기",
+    "faqUploadToggle": "업로드 전 FAQ 보기",
+    "uploadHeading": "3D 파일",
+    "uploadHeadingAccent": "업로드",
+    "uploadFormats": "STL·OBJ·3MF·PLY 즉시 견적 · STEP·STP 자동 변환",
+    "viewerIdle": "파일을 드래그하거나 왼쪽에서 업로드하면 3D 미리보기가 활성화됩니다.",
+    "dropHere": "여기에 모델을 놓아 업로드",
+    "mobileUploadTab": "파일 업로드",
+    "mobileViewerTab": "3D 뷰어",
+    "liveQuote": "실시간 지능형 견적",
+    "analyzing": "최적의 견적을 산출하기 위해 잠시만 기다려 주세요.",
+    "photoGuideTitle": "사진(이미지)→3D 견적 가이드",
+    "faqs": [
+      {
+        "q": "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
+        "a": "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없다면 제품 사진(이미지)으로 AI 모델링 후 견적할 수 있습니다."
+      },
+      {
+        "q": "3D 모델 파일이 없어도 견적이 가능한가요?",
+        "a": "가능합니다. 견적 시작 화면에서 「3D 모델이 없어요」를 선택한 뒤 제품 사진(이미지)(JPG/PNG)을 올리면 AI가 3D 모델을 생성하고 자동견적으로 이어집니다. 정밀 치수·조립 공차가 필요한 부품은 STL/STEP 업로드를 권장합니다."
+      },
+      {
+        "q": "사진(이미지)→AI 3D는 로그인·이용 한도가 있나요?",
+        "a": "로그인 회원 기준 하루 1회(한국 시간)입니다. 생성에 실패하면 횟수가 차감되지 않습니다.",
+        "guideLabel": "사진(이미지)→3D 촬영·견적 가이드"
+      },
+      {
+        "q": "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
+        "a": "레이어 높이가 낮아질수록 출력 시간이 늘어나고, 인필이 높아질수록 재료 사용량이 증가합니다. 그래서 옵션에 따라 가격과 예상 시간이 함께 달라집니다."
+      },
+      {
+        "q": "자동견적 후 실제 제작 금액이 달라질 수도 있나요?",
+        "a": "일반적인 모델은 자동견적이 유효하지만, 복잡한 형상이나 특수 후가공이 필요한 경우에는 관리자 검토 후 수정견적으로 안내될 수 있습니다."
+      }
+    ],
+    "metaTitle": "3D프린팅 자동견적 | 3D프린팅 견적 · 3D프린터 출력 가격",
+    "metaDescription": "3D프린팅 자동견적·3D프린팅 견적·3D프린터 출력 가격을 파일 업로드 또는 사진(이미지) AI 모델링 후 즉시 확인하세요.",
+    "stepOrder": "주문 완료",
+    "exit": "나가기",
+    "replaceFile": "파일 교체",
+    "loadedQuoteHint": "저장·장바구니에서 불러온 견적입니다. 3D 뷰어에서 크기·회전을 조정한 뒤 저장하면 장바구니 금액도 함께 갱신됩니다.",
+    "analyzingTitle": "모델",
+    "analyzingTitleAccent": "정밀 분석 중",
+    "analyzingBody": "부피·표면적·출력 시간을 계산하고 있습니다.",
+    "analyzingLargeFile": "대용량 AI 모델은 먼저 치수 근사값으로 견적 화면을 연 뒤, 백그라운드에서 정밀 분석을 이어갑니다.",
+    "photoGuideDesc": "촬영 방법·한도·Maker와의 차이",
+    "reselectMode": "시작 방식 다시 선택",
+    "guideFrom": "{label} 가이드에서 들어오셨습니다.",
+    "mobileUploadCta": "모델 파일 업로드",
+    "mobileUploadHint": "아래 「파일 업로드」 탭에서도 선택할 수 있어요",
+    "materialsLine": "30종+ 고성능 소재",
+    "precisionLine": "±0.1mm 정밀 제작",
+    "loadFailTitle": "견적 불러오기 실패",
+    "loadFailDesc": "저장된 견적 정보를 가져오지 못했습니다.",
+    "collectionName": "3D 프린팅 자동 견적",
+    "collectionDesc": "STL, OBJ, 3MF, PLY 파일 업로드 또는 제품 사진(이미지) AI 3D 모델링 후 출력 방식, 레이어 높이, 인필, 소재를 선택해 실시간 견적을 확인하는 페이지입니다.",
+    "breadcrumbHome": "홈",
+    "breadcrumbQuote": "자동 견적",
+    "metaKeywords": [
+      "3D프린팅출력",
+      "3D프린터출력",
+      "3D프린팅 자동견적",
+      "3D프린팅 견적",
+      "3D프린터 출력 가격",
+      "3D 프린팅 견적"
+    ],
+    "modelLoadFailTitle": "모델 불러오기 실패",
+    "modelLoadFailDesc": "저장된 3D 파일을 열 수 없습니다. 잠시 후 다시 시도해 주세요."
   }
 }

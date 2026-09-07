@@ -1,6 +1,8 @@
 'use client'
 
 import { FileBox, ImageIcon, ArrowRight, Sparkles } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 
 export type QuoteEntryMode = 'file' | 'photo'
@@ -10,19 +12,21 @@ type Props = {
 }
 
 export default function QuoteSourceChooser({ onSelect }: Props) {
+    const t = useTranslations('Quote')
+
     return (
         <div className="space-y-6">
             <div className="space-y-2">
                 <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300/90">
-                    자동견적 시작
+                    {t('eyebrow')}
                 </p>
                 <h1 className="text-3xl font-black leading-[1.15] tracking-tight text-white sm:text-4xl">
-                    3D 파일·사진으로
+                    {t('titleLine1')}
                     <br />
-                    <span className="text-teal-400">실시간 견적</span>
+                    <span className="text-teal-400">{t('titleAccent')}</span>
                 </h1>
                 <p className="max-w-lg text-sm font-medium leading-relaxed text-white/60 break-keep">
-                    파일이 있으면 즉시 분석, 사진만 있으면 AI가 3D 모델을 만든 뒤 견적으로 이어집니다.
+                    {t('subtitle')}
                 </p>
             </div>
 
@@ -38,12 +42,12 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                     <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-teal-400/30 bg-teal-400/15 text-teal-300">
                         <FileBox className="h-5 w-5" />
                     </div>
-                    <p className="text-lg font-black text-white">3D 파일이 있어요</p>
+                    <p className="text-lg font-black text-white">{t('hasFile')}</p>
                     <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
-                        STL · OBJ · STEP 등 즉시 자동견적
+                        {t('hasFileDesc')}
                     </p>
                     <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-teal-300 group-hover:gap-2">
-                        업로드하기 <ArrowRight className="h-3.5 w-3.5" />
+                        {t('uploadCta')} <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                 </button>
 
@@ -59,27 +63,27 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                         <ImageIcon className="h-5 w-5" />
                     </div>
                     <p className="flex items-center gap-2 text-lg font-black text-white">
-                        사진만 있어요
+                        {t('hasPhoto')}
                         <span className="inline-flex items-center gap-1 rounded-full border border-indigo-400/30 bg-indigo-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-indigo-200">
                             <Sparkles className="h-3 w-3" />
                             AI
                         </span>
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
-                        JPG · PNG → AI 3D → 견적
+                        {t('hasPhotoDesc')}
                     </p>
                     <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-indigo-300 group-hover:gap-2">
-                        3D 만들기 <ArrowRight className="h-3.5 w-3.5" />
+                        {t('make3dCta')} <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                 </button>
             </div>
 
             <p className="text-[11px] font-bold leading-relaxed text-white/35 break-keep">
-                로고·2.5D 배지는{' '}
-                <a href="/#ai-3d-maker" className="text-teal-400 hover:underline">
+                {t('makerHintBefore')}
+                <Link href="/#ai-3d-maker" className="text-teal-400 hover:underline">
                     AI 3D Maker
-                </a>
-                를 이용해 주세요.
+                </Link>
+                {t('makerHintAfter')}
             </p>
         </div>
     )

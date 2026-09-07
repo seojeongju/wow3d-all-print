@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   buildBreadcrumbSchema,
   buildCollectionPageSchema,
@@ -6,6 +7,8 @@ import {
   buildPhotoTo3DHowToSchema,
   buildWebPageSchema,
 } from "@/lib/aeo-schema";
+import { getPathname } from "@/i18n/navigation";
+import { routing, type AppLocale } from "@/i18n/routing";
 import {
   absoluteUrl,
   buildQuoteOgImages,
@@ -16,70 +19,95 @@ import {
   SITE_URL,
 } from "@/lib/site-url";
 
-const quoteTitle = "3D프린팅 자동견적 | 3D프린팅 견적 · 3D프린터 출력 가격";
-const quoteDescription =
-  "3D프린팅 자동견적·3D프린팅 견적·3D프린터 출력 가격을 파일 업로드 또는 사진(이미지) AI 모델링 후 즉시 확인하세요. STL·OBJ·3MF·PLY 즉시 견적, STEP·STP 자동 변환, 사진(이미지)→3D.";
-
-const quoteOgImages = buildQuoteOgImages();
-const quotePrimaryImage = absoluteUrl(OG_QUOTE_IMAGE_PATH);
-
-export const metadata: Metadata = {
-  title: quoteTitle,
-  description: quoteDescription,
-  keywords: [
-    "3D프린팅출력",
-    "3D프린터출력",
-    "3D프린팅 자동견적",
-    "3D프린팅 견적",
-    "3D프린터 출력 가격",
-    "3D 프린팅 견적",
-  ],
-  openGraph: {
-    type: "website",
-    locale: "ko_KR",
-    url: `${SITE_URL}/quote`,
-    siteName: "(주)와우쓰리디",
-    title: quoteTitle,
-    description: quoteDescription,
-    images: quoteOgImages,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: quoteTitle,
-    description: quoteDescription,
-    images: [quotePrimaryImage],
-  },
-  alternates: { canonical: `${SITE_URL}/quote` },
-  other: {
-    "og:image:secure_url": quotePrimaryImage,
-  },
+type Props = {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 };
 
-export default function QuoteLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function quotePath(locale: AppLocale) {
+  return getPathname({ locale, href: "/quote" });
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam } = await params;
+  const locale = (routing.locales.includes(localeParam as AppLocale)
+    ? localeParam
+    : routing.defaultLocale) as AppLocale;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Quote" });
+
+  const quoteTitle = t("metaTitle");
+  const quoteDescription = t("metaDescription");
+  const path = quotePath(locale);
+  const canonical = `${SITE_URL}${path}`;
+  const quoteOgImages = buildQuoteOgImages();
+  const quotePrimaryImage = absoluteUrl(OG_QUOTE_IMAGE_PATH);
+  const keywords = t.raw("metaKeywords") as string[];
+
+  return {
+    title: quoteTitle,
+    description: quoteDescription,
+    keywords,
+    openGraph: {
+      type: "website",
+      locale: locale === "en" ? "en_US" : "ko_KR",
+      url: canonical,
+      siteName: "(주)와우쓰리디",
+      title: quoteTitle,
+      description: quoteDescription,
+      images: quoteOgImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: quoteTitle,
+      description: quoteDescription,
+      images: [quotePrimaryImage],
+    },
+    alternates: {
+      canonical,
+      languages: {
+        ko: `${SITE_URL}${quotePath("ko")}`,
+        en: `${SITE_URL}${quotePath("en")}`,
+        "x-default": `${SITE_URL}${quotePath("ko")}`,
+      },
+    },
+    other: {
+      "og:image:secure_url": quotePrimaryImage,
+    },
+  };
+}
+
+export default async function QuoteLayout({ children, params }: Props) {
+  const { locale: localeParam } = await params;
+  const locale = (routing.locales.includes(localeParam as AppLocale)
+    ? localeParam
+    : routing.defaultLocale) as AppLocale;
+  setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Quote" });
+
+  const quoteTitle = t("metaTitle");
+  const quoteDescription = t("metaDescription");
+  const path = quotePath(locale);
+
   const schemas = [
     buildWebPageSchema({
       name: quoteTitle,
       description: quoteDescription,
-      path: "/quote",
+      path,
       imagePath: OG_QUOTE_IMAGE_PATH,
       imageWidth: OG_QUOTE_IMAGE_WIDTH,
       imageHeight: OG_QUOTE_IMAGE_HEIGHT,
       imageCaption: OG_QUOTE_IMAGE_ALT,
     }),
     buildCollectionPageSchema({
-      name: "3D 프린팅 자동 견적",
-      description:
-        "STL, OBJ, 3MF, PLY 파일 업로드 또는 제품 사진(이미지) AI 3D 모델링 후 출력 방식, 레이어 높이, 인필, 소재를 선택해 실시간 견적을 확인하는 페이지입니다.",
-      path: "/quote",
+      name: t("collectionName"),
+      description: t("collectionDesc"),
+      path,
       imagePath: OG_QUOTE_IMAGE_PATH,
     }),
     buildBreadcrumbSchema([
-      { name: "홈", path: "/" },
-      { name: "자동 견적", path: "/quote" },
+      { name: t("breadcrumbHome"), path: locale === "en" ? "/en" : "/" },
+      { name: t("breadcrumbQuote"), path },
     ]),
     buildQuoteHowToSchema(),
     buildPhotoTo3DHowToSchema(),

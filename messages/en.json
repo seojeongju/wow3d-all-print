@@ -100,5 +100,90 @@
     "bottomTitle": "Get a quote now",
     "bottomDesc": "Upload files and check pricing without signing up.",
     "bottomContact": "Contact"
+  },
+  "Quote": {
+    "eyebrow": "Start your quote",
+    "titleLine1": "From 3D files or photos",
+    "titleAccent": "instant pricing",
+    "subtitle": "Upload a model for immediate analysis, or let AI build a 3D mesh from photos and continue to quoting.",
+    "hasFile": "I have a 3D file",
+    "hasFileDesc": "STL · OBJ · STEP and more — instant quote",
+    "uploadCta": "Upload file",
+    "hasPhoto": "I only have photos",
+    "hasPhotoDesc": "JPG · PNG → AI 3D → quote",
+    "make3dCta": "Create 3D",
+    "makerHintBefore": "For logo / 2.5D badges, use ",
+    "makerHintAfter": ".",
+    "stepUpload": "Upload",
+    "stepConfigure": "Configure",
+    "settingsTitle": "Quote settings",
+    "faqToggle": "Show FAQ",
+    "faqHide": "Hide FAQ",
+    "faqUploadToggle": "FAQ before upload",
+    "uploadHeading": "Upload",
+    "uploadHeadingAccent": "3D file",
+    "uploadFormats": "Instant quote for STL·OBJ·3MF·PLY · auto-convert STEP·STP",
+    "viewerIdle": "Drag a model here or upload on the left to enable 3D preview.",
+    "dropHere": "Drop model here to upload",
+    "mobileUploadTab": "Upload",
+    "mobileViewerTab": "3D viewer",
+    "liveQuote": "Live intelligent quote",
+    "analyzing": "Please wait while we prepare your quote.",
+    "photoGuideTitle": "Photo → 3D quote guide",
+    "faqs": [
+      {
+        "q": "Which files can I upload for a 3D printing quote?",
+        "a": "STL, OBJ, 3MF, and PLY support instant quoting. STEP/STP are converted automatically on upload. Without a 3D file, you can upload product photos for AI modeling first."
+      },
+      {
+        "q": "Can I get a quote without a 3D model file?",
+        "a": "Yes. Choose “I only have photos”, upload JPG/PNG product images, and AI will generate a mesh for quoting. For tight tolerances or assemblies, STL/STEP is recommended."
+      },
+      {
+        "q": "Is there a login or daily limit for Photo → AI 3D?",
+        "a": "Logged-in members get 1 run per day (Korea time). Failed generations do not count against the limit.",
+        "guideLabel": "Photo → 3D shooting & quote guide"
+      },
+      {
+        "q": "Why does changing layer height or infill change the price?",
+        "a": "Lower layer heights increase print time; higher infill uses more material. Price and estimated time update with your options."
+      },
+      {
+        "q": "Can the final production price differ from the automatic quote?",
+        "a": "Most models match the automatic quote, but complex geometry or special finishing may be reviewed and adjusted by our team."
+      }
+    ],
+    "metaTitle": "Instant 3D printing quote | File or photo to price",
+    "metaDescription": "Get an instant 3D printing quote from STL/OBJ/STEP uploads or photo-to-AI 3D modeling. Live pricing for FDM, SLA, and more.",
+    "stepOrder": "Order complete",
+    "exit": "Exit",
+    "replaceFile": "Replace file",
+    "loadedQuoteHint": "Loaded from saved quotes or cart. Adjust scale/rotation in the 3D viewer, then save to refresh the cart price.",
+    "analyzingTitle": "Model",
+    "analyzingTitleAccent": "precision analysis",
+    "analyzingBody": "Calculating volume, surface area, and print time.",
+    "analyzingLargeFile": "For large AI models we open quote with approximate dimensions first, then refine analysis in the background.",
+    "photoGuideDesc": "Shooting tips, limits, and how it differs from Maker",
+    "reselectMode": "Choose start method again",
+    "guideFrom": "You came from the {label} guide.",
+    "mobileUploadCta": "Upload model file",
+    "mobileUploadHint": "You can also choose the Upload tab below",
+    "materialsLine": "30+ high-performance materials",
+    "precisionLine": "±0.1mm precision",
+    "loadFailTitle": "Failed to load quote",
+    "loadFailDesc": "Could not load the saved quote.",
+    "collectionName": "Instant 3D printing quote",
+    "collectionDesc": "Upload STL, OBJ, 3MF, or PLY — or generate a model from product photos with AI — then choose process, layer height, infill, and material for a live quote.",
+    "breadcrumbHome": "Home",
+    "breadcrumbQuote": "Instant quote",
+    "metaKeywords": [
+      "3D printing quote",
+      "instant 3D printing quote",
+      "3D printer price",
+      "STL quote",
+      "photo to 3D quote"
+    ],
+    "modelLoadFailTitle": "Failed to load model",
+    "modelLoadFailDesc": "Could not open the saved 3D file. Please try again shortly."
   }
 }

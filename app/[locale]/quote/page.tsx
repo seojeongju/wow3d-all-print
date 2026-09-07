@@ -6,10 +6,11 @@ import FileUpload from "@/components/upload/FileUpload";
 import QuotePanel from "@/components/quote/QuotePanel";
 import QuoteSourceChooser, { type QuoteEntryMode } from "@/components/quote/QuoteSourceChooser";
 import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
-import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Info, Boxes, FileBox, Loader2, FileText, ShoppingCart, RefreshCw, Camera, ChevronDown } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { ArrowLeft, Boxes, FileBox, Loader2, ShoppingCart, RefreshCw, Camera, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, Suspense, useCallback, useId, type DragEvent } from "react";
+import { useState, useEffect, Suspense, useCallback, useId, useMemo, type DragEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
@@ -22,32 +23,9 @@ import { usePhotoHandoffStore } from "@/store/usePhotoHandoffStore";
 import { useQuoteFunnelTracking } from "@/hooks/useQuoteFunnelTracking";
 import { showToast } from "@/lib/toast-helper";
 
-const quickQuoteFaqs: { q: string; a: string; guideHref?: string; guideLabel?: string }[] = [
-    {
-        q: "3D 프린팅 견적을 받으려면 어떤 파일을 올려야 하나요?",
-        a: "STL, OBJ, 3MF, PLY 파일은 즉시 자동견적을 지원합니다. STEP, STP 파일은 업로드 시 자동 변환 후 견적을 제공합니다. 3D 파일이 없다면 제품 사진(이미지)으로 AI 모델링 후 견적할 수 있습니다.",
-    },
-    {
-        q: "3D 모델 파일이 없어도 견적이 가능한가요?",
-        a: "가능합니다. 견적 시작 화면에서 「3D 모델이 없어요」를 선택한 뒤 제품 사진(이미지)(JPG/PNG)을 올리면 AI가 3D 모델을 생성하고 자동견적으로 이어집니다. 정밀 치수·조립 공차가 필요한 부품은 STL/STEP 업로드를 권장합니다.",
-    },
-    {
-        q: "사진(이미지)→AI 3D는 로그인·이용 한도가 있나요?",
-        a: "로그인 회원 기준 하루 1회(한국 시간)입니다. 생성에 실패하면 횟수가 차감되지 않습니다.",
-        guideHref: "/guides/photo-to-3d-printing-quote",
-        guideLabel: "사진(이미지)→3D 촬영·견적 가이드",
-    },
-    {
-        q: "레이어 높이와 인필을 바꾸면 견적이 왜 달라지나요?",
-        a: "레이어 높이가 낮아질수록 출력 시간이 늘어나고, 인필이 높아질수록 재료 사용량이 증가합니다. 그래서 옵션에 따라 가격과 예상 시간이 함께 달라집니다.",
-    },
-    {
-        q: "자동견적 후 실제 제작 금액이 달라질 수도 있나요?",
-        a: "일반적인 모델은 자동견적이 유효하지만, 복잡한 형상이나 특수 후가공이 필요한 경우에는 관리자 검토 후 수정견적으로 안내될 수 있습니다.",
-    },
-];
+type QuoteFaqItem = { q: string; a: string; guideHref?: string; guideLabel?: string };
 
-function QuickQuoteFaqCard({ item }: { item: (typeof quickQuoteFaqs)[number] }) {
+function QuickQuoteFaqCard({ item }: { item: QuoteFaqItem }) {
     const [open, setOpen] = useState(false);
     const panelId = useId();
 
@@ -108,6 +86,14 @@ const GUIDE_SOURCE_LABELS: Record<string, string> = {
 
 function QuoteContent() {
     useCpuModelAnalysis();
+    const t = useTranslations('Quote');
+    const quickQuoteFaqs = useMemo(() => {
+        const raw = t.raw('faqs') as Array<{ q: string; a: string; guideLabel?: string }>;
+        return raw.map((item, index): QuoteFaqItem => ({
+            ...item,
+            guideHref: index === 2 ? '/guides/photo-to-3d-printing-quote' : undefined,
+        }));
+    }, [t]);
     const { file, baseAnalysis, analysisError, reset, setFile } = useFileStore();
     const analysis = baseAnalysis;
     const showQuotePanel = Boolean(file && analysis);
@@ -213,21 +199,21 @@ function QuoteContent() {
                     } catch (e) {
                         console.error('Failed to load quote model:', e);
                         showToast.error(
-                            '모델 불러오기 실패',
+                            t('modelLoadFailTitle'),
                             e instanceof Error
                                 ? e.message
-                                : '저장된 3D 파일을 열 수 없습니다. 잠시 후 다시 시도해 주세요.'
+                                : t('modelLoadFailDesc')
                         );
                     }
                 }
             } catch (error) {
                 console.error("Failed to load quote:", error);
-                showToast.error('견적 불러오기 실패', '저장된 견적 정보를 가져오지 못했습니다.');
+                showToast.error(t('loadFailTitle'), t('loadFailDesc'));
             }
         };
 
         void load();
-    }, [loadQuoteId, setFile, token, sessionId, user?.id]);
+    }, [loadQuoteId, setFile, token, sessionId, user?.id, t]);
 
     const handleViewerDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
         if (!e.dataTransfer?.types?.includes('Files')) return;
@@ -312,9 +298,9 @@ function QuoteContent() {
 
                         <nav className="hidden sm:flex items-center gap-1 bg-white/10 p-1 rounded-full border border-white/20 scale-90 sm:scale-100 origin-left">
                             {[
-                                { id: 1, label: "업로드", active: step >= 1 },
-                                { id: 2, label: "견적 설정", active: step >= 2 },
-                                { id: 3, label: "주문 완료", active: step >= 3 },
+                                { id: 1, label: t('stepUpload'), active: step >= 1 },
+                                { id: 2, label: t('stepConfigure'), active: step >= 2 },
+                                { id: 3, label: t('stepOrder'), active: step >= 3 },
                             ].map((item) => (
                                 <div
                                     key={item.id}
@@ -338,7 +324,7 @@ function QuoteContent() {
                         <Link href="/">
                             <Button variant="outline" size="sm" className="h-9 sm:h-11 rounded-xl bg-white/10 border-white/25 text-white hover:bg-white/20 px-3 sm:px-5 font-bold transition-all text-xs sm:text-sm">
                                 <ArrowLeft className="w-4 h-4 sm:mr-2" />
-                                <span className="hidden sm:inline">나가기</span>
+                                <span className="hidden sm:inline">{t('exit')}</span>
                             </Button>
                         </Link>
                     </div>
@@ -366,18 +352,18 @@ function QuoteContent() {
                                         className="space-y-6 sm:space-y-8"
                                     >
                                         <div className="flex items-center justify-between px-1">
-                                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">견적 세부 설정</h2>
+                                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{t('settingsTitle')}</h2>
                                             <button
                                                 onClick={() => { reset(); setStep(1); setEntryMode(null); }}
                                                 className="px-3 py-1.5 rounded-lg bg-teal-400/20 border border-teal-400/30 text-[10px] sm:text-[12px] text-teal-400 hover:bg-teal-400 hover:text-slate-900 font-black tracking-tight transition-all flex items-center gap-1.5 shadow-sm active:scale-95 group"
                                             >
                                                 <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-                                                파일 교체
+                                                {t('replaceFile')}
                                             </button>
                                         </div>
                                         {loadQuoteId ? (
                                             <div className="rounded-2xl border border-teal-400/25 bg-teal-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-teal-100/90 leading-relaxed break-keep">
-                                                저장·장바구니에서 불러온 견적입니다. 3D 뷰어에서 크기·회전을 조정한 뒤 저장하면 장바구니 금액도 함께 갱신됩니다.
+                                                {t('loadedQuoteHint')}
                                             </div>
                                         ) : null}
                                         <div className="relative">
@@ -408,16 +394,16 @@ function QuoteContent() {
                                             </div>
                                             <div className="text-center space-y-2 sm:space-y-3">
                                                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-                                                    모델 <span className="text-teal-400">정밀 분석 중</span>
+                                                    {t('analyzingTitle')} <span className="text-teal-400">{t('analyzingTitleAccent')}</span>
                                                 </h1>
                                                 <p className="text-white/60 text-xs sm:text-sm break-keep font-bold leading-relaxed px-4">
-                                                    부피·표면적·출력 시간을 계산하고 있습니다.
+                                                    {t('analyzingBody')}
                                                     <br className="hidden sm:block" />
-                                                    최적의 견적을 산출하기 위해 잠시만 기다려 주세요.
+                                                    {t('analyzing')}
                                                 </p>
                                                 {file.size >= 20 * 1024 * 1024 ? (
                                                     <p className="text-amber-300/90 text-[11px] sm:text-xs font-bold break-keep px-6">
-                                                        대용량 AI 모델은 먼저 치수 근사값으로 견적 화면을 연 뒤, 백그라운드에서 정밀 분석을 이어갑니다.
+                                                        {t('analyzingLargeFile')}
                                                     </p>
                                                 ) : null}
                                                 {analysisError ? (
@@ -450,7 +436,7 @@ function QuoteContent() {
                                                     onClick={() => setShowQuoteFaqs((v) => !v)}
                                                     className="text-xs font-black text-white/45 hover:text-teal-300 transition-colors"
                                                 >
-                                                    {showQuoteFaqs ? 'FAQ 접기' : '자주 묻는 질문 보기'}
+                                                    {showQuoteFaqs ? t('faqHide') : t('faqToggle')}
                                                 </button>
                                                 {showQuoteFaqs ? (
                                                     <div className="mt-4 space-y-3">
@@ -465,9 +451,9 @@ function QuoteContent() {
                                                                 <Camera className="h-5 w-5" />
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <h3 className="text-sm font-black text-white">사진(이미지)→3D 견적 가이드</h3>
+                                                                <h3 className="text-sm font-black text-white">{t('photoGuideTitle')}</h3>
                                                                 <p className="mt-1 text-[11px] font-bold leading-relaxed text-white/50 break-keep">
-                                                                    촬영 방법·한도·Maker와의 차이
+                                                                    {t('photoGuideDesc')}
                                                                 </p>
                                                             </div>
                                                         </Link>
@@ -506,20 +492,20 @@ function QuoteContent() {
                                                     className="inline-flex items-center gap-1.5 text-[12px] font-black text-white/50 hover:text-white transition-colors"
                                                 >
                                                     <ArrowLeft className="w-3.5 h-3.5" />
-                                                    시작 방식 다시 선택
+                                                    {t('reselectMode')}
                                                 </button>
                                                 {guideLabel ? (
                                                     <div className="rounded-2xl border border-teal-400/20 bg-teal-400/10 px-4 py-3">
                                                         <p className="text-xs font-bold text-white/80 break-keep">
-                                                            <span className="text-teal-300">{guideLabel}</span> 가이드에서 들어오셨습니다.
+                                                            {t('guideFrom', { label: guideLabel })}
                                                         </p>
                                                     </div>
                                                 ) : null}
                                                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                                                    3D 파일 <span className="text-teal-400">업로드</span>
+                                                    {t('uploadHeading')} <span className="text-teal-400">{t('uploadHeadingAccent')}</span>
                                                 </h1>
                                                 <p className="text-sm text-white/60 font-medium break-keep">
-                                                    STL·OBJ·3MF·PLY 즉시 견적 · STEP·STP 자동 변환
+                                                    {t('uploadFormats')}
                                                 </p>
                                             </div>
                                             <div className="rounded-[2rem] border border-white/20 bg-white/10 p-1 shadow-2xl">
@@ -530,7 +516,7 @@ function QuoteContent() {
                                                 onClick={() => setShowQuoteFaqs((v) => !v)}
                                                 className="text-xs font-black text-white/45 hover:text-teal-300"
                                             >
-                                                {showQuoteFaqs ? 'FAQ 접기' : '업로드 전 FAQ 보기'}
+                                                {showQuoteFaqs ? t('faqHide') : t('faqUploadToggle')}
                                             </button>
                                             {showQuoteFaqs ? (
                                                 <div className="space-y-3">
@@ -576,7 +562,7 @@ function QuoteContent() {
                             {isViewerDragging ? (
                                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm pointer-events-none">
                                     <p className="text-teal-300 font-black text-sm sm:text-base tracking-wide">
-                                        여기에 모델을 놓아 업로드
+                                        {t('dropHere')}
                                     </p>
                                 </div>
                             ) : null}
@@ -601,7 +587,7 @@ function QuoteContent() {
                                         <div className="mt-8 sm:mt-10 text-center space-y-2">
                                             <p className="text-white/30 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
                                             <p className="text-white/20 text-[11px] sm:text-sm font-medium italic break-keep">
-                                                파일을 드래그하거나 왼쪽에서 업로드하면 3D 미리보기가 활성화됩니다.
+                                                {t('viewerIdle')}
                                             </p>
                                         </div>
                                     </div>
@@ -611,10 +597,10 @@ function QuoteContent() {
                                         className="pointer-events-auto mt-8 flex items-center justify-center gap-2 rounded-2xl bg-teal-500 px-6 py-3.5 text-sm font-black text-slate-950 shadow-[0_8px_30px_rgba(20,184,166,0.35)] active:scale-[0.98] transition-transform lg:hidden"
                                     >
                                         <FileBox className="h-5 w-5" />
-                                        모델 파일 업로드
+                                        {t('mobileUploadCta')}
                                     </button>
                                     <p className="pointer-events-none mt-3 text-center text-[10px] text-white/35 lg:hidden break-keep">
-                                        아래 「파일 업로드」 탭에서도 선택할 수 있어요
+                                        {t('mobileUploadHint')}
                                     </p>
                                 </div>
                             )}
@@ -625,15 +611,15 @@ function QuoteContent() {
                             <div className="flex-1 flex items-center gap-4 sm:gap-12 text-[9px] sm:text-[12px] font-black tracking-[0.08em] sm:tracking-[0.25em] uppercase text-white/50 overflow-x-auto no-scrollbar whitespace-nowrap">
                                 <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                                     <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.5)]" />
-                                    30종+ 고성능 소재
+                                    {t('materialsLine')}
                                 </div>
                                 <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                                     <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.5)]" />
-                                    실시간 지능형 견적
+                                    {t('liveQuote')}
                                 </div>
                                 <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                                     <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-                                    ±0.1mm 정밀 제작
+                                    {t('precisionLine')}
                                 </div>
                             </div>
                             <div className="ml-3 sm:ml-auto text-right shrink-0 hidden sm:block">
@@ -659,7 +645,7 @@ function QuoteContent() {
                         }`}
                     >
                         <FileBox className="h-5 w-5" />
-                        파일 업로드
+                        {t('mobileUploadTab')}
                     </button>
                     <button
                         type="button"
@@ -669,7 +655,7 @@ function QuoteContent() {
                         }`}
                     >
                         <Boxes className="h-5 w-5" />
-                        3D 뷰어
+                        {t('mobileViewerTab')}
                     </button>
                 </div>
             </section>
