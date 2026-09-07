@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
-  alternates: { canonical: "/" },
+  // canonical은 페이지별로 설정 — 루트에 "/"를 두면 /hardware 등 하위 페이지가 홈 표준으로 잘못 상속됨
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "-9piNXSyjNzl442zz",
   },
