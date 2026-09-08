@@ -26,7 +26,7 @@ export const MAKERSPACES: Makerspace[] = [
         lng: 126.9237718,
         phone: '02-3144-3137',
         hours: '평일 09:00 – 18:00',
-        transit: '상수역·합정역 인근',
+        transit: '상수역 2번 출구 전방 50M',
     },
     {
         id: 'gumi',
