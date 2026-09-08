@@ -2179,5 +2179,62 @@
     "defaultQuoteCta": "Start auto quote",
     "defaultContactCta": "Contact us",
     "faqHeading": "FAQ"
+  },
+  "QnAPage": {
+    "metaTitle": "3D printing FAQ · photo-to-3D modeling · common questions",
+    "metaDescription": "How to convert photos to 3D models, 3D printing quotes, FDM·SLA·DLP differences, STL uploads, lead times, and more WOW3D FAQs.",
+    "metaKeywords": [
+      "photo to 3D modeling",
+      "image to 3D",
+      "3D printing from photo",
+      "3D printing FAQ",
+      "AI 3D modeling"
+    ],
+    "ogTitle": "3D printing FAQ | photo-to-3D | WOW3D",
+    "ogDescription": "Learn photo-to-3D conversion plus quotes, files, and production FAQs.",
+    "collectionName": "3D printing FAQ · photo-to-3D modeling",
+    "collectionDescription": "Questions and answers on photo-to-3D modeling, quoting, file uploads, lead times, and print processes.",
+    "breadcrumbHome": "Home",
+    "breadcrumbFaq": "FAQ",
+    "eyebrow": "FAQ System",
+    "title": "Frequently asked questions",
+    "subtitle": "From converting photos into 3D models to quote math, FDM vs SLA, STL uploads, and lead times—answers customers ask most on WOW3D.",
+    "cards": {
+      "photo": {
+        "title": "Photo (image) to 3D",
+        "desc": "Even with only JPG/PNG, AI builds an STL mesh and continues into auto-quote and printing."
+      },
+      "quote": {
+        "title": "How 3D printing quotes work",
+        "desc": "See how layer height, infill, material, and finishing affect price and time."
+      },
+      "compare": {
+        "title": "FDM · SLA · DLP compare",
+        "desc": "Compare which process fits prototypes, precision models, and functional parts."
+      },
+      "file": {
+        "title": "File prep guide",
+        "desc": "Check formats, units, wall thickness, and mesh issues before upload."
+      },
+      "action": {
+        "title": "Get a live auto quote",
+        "desc": "Use STL/OBJ files or product photos (JPG/PNG) to check print time and price live."
+      }
+    },
+    "browseGuides": "Browse all guides",
+    "searchPlaceholder": "Search anything…",
+    "categories": {
+      "all": "All",
+      "general": "General",
+      "quote": "Quote & production",
+      "tech": "Tech & files",
+      "partnership": "Partnership",
+      "other": "Other"
+    },
+    "empty": "No results found.",
+    "viewAll": "View all",
+    "ctaTitle": "Didn’t find your answer?",
+    "ctaDesc": "A specialist will send a tailored guide within 24 hours.",
+    "ctaContact": "Contact us"
   }
 }

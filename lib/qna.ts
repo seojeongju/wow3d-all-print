@@ -1,4 +1,5 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { QNA_EN_BY_QUESTION } from '@/lib/qna-en';
 
 export type QnAItem = {
     id: number;
@@ -169,4 +170,14 @@ export function pickVisibleFaqItems(items: QnAItem[], limit: number): QnAItem[] 
     const photo = items.filter(isPhotoTo3DFaq);
     const rest = items.filter((item) => !isPhotoTo3DFaq(item));
     return dedupeQnas([...photo.slice(0, 2), ...rest]).slice(0, limit);
+}
+
+/** locale=en이면 알려진 FAQ를 영문으로 치환 (KO 원문은 id·카테고리 유지) */
+export function localizeQnas(items: QnAItem[], locale: string = 'ko'): QnAItem[] {
+    if (locale !== 'en') return items;
+    return items.map((item) => {
+        const en = QNA_EN_BY_QUESTION[item.question];
+        if (!en) return item;
+        return { ...item, question: en.question, answer: en.answer };
+    });
 }
