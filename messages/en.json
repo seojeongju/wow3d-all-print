@@ -1307,5 +1307,165 @@
         ]
       }
     }
+  },
+  "PhotoTo3DGuide": {
+    "metaTitle": "Get a 3D printing quote from a photo | AI 3D modeling · auto quote",
+    "metaDescription": "No 3D file needed — upload a product photo (JPG/PNG), generate an AI 3D model, then auto-quote and order print on WOW3D. Photo tips, daily limits, and how it differs from Maker.",
+    "metaKeywords": [
+      "photo to 3D modeling",
+      "image to 3D",
+      "3D printing from photos",
+      "quote without 3D file",
+      "AI 3D modeling",
+      "product photo 3D print"
+    ],
+    "eyebrow": "Photo → AI 3D",
+    "h1Line1": "From a single photo",
+    "h1Accent": "to a 3D printing quote",
+    "heroBody": "Even without STL or STEP files, you can upload a product or figurine photo (JPG/PNG), generate an AI 3D model, then get an auto quote and place a print order — all on WOW3D. Best for shape checks and prototypes; for tight dimensional or assembly tolerances, upload a CAD file instead.",
+    "ctaStart": "Start quote from a photo",
+    "ctaStlGuide": "STL upload guide",
+    "stepsHeading": "How it works",
+    "steps": [
+      {
+        "title": "Sign in · upload photo",
+        "body": "In auto quote, choose “I don’t have a 3D model.” Upload a front JPG/PNG with the object large and centered; add right, back, and left views when you can."
+      },
+      {
+        "title": "AI 3D model generation",
+        "body": "AI analyzes the photo and builds a 3D mesh (STL). When ready, review shape and size in the 3D viewer."
+      },
+      {
+        "title": "Auto quote · pick options",
+        "body": "Choose FDM, SLA, or DLP, material, layer height, and infill — volume, time, and price update live."
+      },
+      {
+        "title": "Order · 3D print",
+        "body": "If the quote looks right, continue to cart and order for actual 3D printing."
+      }
+    ],
+    "goodHeading": "Good photo examples",
+    "badHeading": "Photos to avoid",
+    "goodPhoto": [
+      "Object large and centered",
+      "Plain, bright background",
+      "Front or slight angle",
+      "One object per shot"
+    ],
+    "badPhoto": [
+      "Multiple objects in one shot",
+      "Busy background, hands, clutter",
+      "Too dark or blurry",
+      "Extreme close-up or cropped"
+    ],
+    "showcaseHeading": "Photo → AI 3D → print",
+    "showcaseDescription": "Examples of going from a product photo to an AI 3D model, then auto quote and 3D printing.",
+    "beforeLabel": "Source photo",
+    "afterLabel": "AI 3D · print",
+    "compareHeading": "AI 3D Maker vs photo → AI 3D quote",
+    "compareIntro": "WOW3D offers a 2.5D Maker for sketches and logos, and a separate photo-based 3D quote flow. Pick the one that matches your goal.",
+    "compareColCategory": "Aspect",
+    "compareColMaker": "AI 3D Maker",
+    "compareColPhoto": "Photo → AI 3D quote",
+    "compareLinkMaker": "Open AI 3D Maker",
+    "compareLinkPhoto": "Start photo → AI 3D quote",
+    "makerVsPhotoRows": [
+      {
+        "label": "Input",
+        "maker": "Sketch / logo PNG",
+        "photo": "Product or figurine photo"
+      },
+      {
+        "label": "Result",
+        "maker": "2.5D extruded mesh",
+        "photo": "Full 3D STL"
+      },
+      {
+        "label": "Quote link",
+        "maker": "Save STL, then upload on quote",
+        "photo": "Auto quote right after generation"
+      },
+      {
+        "label": "Best for",
+        "maker": "Logos, signs, simple silhouettes",
+        "photo": "Prototypes and figurine shape checks"
+      }
+    ],
+    "faqHeading": "FAQ",
+    "faqs": [
+      {
+        "q": "Can I turn a photo into a 3D model?",
+        "a": "Yes. On WOW3D, upload a JPG or PNG product photo and AI converts it to a 3D model (STL), then you can continue to auto quote and print order. In auto quote, choose “I don’t have a 3D model” and upload a front photo."
+      },
+      {
+        "q": "Can I get a 3D printing quote without a 3D file?",
+        "a": "Yes. In WOW3D auto quote, choose “I don’t have a 3D model,” upload a JPG or PNG product photo, and AI builds a 3D mesh (STL) before volume and price quoting."
+      },
+      {
+        "q": "What photos work best for photo-to-3D modeling?",
+        "a": "Prefer an object large and centered, a plain bright background, one object per shot, and low shadow or glare. Adding right, back, and left views can improve shape accuracy."
+      },
+      {
+        "q": "Can I order a print from an AI-generated 3D model?",
+        "a": "Yes. Use the generated STL for auto quote (material, layer, infill), then continue to cart and order in one flow."
+      },
+      {
+        "q": "Should I use photo → 3D or upload CAD/STL?",
+        "a": "If assembly tolerances and precise dimensions matter, upload STL or STEP. For shape checks, prototypes, and figurine ideas, photo AI 3D is a good fit."
+      },
+      {
+        "q": "How many photo → AI 3D runs per day?",
+        "a": "One run per signed-in account per day (Korea time). Failed generations do not count against the limit."
+      },
+      {
+        "q": "How is AI 3D Maker different from photo → AI 3D quote?",
+        "a": "AI 3D Maker is for 2.5D extrusion from sketch or logo PNGs. Photo → AI 3D quote builds a full mesh from a real photo, then goes straight to print quote and order."
+      },
+      {
+        "q": "What photo formats and sizes are supported?",
+        "a": "JPG and PNG up to 8MB. Results are STL for the 3D viewer and auto quote."
+      }
+    ],
+    "ctaEyebrow": "Photo to 3D Quote",
+    "ctaTitle": "Get a 3D printing quote from a photo",
+    "ctaDescription": "Sign in, upload a product photo, and AI 3D generation continues into auto quote. One run per day (Korea time).",
+    "ctaPrimary": "Upload photo · start AI 3D",
+    "ctaSecondary": "View service overview",
+    "ctaTrackingTopic": "photo→AI 3D quote guide",
+    "breadcrumbCurrent": "Photo → 3D printing quote",
+    "articleHeadline": "How to get a 3D printing quote from a photo",
+    "howToName": "How to get a 3D printing quote from a photo",
+    "howToDescription": "Upload a product photo (JPG/PNG), generate an AI 3D model on WOW3D, then continue to STL auto quote and print order.",
+    "howToSupplyPhoto": "Product photo (JPG or PNG, max 8MB)",
+    "howToSupplyLogin": "WOW3D member sign-in",
+    "howToTool": "WOW3D photo → AI 3D auto quote",
+    "howToSteps": [
+      {
+        "name": "Sign in and upload a photo",
+        "text": "In auto quote, choose “I don’t have a 3D model” and upload a front photo. Add right, back, and left views if needed."
+      },
+      {
+        "name": "Generate an AI 3D model",
+        "text": "AI analyzes the photo and builds a 3D mesh (STL). Review the shape in the 3D viewer when ready."
+      },
+      {
+        "name": "Review the auto quote",
+        "text": "After volume and size analysis, pick FDM, SLA, or DLP, material, layer, and infill for a live quote."
+      },
+      {
+        "name": "Order and print",
+        "text": "If the quote looks right, continue to cart and order for 3D printing."
+      }
+    ],
+    "showcaseSchemaName": "Photo → AI 3D conversion and print examples",
+    "showcaseSchemaDescription": "WOW3D workflow examples from product photos to AI 3D models and 3D printing"
+  },
+  "GuideChrome": {
+    "breadcrumbHome": "Home",
+    "breadcrumbGuides": "Guides",
+    "hubCta": "All guides",
+    "defaultQuoteCta": "Start auto quote",
+    "defaultContactCta": "Contact us",
+    "faqHeading": "FAQ"
   }
 }

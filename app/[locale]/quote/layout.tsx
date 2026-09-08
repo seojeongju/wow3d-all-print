@@ -110,7 +110,7 @@ export default async function QuoteLayout({ children, params }: Props) {
       { name: t("breadcrumbQuote"), path },
     ]),
     buildQuoteHowToSchema(),
-    buildPhotoTo3DHowToSchema(),
+    buildPhotoTo3DHowToSchema({ locale }),
   ];
 
   return (

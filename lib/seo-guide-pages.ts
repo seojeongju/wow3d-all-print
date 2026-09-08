@@ -311,6 +311,11 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
     },
 ]
 
-export function getGuideBySlug(slug: string) {
+import { NEW_SEO_GUIDES_EN } from '@/lib/seo-guide-pages-en'
+
+export function getGuideBySlug(slug: string, locale: string = 'ko') {
+    if (locale === 'en') {
+        return NEW_SEO_GUIDES_EN.find((g) => g.slug === slug) ?? NEW_SEO_GUIDES.find((g) => g.slug === slug)
+    }
     return NEW_SEO_GUIDES.find((g) => g.slug === slug)
 }

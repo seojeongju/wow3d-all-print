@@ -1,40 +1,47 @@
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+'use client'
+
+import { useTranslations } from 'next-intl'
+import { ArrowRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Link } from '@/i18n/navigation'
 
 type GuideCTAProps = {
-    eyebrow?: string;
-    title: string;
-    description: string;
-    primaryHref?: string;
-    primaryLabel?: string;
-    trackingSource?: string;
-    trackingTopic?: string;
-    secondaryHref?: string;
-    secondaryLabel?: string;
-};
+    eyebrow?: string
+    title: string
+    description: string
+    primaryHref?: string
+    primaryLabel?: string
+    trackingSource?: string
+    trackingTopic?: string
+    secondaryHref?: string
+    secondaryLabel?: string
+}
 
 export default function GuideCTA({
     eyebrow = 'Next Step',
     title,
     description,
     primaryHref = '/quote',
-    primaryLabel = '자동견적 시작',
+    primaryLabel,
     trackingSource,
     trackingTopic,
     secondaryHref = '/contact',
-    secondaryLabel = '1:1 문의하기',
+    secondaryLabel,
 }: GuideCTAProps) {
-    const primaryLink = (() => {
-        if (!trackingSource && !trackingTopic) return primaryHref;
+    const t = useTranslations('GuideChrome')
+    const resolvedPrimary = primaryLabel ?? t('defaultQuoteCta')
+    const resolvedSecondary = secondaryLabel ?? t('defaultContactCta')
 
-        const [pathname, search = ''] = primaryHref.split('?');
-        const params = new URLSearchParams(search);
-        if (trackingSource) params.set('guide_source', trackingSource);
-        if (trackingTopic) params.set('guide_topic', trackingTopic);
-        const qs = params.toString();
-        return qs ? `${pathname}?${qs}` : pathname;
-    })();
+    const primaryLink = (() => {
+        if (!trackingSource && !trackingTopic) return primaryHref
+
+        const [pathname, search = ''] = primaryHref.split('?')
+        const params = new URLSearchParams(search)
+        if (trackingSource) params.set('guide_source', trackingSource)
+        if (trackingTopic) params.set('guide_topic', trackingTopic)
+        const qs = params.toString()
+        return qs ? `${pathname}?${qs}` : pathname
+    })()
 
     return (
         <div className="rounded-[2rem] border border-teal-400/20 bg-teal-400/5 p-8 md:p-10 space-y-5">
@@ -44,17 +51,17 @@ export default function GuideCTA({
                 <p className="text-white/70 break-keep leading-relaxed">{description}</p>
             </div>
             <div className="flex gap-3">
-                <Link href={primaryLink}>
+                <Link href={primaryLink as '/'}>
                     <Button className="rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black">
-                        {primaryLabel} <ArrowRight className="w-4 h-4 ml-1" />
+                        {resolvedPrimary} <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                 </Link>
-                <Link href={secondaryHref}>
+                <Link href={secondaryHref as '/'}>
                     <Button variant="outline" className="rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10">
-                        {secondaryLabel}
+                        {resolvedSecondary}
                     </Button>
                 </Link>
             </div>
         </div>
-    );
+    )
 }

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
@@ -6,8 +6,20 @@ import { ArrowRight } from 'lucide-react'
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import type { GuideLandingConfig } from '@/lib/seo-guide-pages'
 import type { QnAItem } from '@/lib/qna'
+import { Link, getPathname } from '@/i18n/navigation'
+import type { AppLocale } from '@/i18n/routing'
 
-export default function GuideLandingPage({ config }: { config: GuideLandingConfig }) {
+type Props = {
+    config: GuideLandingConfig
+    locale: AppLocale
+}
+
+export default async function GuideLandingPage({ config, locale }: Props) {
+    const t = await getTranslations({ locale, namespace: 'GuideChrome' })
+    const guidesPath = getPathname({ locale, href: '/guides' })
+    const homePath = getPathname({ locale, href: '/' })
+    const articlePath = getPathname({ locale, href: config.path as '/' })
+
     const faqItems: QnAItem[] = config.faqs.map((f, i) => ({
         id: i + 1,
         question: f.q,
@@ -17,16 +29,16 @@ export default function GuideLandingPage({ config }: { config: GuideLandingConfi
 
     const schemas = [
         buildBreadcrumbSchema([
-            { name: '홈', path: '/' },
-            { name: '가이드', path: '/guides' },
-            { name: config.title, path: config.path },
+            { name: t('breadcrumbHome'), path: homePath },
+            { name: t('breadcrumbGuides'), path: guidesPath },
+            { name: config.title, path: articlePath },
         ]),
         buildArticleSchema({
             headline: config.title,
             description: config.description,
-            path: config.path,
+            path: articlePath,
         }),
-        buildFaqPageSchema(faqItems, config.path),
+        buildFaqPageSchema(faqItems, articlePath),
     ]
 
     return (
@@ -68,7 +80,7 @@ export default function GuideLandingPage({ config }: { config: GuideLandingConfi
                     </div>
 
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-black mb-6">FAQ</h2>
+                        <h2 className="text-2xl md:text-3xl font-black mb-6">{t('faqHeading')}</h2>
                         <div className="space-y-4">
                             {config.faqs.map((f) => (
                                 <article
@@ -83,9 +95,9 @@ export default function GuideLandingPage({ config }: { config: GuideLandingConfi
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                        <Link href={config.ctaHref || '/quote'}>
+                        <Link href={(config.ctaHref || '/quote') as '/'}>
                             <Button className="h-12 px-6 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black gap-2">
-                                {config.ctaLabel || '자동견적 시작'}
+                                {config.ctaLabel || t('defaultQuoteCta')}
                                 <ArrowRight className="w-4 h-4" />
                             </Button>
                         </Link>
@@ -94,7 +106,7 @@ export default function GuideLandingPage({ config }: { config: GuideLandingConfi
                                 variant="outline"
                                 className="h-12 px-6 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10"
                             >
-                                가이드 모음
+                                {t('hubCta')}
                             </Button>
                         </Link>
                     </div>

@@ -6,12 +6,16 @@ type PhotoTo3DBeforeAfterProps = {
     items: readonly PhotoTo3DShowcaseItem[]
     heading?: string
     description?: string
+    beforeLabel?: string
+    afterLabel?: string
 }
 
 export default function PhotoTo3DBeforeAfter({
     items,
     heading = '사진(이미지) → AI 3D → 출력',
     description = '제품 사진(이미지)에서 AI 3D 모델을 만들고, 자동견적·3D 프린팅 출력까지 이어지는 흐름 예시입니다.',
+    beforeLabel = '원본 사진(이미지)',
+    afterLabel = 'AI 3D · 출력',
 }: PhotoTo3DBeforeAfterProps) {
     if (items.length === 0) return null
 
@@ -42,7 +46,7 @@ export default function PhotoTo3DBeforeAfter({
                                     />
                                 </div>
                                 <figcaption className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/45 text-center">
-                                    원본 사진(이미지)
+                                    {beforeLabel}
                                 </figcaption>
                             </figure>
 
@@ -61,7 +65,7 @@ export default function PhotoTo3DBeforeAfter({
                                     />
                                 </div>
                                 <figcaption className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-teal-400/80 text-center">
-                                    AI 3D · 출력
+                                    {afterLabel}
                                 </figcaption>
                             </figure>
                         </div>
