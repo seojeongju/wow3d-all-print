@@ -216,7 +216,8 @@ export default function MyAccountPage() {
             return;
         }
         if (user?.role === 'admin') {
-            router.replace('/admin');
+            // 관리자는 locale 밖 — i18n router 사용 시 /en/admin 이 됨
+            window.location.replace('/admin');
             return;
         }
         loadData();

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type ReactNode, type AnchorHTMLAttributes } from "react";
 import NextLink from "next/link";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -14,6 +14,39 @@ import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 
 type NavChild = { label: string; href: string; desc?: string; external?: boolean }
 type NavItem = { label: string; href: string; external?: boolean; children?: NavChild[] }
+
+/** 관리자 등 locale 밖 경로는 next/link 사용 (/en/admin 방지) */
+function isLocaleExemptHref(href: string, external?: boolean) {
+    return Boolean(external || href.startsWith('/admin'))
+}
+
+function HeaderNavLink({
+    href,
+    external,
+    className,
+    children,
+    onClick,
+    ...rest
+}: {
+    href: string
+    external?: boolean
+    className?: string
+    children: ReactNode
+    onClick?: () => void
+} & AnchorHTMLAttributes<HTMLAnchorElement>) {
+    if (isLocaleExemptHref(href, external)) {
+        return (
+            <NextLink href={href} className={className} onClick={onClick} {...rest}>
+                {children}
+            </NextLink>
+        )
+    }
+    return (
+        <Link href={href as '/'} className={className} onClick={onClick} {...rest}>
+            {children}
+        </Link>
+    )
+}
 
 export default function Header() {
     const t = useTranslations('Nav')
@@ -153,8 +186,9 @@ export default function Header() {
                                 onMouseEnter={() => setOpenDropdown(item.label)}
                                 onMouseLeave={() => setOpenDropdown(null)}
                             >
-                                <Link
+                                <HeaderNavLink
                                     href={item.href}
+                                    external={item.external}
                                     className={`inline-flex items-center gap-1 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
                                         isPastHero
                                             ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
@@ -170,7 +204,7 @@ export default function Header() {
                                         }`}
                                         aria-hidden
                                     />
-                                </Link>
+                                </HeaderNavLink>
                                 {openDropdown === item.label && (
                                     <div className="absolute left-0 top-full z-[120] min-w-[280px] pt-2">
                                         <div
@@ -214,9 +248,10 @@ export default function Header() {
                                 )}
                             </div>
                         ) : (
-                            <Link
+                            <HeaderNavLink
                                 key={item.label}
                                 href={item.href}
+                                external={item.external}
                                 className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
                                     isPastHero
                                         ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
@@ -224,7 +259,7 @@ export default function Header() {
                                 }`}
                             >
                                 {item.label}
-                            </Link>
+                            </HeaderNavLink>
                         )
                     )}
                 </nav>
@@ -443,8 +478,9 @@ export default function Header() {
                                             )}
                                         </div>
                                     ) : (
-                                        <Link
+                                        <HeaderNavLink
                                             href={item.href}
+                                            external={item.external}
                                             onClick={() => setMobileOpen(false)}
                                             className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group mb-2 shadow-lg shadow-black/20"
                                         >
@@ -460,7 +496,7 @@ export default function Header() {
                                             </div>
                                             <span className="group-hover:translate-x-1 transition-transform tracking-tight">{item.label}</span>
                                             <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
-                                        </Link>
+                                        </HeaderNavLink>
                                     )}
                                 </motion.div>
                             ))}
@@ -488,19 +524,35 @@ export default function Header() {
                             {isAuthenticated ? (
                                 <>
                                     <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
-                                        <Link
-                                            href={user?.role === 'admin' ? '/admin' : '/my-account'}
-                                            onClick={() => setMobileOpen(false)}
-                                            className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center gap-3 group"
-                                        >
-                                            <div className="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
-                                                <User className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span>{user?.name}</span>
-                                                <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">{user?.role === 'admin' ? 'Administrator' : 'Premium Member'}</span>
-                                            </div>
-                                        </Link>
+                                        {user?.role === 'admin' ? (
+                                            <NextLink
+                                                href="/admin"
+                                                onClick={() => setMobileOpen(false)}
+                                                className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center gap-3 group"
+                                            >
+                                                <div className="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
+                                                    <User className="w-5 h-5" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span>{user?.name}</span>
+                                                    <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">Administrator</span>
+                                                </div>
+                                            </NextLink>
+                                        ) : (
+                                            <Link
+                                                href="/my-account"
+                                                onClick={() => setMobileOpen(false)}
+                                                className="px-5 py-4 min-h-[56px] rounded-2xl text-[16px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center gap-3 group"
+                                            >
+                                                <div className="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
+                                                    <User className="w-5 h-5" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span>{user?.name}</span>
+                                                    <span className="text-white/40 text-[10px] font-black uppercase tracking-wider">Premium Member</span>
+                                                </div>
+                                            </Link>
+                                        )}
                                     </motion.div>
                                     <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
                                         <button

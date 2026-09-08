@@ -27,6 +27,14 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(url, 301)
     }
 
+    // 관리자는 locale 밖 — /en/admin, /ko/admin → /admin (영문 대시보드 미지원)
+    const localeAdmin = pathname.match(/^\/(en|ko)\/admin(\/.*)?$/)
+    if (localeAdmin) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/admin${localeAdmin[2] || ''}`
+        return NextResponse.redirect(url)
+    }
+
     // API·관리자·정적 메타는 locale 라우팅 제외
     if (
         pathname.startsWith('/api') ||
