@@ -1703,6 +1703,201 @@
     "ctaMethods": "View process details",
     "ctaContact": "Production consult"
   },
+  "TurnaroundGuide": {
+    "metaTitle": "Prototype lead time · 3D printing turnaround guide",
+    "metaDescription": "Lead times for prototypes and 3D printing—file review, print, finishing, QC, and shipping. When you can typically receive parts in about 3–7 days.",
+    "ogTitle": "3D printing turnaround & lead-time guide",
+    "ogDescription": "After order confirmation: produce, inspect, and ship—typically about 3–7 days. Factors by process, quantity, and finishing.",
+    "eyebrow": "Turnaround Guide",
+    "h1Line1": "How long does",
+    "h1Accent": "3D printing take?",
+    "intro": "After order confirmation we produce, inspect, and ship—you can typically receive parts in about 3–7 days. Timing varies by process, quantity, and finishing, and covers file review through delivery.",
+    "steps": [
+      {
+        "label": "Step 1",
+        "title": "File upload",
+        "body": "Automatic volume, size, and surface-area analysis"
+      },
+      {
+        "label": "Step 2",
+        "title": "Print",
+        "body": "Time estimated from process, layer height, and quantity"
+      },
+      {
+        "label": "Step 3",
+        "title": "Finishing & QC",
+        "body": "Support removal, wash, cure, and inspection"
+      },
+      {
+        "label": "Step 4",
+        "title": "Shipping",
+        "body": "Pack, ship, and regional delivery schedules"
+      }
+    ],
+    "factorsTitle": "What affects lead time",
+    "factors": [
+      "Print process: FDM / SLA / DLP differ in machine time and post-processing.",
+      "Layer height: Finer settings can lengthen print time.",
+      "Quantity: Repeating the same part changes total work time.",
+      "Finishing: Wash, cure, assembly, paint, and extras can extend lead time.",
+      "File condition: Fixes or extra review for model errors may add time."
+    ],
+    "flowTitle": "Typical flow",
+    "flowBody": "Many jobs quote instantly, but complex geometry or revised quotes may get a separate lead-time note after admin review. WOW3D proceeds order confirmation → production → QC → shipping.",
+    "ctaContact": "Ask about lead time",
+    "ctaQuote": "Start auto quote"
+  },
+  "FilamentCompareGuide": {
+    "metaTitle": "PLA vs ABS vs PETG material comparison guide",
+    "metaDescription": "Compare PLA, ABS, and PETG for 3D printing—heat resistance, strength, post-processing, and recommended uses to pick the right filament.",
+    "ogTitle": "PLA vs ABS vs PETG material comparison",
+    "ogDescription": "Compare popular FDM filaments PLA, ABS, and PETG—differences and recommended uses.",
+    "articleHeadline": "PLA vs ABS vs PETG material comparison guide",
+    "articleDescription": "A guide to choosing the right FDM filament by comparing PLA, ABS, and PETG differences and recommended uses.",
+    "breadcrumbMaterials": "Materials",
+    "breadcrumbCurrent": "PLA vs ABS vs PETG comparison",
+    "eyebrow": "Material Guide",
+    "h1Line1": "PLA, ABS, and PETG—",
+    "h1Accent": "what’s the difference?",
+    "intro": "A clear comparison of the FDM filaments people ask about most: PLA, ABS, and PETG. Use strength, heat resistance, print difficulty, post-processing, and recommended uses to decide which fits.",
+    "colItem": "Item",
+    "colPla": "PLA",
+    "colAbs": "ABS",
+    "colPetg": "PETG",
+    "tableRows": [
+      {
+        "label": "Traits",
+        "pla": "Easy to print; good for visual prototypes",
+        "abs": "Strong heat & impact resistance",
+        "petg": "Balance of strength and print stability"
+      },
+      {
+        "label": "Best for",
+        "pla": "Design mockups, education, display",
+        "abs": "Housings, functional tests, assembly parts",
+        "petg": "Functional parts, protective cases, outdoor structures"
+      },
+      {
+        "label": "Pros",
+        "pla": "Beginner-friendly; clean surface",
+        "abs": "Great machinability and durability",
+        "petg": "Impact, moisture resistance; translucent options"
+      },
+      {
+        "label": "Watch-outs",
+        "pla": "Limits on heat and impact",
+        "abs": "Shrink and odor; ventilation needed",
+        "petg": "Moisture control and tuned settings"
+      }
+    ],
+    "cards": [
+      {
+        "title": "PLA",
+        "body": "Easy to print—great for general prototypes and education. Common for appearance checks, display, and early idea validation."
+      },
+      {
+        "title": "ABS",
+        "body": "Better heat and impact resistance for housings, functional tests, and fit/assembly parts. Print environment control matters more."
+      },
+      {
+        "title": "PETG",
+        "body": "Stronger than PLA and usually easier than ABS—often chosen as a balanced functional filament."
+      }
+    ],
+    "faqTitle": "Frequently asked questions",
+    "faqs": [
+      {
+        "q": "For beginners or general prototypes, which is best: PLA, ABS, or PETG?",
+        "a": "PLA is usually the safest choice thanks to print stability and ease of use. For functional tests or more heat resistance, consider PETG or ABS."
+      },
+      {
+        "q": "If heat and impact matter, is ABS better than PLA?",
+        "a": "Usually yes. ABS typically outdoes PLA on heat and impact—often a better fit for housings, functional test parts, and automotive or appliance prototypes."
+      },
+      {
+        "q": "Is PETG a middle ground between PLA and ABS?",
+        "a": "In practice, often yes. PETG is stronger and more durable than PLA while usually easier to print than ABS, so it’s a popular balanced pick."
+      }
+    ],
+    "ctaMaterials": "Browse all materials",
+    "ctaQuote": "Start auto quote"
+  },
+  "ResinCompareGuide": {
+    "metaTitle": "Standard vs Tough vs Clear vs Flexible resin comparison",
+    "metaDescription": "Compare Standard, Tough, Clear, and Flexible resins for SLA and DLP—surface quality, strength, clarity, and recommended uses.",
+    "ogTitle": "Standard vs Tough vs Clear vs Flexible resin comparison",
+    "ogDescription": "Compare common SLA/DLP resins—differences and recommended uses.",
+    "articleHeadline": "Standard vs Tough vs Clear vs Flexible resin comparison",
+    "articleDescription": "A guide comparing Standard, Tough, Clear, and Flexible resins used in SLA and DLP 3D printing—and when to use each.",
+    "breadcrumbMaterials": "Materials",
+    "breadcrumbCurrent": "Resin comparison guide",
+    "eyebrow": "Resin Guide",
+    "h1Line1": "Standard, Tough, Clear, Flexible",
+    "h1Accent": "—how do these resins differ?",
+    "intro": "A side-by-side look at four resins often chosen for SLA and DLP. Quickly match visual prototypes, functional tests, clear parts, or flexible parts to the right resin.",
+    "colItem": "Item",
+    "colStandard": "Standard",
+    "colTough": "Tough",
+    "colClear": "Clear",
+    "colFlexible": "Flexible",
+    "tableRows": [
+      {
+        "label": "Key traits",
+        "standard": "Excellent surface & detail",
+        "tough": "Strong & impact-resistant",
+        "clear": "Clarity & visibility",
+        "flexible": "Flex & cushioning"
+      },
+      {
+        "label": "Best for",
+        "standard": "Visual prototypes",
+        "tough": "Assembly & functional tests",
+        "clear": "Covers, windows, observation parts",
+        "flexible": "Grips, cushions, soft parts"
+      },
+      {
+        "label": "Pros",
+        "standard": "Economical; great expression",
+        "tough": "Durability and fastening",
+        "clear": "High clarity after finishing",
+        "flexible": "Allows deformation; absorbs impact"
+      },
+      {
+        "label": "Watch-outs",
+        "standard": "Limits under functional loads",
+        "tough": "Cost can rise",
+        "clear": "Finishing often required",
+        "flexible": "Hardness & storage conditions matter"
+      }
+    ],
+    "cards": [
+      {
+        "title": "Standard / Tough",
+        "body": "For looks-first parts, Standard; when function and assembly matter more, Tough is often the better fit."
+      },
+      {
+        "title": "Clear / Flexible",
+        "body": "Clear for transparent parts; Flexible when you need bend or cushioning."
+      }
+    ],
+    "faqTitle": "Frequently asked questions",
+    "faqs": [
+      {
+        "q": "Which resin is best for design-review appearance prototypes?",
+        "a": "Standard resin is used most for general appearance and design checks. Smooth surfaces and fine detail make it a strong fit for visual prototypes."
+      },
+      {
+        "q": "Is Tough better for assembly or functional tests?",
+        "a": "Usually yes. Tough typically handles impact and load better than Standard—better for fit checks, fastening tests, and functional prototypes."
+      },
+      {
+        "q": "Should I pick Clear resin for transparent parts or window structures?",
+        "a": "Yes. Covers, windows, and observation parts that need visibility suit Clear. For high clarity you may still need polishing or coating."
+      }
+    ],
+    "ctaMaterials": "Browse all materials",
+    "ctaQuote": "Start auto quote"
+  },
   "GuideChrome": {
     "breadcrumbHome": "Home",
     "breadcrumbGuides": "Guides",
