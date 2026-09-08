@@ -195,6 +195,103 @@
       "originalPhoto": "원본 사진(이미지)",
       "aiPrint": "AI 3D · 출력",
       "similarQuote": "유사 시제품 견적 문의하기"
+    },
+    "servicesSection": {
+      "title": "서비스 안내",
+      "subtitle": "와우쓰리디는 3D프린팅 출력과 시제품 제작을 전문으로 합니다. FDM, SLA, DLP 공정과 다양한 소재를 기반으로 목적에 맞는 제작 솔루션을 제안합니다.",
+      "cta": "3D 프린팅 견적 요청하기",
+      "cards": {
+        "prototype": {
+          "title": "시제품 & 프로토타입",
+          "description": "아이디어 검증부터 디자인 리뷰까지. 단일·소량 시제품으로 제품화 전 검증과 투자 논의를 앞당깁니다.",
+          "items": [
+            "디자인 검증",
+            "기능 시험",
+            "투자·발표용 샘플"
+          ]
+        },
+        "production": {
+          "title": "소량·대량 생산",
+          "description": "1개부터 수백 개까지. FDM·SLA·DLP를 조합해 리드타임과 단가를 최적화한 소량 양산을 지원합니다.",
+          "items": [
+            "소량 로트",
+            "반복 주문",
+            "재고형 생산"
+          ]
+        },
+        "methods": {
+          "title": "출력 방식",
+          "description": "FDM(강도·비용), SLA(표면·정밀), DLP(속도·세밀)를 목적에 맞게 선택할 수 있습니다.",
+          "fdm": "필라멘트 적층, 기능 시험·튼튼한 부품",
+          "sla": "레진 광조형, 매끄러운 표면·디테일",
+          "dlp": "광경화, 빠른 제작·정밀도"
+        },
+        "materials": {
+          "title": "다양한 소재",
+          "description": "PLA, ABS, PETG, TPU, 나일론, Standard·Tough·Clear·Flexible 레진 등 30종 이상. 용도별 최적 소재를 제안합니다.",
+          "items": [
+            "PLA·ABS·PETG·TPU",
+            "나일론·PC",
+            "Standard·Tough·Clear·Flexible 레진"
+          ]
+        },
+        "finishing": {
+          "title": "후가공 & 도장",
+          "description": "연마, 도색, 경화, 조립 등. 출력물을 그대로가 아닌 제품 수준으로 마감하는 옵션을 제공합니다.",
+          "items": [
+            "연마·경화",
+            "도장·도색",
+            "조립·패키징"
+          ]
+        },
+        "targets": {
+          "title": "맞춤 타깃",
+          "description": "산업용 시제품 제작, 스타트업 목업 제작, 졸업작품 3D프린팅, 개인 맞춤 제작까지. 예산과 용도에 따라 최적의 3D프린팅 제작 방식을 안내합니다.",
+          "items": [
+            "산업·시제품 제작",
+            "스타트업·목업 제작",
+            "졸업작품 3D프린팅"
+          ]
+        }
+      }
+    },
+    "quickProcess": {
+      "titleBefore": "파일이 없거나 ",
+      "titleAccent": "다른 방식",
+      "titleAfter": "으로 견적받기",
+      "subtitle": "자동견적 외에 모델링 의뢰·이메일 견적도 가능합니다. 먼저 파일이 있다면 위의 업로드 경로를 이용해 주세요.",
+      "paths": {
+        "hasFile": {
+          "title": "1. 3D 모델링 파일 준비 시",
+          "description": "준비된 설계 파일로 즉시 견적 확인",
+          "steps": [
+            "3D 파일 준비 (STL·OBJ·3MF·PLY / STEP·STP)",
+            "와우3D 자동 견적 프로그램 업로드",
+            "견적 요청 및 확인"
+          ]
+        },
+        "noFile": {
+          "title": "2. 3D 모델링이 없는 경우",
+          "description": "전문 상담을 통한 설계 의뢰 서비스",
+          "steps": [
+            "3D 모델링 설계 의뢰 (02-3144-3137)",
+            "설계 완료 및 파일 수령",
+            "와우3D 자동 견적 프로그램 업로드",
+            "견적 요청 및 확인"
+          ]
+        },
+        "email": {
+          "title": "3. 직접 이메일 견적 요청",
+          "description": "대량 주문이나 특수 사양 상담",
+          "steps": [
+            "3D 파일 준비 (STL·OBJ·3MF·PLY / STEP·STP)",
+            "파일 이메일 전송 (wow3d16@naver.com)",
+            "이메일 견적 회신 및 확인"
+          ]
+        }
+      },
+      "finalTitle": "최종 단계: 결제 및 출력 진행",
+      "finalDesc": "견적 확정 후 즉시 산업용 프린터로 정밀 제작이 시작됩니다."
     }
   },
   "Services": {
@@ -552,6 +649,88 @@
     "itemCount": "{count}개",
     "bottomTitle": "가이드를 읽었다면, 바로 견적을 받아보세요",
     "bottomDesc": "파일 업로드 또는 AI 3D 변환 후 소재·옵션을 선택하면 실시간 견적이 표시됩니다.",
-    "viewMaterials": "소재 전체 보기"
+    "viewMaterials": "소재 전체 보기",
+    "items": {
+      "photo-to-3d-printing-quote": {
+        "title": "사진(이미지)으로 3D 프린팅 견적",
+        "desc": "3D 파일 없이 사진(이미지)→AI 3D→자동견적·주문 절차"
+      },
+      "3d-printing-quote-guide": {
+        "title": "3D프린팅 비용 계산 방법",
+        "desc": "견적 산출 기준과 가격·시간에 영향을 주는 요소"
+      },
+      "how-to-reduce-3d-printing-cost": {
+        "title": "3D프린팅 가격을 줄이는 방법",
+        "desc": "레이어·인필·서포트·소재로 비용 절감"
+      },
+      "fdm-vs-sla-vs-dlp": {
+        "title": "3D 프린팅 공정 비교",
+        "desc": "FDM·SLA·DLP·SLS·PolyJet 등 출력 방식 비교"
+      },
+      "pla-vs-abs-vs-petg": {
+        "title": "PLA와 PETG 차이",
+        "desc": "FDM 주요 필라멘트 비교"
+      },
+      "3d-printing-file-preparation": {
+        "title": "파일 준비 가이드",
+        "desc": "업로드 전 형식, 단위, 메쉬 오류 점검"
+      },
+      "3d-printing-turnaround-time": {
+        "title": "시제품 제작 기간",
+        "desc": "출력·후처리·검수·배송 납기 안내"
+      },
+      "choosing-infill-density": {
+        "title": "인필 밀도 선택 방법",
+        "desc": "용도별 인필 %와 강도·비용 균형"
+      },
+      "fixing-stl-file-errors": {
+        "title": "STL 파일 오류 해결 방법",
+        "desc": "비매니폴드·구멍 등 업로드 전 메쉬 점검"
+      },
+      "minimum-wall-thickness": {
+        "title": "3D프린팅 최소 벽 두께",
+        "desc": "공정별 권장 벽 두께와 깨짐 예방"
+      },
+      "why-support-costs": {
+        "title": "서포트 비용이 발생하는 이유",
+        "desc": "오버행·각도에 따른 서포트와 견적 영향"
+      },
+      "3d-printing-tolerances": {
+        "title": "3D프린팅 공차",
+        "desc": "조립·맞춤을 위한 공차 설계 팁"
+      },
+      "splitting-large-3d-prints": {
+        "title": "대형 출력물 분할 방법",
+        "desc": "빌드 볼륨 초과 시 분할·조립 전략"
+      },
+      "graduation-project-checklist": {
+        "title": "졸업작품 출력 준비 체크리스트",
+        "desc": "일정·파일·소재·납기 준비 목록"
+      },
+      "standard-vs-tough-vs-clear-vs-flexible-resin": {
+        "title": "Standard vs Tough vs Clear vs Flexible",
+        "desc": "SLA·DLP 주요 레진 비교"
+      },
+      "best-materials-for-3d-printing-prototypes": {
+        "title": "시제품용 소재 추천",
+        "desc": "외관 확인, 기능 검토, 조립 테스트 기준 추천"
+      },
+      "best-materials-for-transparent-3d-printed-parts": {
+        "title": "투명 부품용 소재 추천",
+        "desc": "투명 커버, 관찰창, 시인성 부품 기준 추천"
+      },
+      "best-materials-for-3d-printed-housings-and-cases": {
+        "title": "하우징·케이스용 소재 추천",
+        "desc": "전자기기 하우징, 보호 케이스, 외장 커버 기준 추천"
+      },
+      "best-materials-for-heat-resistant-and-impact-resistant-parts": {
+        "title": "내열·내충격 부품용 소재 추천",
+        "desc": "기능성 부품과 열·충격 환경 기준 추천"
+      },
+      "best-materials-for-miniatures-and-figurines": {
+        "title": "정밀 모형·피규어용 소재 추천",
+        "desc": "미니어처, 피규어, 디오라마용 정밀 소재 추천"
+      }
+    }
   }
 }

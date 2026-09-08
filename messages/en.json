@@ -195,6 +195,103 @@
       "originalPhoto": "Original photo",
       "aiPrint": "AI 3D · print",
       "similarQuote": "Ask about a similar prototype"
+    },
+    "servicesSection": {
+      "title": "Our services",
+      "subtitle": "WOW3D specializes in 3D printing and prototyping. We recommend FDM, SLA, and DLP plus the right materials for your goal.",
+      "cta": "Request a 3D printing quote",
+      "cards": {
+        "prototype": {
+          "title": "Prototypes",
+          "description": "From idea validation to design review. Single and small-batch prototypes speed productization and investor demos.",
+          "items": [
+            "Design validation",
+            "Functional testing",
+            "Pitch / presentation samples"
+          ]
+        },
+        "production": {
+          "title": "Small & volume runs",
+          "description": "From 1 to hundreds of parts. Mix FDM·SLA·DLP to balance lead time and unit cost.",
+          "items": [
+            "Small lots",
+            "Repeat orders",
+            "Stock-style production"
+          ]
+        },
+        "methods": {
+          "title": "Print methods",
+          "description": "Choose FDM (strength·cost), SLA (surface·detail), or DLP (speed·fine features) for the job.",
+          "fdm": "Filament FFF — functional, durable parts",
+          "sla": "Resin stereolithography — smooth surfaces & detail",
+          "dlp": "Light-cured — fast builds & precision"
+        },
+        "materials": {
+          "title": "Materials",
+          "description": "30+ options including PLA, ABS, PETG, TPU, nylon, and Standard·Tough·Clear·Flexible resins. We match material to use case.",
+          "items": [
+            "PLA·ABS·PETG·TPU",
+            "Nylon·PC",
+            "Standard·Tough·Clear·Flexible resin"
+          ]
+        },
+        "finishing": {
+          "title": "Finishing & paint",
+          "description": "Sanding, painting, curing, assembly — finish parts to product-ready quality.",
+          "items": [
+            "Sanding · curing",
+            "Paint · coating",
+            "Assembly · packaging"
+          ]
+        },
+        "targets": {
+          "title": "Who we serve",
+          "description": "Industrial prototypes, startup mockups, graduation projects, and custom one-offs — guided by budget and use case.",
+          "items": [
+            "Industrial prototypes",
+            "Startup mockups",
+            "Graduation 3D printing"
+          ]
+        }
+      }
+    },
+    "quickProcess": {
+      "titleBefore": "No file — or need ",
+      "titleAccent": "another path",
+      "titleAfter": " to quote?",
+      "subtitle": "Besides auto-quote, you can request modeling help or email quotes. If you already have a file, use the upload path above.",
+      "paths": {
+        "hasFile": {
+          "title": "1. When you have a 3D model",
+          "description": "Instant quote from your design file",
+          "steps": [
+            "Prepare 3D file (STL·OBJ·3MF·PLY / STEP·STP)",
+            "Upload to WOW3D auto-quote",
+            "Request and confirm quote"
+          ]
+        },
+        "noFile": {
+          "title": "2. When you have no model",
+          "description": "Design-on-request via specialist consult",
+          "steps": [
+            "Request 3D modeling (02-3144-3137)",
+            "Receive completed design file",
+            "Upload to WOW3D auto-quote",
+            "Request and confirm quote"
+          ]
+        },
+        "email": {
+          "title": "3. Email quote request",
+          "description": "Large orders or special specs",
+          "steps": [
+            "Prepare 3D file (STL·OBJ·3MF·PLY / STEP·STP)",
+            "Email files (wow3d16@naver.com)",
+            "Receive and confirm email quote"
+          ]
+        }
+      },
+      "finalTitle": "Final step: pay & print",
+      "finalDesc": "Once the quote is confirmed, industrial printers start precision production."
     }
   },
   "Services": {
@@ -551,6 +648,88 @@
     "itemCount": "{count}",
     "bottomTitle": "Done reading? Get a quote next",
     "bottomDesc": "Upload a file or convert with AI 3D, then pick material and options for a live quote.",
-    "viewMaterials": "Browse all materials"
+    "viewMaterials": "Browse all materials",
+    "items": {
+      "photo-to-3d-printing-quote": {
+        "title": "Quote from photos (no 3D file)",
+        "desc": "Photo → AI 3D → auto quote and order flow"
+      },
+      "3d-printing-quote-guide": {
+        "title": "How 3D printing pricing works",
+        "desc": "What drives quote price and print time"
+      },
+      "how-to-reduce-3d-printing-cost": {
+        "title": "How to lower 3D printing cost",
+        "desc": "Save with layer, infill, support, and material choices"
+      },
+      "fdm-vs-sla-vs-dlp": {
+        "title": "Compare 3D printing processes",
+        "desc": "FDM·SLA·DLP·SLS·PolyJet and more"
+      },
+      "pla-vs-abs-vs-petg": {
+        "title": "PLA vs PETG (and ABS)",
+        "desc": "Compare common FDM filaments"
+      },
+      "3d-printing-file-preparation": {
+        "title": "File prep guide",
+        "desc": "Formats, units, and mesh checks before upload"
+      },
+      "3d-printing-turnaround-time": {
+        "title": "Prototype lead times",
+        "desc": "Print, post-process, QC, and shipping timelines"
+      },
+      "choosing-infill-density": {
+        "title": "Choosing infill density",
+        "desc": "Balance strength and cost by use case"
+      },
+      "fixing-stl-file-errors": {
+        "title": "Fixing STL errors",
+        "desc": "Non-manifold, holes, and pre-upload mesh checks"
+      },
+      "minimum-wall-thickness": {
+        "title": "Minimum wall thickness",
+        "desc": "Recommended walls by process to avoid breakage"
+      },
+      "why-support-costs": {
+        "title": "Why supports add cost",
+        "desc": "How overhangs and angles affect supports and quotes"
+      },
+      "3d-printing-tolerances": {
+        "title": "3D printing tolerances",
+        "desc": "Design tips for fit and assembly"
+      },
+      "splitting-large-3d-prints": {
+        "title": "Splitting large prints",
+        "desc": "Strategies when parts exceed build volume"
+      },
+      "graduation-project-checklist": {
+        "title": "Graduation project checklist",
+        "desc": "Schedule, files, materials, and lead-time prep"
+      },
+      "standard-vs-tough-vs-clear-vs-flexible-resin": {
+        "title": "Standard vs Tough vs Clear vs Flexible",
+        "desc": "Compare common SLA·DLP resins"
+      },
+      "best-materials-for-3d-printing-prototypes": {
+        "title": "Best materials for prototypes",
+        "desc": "Looks, function checks, and assembly tests"
+      },
+      "best-materials-for-transparent-3d-printed-parts": {
+        "title": "Best materials for clear parts",
+        "desc": "Covers, windows, and visibility parts"
+      },
+      "best-materials-for-3d-printed-housings-and-cases": {
+        "title": "Best materials for housings & cases",
+        "desc": "Electronics enclosures and protective covers"
+      },
+      "best-materials-for-heat-resistant-and-impact-resistant-parts": {
+        "title": "Heat- & impact-resistant materials",
+        "desc": "Functional parts for thermal and shock loads"
+      },
+      "best-materials-for-miniatures-and-figurines": {
+        "title": "Materials for miniatures & figurines",
+        "desc": "Fine detail for minis, figures, and dioramas"
+      }
+    }
   }
 }

@@ -11,92 +11,58 @@ import {
   CreditCard,
   ArrowRight
 } from 'lucide-react';
-
-const processPaths = [
-  {
-    title: "1. 3D 모델링 파일 준비 시",
-    description: "준비된 설계 파일로 즉시 견적 확인",
-    steps: [
-      {
-        icon: FileSearch,
-        label: "STEP 1",
-        text: "3D 파일 준비 (STL·OBJ·3MF·PLY / STEP·STP)"
-      },
-      {
-        icon: UploadCloud,
-        label: "STEP 2",
-        text: "와우3D 자동 견적 프로그램 업로드"
-      },
-      {
-        icon: CheckCircle2,
-        label: "STEP 3",
-        text: "견적 요청 및 확인"
-      }
-    ],
-    color: "from-teal-500/20 to-emerald-500/20",
-    borderColor: "border-teal-500/30",
-    /** 흰 아이콘 박스 위 대비 — 다크 모드에서 text-primary는 밝아져 묻힘 */
-    stepIconClass: "text-teal-700 dark:text-teal-600",
-    stepLabelClass: "text-teal-800 dark:text-teal-300",
-  },
-  {
-    title: "2. 3D 모델링이 없는 경우",
-    description: "전문 상담을 통한 설계 의뢰 서비스",
-    steps: [
-      {
-        icon: PhoneCall,
-        label: "STEP 1",
-        text: "3D 모델링 설계 의뢰 (02-3144-3137)"
-      },
-      {
-        icon: FileSearch,
-        label: "STEP 2",
-        text: "설계 완료 및 파일 수령"
-      },
-      {
-        icon: UploadCloud,
-        label: "STEP 3",
-        text: "와우3D 자동 견적 프로그램 업로드"
-      },
-      {
-        icon: CheckCircle2,
-        label: "STEP 4",
-        text: "견적 요청 및 확인"
-      }
-    ],
-    color: "from-indigo-500/20 to-blue-500/20",
-    borderColor: "border-indigo-500/30",
-    stepIconClass: "text-indigo-700 dark:text-indigo-500",
-    stepLabelClass: "text-indigo-900 dark:text-indigo-300",
-  },
-  {
-    title: "3. 직접 이메일 견적 요청",
-    description: "대량 주문이나 특수 사양 상담",
-    steps: [
-      {
-        icon: FileSearch,
-        label: "STEP 1",
-        text: "3D 파일 준비 (STL·OBJ·3MF·PLY / STEP·STP)"
-      },
-      {
-        icon: Mail,
-        label: "STEP 2",
-        text: "파일 이메일 전송 (wow3d16@naver.com)"
-      },
-      {
-        icon: Reply,
-        label: "STEP 3",
-        text: "이메일 견적 회신 및 확인"
-      }
-    ],
-    color: "from-purple-500/20 to-pink-500/20",
-    borderColor: "border-purple-500/30",
-    stepIconClass: "text-purple-700 dark:text-purple-400",
-    stepLabelClass: "text-purple-900 dark:text-purple-300",
-  }
-];
+import { useTranslations } from 'next-intl';
 
 export default function QuickProcessSteps() {
+  const t = useTranslations('Home.quickProcess');
+
+  const hasFileSteps = t.raw('paths.hasFile.steps') as string[];
+  const noFileSteps = t.raw('paths.noFile.steps') as string[];
+  const emailSteps = t.raw('paths.email.steps') as string[];
+
+  const processPaths = [
+    {
+      title: t('paths.hasFile.title'),
+      description: t('paths.hasFile.description'),
+      steps: hasFileSteps.map((text, i) => ({
+        icon: [FileSearch, UploadCloud, CheckCircle2][i],
+        label: `STEP ${i + 1}`,
+        text,
+      })),
+      color: "from-teal-500/20 to-emerald-500/20",
+      borderColor: "border-teal-500/30",
+      /** 흰 아이콘 박스 위 대비 — 다크 모드에서 text-primary는 밝아져 묻힘 */
+      stepIconClass: "text-teal-700 dark:text-teal-600",
+      stepLabelClass: "text-teal-800 dark:text-teal-300",
+    },
+    {
+      title: t('paths.noFile.title'),
+      description: t('paths.noFile.description'),
+      steps: noFileSteps.map((text, i) => ({
+        icon: [PhoneCall, FileSearch, UploadCloud, CheckCircle2][i],
+        label: `STEP ${i + 1}`,
+        text,
+      })),
+      color: "from-indigo-500/20 to-blue-500/20",
+      borderColor: "border-indigo-500/30",
+      stepIconClass: "text-indigo-700 dark:text-indigo-500",
+      stepLabelClass: "text-indigo-900 dark:text-indigo-300",
+    },
+    {
+      title: t('paths.email.title'),
+      description: t('paths.email.description'),
+      steps: emailSteps.map((text, i) => ({
+        icon: [FileSearch, Mail, Reply][i],
+        label: `STEP ${i + 1}`,
+        text,
+      })),
+      color: "from-purple-500/20 to-pink-500/20",
+      borderColor: "border-purple-500/30",
+      stepIconClass: "text-purple-700 dark:text-purple-400",
+      stepLabelClass: "text-purple-900 dark:text-purple-300",
+    }
+  ];
+
   return (
     <section className="py-24 relative overflow-hidden bg-background">
       {/* 배경 장식 */}
@@ -112,11 +78,10 @@ export default function QuickProcessSteps() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
-              파일이 없거나 <span className="text-primary italic">다른 방식</span>으로 견적받기
+              {t('titleBefore')}<span className="text-primary italic">{t('titleAccent')}</span>{t('titleAfter')}
             </h2>
             <p className="text-lg text-foreground/60 max-w-2xl mx-auto break-keep leading-relaxed">
-              자동견적 외에 모델링 의뢰·이메일 견적도 가능합니다.<br className="hidden md:block" />
-              먼저 파일이 있다면 위의 업로드 경로를 이용해 주세요.
+              {t('subtitle')}
             </p>
           </motion.div>
         </div>
@@ -169,11 +134,11 @@ export default function QuickProcessSteps() {
             <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
               <CreditCard className="w-7 h-7" />
             </div>
-            <span className="text-2xl font-black tracking-tight">최종 단계: 결제 및 출력 진행</span>
+            <span className="text-2xl font-black tracking-tight">{t('finalTitle')}</span>
           </div>
           <ArrowRight className="hidden md:block w-8 h-8 text-primary animate-pulse" />
           <p className="text-lg font-medium text-foreground/80 text-center md:text-left break-keep max-w-sm leading-snug">
-            견적 확정 후 즉시 산업용 프린터로 정밀 제작이 시작됩니다.
+            {t('finalDesc')}
           </p>
         </motion.div>
       </div>

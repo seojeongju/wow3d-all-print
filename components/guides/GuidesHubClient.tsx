@@ -46,6 +46,9 @@ function FloatingIcon({
 function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
     const t = useTranslations('GuidesHub')
     const Icon = item.icon
+    const slug = item.href.split('/guides/').pop() ?? ''
+    const title = t(`items.${slug}.title`)
+    const desc = t(`items.${slug}.desc`)
     return (
         <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -70,9 +73,9 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
                     </span>
                 </div>
                 <h3 className="mb-2 text-lg font-black leading-snug text-white transition-colors group-hover:text-teal-100">
-                    {item.title}
+                    {title}
                 </h3>
-                <p className="mb-5 flex-1 text-sm leading-relaxed text-white/55 break-keep">{item.desc}</p>
+                <p className="mb-5 flex-1 text-sm leading-relaxed text-white/55 break-keep">{desc}</p>
                 <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-teal-400/80 transition-all group-hover:gap-2.5 group-hover:text-teal-300">
                     {t('readGuide')}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
