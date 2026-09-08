@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Image as ImageIcon, Loader2, X, FileCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { convertImageToSVG, removeBackground, type ConvertMode } from '@/lib/image-processor';
@@ -22,6 +23,7 @@ export function ImageUploader({
     authHeaders,
     onRemoveBgDone,
 }: Props) {
+    const t = useTranslations('Maker');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const svgInputRef = useRef<HTMLInputElement>(null);
     const abortRef = useRef<AbortController | null>(null);
@@ -45,10 +47,10 @@ export function ImageUploader({
                 const cleaned = stripSvgBackgroundLayers(text);
                 onSvgConverted({ name: file.name, svgContent: cleaned });
             } else {
-                alert('유효한 SVG 파일이 아닙니다.');
+                alert(t('invalidSvg'));
             }
         };
-        reader.onerror = () => alert('SVG 파일을 읽지 못했습니다.');
+        reader.onerror = () => alert(t('svgReadFail'));
         reader.readAsText(file, 'utf-8');
     };
 
@@ -66,7 +68,7 @@ export function ImageUploader({
             if (useRemoveBg) {
                 try {
                     imageToConvert = await removeBackground(file, signal, authHeaders);
-                    showToast.success('배경 제거 완료', '실루엣만 남긴 뒤 돌출용 SVG로 변환합니다.');
+                    showToast.success(t('toastBgRemovedTitle'), t('toastBgRemovedDesc'));
                     onRemoveBgDone?.();
                 } catch (bgErr) {
                     imageToConvert = file;
@@ -75,11 +77,11 @@ export function ImageUploader({
                     const isUnavailable = status === 503 || msg.includes('설정되지 않았습니다');
                     const isLimit = status === 402 || status === 429 || msg.includes('한도') || msg.includes('크레딧');
                     if (isUnavailable) {
-                        showToast.error('배경 제거 불가', 'API가 없거나 일시 중단입니다. 배경 없이 변환합니다.');
+                        showToast.error(t('toastRemoveBgUnavailableTitle'), t('toastBgUnavailableDesc'));
                     } else if (isLimit) {
-                        showToast.error('배경 제거 한도', `${msg || '오늘 한도에 도달했습니다.'} 배경 없이 변환합니다.`);
+                        showToast.error(t('toastBgLimitTitle'), t('toastBgLimitDesc', { msg: msg || t('toastRemoveBgLimit') }));
                     } else {
-                        showToast.error('배경 제거 실패', `${msg || '오류가 발생했습니다.'} 배경 없이 변환합니다.`);
+                        showToast.error(t('toastBgFailTitle'), t('toastBgFailDesc', { msg: msg || t('toastQuoteFailRetry') }));
                     }
                     onRemoveBgDone?.();
                 }
@@ -94,8 +96,8 @@ export function ImageUploader({
             const msg = error instanceof Error ? error.message : '';
             alert(
                 msg.includes('decode') || msg.includes('load')
-                    ? '이미지를 불러올 수 없습니다. JPG/PNG 파일인지, 손상되지 않았는지 확인해 주세요.'
-                    : '이미지를 3D용으로 변환하지 못했습니다. 다른 이미지로 시도해 주세요.'
+                    ? t('imageLoadFail')
+                    : t('imageConvertFail')
             );
         } finally {
             setIsProcessing(false);
@@ -124,7 +126,7 @@ export function ImageUploader({
                 <div className="flex items-center gap-1">
                     <Button
                         variant="ghost"
-                        title="이미지 (PNG, JPEG) → 글자·로고 실루엣 변환"
+                        title={t('imageUploadTitle')}
                         className="w-12 h-12 p-0 rounded-2xl bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 border border-teal-400/30 flex items-center justify-center transition-all duration-300"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isProcessing}
@@ -142,20 +144,20 @@ export function ImageUploader({
                             size="sm"
                             className="w-9 h-9 p-0 rounded-xl text-white/80 hover:text-white hover:bg-red-500/20 border border-white/20"
                             onClick={handleCancel}
-                            title="변환 중단"
+                            title={t('cancelConvertTitle')}
                         >
                             <X className="w-4 h-4" />
                         </Button>
                     )}
                 </div>
-                <span className="text-[9px] font-bold text-white/85 text-center">이미지</span>
+                <span className="text-[9px] font-bold text-white/85 text-center">{t('imageLabel')}</span>
 
                 <div className="w-8 h-px bg-white/10" />
 
                 <div className="flex flex-col items-center gap-1">
                     <Button
                         variant="ghost"
-                        title="SVG 파일 직접 사용 (변환 없음)"
+                        title={t('svgUploadTitle')}
                         className="w-12 h-12 p-0 rounded-2xl bg-white/5 text-white/80 hover:bg-white/10 hover:text-white border border-white/10 flex items-center justify-center transition-all duration-300"
                         onClick={() => svgInputRef.current?.click()}
                         disabled={isProcessing}
@@ -166,7 +168,7 @@ export function ImageUploader({
                 </div>
 
                 {isProcessing && (
-                    <span className="text-[10px] font-bold text-amber-200">변환 중… × 로 중단</span>
+                    <span className="text-[10px] font-bold text-amber-200">{t('converting')}</span>
                 )}
             </div>
         </>

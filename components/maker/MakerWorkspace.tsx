@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { useFileStore } from '@/store/useFileStore';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ import { showToast } from '@/lib/toast-helper';
 const UNMOUNT_3D_DELAY_MS = 180;
 
 export function MakerWorkspace() {
+    const t = useTranslations('Maker');
     const router = useRouter();
     const setFile = useFileStore((s) => s.setFile);
     const {
@@ -136,7 +137,7 @@ export function MakerWorkspace() {
         setSelectedLogoId(id);
         setPendingSvg(null);
         setActiveTab('3d');
-        showToast.success('로고 추가됨', '아래에서 크기·위치를 맞춘 뒤 결과물(3D)을 확인하세요.');
+        showToast.success(t('toastLogoAddedTitle'), t('toastLogoAddedDesc'));
     };
 
     /** 변환 완료 시 바로 3D에 올려 배지 위에 보이도록 함 (별도 확인 버튼 불필요) */
@@ -157,13 +158,13 @@ export function MakerWorkspace() {
         setActiveTab('3d');
         if (pathCount <= 1) {
             showToast.error(
-                '실루엣이 단순합니다',
-                '통짜처럼 보이면 「글자·로고」로 다시 올리거나 SVG를 쓰세요. 크기·위치는 오른쪽에서 조절할 수 있습니다.'
+                t('toastSimpleSilhouetteTitle'),
+                t('toastSimpleSilhouetteDesc')
             );
         } else {
             showToast.success(
-                '로고를 올렸습니다',
-                '오른쪽 「로고 위치·크기」에서 맞춘 뒤 돌출·STL을 확인하세요.'
+                t('toastLogoPlacedTitle'),
+                t('toastLogoPlacedDesc')
             );
         }
     };
@@ -189,41 +190,41 @@ export function MakerWorkspace() {
     const handleApplyTemplate = (id: Parameters<typeof applyTemplate>[0]) => {
         if (activeTemplateId === id) {
             clearTemplate();
-            const t = getMakerTemplate(id);
+            const tmpl = getMakerTemplate(id);
             showToast.success(
-                t ? `${t.name} 해제` : '템플릿 해제',
-                '판형이 없음으로 돌아갔습니다. 스케치·로고는 그대로입니다.'
+                tmpl ? t('toastTemplateOffTitle', { name: tmpl.name }) : t('toastTemplateOffFallback'),
+                t('toastTemplateOffDesc')
             );
             return;
         }
         applyTemplate(id);
-        const t = getMakerTemplate(id);
+        const tmpl = getMakerTemplate(id);
         setActiveTab('3d');
         showToast.success(
-            t ? `${t.name} 적용` : '템플릿 적용',
-            '결과물(3D)에서 판형을 확인한 뒤 로고를 올려 주세요.'
+            tmpl ? t('toastTemplateOnTitle', { name: tmpl.name }) : t('toastTemplateOnFallback'),
+            t('toastTemplateOnDesc')
         );
     };
 
     const handleRequestQuote = async () => {
         if (!hasMakerExportContent(sceneInput())) {
-            showToast.error('견적 불가', '템플릿을 고르거나 스케치·로고를 추가한 뒤 다시 시도해 주세요.');
+            showToast.error(t('toastQuoteUnavailableTitle'), t('toastQuoteNeedContent'));
             return;
         }
         setIsQuoting(true);
         try {
             const blob = buildMakerStlBlob(sceneInput());
             if (!blob) {
-                showToast.error('견적 불가', '3D 메시를 만들지 못했습니다. 결과물(3D) 탭에서 미리보기를 확인해 주세요.');
+                showToast.error(t('toastQuoteUnavailableTitle'), t('toastQuoteNoMesh'));
                 return;
             }
             const file = new File([blob], `wow3d-maker-${Date.now()}.stl`, { type: 'model/stl' });
             setFile(file);
-            showToast.success('견적으로 이동', 'Maker 2.5D 모델을 자동견적에 불러왔습니다.');
+            showToast.success(t('toastQuoteOkTitle'), t('toastQuoteOkDesc'));
             router.push('/quote?entry=file');
         } catch (e) {
             console.error(e);
-            showToast.error('견적 연동 실패', e instanceof Error ? e.message : '다시 시도해 주세요.');
+            showToast.error(t('toastQuoteFailTitle'), e instanceof Error ? e.message : t('toastQuoteFailRetry'));
         } finally {
             setIsQuoting(false);
         }
@@ -241,15 +242,15 @@ export function MakerWorkspace() {
                     </div>
                     <div className="min-w-0">
                         <span className="font-bold text-white tracking-wide text-sm md:text-base truncate block leading-tight">AI 3D Maker</span>
-                        <span className="hidden sm:block text-[9px] font-black uppercase tracking-widest text-teal-400/80">로고·스케치 2.5D</span>
+                        <span className="hidden sm:block text-[9px] font-black uppercase tracking-widest text-teal-400/80">{t('headerSubtitle')}</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-9 md:h-10">
                         <TabsList className="grid w-[160px] md:w-[200px] grid-cols-2 h-9 md:h-10 bg-white/5 border border-white/10 rounded-lg md:rounded-xl p-1">
-                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 text-white/75 hover:text-white rounded-md md:rounded-lg transition-all">스케치(2D)</TabsTrigger>
-                            <TabsTrigger value="3d" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 text-white/75 hover:text-white rounded-md md:rounded-lg transition-all">결과물(3D)</TabsTrigger>
+                            <TabsTrigger value="draw" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 text-white/75 hover:text-white rounded-md md:rounded-lg transition-all">{t('tabDraw')}</TabsTrigger>
+                            <TabsTrigger value="3d" className="text-[10px] md:text-xs font-semibold data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 text-white/75 hover:text-white rounded-md md:rounded-lg transition-all">{t('tab3d')}</TabsTrigger>
                         </TabsList>
                     </Tabs>
 
@@ -257,9 +258,9 @@ export function MakerWorkspace() {
 
                     <Button variant="outline" size="sm" className="h-9 md:h-10 px-3 md:px-4 text-[10px] md:text-xs font-semibold bg-white/5 border-white/10 text-white hover:bg-white/15 hover:border-white/30 rounded-lg md:rounded-xl transition-all" onClick={triggerExport}>
                         <Download className="w-3.5 h-3.5 md:w-4 md:h-4 sm:mr-1.5" />
-                        <span className="hidden sm:inline">STL 저장</span>
+                        <span className="hidden sm:inline">{t('stlSave')}</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="md:hidden h-9 w-9 p-0 rounded-lg border-white/20 text-white/80 hover:bg-white/10" onClick={() => setMobileSettingsOpen(true)} aria-label="설정">
+                    <Button variant="outline" size="sm" className="md:hidden h-9 w-9 p-0 rounded-lg border-white/20 text-white/80 hover:bg-white/10" onClick={() => setMobileSettingsOpen(true)} aria-label={t('settingsAria')}>
                         <PanelRightOpen className="w-4 h-4" />
                     </Button>
                     <Button
@@ -269,7 +270,7 @@ export function MakerWorkspace() {
                         className="hidden sm:flex h-9 md:h-10 px-4 md:px-5 text-[10px] md:text-xs font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-lg md:rounded-xl transition-all gap-1.5"
                     >
                         {isQuoting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
-                        견적 의뢰하기
+                        {t('requestQuote')}
                     </Button>
                 </div>
             </header>
@@ -277,16 +278,15 @@ export function MakerWorkspace() {
             {/* 역할 구분 배너 */}
             <div className="shrink-0 px-3 md:px-6 py-2.5 bg-gradient-to-r from-teal-500/10 via-transparent to-indigo-500/10 border-b border-white/5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <p className="text-[11px] md:text-[13px] text-white/85 font-bold leading-relaxed break-keep flex-1">
-                    <span className="text-teal-300">Maker</span>는 로고·배지·키캡용 <strong className="text-white/85">실루엣 돌출(2.5D)</strong> 도구입니다.
-                    제품 <strong className="text-white/85">실사 사진(이미지) → 입체 3D</strong>는 자동견적 AI를 이용하세요.
+                    <span className="text-teal-300">{t('bannerBefore')}</span>{t('bannerMid')}{' '}
+                    <strong className="text-white/85">{t('bannerBold1')}</strong> {t('bannerMid2')}{' '}
+                    <strong className="text-white/85">{t('bannerBold2')}</strong>{t('bannerAfter')}
                 </p>
                 <Link
                     href="/quote?entry=photo"
                     className="inline-flex items-center gap-1.5 shrink-0 rounded-lg border border-indigo-400/35 bg-indigo-500/15 px-3 py-1.5 text-[11px] font-black text-indigo-200 hover:bg-indigo-500/25 transition-colors"
                 >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    사진(이미지)으로 입체 3D 만들기
-                </Link>
+                    <Sparkles className="w-3.5 h-3.5" />{t('bannerCta')}</Link>
             </div>
 
             {/* Main Content */}
@@ -300,19 +300,19 @@ export function MakerWorkspace() {
                         active={tool === 'pen'}
                         onClick={() => setTool('pen')}
                         icon={<Pencil className="w-4 h-4 md:w-5 md:h-5" />}
-                        label="펜"
+                        label={t('toolPen')}
                     />
                     <ToolbarButton
                         active={tool === 'eraser'}
                         onClick={() => setTool('eraser')}
                         icon={<Eraser className="w-4 h-4 md:w-5 md:h-5" />}
-                        label="지우개"
+                        label={t('toolEraser')}
                     />
                     <div className="w-6 md:w-8 h-px bg-white/10 my-1 md:my-2" />
                     <ToolbarButton
                         onClick={undo}
                         icon={<Undo className="w-4 h-4 md:w-5 md:h-5" />}
-                        label="취소"
+                        label={t('toolUndo')}
                     />
                     <ToolbarButton
                         onClick={() => {
@@ -322,18 +322,18 @@ export function MakerWorkspace() {
                                 basePlateType !== 'none' ||
                                 activeTemplateId != null
                             if (!hasWork) {
-                                showToast.success('초기화', '지울 작업이 없습니다.')
+                                showToast.success(t('toastClearTitle'), t('toastNothingToClear'))
                                 return
                             }
-                            if (!window.confirm('스케치·로고·배지 템플릿을 모두 지울까요?')) return
+                            if (!window.confirm(t('confirmClearAll'))) return
                             clearCanvas()
                             setPendingSvg(null)
                             setSelectedLogoId(null)
                             setActiveTab('draw')
-                            showToast.success('전체 지우기', '스케치·로고·배지 작업을 초기화했습니다.')
+                            showToast.success(t('toastClearedTitle'), t('toastClearedDesc'))
                         }}
                         icon={<Trash2 className="w-4 h-4 md:w-5 md:h-5" />}
-                        label="지우기"
+                        label={t('toolClear')}
                         className="hover:text-red-400 hover:bg-red-500/10 text-white/70"
                     />
 
@@ -363,7 +363,7 @@ export function MakerWorkspace() {
                             {paths.length === 0 && importedSvgs.length === 0 && !pendingSvg && (
                                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
                                     <p className="max-w-xs text-center text-[13px] font-bold text-white/80 leading-relaxed break-keep rounded-2xl bg-black/45 border border-white/15 px-4 py-3">
-                                        왼쪽에서 <span className="text-teal-300">이미지·SVG</span>를 올리거나, 펜으로 그려 주세요.
+                                        {t('emptyCanvasHint')}
                                     </p>
                                 </div>
                             )}
@@ -373,7 +373,12 @@ export function MakerWorkspace() {
                         <div className={`absolute inset-0 transition-opacity duration-300 ${activeTab === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
                             <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] to-[#12121a]" />
                             {show3dCanvas && (
-                                <Maker3DErrorBoundary onRetry={() => setActiveTab('draw')}>
+                                <Maker3DErrorBoundary
+                                    onRetry={() => setActiveTab('draw')}
+                                    title={t('error3dTitle')}
+                                    description={t('error3dDesc')}
+                                    backLabel={t('backToSketch')}
+                                >
                                     <Preview3D />
                                 </Maker3DErrorBoundary>
                             )}
@@ -402,14 +407,14 @@ export function MakerWorkspace() {
                 >
                     {/* 모바일 전용: 드로어 헤더(닫기) */}
                     <div className="md:hidden absolute top-0 left-0 right-0 h-14 flex items-center justify-between px-4 border-b border-white/10 bg-black/60 z-10">
-                        <span className="font-bold text-white text-sm">설정</span>
-                        <button type="button" onClick={() => setMobileSettingsOpen(false)} className="p-2 rounded-lg text-white/70 hover:bg-white/10" aria-label="닫기">
+                        <span className="font-bold text-white text-sm">{t('settingsTitle')}</span>
+                        <button type="button" onClick={() => setMobileSettingsOpen(false)} className="p-2 rounded-lg text-white/70 hover:bg-white/10" aria-label={t('closeAria')}>
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     <p className="text-[12px] font-bold text-white/85 leading-relaxed break-keep rounded-xl bg-white/8 border border-white/15 px-3 py-2.5">
-                        <span className="text-teal-300">1</span> 템플릿 → <span className="text-teal-300">2</span> 로고 → <span className="text-teal-300">3</span> 결과물(3D)
+                        {t('flowHint')}
                     </p>
 
                     <MakerTemplatePicker activeId={activeTemplateId} onApply={handleApplyTemplate} />
@@ -449,23 +454,23 @@ export function MakerWorkspace() {
                     <div className="bg-teal-500/5 border border-teal-400/20 rounded-2xl p-5 shadow-xl">
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-3">
                             <span className="inline-flex w-6 h-6 rounded-full bg-teal-500/30 text-teal-300 text-[11px] font-black items-center justify-center">2</span>
-                            로고·SVG 입력
+                            {t('inputTitle')}
                         </h3>
                         <p className="text-[12px] text-white/80 leading-relaxed break-keep">
-                            <strong className="text-white">글자·로고</strong>는 <strong className="text-white">흰 배경 + 검정 선</strong> PNG/JPEG 또는{' '}
-                            <strong className="text-white">SVG</strong>가 가장 선명합니다.
-                            컬러 사진(이미지)·그라데이션은 통짜 덩어리로 나올 수 있어요. 입체 피규어는{' '}
+                            <strong className="text-white">{t('inputGuideBefore')}</strong>{t('inputGuideMid')}{' '}
+                            <strong className="text-white">{t('inputGuideBold1')}</strong> {t('inputGuideMid2')}{' '}
+                            <strong className="text-white">{t('inputGuideBold2')}</strong>{t('inputGuideAfter')}{' '}
                             <Link href="/quote?entry=photo" className="text-indigo-300 font-black underline-offset-2 hover:underline">
-                                사진(이미지)→AI 3D 견적
+                                {t('inputGuideLink')}
                             </Link>
-                            을 이용하세요.
+                            {t('inputGuideEnd')}
                         </p>
                         <div className="mt-4 space-y-3 pt-3 border-t border-white/10">
-                            <label className="text-[12px] font-bold text-white/85 block">변환 모드</label>
+                            <label className="text-[12px] font-bold text-white/85 block">{t('convertMode')}</label>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
-                                    title="글자·로고·아이콘 — 고대비 실루엣"
+                                    title={t('modeLogoTitle')}
                                     onClick={() => setConvertMode('simple')}
                                     className={cn(
                                         'h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 inline-flex items-center justify-center gap-1.5 border transition-colors',
@@ -475,11 +480,11 @@ export function MakerWorkspace() {
                                     )}
                                 >
                                     {convertMode === 'simple' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                                    글자·로고
+                                    {t('modeLogo')}
                                 </button>
                                 <button
                                     type="button"
-                                    title="복잡한 실루엣 — 디테일 유지"
+                                    title={t('modeDetailTitle')}
                                     onClick={() => setConvertMode('detailed')}
                                     className={cn(
                                         'h-9 rounded-xl text-center text-[11px] leading-tight px-2 min-w-0 inline-flex items-center justify-center gap-1.5 border transition-colors',
@@ -489,22 +494,22 @@ export function MakerWorkspace() {
                                     )}
                                 >
                                     {convertMode === 'detailed' && <Check className="w-3.5 h-3.5 shrink-0" />}
-                                    상세 실루엣
+                                    {t('modeDetail')}
                                 </button>
                             </div>
                             {convertMode === 'simple' && (
                                 <p className="text-[11px] font-bold text-teal-100/90 leading-relaxed break-keep rounded-lg bg-teal-500/10 border border-teal-400/25 px-3 py-2">
-                                    텍스트·마크 로고용입니다. 왼쪽 <strong className="text-white">이미지</strong>로 PNG를 올리거나, 가능하면 <strong className="text-white">SVG</strong>를 쓰세요.
+                                    {t('modeLogoHintBefore')} <strong className="text-white">{t('modeLogoHintBold1')}</strong>{t('modeLogoHintMid')} <strong className="text-white">{t('modeLogoHintBold2')}</strong>{t('modeLogoHintAfter')}
                                 </p>
                             )}
                             {convertMode === 'detailed' && (
                                 <div className="rounded-xl border border-indigo-400/40 bg-indigo-500/15 p-3 space-y-2">
                                     <p className="text-[12px] text-indigo-100 font-bold leading-relaxed break-keep">
-                                        실사 입체 모델이 필요하신가요?
+                                        {t('needPhotoTitle')}
                                     </p>
                                     <Link href="/quote?entry=photo" className="inline-flex items-center gap-1.5 text-[12px] font-black text-indigo-200 hover:text-white">
                                         <Sparkles className="w-3.5 h-3.5" />
-                                        자동견적 · 사진(이미지)으로 3D 만들기
+                                        {t('needPhotoCta')}
                                     </Link>
                                 </div>
                             )}
@@ -515,11 +520,11 @@ export function MakerWorkspace() {
                                     aria-checked={useRemoveBg}
                                     onClick={() => {
                                         if (removeBgConfigured === false) {
-                                            showToast.error('배경 제거 불가', 'API가 설정되지 않았습니다. SVG를 직접 올리거나 배경 없이 변환해 주세요.');
+                                            showToast.error(t('toastRemoveBgUnavailableTitle'), t('toastRemoveBgUnavailable'));
                                             return;
                                         }
                                         if (removeBgRemaining === 0) {
-                                            showToast.error('오늘 한도 소진', '배경 없이 변환하거나 내일 다시 시도해 주세요.');
+                                            showToast.error(t('toastRemoveBgLimitTitle'), t('toastRemoveBgLimit'));
                                             return;
                                         }
                                         setUseRemoveBg((v) => !v);
@@ -535,18 +540,18 @@ export function MakerWorkspace() {
                                         setUseRemoveBg((v) => !v);
                                     }}
                                 >
-                                    배경 제거 후 변환
+                                    {t('removeBg')}
                                 </label>
                             </div>
                             {removeBgConfigured === false ? (
                                 <p className="text-[12px] font-bold text-amber-200 leading-relaxed break-keep rounded-lg bg-amber-500/15 border border-amber-400/40 px-3 py-2">
-                                    배경 제거 API가 꺼져 있습니다. PNG/JPG는 배경 포함으로 변환되고, SVG 직접 업로드가 더 선명합니다.
+                                    {t('removeBgApiOff')}
                                 </p>
                             ) : (
                                 <p className="text-[12px] font-bold text-white/75 leading-relaxed break-keep">
                                     {removeBgRemaining != null && removeBgLimit != null
-                                        ? `오늘 남은 횟수 ${removeBgRemaining}/${removeBgLimit}회 · JPG/PNG 최대 8MB`
-                                        : '배경 제거 사용 가능 · JPG/PNG 최대 8MB'}
+                                        ? t('removeBgRemaining', { n: removeBgRemaining, limit: removeBgLimit })
+                                        : t('removeBgAvailable')}
                                 </p>
                             )}
                         </div>
@@ -556,13 +561,13 @@ export function MakerWorkspace() {
                     <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 shadow-xl backdrop-blur-md">
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-6">
                             <Settings className="w-4 h-4 text-teal-400" />
-                            브러쉬 설정
+                            {t('brushTitle')}
                         </h3>
 
                         <div className="space-y-8">
                             <div>
                                 <div className="flex justify-between items-center mb-4">
-                                    <label className="text-[12px] font-bold text-white/85">펜 두께</label>
+                                    <label className="text-[12px] font-bold text-white/85">{t('penWidth')}</label>
                                     <span className="text-xs font-black text-teal-200 bg-teal-500/20 px-3 py-1 rounded-full border border-teal-400/40">{strokeWidth}px</span>
                                 </div>
                                 <div className="px-1">
@@ -576,7 +581,7 @@ export function MakerWorkspace() {
                             </div>
 
                             <div>
-                                <label className="text-[12px] font-bold text-white/85 mb-4 block">펜 색상</label>
+                                <label className="text-[12px] font-bold text-white/85 mb-4 block">{t('penColor')}</label>
                                 <div className="flex gap-3">
                                     {[
                                         { id: 'white', value: '#ffffff' },
@@ -610,22 +615,22 @@ export function MakerWorkspace() {
                         <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.2em] mb-2 relative">
                             <span className="inline-flex w-6 h-6 rounded-full bg-teal-500/30 text-teal-300 text-[11px] font-black items-center justify-center">3</span>
                             <Layers className="w-4 h-4 text-teal-400" />
-                            레이어 · 모따기
+                            {t('layerTitle')}
                         </h3>
                         <p className="text-[12px] text-white/80 font-bold leading-relaxed break-keep mb-5 relative">
-                            1층 베이스 → 2층 로고 돌출 → 선택 3층 테두리. 수치는 mm입니다.
+                            {t('layerDesc')}
                         </p>
 
                         <div className="space-y-6 relative">
                             <div>
-                                <label className="text-[12px] font-bold text-white/85 mb-3 block">바닥 판형</label>
+                                <label className="text-[12px] font-bold text-white/85 mb-3 block">{t('basePlate')}</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {([
-                                        ['none', '없음'],
-                                        ['rect', '사각'],
-                                        ['circle', '원형'],
-                                        ['rounded', '라운드'],
-                                    ] as const).map(([type, label]) => (
+                                        ['none', 'plateNone'],
+                                        ['rect', 'plateRect'],
+                                        ['circle', 'plateCircle'],
+                                        ['rounded', 'plateRounded'],
+                                    ] as const).map(([type, labelKey]) => (
                                         <button
                                             key={type}
                                             type="button"
@@ -637,13 +642,13 @@ export function MakerWorkspace() {
                                                     : 'bg-white/15 border-white/30 text-white hover:bg-white/25 hover:text-white'
                                             )}
                                         >
-                                            {label}
+                                            {t(labelKey)}
                                         </button>
                                     ))}
                                 </div>
                                 {basePlateType === 'none' && (
                                     <p className="mt-3 text-[12px] font-bold text-teal-100 leading-relaxed break-keep rounded-lg bg-teal-500/15 border border-teal-400/35 px-3 py-2">
-                                        위에서 템플릿을 누르거나 사각·원형·라운드를 고르면 두께·모따기·장착 옵션이 나타납니다.
+                                        {t('plateHint')}
                                     </p>
                                 )}
                             </div>
@@ -653,8 +658,8 @@ export function MakerWorkspace() {
                                     <MmControl
                                         label={
                                             basePlateType === 'circle'
-                                                ? '판 지름 (mm) — 위와 동일'
-                                                : '판 한 변 (mm) — 위와 동일'
+                                                ? t('plateDiameter')
+                                                : t('plateSide')
                                         }
                                         value={baseSizeMm}
                                         min={10}
@@ -664,7 +669,7 @@ export function MakerWorkspace() {
                                     />
                                     {basePlateType === 'rounded' && (
                                         <MmControl
-                                            label="모서리 라운드 (mm)"
+                                            label={t('cornerRound')}
                                             value={cornerRadiusMm}
                                             min={0.4}
                                             max={16}
@@ -673,7 +678,7 @@ export function MakerWorkspace() {
                                         />
                                     )}
                                     <MmControl
-                                        label="1층 · 베이스 두께 (mm)"
+                                        label={t('baseThickness')}
                                         value={baseHeight}
                                         min={0.5}
                                         max={20}
@@ -681,7 +686,7 @@ export function MakerWorkspace() {
                                         onChange={setBaseHeight}
                                     />
                                     <MmControl
-                                        label="3층 · 테두리 림 (mm)"
+                                        label={t('rimThickness')}
                                         value={rimHeightMm}
                                         min={0}
                                         max={8}
@@ -694,7 +699,7 @@ export function MakerWorkspace() {
                             <div className="h-px bg-white/5" />
 
                             <MmControl
-                                label="2층 · 로고/스케치 돌출 (mm)"
+                                label={t('logoExtrude')}
                                 value={extrusionHeight}
                                 min={0.4}
                                 max={50}
@@ -702,7 +707,7 @@ export function MakerWorkspace() {
                                 onChange={setExtrusionHeight}
                             />
                             <MmControl
-                                label="모따기 bevel (mm)"
+                                label={t('bevel')}
                                 value={bevelMm}
                                 min={0}
                                 max={3}
@@ -711,7 +716,7 @@ export function MakerWorkspace() {
                             />
 
                             {basePlateType === 'none' && (
-                                <LayerSwatches label="로고/스케치 색" value={logoColor} onChange={setLogoColor} />
+                                <LayerSwatches label={t('logoSketchColor')} value={logoColor} onChange={setLogoColor} />
                             )}
 
                             {basePlateType !== 'none' && (
@@ -721,13 +726,13 @@ export function MakerWorkspace() {
                                         onClick={() => setShowAdvanced((v) => !v)}
                                         className="flex w-full items-center justify-between rounded-xl border border-white/20 bg-white/8 px-3 py-2.5 text-[12px] font-bold text-white hover:bg-white/12"
                                     >
-                                        키캡·배지 장착 / 색 더 보기
+                                        {t('mountMore')}
                                         <ChevronDown className={`w-4 h-4 text-white/80 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
                                     </button>
                                     {showAdvanced && (
                                         <div className="space-y-5 rounded-xl border border-white/15 bg-black/25 p-4">
                                             <div>
-                                                <label className="text-[12px] font-bold text-white/85 mb-2 block">MX 스템 (키캡 밑면)</label>
+                                                <label className="text-[12px] font-bold text-white/85 mb-2 block">{t('mxStem')}</label>
                                                 <button
                                                     type="button"
                                                     role="switch"
@@ -738,17 +743,17 @@ export function MakerWorkspace() {
                                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${mxStem ? 'translate-x-6' : 'translate-x-1'}`} />
                                                 </button>
                                                 <p className="text-[12px] text-white/75 mt-1.5 break-keep">
-                                                    Cherry MX 간이 십자(+). FDM 여유 슬롯 1.35mm · 높이 4mm.
+                                                    {t('mxStemHint')}
                                                 </p>
                                             </div>
                                             <div>
-                                                <label className="text-[12px] font-bold text-white/85 mb-2 block">배지 뒷면 장착</label>
+                                                <label className="text-[12px] font-bold text-white/85 mb-2 block">{t('badgeMount')}</label>
                                                 <div className="grid grid-cols-3 gap-1.5">
                                                     {([
-                                                        ['none', '없음'],
-                                                        ['magnet', '마그넷'],
-                                                        ['pin', '옷핀'],
-                                                    ] as const).map(([id, label]) => (
+                                                        ['none', 'plateNone'],
+                                                        ['magnet', 'mountMagnet'],
+                                                        ['pin', 'mountPin'],
+                                                    ] as const).map(([id, labelKey]) => (
                                                         <button
                                                             key={id}
                                                             type="button"
@@ -760,23 +765,23 @@ export function MakerWorkspace() {
                                                                     : 'bg-white/15 border-white/30 text-white hover:bg-white/25 hover:text-white'
                                                             )}
                                                         >
-                                                            {label}
+                                                            {t(labelKey)}
                                                         </button>
                                                     ))}
                                                 </div>
                                                 <p className="text-[12px] text-white/75 mt-1.5 break-keep">
-                                                    마그넷: Ø10×2mm 컵. 옷핀: 16mm 브로치핀 채널.
+                                                    {t('mountHint')}
                                                 </p>
                                             </div>
                                             <div>
-                                                <label className="text-[12px] font-bold text-white/85 mb-2 block">레이어 색 (미리보기)</label>
+                                                <label className="text-[12px] font-bold text-white/85 mb-2 block">{t('layerColors')}</label>
                                                 <p className="text-[12px] text-white/75 font-bold leading-relaxed break-keep mb-3">
-                                                    결과물(3D)에서 배색을 확인합니다. STL은 형상만 저장됩니다.
+                                                    {t('layerColorsHint')}
                                                 </p>
-                                                <LayerSwatches label="1층 베이스" value={baseColor} onChange={setBaseColor} />
-                                                <LayerSwatches label="2층 로고" value={logoColor} onChange={setLogoColor} />
+                                                <LayerSwatches label={t('colorBase')} value={baseColor} onChange={setBaseColor} />
+                                                <LayerSwatches label={t('colorLogo')} value={logoColor} onChange={setLogoColor} />
                                                 {rimHeightMm >= 0.4 && (
-                                                    <LayerSwatches label="3층 림" value={rimColor} onChange={setRimColor} />
+                                                    <LayerSwatches label={t('colorRim')} value={rimColor} onChange={setRimColor} />
                                                 )}
                                             </div>
                                         </div>
@@ -787,7 +792,7 @@ export function MakerWorkspace() {
                             <div className="h-px bg-white/15" />
 
                             <div className="flex items-center justify-between">
-                                <label className="text-[12px] font-bold text-white/85">그리드 표시</label>
+                                <label className="text-[12px] font-bold text-white/85">{t('showGrid')}</label>
                                 <button
                                     onClick={() => setShowGrid(!showGrid)}
                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none ring-offset-black focus:ring-2 focus:ring-teal-400/50 ${showGrid ? 'bg-teal-500' : 'bg-white/20'}`}
@@ -809,7 +814,7 @@ export function MakerWorkspace() {
                             className="w-full h-12 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black gap-2"
                         >
                             {isQuoting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
-                            견적 의뢰하기
+                            {t('requestQuote')}
                         </Button>
                     </div>
 
@@ -819,23 +824,23 @@ export function MakerWorkspace() {
                             <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.15em] mb-4">
                                 <span className="inline-flex w-6 h-6 rounded-full bg-primary/30 text-primary text-[11px] font-black items-center justify-center">2</span>
                                 <ImagePlus className="w-4 h-4 text-primary" />
-                                SVG 미리보기
+                                {t('svgPreviewTitle')}
                             </h3>
                             <div className="space-y-4">
                                 <div className="text-[11px] text-white/70 space-y-1.5">
                                     <p className="flex items-center gap-2">
                                         <span className="inline-flex w-5 h-5 rounded-full bg-primary/30 text-primary text-[10px] font-bold items-center justify-center">2</span>
-                                        SVG 확인 (변환됨 또는 직접 입력)
+                                        {t('svgPreviewReady')}
                                     </p>
                                     <p className="flex items-center gap-2">
                                         <span className="inline-flex w-5 h-5 rounded-full bg-white/10 text-white/70 text-[10px] font-bold items-center justify-center">3</span>
-                                        돌출 높이 설정 후 [3D에 추가] → 결과물(3D) 탭에서 확인
+                                        {t('svgPreviewHint')}
                                     </p>
                                 </div>
                                 <div className="rounded-xl overflow-hidden bg-black/40 border border-white/10 aspect-square max-h-32 flex items-center justify-center">
                                     <img
                                         src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(pendingSvg.svgContent)}`}
-                                        alt="SVG 미리보기"
+                                        alt={t('svgPreviewAlt')}
                                         className="max-w-full max-h-full object-contain"
                                     />
                                 </div>
@@ -847,7 +852,7 @@ export function MakerWorkspace() {
                                         onClick={handleAddPendingTo3D}
                                     >
                                         <Check className="w-4 h-4 mr-1.5" />
-                                        3D에 추가
+                                        {t('addTo3d')}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -855,7 +860,7 @@ export function MakerWorkspace() {
                                         className="h-10 px-4 text-xs rounded-xl border-white/20 text-white/70 hover:bg-white/10"
                                         onClick={() => setPendingSvg(null)}
                                     >
-                                        취소
+                                        {t('cancel')}
                                     </Button>
                                 </div>
                             </div>
@@ -867,9 +872,9 @@ export function MakerWorkspace() {
                         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
                             <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                             <div className="text-xs text-white/85 leading-relaxed space-y-1">
-                                <span className="text-white font-semibold block mb-1">작업 순서</span>
-                                <p><strong className="text-teal-300 font-medium">1</strong> 배지·키캡 템플릿(선택) → <strong className="text-teal-300 font-medium">2</strong> 로고·SVG → <strong className="text-teal-300 font-medium">3</strong> 결과물(3D)에서 레이어·bevel 확인. <strong className="text-white">STL 저장</strong> 또는 견적 의뢰.</p>
-                                <p className="text-white/80">실사 입체는 사진(이미지)→AI 3D 견적, 로고 돌출은 Maker입니다.</p>
+                                <span className="text-white font-semibold block mb-1">{t('workflowTitle')}</span>
+                                <p>{t('workflowSteps')}</p>
+                                <p className="text-white/80">{t('workflowNote')}</p>
                             </div>
                         </div>
                     </div>

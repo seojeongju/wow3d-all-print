@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { buildMakerStlBlob, downloadMakerStl } from '@/lib/maker-stl-export';
 
@@ -9,6 +10,7 @@ import { buildMakerStlBlob, downloadMakerStl } from '@/lib/maker-stl-export';
  * paths/importedSvgs를 deps에 넣으면 취소·지우기 때도 다운로드가 다시 뜹니다.
  */
 export function Exporter() {
+    const t = useTranslations('Maker');
     const exportTrigger = useMakerStore((s) => s.exportTrigger);
     const lastHandled = useRef(0);
 
@@ -36,15 +38,15 @@ export function Exporter() {
                 canvasSize: s.canvasSize,
             }));
             if (!blob) {
-                alert('저장할 모델이 없습니다. 템플릿을 고르거나 스케치·로고를 넣어 주세요.');
+                alert(t('exportEmpty'));
                 return;
             }
             downloadMakerStl(blob);
         } catch (e) {
             console.error('STL export failed', e);
-            alert('STL 저장에 실패했습니다. 콘솔을 확인해 주세요.');
+            alert(t('exportFail'));
         }
-    }, [exportTrigger]);
+    }, [exportTrigger, t]);
 
     return null;
 }

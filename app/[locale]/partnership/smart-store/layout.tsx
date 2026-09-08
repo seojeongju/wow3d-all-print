@@ -1,32 +1,59 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: '스마트상점 기술보급 사업 | MSLA-DLP P시리즈 공식 공급',
-    description:
-        '소상공인시장진흥공단 스마트상점 기술보급 사업과 (주)와우쓰리디 MSLA-DLP P7 Pro·P10 Pro·P13 Pro 공식 공급. 3D프린터 스마트기술 도입을 안내합니다.',
-    keywords: [
-        '스마트상점 기술보급 사업',
-        '소상공인시장진흥공단',
-        '스마트상점',
-        '3D프린터',
-        'MSLA',
-        'DLP',
-        'P7 Pro',
-        'P10 Pro',
-        'P13 Pro',
-        '와우쓰리디',
-    ],
-    alternates: { canonical: absoluteUrl('/partnership/smart-store') },
-    openGraph: {
-        title: '스마트상점 기술보급 사업 · MSLA-DLP 공식 공급 | WOW3D',
-        description:
-            '(주)와우쓰리디는 MSLA-DLP P7 Pro·P10 Pro·P13 Pro 공식 공급업체로서 스마트상점 기술보급 사업 연계 도입을 지원합니다.',
-        url: absoluteUrl('/partnership/smart-store'),
-        type: 'website',
-    },
+type Props = {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
 }
 
-export default function SmartStoreLayout({ children }: { children: React.ReactNode }) {
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+function smartStorePath(locale: AppLocale) {
+    return getPathname({ locale, href: '/partnership/smart-store' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'PartnershipSmartStore' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = smartStorePath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        keywords: t.raw('keywords') as string[],
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${smartStorePath('ko')}`,
+                en: `${SITE_URL}${smartStorePath('en')}`,
+                'x-default': `${SITE_URL}${smartStorePath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('ogTitle'),
+            description: t('ogDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function SmartStoreLayout({ children, params }: Props) {
+    const { locale: localeParam } = await params
+    setRequestLocale(resolveLocale(localeParam))
     return children
 }

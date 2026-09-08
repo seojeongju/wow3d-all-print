@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 interface Props {
     children: React.ReactNode;
     onRetry: () => void;
+    title: string;
+    description: string;
+    backLabel: string;
 }
 
 interface State {
@@ -41,10 +44,10 @@ export class Maker3DErrorBoundary extends React.Component<Props, State> {
                     </div>
                     <div className="text-center space-y-2 max-w-sm">
                         <p className="text-sm font-semibold text-white">
-                            3D 미리보기를 불러올 수 없습니다
+                            {this.props.title}
                         </p>
                         <p className="text-xs text-white/80">
-                            브라우저가 3D 렌더링을 지원하지 않거나 일시적인 오류가 발생했을 수 있습니다. 스케치(2D) 탭으로 돌아가 다시 그려 주세요.
+                            {this.props.description}
                         </p>
                     </div>
                     <Button
@@ -58,7 +61,7 @@ export class Maker3DErrorBoundary extends React.Component<Props, State> {
                         className="gap-2 border-white/20 text-white hover:bg-white/10"
                     >
                         <Pencil className="w-4 h-4" />
-                        스케치(2D)로 돌아가기
+                        {this.props.backLabel}
                     </Button>
                 </div>
             );

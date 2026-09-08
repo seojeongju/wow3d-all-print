@@ -1,21 +1,60 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getShowcaseCategories } from '@/lib/showcase-public'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 import ExpertPageClient from './ExpertPageClient'
 
-export const metadata: Metadata = {
-    title: '제품개발 전문가 | 3D프린팅 시제품·양산 컨설팅',
-    description:
-        '아이디어 설계부터 시제품·양산까지. 와우쓰리디 제품개발 전문가가 산업·의료·아트·건축 분야 3D프린팅 솔루션과 제작 사례를 제공합니다.',
-    alternates: { canonical: absoluteUrl('/expert') },
-    openGraph: {
-        title: '제품개발 전문가 | WOW3D 3D프린팅',
-        description: '설계·시제품·양산 원스톱. 분야별 제작 사례와 전문가 무료 상담.',
-        url: absoluteUrl('/expert'),
-    },
+type Props = {
+    params: Promise<{ locale: string }>
 }
 
-export default async function ExpertServicePage() {
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+function expertPath(locale: AppLocale) {
+    return getPathname({ locale, href: '/expert' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Expert' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = expertPath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${expertPath('ko')}`,
+                en: `${SITE_URL}${expertPath('en')}`,
+                'x-default': `${SITE_URL}${expertPath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('ogTitle'),
+            description: t('ogDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function ExpertServicePage({ params }: Props) {
+    const { locale: localeParam } = await params
+    setRequestLocale(resolveLocale(localeParam))
     const cards = await getShowcaseCategories()
     return <ExpertPageClient initialCards={cards} />
 }

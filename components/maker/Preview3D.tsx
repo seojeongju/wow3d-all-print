@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Center } from '@react-three/drei';
+import { Link } from '@/i18n/navigation';
 import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore';
 import { buildMakerSceneGroup, disposeObject3D, hasMakerSceneContent } from '@/lib/maker-geometry';
 import type { Group } from 'three';
@@ -42,14 +44,7 @@ const VIEW_POSES: Record<MakerViewPreset, { position: THREE.Vector3; target: THR
     },
 };
 
-const VIEW_BUTTONS: { id: MakerViewPreset; label: string }[] = [
-    { id: 'iso', label: '사선' },
-    { id: 'front', label: '정면' },
-    { id: 'right', label: '우측' },
-    { id: 'left', label: '좌측' },
-    { id: 'top', label: '윗면' },
-    { id: 'bottom', label: '아랫면' },
-];
+const VIEW_BUTTON_IDS: MakerViewPreset[] = ['iso', 'front', 'right', 'left', 'top', 'bottom'];
 
 /** WebGL context 손실 감지 → 상위 state 갱신 후 render 단계에서 throw 해서 에러 바운더리 포착 */
 function ContextLossHandler({ onContextLost }: { onContextLost: () => void }) {
@@ -232,6 +227,7 @@ function PreviewScene({
 }
 
 export function Preview3D() {
+    const t = useTranslations('Maker');
     const [mounted, setMounted] = useState(false);
     const [webglContextLost, setWebglContextLost] = useState(false);
     const [viewPreset, setViewPreset] = useState<MakerViewPreset>('iso');
@@ -242,6 +238,15 @@ export function Preview3D() {
     const importedSvgs = useMakerStore((s) => s.importedSvgs);
     const basePlateType = useMakerStore((s) => s.basePlateType);
     const showGrid = useMakerStore((s) => s.showGrid);
+
+    const viewLabels: Record<MakerViewPreset, string> = {
+        iso: t('viewIso'),
+        front: t('viewFront'),
+        right: t('viewRight'),
+        left: t('viewLeft'),
+        top: t('viewTop'),
+        bottom: t('viewBottom'),
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -278,14 +283,18 @@ export function Preview3D() {
         return (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 bg-gradient-to-b from-[#0a0a0f] to-[#12121a]">
                 <p className="text-sm font-medium text-white/80 text-center">
-                    표시할 3D 모델이 없습니다
+                    {t('previewEmptyTitle')}
                 </p>
                 <p className="text-xs text-white/80 text-center max-w-[260px] break-keep">
-                    오른쪽에서 <strong className="text-white">배지·키캡 템플릿</strong>을 고르거나,
-                    <strong className="text-white"> 스케치·로고</strong>를 넣어 주세요.
-                    제품 실사 입체는{' '}
-                    <a href="/quote?entry=photo" className="text-indigo-300 font-bold hover:underline">사진(이미지)→AI 3D 견적</a>
-                    을 이용하세요.
+                    {t('previewEmptyBefore')}{' '}
+                    <strong className="text-white">{t('previewEmptyBold1')}</strong>
+                    {t('previewEmptyMid')}
+                    <strong className="text-white"> {t('previewEmptyBold2')}</strong>
+                    {t('previewEmptyAfter')}{' '}
+                    <Link href="/quote?entry=photo" className="text-indigo-300 font-bold hover:underline">
+                        {t('previewEmptyLink')}
+                    </Link>
+                    {t('previewEmptyEnd')}
                 </p>
             </div>
         );
@@ -323,22 +332,22 @@ export function Preview3D() {
             {/* 뷰 프리셋 · 자동 회전 */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 p-3 sm:p-4">
                 <p className="pointer-events-none text-[10px] font-bold text-white/80 drop-shadow-md">
-                    드래그로 360° 회전 · 휠 확대 · 아래 버튼으로 정면·측면·윗면
+                    {t('previewOrbitHint')}
                 </p>
                 <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/25 bg-black/75 px-2 py-2 backdrop-blur-md shadow-2xl">
-                    {VIEW_BUTTONS.map((b) => (
+                    {VIEW_BUTTON_IDS.map((id) => (
                         <button
-                            key={b.id}
+                            key={id}
                             type="button"
-                            onClick={() => applyView(b.id)}
+                            onClick={() => applyView(id)}
                             className={cn(
                                 'h-8 rounded-lg px-2.5 text-[11px] font-black transition-colors',
-                                viewPreset === b.id && !autoRotate
+                                viewPreset === id && !autoRotate
                                     ? 'bg-teal-500 text-slate-950'
                                     : 'bg-white/10 text-white hover:bg-white/20'
                             )}
                         >
-                            {b.label}
+                            {viewLabels[id]}
                         </button>
                     ))}
                     <span className="mx-0.5 h-5 w-px bg-white/20" aria-hidden />
@@ -351,19 +360,19 @@ export function Preview3D() {
                                 ? 'bg-teal-500 text-slate-950'
                                 : 'bg-white/10 text-white hover:bg-white/20'
                         )}
-                        title={autoRotate ? '자동 회전 멈춤' : '자동 360° 회전'}
+                        title={autoRotate ? t('rotateOffTitle') : t('rotateOnTitle')}
                     >
                         {autoRotate ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                        회전
+                        {t('rotate')}
                     </button>
                     <button
                         type="button"
                         onClick={() => applyView('iso')}
                         className="inline-flex h-8 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[11px] font-black text-white hover:bg-white/20"
-                        title="사선 뷰로 리셋"
+                        title={t('resetTitle')}
                     >
                         <RotateCcw className="h-3.5 w-3.5" />
-                        리셋
+                        {t('reset')}
                     </button>
                 </div>
             </div>

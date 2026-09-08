@@ -1,21 +1,23 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
-import type { ShowcaseSlug } from '@/lib/showcase';
-import type { ShowcaseDetail } from '@/lib/showcase-public';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
+import { motion } from 'framer-motion'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import type { ShowcaseSlug } from '@/lib/showcase'
+import type { ShowcaseDetail } from '@/lib/showcase-public'
+import Header from '@/components/layout/Header'
+import Footer from '@/components/layout/Footer'
 
 export default function ShowcaseDetailClient({
-    slug,
+    slug: _slug,
     initialData,
 }: {
-    slug: ShowcaseSlug;
-    initialData: ShowcaseDetail;
+    slug: ShowcaseSlug
+    initialData: ShowcaseDetail
 }) {
-    const data = initialData;
+    const t = useTranslations('Expert')
+    const data = initialData
 
     return (
         <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-teal-500/30 overflow-hidden relative font-sans">
@@ -33,7 +35,7 @@ export default function ShowcaseDetailClient({
                         className="inline-flex items-center gap-2 text-sm font-bold text-teal-400/80 hover:text-teal-300 mb-10 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        전문가 서비스로 돌아가기
+                        {t('backToExpert')}
                     </Link>
 
                     <motion.div
@@ -44,10 +46,10 @@ export default function ShowcaseDetailClient({
                         <div className="relative aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
                             <img
                                 src={data.heroImageUrl}
-                                alt={`${data.title} 대표 이미지`}
+                                alt={t('heroImageAlt', { title: data.title })}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/placeholder-3d.svg';
+                                    ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                                 }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -77,16 +79,15 @@ export default function ShowcaseDetailClient({
 
                     <section className="border-t border-white/10 pt-16">
                         <h2 className="text-2xl md:text-3xl font-black text-white mb-4 tracking-tight">
-                            제작 예시
+                            {t('examplesTitle')}
                         </h2>
                         <p className="text-white/45 text-sm font-medium mb-12 max-w-xl break-keep">
-                            실제 진행한 샘플·사례 이미지와 영상입니다. 관리자가 등록한 콘텐츠가 없으면 이 섹션은 비어
-                            있을 수 있습니다.
+                            {t('examplesSubtitle')}
                         </p>
 
                         {data.examples.length === 0 ? (
                             <p className="text-white/35 text-center py-16 rounded-3xl border border-dashed border-white/10">
-                                등록된 제작 예시가 없습니다. 곧 업데이트될 예정입니다.
+                                {t('examplesEmpty')}
                             </p>
                         ) : (
                             <div className="space-y-16">
@@ -157,5 +158,5 @@ export default function ShowcaseDetailClient({
 
             <Footer />
         </main>
-    );
+    )
 }

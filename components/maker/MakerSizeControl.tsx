@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Slider } from '@/components/ui/slider'
 import type { BasePlateType } from '@/lib/maker-geometry'
 import type { MakerTemplateId } from '@/lib/maker-templates'
@@ -15,18 +16,6 @@ type Props = {
     onChange: (mm: number) => void
 }
 
-function sizeLabel(basePlateType: BasePlateType, activeTemplateId: MakerTemplateId | null): string {
-    if (activeTemplateId === 'keycap-1u') return '키캡 한 변'
-    if (basePlateType === 'circle') return '배지 지름'
-    return '배지 한 변'
-}
-
-function sizeHint(basePlateType: BasePlateType, activeTemplateId: MakerTemplateId | null): string {
-    if (activeTemplateId === 'keycap-1u') return 'Cherry MX 1U 기준은 18mm입니다.'
-    if (basePlateType === 'circle') return '원형 배지의 지름(Ø)입니다. 로고도 함께 맞춰집니다.'
-    return '사각·라운드 판의 한 변 길이입니다. 로고도 함께 맞춰집니다.'
-}
-
 function formatValue(mm: number, basePlateType: BasePlateType, activeTemplateId: MakerTemplateId | null): string {
     if (activeTemplateId === 'keycap-1u') return `${mm}mm`
     if (basePlateType === 'circle') return `Ø${mm}mm`
@@ -39,13 +28,24 @@ export function MakerSizeControl({
     activeTemplateId,
     onChange,
 }: Props) {
+    const t = useTranslations('Maker')
+
     if (basePlateType === 'none') return null
 
     const isKeycap = activeTemplateId === 'keycap-1u'
     const presets = isKeycap ? KEYCAP_PRESETS : BADGE_PRESETS
     const min = isKeycap ? 14 : 15
     const max = isKeycap ? 22 : 80
-    const label = sizeLabel(basePlateType, activeTemplateId)
+    const label = isKeycap
+        ? t('sizeKeycapSide')
+        : basePlateType === 'circle'
+            ? t('sizeBadgeDiameter')
+            : t('sizeBadgeSide')
+    const hint = isKeycap
+        ? t('sizeHintKeycap')
+        : basePlateType === 'circle'
+            ? t('sizeHintCircle')
+            : t('sizeHintRect')
     const clamped = Math.min(max, Math.max(min, baseSizeMm))
 
     return (
@@ -57,7 +57,7 @@ export function MakerSizeControl({
                 </span>
             </div>
             <p className="text-[11px] font-bold text-white/75 leading-relaxed break-keep mb-3">
-                {sizeHint(basePlateType, activeTemplateId)}
+                {hint}
             </p>
 
             <div className="flex flex-wrap gap-1.5 mb-3">
@@ -104,7 +104,9 @@ export function MakerSizeControl({
                 />
             </div>
             <p className="mt-2 text-[10px] font-bold text-white/65">
-                {isKeycap ? `조절 범위 ${min}–${max}mm` : `조절 범위 ${min}–${max}mm · 흔히 쓰는 크기 버튼을 먼저 눌러 보세요`}
+                {isKeycap
+                    ? t('sizeRangeKeycap', { min, max })
+                    : t('sizeRangeBadge', { min, max })}
             </p>
         </div>
     )

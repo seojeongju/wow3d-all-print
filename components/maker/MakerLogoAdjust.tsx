@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Move, RotateCw, Maximize2, RotateCcw, Box } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,8 @@ export function MakerLogoAdjust({
     onReset,
     onRemove,
 }: Props) {
+    const t = useTranslations('Maker')
+
     if (items.length === 0) return null
 
     const active = items.find((i) => i.id === selectedId) ?? items[0]
@@ -48,10 +51,12 @@ export function MakerLogoAdjust({
             <div>
                 <h3 className="font-bold text-[13px] text-white flex items-center gap-2 uppercase tracking-[0.12em]">
                     <Box className="w-4 h-4 text-teal-300" />
-                    로고 크기 · 돌출
+                    {t('logoAdjustTitle')}
                 </h3>
                 <p className="text-[11px] font-bold text-white/80 leading-relaxed break-keep mt-1.5">
-                    크기·위치를 맞춘 뒤 <strong className="text-teal-200">돌출 높이(mm)</strong>로 두께를 정합니다. 결과물(3D)에 바로 반영됩니다.
+                    {t('logoAdjustHintBefore')}{' '}
+                    <strong className="text-teal-200">{t('logoAdjustHintBold')}</strong>
+                    {t('logoAdjustHintAfter')}
                 </p>
             </div>
 
@@ -82,7 +87,7 @@ export function MakerLogoAdjust({
                     <div className="flex justify-between items-center mb-2">
                         <label className="text-[12px] font-black text-amber-100 flex items-center gap-1.5">
                             <Box className="w-3.5 h-3.5" />
-                            돌출 높이
+                            {t('extrudeHeight')}
                         </label>
                         <span className="text-[13px] font-black text-amber-200 tabular-nums">
                             {extrusionHeight.toFixed(1)}mm
@@ -119,7 +124,7 @@ export function MakerLogoAdjust({
                     <div className="flex justify-between items-center mb-2">
                         <label className="text-[12px] font-bold text-white/90 flex items-center gap-1.5">
                             <Maximize2 className="w-3.5 h-3.5 text-teal-300" />
-                            평면 크기
+                            {t('planarSize')}
                         </label>
                         <span className="text-[12px] font-black text-teal-200 tabular-nums">
                             {Math.round(active.scale * 100)}%
@@ -151,7 +156,7 @@ export function MakerLogoAdjust({
                         ))}
                     </div>
                     <p className="mt-1.5 text-[10px] font-bold text-white/65 break-keep">
-                        배지 밖으로 나가거나 어둡게 가려 보이면 크기를 줄이세요.
+                        {t('logoClipHint')}
                     </p>
                 </div>
 
@@ -159,7 +164,7 @@ export function MakerLogoAdjust({
                     <div className="flex justify-between items-center mb-2">
                         <label className="text-[12px] font-bold text-white/90 flex items-center gap-1.5">
                             <Move className="w-3.5 h-3.5 text-teal-300" />
-                            좌우 이동
+                            {t('moveX')}
                         </label>
                         <span className="text-[12px] font-black text-teal-200 tabular-nums">
                             {active.offsetXMm > 0 ? '+' : ''}{active.offsetXMm.toFixed(1)}mm
@@ -179,7 +184,7 @@ export function MakerLogoAdjust({
                     <div className="flex justify-between items-center mb-2">
                         <label className="text-[12px] font-bold text-white/90 flex items-center gap-1.5">
                             <Move className="w-3.5 h-3.5 text-teal-300 rotate-90" />
-                            위아래 이동
+                            {t('moveY')}
                         </label>
                         <span className="text-[12px] font-black text-teal-200 tabular-nums">
                             {active.offsetYMm > 0 ? '+' : ''}{active.offsetYMm.toFixed(1)}mm
@@ -199,7 +204,7 @@ export function MakerLogoAdjust({
                     <div className="flex justify-between items-center mb-2">
                         <label className="text-[12px] font-bold text-white/90 flex items-center gap-1.5">
                             <RotateCw className="w-3.5 h-3.5 text-teal-300" />
-                            회전
+                            {t('rotation')}
                         </label>
                         <span className="text-[12px] font-black text-teal-200 tabular-nums">
                             {Math.round(active.rotationDeg)}°
@@ -239,16 +244,18 @@ export function MakerLogoAdjust({
                         className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-white/10 text-[11px] font-black text-white hover:bg-white/20"
                     >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        위치·크기 초기화
+                        {t('resetTransform')}
                     </button>
                     <button
                         type="button"
                         onClick={() => {
-                            if (window.confirm(`"${active.name}"을(를) 삭제할까요?`)) onRemove(active.id)
+                            if (window.confirm(t('confirmDeleteLogo', { name: active.name }))) {
+                                onRemove(active.id)
+                            }
                         }}
                         className="h-9 rounded-xl border border-red-400/40 bg-red-500/15 px-3 text-[11px] font-black text-red-200 hover:bg-red-500/25"
                     >
-                        삭제
+                        {t('delete')}
                     </button>
                 </div>
             </div>

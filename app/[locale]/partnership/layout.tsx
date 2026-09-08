@@ -1,19 +1,58 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: '3D프린터 파트너십·대리점 제휴',
-    description:
-        '와우쓰리디 3D프린터·AI 자동견적 파트너십. 하드웨어 공급, 견적 시스템 제휴, 대리점 문의는 WOW3D에 연락하세요.',
-    alternates: { canonical: absoluteUrl('/partnership') },
-    openGraph: {
-        title: '파트너십·대리점 제휴 | WOW3D',
-        description: '3D프린터 공급·AI 자동견적 제휴. 파트너사 전용 혜택과 문의 안내.',
-        url: absoluteUrl('/partnership'),
-        type: 'website',
-    },
+type Props = {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
 }
 
-export default function PartnershipLayout({ children }: { children: React.ReactNode }) {
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+function partnershipPath(locale: AppLocale) {
+    return getPathname({ locale, href: '/partnership' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Partnership' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = partnershipPath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${partnershipPath('ko')}`,
+                en: `${SITE_URL}${partnershipPath('en')}`,
+                'x-default': `${SITE_URL}${partnershipPath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('ogTitle'),
+            description: t('ogDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function PartnershipLayout({ children, params }: Props) {
+    const { locale: localeParam } = await params
+    setRequestLocale(resolveLocale(localeParam))
     return children
 }

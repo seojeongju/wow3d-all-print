@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Circle, Square, Keyboard } from 'lucide-react';
 import { MAKER_TEMPLATES, type MakerTemplateId } from '@/lib/maker-templates';
 import { cn } from '@/lib/utils';
@@ -16,26 +17,28 @@ type Props = {
 };
 
 export function MakerTemplatePicker({ activeId, onApply }: Props) {
+    const t = useTranslations('Maker');
+
     return (
         <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-5 shadow-xl">
             <h3 className="font-bold text-[13px] text-white uppercase tracking-[0.15em] mb-2 flex items-center gap-2">
                 <span className="inline-flex w-6 h-6 rounded-full bg-teal-500/30 text-teal-300 text-[11px] font-black items-center justify-center">1</span>
-                배지 · 키캡 템플릿
+                {t('templateTitle')}
             </h3>
             <p className="text-[12px] text-white/80 font-bold leading-relaxed break-keep mb-4">
-                선택 후 아래에서 크기를 바꿀 수 있습니다. 같은 항목을 다시 누르면 해제됩니다.
+                {t('templateHint')}
             </p>
             <div className="grid grid-cols-1 gap-2">
-                {MAKER_TEMPLATES.map((t) => {
-                    const Icon = ICONS[t.id];
-                    const active = activeId === t.id;
+                {MAKER_TEMPLATES.map((tmpl) => {
+                    const Icon = ICONS[tmpl.id];
+                    const active = activeId === tmpl.id;
                     return (
                         <button
-                            key={t.id}
+                            key={tmpl.id}
                             type="button"
-                            onClick={() => onApply(t.id)}
+                            onClick={() => onApply(tmpl.id)}
                             aria-pressed={active}
-                            title={active ? '다시 눌러 선택 해제' : `${t.name} 적용`}
+                            title={active ? t('templateToggleOff') : t('templateApply', { name: tmpl.name })}
                             className={cn(
                                 'text-left rounded-xl border px-3 py-2.5 transition-all',
                                 active
@@ -52,19 +55,17 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                                 </span>
                                 <span className="min-w-0">
                                     <span className="block text-[12px] font-black text-white">
-                                        {t.name}
+                                        {tmpl.name}
                                         {active && (
                                             <span className="ml-1.5 text-teal-300 font-bold">
-                                                {t.id === 'badge-circle'
-                                                    ? '· 크기 조절 ↓'
-                                                    : t.id === 'keycap-1u'
-                                                        ? '· 18mm 기준'
-                                                        : '· 크기 조절 ↓'}
+                                                {tmpl.id === 'keycap-1u'
+                                                    ? t('templateKeycapBase')
+                                                    : t('templateSizeAdjust')}
                                             </span>
                                         )}
                                     </span>
                                     <span className="block text-[11px] text-white/75 font-bold leading-relaxed break-keep mt-0.5">
-                                        {t.description}
+                                        {tmpl.description}
                                     </span>
                                 </span>
                             </div>

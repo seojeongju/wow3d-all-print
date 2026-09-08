@@ -1,19 +1,58 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: '3D프린팅 견적 체험 | 샘플 모델로 바로 확인',
-    description:
-        '샘플 STL로 와우쓰리디 자동견적을 체험하세요. 파일 업로드 없이 3D 뷰어·가격·출력 옵션 흐름을 미리 확인할 수 있습니다.',
-    alternates: { canonical: absoluteUrl('/experience') },
-    openGraph: {
-        title: '3D프린팅 견적 체험 | WOW3D',
-        description: '샘플 모델로 실시간 자동견적·3D 뷰어를 체험해 보세요.',
-        url: absoluteUrl('/experience'),
-        type: 'website',
-    },
+type Props = {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
 }
 
-export default function ExperienceLayout({ children }: { children: React.ReactNode }) {
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+function experiencePath(locale: AppLocale) {
+    return getPathname({ locale, href: '/experience' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Experience' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = experiencePath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${experiencePath('ko')}`,
+                en: `${SITE_URL}${experiencePath('en')}`,
+                'x-default': `${SITE_URL}${experiencePath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('ogTitle'),
+            description: t('ogDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function ExperienceLayout({ children, params }: Props) {
+    const { locale: localeParam } = await params
+    setRequestLocale(resolveLocale(localeParam))
     return children
 }
