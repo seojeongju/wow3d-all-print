@@ -167,7 +167,7 @@ export default function Header() {
                             WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
                         </span>
                         <span className={`hidden sm:block text-[10px] sm:text-[11px] font-bold leading-tight mt-1 transition-colors truncate ${isPastHero ? 'text-slate-600' : 'text-white/80'}`}>
-                            (주)와우쓰리디 / <span className="text-teal-400 font-semibold">3D쿠키홍대</span>
+                            {tCommon('company')} / <span className="text-teal-400 font-semibold">{tCommon('cookieBrand')}</span>
                         </span>
                     </div>
                 </Link>

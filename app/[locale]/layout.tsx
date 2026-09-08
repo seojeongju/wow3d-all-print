@@ -3,6 +3,9 @@ import { getMessages, setRequestLocale } from 'next-intl/server'
 import { hasLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
+import SessionValidator from '@/components/auth/SessionValidator'
+import EducationQuickMenu from '@/components/layout/EducationQuickMenu'
+import SitePopup from '@/components/popup/SitePopup'
 
 type Props = {
     children: React.ReactNode
@@ -24,7 +27,10 @@ export default async function LocaleLayout({ children, params }: Props) {
 
     return (
         <NextIntlClientProvider messages={messages}>
+            <SessionValidator />
             {children}
+            <EducationQuickMenu />
+            <SitePopup />
         </NextIntlClientProvider>
     )
 }

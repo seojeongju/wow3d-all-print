@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ExternalLink, Loader2, MapPin } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
     type Makerspace,
     kakaoMapDirectionsUrl,
@@ -54,6 +55,7 @@ function loadKakaoSdk(appKey: string): Promise<typeof kakao.maps> {
 }
 
 export default function KakaoMapView({ center, className }: Props) {
+    const t = useTranslations('Makerspace')
     const mapRef = useRef<HTMLDivElement>(null)
     const mapInstance = useRef<kakao.maps.Map | null>(null)
     const markerInstance = useRef<kakao.maps.Marker | null>(null)
@@ -165,7 +167,7 @@ export default function KakaoMapView({ center, className }: Props) {
             {mode === 'loading' && (
                 <div className="flex h-[280px] w-full items-center justify-center sm:h-[360px] lg:h-[420px]">
                     <Loader2 className="h-7 w-7 animate-spin text-teal-400" aria-hidden />
-                    <span className="sr-only">지도를 불러오는 중</span>
+                    <span className="sr-only">{t('mapLoading')}</span>
                 </div>
             )}
 
@@ -175,7 +177,7 @@ export default function KakaoMapView({ center, className }: Props) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={staticSrc}
-                            alt={`${center.name} 위치 지도`}
+                            alt={t('mapAlt', { name: center.name })}
                             className="h-full w-full object-cover"
                             onError={() => setStaticFailed(true)}
                         />
@@ -183,7 +185,7 @@ export default function KakaoMapView({ center, className }: Props) {
                         <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-900 to-slate-950 px-6 text-center">
                             <MapPin className="h-8 w-8 text-teal-400" aria-hidden />
                             <p className="text-sm font-bold text-white/80">{center.address}</p>
-                            <p className="text-xs text-white/40">지도를 불러오지 못했습니다. 카카오맵에서 확인해 주세요.</p>
+                            <p className="text-xs text-white/40">{t('mapError')}</p>
                         </div>
                     )}
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b1220]/50 via-transparent to-transparent" />
@@ -197,7 +199,7 @@ export default function KakaoMapView({ center, className }: Props) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-black/70 px-3 py-2 text-[11px] font-bold text-white/90 backdrop-blur-md transition hover:border-teal-400/40 hover:text-teal-300"
                 >
-                    카카오맵
+                    {t('kakaoMapLabel')}
                     <ExternalLink className="h-3 w-3" aria-hidden />
                 </a>
                 <a
@@ -206,7 +208,7 @@ export default function KakaoMapView({ center, className }: Props) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-xl bg-teal-400 px-3 py-2 text-[11px] font-extrabold text-slate-950 transition hover:bg-teal-300"
                 >
-                    길찾기
+                    {t('directionsLabel')}
                     <ExternalLink className="h-3 w-3" aria-hidden />
                 </a>
             </div>

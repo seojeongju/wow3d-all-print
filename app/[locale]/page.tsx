@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { buildFaqPageSchema, buildWebPageSchema } from '@/lib/aeo-schema';
 import { getPublishedQnas, localizeQnas, pickVisibleFaqItems } from '@/lib/qna';
 import HomePageClient from '@/components/home/HomePageClient';
-import { absoluteUrl, SITE_DESCRIPTION, SITE_TITLE } from '@/lib/site-url';
+import { absoluteUrl } from '@/lib/site-url';
 import { getPathname } from '@/i18n/navigation';
 import { routing, type AppLocale } from '@/i18n/routing';
 
@@ -18,12 +18,15 @@ function resolveLocale(localeParam: string): AppLocale {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: localeParam } = await params;
   const locale = resolveLocale(localeParam);
+  const t = await getTranslations({ locale, namespace: 'Home' });
   const path = getPathname({ locale, href: '/' });
   const canonical = absoluteUrl(path);
+  const title = t('metaTitle');
+  const description = t('metaDescription');
 
   return {
-    title: { absolute: SITE_TITLE },
-    description: SITE_DESCRIPTION,
+    title: { absolute: title },
+    description,
     alternates: {
       canonical,
       languages: {
@@ -34,8 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     openGraph: {
       url: canonical,
-      title: SITE_TITLE,
-      description: SITE_DESCRIPTION,
+      title,
+      description,
       locale: locale === 'en' ? 'en_US' : 'ko_KR',
     },
   };

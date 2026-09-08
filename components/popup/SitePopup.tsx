@@ -10,6 +10,7 @@ import {
 } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ExternalLink, GripVertical, X } from 'lucide-react'
 import { dismissPopup, isPopupDismissed, type PublicPopup } from '@/lib/popup'
@@ -107,6 +108,7 @@ function clampPosition(pos: Pos, boxW: number, boxH: number): Pos {
 }
 
 export default function SitePopup() {
+  const t = useTranslations('Common')
   const pathname = usePathname()
   const [popup, setPopup] = useState<PublicPopup | null>(null)
   const [open, setOpen] = useState(false)
@@ -249,7 +251,7 @@ export default function SitePopup() {
             className={`flex items-start gap-2 border-b border-white/10 px-3 py-3 touch-none ${
               dragging ? 'cursor-grabbing' : 'cursor-grab'
             }`}
-            title="드래그하여 이동"
+            title={t('dragToMove')}
           >
             <GripVertical className="mt-0.5 h-5 w-5 shrink-0 text-white/35" aria-hidden />
             <h2 className="min-w-0 flex-1 pr-1 text-[15px] font-bold leading-snug text-white break-keep">
@@ -259,7 +261,7 @@ export default function SitePopup() {
               type="button"
               onClick={close}
               className="shrink-0 rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
-              aria-label="팝업 닫기"
+              aria-label={t('closePopup')}
             >
               <X className="h-5 w-5" />
             </button>
@@ -303,7 +305,7 @@ export default function SitePopup() {
                     onClick={close}
                     className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-300 hover:text-teal-200"
                   >
-                    자세히 보기
+                    {t('learnMore')}
                     <ExternalLink className="h-3.5 w-3.5" />
                   </PopupLink>
                 )}
@@ -319,8 +321,8 @@ export default function SitePopup() {
                 className="text-xs font-medium text-white/45 hover:text-white/70"
               >
                 {popup.dismissDays === 1
-                  ? '오늘 하루 보지 않기'
-                  : `${popup.dismissDays}일 동안 보지 않기`}
+                  ? t('dismissToday')
+                  : t('dismissForDays', { days: popup.dismissDays })}
               </button>
             ) : (
               <span />
@@ -330,7 +332,7 @@ export default function SitePopup() {
               onClick={close}
               className="rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/15"
             >
-              닫기
+              {t('close')}
             </button>
           </div>
         </motion.div>

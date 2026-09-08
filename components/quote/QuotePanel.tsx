@@ -11,7 +11,7 @@ import {
     ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight
 } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
@@ -38,7 +38,7 @@ import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
-import { MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
+import { MESHY_AI_DISCLAIMER_SHORT, MESHY_AI_DISCLAIMER_SHORT_EN } from '@/lib/meshy-disclaimer'
 
 type PrintSpecs = {
     fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
@@ -131,6 +131,7 @@ const defaultQuoteDetail = {
 
 export default function QuotePanel({ embedded = false, initialQuote, reloadQuoteId, guideSource, guideTopic }: QuotePanelProps) {
     const t = useTranslations('QuotePanel')
+    const locale = useLocale()
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
@@ -1176,7 +1177,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-400/25 text-amber-50">
                             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-300" />
                             <p className="text-[11px] sm:text-[12px] font-bold leading-relaxed break-keep">
-                                {MESHY_AI_DISCLAIMER_SHORT}
+                                {locale === 'en' ? MESHY_AI_DISCLAIMER_SHORT_EN : MESHY_AI_DISCLAIMER_SHORT}
                             </p>
                         </div>
                     )}

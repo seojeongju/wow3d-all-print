@@ -67,7 +67,32 @@
     "cookieBrand": "3D Cookie Hongdae",
     "getQuote": "Get a quote",
     "learnMore": "Learn more",
-    "contactUs": "Contact us"
+    "contactUs": "Contact us",
+    "dragToMove": "Drag to move",
+    "closePopup": "Close popup",
+    "dismissToday": "Don't show today",
+    "dismissForDays": "Don't show for {days} days",
+    "close": "Close",
+    "sessionExpiredTitle": "Signed out",
+    "sessionExpiredDesc": "Please sign in again.",
+    "sessionExpiredLong": "Your session has expired. Please sign in again.",
+    "sessionInvalid": "Your sign-in is no longer valid. Please sign in again.",
+    "toastUnknownError": "Something went wrong. Please try again shortly.",
+    "toastNetworkTitle": "Network error",
+    "toastNetworkDesc": "Could not reach the server. Check your connection.",
+    "toastAuthTitle": "Permission or session error",
+    "toastAuthDesc": "Your session expired or you lack access. Please sign in again.",
+    "naverTalkShort": "Naver TalkTalk",
+    "naverBlog": "Naver Blog",
+    "naverBand": "Naver Band",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+    "eduCenterTitle": "WOW3D Hongdae Education Center",
+    "eduCenterAria": "Open WOW3D Hongdae Education Center",
+    "officialSiteTitle": "WOW3D Co., Ltd. website",
+    "officialSiteAria": "Open WOW3D Co., Ltd. website",
+    "talkConsultTitle": "Naver TalkTalk chat",
+    "talkConsultAria": "Open Naver TalkTalk live chat"
   },
   "Home": {
     "comingSoon": "English home content is rolling out. Use Quote and Services from the menu.",
@@ -292,7 +317,26 @@
       },
       "finalTitle": "Final step: pay & print",
       "finalDesc": "Once the quote is confirmed, industrial printers start precision production."
-    }
+    },
+    "marqueeItems": [
+      "PLA",
+      "ABS",
+      "PETG",
+      "TPU",
+      "Nylon",
+      "Standard Resin",
+      "Tough Resin",
+      "FDM",
+      "SLA precision",
+      "DLP high-speed",
+      "Prototype service",
+      "Graduation projects",
+      "Small-batch production",
+      "Post-processing"
+    ],
+    "metaTitle": "3D Printing · On-demand Output & Prototypes | WOW3D",
+    "metaDescription": "WOW3D 3D printing & prototypes. Instant quotes for STL·OBJ·3MF·PLY; STEP·STP auto-convert. From prototypes to small-batch production.",
+    "ogImageAlt": "WOW3D 3D printing and prototype manufacturing"
   },
   "Services": {
     "eyebrow": "WOW3D PRO Services",
@@ -979,15 +1023,35 @@
     "listSchemaName": "WOW3D makerspaces (production centers)",
     "centers": {
       "hongdae": {
-        "name": "Hongdae Center"
+        "name": "Hongdae Center",
+        "label": "Seoul · Hongdae",
+        "address": "93 Dokmak-ro, Mapo-gu, Seoul",
+        "addressDetail": "4F, Sangsu Building",
+        "hours": "Weekdays 09:00 – 18:00",
+        "transit": "Near Sangsu · Hapjeong Station"
       },
       "gumi": {
-        "name": "Gumi Center"
+        "name": "Gumi Center",
+        "label": "Gyeongbuk · Gumi",
+        "address": "253 Sanho-daero, Gumi, Gyeongbuk",
+        "addressDetail": "Room 606, Gumi Advanced Medical Tech Tower",
+        "hours": "Weekdays 09:00 – 18:00",
+        "transit": "Gongdan-dong · Sanho-daero"
       },
       "jeonju": {
-        "name": "Jeonju Center"
+        "name": "Jeonju Center",
+        "label": "Jeonbuk · Jeonju",
+        "address": "109 Bannyong-ro, Deokjin-gu, Jeonju, Jeonbuk",
+        "addressDetail": "Room 207, Techno-vil Building A",
+        "hours": "Weekdays 09:00 – 18:00",
+        "transit": "Deokjin-gu · Bannyong-ro"
       }
-    }
+    },
+    "mapLoading": "Loading map",
+    "mapAlt": "{name} location map",
+    "mapError": "Could not load the map. Please open Kakao Map.",
+    "kakaoMapLabel": "Kakao Map",
+    "directionsLabel": "Directions"
   },
   "PrintMethods": {
     "metaTitle": "Compare FDM, SLA & DLP 3D printing methods",

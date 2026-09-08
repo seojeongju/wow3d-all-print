@@ -10,12 +10,23 @@ import { MAKERSPACES } from '@/lib/makerspaces'
 export default function Footer() {
     const t = useTranslations('Footer')
     const tCommon = useTranslations('Common')
+    const tMs = useTranslations('Makerspace')
     const [mounted, setMounted] = useState(false)
     const talkUrl = getNaverTalkTalkChatUrl()
 
     useEffect(() => {
         setMounted(true)
     }, [])
+
+    const socialLinks = [
+        ...(talkUrl
+            ? [{ name: tCommon('naverTalkShort'), url: talkUrl, icon: MessageCircle }]
+            : []),
+        { name: tCommon('naverBlog'), url: 'https://blog.naver.com/3dcookiehd', icon: BookOpen },
+        { name: tCommon('naverBand'), url: 'https://www.band.us/@3dcookiehd', icon: Users },
+        { name: tCommon('instagram'), url: 'https://www.instagram.com/3dcookie_hd/', icon: Instagram },
+        { name: tCommon('facebook'), url: 'https://ko-kr.facebook.com/3dfabcafe/', icon: Facebook },
+    ] as const
     return (
         <footer className="relative overflow-hidden pt-16 sm:pt-24 pb-8 sm:pb-12 border-t border-white/5">
             {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
@@ -54,15 +65,7 @@ export default function Footer() {
                         </p>
 
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                            {[
-                                ...(talkUrl
-                                    ? [{ name: '네이버 톡톡 상담', url: talkUrl, icon: MessageCircle }]
-                                    : []),
-                                { name: '네이버 블로그', url: 'https://blog.naver.com/3dcookiehd', icon: BookOpen },
-                                { name: '네이버 밴드', url: 'https://www.band.us/@3dcookiehd', icon: Users },
-                                { name: '인스타그램', url: 'https://www.instagram.com/3dcookie_hd/', icon: Instagram },
-                                { name: '페이스북', url: 'https://ko-kr.facebook.com/3dfabcafe/', icon: Facebook },
-                            ].map(({ name, url, icon: Icon }, i) => (
+                            {socialLinks.map(({ name, url, icon: Icon }, i) => (
                                 <a key={i} href={url} target="_blank" rel="noopener noreferrer" aria-label={name} title={name} className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/30 hover:text-teal-400 hover:border-teal-500/30 hover:bg-teal-500/10 transition-all active:scale-95">
                                     <Icon className="w-4 h-4" />
                                 </a>
@@ -87,12 +90,14 @@ export default function Footer() {
                                     <li key={item.id}>
                                         <Link href={`/makerspace#${item.id}`} className="group block">
                                             <div className="text-[10px] sm:text-[11px] font-black text-white/50 group-hover:text-teal-400 transition-colors flex items-center gap-1">
-                                                {item.name}
+                                                {tMs(`centers.${item.id}.name`)}
                                                 <ArrowUpRight className="w-2 sm:w-2.5 h-2 sm:h-2.5 opacity-0 group-hover:opacity-100 transition-all" />
                                             </div>
                                             <p className="text-[9px] sm:text-[10px] text-white/20 mt-0.5 font-medium">
-                                                {item.address}
-                                                {item.addressDetail ? ` ${item.addressDetail}` : ''}
+                                                {tMs(`centers.${item.id}.address`)}
+                                                {tMs(`centers.${item.id}.addressDetail`)
+                                                    ? ` ${tMs(`centers.${item.id}.addressDetail`)}`
+                                                    : ''}
                                             </p>
                                         </Link>
                                     </li>

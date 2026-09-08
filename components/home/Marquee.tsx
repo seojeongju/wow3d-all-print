@@ -1,14 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-
-const items = [
-    "PLA", "ABS", "PETG", "TPU", "Nylon", "Standard Resin", "Tough Resin",
-    "FDM 방식", "SLA 정밀 출력", "DLP 고속 출력", "시제품제작 서비스",
-    "졸업작품", "대량 생산", "후가공 서비스"
-];
+import { useTranslations } from 'next-intl';
 
 export default function Marquee() {
+    const t = useTranslations('Home');
+    const items = (t.raw('marqueeItems') as string[]) || [];
+
     return (
         <div className="py-8 bg-foreground/5 border-y border-border overflow-hidden flex select-none">
             <motion.div

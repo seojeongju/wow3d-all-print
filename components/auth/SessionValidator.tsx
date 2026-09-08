@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/useAuthStore';
 import { isTokenExpired, validateAuthToken } from '@/lib/auth-session';
 import { showToast } from '@/lib/toast-helper';
@@ -9,6 +10,8 @@ import { showToast } from '@/lib/toast-helper';
 /** 로그인 상태 UI와 JWT 만료를 동기화 (admin/auth 페이지 제외) */
 export default function SessionValidator() {
     const pathname = usePathname();
+    const locale = useLocale();
+    const t = useTranslations('Common');
     const { isAuthenticated, token, logout } = useAuthStore();
     const checkedRef = useRef<string | null>(null);
 
@@ -22,7 +25,7 @@ export default function SessionValidator() {
         const syncSession = async () => {
             if (isTokenExpired(token)) {
                 logout({ keepCart: true });
-                showToast.info('로그인 만료', '다시 로그인해 주세요.');
+                showToast.info(t('sessionExpiredTitle'), t('sessionExpiredDesc'), locale);
                 checkedRef.current = cacheKey;
                 return;
             }
@@ -31,17 +34,18 @@ export default function SessionValidator() {
             if (!result.ok && result.reason !== 'network_error') {
                 logout({ keepCart: true });
                 showToast.info(
-                    '로그인 만료',
+                    t('sessionExpiredTitle'),
                     result.reason === 'token_expired'
-                        ? '세션이 만료되었습니다. 다시 로그인해 주세요.'
-                        : '로그인 정보가 유효하지 않습니다. 다시 로그인해 주세요.'
+                        ? t('sessionExpiredLong')
+                        : t('sessionInvalid'),
+                    locale
                 );
             }
             checkedRef.current = cacheKey;
         };
 
         void syncSession();
-    }, [isAuthenticated, token, pathname, logout]);
+    }, [isAuthenticated, token, pathname, logout, t, locale]);
 
     return null;
 }

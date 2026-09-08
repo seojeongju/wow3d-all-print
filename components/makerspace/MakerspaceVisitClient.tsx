@@ -42,6 +42,11 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
     )
 
     const centerName = (id: MakerspaceId) => t(`centers.${id}.name`)
+    const centerLabel = (id: MakerspaceId) => t(`centers.${id}.label`)
+    const centerAddress = (id: MakerspaceId) => t(`centers.${id}.address`)
+    const centerAddressDetail = (id: MakerspaceId) => t(`centers.${id}.addressDetail`)
+    const centerHours = (id: MakerspaceId) => t(`centers.${id}.hours`)
+    const centerTransit = (id: MakerspaceId) => t(`centers.${id}.transit`)
 
     useEffect(() => {
         const fromHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : ''
@@ -82,9 +87,10 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
     }
 
     const copyAddress = async () => {
-        const text = active.addressDetail
-            ? `${active.address} ${active.addressDetail}`
-            : active.address
+        const detail = centerAddressDetail(active.id)
+        const text = detail
+            ? `${centerAddress(active.id)} ${detail}`
+            : centerAddress(active.id)
         try {
             await navigator.clipboard.writeText(text)
             setCopied(true)
@@ -160,7 +166,7 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                                         isActive ? 'text-teal-300' : 'text-white/35',
                                                     )}
                                                 >
-                                                    {center.label}
+                                                    {centerLabel(center.id)}
                                                 </p>
                                                 <p
                                                     className={cn(
@@ -171,8 +177,10 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                                     {centerName(center.id)}
                                                 </p>
                                                 <p className="mt-1.5 text-xs font-medium text-white/45 sm:text-sm">
-                                                    {center.address}
-                                                    {center.addressDetail ? ` ${center.addressDetail}` : ''}
+                                                    {centerAddress(center.id)}
+                                                    {centerAddressDetail(center.id)
+                                                        ? ` ${centerAddressDetail(center.id)}`
+                                                        : ''}
                                                 </p>
                                             </div>
                                             <MapPin
@@ -195,9 +203,9 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                     <li className="flex items-start gap-2.5">
                                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-teal-400" aria-hidden />
                                         <span>
-                                            {active.address}
-                                            {active.addressDetail ? (
-                                                <span className="text-white/45"> · {active.addressDetail}</span>
+                                            {centerAddress(active.id)}
+                                            {centerAddressDetail(active.id) ? (
+                                                <span className="text-white/45"> · {centerAddressDetail(active.id)}</span>
                                             ) : null}
                                         </span>
                                     </li>
@@ -212,13 +220,13 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                     {active.hours ? (
                                         <li className="flex items-center gap-2.5">
                                             <Clock3 className="h-4 w-4 shrink-0 text-teal-400" aria-hidden />
-                                            <span>{active.hours}</span>
+                                            <span>{centerHours(active.id)}</span>
                                         </li>
                                     ) : null}
                                     {active.transit ? (
                                         <li className="flex items-center gap-2.5">
                                             <TrainFront className="h-4 w-4 shrink-0 text-teal-400" aria-hidden />
-                                            <span>{active.transit}</span>
+                                            <span>{centerTransit(active.id)}</span>
                                         </li>
                                     ) : null}
                                 </ul>

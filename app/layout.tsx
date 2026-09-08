@@ -5,10 +5,7 @@ import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
-import SessionValidator from "@/components/auth/SessionValidator";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
-import EducationQuickMenu from "@/components/layout/EducationQuickMenu";
-import SitePopup from "@/components/popup/SitePopup";
 import {
   absoluteUrl,
   buildOgImages,
@@ -134,14 +131,11 @@ export default async function RootLayout({
           }}
         />
         <ClearCartWhenGuest />
-        <SessionValidator />
         <Suspense fallback={null}>
           <TrafficTracker />
         </Suspense>
         {children}
         <Toaster />
-        <EducationQuickMenu />
-        <SitePopup />
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, ExternalLink, Globe2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon';
 import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk';
 
@@ -139,14 +140,21 @@ function QuickLinkButton({
  */
 export default function EducationQuickMenu() {
     const pathname = usePathname();
+    const t = useTranslations('Common');
     const talkUrl = getNaverTalkTalkChatUrl();
     const isAdmin = pathname?.startsWith('/admin');
     const isQuotePage =
-        pathname === '/quote' || pathname?.startsWith('/quote/');
+        pathname === '/quote' ||
+        pathname?.startsWith('/quote/') ||
+        pathname === '/en/quote' ||
+        pathname?.startsWith('/en/quote/');
 
     /** 3D 뷰어 우측 메뉴(스크린샷·치수·뷰 프리셋·팔레트)와 겹치는 페이지 */
     const isViewerPage =
-        pathname === '/experience' || pathname?.startsWith('/experience/');
+        pathname === '/experience' ||
+        pathname?.startsWith('/experience/') ||
+        pathname === '/en/experience' ||
+        pathname?.startsWith('/en/experience/');
 
     // 견적 받기 페이지에서는 사이트 연결 아이콘 비표시
     if (isAdmin || isQuotePage) return null;
@@ -157,16 +165,16 @@ export default function EducationQuickMenu() {
         {
             href: 'https://3dcookiehd.com/',
             eyebrow: 'Education Center',
-            title: '와우3D홍대교육센터',
-            ariaLabel: '와우3D홍대교육센터 바로가기',
+            title: t('eduCenterTitle'),
+            ariaLabel: t('eduCenterAria'),
             accent: 'teal',
             icon: <GraduationCap className="w-5 h-5" />,
         },
         {
             href: 'https://wow3dsw.co.kr/',
             eyebrow: 'Official Site',
-            title: '(주)와우쓰리디 홈페이지',
-            ariaLabel: '(주)와우쓰리디 홈페이지 바로가기',
+            title: t('officialSiteTitle'),
+            ariaLabel: t('officialSiteAria'),
             accent: 'teal',
             icon: <Globe2 className="w-5 h-5" strokeWidth={2.1} />,
         },
@@ -175,8 +183,8 @@ export default function EducationQuickMenu() {
                   {
                       href: talkUrl,
                       eyebrow: 'Live Chat',
-                      title: '네이버 톡톡 상담',
-                      ariaLabel: '네이버 톡톡 실시간 상담',
+                      title: t('talkConsultTitle'),
+                      ariaLabel: t('talkConsultAria'),
                       accent: 'naver' as const,
                       iconShape: 'circle' as const,
                       icon: <NaverTalkTalkIcon className="w-5 h-5" />,
