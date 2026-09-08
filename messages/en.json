@@ -1460,6 +1460,249 @@
     "showcaseSchemaName": "Photo → AI 3D conversion and print examples",
     "showcaseSchemaDescription": "WOW3D workflow examples from product photos to AI 3D models and 3D printing"
   },
+  "QuoteGuide": {
+    "metaTitle": "How 3D printing costs are calculated · quote guide",
+    "metaDescription": "Learn how WOW3D auto quotes work—layer height, infill, materials, and finishing, and how they affect price and print time.",
+    "ogTitle": "How 3D printing costs are calculated | Quote guide",
+    "ogDescription": "A clear guide to quote factors: layer height, infill, materials, and post-processing—and how they affect price and lead time.",
+    "articleHeadline": "3D printing quote calculation guide",
+    "articleDescription": "How layer height, infill, materials, and finishing affect price and print time in WOW3D auto quotes.",
+    "eyebrow": "Pricing Guide",
+    "h1Line1": "How is a 3D printing quote",
+    "h1Accent": "actually calculated?",
+    "intro": "WOW3D auto quotes combine material cost, machine time, layer height, infill density, supports, and finishing. This page explains price and lead time in plain language—based on questions customers ask most.",
+    "cards": [
+      {
+        "title": "Print process",
+        "body": "FDM, SLA, and DLP use different machine rates and materials, so the same model can quote differently."
+      },
+      {
+        "title": "Layer & infill",
+        "body": "Finer layers and higher infill increase material use and print time—and therefore price."
+      },
+      {
+        "title": "Print time",
+        "body": "Machine time is a core quote driver and can vary widely with layer height and geometry."
+      }
+    ],
+    "criteriaTitle": "What drives a WOW3D auto quote",
+    "criteriaBody": "3D printing cost is not size alone. Upload a file and WOW3D calculates volume, surface area, dimensions, process, layer height, infill, and finishing in real time.",
+    "criteriaItems": [
+      "Material: scales with filament or resin usage",
+      "Machine time: print duration × process hourly rate",
+      "Options: supports, finishing, special requirements",
+      "Review adjustments: complex geometry, specialty materials, or deadline needs"
+    ],
+    "layerTitle": "Layer height vs print time",
+    "layerBody": "Lower layer heights need more layers, so print time goes up. For example FDM at 0.1 mm needs more layers and longer machine time than 0.2 mm—better surface detail, often a higher quote.",
+    "layerNote": "0.1 mm: detail first / 0.2 mm: standard / 0.3 mm: speed first",
+    "faqTitle": "Frequently asked questions",
+    "faqs": [
+      {
+        "q": "How is a 3D printing quote calculated?",
+        "a": "WOW3D auto quotes combine material cost, machine time, layer height, infill, supports, and finishing. Time formulas and cost lines differ for FDM vs SLA/DLP."
+      },
+      {
+        "q": "Why does a lower layer height cost more?",
+        "a": "Lower layers mean more layers for the same height, so print time increases. FDM at 0.1 mm needs more layers and longer machine time than 0.2 mm."
+      },
+      {
+        "q": "What is the difference between 20% and 100% infill?",
+        "a": "Infill is internal density. Higher infill uses more material and time—raising the quote—but can suit parts that need strength and durability."
+      },
+      {
+        "q": "Should I choose FDM, SLA, or DLP?",
+        "a": "Functional prototypes and durable parts usually fit FDM; surface quality and fine detail favor SLA or DLP. The best process depends on the goal, even for the same shape."
+      },
+      {
+        "q": "Can the auto quote differ from the final price?",
+        "a": "Most typical models quote quickly, but complex geometry, specialty materials, finishing, or file issues may need admin review and a revised quote."
+      },
+      {
+        "q": "Can I get a quote without a 3D model file?",
+        "a": "Yes. Upload a product photo (JPG/PNG), generate an AI 3D model, then continue to auto quote. For tight dimensional or assembly tolerances, prefer STL or STEP."
+      }
+    ],
+    "ctaTitle": "Get an auto quote now",
+    "ctaBody": "Upload STL, OBJ, or 3MF—or if you have no 3D file, use a product photo for AI 3D modeling, then check the quote.",
+    "ctaQuote": "Get a quote",
+    "ctaPhoto": "Photo → 3D quote",
+    "ctaMethods": "Compare processes"
+  },
+  "FilePrepGuide": {
+    "metaTitle": "3D printing file preparation guide",
+    "metaDescription": "Checklist before upload: formats (STL, OBJ, 3MF, STEP), size, wall thickness, mesh errors, orientation, and tolerances for 3D printing quotes.",
+    "ogTitle": "3D printing file preparation guide",
+    "ogDescription": "What to check before uploading STL, OBJ, 3MF, or STEP—format, size, thickness, mesh, and tolerances.",
+    "articleHeadline": "3D printing file preparation guide",
+    "articleDescription": "How to prepare file format, thickness, mesh integrity, orientation, and units before an auto quote.",
+    "breadcrumbCurrent": "File preparation guide",
+    "eyebrow": "File Guide",
+    "h1Line1": "Before you print",
+    "h1Accent": "how should you prepare the file?",
+    "intro": "Clean files make auto quotes and production review faster. This guide covers the most common misses when preparing STL, OBJ, 3MF, and STEP files.",
+    "cards": [
+      {
+        "title": "File format",
+        "body": "STL, OBJ, and 3MF are the most common and analyze reliably for auto quotes."
+      },
+      {
+        "title": "Thickness & mesh",
+        "body": "Thin walls, open meshes, and flipped normals often cause print failures."
+      },
+      {
+        "title": "Intent",
+        "body": "Tell us if it is for looks or a functional part—process and lead-time guidance get more accurate."
+      }
+    ],
+    "checklistTitle": "Pre-upload checklist",
+    "checklistItems": [
+      "Confirm units are in mm",
+      "Confirm final size and dimensions match intent",
+      "Check walls are not too thin",
+      "Confirm the mesh is watertight and free of bad faces",
+      "For assemblies, allow for fit and tolerances",
+      "Share finishing, paint, and surface requirements"
+    ],
+    "photoTitle": "No 3D file—only a photo?",
+    "photoBody": "Without STL or STEP you can still generate an AI 3D model from a product photo (JPG/PNG) and continue to quote and order. Great for shape checks and prototypes; for tight assembly or dimensional tolerances, prefer CAD upload or a modeling request.",
+    "ctaPhoto": "Make 3D from a photo",
+    "ctaPhotoGuide": "Photo → 3D guide",
+    "faqTitle": "Frequently asked questions",
+    "faqs": [
+      {
+        "q": "Which file format is best for a quote?",
+        "a": "STL, OBJ, 3MF, and PLY support instant auto quotes. STEP/STP convert on upload. STL is most common for geometry alone; OBJ or 3MF help when color or metadata matters."
+      },
+      {
+        "q": "Why won’t it print even though the file opens?",
+        "a": "Often the mesh is not closed, faces are flipped, or walls are too thin for printing. Looking fine visually does not guarantee printability."
+      },
+      {
+        "q": "Can I upload STEP files?",
+        "a": "Yes. STEP/STP convert on upload for quoting. If conversion is hard or geometry is complex, also prepare STL or 3MF."
+      },
+      {
+        "q": "What if I only have a photo?",
+        "a": "Use photo → AI 3D in auto quote to build an STL from JPG/PNG, then quote and order. For tight tolerances, consider a modeling request."
+      }
+    ],
+    "bottomTitle": "File ready? Check the quote next",
+    "bottomBody": "After upload, switch processes and materials to compare estimated time and price in real time.",
+    "ctaQuote": "Get a quote",
+    "ctaCompare": "Compare processes",
+    "howToName": "How to prepare a file before 3D printing upload",
+    "howToDescription": "Basic steps to prepare a file for auto quote and production review.",
+    "howToSteps": [
+      {
+        "name": "Check file format",
+        "text": "Confirm a mesh-based format such as STL, OBJ, or 3MF."
+      },
+      {
+        "name": "Check size and units",
+        "text": "Confirm mm units and that the build size matches intent."
+      },
+      {
+        "name": "Review thickness and mesh errors",
+        "text": "Fix thin walls, holes, flipped normals, and bad faces."
+      },
+      {
+        "name": "Note print intent",
+        "text": "Say whether it is visual or functional, and if finishing is needed."
+      }
+    ]
+  },
+  "ProcessCompareGuide": {
+    "metaTitle": "3D printing process comparison — FDM vs SLA vs DLP vs SLS vs PolyJet",
+    "metaDescription": "Compare FDM·SLA·DLP (offered by WOW3D) with powder bed fusion (SLS/SLM/DMLS) and material jetting (PolyJet/MJP)—use cases, surface quality, and cost at a glance.",
+    "ogTitle": "3D printing process comparison guide",
+    "ogDescription": "Compare FDM·SLA·DLP with SLS/SLM/DMLS and PolyJet/MJP—differences and recommended uses.",
+    "eyebrow": "Compare Guide",
+    "h1Line1": "3D printing processes—",
+    "h1Accent": "what’s the difference?",
+    "intro": "Compare WOW3D’s FDM·SLA·DLP with industry powder bed (SLS/SLM/DMLS) and material jetting (PolyJet/MJP) on one page. Cost, surface quality, strength, and supports decide the right process.",
+    "tableTitle": "All processes at a glance",
+    "tableNote": "SLS/SLM/DMLS and PolyJet/MJP are reference processes not offered directly by WOW3D. For similar needs we suggest FDM·SLA·DLP alternatives or a production consult.",
+    "colItem": "Item",
+    "allCompareRows": [
+      {
+        "label": "Best for",
+        "fdm": "Functional prototypes & assembly",
+        "sla": "Looks & precision models",
+        "dlp": "Small precision & repeats",
+        "powder": "Metal, complex shapes, low-volume",
+        "jetting": "High-res looks & multi-color"
+      },
+      {
+        "label": "Surface quality",
+        "fdm": "Fair (layer lines possible)",
+        "sla": "Very high",
+        "dlp": "Very high",
+        "powder": "By material & finish",
+        "jetting": "Best-in-class"
+      },
+      {
+        "label": "Mechanical strength",
+        "fdm": "High",
+        "sla": "By material",
+        "dlp": "By material",
+        "powder": "Very high (metals possible)",
+        "jetting": "By use (limited)"
+      },
+      {
+        "label": "Supports",
+        "fdm": "Required",
+        "sla": "Required",
+        "dlp": "Required",
+        "powder": "Not required",
+        "jetting": "Required"
+      },
+      {
+        "label": "Cost efficiency",
+        "fdm": "Excellent",
+        "sla": "Moderate",
+        "dlp": "Moderate",
+        "powder": "Higher cost",
+        "jetting": "Higher cost"
+      },
+      {
+        "label": "WOW3D offer",
+        "fdm": "Offered",
+        "sla": "Offered",
+        "dlp": "Offered",
+        "powder": "Reference only",
+        "jetting": "Reference only"
+      }
+    ],
+    "wowEyebrow": "Offered by WOW3D",
+    "wowTitle": "Processes you can quote and produce now",
+    "badgeProvided": "Offered",
+    "refEyebrow": "Reference",
+    "refTitle": "Other 3D printing processes (reference)",
+    "badgeInfo": "Info only",
+    "tipsTitle": "How to choose",
+    "tips": [
+      {
+        "strong": "Functional tests & assembly parts",
+        "rest": " → FDM is usually the best value."
+      },
+      {
+        "strong": "Looks & fine detail",
+        "rest": " → Consider SLA or DLP."
+      },
+      {
+        "strong": "Complex shapes without supports · metal parts",
+        "rest": " → SLS/SLM/DMLS (reference) may fit."
+      },
+      {
+        "strong": "Multi-color · ultra high-res appearance models",
+        "rest": " → Review PolyJet/MJP (reference)."
+      }
+    ],
+    "ctaQuote": "Get an auto quote",
+    "ctaMethods": "View process details",
+    "ctaContact": "Production consult"
+  },
   "GuideChrome": {
     "breadcrumbHome": "Home",
     "breadcrumbGuides": "Guides",
