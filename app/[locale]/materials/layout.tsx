@@ -1,19 +1,58 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: '3D프린팅 소재 안내 | PLA·ABS·PETG·레진',
-    description:
-        '와우쓰리디 WOW3D 3D프린팅 소재 가이드. FDM(PLA, ABS, PETG, TPU)과 SLA·DLP 레진의 특징, 용도, 선택 기준을 확인하세요.',
-    alternates: { canonical: absoluteUrl('/materials') },
-    openGraph: {
-        title: '3D프린팅 소재 안내 | WOW3D',
-        description: 'PLA·ABS·PETG·TPU 및 레진 소재 비교. 시제품·기능 부품에 맞는 소재를 고르세요.',
-        url: absoluteUrl('/materials'),
-        type: 'website',
-    },
+type Props = {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
 }
 
-export default function MaterialsLayout({ children }: { children: React.ReactNode }) {
+function materialsPath(locale: AppLocale) {
+    return getPathname({ locale, href: '/materials' })
+}
+
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Materials' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = materialsPath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${materialsPath('ko')}`,
+                en: `${SITE_URL}${materialsPath('en')}`,
+                'x-default': `${SITE_URL}${materialsPath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('metaOgTitle'),
+            description: t('metaOgDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function MaterialsLayout({ children, params }: Props) {
+    const { locale: localeParam } = await params
+    setRequestLocale(resolveLocale(localeParam))
     return children
 }

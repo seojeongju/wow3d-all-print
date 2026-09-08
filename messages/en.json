@@ -731,5 +731,581 @@
         "desc": "Fine detail for minis, figures, and dioramas"
       }
     }
+  },
+  "Materials": {
+    "metaTitle": "3D Printing Materials | PLA·ABS·PETG·Resin",
+    "metaDescription": "WOW3D material guide. Compare FDM (PLA, ABS, PETG, TPU) and SLA·DLP resins—properties, uses, and how to choose.",
+    "metaOgTitle": "3D Printing Materials | WOW3D",
+    "metaOgDescription": "Compare PLA·ABS·PETG·TPU and resins. Pick the right material for prototypes and functional parts.",
+    "hero": {
+      "title": "Browse",
+      "titleAccent": "materials",
+      "subtitle": "What differs among PLA, ABS, and PETG? Which materials suit prototypes vs functional parts? How to choose resin vs filament—all in one place."
+    },
+    "byMethod": {
+      "title": "Key materials by process",
+      "fdm": "Strong, practical parts",
+      "sla": "Ultra-fine, smooth surfaces",
+      "dlp": "Complex fine detail"
+    },
+    "fdmGuide": {
+      "title": "Which is right: PLA, ABS, or PETG?",
+      "desc": "The three FDM filaments compared most often—strength, heat resistance, post-processing, and recommended uses.",
+      "compareLink": "Read the comparison guide",
+      "housingLink": "Materials for housings & cases",
+      "heatLink": "Materials for heat- & impact-resistant parts"
+    },
+    "resinGuide": {
+      "title": "How do Standard, Tough, Clear, and Flexible resins differ?",
+      "desc": "Which resin fits visual prototypes, functional tests, clear parts, or flexible parts—organized by search-style questions.",
+      "compareLink": "Read the resin comparison guide",
+      "clearLink": "Materials for transparent parts",
+      "miniatureLink": "Materials for precision models & figurines"
+    },
+    "materials": {
+      "pla": {
+        "nameKo": "Polylactic acid (PLA)",
+        "features": [
+          "Plant-based (corn, sugarcane); biodegradable and eco-friendly",
+          "Low shrink/warp—easy to print, beginner-friendly",
+          "Lightweight with a clean surface finish",
+          "Lower heat and impact resistance than ABS or PETG"
+        ],
+        "applications": [
+          "Prototypes & displays",
+          "Education & graduation projects",
+          "Packaging",
+          "Low-load parts & interiors"
+        ]
+      },
+      "abs": {
+        "nameKo": "Acrylonitrile butadiene styrene",
+        "features": [
+          "Excellent impact, durability, and heat resistance",
+          "Great for sanding, painting, bonding, and welding",
+          "Watch fumes and shrink while printing; ventilation needed"
+        ],
+        "applications": [
+          "Cases & housings",
+          "Automotive & appliance parts",
+          "Assembly & functional tests",
+          "Tooling & jigs"
+        ]
+      },
+      "petg": {
+        "nameKo": "Glycol-modified PET thermoplastic with improved durability, clarity, and processability",
+        "features": [
+          "Combines PLA and ABS strengths—stiffness, impact, heat",
+          "Clear / translucent grades available",
+          "Food- and medical-contact grades exist",
+          "Moisture management required"
+        ],
+        "applications": [
+          "Functional parts & protective cases",
+          "Medical / food-related structures",
+          "Outdoor & weather-resistant uses",
+          "Clear covers & windows"
+        ]
+      },
+      "tpu": {
+        "nameKo": "Thermoplastic polyurethane",
+        "features": [
+          "Rubber-like flex and elasticity (Shore A tens to ~90)",
+          "Abrasion-, oil-resistant; absorbs impact",
+          "Needs careful feed and print settings"
+        ],
+        "applications": [
+          "Grips, bushings, gaskets",
+          "Seals & tubing",
+          "Wearables & protectors",
+          "Shock-absorbing pads"
+        ]
+      },
+      "standard": {
+        "nameKo": "Standard resin",
+        "features": [
+          "Smooth surface and excellent detail",
+          "Wide color range; relatively economical",
+          "Lower impact/strength than Tough or engineering grades"
+        ],
+        "applications": [
+          "Visual prototypes & design validation",
+          "Jewelry & fashion accessories",
+          "Masters for silicone molds",
+          "Dioramas & figurines"
+        ]
+      },
+      "tough": {
+        "nameKo": "Tough resin",
+        "features": [
+          "High impact and tensile strength for functional tests",
+          "Suited to screws, fastening, and assembly",
+          "Higher cost and density than Standard"
+        ],
+        "applications": [
+          "Fit & function testing",
+          "Cases & housings",
+          "Tooling & jigs",
+          "Small-run functional parts"
+        ]
+      },
+      "clear": {
+        "nameKo": "Clear resin",
+        "features": [
+          "High transparency and visibility",
+          "Near glass-like clarity after polish/coat",
+          "May discolor with UV or heat"
+        ],
+        "applications": [
+          "Light covers & lens housings",
+          "Glass / window substitutes",
+          "Inspection & observation windows",
+          "Medical & lab equipment"
+        ]
+      },
+      "flexible": {
+        "nameKo": "Flexible resin",
+        "features": [
+          "Rubber-like toughness and deformation",
+          "Good for snaps, grips, and press-fits",
+          "Hardness varies with cure and storage"
+        ],
+        "applications": [
+          "Silicone mold / press pads",
+          "Grips & case inserts",
+          "Wearables & protectors",
+          "Sealing & cushioning"
+        ]
+      }
+    },
+    "cta": {
+      "titleBefore": "Found the right material?",
+      "titleAccent": "Smart quoting",
+      "titleAfter": "starts here.",
+      "subtitle": "Upload a file—no complex math—and get a precise quote instantly.",
+      "button": "Start a quote"
+    }
+  },
+  "Makerspace": {
+    "metaTitle": "Makerspace directions | Hongdae · Gumi · Jeonju",
+    "metaDescription": "Find WOW3D makerspaces (production centers). Locations and Kakao Map directions for Hongdae, Gumi, and Jeonju.",
+    "metaOgTitle": "Makerspace directions | WOW3D",
+    "metaOgDescription": "Hongdae, Gumi, and Jeonju center locations with Kakao Map directions",
+    "badge": "Makerspace · Directions",
+    "title": "Makerspace",
+    "titleAccent": "directions",
+    "subtitle": "Check Hongdae, Gumi, and Jeonju production center locations and get Kakao Map directions.",
+    "centerSelectAria": "Select a production center",
+    "centerGuide": "{name} info",
+    "copyAddress": "Copy address",
+    "copied": "Copied",
+    "copySuccessTitle": "Address copied",
+    "copyErrorTitle": "Copy failed",
+    "copyErrorDesc": "Please select and copy the address manually.",
+    "kakaoDirections": "Kakao directions",
+    "contact": "Contact us",
+    "mapCredit": "Map data © Kakao · Selecting a center switches the map location.",
+    "listSchemaName": "WOW3D makerspaces (production centers)",
+    "centers": {
+      "hongdae": {
+        "name": "Hongdae Center"
+      },
+      "gumi": {
+        "name": "Gumi Center"
+      },
+      "jeonju": {
+        "name": "Jeonju Center"
+      }
+    }
+  },
+  "PrintMethods": {
+    "metaTitle": "Compare FDM, SLA & DLP 3D printing methods",
+    "metaDescription": "Compare WOW3D FDM·SLA·DLP with powder bed fusion (SLS/SLM/DMLS) and material jetting (PolyJet/MJP)—use cases, materials, and surface quality.",
+    "breadcrumbHome": "Home",
+    "breadcrumbMethods": "Print methods",
+    "infoBadge": "Reference",
+    "viewDetail": "View details",
+    "providedBy": "Offered by WOW3D",
+    "referenceInfo": "Reference",
+    "viewService": "View service",
+    "compareGuide": "Compare guide",
+    "consultSimilar": "Ask about similar builds",
+    "principle": "How it works",
+    "mainMaterials": "Key materials",
+    "suitableUses": "Best for",
+    "strengths": "Strengths",
+    "notes": "Notes",
+    "heroTitleLine1": "3D printer",
+    "heroTitleAccent": "process comparison",
+    "heroSubtitle": "Compare WOW3D FDM·SLA·DLP with widely used powder bed (SLS/SLM/DMLS) and material jetting (PolyJet/MJP) processes.",
+    "ctaQuote": "Start auto quote",
+    "ctaGuide": "Process compare guide",
+    "tipFunctional": "Functional prototypes → FDM",
+    "tipAppearance": "Looks & fine detail → SLA / DLP",
+    "journeyTitle": "3 steps to choose a process",
+    "journey": {
+      "01": {
+        "title": "Compare processes",
+        "desc": "Review FDM·SLA·DLP traits and uses"
+      },
+      "02": {
+        "title": "Pick materials & options",
+        "desc": "Choose material and finishing for your goal"
+      },
+      "03": {
+        "title": "Auto quote",
+        "desc": "Upload a file for price and lead time"
+      }
+    },
+    "wowSectionEyebrow": "Offered by WOW3D",
+    "wowSectionTitle": "Processes you can quote and produce now",
+    "refSectionTitle": "Other 3D printing methods",
+    "refSectionDesc": "These processes are not offered directly by WOW3D; they are reference info for industry comparison. For similar needs we suggest FDM·SLA·DLP alternatives or a build consult.",
+    "compareWowTitle": "WOW3D process comparison",
+    "compareRefTitle": "Reference process comparison",
+    "compareRefSubtitle": "Powder bed · Material jetting",
+    "compareColItem": "Item",
+    "detailWowTitle": "Offered process details",
+    "detailRefTitle": "Other 3D printing methods",
+    "detailRefDesc": "Common industrial processes. WOW3D focuses on FDM·SLA·DLP; if you need the methods below we can discuss alternatives or partner options.",
+    "faqTitle": "FAQs before you choose a process",
+    "faqSubtitle": "From picking FDM·SLA·DLP to understanding powder bed and material jetting—common questions answered.",
+    "readGuide": "Read guide",
+    "bottomTitle": "Ready to print? Get a quote",
+    "bottomDesc": "Upload a file and choose FDM·SLA·DLP for a live quote and estimated lead time.",
+    "getQuote": "Get a quote",
+    "browseMaterials": "Browse materials",
+    "stats": {
+      "provided": "WOW3D processes",
+      "reference": "Reference",
+      "liveQuote": "Custom quote",
+      "liveValue": "Live"
+    },
+    "faqs": [
+      {
+        "q": "For functional prototypes, is FDM or SLA better?",
+        "a": "If you need fit checks, durability tests, or functional trials, FDM is usually better. If looks and fine detail matter more, choose SLA or DLP."
+      },
+      {
+        "q": "SLA and DLP look similar—what is the difference?",
+        "a": "Both are resin processes, but SLA cures point-by-point with a laser while DLP cures a full layer at once. For repeating small precision parts, DLP can be faster."
+      },
+      {
+        "q": "Which process is best when surface quality matters most?",
+        "a": "For smooth surfaces and fine detail, pick SLA or DLP. FDM is more economical but layer lines can show."
+      },
+      {
+        "q": "How do SLS·SLM·DMLS differ from FDM?",
+        "a": "Powder bed fusion can build complex shapes and metal parts without supports, but equipment and cost are higher. Everyday prototypes are often more economical with FDM·SLA·DLP."
+      },
+      {
+        "q": "What is the difference between PolyJet and SLA?",
+        "a": "Both deliver high resolution. PolyJet/MJP jets materials and excels at multi-color/multi-material; SLA photopolymerizes resin and is widely used for fine detail and clear materials."
+      }
+    ],
+    "compareRows": [
+      {
+        "label": "Best for",
+        "fdm": "Functional prototypes & assembly",
+        "sla": "Looks & precision models",
+        "dlp": "Small precision & repeats"
+      },
+      {
+        "label": "Surface quality",
+        "fdm": "Fair",
+        "sla": "Very high",
+        "dlp": "Very high"
+      },
+      {
+        "label": "Mechanical strength",
+        "fdm": "High",
+        "sla": "By material",
+        "dlp": "By material"
+      },
+      {
+        "label": "Cost efficiency",
+        "fdm": "Excellent",
+        "sla": "Moderate",
+        "dlp": "Moderate"
+      }
+    ],
+    "refCompareRows": [
+      {
+        "label": "Principle",
+        "powder": "Laser sinter/melt powder",
+        "jetting": "Fine liquid material jets"
+      },
+      {
+        "label": "Typical processes",
+        "powder": "SLS · SLM · DMLS",
+        "jetting": "PolyJet · MJP"
+      },
+      {
+        "label": "Strengths",
+        "powder": "No supports · metals possible",
+        "jetting": "High res · multi-color"
+      },
+      {
+        "label": "WOW3D",
+        "powder": "Info only",
+        "jetting": "Info only"
+      }
+    ],
+    "featured": [
+      {
+        "title": "3D printing process compare guide",
+        "desc": "Differences and recommended uses for FDM·SLA·DLP, SLS/SLM/DMLS, PolyJet/MJP, and more."
+      },
+      {
+        "title": "How quote pricing works",
+        "desc": "How layer height, material, infill, and finishing affect price and time."
+      }
+    ],
+    "methods": {
+      "fdm": {
+        "nameKo": "Fused Deposition Modeling",
+        "principle": "Solid filament is heated and melted in a nozzle, then deposited layer by layer on the bed. The most widely used 3D printing technology.",
+        "materials": [
+          "PLA",
+          "ABS",
+          "PETG",
+          "TPU",
+          "Nylon",
+          "PC"
+        ],
+        "strengths": [
+          "Strong cost efficiency",
+          "High mechanical strength & durability",
+          "Wide material choices",
+          "Great for functional tests & assembly parts"
+        ],
+        "weaknesses": [
+          "Layer lines may be visible",
+          "Surface precision lower than SLA·DLP"
+        ],
+        "uses": [
+          "Prototypes",
+          "Functional & durability tests",
+          "Assembly parts & tooling",
+          "Education & hobby builds"
+        ],
+        "specs": [
+          {
+            "label": "Surface quality",
+            "value": "Fair"
+          },
+          {
+            "label": "Durability",
+            "value": "High"
+          },
+          {
+            "label": "Print speed",
+            "value": "Fast"
+          },
+          {
+            "label": "Cost",
+            "value": "Economical"
+          }
+        ]
+      },
+      "sla": {
+        "nameKo": "Stereolithography",
+        "principle": "A UV laser scans and selectively cures liquid photopolymer resin layer by layer. Surfaces are smooth with excellent detail.",
+        "materials": [
+          "Standard resin",
+          "Tough resin",
+          "Clear resin",
+          "Flexible resin"
+        ],
+        "strengths": [
+          "Smooth surface & high detail",
+          "Complex shapes & fine features",
+          "Ideal for dental, jewelry & visual models"
+        ],
+        "weaknesses": [
+          "Resin cost & post-processing (wash & secondary cure)",
+          "Impact/heat resistance depend on material"
+        ],
+        "uses": [
+          "Design validation & visual prototypes",
+          "Jewelry, dental & medical models",
+          "Masters & silicone mold patterns",
+          "Precision prototypes"
+        ],
+        "specs": [
+          {
+            "label": "Surface quality",
+            "value": "Very high"
+          },
+          {
+            "label": "Durability",
+            "value": "By material"
+          },
+          {
+            "label": "Print speed",
+            "value": "Moderate"
+          },
+          {
+            "label": "Cost",
+            "value": "Mid-range"
+          }
+        ]
+      },
+      "dlp": {
+        "nameKo": "Digital Light Processing",
+        "principle": "A light source (projector/UV panel) cures an entire resin layer at once. Per-layer cure time is short, so builds can be faster than SLA.",
+        "materials": [
+          "Standard·Tough·Clear·Flexible resin"
+        ],
+        "strengths": [
+          "Fast per-layer cure",
+          "Good for many identical small parts",
+          "Excellent precision & surface quality"
+        ],
+        "weaknesses": [
+          "Build area limited by machine",
+          "Resin storage & handling required"
+        ],
+        "uses": [
+          "Dental, jewelry & small precision parts",
+          "Low- to mid-volume identical parts",
+          "Models where fine detail matters"
+        ],
+        "specs": [
+          {
+            "label": "Surface quality",
+            "value": "Very high"
+          },
+          {
+            "label": "Durability",
+            "value": "By material"
+          },
+          {
+            "label": "Print speed",
+            "value": "Fast"
+          },
+          {
+            "label": "Cost",
+            "value": "Mid-range"
+          }
+        ]
+      },
+      "powder-sintering": {
+        "nameKo": "Powder bed fusion",
+        "principle": "Powder is spread thin and selectively sintered or melted by laser to build layers. Complex shapes can be made without supports; applies to plastics (SLS) and metals (SLM·DMLS).",
+        "materials": [
+          "Nylon (PA12)",
+          "TPU",
+          "Aluminum",
+          "Titanium",
+          "Stainless steel",
+          "Inconel & other alloys"
+        ],
+        "strengths": [
+          "Complex internals & undercuts without supports",
+          "Strong heat resistance for functional tests (by material)",
+          "Useful for low-volume multi-SKU metal parts",
+          "Widely used in pre-production validation"
+        ],
+        "weaknesses": [
+          "Equipment & operating cost higher than FDM/resin",
+          "Surface roughness & accuracy depend on post-processing",
+          "Metal workflows need more setup, safety & finishing"
+        ],
+        "uses": [
+          "Functional prototypes & low-volume production",
+          "Metal parts for aerospace & medical",
+          "Hinges, clips & assembly structures",
+          "Internal channels & lattice structures"
+        ],
+        "specs": [
+          {
+            "label": "Surface quality",
+            "value": "By material & finish"
+          },
+          {
+            "label": "Durability",
+            "value": "Very high"
+          },
+          {
+            "label": "Print speed",
+            "value": "Moderate"
+          },
+          {
+            "label": "Cost",
+            "value": "High"
+          }
+        ],
+        "subtypes": [
+          {
+            "name": "SLS",
+            "description": "Selective Laser Sintering. Lasers sinter nylon/TPU powders. Common for plastic functional parts and prototypes."
+          },
+          {
+            "name": "SLM",
+            "description": "Selective Laser Melting. Fully melts metal powder into dense metal parts for aerospace, medical, and automotive uses."
+          },
+          {
+            "name": "DMLS",
+            "description": "Direct Metal Laser Sintering. Metal powder laser process name used by EOS and others; produces metal parts similar to SLM."
+          }
+        ]
+      },
+      "material-jetting": {
+        "nameKo": "Material jetting",
+        "principle": "Liquid material is finely jetted and cured to build layers. Multiple materials and colors can be combined in one build—strong for visual models and high-res appearance prototypes.",
+        "materials": [
+          "Acrylic-based resins",
+          "Rubber-like materials",
+          "Clear & multi-color resins",
+          "Medical / simulation materials"
+        ],
+        "strengths": [
+          "Very high resolution & smooth surfaces",
+          "Multi-material & full-color (PolyJet)",
+          "Great for design validation, medical & dental models",
+          "Excellent fine labels & textures"
+        ],
+        "weaknesses": [
+          "Large or high-volume jobs can be costly",
+          "Mechanical strength more limited than FDM/metal",
+          "Strong dependency on materials & machines"
+        ],
+        "uses": [
+          "High-res appearance prototypes",
+          "Multi-color & overmold mockups",
+          "Dental/medical guides & models",
+          "Design reviews & marketing samples"
+        ],
+        "specs": [
+          {
+            "label": "Surface quality",
+            "value": "Best-in-class"
+          },
+          {
+            "label": "Durability",
+            "value": "By use case"
+          },
+          {
+            "label": "Print speed",
+            "value": "Moderate"
+          },
+          {
+            "label": "Cost",
+            "value": "High"
+          }
+        ],
+        "subtypes": [
+          {
+            "name": "PolyJet",
+            "description": "Stratasys-family material jetting. Jets multiple materials/colors in one build for high-res multi-color models."
+          },
+          {
+            "name": "MJP",
+            "description": "Multi Jet Printing. Jet-based processes from 3D Systems and others for precise visual models and casting patterns in wax/resin."
+          }
+        ]
+      }
+    }
   }
 }

@@ -4,98 +4,71 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { motion } from 'framer-motion';
 import { Printer, Droplets, Zap, ArrowRight, Box, Layers, Shield } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 
-// FDM 소재
-const FDM_MATERIALS = [
-    {
-        id: 'pla',
-        name: 'PLA',
-        nameKo: '폴리폴리락트산',
-        color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30',
-        accent: 'text-emerald-500',
-        features: ['옥수수·사탕수수 등 식물 기반, 생분해·친환경', '수축·뒤틀림이 적어 인쇄가 쉽고 초보자에게 적합', '경량, 표면이 깨끗함', '내열·내충격은 ABS·PETG보다 낮음'],
-        applications: ['시제품·디스플레이', '교육·졸업작품', '패키징·포장', '저부하 부품·인테리어'],
-        methods: ['FDM'],
-    },
-    {
-        id: 'abs',
-        name: 'ABS',
-        nameKo: '아크릴로니트릴-부타디엔-스티렌',
-        color: 'from-amber-500/20 to-orange-500/10 border-amber-500/30',
-        accent: 'text-amber-500',
-        features: ['내충격·내구성·내열성 우수', '연마·도장·접착·용접 등 후가공에 적합', '인쇄 시 냄새·수축에 주의, 환기 필요'],
-        applications: ['케이스·하우징', '자동차·가전 부품', '조립·기능 시험', '툴링·지그'],
-        methods: ['FDM'],
-    },
-    {
-        id: 'petg',
-        name: 'PETG',
-        nameKo: '폴리에틸렌 테레프탈레이트(PET)에 글리콜을 첨가하여 내구성과 투명성, 가공성을 높인 열가소성 플라스틱',
-        color: 'from-blue-500/20 to-cyan-500/10 border-blue-500/30',
-        accent: 'text-blue-500',
-        features: ['PLA와 ABS의 장점을 겸비, 강성·내충격·내열', '투명·반투명 제형 가능', '식품·의료 접촉 등급 제품 존재', '습기 관리 필요'],
-        applications: ['기능 부품·보호 케이스', '의료·식품 관련 구조물', '야외·내후 용도', '투명 덮개·창'],
-        methods: ['FDM'],
-    },
-    {
-        id: 'tpu',
-        name: 'TPU',
-        nameKo: '열가소성 폴리우레탄',
-        color: 'from-pink-500/20 to-rose-500/10 border-pink-500/30',
-        accent: 'text-pink-500',
-        features: ['고무처럼 유연·탄성, 셔어 A 수십~90대', '내마모·내오일·충격 흡수', '인쇄 시 인피드·설정 신경 써야 함'],
-        applications: ['그립·부싱·갸스켓', '실링·튜브', '웨어러블·보호대', '충격 완화 패드'],
-        methods: ['FDM'],
-    },
+type MaterialMeta = {
+    id: 'pla' | 'abs' | 'petg' | 'tpu' | 'standard' | 'tough' | 'clear' | 'flexible';
+    name: string;
+    methods: string[];
+};
+
+const FDM_META: MaterialMeta[] = [
+    { id: 'pla', name: 'PLA', methods: ['FDM'] },
+    { id: 'abs', name: 'ABS', methods: ['FDM'] },
+    { id: 'petg', name: 'PETG', methods: ['FDM'] },
+    { id: 'tpu', name: 'TPU', methods: ['FDM'] },
 ];
 
-// 레진 소재 (SLA·DLP 공통)
-const RESIN_MATERIALS = [
-    {
-        id: 'standard',
-        name: 'Standard',
-        nameKo: '표준 레진',
-        color: 'from-violet-500/20 to-purple-500/10 border-violet-500/30',
-        accent: 'text-violet-500',
-        features: ['매끄러운 표면·뛰어난 디테일', '다양한 색상, 비교적 경제적', '내충격·강도는 Tough·엔지니어링 계열보다 낮음'],
-        applications: ['시각 프로토타입·디자인 검증', '보석·패션 악세서리', '마스터·실리콘 몰드 원형', '디오라마·피규어'],
-        methods: ['SLA', 'DLP'],
-    },
-    {
-        id: 'tough',
-        name: 'Tough',
-        nameKo: '고강도 레진',
-        color: 'from-slate-500/20 to-zinc-500/10 border-slate-500/30',
-        accent: 'text-slate-300',
-        features: ['내충격·인장 강도 우수, 기능 시험 용이', '나사·체결·조립에 적합', 'Standard보다 단가·비중 높음'],
-        applications: ['장착·기능 테스트', '케이스·하우징', '툴링·지그', '소량 기능 부품'],
-        methods: ['SLA', 'DLP'],
-    },
-    {
-        id: 'clear',
-        name: 'Clear',
-        nameKo: '투명 레진',
-        color: 'from-cyan-500/20 to-sky-500/10 border-cyan-500/30',
-        accent: 'text-cyan-400',
-        features: ['높은 투명도·시인성', '연마·코팅 후 유리-like 투명도', 'UV·열에 따라 변색 가능성'],
-        applications: ['등화·렌즈 덮개', '유리·창 대체', '시각 검사·관측 창', '의료·실험 장비'],
-        methods: ['SLA', 'DLP'],
-    },
-    {
-        id: 'flexible',
-        name: 'Flexible',
-        nameKo: '연성 레진',
-        color: 'from-lime-500/20 to-green-500/10 border-lime-500/30',
-        accent: 'text-lime-400',
-        features: ['고무에 가까운 인성·변형', '캐치·그립·압입에 적합', '경화·보관 조건에 따라 경도 차이'],
-        applications: ['실리콘 몰드·프레스 패드', '그립·케이스 내삽', '웨어러블·보호대', '밀봉·완충'],
-        methods: ['SLA', 'DLP'],
-    },
+const RESIN_META: MaterialMeta[] = [
+    { id: 'standard', name: 'Standard', methods: ['SLA', 'DLP'] },
+    { id: 'tough', name: 'Tough', methods: ['SLA', 'DLP'] },
+    { id: 'clear', name: 'Clear', methods: ['SLA', 'DLP'] },
+    { id: 'flexible', name: 'Flexible', methods: ['SLA', 'DLP'] },
 ];
 
 export default function MaterialsPage() {
+    const t = useTranslations('Materials');
+
+    const fdmMaterials = FDM_META.map((m) => ({
+        ...m,
+        nameKo: t(`materials.${m.id}.nameKo`),
+        features: t.raw(`materials.${m.id}.features`) as string[],
+        applications: t.raw(`materials.${m.id}.applications`) as string[],
+    }));
+
+    const resinMaterials = RESIN_META.map((m) => ({
+        ...m,
+        nameKo: t(`materials.${m.id}.nameKo`),
+        features: t.raw(`materials.${m.id}.features`) as string[],
+        applications: t.raw(`materials.${m.id}.applications`) as string[],
+    }));
+
+    const methodCards = [
+        {
+            title: 'FDM',
+            desc: t('byMethod.fdm'),
+            color: 'teal',
+            icon: <Printer className="w-5 h-5" />,
+            items: ['PLA', 'ABS', 'PETG', 'TPU'],
+        },
+        {
+            title: 'SLA',
+            desc: t('byMethod.sla'),
+            color: 'indigo',
+            icon: <Droplets className="w-5 h-5" />,
+            items: ['Standard', 'Tough', 'Clear', 'Flexible'],
+        },
+        {
+            title: 'DLP',
+            desc: t('byMethod.dlp'),
+            color: 'purple',
+            icon: <Zap className="w-5 h-5" />,
+            items: ['Standard', 'Tough', 'Clear', 'Flexible'],
+        },
+    ];
+
     return (
         <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-teal-500/30 overflow-hidden relative font-sans">
             <Header />
@@ -120,11 +93,11 @@ export default function MaterialsPage() {
                             Material Intelligence
                         </div>
                         <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] shadow-text">
-                            소재 <span className="text-teal-400">살펴보기</span>
+                            {t('hero.title')}{' '}
+                            <span className="text-teal-400">{t('hero.titleAccent')}</span>
                         </h1>
                         <p className="text-lg md:text-xl font-bold text-white/40 leading-relaxed break-keep max-w-2xl mx-auto">
-                            PLA, ABS, PETG 차이는 무엇인지, 어떤 소재가 시제품과 기능 부품에 적합한지,
-                            레진과 필라멘트는 어떤 기준으로 고르면 되는지 한 번에 확인할 수 있습니다.
+                            {t('hero.subtitle')}
                         </p>
                         <div className="flex flex-wrap justify-center gap-3 pt-2">
                             <Link href="/guides/pla-vs-abs-vs-petg" className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-teal-400/10 border border-teal-400/20 text-xs font-black text-teal-300 uppercase tracking-widest hover:text-white hover:bg-teal-400/15 transition-all">
@@ -152,14 +125,10 @@ export default function MaterialsPage() {
                         className="text-2xl font-black text-white/90 mb-12 flex items-center gap-4 px-2"
                     >
                         <Layers className="w-8 h-8 text-teal-400" />
-                        출력방식별 핵심 소재
+                        {t('byMethod.title')}
                     </motion.h2>
                     <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            { title: 'FDM', desc: '고강도 실용 부품', color: 'teal', icon: <Printer className="w-5 h-5" />, items: ['PLA', 'ABS', 'PETG', 'TPU'] },
-                            { title: 'SLA', desc: '초정밀 매끄러운 표면', color: 'indigo', icon: <Droplets className="w-5 h-5" />, items: ['Standard', 'Tough', 'Clear', 'Flexible'] },
-                            { title: 'DLP', desc: '복잡한 디테일 구현', color: 'purple', icon: <Zap className="w-5 h-5" />, items: ['Standard', 'Tough', 'Clear', 'Flexible'] }
-                        ].map((m, idx) => (
+                        {methodCards.map((m, idx) => (
                             <motion.div
                                 key={m.title}
                                 initial={{ opacity: 0, y: 20 }}
@@ -196,19 +165,19 @@ export default function MaterialsPage() {
                 <div className="container mx-auto px-6">
                     <div className="mb-10 rounded-[2rem] border border-teal-400/15 bg-teal-400/5 p-6 md:p-8">
                         <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-3">Popular Guide</p>
-                        <h2 className="text-2xl md:text-3xl font-black text-white mb-3">PLA, ABS, PETG 중 어떤 소재가 맞을까요?</h2>
+                        <h2 className="text-2xl md:text-3xl font-black text-white mb-3">{t('fdmGuide.title')}</h2>
                         <p className="text-white/60 break-keep leading-relaxed mb-5">
-                            FDM 소재 선택에서 가장 많이 비교되는 세 가지 필라멘트를 강도, 내열성, 후가공성, 추천 용도 기준으로 따로 정리했습니다.
+                            {t('fdmGuide.desc')}
                         </p>
                         <div className="flex flex-wrap gap-4">
                             <Link href="/guides/pla-vs-abs-vs-petg" className="inline-flex items-center gap-2 text-sm font-black text-teal-300 hover:text-white transition-colors">
-                                비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                                {t('fdmGuide.compareLink')} <ArrowRight className="w-4 h-4" />
                             </Link>
                             <Link href="/guides/best-materials-for-3d-printed-housings-and-cases" className="inline-flex items-center gap-2 text-sm font-black text-amber-300 hover:text-white transition-colors">
-                                하우징·케이스용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                                {t('fdmGuide.housingLink')} <ArrowRight className="w-4 h-4" />
                             </Link>
                             <Link href="/guides/best-materials-for-heat-resistant-and-impact-resistant-parts" className="inline-flex items-center gap-2 text-sm font-black text-rose-300 hover:text-white transition-colors">
-                                내열·내충격 부품용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                                {t('fdmGuide.heatLink')} <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
                     </div>
@@ -222,7 +191,7 @@ export default function MaterialsPage() {
                         FDM Materials
                     </motion.h2>
                     <div className="space-y-8">
-                        {FDM_MATERIALS.map((m, i) => (
+                        {fdmMaterials.map((m, i) => (
                             <motion.article
                                 key={m.id}
                                 initial={{ opacity: 0, y: 24 }}
@@ -281,19 +250,19 @@ export default function MaterialsPage() {
                 <div className="container mx-auto px-6">
                     <div className="mb-10 rounded-[2rem] border border-indigo-400/15 bg-indigo-400/5 p-6 md:p-8">
                         <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-300 mb-3">Popular Guide</p>
-                        <h2 className="text-2xl md:text-3xl font-black text-white mb-3">Standard, Tough, Clear, Flexible 레진은 어떻게 다를까요?</h2>
+                        <h2 className="text-2xl md:text-3xl font-black text-white mb-3">{t('resinGuide.title')}</h2>
                         <p className="text-white/60 break-keep leading-relaxed mb-5">
-                            외관 시제품, 기능 테스트, 투명 부품, 유연 부품에 어떤 레진이 적합한지 검색형 질문 기준으로 따로 정리했습니다.
+                            {t('resinGuide.desc')}
                         </p>
                         <div className="flex flex-wrap gap-4">
                             <Link href="/guides/standard-vs-tough-vs-clear-vs-flexible-resin" className="inline-flex items-center gap-2 text-sm font-black text-indigo-300 hover:text-white transition-colors">
-                                레진 비교 가이드 자세히 보기 <ArrowRight className="w-4 h-4" />
+                                {t('resinGuide.compareLink')} <ArrowRight className="w-4 h-4" />
                             </Link>
                             <Link href="/guides/best-materials-for-transparent-3d-printed-parts" className="inline-flex items-center gap-2 text-sm font-black text-cyan-300 hover:text-white transition-colors">
-                                투명 부품용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                                {t('resinGuide.clearLink')} <ArrowRight className="w-4 h-4" />
                             </Link>
                             <Link href="/guides/best-materials-for-miniatures-and-figurines" className="inline-flex items-center gap-2 text-sm font-black text-fuchsia-300 hover:text-white transition-colors">
-                                정밀 모형·피규어용 소재 추천 보기 <ArrowRight className="w-4 h-4" />
+                                {t('resinGuide.miniatureLink')} <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
                     </div>
@@ -307,7 +276,7 @@ export default function MaterialsPage() {
                         Resin Materials (SLA · DLP)
                     </motion.h2>
                     <div className="space-y-8">
-                        {RESIN_MATERIALS.map((m, i) => (
+                        {resinMaterials.map((m, i) => (
                             <motion.article
                                 key={m.id}
                                 initial={{ opacity: 0, y: 24 }}
@@ -373,16 +342,18 @@ export default function MaterialsPage() {
                     >
                         <div className="absolute inset-0 bg-teal-400/5 blur-3xl rounded-full opacity-30 pointer-events-none" />
                         <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-                            최적의 소재를 찾으셨나요?<br />
-                            <span className="text-teal-400">지능형 견적</span>을 시작하세요.
+                            {t('cta.titleBefore')}
+                            <br />
+                            <span className="text-teal-400">{t('cta.titleAccent')}</span>
+                            {t('cta.titleAfter')}
                         </h2>
                         <p className="text-lg font-bold text-white/40 max-w-xl mx-auto break-keep">
-                            복잡한 계산 없이 파일을 업로드하는 것만으로 즉시 정밀한 견적을 산출합니다.
+                            {t('cta.subtitle')}
                         </p>
                         <div className="pt-4">
                             <Link href="/quote">
                                 <Button size="lg" className="h-16 px-12 text-lg rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 gap-3 shadow-[0_0_30px_rgba(45,212,191,0.3)] transition-all active:scale-95">
-                                    견적 시작하기 <ArrowRight className="w-6 h-6" />
+                                    {t('cta.button')} <ArrowRight className="w-6 h-6" />
                                 </Button>
                             </Link>
                         </div>

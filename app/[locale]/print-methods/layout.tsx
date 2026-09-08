@@ -1,33 +1,78 @@
-import type { Metadata } from 'next';
-import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema';
-import { absoluteUrl } from '@/lib/site-url';
+import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: 'FDM, SLA, DLP 3D 프린팅 방식 비교',
-    description:
-        'WOW3D 제공 FDM·SLA·DLP와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 등 3D 프린팅 공정의 차이, 추천 용도, 소재, 표면 품질을 비교 안내합니다.',
-    alternates: { canonical: absoluteUrl('/print-methods') },
-    openGraph: {
-        title: 'FDM, SLA, DLP 3D 프린팅 방식 비교',
-        description:
-            'FDM·SLA·DLP 제작 공정과 SLS/SLM/DMLS, PolyJet/MJP 등 업계 주요 3D 프린팅 방식을 WOW3D가 비교 안내합니다.',
-        url: absoluteUrl('/print-methods'),
-    },
-};
+type Props = {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
+}
 
-export default function PrintMethodsLayout({ children }: { children: React.ReactNode }) {
+function printMethodsPath(locale: AppLocale) {
+    return getPathname({ locale, href: '/print-methods' })
+}
+
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'PrintMethods' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = printMethodsPath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: canonical,
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${printMethodsPath('ko')}`,
+                en: `${SITE_URL}${printMethodsPath('en')}`,
+                'x-default': `${SITE_URL}${printMethodsPath('ko')}`,
+            },
+        },
+    }
+}
+
+export default async function PrintMethodsLayout({ children, params }: Props) {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'PrintMethods' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = printMethodsPath(locale)
+    const homePath = locale === 'en' ? '/en' : '/'
+
     const schemas = [
         buildCollectionPageSchema({
-            name: 'FDM, SLA, DLP 3D 프린팅 방식 비교',
-            description:
-                'WOW3D 제공 FDM·SLA·DLP와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 등 3D 프린팅 공정의 차이와 추천 용도를 비교하는 안내 페이지입니다.',
-            path: '/print-methods',
+            name: title,
+            description,
+            path,
         }),
         buildBreadcrumbSchema([
-            { name: '홈', path: '/' },
-            { name: '출력 방식 비교', path: '/print-methods' },
+            { name: t('breadcrumbHome'), path: homePath },
+            { name: t('breadcrumbMethods'), path },
         ]),
-    ];
+    ]
 
     return (
         <>
@@ -37,5 +82,5 @@ export default function PrintMethodsLayout({ children }: { children: React.React
             />
             {children}
         </>
-    );
+    )
 }

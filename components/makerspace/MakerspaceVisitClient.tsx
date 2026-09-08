@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
     Clock3,
@@ -13,6 +11,7 @@ import {
     Phone,
     TrainFront,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import KakaoMapView from '@/components/makerspace/KakaoMapView'
@@ -22,6 +21,7 @@ import {
     getMakerspace,
     kakaoMapDirectionsUrl,
 } from '@/lib/makerspaces'
+import { Link, useRouter } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 import { showToast } from '@/lib/toast-helper'
 
@@ -30,6 +30,7 @@ type Props = {
 }
 
 export default function MakerspaceVisitClient({ initialId }: Props) {
+    const t = useTranslations('Makerspace')
     const router = useRouter()
     const firstValid = getMakerspace(initialId)?.id ?? MAKERSPACES[0].id
     const [activeId, setActiveId] = useState<MakerspaceId>(firstValid)
@@ -39,6 +40,8 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
         () => getMakerspace(activeId) ?? MAKERSPACES[0],
         [activeId],
     )
+
+    const centerName = (id: MakerspaceId) => t(`centers.${id}.name`)
 
     useEffect(() => {
         const fromHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : ''
@@ -85,10 +88,10 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
         try {
             await navigator.clipboard.writeText(text)
             setCopied(true)
-            showToast.success('주소 복사됨', text)
+            showToast.success(t('copySuccessTitle'), text)
             window.setTimeout(() => setCopied(false), 2000)
         } catch {
-            showToast.error('복사 실패', '주소를 직접 선택해 복사해 주세요.')
+            showToast.error(t('copyErrorTitle'), t('copyErrorDesc'))
         }
     }
 
@@ -111,14 +114,14 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                         className="mx-auto max-w-3xl text-center"
                     >
                         <p className="mb-4 text-[11px] font-black uppercase tracking-[0.28em] text-teal-400">
-                            Makerspace · Directions
+                            {t('badge')}
                         </p>
                         <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
-                            메이커스페이스
-                            <span className="text-teal-400"> 찾아오는길</span>
+                            {t('title')}
+                            <span className="text-teal-400"> {t('titleAccent')}</span>
                         </h1>
                         <p className="mx-auto mt-4 max-w-xl text-sm font-medium leading-relaxed text-white/50 break-keep sm:text-base">
-                            홍대·구미·전주 제작센터 위치를 확인하고 카카오맵으로 길을 안내받으세요.
+                            {t('subtitle')}
                         </p>
                     </motion.div>
 
@@ -130,7 +133,7 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                             transition={{ delay: 0.05 }}
                             className="space-y-3"
                             role="tablist"
-                            aria-label="제작센터 선택"
+                            aria-label={t('centerSelectAria')}
                         >
                             {MAKERSPACES.map((center) => {
                                 const isActive = center.id === activeId
@@ -165,7 +168,7 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                                         isActive ? 'text-white' : 'text-white/75',
                                                     )}
                                                 >
-                                                    {center.name}
+                                                    {centerName(center.id)}
                                                 </p>
                                                 <p className="mt-1.5 text-xs font-medium text-white/45 sm:text-sm">
                                                     {center.address}
@@ -185,7 +188,9 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                             })}
 
                             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                                <h2 className="text-sm font-black text-white">{active.name} 안내</h2>
+                                <h2 className="text-sm font-black text-white">
+                                    {t('centerGuide', { name: centerName(active.id) })}
+                                </h2>
                                 <ul className="mt-4 space-y-3 text-sm text-white/65">
                                     <li className="flex items-start gap-2.5">
                                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-teal-400" aria-hidden />
@@ -225,7 +230,7 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                         className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2.5 text-xs font-bold text-white/85 transition hover:border-white/25 hover:text-white"
                                     >
                                         {copied ? <Check className="h-3.5 w-3.5 text-teal-300" /> : <Copy className="h-3.5 w-3.5" />}
-                                        {copied ? '복사됨' : '주소 복사'}
+                                        {copied ? t('copied') : t('copyAddress')}
                                     </button>
                                     <a
                                         href={kakaoMapDirectionsUrl(active)}
@@ -234,13 +239,13 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                                         className="inline-flex items-center gap-1.5 rounded-xl bg-teal-400 px-3 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-teal-300"
                                     >
                                         <Navigation className="h-3.5 w-3.5" aria-hidden />
-                                        카카오 길찾기
+                                        {t('kakaoDirections')}
                                     </a>
                                     <Link
                                         href="/contact"
                                         className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2.5 text-xs font-bold text-white/85 transition hover:border-teal-400/35 hover:text-teal-200"
                                     >
-                                        문의하기
+                                        {t('contact')}
                                     </Link>
                                 </div>
                             </div>
@@ -255,7 +260,7 @@ export default function MakerspaceVisitClient({ initialId }: Props) {
                         >
                             <KakaoMapView center={active} />
                             <p className="mt-3 text-center text-[11px] font-medium text-white/35 sm:text-left">
-                                지도 데이터 © Kakao · 센터를 선택하면 위치가 전환됩니다.
+                                {t('mapCredit')}
                             </p>
                         </motion.div>
                     </div>

@@ -732,5 +732,581 @@
         "desc": "미니어처, 피규어, 디오라마용 정밀 소재 추천"
       }
     }
+  },
+  "Materials": {
+    "metaTitle": "3D프린팅 소재 안내 | PLA·ABS·PETG·레진",
+    "metaDescription": "와우쓰리디 WOW3D 3D프린팅 소재 가이드. FDM(PLA, ABS, PETG, TPU)과 SLA·DLP 레진의 특징, 용도, 선택 기준을 확인하세요.",
+    "metaOgTitle": "3D프린팅 소재 안내 | WOW3D",
+    "metaOgDescription": "PLA·ABS·PETG·TPU 및 레진 소재 비교. 시제품·기능 부품에 맞는 소재를 고르세요.",
+    "hero": {
+      "title": "소재",
+      "titleAccent": "살펴보기",
+      "subtitle": "PLA, ABS, PETG 차이는 무엇인지, 어떤 소재가 시제품과 기능 부품에 적합한지, 레진과 필라멘트는 어떤 기준으로 고르면 되는지 한 번에 확인할 수 있습니다."
+    },
+    "byMethod": {
+      "title": "출력방식별 핵심 소재",
+      "fdm": "고강도 실용 부품",
+      "sla": "초정밀 매끄러운 표면",
+      "dlp": "복잡한 디테일 구현"
+    },
+    "fdmGuide": {
+      "title": "PLA, ABS, PETG 중 어떤 소재가 맞을까요?",
+      "desc": "FDM 소재 선택에서 가장 많이 비교되는 세 가지 필라멘트를 강도, 내열성, 후가공성, 추천 용도 기준으로 따로 정리했습니다.",
+      "compareLink": "비교 가이드 자세히 보기",
+      "housingLink": "하우징·케이스용 소재 추천 보기",
+      "heatLink": "내열·내충격 부품용 소재 추천 보기"
+    },
+    "resinGuide": {
+      "title": "Standard, Tough, Clear, Flexible 레진은 어떻게 다를까요?",
+      "desc": "외관 시제품, 기능 테스트, 투명 부품, 유연 부품에 어떤 레진이 적합한지 검색형 질문 기준으로 따로 정리했습니다.",
+      "compareLink": "레진 비교 가이드 자세히 보기",
+      "clearLink": "투명 부품용 소재 추천 보기",
+      "miniatureLink": "정밀 모형·피규어용 소재 추천 보기"
+    },
+    "materials": {
+      "pla": {
+        "nameKo": "폴리폴리락트산",
+        "features": [
+          "옥수수·사탕수수 등 식물 기반, 생분해·친환경",
+          "수축·뒤틀림이 적어 인쇄가 쉽고 초보자에게 적합",
+          "경량, 표면이 깨끗함",
+          "내열·내충격은 ABS·PETG보다 낮음"
+        ],
+        "applications": [
+          "시제품·디스플레이",
+          "교육·졸업작품",
+          "패키징·포장",
+          "저부하 부품·인테리어"
+        ]
+      },
+      "abs": {
+        "nameKo": "아크릴로니트릴-부타디엔-스티렌",
+        "features": [
+          "내충격·내구성·내열성 우수",
+          "연마·도장·접착·용접 등 후가공에 적합",
+          "인쇄 시 냄새·수축에 주의, 환기 필요"
+        ],
+        "applications": [
+          "케이스·하우징",
+          "자동차·가전 부품",
+          "조립·기능 시험",
+          "툴링·지그"
+        ]
+      },
+      "petg": {
+        "nameKo": "폴리에틸렌 테레프탈레이트(PET)에 글리콜을 첨가하여 내구성과 투명성, 가공성을 높인 열가소성 플라스틱",
+        "features": [
+          "PLA와 ABS의 장점을 겸비, 강성·내충격·내열",
+          "투명·반투명 제형 가능",
+          "식품·의료 접촉 등급 제품 존재",
+          "습기 관리 필요"
+        ],
+        "applications": [
+          "기능 부품·보호 케이스",
+          "의료·식품 관련 구조물",
+          "야외·내후 용도",
+          "투명 덮개·창"
+        ]
+      },
+      "tpu": {
+        "nameKo": "열가소성 폴리우레탄",
+        "features": [
+          "고무처럼 유연·탄성, 셔어 A 수십~90대",
+          "내마모·내오일·충격 흡수",
+          "인쇄 시 인피드·설정 신경 써야 함"
+        ],
+        "applications": [
+          "그립·부싱·갸스켓",
+          "실링·튜브",
+          "웨어러블·보호대",
+          "충격 완화 패드"
+        ]
+      },
+      "standard": {
+        "nameKo": "표준 레진",
+        "features": [
+          "매끄러운 표면·뛰어난 디테일",
+          "다양한 색상, 비교적 경제적",
+          "내충격·강도는 Tough·엔지니어링 계열보다 낮음"
+        ],
+        "applications": [
+          "시각 프로토타입·디자인 검증",
+          "보석·패션 악세서리",
+          "마스터·실리콘 몰드 원형",
+          "디오라마·피규어"
+        ]
+      },
+      "tough": {
+        "nameKo": "고강도 레진",
+        "features": [
+          "내충격·인장 강도 우수, 기능 시험 용이",
+          "나사·체결·조립에 적합",
+          "Standard보다 단가·비중 높음"
+        ],
+        "applications": [
+          "장착·기능 테스트",
+          "케이스·하우징",
+          "툴링·지그",
+          "소량 기능 부품"
+        ]
+      },
+      "clear": {
+        "nameKo": "투명 레진",
+        "features": [
+          "높은 투명도·시인성",
+          "연마·코팅 후 유리-like 투명도",
+          "UV·열에 따라 변색 가능성"
+        ],
+        "applications": [
+          "등화·렌즈 덮개",
+          "유리·창 대체",
+          "시각 검사·관측 창",
+          "의료·실험 장비"
+        ]
+      },
+      "flexible": {
+        "nameKo": "연성 레진",
+        "features": [
+          "고무에 가까운 인성·변형",
+          "캐치·그립·압입에 적합",
+          "경화·보관 조건에 따라 경도 차이"
+        ],
+        "applications": [
+          "실리콘 몰드·프레스 패드",
+          "그립·케이스 내삽",
+          "웨어러블·보호대",
+          "밀봉·완충"
+        ]
+      }
+    },
+    "cta": {
+      "titleBefore": "최적의 소재를 찾으셨나요?",
+      "titleAccent": "지능형 견적",
+      "titleAfter": "을 시작하세요.",
+      "subtitle": "복잡한 계산 없이 파일을 업로드하는 것만으로 즉시 정밀한 견적을 산출합니다.",
+      "button": "견적 시작하기"
+    }
+  },
+  "Makerspace": {
+    "metaTitle": "메이커스페이스 찾아오는길 | 홍대·구미·전주 제작센터",
+    "metaDescription": "와우쓰리디 메이커스페이스(제작센터) 찾아오는길. 홍대센터·구미센터·전주센터 위치와 카카오맵 길안내를 확인하세요.",
+    "metaOgTitle": "메이커스페이스 찾아오는길 | WOW3D",
+    "metaOgDescription": "홍대·구미·전주 제작센터 위치와 카카오맵 길안내",
+    "badge": "Makerspace · Directions",
+    "title": "메이커스페이스",
+    "titleAccent": "찾아오는길",
+    "subtitle": "홍대·구미·전주 제작센터 위치를 확인하고 카카오맵으로 길을 안내받으세요.",
+    "centerSelectAria": "제작센터 선택",
+    "centerGuide": "{name} 안내",
+    "copyAddress": "주소 복사",
+    "copied": "복사됨",
+    "copySuccessTitle": "주소 복사됨",
+    "copyErrorTitle": "복사 실패",
+    "copyErrorDesc": "주소를 직접 선택해 복사해 주세요.",
+    "kakaoDirections": "카카오 길찾기",
+    "contact": "문의하기",
+    "mapCredit": "지도 데이터 © Kakao · 센터를 선택하면 위치가 전환됩니다.",
+    "listSchemaName": "WOW3D 메이커스페이스(제작센터)",
+    "centers": {
+      "hongdae": {
+        "name": "홍대센터"
+      },
+      "gumi": {
+        "name": "구미센터"
+      },
+      "jeonju": {
+        "name": "전주센터"
+      }
+    }
+  },
+  "PrintMethods": {
+    "metaTitle": "FDM, SLA, DLP 3D 프린팅 방식 비교",
+    "metaDescription": "WOW3D 제공 FDM·SLA·DLP와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 등 3D 프린팅 공정의 차이, 추천 용도, 소재, 표면 품질을 비교 안내합니다.",
+    "breadcrumbHome": "홈",
+    "breadcrumbMethods": "출력 방식 비교",
+    "infoBadge": "정보 안내",
+    "viewDetail": "상세 보기",
+    "providedBy": "WOW3D 제공",
+    "referenceInfo": "참고 정보",
+    "viewService": "서비스 보기",
+    "compareGuide": "비교 가이드",
+    "consultSimilar": "유사 제작 상담",
+    "principle": "원리",
+    "mainMaterials": "주요 소재",
+    "suitableUses": "적합 용도",
+    "strengths": "장점",
+    "notes": "참고",
+    "heroTitleLine1": "3D 프린터",
+    "heroTitleAccent": "출력방식 비교",
+    "heroSubtitle": "WOW3D가 제공하는 FDM·SLA·DLP와 함께, 업계에서 널리 쓰이는 분말 소결(SLS/SLM/DMLS)·재료 분사(PolyJet/MJP) 공정도 비교해 보세요.",
+    "ctaQuote": "자동견적 시작",
+    "ctaGuide": "공정 비교 가이드",
+    "tipFunctional": "기능 시제품 → FDM",
+    "tipAppearance": "외관·정밀 모형 → SLA / DLP",
+    "journeyTitle": "출력 방식 선택 3단계",
+    "journey": {
+      "01": {
+        "title": "공정 비교",
+        "desc": "FDM·SLA·DLP 특성과 용도 확인"
+      },
+      "02": {
+        "title": "소재·옵션 선택",
+        "desc": "목적에 맞는 소재와 후가공 결정"
+      },
+      "03": {
+        "title": "자동견적",
+        "desc": "파일 업로드 후 가격·납기 확인"
+      }
+    },
+    "wowSectionEyebrow": "WOW3D 제공",
+    "wowSectionTitle": "바로 견적·제작 가능한 공정",
+    "refSectionTitle": "다른 3D 프린팅 방식 알아보기",
+    "refSectionDesc": "아래 공정은 WOW3D에서 직접 제공하지 않으며, 업계 비교·이해를 위한 참고 정보입니다. 유사 요구사항은 FDM·SLA·DLP 대안 또는 제작 상담으로 안내해 드립니다.",
+    "compareWowTitle": "WOW3D 제공 공정 비교",
+    "compareRefTitle": "참고 공정 비교",
+    "compareRefSubtitle": "분말 소결 · 재료 분사",
+    "compareColItem": "항목",
+    "detailWowTitle": "제공 공정 상세 안내",
+    "detailRefTitle": "기타 3D 프린팅 방식",
+    "detailRefDesc": "산업 현장에서 자주 언급되는 공정입니다. WOW3D는 FDM·SLA·DLP 중심으로 제작을 지원하며, 아래 공정이 필요한 경우 대안 소재·공정 또는 파트너 연계를 상담해 드립니다.",
+    "faqTitle": "출력 방식 선택 전 자주 묻는 질문",
+    "faqSubtitle": "FDM·SLA·DLP 선택부터 분말 소결·재료 분사 공정 이해까지, 자주 받는 질문을 정리했습니다.",
+    "readGuide": "가이드 읽기",
+    "bottomTitle": "공정을 정했다면 바로 견적을 받아보세요",
+    "bottomDesc": "파일을 업로드하고 FDM·SLA·DLP 중 원하는 방식으로 실시간 견적과 예상 납기를 확인할 수 있습니다.",
+    "getQuote": "견적 받기",
+    "browseMaterials": "소재 살펴보기",
+    "stats": {
+      "provided": "WOW3D 제공",
+      "reference": "참고 공정",
+      "liveQuote": "맞춤 견적",
+      "liveValue": "실시간"
+    },
+    "faqs": [
+      {
+        "q": "기능성 시제품에는 FDM과 SLA 중 어떤 방식이 더 적합한가요?",
+        "a": "조립성 확인, 내구성 테스트, 기능 시험이 목적이라면 일반적으로 FDM이 더 적합합니다. 외관과 디테일이 더 중요하다면 SLA 또는 DLP가 유리합니다."
+      },
+      {
+        "q": "SLA와 DLP는 비슷해 보이는데 어떤 차이가 있나요?",
+        "a": "둘 다 레진 기반 정밀 공정이지만, SLA는 레이저로 한 점씩 경화하고 DLP는 한 레이어를 동시에 경화합니다. 같은 소형 정밀 부품을 반복 제작할 때는 DLP가 유리할 수 있습니다."
+      },
+      {
+        "q": "표면 품질이 가장 중요한 제품은 어떤 3D 프린팅 방식을 선택해야 하나요?",
+        "a": "매끄러운 표면과 미세한 디테일이 중요하다면 SLA 또는 DLP가 적합합니다. FDM은 상대적으로 경제적이지만 층선이 보일 수 있습니다."
+      },
+      {
+        "q": "SLS·SLM·DMLS는 FDM과 어떻게 다른가요?",
+        "a": "분말 소결·용융 방식은 서포트 없이 복잡한 형상과 금속 부품을 만들 수 있지만, 장비·비용이 높은 편입니다. 일반적인 시제품·프로토타입은 FDM·SLA·DLP가 더 경제적인 경우가 많습니다."
+      },
+      {
+        "q": "PolyJet과 SLA의 차이는 무엇인가요?",
+        "a": "둘 다 높은 해상도를 내지만, PolyJet/MJP는 재료를 분사하는 방식이라 멀티컬러·멀티머티리얼 표현에 강하고, SLA는 레진을 광경화하는 방식으로 정밀 디테일·투명 소재에 많이 쓰입니다."
+      }
+    ],
+    "compareRows": [
+      {
+        "label": "추천 용도",
+        "fdm": "기능 시제품·조립",
+        "sla": "외관·정밀 모형",
+        "dlp": "소형 정밀·반복"
+      },
+      {
+        "label": "표면 품질",
+        "fdm": "보통",
+        "sla": "매우 높음",
+        "dlp": "매우 높음"
+      },
+      {
+        "label": "기계적 강도",
+        "fdm": "높음",
+        "sla": "소재별",
+        "dlp": "소재별"
+      },
+      {
+        "label": "비용 효율",
+        "fdm": "우수",
+        "sla": "보통",
+        "dlp": "보통"
+      }
+    ],
+    "refCompareRows": [
+      {
+        "label": "원리",
+        "powder": "분말 레이저 소결·용융",
+        "jetting": "액상 소재 미세 분사"
+      },
+      {
+        "label": "대표 공정",
+        "powder": "SLS · SLM · DMLS",
+        "jetting": "PolyJet · MJP"
+      },
+      {
+        "label": "강점",
+        "powder": "서포트 없음·금속 가능",
+        "jetting": "고해상도·멀티컬러"
+      },
+      {
+        "label": "WOW3D",
+        "powder": "정보 안내",
+        "jetting": "정보 안내"
+      }
+    ],
+    "featured": [
+      {
+        "title": "3D 프린팅 공정 비교 가이드",
+        "desc": "FDM·SLA·DLP와 SLS/SLM/DMLS, PolyJet/MJP 등 주요 공정의 차이와 추천 용도를 정리했습니다."
+      },
+      {
+        "title": "견적 계산 방식 가이드",
+        "desc": "레이어 높이, 소재, 인필, 후가공이 가격과 시간에 어떤 영향을 주는지 설명합니다."
+      }
+    ],
+    "methods": {
+      "fdm": {
+        "nameKo": "용융 적층 조형",
+        "principle": "필라멘트(고체)를 노즐에서 가열·용융한 뒤 베드 위에 층층이 쌓아 올리는 방식입니다. 가장 널리 쓰이는 3D 프린팅 기술입니다.",
+        "materials": [
+          "PLA",
+          "ABS",
+          "PETG",
+          "TPU",
+          "나일론",
+          "PC"
+        ],
+        "strengths": [
+          "비용 대비 효율 우수",
+          "강한 기계적 성능·내구성",
+          "소재 선택지 다양",
+          "기능 시험·조립 부품에 적합"
+        ],
+        "weaknesses": [
+          "레이어 선(층선)이 보일 수 있음",
+          "표면 정밀도는 SLA·DLP보다 낮음"
+        ],
+        "uses": [
+          "시제품·프로토타입",
+          "기능 시험·내구 테스트",
+          "조립용 부품·툴링",
+          "교육·취미 제작"
+        ],
+        "specs": [
+          {
+            "label": "표면 품질",
+            "value": "보통"
+          },
+          {
+            "label": "내구성",
+            "value": "높음"
+          },
+          {
+            "label": "제작 속도",
+            "value": "빠름"
+          },
+          {
+            "label": "비용",
+            "value": "경제적"
+          }
+        ]
+      },
+      "sla": {
+        "nameKo": "광조형 (스테레오리소그래피)",
+        "principle": "액상 광경화 레진 위를 UV 레이저가 스캔하며 선택적으로 경화시켜 한 층씩 쌓는 방식입니다. 표면이 매끄럽고 디테일이 뛰어납니다.",
+        "materials": [
+          "Standard 레진",
+          "Tough 레진",
+          "Clear 레진",
+          "Flexible 레진"
+        ],
+        "strengths": [
+          "매끄러운 표면·높은 디테일",
+          "복잡한 형상·미세 구조 표현",
+          "치과·보석·시각 모형에 최적"
+        ],
+        "weaknesses": [
+          "레진 단가·후처리(세척·2차 경화) 필요",
+          "내충격·내열은 소재에 따라 제한"
+        ],
+        "uses": [
+          "디자인 검증·시각 프로토타입",
+          "보석·치과·의료 모형",
+          "마스터·실리콘 몰드 원형",
+          "정밀 시제품"
+        ],
+        "specs": [
+          {
+            "label": "표면 품질",
+            "value": "매우 높음"
+          },
+          {
+            "label": "내구성",
+            "value": "소재별"
+          },
+          {
+            "label": "제작 속도",
+            "value": "보통"
+          },
+          {
+            "label": "비용",
+            "value": "중간"
+          }
+        ]
+      },
+      "dlp": {
+        "nameKo": "디지털 광조형",
+        "principle": "광원(프로젝터·UV 패널)으로 한 레이어 전체를 동시에 비춰 레진을 경화시킵니다. 레이어당 경화 시간이 짧아 SLA 대비 빠른 제작이 가능합니다.",
+        "materials": [
+          "Standard·Tough·Clear·Flexible 레진"
+        ],
+        "strengths": [
+          "레이어당 경화 속도 빠름",
+          "동일 부품 다량 제작에 유리",
+          "정밀도·표면 품질 우수"
+        ],
+        "weaknesses": [
+          "빌드 영역이 기기별로 제한",
+          "레진 저장·관리 필요"
+        ],
+        "uses": [
+          "치과·보석·소형 정밀 부품",
+          "동일 부품 소량·다량 생산",
+          "미세한 디테일이 중요한 모형"
+        ],
+        "specs": [
+          {
+            "label": "표면 품질",
+            "value": "매우 높음"
+          },
+          {
+            "label": "내구성",
+            "value": "소재별"
+          },
+          {
+            "label": "제작 속도",
+            "value": "빠름"
+          },
+          {
+            "label": "비용",
+            "value": "중간"
+          }
+        ]
+      },
+      "powder-sintering": {
+        "nameKo": "분말 소결 방식",
+        "principle": "분말 소재를 얇게 펴고 레이저로 선택적으로 소결·용융해 층을 쌓는 방식입니다. 서포트 없이 복잡한 형상을 만들 수 있으며, 플라스틱(SLS)과 금속(SLM·DMLS) 모두에 적용됩니다.",
+        "materials": [
+          "나일론(PA12)",
+          "TPU",
+          "알루미늄",
+          "티타늄",
+          "스테인리스",
+          "인코넬 등 금속 합금"
+        ],
+        "strengths": [
+          "서포트 없이 복잡한 내부 구조·언더컷 구현",
+          "기능 시험용 강도·내열성 우수 (소재별)",
+          "소량·다품종 금속 부품 제작에 활용",
+          "양산 전 검증 단계에서 널리 사용"
+        ],
+        "weaknesses": [
+          "장비·운영 비용이 FDM·레진 대비 높음",
+          "표면 거칠기·치수 정밀도는 후가공에 따라 달라짐",
+          "금속 공정은 투입·안전·후처리 요구가 큼"
+        ],
+        "uses": [
+          "기능 시제품·소량 양산",
+          "금속 부품·항공·의료",
+          "힌지·클립 등 조립 구조",
+          "내장 채널·격자 구조"
+        ],
+        "specs": [
+          {
+            "label": "표면 품질",
+            "value": "소재·후처리별"
+          },
+          {
+            "label": "내구성",
+            "value": "매우 높음"
+          },
+          {
+            "label": "제작 속도",
+            "value": "보통"
+          },
+          {
+            "label": "비용",
+            "value": "높음"
+          }
+        ],
+        "subtypes": [
+          {
+            "name": "SLS",
+            "description": "Selective Laser Sintering. 나일론·TPU 등 분말을 레이저로 소결합니다. 플라스틱 기능 부품·시제품에 많이 쓰입니다."
+          },
+          {
+            "name": "SLM",
+            "description": "Selective Laser Melting. 금속 분말을 완전 용융해 치밀한 금속 부품을 만듭니다. 항공·의료·자동차 금속 부품에 활용됩니다."
+          },
+          {
+            "name": "DMLS",
+            "description": "Direct Metal Laser Sintering. EOS 등에서 쓰는 금속 분말 레이저 공정 명칭으로, SLM과 유사하게 금속 부품을 제작합니다."
+          }
+        ]
+      },
+      "material-jetting": {
+        "nameKo": "재료 분사 방식",
+        "principle": "노즐에서 액상 소재를 미세하게 분사·경화시키며 층을 쌓는 방식입니다. 한 번에 여러 소재·색상을 조합할 수 있어 시각 모형·고해상도 외관 시제품에 강점이 있습니다.",
+        "materials": [
+          "아크릴계 수지",
+          "고무형 소재",
+          "투명·다색 수지",
+          "의료·시뮬레이션용 소재"
+        ],
+        "strengths": [
+          "매우 높은 해상도와 매끄러운 표면",
+          "멀티머티리얼·풀컬러 출력 가능 (PolyJet)",
+          "디자인 검증·의료·치과 모형에 적합",
+          "미세한 라벨·텍스처 표현 우수"
+        ],
+        "weaknesses": [
+          "대형·대량 생산 비용이 높을 수 있음",
+          "기계적 강도는 FDM·금속 공정보다 제한적",
+          "소재·장비 종속성이 큼"
+        ],
+        "uses": [
+          "고해상도 외관 시제품",
+          "멀티컬러·오버몰드 모형",
+          "치과·의료 가이드·모형",
+          "디자인 리뷰·마케팅 샘플"
+        ],
+        "specs": [
+          {
+            "label": "표면 품질",
+            "value": "최상"
+          },
+          {
+            "label": "내구성",
+            "value": "용도별"
+          },
+          {
+            "label": "제작 속도",
+            "value": "보통"
+          },
+          {
+            "label": "비용",
+            "value": "높음"
+          }
+        ],
+        "subtypes": [
+          {
+            "name": "PolyJet",
+            "description": "Stratasys 계열 재료 분사 공정. 한 빌드에서 여러 소재·색을 동시에 분사해 고해상도 다색 모형을 만듭니다."
+          },
+          {
+            "name": "MJP",
+            "description": "Multi Jet Printing. 3D Systems 등의 분사 기반 공정으로, 왁스·수지 소재의 정밀 시각 모형·주조 패턴에 활용됩니다."
+          }
+        ]
+      }
+    }
   }
 }
