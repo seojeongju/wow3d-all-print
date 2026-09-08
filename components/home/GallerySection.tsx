@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef, useMemo, type MouseEvent as R
 import { motion } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
 import { cn } from '@/lib/utils';
 
@@ -226,6 +227,7 @@ export function DetailViewModal({
     currentIndex?: number;
     totalCount?: number;
 }) {
+    const t = useTranslations('Home.gallery');
     const tags: string[] = (() => {
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
@@ -270,19 +272,19 @@ export function DetailViewModal({
                             <div className="flex flex-1 flex-col md:flex-row min-h-0">
                                 <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-white/10 min-h-[180px]">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center py-2 shrink-0">
-                                        원본 사진(이미지)
+                                        {t('originalPhoto')}
                                     </p>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         key={item.source_image_url}
                                         src={resolveImageUrl(item.source_image_url)}
-                                        alt={`${item.title} 원본 사진(이미지)`}
+                                        alt={`${item.title} ${t('originalPhoto')}`}
                                         className="flex-1 w-full object-contain p-3 min-h-0"
                                     />
                                 </div>
                                 <div className="flex-1 flex flex-col min-h-[180px]">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-teal-400/80 text-center py-2 shrink-0">
-                                        AI 3D · 출력
+                                        {t('aiPrint')}
                                     </p>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
@@ -387,7 +389,7 @@ export function DetailViewModal({
                         <div className="mt-8 pt-8 border-t border-white/10">
                             <Button asChild className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2">
                                 <Link href="/quote" onClick={onClose}>
-                                    유사 시제품 견적 문의하기
+                                    {t('similarQuote')}
                                     <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </Button>
@@ -422,6 +424,7 @@ function SkeletonCard({ className }: { className?: string }) {
 // 메인 갤러리 섹션: 자동 좌측 슬라이드 + 좌·우 버튼 수동 탐색
 // ─────────────────────────────────────────────────────
 export default function GallerySection() {
+    const t = useTranslations('Home.gallery');
     const scrollRef = useRef<HTMLDivElement>(null);
     const pausedRef = useRef(false);
     const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -566,10 +569,10 @@ export default function GallerySection() {
                                 PORTFOLIO
                             </div>
                             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white leading-tight">
-                                시제품제작<span className="text-teal-400">갤러리</span>
+                                {t('titleBefore')}<span className="text-teal-400">{t('titleAccent')}</span>
                             </h2>
                             <p className="text-white/60 sm:text-white/70 text-xs sm:text-sm mt-3 max-w-md break-keep leading-relaxed font-medium">
-                                전담 전문가들이 다양한 소재와 출력 방식으로 제작한 고품질 실제 출력물들을 확인하세요.
+                                {t('subtitle')}
                             </p>
                         </motion.div>
 
@@ -586,7 +589,7 @@ export default function GallerySection() {
                                     className="gap-2 rounded-full border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white transition-all h-10 px-5"
                                 >
                                     <Grid3X3 className="w-4 h-4 text-primary" />
-                                    <span className="font-semibold">전체 갤러리 보기</span>
+                                    <span className="font-semibold">{t('viewAll')}</span>
                                 </Button>
                             </Link>
                         </motion.div>
@@ -605,7 +608,7 @@ export default function GallerySection() {
                                 className="gap-2 rounded-full border-white/10 bg-white/5 active:bg-white/10 text-white w-full h-11 text-xs font-bold"
                             >
                                 <Grid3X3 className="w-4 h-4 text-primary" />
-                                전체 출력 포트폴리오 보기
+                                {t('viewAllMobile')}
                             </Button>
                         </Link>
                     </motion.div>
@@ -627,14 +630,14 @@ export default function GallerySection() {
                                                 <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                                                     <Box className="w-7 h-7 text-primary/40" />
                                                 </div>
-                                                <p className="text-white/20 text-[11px] font-bold">포트폴리오 준비 중</p>
+                                                <p className="text-white/20 text-[11px] font-bold">{t('empty')}</p>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="relative w-full group/gallery" role="region" aria-label="시제품 제작 갤러리">
+                            <div className="relative w-full group/gallery" role="region" aria-label={t('aria')}>
                                 {items.length > 1 && (
                                     <>
                                         <div
@@ -648,7 +651,7 @@ export default function GallerySection() {
                                         <button
                                             type="button"
                                             onClick={() => scrollGallery('left')}
-                                            aria-label="이전 갤러리 항목"
+                                            aria-label={t('prev')}
                                             className="absolute left-0 sm:left-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 shadow-lg"
                                         >
                                             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -656,7 +659,7 @@ export default function GallerySection() {
                                         <button
                                             type="button"
                                             onClick={() => scrollGallery('right')}
-                                            aria-label="다음 갤러리 항목"
+                                            aria-label={t('next')}
                                             className="absolute right-0 sm:right-1 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all hover:bg-black/70 hover:scale-105 shadow-lg"
                                         >
                                             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -709,7 +712,7 @@ export default function GallerySection() {
                         className="rounded-full h-11 sm:h-12 px-6 sm:px-8 bg-primary hover:bg-primary/90 text-[13px] sm:text-base text-primary-foreground shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] font-bold"
                     >
                         <Link href="/quote">
-                            AI 실시간 자동견적 받기
+                            {t('quoteCta')}
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Link>
                     </Button>

@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Minus, HelpCircle, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import type { QnAItem } from '@/lib/qna'
 
@@ -12,6 +13,7 @@ type HomeFAQProps = {
 };
 
 export default function HomeFAQ({ items }: HomeFAQProps) {
+    const t = useTranslations('Home.faq')
     const [openId, setOpenId] = useState<number | null>(null)
 
     if (items.length === 0) return null;
@@ -36,9 +38,9 @@ export default function HomeFAQ({ items }: HomeFAQProps) {
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[10px] font-black uppercase tracking-widest mb-2">
                             <HelpCircle className="w-3 h-3" /> FAQ
                         </div>
-                        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase text-white">자주 묻는 질문</h2>
+                        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none uppercase text-white">{t('title')}</h2>
                         <p className="text-white/70 text-sm md:text-base text-balance leading-relaxed font-medium">
-                            WOW3D 이용에 대해 가장 많이 궁금해하시는 내용을 정리했습니다.
+                            {t('subtitle')}
                         </p>
                     </motion.div>
 
@@ -91,7 +93,7 @@ export default function HomeFAQ({ items }: HomeFAQProps) {
                     >
                         <Link href="/qna">
                             <Button variant="ghost" className="group text-white/70 hover:text-teal-400 hover:bg-white/5 transition-all gap-2">
-                                전체 FAQ 확인하기
+                                {t('viewAll')}
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>

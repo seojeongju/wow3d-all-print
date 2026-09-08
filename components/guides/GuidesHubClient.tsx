@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { motion } from 'framer-motion'
 import {
     ArrowRight,
@@ -16,10 +16,10 @@ import {
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
+import { Link } from '@/i18n/navigation'
 import {
     GUIDE_HUB_JOURNEY,
     GUIDE_HUB_SECTIONS,
-    GUIDE_HUB_STATS,
     type GuideHubItem,
 } from '@/lib/guides-hub-data'
 
@@ -44,6 +44,7 @@ function FloatingIcon({
 }
 
 function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
+    const t = useTranslations('GuidesHub')
     const Icon = item.icon
     return (
         <motion.div
@@ -65,7 +66,7 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
                     </div>
                     <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-bold text-white/45">
                         <Clock className="h-3 w-3" />
-                        {item.readMin}분
+                        {t('readMin', { min: item.readMin })}
                     </span>
                 </div>
                 <h3 className="mb-2 text-lg font-black leading-snug text-white transition-colors group-hover:text-teal-100">
@@ -73,7 +74,7 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
                 </h3>
                 <p className="mb-5 flex-1 text-sm leading-relaxed text-white/55 break-keep">{item.desc}</p>
                 <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-teal-400/80 transition-all group-hover:gap-2.5 group-hover:text-teal-300">
-                    가이드 읽기
+                    {t('readGuide')}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </span>
             </Link>
@@ -82,7 +83,14 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
 }
 
 export default function GuidesHubClient() {
+    const t = useTranslations('GuidesHub')
     const totalGuides = GUIDE_HUB_SECTIONS.reduce((n, s) => n + s.items.length, 0)
+
+    const stats = [
+        { label: t('stats.guides'), value: '20+' },
+        { label: t('stats.topics'), value: '4' },
+        { label: t('stats.avgRead'), value: t('stats.avgReadValue') },
+    ]
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-[#020617] text-white selection:bg-teal-500/30">
@@ -110,20 +118,19 @@ export default function GuidesHubClient() {
                                 Guide Hub
                             </div>
                             <h1 className="text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
-                                WOW3D 3D 프린팅
+                                {t('titleLine')}
                                 <br />
                                 <span className="bg-gradient-to-r from-teal-300 via-teal-400 to-cyan-300 bg-clip-text text-transparent">
-                                    가이드 모음
+                                    {t('titleAccent')}
                                 </span>
                             </h1>
                             <p className="max-w-xl text-lg leading-relaxed text-white/65 break-keep">
-                                견적 계산, 출력 공정 비교, 파일 준비, 납기, 소재 선택까지 — 처음 방문하는
-                                고객도 바로 이해할 수 있도록 카테고리별로 정리했습니다.
+                                {t('subtitle')}
                             </p>
                             <div className="flex flex-wrap gap-3 pt-1">
                                 <Link href="/quote">
                                     <Button className="h-12 rounded-2xl bg-teal-400 px-6 font-black text-slate-950 hover:bg-teal-300">
-                                        자동견적 시작 <ArrowRight className="ml-1 h-4 w-4" />
+                                        {t('ctaQuote')} <ArrowRight className="ml-1 h-4 w-4" />
                                     </Button>
                                 </Link>
                                 <Link href="/guides/photo-to-3d-printing-quote">
@@ -131,12 +138,12 @@ export default function GuidesHubClient() {
                                         variant="outline"
                                         className="h-12 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10"
                                     >
-                                        사진→AI 3D 가이드
+                                        {t('ctaPhoto')}
                                     </Button>
                                 </Link>
                             </div>
                             <div className="flex flex-wrap gap-6 pt-2">
-                                {GUIDE_HUB_STATS.map((stat, i) => (
+                                {stats.map((stat, i) => (
                                     <motion.div
                                         key={stat.label}
                                         initial={{ opacity: 0, y: 10 }}
@@ -156,7 +163,7 @@ export default function GuidesHubClient() {
                                 >
                                     <p className="text-2xl font-black text-teal-400">{totalGuides}</p>
                                     <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">
-                                        전체 문서
+                                        {t('totalDocs')}
                                     </p>
                                 </motion.div>
                             </div>
@@ -205,8 +212,8 @@ export default function GuidesHubClient() {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-teal-400/80">
                                     Popular
                                 </p>
-                                <p className="mt-1 text-sm font-bold text-white">사진만으로 AI 3D 견적</p>
-                                <p className="mt-0.5 text-xs text-white/50">파일 없이도 시작 가능</p>
+                                <p className="mt-1 text-sm font-bold text-white">{t('popularTitle')}</p>
+                                <p className="mt-0.5 text-xs text-white/50">{t('popularDesc')}</p>
                             </motion.div>
                         </motion.div>
                     </div>
@@ -226,7 +233,7 @@ export default function GuidesHubClient() {
                             How to use
                         </p>
                         <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
-                            가이드 활용 3단계
+                            {t('journeyTitle')}
                         </h2>
                     </motion.div>
                     <div className="grid gap-4 md:grid-cols-3">
@@ -250,8 +257,12 @@ export default function GuidesHubClient() {
                                             <Icon className="h-5 w-5" />
                                         </div>
                                     </div>
-                                    <h3 className="mb-1 text-lg font-black">{step.title}</h3>
-                                    <p className="text-sm text-white/55 break-keep">{step.desc}</p>
+                                    <h3 className="mb-1 text-lg font-black">
+                                        {t(`journey.${step.step}.title`)}
+                                    </h3>
+                                    <p className="text-sm text-white/55 break-keep">
+                                        {t(`journey.${step.step}.desc`)}
+                                    </p>
                                 </motion.div>
                             )
                         })}
@@ -278,11 +289,10 @@ export default function GuidesHubClient() {
                                         Featured Guide
                                     </p>
                                     <h2 className="text-2xl font-black md:text-3xl">
-                                        사진(이미지)만으로 3D 프린팅 견적 받기
+                                        {t('featuredTitle')}
                                     </h2>
                                     <p className="max-w-2xl text-white/65 break-keep leading-relaxed">
-                                        STL 파일이 없어도 괜찮습니다. 사진 업로드 → AI 3D 변환 → 자동견적까지
-                                        한 번에 이어지는 전체 흐름을 단계별로 안내합니다.
+                                        {t('featuredDesc')}
                                     </p>
                                 </div>
                                 <div className="flex h-20 w-20 shrink-0 items-center justify-center self-start rounded-3xl border border-teal-400/30 bg-teal-400/15 text-teal-300 transition-transform group-hover:scale-105 md:self-center">
@@ -290,7 +300,7 @@ export default function GuidesHubClient() {
                                 </div>
                             </div>
                             <span className="relative mt-6 inline-flex items-center gap-2 text-sm font-black text-teal-300 group-hover:gap-3">
-                                지금 읽어보기 <ArrowRight className="h-4 w-4" />
+                                {t('readNow')} <ArrowRight className="h-4 w-4" />
                             </span>
                         </Link>
                     </motion.div>
@@ -322,11 +332,15 @@ export default function GuidesHubClient() {
                                             <SectionIcon className="h-7 w-7" />
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-black md:text-3xl">{section.title}</h2>
-                                            <p className="mt-1 text-sm text-white/55">{section.subtitle}</p>
+                                            <h2 className="text-2xl font-black md:text-3xl">
+                                                {t(`sections.${section.id}.title`)}
+                                            </h2>
+                                            <p className="mt-1 text-sm text-white/55">
+                                                {t(`sections.${section.id}.subtitle`)}
+                                            </p>
                                         </div>
                                         <span className="ml-auto rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-bold text-white/50">
-                                            {section.items.length}개
+                                            {t('itemCount', { count: section.items.length })}
                                         </span>
                                     </div>
                                 </div>
@@ -355,15 +369,15 @@ export default function GuidesHubClient() {
                                 <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">
                                     Ready to print?
                                 </p>
-                                <h2 className="text-2xl font-black md:text-3xl">가이드를 읽었다면, 바로 견적을 받아보세요</h2>
+                                <h2 className="text-2xl font-black md:text-3xl">{t('bottomTitle')}</h2>
                                 <p className="text-white/65 break-keep leading-relaxed">
-                                    파일 업로드 또는 AI 3D 변환 후 소재·옵션을 선택하면 실시간 견적이 표시됩니다.
+                                    {t('bottomDesc')}
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <Link href="/quote">
                                     <Button className="h-12 rounded-2xl bg-teal-400 px-6 font-black text-slate-950 hover:bg-teal-300">
-                                        자동견적 시작 <ArrowRight className="ml-1 h-4 w-4" />
+                                        {t('ctaQuote')} <ArrowRight className="ml-1 h-4 w-4" />
                                     </Button>
                                 </Link>
                                 <Link href="/materials">
@@ -371,7 +385,7 @@ export default function GuidesHubClient() {
                                         variant="outline"
                                         className="h-12 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10"
                                     >
-                                        소재 전체 보기
+                                        {t('viewMaterials')}
                                     </Button>
                                 </Link>
                             </div>

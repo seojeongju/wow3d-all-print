@@ -70,7 +70,132 @@
     "contactUs": "Contact us"
   },
   "Home": {
-    "comingSoon": "English home content is being rolled out. You can already use Instant Quote and Services from the menu."
+    "comingSoon": "English home content is rolling out. Use Quote and Services from the menu.",
+    "hero": {
+      "badgePhoto": "Photo → AI 3D",
+      "titleLine1": "3D printing ·",
+      "titleLine2": "on-demand output",
+      "titleAccent": "prototype service",
+      "subtitleLead": "Upload → price & lead time → order & pay.",
+      "subtitleFile": "3D files",
+      "subtitleMid": " get an instant quote; ",
+      "subtitlePhoto": "photos",
+      "subtitleEnd": " alone let AI build a model and continue to quoting.",
+      "hasFile": "I have a 3D file",
+      "hasFileDesc": "STL·OBJ·STEP and more — instant quote",
+      "getQuote": "Get a quote",
+      "hasPhoto": "I only have photos",
+      "hasPhotoDesc": "AI builds 3D, then quote",
+      "make3d": "Create 3D",
+      "tabFileQuote": "Quote from 3D file",
+      "tabPhoto3d": "Photo to 3D",
+      "customers": "1,000+ customers",
+      "linkMethods": "Print methods",
+      "linkMaterials": "Materials",
+      "linkMaker": "Logo Maker",
+      "sampleLoading": "Loading…",
+      "sampleCta": "Try sample quote",
+      "uploadModeAria": "Choose upload type",
+      "tabFile": "3D file",
+      "tabPhoto": "Photo",
+      "aiQuote": "AI quote analysis",
+      "aiConvert": "AI 3D convert",
+      "readyFile": "Ready · instant analysis",
+      "readyPhoto": "Ready · auto quote",
+      "dropFile": "Drop your 3D file here",
+      "dropPhoto": "Drop a product photo here",
+      "formatsFile": "STL · OBJ · 3MF · PLY · STEP · STP · max 100MB",
+      "formatsPhoto": "JPG · PNG · max 8MB · AI 3D then quote",
+      "clickHint": "Click to choose a file · you’ll go to the quote page after upload",
+      "ctaFile": "Get detailed quote",
+      "ctaPhoto": "Create 3D from photo",
+      "errSizeTitle": "File too large",
+      "errSizeModel": "3D files can be up to 100MB.",
+      "errSizePhoto": "Photos can be up to 8MB.",
+      "errTypeTitle": "Unsupported format",
+      "errTypeModel": "Only STL, OBJ, 3MF, PLY, STEP, and STP are supported.",
+      "errTypePhoto": "Only JPG and PNG images are supported.",
+      "errNeedModelTitle": "3D file required",
+      "errNeedModel": "Please drop an STL, OBJ, 3MF, PLY, STEP, or STP file.",
+      "errSampleLoad": "Could not load the sample file.",
+      "errTitle": "Error",
+      "errSampleFail": "Failed to load the sample file."
+    },
+    "featured": {
+      "aria": "WOW3D 3D printing case studies",
+      "title": "WOW3D 3D printing · prototype cases",
+      "desc": "Precision industrial parts and prototypes. Upload a file and check live auto-quotes."
+    },
+    "noFile": {
+      "titleBefore": "No model file?",
+      "titleAccent": "",
+      "subtitleBefore": "Pick the right tool. ",
+      "logoSketch": "Logo / sketch",
+      "subtitleMid": " → Maker (2.5D). ",
+      "photoReal": "Product photos",
+      "subtitleEnd": " → Quote AI (full 3D).",
+      "makerTitle": "Logo · sketch → 2.5D",
+      "makerDesc": "Place logos on round/square badges or 1U keycaps with layer and bevel extrusion.",
+      "makerCta": "Use Maker below",
+      "aiLabel": "Quote AI",
+      "photoTitle": "Photo → full 3D",
+      "photoDesc": "Build a mesh from product/figurine photos, then get an instant quote.",
+      "photoCta": "Create 3D from photo",
+      "photoGuide": "View photo → 3D quote guide"
+    },
+    "moreGuides": {
+      "titleBefore": "Need more? ",
+      "titleAccent": "Guides",
+      "subtitle": "Quotes, processes, file prep, and FAQ — when you need them.",
+      "servicesTitle": "Core conversion services",
+      "servicesDesc": "Print bureau · photo→3D · prototypes · FDM · SLA",
+      "photoTitle": "Photo → 3D quote",
+      "photoDesc": "AI modeling and auto-quote without a 3D file",
+      "costTitle": "How pricing works",
+      "costDesc": "How layer, infill, and material affect price",
+      "compareTitle": "FDM · SLA · DLP",
+      "compareDesc": "Compare methods by use case",
+      "allTitle": "All guides",
+      "allDesc": "Tolerance, supports, STL, graduation checklist",
+      "browseAll": "Browse all guides"
+    },
+    "journey": {
+      "title": "From upload to order",
+      "subtitle": "New visitors only need these three steps.",
+      "step1Title": "Upload · auto quote",
+      "step1Desc": "STL·OBJ·3MF·PLY quote instantly; STEP·STP convert on upload then quote.",
+      "step2Title": "Price · lead time",
+      "step2Desc": "Choose material and process for live pricing. Typical delivery is about 3–7 days.",
+      "step3Title": "Order · pay",
+      "step3Desc": "Enter shipping details, pay, and we handle production, QC, and shipping.",
+      "cta": "Start auto quote now"
+    },
+    "cta": {
+      "titleBefore": "Start printing ",
+      "titleAccent": "now",
+      "desc": "Upload a file and see pricing instantly — no signup required to check quotes.",
+      "button": "Get a free 3D printing quote"
+    },
+    "faq": {
+      "title": "FAQ",
+      "subtitle": "Answers to the questions we hear most about WOW3D.",
+      "viewAll": "View all FAQs"
+    },
+    "gallery": {
+      "titleBefore": "Prototype",
+      "titleAccent": "gallery",
+      "subtitle": "Real parts made by specialists across materials and print methods.",
+      "viewAll": "View full gallery",
+      "viewAllMobile": "View full print portfolio",
+      "empty": "Portfolio coming soon",
+      "aria": "Prototype gallery",
+      "prev": "Previous gallery item",
+      "next": "Next gallery item",
+      "quoteCta": "Get AI live quote",
+      "originalPhoto": "Original photo",
+      "aiPrint": "AI 3D · print",
+      "similarQuote": "Ask about a similar prototype"
+    }
   },
   "Services": {
     "eyebrow": "WOW3D PRO Services",
@@ -367,5 +492,65 @@
       "Extreme close-up or cropped"
     ],
     "footnote": "Results are for prototype / shape checks. For tight tolerances, upload a 3D file."
+  },
+  "GuidesHub": {
+    "titleLine": "WOW3D 3D printing",
+    "titleAccent": "guide hub",
+    "subtitle": "Quote math, process comparison, file prep, lead times, and materials — organized so first-time visitors can start fast.",
+    "ctaQuote": "Start auto quote",
+    "ctaPhoto": "Photo → AI 3D guide",
+    "totalDocs": "All guides",
+    "popularTitle": "AI 3D quote from photos alone",
+    "popularDesc": "Start without a 3D file",
+    "journeyTitle": "3 steps to use guides",
+    "readGuide": "Read guide",
+    "readMin": "{min} min",
+    "sections": {
+      "basics": {
+        "title": "Basics",
+        "subtitle": "Start with quote, process, and file prep"
+      },
+      "practical": {
+        "title": "Practical checks",
+        "subtitle": "Checklists before you print"
+      },
+      "material-compare": {
+        "title": "Material compare",
+        "subtitle": "Filament and resin at a glance"
+      },
+      "by-use-case": {
+        "title": "By use case",
+        "subtitle": "Pick materials for your goal"
+      }
+    },
+    "journey": {
+      "01": {
+        "title": "Browse guides",
+        "desc": "Pick quote, materials, or file prep"
+      },
+      "02": {
+        "title": "Check lists",
+        "desc": "Cut errors and cost with practical tips"
+      },
+      "03": {
+        "title": "Start quote",
+        "desc": "Upload STL or use AI 3D"
+      }
+    },
+    "metaTitle": "3D printing guide hub",
+    "metaDescription": "WOW3D guides on quoting, cost reduction, FDM vs SLA, infill, STL fixes, wall thickness, supports, tolerances, large splits, and graduation checklists.",
+    "stats": {
+      "guides": "Guides",
+      "topics": "Topics",
+      "avgRead": "Avg read",
+      "avgReadValue": "4 min"
+    },
+    "featuredTitle": "Get a 3D printing quote from photos alone",
+    "featuredDesc": "No STL needed. Photo upload → AI 3D → auto quote — the full flow step by step.",
+    "readNow": "Read now",
+    "itemCount": "{count}",
+    "bottomTitle": "Done reading? Get a quote next",
+    "bottomDesc": "Upload a file or convert with AI 3D, then pick material and options for a live quote.",
+    "viewMaterials": "Browse all materials"
   }
 }

@@ -10,7 +10,8 @@ import {
     Upload,
     ChevronRight,
 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFileStore } from '@/store/useFileStore';
@@ -43,6 +44,7 @@ function isPhotoFile(file: File): boolean {
 }
 
 export default function Hero() {
+    const t = useTranslations('Home.hero');
     const router = useRouter();
     const { user } = useAuthStore();
     const { setFile, file, reset } = useFileStore();
@@ -100,46 +102,46 @@ export default function Hero() {
         (candidate: File) => {
             if (candidate.size > MODEL_FILE_MAX_BYTES) {
                 toast({
-                    title: '파일 크기 초과',
-                    description: '3D 파일은 최대 100MB까지 업로드할 수 있습니다.',
+                    title: t('errSizeTitle'),
+                    description: t('errSizeModel'),
                     variant: 'destructive',
                 });
                 return;
             }
             if (!hasModelFileExtension(candidate)) {
                 toast({
-                    title: '지원하지 않는 형식',
-                    description: 'STL, OBJ, 3MF, PLY, STEP, STP 파일만 업로드할 수 있습니다.',
+                    title: t('errTypeTitle'),
+                    description: t('errTypeModel'),
                     variant: 'destructive',
                 });
                 return;
             }
             handleModelUpload(candidate);
         },
-        [handleModelUpload, toast],
+        [handleModelUpload, toast, t],
     );
 
     const validateAndUploadPhoto = useCallback(
         (candidate: File) => {
             if (candidate.size > MESHY_IMAGE_MAX_BYTES) {
                 toast({
-                    title: '파일 크기 초과',
-                    description: '사진(이미지)은 최대 8MB까지 업로드할 수 있습니다.',
+                    title: t('errSizeTitle'),
+                    description: t('errSizePhoto'),
                     variant: 'destructive',
                 });
                 return;
             }
             if (!isPhotoFile(candidate)) {
                 toast({
-                    title: '지원하지 않는 형식',
-                    description: 'JPG, PNG 이미지만 업로드할 수 있습니다.',
+                    title: t('errTypeTitle'),
+                    description: t('errTypePhoto'),
                     variant: 'destructive',
                 });
                 return;
             }
             handlePhotoUpload(candidate);
         },
-        [handlePhotoUpload, toast],
+        [handlePhotoUpload, toast, t],
     );
 
     const handleDrop = useCallback(
@@ -153,8 +155,8 @@ export default function Hero() {
                 const model = getModelFileFromDataTransfer(e.dataTransfer);
                 if (!model) {
                     toast({
-                        title: '3D 파일이 필요합니다',
-                        description: 'STL, OBJ, 3MF, PLY, STEP, STP 파일을 놓아 주세요.',
+                        title: t('errNeedModelTitle'),
+                        description: t('errNeedModel'),
                         variant: 'destructive',
                     });
                     return;
@@ -164,7 +166,7 @@ export default function Hero() {
                 validateAndUploadPhoto(dropped);
             }
         },
-        [uploadMode, handleModelUpload, validateAndUploadPhoto, toast],
+        [uploadMode, handleModelUpload, validateAndUploadPhoto, toast, t],
     );
 
     const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
@@ -192,15 +194,15 @@ export default function Hero() {
         setIsLoadingSample(true);
         try {
             const res = await fetch('/test_cube.stl');
-            if (!res.ok) throw new Error('샘플 파일을 불러올 수 없습니다.');
+            if (!res.ok) throw new Error(t('errSampleLoad'));
             const blob = await res.blob();
             const sampleFile = new File([blob], 'sample_cube.stl', { type: 'model/stl' });
             setFile(sampleFile);
             router.push('/experience');
         } catch (e) {
             toast({
-                title: '오류',
-                description: e instanceof Error ? e.message : '샘플 파일 로드에 실패했습니다.',
+                title: t('errTitle'),
+                description: e instanceof Error ? e.message : t('errSampleFail'),
                 variant: 'destructive',
             });
         } finally {
@@ -245,7 +247,7 @@ export default function Hero() {
                         <span className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/15 px-3 py-1 backdrop-blur-md">
                             <ImageIcon className="h-3.5 w-3.5 text-indigo-300" />
                             <span className="text-[10px] font-semibold tracking-wide text-indigo-200/90 sm:text-xs">
-                                사진(이미지) → AI 3D
+                                {t('badgePhoto')}
                             </span>
                         </span>
                     </motion.div>
@@ -255,22 +257,22 @@ export default function Hero() {
                     </p>
 
                     <h1 className="mb-4 text-[1.85rem] font-black leading-[1.15] tracking-tight text-white sm:text-4xl md:text-[2.6rem] lg:text-[2.85rem] break-keep">
-                        3D프린팅출력 ·
+                        {t('titleLine1')}
                         <br />
-                        3D프린터출력
+                        {t('titleLine2')}
                         <br />
                         <span className="text-teal-400 underline decoration-teal-400/40 decoration-2 underline-offset-[6px]">
-                            시제품제작 서비스
+                            {t('titleAccent')}
                         </span>
                     </h1>
 
                     <p className="mb-6 max-w-lg text-base font-medium leading-relaxed text-white/65 break-keep sm:mb-8 sm:text-lg">
-                        파일 업로드 → 가격·제작기간 확인 → 주문·결제.
+                        {t('subtitleLead')}
                         <br />
-                        <span className="font-bold text-white/90">3D 파일</span>
-                        이 있으면 즉시 자동견적,{' '}
-                        <span className="font-bold text-white/90">사진(이미지)</span>
-                        만 있어도 AI가 3D 모델을 만들어 견적으로 이어집니다.
+                        <span className="font-bold text-white/90">{t('subtitleFile')}</span>
+                        {t('subtitleMid')}
+                        <span className="font-bold text-white/90">{t('subtitlePhoto')}</span>
+                        {t('subtitleEnd')}
                     </p>
 
                     {/* 2갈래 Fork 카드 — 드롭존 외곽과 동일 radius */}
@@ -287,12 +289,12 @@ export default function Hero() {
                             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-teal-400/30 bg-teal-400/15 text-teal-300">
                                 <FileBox className="h-5 w-5" />
                             </div>
-                            <p className="text-lg font-black text-white">3D 파일이 있어요</p>
+                            <p className="text-lg font-black text-white">{t('hasFile')}</p>
                             <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
-                                STL·OBJ·STEP 등 즉시 자동견적
+                                {t('hasFileDesc')}
                             </p>
                             <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-teal-300 group-hover:gap-2">
-                                견적 받기 <ChevronRight className="h-3.5 w-3.5" />
+                                {t('getQuote')} <ChevronRight className="h-3.5 w-3.5" />
                             </span>
                         </Link>
 
@@ -308,12 +310,12 @@ export default function Hero() {
                             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-indigo-400/30 bg-indigo-500/15 text-indigo-300">
                                 <ImageIcon className="h-5 w-5" />
                             </div>
-                            <p className="text-lg font-black text-white">사진만 있어요</p>
+                            <p className="text-lg font-black text-white">{t('hasPhoto')}</p>
                             <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
-                                AI가 3D 모델 생성 후 견적
+                                {t('hasPhotoDesc')}
                             </p>
                             <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-indigo-300 group-hover:gap-2">
-                                3D 만들기 <ChevronRight className="h-3.5 w-3.5" />
+                                {t('make3d')} <ChevronRight className="h-3.5 w-3.5" />
                             </span>
                         </Link>
                     </div>
@@ -326,7 +328,7 @@ export default function Hero() {
                                 className="h-14 w-full rounded-2xl bg-teal-400 text-[15px] font-black text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.3)] hover:bg-teal-300"
                             >
                                 <FileBox className="mr-2 h-5 w-5" />
-                                3D 파일로 견적
+                                {t('tabFileQuote')}
                                 <ArrowRight className="ml-1 h-4 w-4" />
                             </Button>
                         </Link>
@@ -336,7 +338,7 @@ export default function Hero() {
                                 className="h-14 w-full rounded-2xl bg-indigo-500 text-[15px] font-black text-white shadow-[0_0_30px_rgba(99,102,241,0.35)] hover:bg-indigo-400"
                             >
                                 <ImageIcon className="mr-2 h-5 w-5" />
-                                사진으로 3D 만들기
+                                {t('tabPhoto3d')}
                             </Button>
                         </Link>
                     </div>
@@ -353,7 +355,7 @@ export default function Hero() {
                             ))}
                         </div>
                         <div>
-                            <p className="text-sm font-bold leading-tight text-white">1,000+ 고객</p>
+                            <p className="text-sm font-bold leading-tight text-white">{t('customers')}</p>
                             <p className="text-[10px] font-medium uppercase tracking-widest text-teal-500/80">
                                 FDM · SLA · DLP
                             </p>
@@ -367,21 +369,21 @@ export default function Hero() {
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
                             className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
                         >
-                            출력방식
+                            {t('linkMethods')}
                         </Link>
                         <Link
                             href="/materials"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
                             className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
                         >
-                            소재
+                            {t('linkMaterials')}
                         </Link>
                         <Link
                             href="/#ai-3d-maker"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
                             className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
                         >
-                            로고 Maker
+                            {t('linkMaker')}
                         </Link>
                         <button
                             type="button"
@@ -389,7 +391,7 @@ export default function Hero() {
                             disabled={isLoadingSample}
                             className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
                         >
-                            {isLoadingSample ? '불러오는 중…' : '샘플견적체험'}
+                            {isLoadingSample ? t('sampleLoading') : t('sampleCta')}
                         </button>
                     </div>
                 </motion.div>
@@ -405,13 +407,13 @@ export default function Hero() {
                         {/* 탭 — 활성/비활성 대비를 높인 세그먼트 컨트롤 */}
                         <div
                             role="tablist"
-                            aria-label="업로드 방식 선택"
+                            aria-label={t('uploadModeAria')}
                             className="flex shrink-0 gap-1.5 border-b border-white/10 bg-black/35 p-2"
                         >
                             {(
                                 [
-                                    { id: 'file' as const, label: '3D 파일', icon: FileBox },
-                                    { id: 'photo' as const, label: '사진(이미지)', icon: ImageIcon },
+                                    { id: 'file' as const, label: t('tabFile'), icon: FileBox },
+                                    { id: 'photo' as const, label: t('tabPhoto'), icon: ImageIcon },
                                 ] as const
                             ).map(({ id, label, icon: Icon }) => {
                                 const isActive = uploadMode === id;
@@ -511,7 +513,7 @@ export default function Hero() {
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-black leading-tight text-white">
-                                            {uploadMode === 'file' ? 'AI 견적 분석' : 'AI 3D 변환'}
+                                            {uploadMode === 'file' ? t('aiQuote') : t('aiConvert')}
                                         </p>
                                         <p
                                             className={cn(
@@ -519,7 +521,7 @@ export default function Hero() {
                                                 uploadMode === 'file' ? 'text-teal-400/80' : 'text-indigo-300/80',
                                             )}
                                         >
-                                            {uploadMode === 'file' ? 'Ready · 즉시 분석' : 'Ready · 자동 견적'}
+                                            {uploadMode === 'file' ? t('readyFile') : t('readyPhoto')}
                                         </p>
                                     </div>
                                 </div>
@@ -535,17 +537,13 @@ export default function Hero() {
                                     <Upload className="h-8 w-8 sm:h-9 sm:w-9" />
                                 </div>
                                 <p className="text-lg font-black text-white sm:text-xl">
-                                    {uploadMode === 'file'
-                                        ? '3D 파일을 여기에 놓으세요'
-                                        : '제품 사진(이미지)을 여기에 놓으세요'}
+                                    {uploadMode === 'file' ? t('dropFile') : t('dropPhoto')}
                                 </p>
                                 <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/50 break-keep sm:text-sm">
-                                    {uploadMode === 'file'
-                                        ? 'STL · OBJ · 3MF · PLY · STEP · STP · 최대 100MB'
-                                        : 'JPG · PNG · 최대 8MB · AI 3D 변환 후 견적'}
+                                    {uploadMode === 'file' ? t('formatsFile') : t('formatsPhoto')}
                                 </p>
                                 <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-white/35">
-                                    클릭하여 파일 선택 · 업로드 후 견적 페이지로 이동합니다
+                                    {t('clickHint')}
                                 </p>
                             </div>
                         </div>
@@ -572,7 +570,7 @@ export default function Hero() {
                                             : 'bg-indigo-500 text-white hover:bg-indigo-400',
                                     )}
                                 >
-                                    {uploadMode === 'file' ? '상세 견적 받기' : '사진으로 3D 만들기'}
+                                    {uploadMode === 'file' ? t('ctaFile') : t('ctaPhoto')}
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>

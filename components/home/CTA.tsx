@@ -3,9 +3,12 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function CTA() {
+    const t = useTranslations('Home.cta');
+
     return (
         <section className="py-32 relative overflow-hidden">
             {/* 연한 블랙 및 그라데이션 배경 (Hero와 동일) */}
@@ -28,7 +31,7 @@ export default function CTA() {
                         viewport={{ once: true }}
                         className="text-4xl md:text-6xl font-bold mb-8 tracking-tight word-keep-all text-white"
                     >
-                        지금, 출력을 <span className="text-teal-400">시작하세요</span>
+                        {t('titleBefore')}<span className="text-teal-400">{t('titleAccent')}</span>
                     </motion.h2>
 
                     <motion.p
@@ -38,8 +41,7 @@ export default function CTA() {
                         transition={{ delay: 0.1 }}
                         className="text-xl text-white/70 mb-12 max-w-2xl mx-auto break-keep font-medium"
                     >
-                        파일을 업로드하고 즉시 견적을 확인해보세요.
-                        회원가입 없이도 가격을 확인할 수 있습니다.
+                        {t('desc')}
                     </motion.p>
 
                     <motion.div
@@ -51,7 +53,7 @@ export default function CTA() {
                     >
                         <Link href="/quote">
                             <Button size="lg" className="h-16 px-10 text-xl rounded-full shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:scale-105 transition-all duration-300">
-                                3D 프린팅 무료 견적 받기 <ArrowRight className="ml-2" />
+                                {t('button')} <ArrowRight className="ml-2" />
                             </Button>
                         </Link>
                     </motion.div>

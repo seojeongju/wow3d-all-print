@@ -2,33 +2,34 @@
 
 import { motion } from 'framer-motion'
 import { Upload, Calculator, CreditCard, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { TURNAROUND_SHORT } from '@/lib/site-copy'
-
-const steps = [
-    {
-        id: '01',
-        title: '파일 업로드 · 자동견적',
-        description:
-            'STL·OBJ·3MF·PLY는 즉시 자동견적, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다.',
-        icon: Upload,
-    },
-    {
-        id: '02',
-        title: '가격 · 예상 제작기간 확인',
-        description: `소재·출력 방식을 선택하면 가격이 실시간으로 반영됩니다. ${TURNAROUND_SHORT}`,
-        icon: Calculator,
-    },
-    {
-        id: '03',
-        title: '주문 · 결제',
-        description: '배송 정보를 입력하고 결제하면 주문이 접수됩니다. 이후 제작·검수·발송이 진행됩니다.',
-        icon: CreditCard,
-    },
-]
 
 export default function CoreJourneySection() {
+    const t = useTranslations('Home.journey')
+
+    const steps = [
+        {
+            id: '01',
+            title: t('step1Title'),
+            description: t('step1Desc'),
+            icon: Upload,
+        },
+        {
+            id: '02',
+            title: t('step2Title'),
+            description: t('step2Desc'),
+            icon: Calculator,
+        },
+        {
+            id: '03',
+            title: t('step3Title'),
+            description: t('step3Desc'),
+            icon: CreditCard,
+        },
+    ]
+
     return (
         <section id="journey" className="py-20 md:py-28 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
@@ -46,10 +47,10 @@ export default function CoreJourneySection() {
                         3 Steps
                     </p>
                     <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4 break-keep">
-                        업로드부터 주문까지
+                        {t('title')}
                     </h2>
                     <p className="text-white/70 text-base md:text-lg font-medium break-keep">
-                        첫 방문자는 이 세 단계만 기억하시면 됩니다.
+                        {t('subtitle')}
                     </p>
                 </motion.div>
 
@@ -91,7 +92,7 @@ export default function CoreJourneySection() {
                             size="lg"
                             className="h-14 px-8 rounded-2xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black tracking-wide gap-2"
                         >
-                            지금 자동견적 시작
+                            {t('cta')}
                             <ArrowRight className="w-5 h-5" />
                         </Button>
                     </Link>
