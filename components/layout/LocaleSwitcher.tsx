@@ -8,9 +8,11 @@ import { cn } from '@/lib/utils'
 type Props = {
     className?: string
     compact?: boolean
+    /** 흰/밝은 헤더 배경용 — 비활성 라벨 대비 확보 */
+    light?: boolean
 }
 
-export default function LocaleSwitcher({ className, compact }: Props) {
+export default function LocaleSwitcher({ className, compact, light }: Props) {
     const t = useTranslations('LocaleSwitcher')
     const locale = useLocale() as AppLocale
     const pathname = usePathname()
@@ -24,7 +26,10 @@ export default function LocaleSwitcher({ className, compact }: Props) {
     return (
         <div
             className={cn(
-                'inline-flex items-center rounded-xl border border-white/15 bg-white/[0.04] p-0.5',
+                'inline-flex items-center rounded-xl border p-0.5',
+                light
+                    ? 'border-slate-200 bg-slate-100/90'
+                    : 'border-white/15 bg-white/[0.04]',
                 className,
             )}
             role="group"
@@ -40,8 +45,10 @@ export default function LocaleSwitcher({ className, compact }: Props) {
                         className={cn(
                             'rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-colors',
                             active
-                                ? 'bg-teal-400 text-slate-950'
-                                : 'text-white/55 hover:text-white',
+                                ? 'bg-teal-400 text-slate-950 shadow-sm'
+                                : light
+                                  ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+                                  : 'text-white/55 hover:text-white',
                             compact && 'px-2 py-1 text-[10px]',
                         )}
                         aria-pressed={active}

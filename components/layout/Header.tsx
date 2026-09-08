@@ -233,7 +233,8 @@ export default function Header() {
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <LocaleSwitcher
                         compact
-                        className={`hidden md:inline-flex mr-1 ${isPastHero ? 'border-slate-200 bg-slate-50' : ''}`}
+                        light={isPastHero}
+                        className="hidden md:inline-flex mr-1"
                     />
                     <Link href="/cart">
                         <button className={`relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
