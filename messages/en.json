@@ -1898,6 +1898,280 @@
     "ctaMaterials": "Browse all materials",
     "ctaQuote": "Start auto quote"
   },
+  "BestMaterialsGuides": {
+    "breadcrumbMaterials": "Materials",
+    "useCaseLabel": "Use Case",
+    "faqTitle": "Frequently asked questions",
+    "ctaSecondaryLabel": "Browse all materials",
+    "best-materials-for-3d-printing-prototypes": {
+      "metaTitle": "Best 3D printing materials for prototypes",
+      "metaDescription": "Choose PLA, PETG, ABS, Tough resin, or Standard resin based on your prototype goal—looks, fit checks, or functional tests.",
+      "ogTitle": "Best 3D printing materials for prototypes",
+      "ogDescription": "How to pick prototype materials for appearance checks, assembly tests, and functional reviews.",
+      "articleHeadline": "Best 3D printing materials for prototypes",
+      "articleDescription": "Which 3D printing materials fit appearance checks, assembly tests, functional reviews, and clear parts in prototypes.",
+      "breadcrumbCurrent": "Prototype materials guide",
+      "eyebrow": "Use Case Guide",
+      "h1Line1": "For prototypes,",
+      "h1Accent": "which material is best?",
+      "intro": "The right 3D printing material depends on whether you need looks, assembly fit, or functional review. This guide organizes the criteria teams compare most often by purpose.",
+      "items": [
+        {
+          "title": "Appearance prototypes",
+          "material": "PLA or Standard resin",
+          "reason": "Best when speed and visual checks matter. Common for form review, design confirmation, and display mockups."
+        },
+        {
+          "title": "Assembly-test prototypes",
+          "material": "ABS or Tough resin",
+          "reason": "Better when fit, fastening, or load checks matter. Useful for functional review and structural tests."
+        },
+        {
+          "title": "Balanced functional prototypes",
+          "material": "PETG",
+          "reason": "Stronger than PLA and easier to print than ABS—often chosen for general functional prototypes."
+        },
+        {
+          "title": "Clear covers & window structures",
+          "material": "Clear resin",
+          "reason": "Best when visibility and transparency matter—observation windows, covers, and visual-check parts."
+        }
+      ],
+      "checklistTitle": "What to check when choosing prototype materials",
+      "checklistItems": [
+        "Is appearance first, or functional testing?",
+        "Do you need assembly and fastening tests?",
+        "Are heat, impact, or transparency required?",
+        "What matters more—turnaround speed or budget?"
+      ],
+      "faqs": [
+        {
+          "q": "Which material is used most for prototypes—PLA, ABS, or PETG?",
+          "a": "It depends on the goal. Appearance prototypes often use PLA; parts that need durability usually use PETG or ABS."
+        },
+        {
+          "q": "Do I need a strong material if I only need a design check?",
+          "a": "No. For size and form only, economical options with good surface quality—like PLA or Standard resin—are often more efficient."
+        },
+        {
+          "q": "For assembly tests, is FDM better than resin?",
+          "a": "Often yes for repeated fastening, housing tests, and functional review—ABS or PETG FDM parts are a common fit. For precise fit checks, Tough resin can also work well."
+        }
+      ],
+      "ctaEyebrow": "Prototype CTA",
+      "ctaTitle": "Get a quote with materials matched to your prototype goal",
+      "ctaDescription": "Whether you need looks, assembly tests, or functional review, apply the right material and check quote and lead time right away.",
+      "trackingTopic": "Best materials for prototypes"
+    },
+    "best-materials-for-transparent-3d-printed-parts": {
+      "metaTitle": "Best 3D printing materials for transparent parts",
+      "metaDescription": "Compare materials for clear covers, observation windows, and visibility parts—including Clear resin vs PETG.",
+      "ogTitle": "Best materials for transparent 3D printed parts",
+      "ogDescription": "How to choose Clear resin or PETG for clear covers and observation windows.",
+      "articleHeadline": "Best 3D printing materials for transparent parts",
+      "articleDescription": "A guide comparing Clear resin and PETG for clear covers, observation windows, and visibility parts.",
+      "breadcrumbCurrent": "Transparent parts materials guide",
+      "eyebrow": "Use Case Guide",
+      "h1Line1": "For transparent parts,",
+      "h1Accent": "which material is best?",
+      "intro": "Clear covers, observation windows, protective windows, and visibility parts need different selection criteria than ordinary parts. This guide explains how to balance clarity and function.",
+      "items": [
+        {
+          "title": "Top pick: Clear resin",
+          "detail": "Best when transparency and visibility come first. SLA·DLP delivers smooth surfaces and fine detail; polishing and coating can push clarity even higher."
+        },
+        {
+          "title": "Alternative: PETG",
+          "detail": "Better for translucent covers, protective windows, and functional cases than full optical clarity. FDM strength and durability help when structure matters."
+        },
+        {
+          "title": "Often avoid: standard PLA/ABS",
+          "detail": "If true transparency is the goal, PLA and ABS are usually a poor fit—layer lines and light transmission make clean clarity hard."
+        }
+      ],
+      "checklistTitle": "Checklist for transparent parts",
+      "checklistItems": [
+        "Do you need full clarity, or is translucency enough?",
+        "Is appearance more important than structural strength?",
+        "Can you allow finishing such as polishing and coating?",
+        "Is this for indoor display, or a real functional part?"
+      ],
+      "faqs": [
+        {
+          "q": "Can 3D printing really make transparent parts?",
+          "a": "Yes, but results vary a lot by process and finishing. Clear resin is usually best; glass-like clarity often needs extra polishing and coating."
+        },
+        {
+          "q": "For clear covers or windows, is PETG or Clear resin better?",
+          "a": "If visibility and appearance matter most, choose Clear resin. If strength and general function matter more and slight translucency is OK, PETG is a solid option."
+        },
+        {
+          "q": "Is post-processing required for transparent parts?",
+          "a": "Usually yes if you want high clarity. Resin parts improve with wash, cure, polish, and coating."
+        }
+      ],
+      "ctaEyebrow": "Transparent Parts CTA",
+      "ctaTitle": "Quote clear covers and window parts with the right material",
+      "ctaDescription": "Factor in clarity, visibility, and finishing tolerance—then check real quotes and manufacturability for Clear resin or PETG.",
+      "trackingTopic": "Best materials for transparent parts"
+    },
+    "best-materials-for-3d-printed-housings-and-cases": {
+      "metaTitle": "Best 3D printing materials for housings and cases",
+      "metaDescription": "Compare materials for electronics housings, protective cases, covers, and exterior parts—including ABS, PETG, and Tough resin.",
+      "ogTitle": "Best materials for housings and cases",
+      "ogDescription": "How to choose ABS, PETG, or Tough resin for electronics housings and protective cases.",
+      "articleHeadline": "Best 3D printing materials for housings and cases",
+      "articleDescription": "A guide comparing ABS, PETG, and Tough resin for electronics housings, protective cases, and exterior covers.",
+      "breadcrumbCurrent": "Housings & cases materials guide",
+      "eyebrow": "Use Case Guide",
+      "h1Line1": "For housings and cases,",
+      "h1Accent": "which material is best?",
+      "intro": "Electronics housings, protective cases, and exterior covers need more than looks—assembly, impact, heat, and finishing matter too. This guide organizes the materials teams choose most often by purpose.",
+      "items": [
+        {
+          "title": "Default for functional housings: ABS",
+          "detail": "Strong for impact and heat when fastening or assembly tests matter. Good machinability and finishing make it common for housing prototypes."
+        },
+        {
+          "title": "Balanced choice: PETG",
+          "detail": "A good balance of strength, durability, and print stability for protective cases, covers, and general exterior parts—often easier to print than ABS."
+        },
+        {
+          "title": "Fine exterior alternative: Tough resin",
+          "detail": "Useful for small precision cases or detail-critical exteriors. For heavy load or heat, FDM materials are often a better fit."
+        }
+      ],
+      "checklistTitle": "Housing material checklist",
+      "checklistItems": [
+        "Will you repeat fastening and assembly tests?",
+        "How much heat and impact resistance do you need?",
+        "Do smooth appearance and dimensional accuracy matter more?",
+        "Do you plan finishing, paint, or sanding?"
+      ],
+      "faqs": [
+        {
+          "q": "For electronics housings or cases, is ABS or PETG better?",
+          "a": "If heat resistance, assembly, and finishing matter most, ABS is often better. For print stability plus balanced durability, PETG is a strong choice."
+        },
+        {
+          "q": "Are small precision cases better in resin?",
+          "a": "If dimensional accuracy and surface quality come first, Tough resin can help. For repeated fastening or impact resistance, prefer ABS or PETG."
+        },
+        {
+          "q": "Should appearance mockups and functional cases use different materials?",
+          "a": "Yes. Appearance mockups can use PLA or Standard resin, but protective cases and housings for real use usually need stronger options like PETG, ABS, or Tough resin."
+        }
+      ],
+      "ctaEyebrow": "Housing CTA",
+      "ctaTitle": "Get a quote for your housing and case requirements",
+      "ctaDescription": "Factor in assembly, fastening, heat resistance, and surface quality—then check real production quotes for ABS, PETG, or Tough resin.",
+      "trackingTopic": "Best materials for housings and cases"
+    },
+    "best-materials-for-heat-resistant-and-impact-resistant-parts": {
+      "metaTitle": "Best 3D printing materials for heat- and impact-resistant parts",
+      "metaDescription": "Compare materials for parts that need heat and impact resistance—focused on ABS, PETG, and Tough resin use cases.",
+      "ogTitle": "Heat- and impact-resistant 3D printing materials",
+      "ogDescription": "How to choose ABS, PETG, or Tough resin for functional parts under heat and impact.",
+      "articleHeadline": "Best 3D printing materials for heat- and impact-resistant parts",
+      "articleDescription": "A guide comparing ABS, PETG, and Tough resin when functional parts need heat and impact resistance.",
+      "breadcrumbCurrent": "Heat & impact materials guide",
+      "eyebrow": "Use Case Guide",
+      "h1Line1": "For heat- and impact-resistant parts,",
+      "h1Accent": "which material is best?",
+      "intro": "Functional parts need more than the right shape. Heat, impact, assembly, and finishing all matter—so material choice by use case is critical.",
+      "items": [
+        {
+          "title": "First pick: ABS",
+          "detail": "Often the first review for functional parts that need both heat and impact resistance—common for housings, fastening parts, and test structures."
+        },
+        {
+          "title": "Balanced choice: PETG",
+          "detail": "More print-stable than ABS while stronger and more durable than PLA—good for general functional parts when you want impact resistance and everyday usability."
+        },
+        {
+          "title": "Precision functional alternative: Tough resin",
+          "detail": "Fits small precision parts or dimensional test pieces. Under high heat and repeated impact, FDM materials are often better."
+        }
+      ],
+      "checklistTitle": "Checklist before you choose",
+      "checklistItems": [
+        "Will the part see continuous heat?",
+        "Are repeated impacts, drops, or fastening expected?",
+        "Does durability matter more than precision?",
+        "Is this a real-use part or a test prototype?"
+      ],
+      "faqs": [
+        {
+          "q": "What material is best when both heat and impact resistance are required?",
+          "a": "ABS is usually reviewed first. Strong assembly, finishing, and functional-test suitability make it common for heat- and impact-demanding parts."
+        },
+        {
+          "q": "Is PETG weaker than ABS?",
+          "a": "It depends on the metric. PETG is excellent for print stability and general durability and is often easier to handle than ABS. For higher heat resistance or certain functional tests, ABS may still win."
+        },
+        {
+          "q": "Can precise functional parts be made in Tough resin?",
+          "a": "Yes for small precision parts or prototype review. Under continuous load, heat, and repeated impact, FDM materials like ABS or PETG are often a better fit."
+        }
+      ],
+      "ctaEyebrow": "Functional Parts CTA",
+      "ctaTitle": "Quote with heat and impact requirements included",
+      "ctaDescription": "Account for heat, impact, fastening, and real use—then quickly check production quotes and direction for ABS, PETG, or Tough resin.",
+      "trackingTopic": "Best materials for heat- and impact-resistant parts"
+    },
+    "best-materials-for-miniatures-and-figurines": {
+      "metaTitle": "Best 3D printing materials for miniatures and figurines",
+      "metaDescription": "Compare materials for precision models, figurines, dioramas, and character models—including Standard resin, Clear resin, and PLA.",
+      "ogTitle": "Best materials for miniatures and figurines",
+      "ogDescription": "How to choose Standard resin, Clear resin, or PLA for miniatures and figurines.",
+      "articleHeadline": "Best 3D printing materials for miniatures and figurines",
+      "articleDescription": "A guide comparing Standard resin, Clear resin, and PLA for miniatures, figurines, and fine appearance models.",
+      "breadcrumbCurrent": "Miniatures & figurines materials guide",
+      "eyebrow": "Use Case Guide",
+      "h1Line1": "For miniatures and figurines,",
+      "h1Accent": "which material is best?",
+      "intro": "Miniatures, figurines, and dioramas live or die on surface quality and fine detail. This guide organizes which materials fit appearance-first models by purpose.",
+      "items": [
+        {
+          "title": "Most common pick: Standard resin",
+          "detail": "Used most when fine detail, smooth surfaces, and small features matter—figurines, miniatures, dioramas, and appearance models."
+        },
+        {
+          "title": "Special-effect alternative: Clear resin",
+          "detail": "Useful for transparent or translucent precision parts—windows, optical effects, and accessories where visibility matters."
+        },
+        {
+          "title": "Budget large mockup alternative: PLA",
+          "detail": "Consider PLA when you care more about large form checks and display mockups than fine detail. Surface quality and micro-features are more limited than resin."
+        }
+      ],
+      "checklistTitle": "Checklist before you choose",
+      "checklistItems": [
+        "How critical are fine detail and surface quality?",
+        "Will you paint and finish the part?",
+        "Do you need transparent parts or special effects?",
+        "Is this a small precision model or a large display mockup?"
+      ],
+      "faqs": [
+        {
+          "q": "Are figurines and miniatures better in resin than FDM?",
+          "a": "Usually yes. Small detail and smooth surfaces matter, so Standard resin or similar precision resins are often the better fit."
+        },
+        {
+          "q": "Which material is best for paintable figurines?",
+          "a": "Standard resin is generally the safest default. Easy surface prep and strong detail make primer and paint workflows smoother."
+        },
+        {
+          "q": "Is PLA enough for large display models?",
+          "a": "Yes if fine sculpting is not the point. When large form checks, display mockups, and budget matter more, PLA can be efficient."
+        }
+      ],
+      "ctaEyebrow": "Miniature CTA",
+      "ctaTitle": "Quote precision models and figurines with the right material",
+      "ctaDescription": "Factor in fine detail, painting plans, and transparent parts—then check production quotes for Standard resin or alternatives.",
+      "trackingTopic": "Best materials for miniatures and figurines"
+    }
+  },
   "GuideChrome": {
     "breadcrumbHome": "Home",
     "breadcrumbGuides": "Guides",
