@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
     getScalePercentMax,
@@ -11,7 +12,7 @@ import {
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
 import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
-import { MESHY_AI_DISCLAIMER } from '@/lib/meshy-disclaimer'
+import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_EN } from '@/lib/meshy-disclaimer'
 import { cn } from '@/lib/utils'
 
 /**
@@ -21,6 +22,8 @@ import { cn } from '@/lib/utils'
  * - 바닥에 붙이기
  */
 export default function ModelTransformPanel({ className }: { className?: string }) {
+    const t = useTranslations('Quote')
+    const locale = useLocale()
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
     const baseAnalysis = useFileStore((s) => s.baseAnalysis)
@@ -100,25 +103,30 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     type="button"
                     onClick={resetTransform}
                     className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black text-white/50 hover:text-teal-300 hover:bg-white/5 transition-colors"
-                    title="스케일·회전 초기화"
+                    title={t('transformResetTitle')}
                 >
                     <RotateCcw className="w-3 h-3" />
-                    초기화
+                    {t('transformReset')}
                 </button>
             </div>
 
             {isAiPhoto && (
                 <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2 text-[10px] font-bold text-amber-100/90 leading-relaxed break-keep space-y-1.5">
-                    <p className="text-amber-50">{MESHY_AI_DISCLAIMER}</p>
+                    <p className="text-amber-50">
+                        {locale === 'en' ? MESHY_AI_DISCLAIMER_EN : MESHY_AI_DISCLAIMER}
+                    </p>
                     <p>
-                        아래 <strong className="text-amber-50">치수(mm)</strong>로 실제 길이에 맞추세요.
-                        정밀 공차는 STL 직접 업로드를 권장합니다.
+                        {t('transformPhotoHintBefore')}{' '}
+                        <strong className="text-amber-50">{t('transformPhotoHintStrong')}</strong>{' '}
+                        {t('transformPhotoHintAfter')}
                     </p>
                     {meshyFitScalePercent != null && meshyFitTargetMm != null && (
                         <p className="text-teal-100">
-                            · 기본 참고 크기: {printMethodForFit.toUpperCase()} 최대 출력의 약 절반(최장축 ≈{' '}
-                            {meshyFitTargetMm}mm, {meshyFitScalePercent}%)으로 맞춰 두었습니다. 견적·실물 크기는
-                            mm로 다시 조절해 주세요.
+                            {t('transformMeshyFitHint', {
+                                method: printMethodForFit.toUpperCase(),
+                                mm: meshyFitTargetMm,
+                                percent: meshyFitScalePercent,
+                            })}
                         </p>
                     )}
                     {assessPrintability(effective).map((w) => (
@@ -137,7 +145,9 @@ export default function ModelTransformPanel({ className }: { className?: string 
             {/* 스케일 % 직접 입력 */}
             <div className="space-y-1.5">
                 <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                    <span className="text-[11px] font-bold text-white/55 shrink-0">균일 스케일 (%)</span>
+                    <span className="text-[11px] font-bold text-white/55 shrink-0">
+                        {t('transformScaleLabel')}
+                    </span>
                     <div className="flex items-center gap-1.5 shrink-0">
                         <input
                             type="text"
@@ -155,21 +165,21 @@ export default function ModelTransformPanel({ className }: { className?: string 
                                 }
                             }}
                             className="min-w-[5.5rem] w-[6.5rem] rounded-lg border border-white/15 bg-black/40 px-2.5 py-1 text-right font-mono text-[12px] tabular-nums text-teal-300 outline-none focus:border-teal-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            aria-label="스케일 퍼센트 직접 입력"
+                            aria-label={t('transformScaleAria')}
                         />
                         <span className="text-teal-300/80 text-[11px] font-bold">%</span>
                     </div>
                 </div>
                 <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
-                    100%는 원본 크기입니다. AI 모델은 mm 입력으로 맞추는 것을 권장합니다.
+                    {t('transformScaleHint')}
                 </p>
             </div>
 
             {/* 치수 mm 직접 입력 */}
             <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-white/55">치수 직접 입력 (mm)</span>
-                    <span className="text-[9px] font-bold text-white/30">균일 스케일</span>
+                    <span className="text-[11px] font-bold text-white/55">{t('transformDimLabel')}</span>
+                    <span className="text-[9px] font-bold text-white/30">{t('transformDimUniform')}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
                     {(['x', 'y', 'z'] as const).map((axis) => (
@@ -195,19 +205,19 @@ export default function ModelTransformPanel({ className }: { className?: string 
                                     if (e.key === 'Enter') e.currentTarget.blur()
                                 }}
                                 className="w-full min-w-0 bg-transparent text-center font-mono text-[11px] tabular-nums text-white/90 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                aria-label={`${axis.toUpperCase()}축 치수(mm)`}
+                                aria-label={t('transformDimAria', { axis: axis.toUpperCase() })}
                             />
                         </label>
                     ))}
                 </div>
                 <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
-                    한 축을 바꾸면 비율을 유지한 채 전체가 함께 커지거나 작아집니다.
+                    {t('transformDimHint')}
                 </p>
             </div>
 
             {/* 90° 회전 */}
             <div className="space-y-1.5">
-                <span className="text-[11px] font-bold text-white/55">90° 회전</span>
+                <span className="text-[11px] font-bold text-white/55">{t('transformRotate90')}</span>
                 <div className="grid grid-cols-3 gap-1.5">
                     {(
                         [
@@ -221,7 +231,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                             type="button"
                             onClick={() => rotateAxis90(item.axis, 90)}
                             className="rounded-xl border border-white/10 bg-white/5 hover:border-teal-400/40 hover:bg-teal-400/10 px-2 py-2 text-center transition-all active:scale-95"
-                            title={`${item.label}축 90° 회전`}
+                            title={t('transformRotateAxisTitle', { axis: item.label })}
                         >
                             <div className="text-[10px] font-black text-teal-300/90">{item.label}</div>
                             <div className="text-[11px] font-mono font-bold text-white/80 mt-0.5">
@@ -245,27 +255,27 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     )}
                 >
                     <MoveDown className="w-3.5 h-3.5" />
-                    바닥에 붙이기
+                    {t('transformSnapFloor')}
                 </button>
                 <button
                     type="button"
                     onClick={alignAxes}
                     className="shrink-0 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-2 text-[10px] font-black text-white/55 hover:text-white transition-all active:scale-95"
-                    title="회전을 0°로 맞춰 축 정렬"
+                    title={t('transformAlignAxesTitle')}
                 >
-                    축 정렬
+                    {t('transformAlignAxes')}
                 </button>
             </div>
 
             <div className="rounded-xl bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white/45 space-y-1">
                 <div className="flex justify-between gap-2">
-                    <span>적용 치수</span>
+                    <span>{t('transformAppliedDims')}</span>
                     <span className="font-mono text-white/75">
                         {box.x.toFixed(1)} × {box.y.toFixed(1)} × {box.z.toFixed(1)} mm
                     </span>
                 </div>
                 <div className="flex justify-between gap-2">
-                    <span>메쉬 부피</span>
+                    <span>{t('transformMeshVolume')}</span>
                     <span className="font-mono text-white/75">{effective.volume.toFixed(2)} cm³</span>
                 </div>
             </div>

@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useDropzone, type FileRejection } from 'react-dropzone'
 import { Upload, FileBox, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useFileStore } from '@/store/useFileStore'
 import { cn } from '@/lib/utils'
 import {
@@ -13,13 +14,8 @@ import {
 
 export type FileUploadVariant = 'default' | 'dark'
 
-function rejectionMessage(rejections: FileRejection[]): string {
-    const code = rejections[0]?.errors?.[0]?.code
-    if (code === 'file-too-large') return '파일 크기는 최대 100MB까지 가능합니다.'
-    return 'STL, OBJ, 3MF, PLY, STEP, STP 파일만 드래그하거나 선택할 수 있습니다.'
-}
-
 export default function FileUpload({ variant = 'default' }: { variant?: FileUploadVariant }) {
+    const t = useTranslations('Quote')
     const { file, setFile, reset } = useFileStore()
     const isDark = variant === 'dark'
     const [error, setError] = useState<string | null>(null)
@@ -32,10 +28,11 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
                 return
             }
             if (rejections.length > 0) {
-                setError(rejectionMessage(rejections))
+                const code = rejections[0]?.errors?.[0]?.code
+                setError(code === 'file-too-large' ? t('dropzoneTooLarge') : t('dropzoneInvalidType'))
             }
         },
-        [setFile]
+        [setFile, t]
     )
 
     const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
@@ -102,7 +99,7 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
                     type="button"
                     onClick={reset}
                     className="p-2.5 hover:bg-red-500/10 hover:text-red-400 text-white/20 rounded-xl transition-all active:scale-90 group"
-                    aria-label="업로드 파일 제거"
+                    aria-label={t('removeFileAria')}
                 >
                     <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                 </button>
@@ -167,9 +164,9 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
             >
                 {isDragActive
                     ? isDragReject
-                        ? '지원하지 않는 파일입니다'
-                        : '여기에 놓아 업로드'
-                    : '3D 모델 업로드'}
+                        ? t('dropzoneTitleReject')
+                        : t('dropzoneTitleActive')
+                    : t('dropzoneTitle')}
             </h3>
             <p
                 className={cn(
@@ -179,12 +176,12 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
                         : 'text-muted-foreground'
                 )}
             >
-                STL, OBJ, 3MF, PLY, STEP, STP 파일을 <br />
-                드래그하거나 <span className="text-teal-400">클릭하여</span> 업로드하세요
+                {t.rich('dropzoneHint', {
+                    br: () => <br />,
+                    click: (chunks) => <span className="text-teal-400">{chunks}</span>,
+                })}
                 <br />
-                <span className="text-[11px] font-medium opacity-80">
-                    메쉬 파일은 즉시 견적 · STEP/STP는 자동 변환
-                </span>
+                <span className="text-[11px] font-medium opacity-80">{t('dropzoneMeshNote')}</span>
             </p>
             <div
                 className={cn(
@@ -194,7 +191,7 @@ export default function FileUpload({ variant = 'default' }: { variant?: FileUplo
                         : 'bg-muted text-muted-foreground/60'
                 )}
             >
-                최대 업로드 용량: 100MB
+                {t('dropzoneMaxSize')}
             </div>
             {error ? (
                 <p

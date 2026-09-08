@@ -3,6 +3,7 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import * as THREE from 'three'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
@@ -21,11 +22,12 @@ const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPres
 
 // 로딩 컴포넌트
 function LoadingSpinner() {
+    const t = useTranslations('Quote')
     return (
         <Html center>
             <div className="flex flex-col items-center gap-3 bg-background/90 backdrop-blur-sm px-6 py-4 rounded-lg border border-border shadow-lg">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <div className="text-sm font-medium">모델 로딩 중...</div>
+                <div className="text-sm font-medium">{t('viewerLoading')}</div>
             </div>
         </Html>
     )
@@ -33,6 +35,7 @@ function LoadingSpinner() {
 
 // 측정 도구: Model Adjust·견적과 동일한 유효 치수(스케일·90° 회전 반영)
 function MeasurementTool() {
+    const t = useTranslations('Quote')
     const effective = useEffectiveAnalysis()
     if (!effective) return null
 
@@ -42,9 +45,9 @@ function MeasurementTool() {
         <Html position={[0, 0, 0]}>
             <div className="bg-slate-900/90 backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/10 shadow-2xl text-xs space-y-2 min-w-[200px] text-white">
                 <div className="font-black text-teal-400 mb-3 flex items-center gap-2 uppercase tracking-widest text-[10px]">
-                    <Ruler className="w-3.5 h-3.5" /> 모델 치수 측정
+                    <Ruler className="w-3.5 h-3.5" /> {t('viewerMeasureTitle')}
                 </div>
-                <p className="text-[9px] font-bold text-white/35 -mt-1 mb-1">스케일·회전 적용 후 (견적 기준)</p>
+                <p className="text-[9px] font-bold text-white/35 -mt-1 mb-1">{t('viewerMeasureHint')}</p>
                 <div className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg">
                     <span className="text-white/40 font-bold uppercase tracking-tighter text-[9px]">X (Width)</span>
                     <span className="font-mono font-black text-white">{x.toFixed(2)}<span className="text-[10px] text-white/30 ml-0.5 font-sans">mm</span></span>
@@ -80,6 +83,7 @@ function Model({
     color: string;
     showMeasurements: boolean;
 }) {
+    const t = useTranslations('Quote')
     const fileRecord = useFileStore((s) => s.file)
     const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -153,7 +157,7 @@ function Model({
                 if (cancelled) return
 
                 if (!geo) {
-                    setError('모델을 해석할 수 없습니다. 지원 형식(STL, OBJ, 3MF, PLY, STEP)인지 확인해 주세요.')
+                    setError(t('viewerParseError'))
                     setIsLoading(false)
                     return
                 }
@@ -194,7 +198,7 @@ function Model({
             geometryRef.current = null
             /* 공유 캐시 geometry — dispose는 reset/setFile 시에만 */
         }
-    }, [url, fileRecord])
+    }, [url, fileRecord, t])
 
     if (isLoading) {
         return <LoadingSpinner />
@@ -344,6 +348,7 @@ function ViewerContent({ color, showMeasurements }: { color: string, showMeasure
 type SceneProps = { compact?: boolean }
 export default function Scene({ compact = false }: SceneProps) {
     useCpuModelAnalysis()
+    const t = useTranslations('Quote')
     const canvasRef = useRef<HTMLDivElement>(null)
     const { fileUrl, reset } = useFileStore()
     const [mounted, setMounted] = useState(false)
@@ -474,17 +479,17 @@ export default function Scene({ compact = false }: SceneProps) {
                             <div className="bg-slate-900/90 backdrop-blur-xl px-4 sm:px-6 py-3 sm:py-4 rounded-2xl border border-white/10 flex items-center gap-3 sm:gap-6 text-white text-[10px] sm:text-xs shadow-2xl pointer-events-auto">
                                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-primary animate-pulse" />
-                                    <span className="whitespace-nowrap">좌클릭: 회전</span>
+                                    <span className="whitespace-nowrap">{t('viewerGuideRotate')}</span>
                                 </div>
                                 <div className="w-px h-3 sm:h-4 bg-white/10 shrink-0" />
                                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 animate-pulse" />
-                                    <span className="whitespace-nowrap">휠: 확대/축소</span>
+                                    <span className="whitespace-nowrap">{t('viewerGuideZoom')}</span>
                                 </div>
                                 <div className="w-px h-3 sm:h-4 bg-white/10 shrink-0" />
                                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                                     <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="whitespace-nowrap">우클릭: 이동</span>
+                                    <span className="whitespace-nowrap">{t('viewerGuidePan')}</span>
                                 </div>
                                 <button
                                     className="ml-2 sm:ml-4 p-1 hover:bg-white/10 rounded-md transition-colors shrink-0"
@@ -502,16 +507,16 @@ export default function Scene({ compact = false }: SceneProps) {
                     <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
                         <Button size="sm" variant="secondary" className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm bg-background/90 rounded-xl" onClick={takeScreenshot}>
                             <Download className="w-4 h-4" />
-                            <span className="hidden sm:inline">스크린샷</span>
+                            <span className="hidden sm:inline">{t('viewerScreenshot')}</span>
                         </Button>
                         <Button size="sm" variant={showMeasurements ? "default" : "secondary"} className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowMeasurements(!showMeasurements)}>
                             <Ruler className="w-4 h-4" />
-                            <span className="hidden sm:inline">치수측정</span>
+                            <span className="hidden sm:inline">{t('viewerMeasure')}</span>
                         </Button>
                         {fileUrl && (
                             <Button size="sm" variant="destructive" className="h-10 sm:h-9 gap-2 shadow-lg backdrop-blur-sm rounded-xl bg-red-500/80 hover:bg-red-500 text-white border-transparent" onClick={() => reset()}>
                                 <Trash2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">모델 삭제</span>
+                                <span className="hidden sm:inline">{t('viewerDeleteModel')}</span>
                             </Button>
                         )}
                         <Button size="icon" variant="secondary" className="sm:hidden h-10 w-10 shadow-lg backdrop-blur-sm rounded-xl" onClick={() => setShowGuide(true)}>
@@ -532,7 +537,7 @@ export default function Scene({ compact = false }: SceneProps) {
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                     <Palette className="w-4 h-4 text-primary" />
-                                    <span className="text-sm font-semibold">모델 색상</span>
+                                    <span className="text-sm font-semibold">{t('viewerModelColor')}</span>
                                 </div>
                                 <button onClick={(e) => { e.stopPropagation(); setColorPanelOpen(false); }} className="hover:text-primary p-1">
                                     <ChevronDown className="w-4 h-4" />
@@ -562,7 +567,7 @@ export default function Scene({ compact = false }: SceneProps) {
                     <div className="absolute bottom-4 left-4 z-20">
                         <div className="flex items-center gap-2 text-white/50">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">3D 뷰어 활성 상태</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">{t('viewerActive')}</span>
                         </div>
                     </div>
                 )}
@@ -576,11 +581,11 @@ export default function Scene({ compact = false }: SceneProps) {
                     }
                 >
                     {[
-                        { id: 'home', label: '홈', icon: Home },
-                        { id: 'front', label: '전면', icon: ArrowUp },
-                        { id: 'back', label: '후면', icon: ArrowDown },
-                        { id: 'left', label: '측면L', icon: ArrowLeft },
-                        { id: 'right', label: '측면R', icon: ArrowRight },
+                        { id: 'home', label: t('viewerViewHome'), icon: Home },
+                        { id: 'front', label: t('viewerViewFront'), icon: ArrowUp },
+                        { id: 'back', label: t('viewerViewBack'), icon: ArrowDown },
+                        { id: 'left', label: t('viewerViewLeft'), icon: ArrowLeft },
+                        { id: 'right', label: t('viewerViewRight'), icon: ArrowRight },
                     ].map((btn) => (
                         <div key={btn.id} className="flex items-center gap-3 group">
                             <span className="text-[10px] font-black text-white/30 group-hover:text-teal-400 transition-colors uppercase tracking-widest opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300">
