@@ -1,20 +1,58 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: '3D프린팅 시제품 갤러리 | 실제 출력 사례 100+',
-    description:
-        '와우쓰리디 WOW3D 3D프린팅 시제품·프로토타입 출력 갤러리. FDM·SLA·DLP로 제작한 실제 사례 이미지와 소재·공정 정보를 확인하세요.',
-    alternates: { canonical: absoluteUrl('/gallery') },
-    openGraph: {
-        title: '3D프린팅 시제품 갤러리 | WOW3D 출력 사례',
-        description:
-            '100여 종의 고품질 3D프린팅 출력·시제품 제작 레퍼런스. 실제 제작 사례를 한눈에 확인하세요.',
-        url: absoluteUrl('/gallery'),
-        type: 'website',
-    },
+type Props = {
+    children: React.ReactNode
+    params: Promise<{ locale: string }>
 }
 
-export default function GalleryLayout({ children }: { children: React.ReactNode }) {
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
+
+function galleryPath(locale: AppLocale) {
+    return getPathname({ locale, href: '/gallery' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Gallery' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = galleryPath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${galleryPath('ko')}`,
+                en: `${SITE_URL}${galleryPath('en')}`,
+                'x-default': `${SITE_URL}${galleryPath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('ogTitle'),
+            description: t('ogDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function GalleryLayout({ children, params }: Props) {
+    const { locale: localeParam } = await params
+    setRequestLocale(resolveLocale(localeParam))
     return children
 }

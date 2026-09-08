@@ -1,23 +1,58 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-  title: '3D프린팅 소재 안전 정보',
-  description:
-    'WOW3D 3D 프린팅 소재 안전 정보. FDM(PLA, ABS, PETG, TPU) 및 레진(SLA·DLP) 취급 시 주의사항, 환기·보관·폐기 안내.',
-  alternates: { canonical: absoluteUrl('/materials/safety') },
-  openGraph: {
-    title: '소재 안전 정보 | WOW3D',
-    description: 'FDM·레진 소재 취급, 환기·보관·폐기 안내.',
-    url: absoluteUrl('/materials/safety'),
-    type: 'website',
-  },
+type Props = {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
 }
 
-export default function MaterialSafetyLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function resolveLocale(localeParam: string): AppLocale {
+  return (routing.locales.includes(localeParam as AppLocale)
+    ? localeParam
+    : routing.defaultLocale) as AppLocale
+}
+
+function safetyPath(locale: AppLocale) {
+  return getPathname({ locale, href: '/materials/safety' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam } = await params
+  const locale = resolveLocale(localeParam)
+  setRequestLocale(locale)
+  const t = await getTranslations({ locale, namespace: 'MaterialsSafety' })
+
+  const title = t('metaTitle')
+  const description = t('metaDescription')
+  const path = safetyPath(locale)
+  const canonical = `${SITE_URL}${path}`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        ko: `${SITE_URL}${safetyPath('ko')}`,
+        en: `${SITE_URL}${safetyPath('en')}`,
+        'x-default': `${SITE_URL}${safetyPath('ko')}`,
+      },
+    },
+    openGraph: {
+      title: t('ogTitle'),
+      description: t('ogDescription'),
+      url: canonical,
+      type: 'website',
+      locale: locale === 'en' ? 'en_US' : 'ko_KR',
+    },
+  }
+}
+
+export default async function MaterialSafetyLayout({ children, params }: Props) {
+  const { locale: localeParam } = await params
+  setRequestLocale(resolveLocale(localeParam))
   return <>{children}</>
 }

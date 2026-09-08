@@ -2,8 +2,8 @@
 
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { useEffect, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -14,17 +14,15 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import {
-    User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock, Eye,
-    Trash2, Edit2, AlertCircle, ShieldCheck, Minus, Plus, Search,
-    RotateCcw, CheckCircle2, Truck, CreditCard, ChevronDown, MapPin, Phone, Mail, Box, ArrowLeft
+    User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock,
+    Trash2, Edit2, ShieldCheck, Minus, Plus, Search,
+    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, Box, ArrowLeft
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { showToast } from '@/lib/toast-helper';
 import type { Quote, Order } from '@/lib/types';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
-import OrderTimeline from '@/components/account/OrderTimeline';
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -124,22 +122,35 @@ function getStatusStyle(status: string): { bg: string; text: string; border: str
 
 /** 주문 진행 단계 표시 선 */
 const ORDER_STEPS = ['pending', 'confirmed', 'quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered', 'completed'];
-const ORDER_STEP_LABELS: Record<string, string> = {
-    pending: '접수',
-    confirmed: '확인',
-    quote_sent: '견적',
-    payment_confirmed: '결제',
-    production: '제작',
-    shipping: '배송',
-    delivered: '배송완료',
-    completed: '완료',
+const ORDER_STEP_KEYS: Record<string, string> = {
+    pending: 'stepPending',
+    confirmed: 'stepConfirmed',
+    quote_sent: 'stepQuoteSent',
+    payment_confirmed: 'stepPayment',
+    production: 'stepProduction',
+    shipping: 'stepShipping',
+    delivered: 'stepDelivered',
+    completed: 'stepCompleted',
+};
+
+const STATUS_KEYS: Record<string, string> = {
+    pending: 'statusPending',
+    confirmed: 'statusConfirmed',
+    quote_sent: 'statusQuoteSent',
+    payment_confirmed: 'statusPaymentConfirmed',
+    production: 'statusProduction',
+    shipping: 'statusShipping',
+    delivered: 'statusDelivered',
+    completed: 'statusCompleted',
+    cancelled: 'statusCancelled',
 };
 
 function StatusProgress({ status }: { status: string }) {
+    const t = useTranslations('MyAccount');
     if (status === 'cancelled') {
         return (
             <div className="flex items-center gap-2 mt-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-red-400/80">주문 취소됨</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-400/80">{t('orderCancelled')}</span>
             </div>
         );
     }
@@ -159,7 +170,7 @@ function StatusProgress({ status }: { status: string }) {
                                 </div>
                                 <span className={`mt-3 text-[11px] font-black uppercase tracking-wide whitespace-nowrap
                                     ${active ? 'text-teal-400' : done ? 'text-white/80' : 'text-white/30'}`}>
-                                    {ORDER_STEP_LABELS[step]}
+                                    {t(ORDER_STEP_KEYS[step] as any)}
                                 </span>
                             </div>
                             {idx < ORDER_STEPS.length - 1 && (
@@ -173,19 +184,12 @@ function StatusProgress({ status }: { status: string }) {
     );
 }
 
-const statusMap: Record<string, string> = {
-    pending: '결제 대기',
-    confirmed: '주문 확인',
-    quote_sent: '견적 발송',
-    payment_confirmed: '결제 확인',
-    production: '제작 중',
-    shipping: '배송 중',
-    delivered: '배송 완료',
-    completed: '완료됨',
-    cancelled: '주문 취소',
-};
-
 export default function MyAccountPage() {
+    const t = useTranslations('MyAccount');
+    const locale = useLocale();
+    const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR';
+    const statusLabel = (status: string) =>
+        STATUS_KEYS[status] ? t(STATUS_KEYS[status] as any) : status;
     const { user, token, isAuthenticated, logout, updateUser, sessionId } = useAuthStore();
     const { addToCart } = useCartStore();
     const router = useRouter();
@@ -264,7 +268,7 @@ export default function MyAccountPage() {
             }
         } catch (error) {
             console.error('Failed to load data:', error);
-            showToast.error('데이터를 불러오는데 실패했습니다', error);
+            showToast.error(t('toastLoadFail'), error);
         } finally {
             setIsLoading(false);
         }
@@ -272,12 +276,12 @@ export default function MyAccountPage() {
 
     const handleLogout = () => {
         logout();
-        showToast.success('로그아웃 완료', '안전하게 로그아웃되었습니다');
+        showToast.success(t('toastLogoutTitle'), t('toastLogoutDesc'));
         router.push('/');
     };
 
     const handleDeleteQuote = async (quoteId: number) => {
-        if (!confirm('정말로 이 견적을 삭제하시겠습니까?')) return;
+        if (!confirm(t('confirmDeleteQuote'))) return;
 
         try {
             const headers: HeadersInit = {};
@@ -295,18 +299,18 @@ export default function MyAccountPage() {
 
             if (res.ok) {
                 setQuotes(prev => prev.filter(q => q.id !== quoteId));
-                showToast.success('견적이 삭제되었습니다');
+                showToast.success(t('toastDeleteQuoteOk'));
             } else {
                 const data = await res.json();
-                showToast.error('견적 삭제 실패', data);
+                showToast.error(t('toastDeleteQuoteFail'), data);
             }
         } catch (error) {
-            showToast.error('견적 삭제 중 오류가 발생했습니다', error);
+            showToast.error(t('toastDeleteQuoteError'), error);
         }
     };
 
     const handleCancelOrder = async (orderId: number) => {
-        if (!confirm('정말로 주문을 취소하시겠습니까?')) return;
+        if (!confirm(t('confirmCancelOrder'))) return;
 
         try {
             const res = await fetch(`/api/orders/${orderId}`, {
@@ -316,13 +320,13 @@ export default function MyAccountPage() {
 
             if (res.ok) {
                 setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o));
-                showToast.success('주문이 취소되었습니다');
+                showToast.success(t('toastCancelOrderOk'));
             } else {
                 const data = await res.json();
-                showToast.error('주문 취소 실패', data);
+                showToast.error(t('toastCancelOrderFail'), data);
             }
         } catch (error) {
-            showToast.error('주문 취소 중 오류가 발생했습니다', error);
+            showToast.error(t('toastCancelOrderError'), error);
         }
     };
 
@@ -349,15 +353,15 @@ export default function MyAccountPage() {
             });
 
             if (res.ok) {
-                showToast.success('주문 정보가 수정되었습니다');
+                showToast.success(t('toastUpdateOrderOk'));
                 setEditingOrder(null);
                 loadData();
             } else {
                 const data = await res.json();
-                showToast.error('주문 정보 수정 실패', data);
+                showToast.error(t('toastUpdateOrderFail'), data);
             }
         } catch (error) {
-            showToast.error('주문 수정 중 오류가 발생했습니다', error);
+            showToast.error(t('toastUpdateOrderError'), error);
         } finally {
             setIsUpdating(false);
         }
@@ -367,7 +371,7 @@ export default function MyAccountPage() {
         e.preventDefault();
         const trimmedName = profileForm.name.trim();
         if (!trimmedName) {
-            showToast.error('이름을 입력해주세요');
+            showToast.error(t('toastNameRequired'));
             return;
         }
 
@@ -403,14 +407,14 @@ export default function MyAccountPage() {
                     name: String(next.name ?? trimmedName),
                     phone: next.phone != null ? String(next.phone) : '',
                 });
-                showToast.success('프로필이 업데이트되었습니다');
+                showToast.success(t('toastProfileOk'));
                 setIsEditingProfile(false);
             } else {
                 const data = await res.json();
-                showToast.error('프로필 업데이트 실패', data);
+                showToast.error(t('toastProfileFail'), data);
             }
         } catch (error) {
-            showToast.error('프로필 업데이트 중 오류가 발생했습니다', error);
+            showToast.error(t('toastProfileError'), error);
         } finally {
             setIsUpdating(false);
         }
@@ -418,7 +422,7 @@ export default function MyAccountPage() {
 
     const handleAddToCartFromSaved = (quote: Quote) => {
         addToCart(quote, 1);
-        showToast.success('장바구니 추가 완료', `${quote.fileName}이 장바구니에 담겼습니다.`);
+        showToast.success(t('toastAddCartTitle'), t('toastAddCartDesc', { name: quote.fileName }));
         router.push('/cart');
     };
 
@@ -431,7 +435,7 @@ export default function MyAccountPage() {
             }
         });
 
-        showToast.success('재주문 준비 완료', '주문 품목들이 장바구니에 다시 담겼습니다.');
+        showToast.success(t('toastReorderTitle'), t('toastReorderDesc'));
         router.push('/cart');
     };
 
@@ -485,7 +489,7 @@ export default function MyAccountPage() {
                                 className="text-white/40 hover:text-teal-400 hover:bg-teal-400/10 px-0 mb-6 h-auto text-[11px] font-black uppercase tracking-[0.2em] gap-2 transition-colors"
                             >
                                 <ArrowLeft className="w-3.5 h-3.5" />
-                                홈으로 돌아가기
+                                {t('backHome')}
                             </Button>
                         </Link>
                     </motion.div>
@@ -496,10 +500,15 @@ export default function MyAccountPage() {
                             animate={{ opacity: 1, y: 0 }}
                         >
                             <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-3">
-                                안녕하세요, <span className="bg-gradient-to-r from-teal-400 to-indigo-400 bg-clip-text text-transparent">{user?.name}</span>님!
+                                {t.rich('greeting', {
+                                name: user?.name ?? '',
+                                highlight: (chunks) => (
+                                    <span className="bg-gradient-to-r from-teal-400 to-indigo-400 bg-clip-text text-transparent">{chunks}</span>
+                                ),
+                            })}
                             </h1>
                             <p className="text-white/40 text-lg font-bold">
-                                진행 중인 프로젝트와 견적 내역을 확인해보세요.
+                                {t('subtitle')}
                             </p>
                         </motion.div>
                         <motion.div
@@ -510,7 +519,7 @@ export default function MyAccountPage() {
                                 onClick={handleLogout} 
                                 className="h-12 px-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-rose-500/10 hover:border-rose-500/50 hover:text-rose-400 font-bold gap-2 transition-all"
                             >
-                                <LogOut className="w-4 h-4" /> 로그아웃
+                                <LogOut className="w-4 h-4" /> {t('logout')}
                             </Button>
                         </motion.div>
                     </div>
@@ -527,9 +536,9 @@ export default function MyAccountPage() {
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {[
-                        { label: '진행 중인 프로젝트', value: `${activeOrders.length}`, unit: '건', desc: '배송을 기다리고 있어요', icon: Clock, color: 'text-teal-400' },
-                                { label: '완료된 프로젝트', value: `${completedOrders.length}`, unit: '건', desc: '완료된 프로젝트 내역', icon: CheckCircle2, color: 'text-indigo-400' },
-                                { label: '누적 이용 금액', value: `₩${Math.round(totalSpentKr).toLocaleString('ko-KR')}`, unit: '', desc: '누적 이용 금액', icon: ShoppingBag, color: 'text-amber-400' },
+                        { label: t('statActiveLabel'), value: `${activeOrders.length}`, unit: t('statActiveUnit'), desc: t('statActiveDesc'), icon: Clock, color: 'text-teal-400' },
+                                { label: t('statCompletedLabel'), value: `${completedOrders.length}`, unit: t('statCompletedUnit'), desc: t('statCompletedDesc'), icon: CheckCircle2, color: 'text-indigo-400' },
+                                { label: t('statSpentLabel'), value: `₩${Math.round(totalSpentKr).toLocaleString(dateLocale)}`, unit: '', desc: t('statSpentDesc'), icon: ShoppingBag, color: 'text-amber-400' },
                             ].map((stat, i) => (
                                 <motion.div
                                     key={stat.label}
@@ -566,10 +575,10 @@ export default function MyAccountPage() {
                         >
                             <TabsList className="bg-white/5 border border-white/10 p-1.5 rounded-[2rem] h-auto flex flex-wrap justify-start gap-1 backdrop-blur-xl">
                                 {[
-                                    { val: 'active-orders', label: '진행 중인 주문' },
-                                    { val: 'history', label: '주문 내역' },
-                                    { val: 'quotes', label: '저장된 견적' },
-                                    { val: 'profile', label: '내 정보' },
+                                    { val: 'active-orders', label: t('tabActive') },
+                                    { val: 'history', label: t('tabHistory') },
+                                    { val: 'quotes', label: t('tabQuotes') },
+                                    { val: 'profile', label: t('tabProfile') },
                                 ].map((tab) => (
                                     <TabsTrigger
                                         key={tab.val}
@@ -588,9 +597,9 @@ export default function MyAccountPage() {
                                         <CreditCard className="w-6 h-6 text-emerald-400" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="text-sm font-black text-emerald-400 mb-1">견적서가 발송되었습니다! 📧</div>
+                                        <div className="text-sm font-black text-emerald-400 mb-1">{t('quoteSentTitle')}</div>
                                         <div className="text-xs text-emerald-400/70">
-                                            {quoteSentOrders.length}개의 주문에 견적서가 발송되었습니다. 금액 확인 후 결제해 주세요.
+                                            {t('quoteSentDesc', { count: quoteSentOrders.length })}
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap gap-2 shrink-0">
@@ -603,14 +612,14 @@ export default function MyAccountPage() {
                                                 onClick={() => openOrderEstimate(o.id)}
                                             >
                                                 <FileText className="w-3.5 h-3.5 mr-1.5" />
-                                                견적서 #{String(o.orderNumber || o.id).slice(-6)}
+                                                {t('quoteSentButton', { tail: String(o.orderNumber || o.id).slice(-6) })}
                                             </Button>
                                         ))}
                                         <Button
                                             size="sm"
                                             className="bg-emerald-400 text-slate-950 font-black hover:bg-emerald-300 rounded-xl px-5 text-xs uppercase tracking-widest"
                                             onClick={() => setAccountTab('active-orders')}
-                                        >확인하기</Button>
+                                        >{t('quoteSentCta')}</Button>
                                     </div>
                                 </div>
                             )}
@@ -618,8 +627,8 @@ export default function MyAccountPage() {
                             {/* Active Orders Tab */}
                             <TabsContent value="active-orders" className="space-y-6">
                                 <div className="mb-8 px-2">
-                                    <h2 className="text-2xl font-black text-white mb-2">진행 중인 주문</h2>
-                                    <p className="text-sm font-bold text-white/50">결제 대기, 견적 확인, 제작 및 배송 등 현재 진행 중인 프로젝트를 확인합니다.</p>
+                                    <h2 className="text-2xl font-black text-white mb-2">{t('activeTitle')}</h2>
+                                    <p className="text-sm font-bold text-white/50">{t('activeDesc')}</p>
                                 </div>
                                 {activeOrders.length === 0 ? (
                                     <motion.div
@@ -630,11 +639,11 @@ export default function MyAccountPage() {
                                         <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                                             <Package className="w-10 h-10 text-white/20" />
                                         </div>
-                                        <h3 className="text-2xl font-black mb-3">진행 중인 주문이 없습니다</h3>
-                                        <p className="text-white/40 font-bold mb-10 break-keep">새로운 아이디어를 출력하고 현실로 만들어보세요!</p>
+                                        <h3 className="text-2xl font-black mb-3">{t('activeEmptyTitle')}</h3>
+                                        <p className="text-white/40 font-bold mb-10 break-keep">{t('activeEmptyDesc')}</p>
                                         <Link href="/quote">
                                             <Button className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20">
-                                                새 견적 받기
+                                                {t('newQuote')}
                                             </Button>
                                         </Link>
                                     </motion.div>
@@ -649,32 +658,32 @@ export default function MyAccountPage() {
                                             <div className="px-8 py-6 bg-white/[0.04] border-b border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                                 <div>
                                                     <div className="flex items-center gap-4 mb-2">
-                                                        <h3 className="text-2xl font-black text-white">주문 #{order.orderNumber}</h3>
+                                                        <h3 className="text-2xl font-black text-white">{t('orderNumber', { number: order.orderNumber })}</h3>
                                                         {(() => {
                                                             const s = getStatusStyle(order.status);
                                                             return (
                                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border ${s.bg} ${s.text} ${s.border}`}>
                                                                     <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-                                                                    {statusMap[order.status] || order.status}
+                                                                    {statusLabel(order.status)}
                                                                 </span>
                                                             );
                                                         })()}
                                                     </div>
                                                     <div className="text-sm font-bold text-white/60 uppercase tracking-widest">
-                                                        주문일: {new Date(order.createdAt).toLocaleDateString('ko-KR')}
+                                                        {t('orderDate', { date: new Date(order.createdAt).toLocaleDateString(dateLocale) })}
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="text-3xl font-black text-white">
-                                                        ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
+                                                        ₩{getOrderFinalAmount(order).toLocaleString(dateLocale)}
                                                     </div>
                                                     {(order as any).expertQuoteData && (() => {
                                                         try {
                                                             const d = JSON.parse((order as any).expertQuoteData);
-                                                            if (d?.total_amount > 0) return <div className="text-[11px] text-emerald-400 font-black mt-1">수정견적 금액</div>;
+                                                            if (d?.total_amount > 0) return <div className="text-[11px] text-emerald-400 font-black mt-1">{t('expertAmount')}</div>;
                                                         } catch { } return null;
                                                     })()}
-                                                    <span className="text-[11px] text-white/50 font-bold">(VAT 포함)</span>
+                                                    <span className="text-[11px] text-white/50 font-bold">{t('vatIncluded')}</span>
                                                 </div>
                                             </div>
                                             <div className="p-8">
@@ -684,9 +693,9 @@ export default function MyAccountPage() {
                                                 {canViewOrderEstimate(order) && (
                                                     <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-black text-emerald-300">관리자 견적서가 준비되었습니다</p>
+                                                            <p className="text-sm font-black text-emerald-300">{t('estimateReadyTitle')}</p>
                                                             <p className="text-[11px] font-bold text-emerald-400/60 mt-0.5">
-                                                                이메일로도 발송되었습니다. 아래에서 바로 확인할 수 있습니다.
+                                                                {t('estimateReadyDesc')}
                                                             </p>
                                                         </div>
                                                         <Button
@@ -694,7 +703,7 @@ export default function MyAccountPage() {
                                                             onClick={() => openOrderEstimate(order.id)}
                                                         >
                                                             <FileText className="w-4 h-4" />
-                                                            견적서 보기
+                                                            {t('viewEstimate')}
                                                         </Button>
                                                     </div>
                                                 )}
@@ -710,14 +719,14 @@ export default function MyAccountPage() {
                                                                 )}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <div className="text-lg font-black truncate text-white mb-2">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
+                                                                <div className="text-lg font-black truncate text-white mb-2">{item.quote?.fileName || t('productFallback', { id: item.quoteId })}</div>
                                                                 <div className="flex items-center gap-3">
                                                                     <Badge variant="outline" className="border-white/10 text-white/40 text-[10px] h-5 font-black uppercase tracking-widest">{item.quote?.printMethod}</Badge>
-                                                                    <span className="text-xs font-bold text-white/20">{item.quantity}개 품목</span>
+                                                                    <span className="text-xs font-bold text-white/20">{t('itemCount', { count: item.quantity })}</span>
                                                                 </div>
                                                             </div>
                                                             <div className="text-lg font-black text-white text-right shrink-0">
-                                                                ₩{Math.round((Number(item.subtotal) || 0)).toLocaleString('ko-KR')}
+                                                                ₩{Math.round((Number(item.subtotal) || 0)).toLocaleString(dateLocale)}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -726,13 +735,13 @@ export default function MyAccountPage() {
                                                 <div className="grid md:grid-cols-2 gap-6 mt-10 p-6 rounded-3xl bg-slate-800/50 border border-slate-700/50">
                                                     <div>
                                                         <span className="text-[11px] font-black uppercase tracking-widest text-teal-400 flex items-center gap-2 mb-3">
-                                                            <MapPin className="w-4 h-4" /> 배송 주소
+                                                            <MapPin className="w-4 h-4" /> {t('shippingAddress')}
                                                         </span>
                                                         <span className="text-base font-bold text-white leading-relaxed block">{order.shippingAddress}</span>
                                                     </div>
                                                     <div>
                                                         <span className="text-[11px] font-black uppercase tracking-widest text-teal-400 flex items-center gap-2 mb-3">
-                                                            <User className="w-4 h-4" /> 수령인
+                                                            <User className="w-4 h-4" /> {t('recipient')}
                                                         </span>
                                                         <span className="text-base font-bold text-white leading-relaxed block">{order.recipientName} ({order.recipientPhone})</span>
                                                     </div>
@@ -745,14 +754,14 @@ export default function MyAccountPage() {
                                                             className="flex-1 h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest gap-2 transition-all"
                                                             onClick={() => setEditingOrder(order)}
                                                         >
-                                                            <Edit2 className="w-4 h-4" /> 주문 수정
+                                                            <Edit2 className="w-4 h-4" /> {t('editOrder')}
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
                                                             className="flex-1 h-14 rounded-2xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-black uppercase tracking-widest gap-2 transition-all"
                                                             onClick={() => handleCancelOrder(order.id)}
                                                         >
-                                                            <Trash2 className="w-4 h-4" /> 주문 취소
+                                                            <Trash2 className="w-4 h-4" /> {t('cancelOrder')}
                                                         </Button>
                                                     </div>
                                                 )}
@@ -765,9 +774,9 @@ export default function MyAccountPage() {
                             {/* History Tab */}
                             <TabsContent value="history" className="space-y-6 outline-none">
                                 <div className="px-2">
-                                    <h2 className="text-2xl font-black text-white mb-2">주문 내역</h2>
+                                    <h2 className="text-2xl font-black text-white mb-2">{t('historyTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">
-                                        전체 주문 {orders.length}건 · 검색 결과 {filteredOrders.length}건
+                                        {t('historySummary', { total: orders.length, filtered: filteredOrders.length })}
                                     </p>
                                 </div>
 
@@ -775,7 +784,7 @@ export default function MyAccountPage() {
                                     <div className="relative flex-1 min-w-0">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
                                         <Input
-                                            placeholder="주문번호 검색..."
+                                            placeholder={t('searchPlaceholder')}
                                             className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 font-bold"
                                             value={orderSearch}
                                             onChange={(e) => setOrderSearch(e.target.value)}
@@ -785,41 +794,41 @@ export default function MyAccountPage() {
                                         value={statusFilter}
                                         onChange={(e) => setStatusFilter(e.target.value)}
                                         className="h-12 min-w-[10rem] rounded-2xl bg-white/5 border border-white/10 px-4 text-sm font-bold text-white outline-none focus:ring-1 focus:ring-teal-400"
-                                        aria-label="주문 상태 필터"
+                                        aria-label={t('statusFilterAria')}
                                     >
-                                        <option value="all" className="bg-slate-900">전체 상태</option>
-                                        <option value="pending" className="bg-slate-900">결제 대기</option>
-                                        <option value="confirmed" className="bg-slate-900">주문 확인</option>
-                                        <option value="quote_sent" className="bg-slate-900">견적 발송</option>
-                                        <option value="payment_confirmed" className="bg-slate-900">결제 확인</option>
-                                        <option value="production" className="bg-slate-900">제작 중</option>
-                                        <option value="shipping" className="bg-slate-900">배송 중</option>
-                                        <option value="delivered" className="bg-slate-900">배송 완료</option>
-                                        <option value="completed" className="bg-slate-900">완료됨</option>
-                                        <option value="cancelled" className="bg-slate-900">주문 취소</option>
+                                        <option value="all" className="bg-slate-900">{t('statusAll')}</option>
+                                        <option value="pending" className="bg-slate-900">{t('statusPending')}</option>
+                                        <option value="confirmed" className="bg-slate-900">{t('statusConfirmed')}</option>
+                                        <option value="quote_sent" className="bg-slate-900">{t('statusQuoteSent')}</option>
+                                        <option value="payment_confirmed" className="bg-slate-900">{t('statusPaymentConfirmed')}</option>
+                                        <option value="production" className="bg-slate-900">{t('statusProduction')}</option>
+                                        <option value="shipping" className="bg-slate-900">{t('statusShipping')}</option>
+                                        <option value="delivered" className="bg-slate-900">{t('statusDelivered')}</option>
+                                        <option value="completed" className="bg-slate-900">{t('statusCompleted')}</option>
+                                        <option value="cancelled" className="bg-slate-900">{t('statusCancelled')}</option>
                                     </select>
                                 </div>
 
                                 {isLoading ? (
                                     <div className="py-20 flex flex-col items-center justify-center gap-4 text-white/50">
                                         <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
-                                        <p className="text-sm font-bold">주문 내역을 불러오는 중...</p>
+                                        <p className="text-sm font-bold">{t('historyLoading')}</p>
                                     </div>
                                 ) : filteredOrders.length === 0 ? (
                                     <div className="py-20 rounded-[2rem] bg-white/[0.03] border border-dashed border-white/15 flex flex-col items-center text-center px-6">
                                         <Search className="w-10 h-10 text-white/25 mb-4" />
                                         <p className="text-base font-black text-white/70 mb-2">
-                                            {orders.length === 0 ? '아직 주문 내역이 없습니다' : '검색 조건에 맞는 주문이 없습니다'}
+                                            {orders.length === 0 ? t('historyEmptyNone') : t('historyEmptyFilter')}
                                         </p>
                                         <p className="text-sm text-white/40 font-medium mb-6">
                                             {orders.length === 0
-                                                ? '견적을 받아 주문을 진행해 보세요.'
-                                                : '검색어나 상태 필터를 바꿔 다시 확인해 주세요.'}
+                                                ? t('historyEmptyNoneDesc')
+                                                : t('historyEmptyFilterDesc')}
                                         </p>
                                         {orders.length === 0 ? (
                                             <Link href="/quote">
                                                 <Button className="h-12 px-8 rounded-2xl bg-teal-400 text-slate-950 font-black">
-                                                    견적 받기
+                                                    {t('getQuote')}
                                                 </Button>
                                             </Link>
                                         ) : (
@@ -831,7 +840,7 @@ export default function MyAccountPage() {
                                                     setStatusFilter('all');
                                                 }}
                                             >
-                                                필터 초기화
+                                                {t('resetFilters')}
                                             </Button>
                                         )}
                                     </div>
@@ -849,15 +858,15 @@ export default function MyAccountPage() {
                                                             <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                                                                 <div>
                                                                     <p className="text-[11px] font-bold text-white/40 uppercase tracking-wider mb-1">
-                                                                        주문일 {order.createdAt ? new Date(order.createdAt).toLocaleDateString('ko-KR') : '-'}
+                                                                        {t('historyOrderDate', { date: order.createdAt ? new Date(order.createdAt).toLocaleDateString(dateLocale) : '-' })}
                                                                     </p>
                                                                     <p className="font-mono text-lg font-black text-white tracking-tight">
-                                                                        {order.orderNumber || `주문 #${order.id}`}
+                                                                        {order.orderNumber || t('orderFallback', { id: order.id })}
                                                                     </p>
                                                                 </div>
                                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
                                                                     <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-                                                                    {statusMap[order.status] || order.status}
+                                                                    {statusLabel(order.status)}
                                                                 </span>
                                                             </div>
                                                             <div className="flex gap-2 mb-3">
@@ -873,15 +882,15 @@ export default function MyAccountPage() {
                                                             </div>
                                                             <p className="text-sm font-bold text-white/80 truncate">
                                                                 {order.items && order.items.length > 0
-                                                                    ? `${order.items[0].quote?.fileName || '상품'} ${order.items.length > 1 ? `외 ${order.items.length - 1}건` : ''}`
-                                                                    : '상품 정보 없음'}
+                                                                    ? `${order.items[0].quote?.fileName || t('productDefault')}${order.items.length > 1 ? ` ${t('andMore', { count: order.items.length - 1 })}` : ''}`
+                                                                    : t('noProductInfo')}
                                                             </p>
                                                         </div>
                                                         <div className="p-6 md:p-8 w-full md:w-72 flex flex-col justify-between gap-4 bg-black/20">
                                                             <div>
-                                                                <p className="text-[10px] font-black text-white/35 uppercase tracking-widest mb-1">총 주문 금액</p>
+                                                                <p className="text-[10px] font-black text-white/35 uppercase tracking-widest mb-1">{t('totalOrderAmount')}</p>
                                                                 <p className="text-2xl font-black text-white">
-                                                                    ₩{getOrderFinalAmount(order).toLocaleString('ko-KR')}
+                                                                    ₩{getOrderFinalAmount(order).toLocaleString(dateLocale)}
                                                                 </p>
                                                             </div>
                                                             <div className="flex flex-col gap-2">
@@ -890,7 +899,7 @@ export default function MyAccountPage() {
                                                                         className="w-full h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30 font-black text-xs gap-2"
                                                                         onClick={() => openOrderEstimate(order.id)}
                                                                     >
-                                                                        <FileText className="w-3.5 h-3.5" /> 견적서 보기
+                                                                        <FileText className="w-3.5 h-3.5" /> {t('viewEstimate')}
                                                                     </Button>
                                                                 )}
                                                                 <div className="flex gap-2">
@@ -899,13 +908,13 @@ export default function MyAccountPage() {
                                                                         className="flex-1 h-11 rounded-xl border-white/15 bg-white/5 text-white font-black text-xs"
                                                                         onClick={() => setSelectedOrder(order)}
                                                                     >
-                                                                        상세
+                                                                        {t('detail')}
                                                                     </Button>
                                                                     <Button
                                                                         className="flex-1 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 font-black text-xs gap-1.5"
                                                                         onClick={() => handleReOrder(order)}
                                                                     >
-                                                                        <RotateCcw className="w-3.5 h-3.5" /> 재주문
+                                                                        <RotateCcw className="w-3.5 h-3.5" /> {t('reorder')}
                                                                     </Button>
                                                                 </div>
                                                             </div>
@@ -921,8 +930,8 @@ export default function MyAccountPage() {
                             {/* Saved Quotes Tab */}
                             <TabsContent value="quotes">
                                 <div className="mb-8 px-2">
-                                    <h2 className="text-2xl font-black text-white mb-2">저장된 견적</h2>
-                                    <p className="text-sm font-bold text-white/50">장바구니에 담기 전 임시로 저장해 둔 출력용 3D 모델 및 설정 정보를 관리합니다.</p>
+                                    <h2 className="text-2xl font-black text-white mb-2">{t('quotesTitle')}</h2>
+                                    <p className="text-sm font-bold text-white/50">{t('quotesDesc')}</p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {quotes.map((quote, i) => (
@@ -951,7 +960,7 @@ export default function MyAccountPage() {
                                                         {quote.fileName}
                                                     </h3>
                                                     <div className="flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-widest mb-3">
-                                                        <span>{new Date(quote.createdAt).toLocaleDateString('ko-KR')}</span>
+                                                        <span>{new Date(quote.createdAt).toLocaleDateString(dateLocale)}</span>
                                                         <span>{(quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>
                                                     </div>
                                                     <QuotePrintSettingsChips
@@ -966,7 +975,7 @@ export default function MyAccountPage() {
                                                 <div className="flex items-center justify-between mb-8">
                                                     <div className="text-2xl font-black text-teal-400">
                                                         ₩{quote.totalPrice.toLocaleString()}
-                                                        <span className="text-[10px] ml-2 opacity-50 font-bold">(VAT 포함)</span>
+                                                        <span className="text-[10px] ml-2 opacity-50 font-bold">{t('vatIncluded')}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-3 mt-auto">
@@ -974,7 +983,7 @@ export default function MyAccountPage() {
                                                         className="flex-1 h-12 rounded-xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-lg shadow-teal-400/20 gap-2"
                                                         onClick={() => handleAddToCartFromSaved(quote)}
                                                     >
-                                                        <ShoppingBag className="w-4 h-4" /> 장바구니 담기
+                                                        <ShoppingBag className="w-4 h-4" /> {t('addToCart')}
                                                     </Button>
                                                     <Button
                                                         size="icon"
@@ -993,7 +1002,7 @@ export default function MyAccountPage() {
                                             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
                                                 <FileText className="w-10 h-10 text-white/10" />
                                             </div>
-                                            <p className="text-white/40 font-bold uppercase tracking-widest">저장된 견적이 없습니다.</p>
+                                            <p className="text-white/40 font-bold uppercase tracking-widest">{t('quotesEmpty')}</p>
                                         </div>
                                     )}
                                 </div>
@@ -1002,33 +1011,33 @@ export default function MyAccountPage() {
                             {/* Profile Tab */}
                             <TabsContent value="profile" className="space-y-8 outline-none">
                                 <div className="mb-4 px-2">
-                                    <h2 className="text-2xl font-black text-white mb-2">내 정보 관리</h2>
-                                    <p className="text-sm font-bold text-white/50">이름·휴대폰 등 계정 정보를 확인하고 수정할 수 있습니다.</p>
+                                    <h2 className="text-2xl font-black text-white mb-2">{t('profileTitle')}</h2>
+                                    <p className="text-sm font-bold text-white/50">{t('profileDesc')}</p>
                                 </div>
                                 <div className="grid md:grid-cols-3 gap-10">
                                     <div className="md:col-span-1 p-8 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
                                         <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
                                             <User className="w-16 h-16" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-white mb-2">{user?.name}님</h3>
+                                        <h3 className="text-2xl font-black text-white mb-2">{t('nameSuffix', { name: user?.name ?? '' })}</h3>
                                         <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-10 break-all text-center">
                                             <Mail className="w-3 h-3 shrink-0" /> {user?.email}
                                         </div>
 
                                         <div className="w-full space-y-4 pt-10 border-t border-white/10">
                                             <div className="flex justify-between items-center">
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">총 주문</span>
-                                                <span className="text-lg font-black text-white">{orders.length}건</span>
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{t('totalOrders')}</span>
+                                                <span className="text-lg font-black text-white">{t('countUnit', { count: orders.length })}</span>
                                             </div>
                                             <div className="flex justify-between items-center">
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">저장된 견적</span>
-                                                <span className="text-lg font-black text-white">{quotes.length}건</span>
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{t('savedQuotesCount')}</span>
+                                                <span className="text-lg font-black text-white">{t('countUnit', { count: quotes.length })}</span>
                                             </div>
                                             <div className="flex justify-between items-center gap-3">
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] shrink-0">가입일</span>
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] shrink-0">{t('joinedAt')}</span>
                                                 <span className="text-sm font-black text-white/60 text-right">
                                                     {user?.createdAt
-                                                        ? new Date(user.createdAt).toLocaleDateString('ko-KR')
+                                                        ? new Date(user.createdAt).toLocaleDateString(dateLocale)
                                                         : '-'}
                                                 </span>
                                             </div>
@@ -1038,8 +1047,8 @@ export default function MyAccountPage() {
                                     <div className="md:col-span-2 p-10 rounded-[3rem] bg-white/[0.03] border border-white/5">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12">
                                             <div>
-                                                <h3 className="text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">회원 정보</h3>
-                                                <p className="text-xs font-bold text-white/40 mt-4">이름과 휴대폰 번호를 관리합니다. 이메일은 변경할 수 없습니다.</p>
+                                                <h3 className="text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">{t('memberInfo')}</h3>
+                                                <p className="text-xs font-bold text-white/40 mt-4">{t('memberInfoDesc')}</p>
                                             </div>
                                             {!isEditingProfile && (
                                                 <Button
@@ -1052,7 +1061,7 @@ export default function MyAccountPage() {
                                                         setIsEditingProfile(true);
                                                     }}
                                                 >
-                                                    <Edit2 className="w-4 h-4" /> 프로필 수정
+                                                    <Edit2 className="w-4 h-4" /> {t('editProfile')}
                                                 </Button>
                                             )}
                                         </div>
@@ -1060,7 +1069,7 @@ export default function MyAccountPage() {
                                         <form onSubmit={handleUpdateProfile} className="space-y-10">
                                             <div className="grid gap-10">
                                                 <div className="grid gap-4">
-                                                    <Label htmlFor="name" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">사용자 이름</Label>
+                                                    <Label htmlFor="name" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">{t('labelName')}</Label>
                                                     {isEditingProfile ? (
                                                         <Input
                                                             id="name"
@@ -1078,12 +1087,12 @@ export default function MyAccountPage() {
                                                 </div>
 
                                                 <div className="grid gap-4">
-                                                    <Label htmlFor="phone" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">휴대폰 번호</Label>
+                                                    <Label htmlFor="phone" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">{t('labelPhone')}</Label>
                                                     {isEditingProfile ? (
                                                         <Input
                                                             id="phone"
                                                             type="tel"
-                                                            placeholder="010-0000-0000"
+                                                            placeholder={t('phonePlaceholder')}
                                                             value={profileForm.phone}
                                                             onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                                                             className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
@@ -1092,13 +1101,13 @@ export default function MyAccountPage() {
                                                     ) : (
                                                         <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white/60 text-lg gap-3">
                                                             <Phone className="w-5 h-5 text-teal-400/40 shrink-0" />
-                                                            {user?.phone || '등록된 번호가 없습니다.'}
+                                                            {user?.phone || t('noPhone')}
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 <div className="grid gap-4">
-                                                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">이메일 (변경 불가)</Label>
+                                                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">{t('labelEmailLocked')}</Label>
                                                     <div className="h-14 flex items-center px-6 bg-transparent border border-white/10 border-dashed rounded-2xl font-bold text-white/50 gap-3">
                                                         <Mail className="w-5 h-5 text-white/20 shrink-0" />
                                                         {user?.email || '-'}
@@ -1118,7 +1127,7 @@ export default function MyAccountPage() {
                                                             if (user) setProfileForm({ name: user.name, phone: user.phone || '' });
                                                         }}
                                                     >
-                                                        취소
+                                                        {t('cancel')}
                                                     </Button>
                                                     <Button
                                                         type="submit"
@@ -1126,7 +1135,7 @@ export default function MyAccountPage() {
                                                         disabled={isUpdating}
                                                     >
                                                         {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                                                        변경 사항 저장
+                                                        {t('saveChanges')}
                                                     </Button>
                                                 </div>
                                             )}
@@ -1142,9 +1151,9 @@ export default function MyAccountPage() {
             <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 shadow-2xl">
                     <DialogHeader className="p-10 pb-0">
-                        <DialogTitle className="text-2xl font-black underline decoration-teal-400 decoration-4 underline-offset-8">주문 상세 정보</DialogTitle>
+                        <DialogTitle className="text-2xl font-black underline decoration-teal-400 decoration-4 underline-offset-8">{t('detailTitle')}</DialogTitle>
                         <DialogDescription className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] pt-6">
-                            주문 번호: <span className="font-mono text-teal-400 ml-2">{selectedOrder?.orderNumber}</span>
+                            {t('detailOrderNumber')} <span className="font-mono text-teal-400 ml-2">{selectedOrder?.orderNumber}</span>
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1153,13 +1162,13 @@ export default function MyAccountPage() {
                             {/* 주문 상태 및 날짜 */}
                             <div className="flex flex-wrap gap-8 p-8 bg-white/[0.03] border border-white/5 rounded-3xl justify-between items-center shadow-inner">
                                 <div>
-                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block mb-2">주문 날짜</span>
-                                    <span className="text-sm font-black text-white/80">{new Date(selectedOrder.createdAt).toLocaleString('ko-KR')}</span>
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block mb-2">{t('detailOrderDate')}</span>
+                                    <span className="text-sm font-black text-white/80">{new Date(selectedOrder.createdAt).toLocaleString(dateLocale)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block mb-2">주문 상태</span>
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block mb-2">{t('detailOrderStatus')}</span>
                                     <Badge className="bg-teal-400 text-slate-950 px-5 py-2 rounded-full font-black text-[10px] uppercase tracking-widest border-none shadow-lg shadow-teal-400/20">
-                                        {statusMap[selectedOrder.status] || selectedOrder.status}
+                                        {statusLabel(selectedOrder.status)}
                                     </Badge>
                                 </div>
                             </div>
@@ -1170,26 +1179,26 @@ export default function MyAccountPage() {
                                     onClick={() => openOrderEstimate(selectedOrder.id)}
                                 >
                                     <FileText className="w-5 h-5" />
-                                    견적서 보기
+                                    {t('viewEstimate')}
                                 </Button>
                             )}
 
                             {/* 배송 정보 */}
                             <div className="space-y-6">
                                 <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-3">
-                                    <MapPin className="w-4 h-4 text-teal-400/40" /> 배송 정보
+                                    <MapPin className="w-4 h-4 text-teal-400/40" /> {t('shippingInfo')}
                                 </h4>
                                 <div className="grid md:grid-cols-2 gap-10 p-8 border border-white/5 bg-white/[0.01] rounded-[2.5rem]">
                                     <div>
-                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">수령인</span>
+                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">{t('recipient')}</span>
                                         <span className="text-base font-black text-white/80">{selectedOrder.recipientName}</span>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">연락처</span>
+                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">{t('contact')}</span>
                                         <span className="text-base font-black text-white/80">{selectedOrder.recipientPhone}</span>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">주소</span>
+                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em] block mb-2">{t('address')}</span>
                                         <span className="text-sm font-bold text-white/60 leading-relaxed italic">{selectedOrder.shippingAddress} {selectedOrder.shippingPostalCode && `(${selectedOrder.shippingPostalCode})`}</span>
                                     </div>
                                 </div>
@@ -1198,22 +1207,22 @@ export default function MyAccountPage() {
                             {/* 주문 상품 목록 */}
                             <div className="space-y-6">
                                 <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-3">
-                                    <Package className="w-4 h-4 text-teal-400/40" /> 주문 품목
+                                    <Package className="w-4 h-4 text-teal-400/40" /> {t('orderItems')}
                                 </h4>
                                 <div className="border border-white/10 rounded-[2.5rem] overflow-hidden bg-white/[0.02]">
                                     <table className="w-full">
                                         <thead>
                                             <tr className="border-b border-white/10 text-[10px] font-black text-white/20 uppercase tracking-[0.2em] bg-white/[0.02]">
-                                                <th className="p-8 text-left">품목</th>
-                                                <th className="p-8 text-center w-24">수량</th>
-                                                <th className="p-8 text-right w-40">소계</th>
+                                                <th className="p-8 text-left">{t('colItem')}</th>
+                                                <th className="p-8 text-center w-24">{t('colQty')}</th>
+                                                <th className="p-8 text-right w-40">{t('colSubtotal')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
                                             {selectedOrder.items?.map((item) => (
                                                 <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group/row">
                                                     <td className="p-8">
-                                                        <div className="text-base font-black text-white mb-2 group-hover/row:text-teal-400 transition-colors">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
+                                                        <div className="text-base font-black text-white mb-2 group-hover/row:text-teal-400 transition-colors">{item.quote?.fileName || t('productFallback', { id: item.quoteId })}</div>
                                                         <div className="flex items-center gap-3">
                                                             {item.quote?.printMethod && <Badge variant="outline" className="text-[9px] h-5 px-2 font-black uppercase border-white/10 text-white/30 group-hover/row:border-teal-400/30 group-hover/row:text-teal-400/60 transition-colors">{item.quote.printMethod}</Badge>}
                                                             {item.quote?.fileSize && <span className="text-[10px] font-black text-white/10 group-hover/row:text-white/30 transition-colors">{(item.quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
@@ -1221,16 +1230,16 @@ export default function MyAccountPage() {
                                                     </td>
                                                     <td className="p-8 text-center text-sm font-black text-white/40">{item.quantity}</td>
                                                     <td className="p-8 text-right text-lg font-black text-white">
-                                                        ₩{Math.round((Number(item.subtotal) || 0)).toLocaleString('ko-KR')}
+                                                        ₩{Math.round((Number(item.subtotal) || 0)).toLocaleString(dateLocale)}
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                         <tfoot className="bg-white/[0.04] border-t border-white/10">
                                             <tr>
-                                                <td colSpan={2} className="p-8 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">최종합계</td>
+                                                <td colSpan={2} className="p-8 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('grandTotal')}</td>
                                                 <td className="p-8 text-right text-3xl font-black text-teal-400">
-                                                    ₩{getOrderFinalAmount(selectedOrder).toLocaleString('ko-KR')}
+                                                    ₩{getOrderFinalAmount(selectedOrder).toLocaleString(dateLocale)}
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -1240,7 +1249,7 @@ export default function MyAccountPage() {
 
                             {selectedOrder.customerNote && (
                                 <div className="space-y-6">
-                                    <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">배송 메시지</h4>
+                                    <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('shippingMessage')}</h4>
                                     <div className="p-8 bg-white/[0.03] border border-white/5 rounded-3xl text-sm font-bold text-white/40 leading-relaxed italic">
                                         "{selectedOrder.customerNote}"
                                     </div>
@@ -1254,9 +1263,9 @@ export default function MyAccountPage() {
             <Dialog open={!!editingOrder} onOpenChange={(open) => !open && setEditingOrder(null)}>
                 <DialogContent className="max-w-lg bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 shadow-2xl overflow-hidden">
                     <DialogHeader className="p-10 pb-0">
-                        <DialogTitle className="text-2xl font-black underline decoration-teal-400 decoration-4 underline-offset-8">주문 수정</DialogTitle>
+                        <DialogTitle className="text-2xl font-black underline decoration-teal-400 decoration-4 underline-offset-8">{t('editOrderTitle')}</DialogTitle>
                         <DialogDescription className="text-sm font-bold text-white/40 uppercase tracking-widest pt-4">
-                            배송 정보 및 품목 수량을 수정합니다.
+                            {t('editOrderDesc')}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1264,7 +1273,7 @@ export default function MyAccountPage() {
                         <form onSubmit={handleUpdateOrder} className="p-10 pt-8 space-y-10">
                             <div className="space-y-8">
                                 <div className="grid gap-4">
-                                    <Label htmlFor="recipientName" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">수령인 이름</Label>
+                                    <Label htmlFor="recipientName" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('recipientName')}</Label>
                                     <Input
                                         id="recipientName"
                                         value={editingOrder.recipientName}
@@ -1274,7 +1283,7 @@ export default function MyAccountPage() {
                                     />
                                 </div>
                                 <div className="grid gap-4">
-                                    <Label htmlFor="recipientPhone" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">연락처</Label>
+                                    <Label htmlFor="recipientPhone" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('contact')}</Label>
                                     <Input
                                         id="recipientPhone"
                                         value={editingOrder.recipientPhone}
@@ -1284,7 +1293,7 @@ export default function MyAccountPage() {
                                     />
                                 </div>
                                 <div className="grid gap-4">
-                                    <Label htmlFor="shippingAddress" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">배송 주소</Label>
+                                    <Label htmlFor="shippingAddress" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('shippingAddress')}</Label>
                                     <Input
                                         id="shippingAddress"
                                         value={editingOrder.shippingAddress}
@@ -1294,10 +1303,10 @@ export default function MyAccountPage() {
                                     />
                                 </div>
                                 <div className="grid gap-4">
-                                    <Label htmlFor="customerNote" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">배송 메시지</Label>
+                                    <Label htmlFor="customerNote" className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">{t('shippingMessage')}</Label>
                                     <Input
                                         id="customerNote"
-                                        placeholder="배송 시 요청사항을 입력하세요..."
+                                        placeholder={t('notePlaceholder')}
                                         value={editingOrder.customerNote || ''}
                                         onChange={(e) => setEditingOrder({ ...editingOrder, customerNote: e.target.value })}
                                         className="h-14 bg-white/5 border-white/10 rounded-2xl focus:ring-teal-400 focus:border-teal-400 font-bold"
@@ -1305,13 +1314,13 @@ export default function MyAccountPage() {
                                 </div>
 
                                 <div className="pt-10 border-t border-white/10">
-                                    <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-6 block">품목 수량 조절</Label>
+                                    <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-6 block">{t('adjustQty')}</Label>
                                     <div className="space-y-4">
                                         {editingOrder.items?.map((item, idx) => (
                                             <div key={item.id} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="text-sm font-black text-white mb-1 truncate">{item.quote?.fileName || `상품 #${item.quoteId}`}</div>
-                                                    <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">단가: ₩{(item.unitPrice).toLocaleString()}</div>
+                                                    <div className="text-sm font-black text-white mb-1 truncate">{item.quote?.fileName || t('productFallback', { id: item.quoteId })}</div>
+                                                    <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{t('unitPrice', { price: (item.unitPrice).toLocaleString() })}</div>
                                                 </div>
                                                 <div className="flex items-center gap-4 ml-8">
                                                     <Button
@@ -1357,7 +1366,7 @@ export default function MyAccountPage() {
                                     className="h-14 px-8 rounded-2xl text-white/40 font-black uppercase tracking-widest hover:bg-white/5"
                                     onClick={() => setEditingOrder(null)}
                                 >
-                                    취소
+                                    {t('cancel')}
                                 </Button>
                                 <Button
                                     type="submit"
@@ -1365,7 +1374,7 @@ export default function MyAccountPage() {
                                     className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20 gap-3"
                                 >
                                     {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                                    변경 사항 저장
+                                    {t('saveChanges')}
                                 </Button>
                             </div>
                         </form>

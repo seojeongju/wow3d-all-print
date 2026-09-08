@@ -1,21 +1,22 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Grid3X3, Loader2, Box, ChevronLeft, ChevronRight, Home } from 'lucide-react';
-import Link from 'next/link';
-import Header from "@/components/layout/Header";
-import { GalleryItem, GalleryCard, DetailViewModal } from '@/components/home/GallerySection';
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Grid3X3, Loader2, Box, ChevronLeft, ChevronRight, Home } from 'lucide-react'
+import { Link, useRouter } from '@/i18n/navigation'
+import Header from '@/components/layout/Header'
+import { GalleryItem, GalleryCard, DetailViewModal } from '@/components/home/GallerySection'
 
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 15
 
 type GalleryPageClientProps = {
-    initialItems: GalleryItem[];
-    initialTotalPages: number;
-    initialTag?: 'all' | 'photo-to-3d';
-    initialItemId?: string | null;
-};
+    initialItems: GalleryItem[]
+    initialTotalPages: number
+    initialTag?: 'all' | 'photo-to-3d'
+    initialItemId?: string | null
+}
 
 export default function GalleryPageClient({
     initialItems,
@@ -23,190 +24,199 @@ export default function GalleryPageClient({
     initialTag = 'all',
     initialItemId = null,
 }: GalleryPageClientProps) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const [items, setItems] = useState<GalleryItem[]>(initialItems);
-    const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(initialTotalPages);
+    const t = useTranslations('Gallery')
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const [items, setItems] = useState<GalleryItem[]>(initialItems)
+    const [loading, setLoading] = useState(false)
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(initialTotalPages)
     const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(() => {
-        if (!initialItemId) return null;
-        return initialItems.find((i) => String(i.id) === String(initialItemId)) ?? null;
-    });
-    const [galleryTag, setGalleryTag] = useState<'all' | 'photo-to-3d'>(initialTag);
+        if (!initialItemId) return null
+        return initialItems.find((i) => String(i.id) === String(initialItemId)) ?? null
+    })
+    const [galleryTag, setGalleryTag] = useState<'all' | 'photo-to-3d'>(initialTag)
 
     const fetchGallery = async (p: number, tag: 'all' | 'photo-to-3d' = galleryTag) => {
-        setLoading(true);
+        setLoading(true)
         try {
-            const tagQuery = tag === 'photo-to-3d' ? '&tag=photo-to-3d' : '';
-            const res = await fetch(`/api/gallery?page=${p}&limit=${ITEMS_PER_PAGE}${tagQuery}`);
+            const tagQuery = tag === 'photo-to-3d' ? '&tag=photo-to-3d' : ''
+            const res = await fetch(`/api/gallery?page=${p}&limit=${ITEMS_PER_PAGE}${tagQuery}`)
             if (res.ok) {
-                const json = await res.json();
+                const json = await res.json()
                 if (json.success) {
-                    setItems(json.data.items);
-                    setTotalPages(json.data.pagination.totalPages || 1);
+                    setItems(json.data.items)
+                    setTotalPages(json.data.pagination.totalPages || 1)
                 }
             }
         } finally {
-            setLoading(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setLoading(false)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         }
-    };
+    }
 
     useEffect(() => {
         if (page === 1 && galleryTag === initialTag) {
-            setItems(initialItems);
-            setTotalPages(initialTotalPages);
-            return;
+            setItems(initialItems)
+            setTotalPages(initialTotalPages)
+            return
         }
-        fetchGallery(page, galleryTag);
-    }, [page, galleryTag, initialItems, initialTotalPages, initialTag]);
+        fetchGallery(page, galleryTag)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, galleryTag, initialItems, initialTotalPages, initialTag])
+
+    const replaceGalleryQuery = useCallback(
+        (next: Record<string, string | undefined>) => {
+            const query: Record<string, string> = {}
+            for (const [key, value] of Object.entries(next)) {
+                if (value) query[key] = value
+            }
+            router.replace(
+                Object.keys(query).length > 0
+                    ? { pathname: '/gallery', query }
+                    : '/gallery',
+                { scroll: false },
+            )
+        },
+        [router],
+    )
 
     const handleTagChange = (tag: 'all' | 'photo-to-3d') => {
-        setGalleryTag(tag);
-        setPage(1);
-        setSelectedItem(null);
-        const params = new URLSearchParams();
-        if (tag === 'photo-to-3d') params.set('tag', 'photo-to-3d');
-        const qs = params.toString();
-        router.replace(qs ? `/gallery?${qs}` : '/gallery', { scroll: false });
+        setGalleryTag(tag)
+        setPage(1)
+        setSelectedItem(null)
+        replaceGalleryQuery({ tag: tag === 'photo-to-3d' ? 'photo-to-3d' : undefined })
         if (tag === initialTag) {
-            setItems(initialItems);
-            setTotalPages(initialTotalPages);
+            setItems(initialItems)
+            setTotalPages(initialTotalPages)
         } else {
-            fetchGallery(1, tag);
+            fetchGallery(1, tag)
         }
-    };
+    }
 
-    const openItem = useCallback((item: GalleryItem) => {
-        setSelectedItem(item);
-        const params = new URLSearchParams(searchParams.toString());
-        params.set('id', String(item.id));
-        router.replace(`/gallery?${params.toString()}`, { scroll: false });
-    }, [router, searchParams]);
+    const openItem = useCallback(
+        (item: GalleryItem) => {
+            setSelectedItem(item)
+            const query: Record<string, string> = { id: String(item.id) }
+            const tag = searchParams.get('tag')
+            if (tag) query.tag = tag
+            replaceGalleryQuery(query)
+        },
+        [replaceGalleryQuery, searchParams],
+    )
 
     const closeItem = useCallback(() => {
-        setSelectedItem(null);
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete('id');
-        const qs = params.toString();
-        router.replace(qs ? `/gallery?${qs}` : '/gallery', { scroll: false });
-    }, [router, searchParams]);
+        setSelectedItem(null)
+        const tag = searchParams.get('tag')
+        replaceGalleryQuery({ tag: tag || undefined })
+    }, [replaceGalleryQuery, searchParams])
 
-    // 홈 갤러리 등에서 /gallery?id= 로 진입 시 상세 모달 자동 오픈
     useEffect(() => {
-        const idFromUrl = searchParams.get('id') || initialItemId;
+        const idFromUrl = searchParams.get('id') || initialItemId
         if (!idFromUrl) {
-            setSelectedItem(null);
-            return;
+            setSelectedItem(null)
+            return
         }
 
-        const inList = items.find((i) => String(i.id) === String(idFromUrl));
+        const inList = items.find((i) => String(i.id) === String(idFromUrl))
         if (inList) {
-            setSelectedItem(inList);
-            return;
+            setSelectedItem(inList)
+            return
         }
 
-        // 이미 같은 id 모달이 열려 있으면 재요청 생략
         if (selectedItem && String(selectedItem.id) === String(idFromUrl)) {
-            return;
+            return
         }
 
-        let cancelled = false;
+        let cancelled = false
         void (async () => {
             try {
-                const res = await fetch(`/api/gallery/${encodeURIComponent(idFromUrl)}`);
-                const json = await res.json();
+                const res = await fetch(`/api/gallery/${encodeURIComponent(idFromUrl)}`)
+                const json = await res.json()
                 if (!cancelled && res.ok && json.success && json.data) {
-                    setSelectedItem(json.data as GalleryItem);
+                    setSelectedItem(json.data as GalleryItem)
                 }
             } catch {
                 /* ignore */
             }
-        })();
+        })()
 
         return () => {
-            cancelled = true;
-        };
-        // selectedItem는 의도적으로 deps에서 제외 (재오픈 루프 방지)
+            cancelled = true
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchParams, initialItemId, items]);
+    }, [searchParams, initialItemId, items])
 
-    // 하단 페이지네이션 렌더링 도우미 (최대 5개 노출)
     const renderPagination = () => {
-        if (totalPages <= 1) return null;
-        const maxPagesToShow = 5;
-        let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2));
-        let endPage = startPage + maxPagesToShow - 1;
+        if (totalPages <= 1) return null
+        const maxPagesToShow = 5
+        let startPage = Math.max(1, page - Math.floor(maxPagesToShow / 2))
+        let endPage = startPage + maxPagesToShow - 1
 
         if (endPage > totalPages) {
-            endPage = totalPages;
-            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            endPage = totalPages
+            startPage = Math.max(1, endPage - maxPagesToShow + 1)
         }
 
-        const buttons = [];
+        const buttons = []
         for (let i = startPage; i <= endPage; i++) {
             buttons.push(
                 <button
                     key={i}
                     onClick={() => setPage(i)}
                     className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all ${
-                        page === i 
-                        ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
-                        : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                        page === i
+                            ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(99,102,241,0.5)]'
+                            : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                 >
                     {i}
-                </button>
-            );
+                </button>,
+            )
         }
-        return buttons;
-    };
+        return buttons
+    }
 
     return (
         <main className="min-h-screen bg-[#0b0f19] pt-28 pb-20 relative overflow-hidden">
             <Header />
-            {/* 배경 효과 */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.15),transparent_50%)] pointer-events-none" />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
             <div className="container mx-auto px-4 relative z-10">
-                {/* 홈으로 가기 상단 영역 */}
                 <div className="mb-8">
                     <Link href="/">
                         <button className="group flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-primary/20 hover:border-primary/30 hover:text-white transition-all shadow-lg hover:shadow-primary/10">
                             <Home className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                            <span className="text-sm font-bold tracking-tight">홈 화면으로 돌아가기</span>
+                            <span className="text-sm font-bold tracking-tight">{t('backHome')}</span>
                         </button>
                     </Link>
                 </div>
 
-                {/* 헤더 타이틀 */}
                 <div className="text-center mb-16">
-
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6 uppercase tracking-widest"
                     >
                         <Grid3X3 className="w-3.5 h-3.5" />
-                        FULL GALLERY
+                        {t('eyebrow')}
                     </motion.div>
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
                         className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4"
                     >
-                        전체 시제품 <span className="text-teal-400">갤러리</span>
+                        {t('title')} <span className="text-teal-400">{t('titleAccent')}</span>
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                         className="text-white/60 text-lg max-w-2xl mx-auto"
                     >
-                        100여 종에 달하는 고품질 출력 레퍼런스를 한눈에 확인하세요.
+                        {t('subtitle')}
                     </motion.p>
                     <div className="flex justify-center gap-2 mt-8">
                         <button
@@ -218,7 +228,7 @@ export default function GalleryPageClient({
                                     : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
                             }`}
                         >
-                            전체
+                            {t('tagAll')}
                         </button>
                         <button
                             type="button"
@@ -229,21 +239,20 @@ export default function GalleryPageClient({
                                     : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
                             }`}
                         >
-                            사진(이미지)→3D Before/After
+                            {t('tagPhotoTo3d')}
                         </button>
                     </div>
                 </div>
 
-                {/* 리스트 영역 */}
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-4">
                         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                        <p className="text-white/50">데이터를 불러오는 중입니다...</p>
+                        <p className="text-white/50">{t('loadingData')}</p>
                     </div>
                 ) : items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-32 bg-white/[0.02] border border-white/5 rounded-3xl max-w-3xl mx-auto">
                         <Box className="w-16 h-16 text-white/20 mb-4" />
-                        <p className="text-white/50">등록된 갤러리 이미지가 없습니다.</p>
+                        <p className="text-white/50">{t('empty')}</p>
                     </div>
                 ) : (
                     <div className="max-w-[1400px] mx-auto">
@@ -258,7 +267,7 @@ export default function GalleryPageClient({
                                     <GalleryCard
                                         item={item}
                                         onClick={(clicked) => {
-                                            openItem(clicked);
+                                            openItem(clicked)
                                         }}
                                         className="w-full"
                                     />
@@ -266,21 +275,20 @@ export default function GalleryPageClient({
                             ))}
                         </div>
 
-                        {/* 페이지네이션 버튼 영역 */}
                         {totalPages > 1 && (
                             <div className="mt-16 flex items-center justify-center gap-2">
                                 <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                                     disabled={page === 1}
                                     className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
-                                
+
                                 {renderPagination()}
 
                                 <button
-                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                     disabled={page === totalPages}
                                     className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                 >
@@ -292,24 +300,23 @@ export default function GalleryPageClient({
                 )}
             </div>
 
-            {/* 상세 뷰 모달 */}
             <AnimatePresence>
                 {selectedItem && (
-                    <DetailViewModal 
+                    <DetailViewModal
                         key={`full-modal-${selectedItem.id}`}
-                        item={selectedItem} 
+                        item={selectedItem}
                         onClose={closeItem}
                         onPrev={() => {
-                            const idx = items.findIndex((i) => String(i.id) === String(selectedItem.id));
-                            if (idx > 0) openItem(items[idx - 1]);
+                            const idx = items.findIndex((i) => String(i.id) === String(selectedItem.id))
+                            if (idx > 0) openItem(items[idx - 1])
                         }}
                         onNext={() => {
-                            const idx = items.findIndex((i) => String(i.id) === String(selectedItem.id));
-                            if (idx >= 0 && idx < items.length - 1) openItem(items[idx + 1]);
+                            const idx = items.findIndex((i) => String(i.id) === String(selectedItem.id))
+                            if (idx >= 0 && idx < items.length - 1) openItem(items[idx + 1])
                         }}
                     />
                 )}
             </AnimatePresence>
         </main>
-    );
+    )
 }

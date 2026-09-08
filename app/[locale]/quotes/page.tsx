@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
+import { Link, useRouter } from '@/i18n/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
 import { Button } from '@/components/ui/button'
-import { FileText, ShoppingCart, Loader2, Boxes, ArrowRight, Plus, Home, Trash2, RotateCcw, ChevronRight, Shield } from 'lucide-react'
+import { FileText, ShoppingCart, Loader2, Boxes, Plus, Trash2, RotateCcw, Shield } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from '@/components/layout/Header'
@@ -78,6 +78,9 @@ function toQuote(r: QuoteRow): Quote {
 }
 
 export default function SavedQuotesPage() {
+    const t = useTranslations('SavedQuotes')
+    const locale = useLocale()
+    const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR'
     const router = useRouter()
     const { sessionId, token, user } = useAuthStore()
     const { addToCart, items } = useCartStore()
@@ -102,7 +105,7 @@ export default function SavedQuotesPage() {
     }, [sessionId, token, user?.id])
 
     const handleDelete = async (id: number) => {
-        if (!confirm('정말 삭제하시겠습니까?')) return
+        if (!confirm(t('confirmDelete'))) return
 
         const headers: HeadersInit = {}
         if (token && user?.id) {
@@ -114,11 +117,11 @@ export default function SavedQuotesPage() {
 
         try {
             const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE', headers })
-            if (!res.ok) throw new Error('삭제 실패')
+            if (!res.ok) throw new Error(t('errDelete'))
             setQuotes((prev) => prev.filter((q) => q.id !== id))
-            showToast.success('삭제 완료', '견적이 삭제되었습니다')
+            showToast.success(t('toastDeleteTitle'), t('toastDeleteDesc'))
         } catch (error) {
-            showToast.error('삭제 실패', error)
+            showToast.error(t('toastDeleteFail'), error)
         }
     }
 
@@ -142,12 +145,12 @@ export default function SavedQuotesPage() {
                 headers,
                 body: JSON.stringify({ quoteId: row.id, quantity: 1 }),
             })
-            if (!res.ok) throw new Error('장바구니 추가 실패')
+            if (!res.ok) throw new Error(t('errAddCart'))
             const q = toQuote(row)
             addToCart(q, 1)
-            showToast.success('장바구니 담기', `${row.file_name}이(가) 장바구니에 담겼습니다`)
+            showToast.success(t('toastAddTitle'), t('toastAddDesc', { name: row.file_name }))
         } catch (error) {
-            showToast.error('추가 실패', error)
+            showToast.error(t('toastAddFail'), error)
         } finally {
             setAddingId(null)
         }
@@ -155,11 +158,12 @@ export default function SavedQuotesPage() {
 
     const inCart = (quoteId: number) => items.some((i) => i.quoteId === quoteId)
 
+    const policyItems = [t('policy1'), t('policy2'), t('policy3'), t('policy4')]
+
     return (
         <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-teal-500/30 overflow-hidden relative font-sans">
             <Header />
 
-            {/* Premium Background System */}
             <div className="fixed inset-0 z-0">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1e293b_0%,#020617_100%)]" />
                 <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:40px_40px] opacity-[0.05] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
@@ -176,13 +180,13 @@ export default function SavedQuotesPage() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                         <div className="space-y-4">
                             <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-[11px] font-black uppercase tracking-[0.3em] text-teal-400">
-                                History & Archives
+                                {t('badge')}
                             </div>
                             <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">
-                                저장된 <span className="text-teal-400">견적함</span>
+                                {t('titleBefore')} <span className="text-teal-400">{t('titleHighlight')}</span>
                             </h1>
                             <p className="text-lg font-bold text-white/40 max-w-xl break-keep">
-                                최근 30일 이내에 산출된 견적들이 보관됩니다. 결제 또는 수정이 가능합니다.
+                                {t('subtitle')}
                             </p>
                         </div>
 
@@ -190,13 +194,13 @@ export default function SavedQuotesPage() {
                             <Link href="/quote">
                                 <Button className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-[13px] font-black text-white tracking-widest uppercase transition-all flex items-center gap-3 active:scale-95">
                                     <Plus className="w-5 h-5 text-teal-400" />
-                                    New Quote
+                                    {t('newQuote')}
                                 </Button>
                             </Link>
                             <Link href="/cart">
                                 <Button className="h-14 px-8 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 text-[13px] tracking-widest uppercase transition-all flex items-center gap-3 shadow-[0_0_20px_rgba(45,212,191,0.2)] active:scale-95">
                                     <ShoppingCart className="w-5 h-5" />
-                                    Cart
+                                    {t('cart')}
                                 </Button>
                             </Link>
                         </div>
@@ -216,12 +220,12 @@ export default function SavedQuotesPage() {
                             <FileText className="w-12 h-12 text-white/20" />
                         </div>
                         <div className="space-y-3">
-                            <h2 className="text-3xl font-black text-white/50">저장된 견적이 없습니다</h2>
-                            <p className="text-white/20 font-bold max-w-sm mx-auto break-keep">파일을 업로드하여 첫 번째 지능형 견적을 만들어 보세요.</p>
+                            <h2 className="text-3xl font-black text-white/50">{t('emptyTitle')}</h2>
+                            <p className="text-white/20 font-bold max-w-sm mx-auto break-keep">{t('emptyDesc')}</p>
                         </div>
                         <Link href="/quote" className="inline-block">
                             <Button className="h-16 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 shadow-xl shadow-teal-400/10 active:scale-95">
-                                첫 견적 산출하기
+                                {t('emptyCta')}
                             </Button>
                         </Link>
                     </motion.div>
@@ -257,7 +261,7 @@ export default function SavedQuotesPage() {
                                     <div className="flex-1 min-w-0 space-y-4 relative z-10">
                                         <div className="flex items-center gap-3">
                                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400/80 bg-teal-400/10 px-2 py-1 rounded-md">ID: {row.id.toString().slice(0, 8)}</span>
-                                            <span className="text-xs font-bold text-white/30">{new Date(row.created_at).toLocaleDateString()}</span>
+                                            <span className="text-xs font-bold text-white/30">{new Date(row.created_at).toLocaleDateString(dateLocale)}</span>
                                         </div>
                                         <h3 className="text-2xl font-black text-white group-hover:text-teal-400 transition-colors truncate">
                                             {row.file_name}
@@ -283,7 +287,7 @@ export default function SavedQuotesPage() {
 
                                     <div className="flex md:flex-col items-center md:items-end gap-6 shrink-0 relative z-10 pl-8 border-l border-white/5">
                                         <div className="text-right">
-                                            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Total Amount</p>
+                                            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">{t('totalAmount')}</p>
                                             <p className="text-3xl font-black text-teal-400 tracking-tight">
                                                 ₩{(Math.round((row.total_price || 0))).toLocaleString()}
                                             </p>
@@ -294,10 +298,10 @@ export default function SavedQuotesPage() {
                                                 variant="ghost"
                                                 className="h-12 px-4 rounded-2xl bg-white/5 text-white/40 hover:text-teal-400 hover:bg-teal-400/10 transition-all active:scale-90 font-black text-[11px] gap-1.5"
                                                 onClick={() => handleRequote(row.id)}
-                                                title="크기·옵션 수정"
+                                                title={t('editTitle')}
                                             >
                                                 <RotateCcw className="w-5 h-5" />
-                                                수정
+                                                {t('edit')}
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -313,7 +317,7 @@ export default function SavedQuotesPage() {
                                                 onClick={() => handleAddToCart(row)}
                                                 disabled={addingId === row.id || inCart(row.id)}
                                             >
-                                                {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? 'Added to Cart' : 'Add to Cart'}
+                                                {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? t('addedToCart') : t('addToCart')}
                                             </Button>
                                         </div>
                                     </div>
@@ -323,7 +327,6 @@ export default function SavedQuotesPage() {
                     </div>
                 )}
 
-                {/* Bottom Notice */}
                     <div className="rounded-[3rem] p-10 md:p-12 bg-indigo-500/5 border border-indigo-500/10 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
                             <Shield className="w-32 h-32 text-indigo-400" />
@@ -333,14 +336,9 @@ export default function SavedQuotesPage() {
                                 <Shield className="w-10 h-10" />
                             </div>
                             <div className="space-y-4 text-center md:text-left">
-                                <h3 className="text-2xl font-black text-white tracking-tight">데이터 보관 정책</h3>
+                                <h3 className="text-2xl font-black text-white tracking-tight">{t('policyTitle')}</h3>
                                 <div className="grid md:grid-cols-2 gap-x-12 gap-y-4">
-                                    {[
-                                        '견적은 산출일로부터 30일 동안 암호화되어 보관됩니다.',
-                                        '30일 이후에는 개인정보 보호 및 DB 최적화를 위해 자동 삭제됩니다.',
-                                        '소속된 소재의 시장가 변동 시 견적 금액이 유동적으로 조정될 수 있습니다.',
-                                        '결제 완료된 견적은 주문 이력에서 영구적으로 확인 가능합니다.'
-                                    ].map((text, i) => (
+                                    {policyItems.map((text, i) => (
                                         <div key={i} className="flex items-start gap-3 group/item">
                                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/40 mt-1.5 group-hover/item:scale-125 transition-transform" />
                                             <span className="text-[14px] font-bold text-white/40 group-hover/item:text-white/60 transition-colors leading-relaxed break-keep">{text}</span>

@@ -1,44 +1,84 @@
 import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import ServicesHubClient from '@/components/services/ServicesHubClient'
-import { absoluteUrl } from '@/lib/site-url'
 import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-    title: '3D프린팅출력·3D프린터출력 서비스 | 출력대행·시제품·FDM·SLA',
-    description:
-        '3D프린팅출력, 3D프린터출력, 시제품 제작, FDM·SLA 출력, 사진(이미지)→AI 3D, 졸업작품, 소량생산, 3D 모델링 의뢰까지 WOW3D PRO 핵심서비스를 한곳에서 확인하세요.',
-    alternates: { canonical: absoluteUrl('/services') },
-    openGraph: {
-        title: 'WOW3D PRO 핵심서비스 | 3D프린팅',
-        description: '업로드부터 자동견적·제작·배송까지. 목적별 3D프린팅 서비스를 확인하세요.',
-        url: absoluteUrl('/services'),
-    },
+type Props = {
+    params: Promise<{ locale: string }>
 }
 
-const schemas = [
-    buildCollectionPageSchema({
-        name: 'WOW3D PRO 핵심서비스',
-        description:
-            '출력대행, 시제품, FDM, SLA, 사진(이미지)→AI 3D, 졸업작품, 소량생산, 모델링 등 WOW3D PRO 핵심서비스',
-        path: '/services',
-    }),
-    buildBreadcrumbSchema([
-        { name: '홈', path: '/' },
-        { name: '서비스', path: '/services' },
-    ]),
-]
+function resolveLocale(localeParam: string): AppLocale {
+    return (routing.locales.includes(localeParam as AppLocale)
+        ? localeParam
+        : routing.defaultLocale) as AppLocale
+}
 
-export default function ServicesHubPage() {
+function servicesPath(locale: AppLocale) {
+    return getPathname({ locale, href: '/services' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Services' })
+
+    const title = t('metaTitle')
+    const description = t('metaDescription')
+    const path = servicesPath(locale)
+    const canonical = `${SITE_URL}${path}`
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical,
+            languages: {
+                ko: `${SITE_URL}${servicesPath('ko')}`,
+                en: `${SITE_URL}${servicesPath('en')}`,
+                'x-default': `${SITE_URL}${servicesPath('ko')}`,
+            },
+        },
+        openGraph: {
+            title: t('ogTitle'),
+            description: t('ogDescription'),
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+    }
+}
+
+export default async function ServicesHubPage({ params }: Props) {
+    const { locale: localeParam } = await params
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    const t = await getTranslations({ locale, namespace: 'Services' })
+
+    const path = servicesPath(locale)
+    const homePath = getPathname({ locale, href: '/' })
+
+    const schemas = [
+        buildCollectionPageSchema({
+            name: t('collectionName'),
+            description: t('collectionDescription'),
+            path,
+        }),
+        buildBreadcrumbSchema([
+            { name: t('breadcrumbHome'), path: homePath },
+            { name: t('breadcrumbServices'), path },
+        ]),
+    ]
+
     return (
         <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
             />
-            {/*
-              검색·키워드 랜딩 분리에 대한 내부 SEO 메모는 화면에 노출하지 않습니다.
-              키워드 유입용 상세 랜딩은 /services/[slug] 및 metadata에만 유지합니다.
-            */}
             <ServicesHubClient />
         </>
     )

@@ -323,6 +323,11 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
     },
 ]
 
-export function getServiceBySlug(slug: string) {
+import { SERVICE_LANDINGS_EN } from '@/lib/seo-service-pages-en'
+
+export function getServiceBySlug(slug: string, locale: string = 'ko') {
+    if (locale === 'en') {
+        return SERVICE_LANDINGS_EN.find((s) => s.slug === slug) ?? SERVICE_LANDINGS.find((s) => s.slug === slug)
+    }
     return SERVICE_LANDINGS.find((s) => s.slug === slug)
 }

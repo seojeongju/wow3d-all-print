@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
@@ -10,8 +10,16 @@ import type { QnAItem } from '@/lib/qna'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
+import { Link, getPathname } from '@/i18n/navigation'
+import type { AppLocale } from '@/i18n/routing'
 
-export default async function ServiceLandingPage({ config }: { config: ServiceLandingConfig }) {
+type Props = {
+    config: ServiceLandingConfig
+    locale: AppLocale
+}
+
+export default async function ServiceLandingPage({ config, locale }: Props) {
+    const t = await getTranslations({ locale, namespace: 'ServiceChrome' })
     const showcaseItems =
         config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems() : null
 
@@ -22,13 +30,18 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
         category: 'service',
     }))
 
+    const homePath = getPathname({ locale, href: '/' })
+    const servicesPath = getPathname({ locale, href: '/services' })
+    const pagePath = getPathname({ locale, href: config.path as '/' })
+    const displayName = config.h1Accent ? `${config.h1} ${config.h1Accent}` : config.h1
+
     const schemas = [
         buildBreadcrumbSchema([
-            { name: '홈', path: '/' },
-            { name: '서비스', path: '/services' },
-            { name: config.h1Accent ? `${config.h1} ${config.h1Accent}` : config.h1, path: config.path },
+            { name: t('breadcrumbHome'), path: homePath },
+            { name: t('breadcrumbServices'), path: servicesPath },
+            { name: displayName, path: pagePath },
         ]),
-        buildFaqPageSchema(faqItems, config.path),
+        buildFaqPageSchema(faqItems, pagePath),
         {
             '@context': 'https://schema.org',
             '@type': 'Service',
@@ -36,11 +49,11 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
             description: config.description,
             provider: {
                 '@type': 'Organization',
-                name: '(주)와우쓰리디',
+                name: t('organizationName'),
                 url: absoluteUrl('/'),
             },
             areaServed: 'KR',
-            url: absoluteUrl(config.path),
+            url: absoluteUrl(pagePath),
         },
         ...(config.slug === 'photo-to-3d' && showcaseItems
             ? [buildPhotoTo3DShowcaseSchema(showcaseItems)]
@@ -68,14 +81,14 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
                         {config.description}
                     </p>
                     <div className="flex flex-wrap gap-3 pt-4">
-                        <Link href={config.primaryCta.href}>
+                        <Link href={config.primaryCta.href as '/'}>
                             <Button className="h-12 px-6 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black gap-2">
                                 {config.primaryCta.label}
                                 <ArrowRight className="w-4 h-4" />
                             </Button>
                         </Link>
                         {config.secondaryCta && (
-                            <Link href={config.secondaryCta.href}>
+                            <Link href={config.secondaryCta.href as '/'}>
                                 <Button
                                     variant="outline"
                                     className="h-12 px-6 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10"
@@ -91,7 +104,7 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
             <section className="py-16">
                 <div className="container mx-auto px-6 max-w-5xl space-y-14">
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-black mb-6">이런 분들께 적합합니다</h2>
+                        <h2 className="text-2xl md:text-3xl font-black mb-6">{t('suitableHeading')}</h2>
                         <ul className="space-y-4">
                             {config.bullets.map((b) => (
                                 <li key={b} className="flex items-start gap-3 text-white/75 break-keep">
@@ -105,13 +118,15 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
                     {config.slug === 'photo-to-3d' && showcaseItems && (
                         <PhotoTo3DBeforeAfter
                             items={showcaseItems}
-                            heading="변환·출력 흐름 예시"
-                            description="사진(이미지) 업로드 → AI 3D 모델 → 자동견적·출력까지 WOW3D에서 한 번에 진행할 수 있습니다."
+                            heading={t('photoShowcaseHeading')}
+                            description={t('photoShowcaseDescription')}
+                            beforeLabel={t('photoBeforeLabel')}
+                            afterLabel={t('photoAfterLabel')}
                         />
                     )}
 
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-black mb-6">자주 묻는 질문</h2>
+                        <h2 className="text-2xl md:text-3xl font-black mb-6">{t('faqHeading')}</h2>
                         <div className="space-y-4">
                             {config.faqs.map((f) => (
                                 <article
@@ -127,12 +142,12 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
 
                     {config.relatedGuides && config.relatedGuides.length > 0 && (
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-black mb-6">관련 가이드</h2>
+                            <h2 className="text-2xl md:text-3xl font-black mb-6">{t('relatedGuidesHeading')}</h2>
                             <div className="grid sm:grid-cols-2 gap-4">
                                 {config.relatedGuides.map((g) => (
                                     <Link
                                         key={g.href}
-                                        href={g.href}
+                                        href={g.href as '/'}
                                         className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors font-bold"
                                     >
                                         {g.title}
@@ -144,12 +159,10 @@ export default async function ServiceLandingPage({ config }: { config: ServiceLa
 
                     <div className="rounded-[2rem] border border-teal-400/20 bg-teal-400/10 p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
-                            <h2 className="text-2xl font-black mb-2">지금 바로 시작하세요</h2>
-                            <p className="text-white/70 break-keep">
-                                파일이 있으면 자동견적, 없으면 모델링·문의로 이어집니다.
-                            </p>
+                            <h2 className="text-2xl font-black mb-2">{t('ctaHeading')}</h2>
+                            <p className="text-white/70 break-keep">{t('ctaBody')}</p>
                         </div>
-                        <Link href={config.primaryCta.href}>
+                        <Link href={config.primaryCta.href as '/'}>
                             <Button className="h-12 px-6 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black gap-2">
                                 {config.primaryCta.label}
                                 <ArrowRight className="w-4 h-4" />

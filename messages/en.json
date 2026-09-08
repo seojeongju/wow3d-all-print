@@ -321,7 +321,15 @@
     "startQuote": "Start quote",
     "bottomTitle": "Get a quote now",
     "bottomDesc": "Upload files and check pricing without signing up.",
-    "bottomContact": "Contact"
+    "bottomContact": "Contact",
+    "metaTitle": "3D Printing Services | Prototypes · FDM · SLA | WOW3D",
+    "metaDescription": "Explore WOW3D PRO core services: print-on-demand, prototypes, FDM & SLA, photo→AI 3D, graduation projects, small batch, and 3D modeling.",
+    "ogTitle": "WOW3D PRO Core Services | 3D Printing",
+    "ogDescription": "From upload to auto-quote, production, and shipping. Pick the service that fits your goal.",
+    "collectionName": "WOW3D PRO Core Services",
+    "collectionDescription": "Print service, prototypes, FDM, SLA, photo→AI 3D, graduation projects, small batch, modeling, and more.",
+    "breadcrumbHome": "Home",
+    "breadcrumbServices": "Services"
   },
   "Quote": {
     "eyebrow": "Start your quote",
@@ -2579,5 +2587,750 @@
     "errCartSync": "Cart sync failed. Please add the items to your cart again.",
     "errOrderCreate": "Failed to create order",
     "ordererNotePrefix": "[Buyer] Name: {name} / Phone: {phone}"
+  },
+  "MyAccount": {
+    "metaTitle": "Orders · My Account",
+    "metaDescription": "Manage active orders, order history, saved quotes, and your profile in your WOW3D account.",
+    "backHome": "Back to home",
+    "greeting": "Hello, <highlight>{name}</highlight>!",
+    "subtitle": "Check your active projects and quote history.",
+    "logout": "Log out",
+    "toastLogoutTitle": "Logged out",
+    "toastLogoutDesc": "You have been logged out safely.",
+    "toastLoadFail": "Failed to load data",
+    "toastDeleteQuoteOk": "Quote deleted",
+    "toastDeleteQuoteFail": "Failed to delete quote",
+    "toastDeleteQuoteError": "An error occurred while deleting the quote",
+    "confirmDeleteQuote": "Are you sure you want to delete this quote?",
+    "confirmCancelOrder": "Are you sure you want to cancel this order?",
+    "toastCancelOrderOk": "Order cancelled",
+    "toastCancelOrderFail": "Failed to cancel order",
+    "toastCancelOrderError": "An error occurred while cancelling the order",
+    "toastUpdateOrderOk": "Order updated",
+    "toastUpdateOrderFail": "Failed to update order",
+    "toastUpdateOrderError": "An error occurred while updating the order",
+    "toastNameRequired": "Please enter your name",
+    "toastProfileOk": "Profile updated",
+    "toastProfileFail": "Failed to update profile",
+    "toastProfileError": "An error occurred while updating your profile",
+    "toastAddCartTitle": "Added to cart",
+    "toastAddCartDesc": "{name} has been added to your cart.",
+    "toastReorderTitle": "Reorder ready",
+    "toastReorderDesc": "Order items have been added to your cart again.",
+    "statActiveLabel": "Active projects",
+    "statActiveUnit": "",
+    "statActiveDesc": "Waiting for delivery",
+    "statCompletedLabel": "Completed projects",
+    "statCompletedUnit": "",
+    "statCompletedDesc": "Completed project history",
+    "statSpentLabel": "Total spent",
+    "statSpentDesc": "Lifetime spending",
+    "tabActive": "Active orders",
+    "tabHistory": "Order history",
+    "tabQuotes": "Saved quotes",
+    "tabProfile": "Profile",
+    "quoteSentTitle": "Your quote has been sent! 📧",
+    "quoteSentDesc": "Quotes were sent for {count} order(s). Please review the amount and proceed to payment.",
+    "quoteSentButton": "Quote #{tail}",
+    "quoteSentCta": "View",
+    "activeTitle": "Active orders",
+    "activeDesc": "Track projects currently in payment, quote review, production, or shipping.",
+    "activeEmptyTitle": "No active orders",
+    "activeEmptyDesc": "Print a new idea and bring it to life!",
+    "newQuote": "Get a new quote",
+    "orderNumber": "Order #{number}",
+    "orderDate": "Ordered: {date}",
+    "expertAmount": "Revised quote amount",
+    "vatIncluded": "(VAT included)",
+    "estimateReadyTitle": "Admin quote is ready",
+    "estimateReadyDesc": "It was also emailed to you. You can view it below.",
+    "viewEstimate": "View quote",
+    "productFallback": "Item #{id}",
+    "itemCount": "{count} item(s)",
+    "shippingAddress": "Shipping address",
+    "recipient": "Recipient",
+    "editOrder": "Edit order",
+    "cancelOrder": "Cancel order",
+    "orderCancelled": "Order cancelled",
+    "stepPending": "Received",
+    "stepConfirmed": "Confirmed",
+    "stepQuoteSent": "Quote",
+    "stepPayment": "Payment",
+    "stepProduction": "Production",
+    "stepShipping": "Shipping",
+    "stepDelivered": "Delivered",
+    "stepCompleted": "Done",
+    "statusPending": "Awaiting payment",
+    "statusConfirmed": "Order confirmed",
+    "statusQuoteSent": "Quote sent",
+    "statusPaymentConfirmed": "Payment confirmed",
+    "statusProduction": "In production",
+    "statusShipping": "Shipping",
+    "statusDelivered": "Delivered",
+    "statusCompleted": "Completed",
+    "statusCancelled": "Cancelled",
+    "historyTitle": "Order history",
+    "historySummary": "{total} order(s) total · {filtered} result(s)",
+    "searchPlaceholder": "Search order number...",
+    "statusFilterAria": "Order status filter",
+    "statusAll": "All statuses",
+    "historyLoading": "Loading order history...",
+    "historyEmptyNone": "No orders yet",
+    "historyEmptyFilter": "No orders match your filters",
+    "historyEmptyNoneDesc": "Get a quote and place an order.",
+    "historyEmptyFilterDesc": "Try a different search term or status filter.",
+    "getQuote": "Get a quote",
+    "resetFilters": "Reset filters",
+    "historyOrderDate": "Ordered {date}",
+    "orderFallback": "Order #{id}",
+    "productDefault": "Item",
+    "andMore": "+{count} more",
+    "noProductInfo": "No product info",
+    "totalOrderAmount": "Order total",
+    "detail": "Details",
+    "reorder": "Reorder",
+    "quotesTitle": "Saved quotes",
+    "quotesDesc": "Manage 3D models and print settings saved before adding to cart.",
+    "addToCart": "Add to cart",
+    "quotesEmpty": "No saved quotes.",
+    "profileTitle": "Manage profile",
+    "profileDesc": "View and update your name, phone, and account details.",
+    "nameSuffix": "{name}",
+    "totalOrders": "Total orders",
+    "countUnit": "{count}",
+    "savedQuotesCount": "Saved quotes",
+    "joinedAt": "Joined",
+    "memberInfo": "Account info",
+    "memberInfoDesc": "Manage your name and phone number. Email cannot be changed.",
+    "editProfile": "Edit profile",
+    "labelName": "Name",
+    "labelPhone": "Phone",
+    "phonePlaceholder": "010-0000-0000",
+    "noPhone": "No phone number on file.",
+    "labelEmailLocked": "Email (read-only)",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
+    "detailTitle": "Order details",
+    "detailOrderNumber": "Order number:",
+    "detailOrderDate": "Order date",
+    "detailOrderStatus": "Status",
+    "shippingInfo": "Shipping info",
+    "contact": "Phone",
+    "address": "Address",
+    "orderItems": "Order items",
+    "colItem": "Item",
+    "colQty": "Qty",
+    "colSubtotal": "Subtotal",
+    "grandTotal": "Total",
+    "shippingMessage": "Delivery note",
+    "editOrderTitle": "Edit order",
+    "editOrderDesc": "Update shipping details and item quantities.",
+    "recipientName": "Recipient name",
+    "notePlaceholder": "Enter delivery requests...",
+    "adjustQty": "Adjust quantities",
+    "unitPrice": "Unit: ₩{price}"
+  },
+  "OrderComplete": {
+    "metaTitle": "Order complete",
+    "metaDescription": "Your order was received successfully. See what happens next.",
+    "title": "Order received",
+    "subtitle": "Your order has been received successfully",
+    "orderNumber": "Order number",
+    "status": "Status",
+    "statusReview": "Under review",
+    "totalAmount": "Total amount",
+    "guestNote": "A confirmation was sent to your email. Please provide your order number when contacting us.",
+    "goHome": "Home",
+    "viewOrders": "View orders",
+    "nextSteps": "What happens next",
+    "step1Title": "Technical review",
+    "step1Desc": "Our engineers review your 3D file and confirm printability.",
+    "step2Title": "Final quote",
+    "step2Desc": "We share a final quote including shipping and material costs.",
+    "step3Title": "Production",
+    "step3Desc": "Once confirmed, your parts enter the production queue.",
+    "step4Title": "QC & shipping",
+    "step4Desc": "After inspection and curing, we ship to your address.",
+    "newQuote": "Get a new quote",
+    "footerBrand": "WOW3D industrial-grade service",
+    "footerNote": "A confirmation email has been sent. Contact our support team (24/7) if you have questions."
+  },
+  "SavedQuotes": {
+    "metaTitle": "Saved quotes",
+    "metaDescription": "Review your saved 3D printing quotes, add them to cart, or edit them.",
+    "badge": "History & Archives",
+    "titleBefore": "Saved",
+    "titleHighlight": "quotes",
+    "subtitle": "Quotes from the last 30 days are stored here. You can check out or edit them.",
+    "newQuote": "New Quote",
+    "cart": "Cart",
+    "emptyTitle": "No saved quotes",
+    "emptyDesc": "Upload a file to create your first smart quote.",
+    "emptyCta": "Create first quote",
+    "totalAmount": "Total Amount",
+    "edit": "Edit",
+    "editTitle": "Edit size & options",
+    "addToCart": "Add to Cart",
+    "addedToCart": "Added to Cart",
+    "confirmDelete": "Delete this quote?",
+    "errDelete": "Delete failed",
+    "toastDeleteTitle": "Deleted",
+    "toastDeleteDesc": "The quote has been deleted",
+    "toastDeleteFail": "Delete failed",
+    "errAddCart": "Failed to add to cart",
+    "toastAddTitle": "Added to cart",
+    "toastAddDesc": "{name} has been added to your cart",
+    "toastAddFail": "Add failed",
+    "policyTitle": "Data retention policy",
+    "policy1": "Quotes are encrypted and stored for 30 days from creation.",
+    "policy2": "After 30 days they are auto-deleted for privacy and database optimization.",
+    "policy3": "Quote amounts may change if material market prices fluctuate.",
+    "policy4": "Paid quotes remain permanently available in your order history."
+  },
+  "ServiceChrome": {
+    "breadcrumbHome": "Home",
+    "breadcrumbServices": "Services",
+    "suitableHeading": "Ideal for",
+    "faqHeading": "Frequently asked questions",
+    "relatedGuidesHeading": "Related guides",
+    "ctaHeading": "Get started now",
+    "ctaBody": "Have a file? Auto-quote. Need modeling? Continue via inquiry.",
+    "photoShowcaseHeading": "Conversion & print flow examples",
+    "photoShowcaseDescription": "Upload a photo → AI 3D model → auto-quote and print, all in one WOW3D flow.",
+    "photoBeforeLabel": "Original photo",
+    "photoAfterLabel": "AI 3D · Print",
+    "organizationName": "WOW3D Co., Ltd."
+  },
+  "Gallery": {
+    "metaTitle": "3D Printed Prototype Gallery | 100+ Real Builds | WOW3D",
+    "metaDescription": "Browse WOW3D’s 3D printing prototype gallery — real FDM, SLA, and DLP builds with material and process notes.",
+    "ogTitle": "3D Printed Prototype Gallery | WOW3D",
+    "ogDescription": "100+ high-quality 3D print and prototype references in one place.",
+    "loadingFallback": "Loading gallery…",
+    "backHome": "Back to home",
+    "eyebrow": "FULL GALLERY",
+    "title": "Full prototype",
+    "titleAccent": "gallery",
+    "subtitle": "Browse 100+ high-quality print references at a glance.",
+    "tagAll": "All",
+    "tagPhotoTo3d": "Photo → 3D Before/After",
+    "loadingData": "Loading data…",
+    "empty": "No gallery images yet."
+  },
+  "Privacy": {
+    "metaTitle": "Privacy Policy | WOW3D PRO",
+    "metaDescription": "WOW3D PRO Privacy Policy. WOW3D Co., Ltd. protects personal information under applicable Korean privacy and network laws.",
+    "home": "Home",
+    "title": "Privacy Policy",
+    "subtitle": "WOW3D Co., Ltd. protects user personal information under Korea’s Personal Information Protection Act and related network laws.",
+    "effectiveDate": "Effective: January 1, 2025 (may be updated when laws or services change; changes will be posted on the site).",
+    "homeCta": "Home",
+    "termsCta": "Terms of Use",
+    "contactCta": "Contact",
+    "tableHeaders": [
+      "Category",
+      "Items collected",
+      "Collection method",
+      "Purpose / retention"
+    ],
+    "sections": [
+      {
+        "id": "1",
+        "title": "Article 1 (Purposes of Processing)",
+        "intro": "WOW3D Co., Ltd. (the “Company”) processes personal information for the purposes below. Information is not used for other purposes, and if the purpose changes the Company will take required steps such as obtaining separate consent under Article 18 of the Personal Information Protection Act.",
+        "listType": "decimal",
+        "items": [
+          {
+            "label": "Membership & account management",
+            "text": "Sign-up and account management, identity verification, abuse prevention, records of misuse or refusal, dispute records, complaint handling, and notices"
+          },
+          {
+            "label": "Quotes, orders, payment & shipping",
+            "text": "3D printing quotes, order intake and fulfillment, payment and settlement, shipping address management, and production/shipping notices"
+          },
+          {
+            "label": "Guest orders",
+            "text": "Guest quote, order, payment, and shipping; order/shipping contact; disputes, refunds, and after-sales"
+          },
+          {
+            "label": "Customer support & inquiries",
+            "text": "Inquiry intake and replies, consultation records, and statistics for service improvement (when de-identified/anonymized)"
+          },
+          {
+            "label": "Marketing & advertising",
+            "text": "Events, promotions, and new service notices (only with consent); optional personalized ads"
+          },
+          {
+            "label": "Service improvement & security",
+            "text": "Usage analytics, security and fraud prevention, incident response, and legal obligations"
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": "Article 2 (Categories of Personal Information)",
+        "intro": "The Company may collect and use personal information as follows to provide the service.",
+        "tableRows": [
+          [
+            "Sign-up",
+            "Name, email, password, phone (optional)",
+            "Sign-up form",
+            "Member identification and verification"
+          ],
+          [
+            "Quote / order",
+            "Name, phone, shipping address, postal code, email (required for guests)",
+            "Order / payment / shipping fields",
+            "Order intake, production, shipping, contact"
+          ],
+          [
+            "Inquiry",
+            "Name, email, phone (optional), message",
+            "Contact form",
+            "Inquiry intake and reply"
+          ],
+          [
+            "Automatic",
+            "IP address, cookies, usage logs, device info",
+            "Automatic during web/app use",
+            "Security, abuse prevention, improvement stats"
+          ]
+        ],
+        "outro": "If required fields are not provided, related services (sign-up, order, inquiry, etc.) may be unavailable. Optional fields may be refused; some convenience features may be limited."
+      },
+      {
+        "id": "3",
+        "title": "Article 3 (Processing and Retention Period)",
+        "intro": "The Company retains and uses personal information for the period required by law or until the purpose is achieved, then destroys it without undue delay. Where other laws require retention, data is kept for that period.",
+        "listType": "disc",
+        "items": [
+          {
+            "label": "Member data",
+            "text": "Until withdrawal. After withdrawal, transaction/claim/dispute records may be kept for 5 years; contract/withdrawal 5 years; payment/supply 5 years; consumer complaint/dispute 3 years; display/ads 6 months under consumer e-commerce laws."
+          },
+          {
+            "label": "Orders, payment & shipping",
+            "text": "Until the statutory retention period after production and delivery are complete."
+          },
+          {
+            "label": "Inquiries",
+            "text": "3 years after the inquiry is closed (may vary by law or company policy)."
+          },
+          {
+            "label": "Logs / access records",
+            "text": "12 months under the Protection of Communications Secrets Act."
+          },
+          {
+            "label": "Tax-related",
+            "text": "5 years under the Framework Act on National Taxes and related laws."
+          }
+        ]
+      },
+      {
+        "id": "4",
+        "title": "Article 4 (Provision to Third Parties)",
+        "paragraphs": [
+          "The Company processes personal information only within Article 1 purposes and does not provide it to third parties without prior consent, except: (1) where required by law; (2) where the user or legal representative consents in advance; (3) where the user cannot express intent, obtaining legal-representative consent is difficult, and disclosure is necessary for the user’s or a third party’s life, body, or property. When processing is entrusted to third parties (carriers, payment processors, cloud/hosting, etc.) for shipping, payment, settlement, or support, the Company clarifies scope, sub-delegation limits, oversight, and liability by contract and discloses this in the privacy policy."
+        ]
+      },
+      {
+        "id": "5",
+        "title": "Article 5 (Destruction of Personal Information)",
+        "listType": "decimal",
+        "items": [
+          {
+            "label": "When",
+            "text": "Personal information whose retention period has ended or whose purpose is achieved is destroyed without undue delay, unless other laws require separate retention first."
+          },
+          {
+            "label": "How",
+            "text": "Electronic files are securely deleted so they cannot be recovered; paper records are shredded or incinerated."
+          }
+        ]
+      },
+      {
+        "id": "6",
+        "title": "Article 6 (Data Subject Rights and How to Exercise Them)",
+        "listType": "decimal",
+        "plainItems": [
+          "Users may request access (Art. 35), correction/deletion (Art. 36), and suspension of processing (Art. 37) under the Personal Information Protection Act. For children under 14, a legal representative may exercise these rights.",
+          "Rights may be exercised in writing, by email, or by fax; the Company will act without undue delay. Applications may follow Company forms and identity checks.",
+          "Correction/deletion requests do not apply to information that must be retained under other laws. Suspension requests may be subject to statutory exceptions (e.g., legal duties, risk to others’ life or body).",
+          "Users must protect their own information. The Company is not liable for issues caused by user negligence or disclosing credentials to third parties."
+        ]
+      },
+      {
+        "id": "7",
+        "title": "Article 7 (Privacy Officer)",
+        "intro": "The Company designates a privacy officer and team to oversee personal information processing and handle user complaints. For access, correction, deletion, suspension, or withdrawal of consent, contact:",
+        "officerTitle": "Privacy Officer",
+        "officerLines": [
+          "WOW3D Co., Ltd. | Representative",
+          "Address: 4F, Sangsu Building, 93 Dokmak-ro, Mapo-gu, Seoul",
+          "Phone: 02-3144-3137, 054-464-3144"
+        ],
+        "officerEmail": "wow3d16@naver.com",
+        "outro": "Users may also seek remedies via the Personal Information Dispute Mediation Committee, KISA Personal Information Infringement Report Center, the Supreme Prosecutors’ Office Cybercrime Investigation Division, or the National Police Agency Cyber Bureau."
+      },
+      {
+        "id": "8",
+        "title": "Article 8 (Security Measures)",
+        "intro": "To secure personal information, the Company takes measures under Article 29 of the Personal Information Protection Act and Article 30 of its Enforcement Decree, including:",
+        "listType": "disc",
+        "plainItems": [
+          "Access control (permission management, passwords, etc.)",
+          "Encryption of important information such as passwords in storage and transit",
+          "Security programs and system checks against hacking and credential leaks",
+          "Minimizing and training staff who handle personal information",
+          "Access control and entry logs for storage/processing areas",
+          "Preventing loss, theft, or damage of records and media"
+        ]
+      },
+      {
+        "id": "9",
+        "title": "Article 9 (Cookies and Opt-Out)",
+        "listType": "decimal",
+        "plainItems": [
+          "The Company may use cookies to provide personalized services. Cookies are small data sent to the user’s device, stored by the browser, and read by the server on later visits.",
+          "Cookie purposes: login/session continuity, convenience (language/settings), usage statistics and improvement, and security/abuse prevention. Cookie data is used only within the Company’s defined scope.",
+          "Users may refuse cookies in browser settings. Doing so may limit stay-signed-in and some personalized features. Path: Browser → Settings/Options → Privacy/Cookies → block cookies or delete all cookies."
+        ]
+      },
+      {
+        "id": "10",
+        "title": "Article 10 (Changes to this Policy)",
+        "paragraphs": [
+          "This Privacy Policy applies from January 1, 2025. Content may change with laws, policy, or services. Changes will be posted with the effective date and details at least 7 days in advance (30 days for changes adverse to users). The revised policy takes effect on the announced date."
+        ]
+      }
+    ]
+  },
+  "Terms": {
+    "metaTitle": "Terms of Use | WOW3D PRO",
+    "metaDescription": "WOW3D PRO Terms of Use covering 3D printing quotes, orders, production, and shipping.",
+    "home": "Home",
+    "title": "Terms of Use",
+    "subtitle": "Terms governing use of the WOW3D PRO service.",
+    "effectiveDate": "Effective: January 1, 2025 (may change with company circumstances; changes will be posted on the site).",
+    "homeCta": "Home",
+    "privacyCta": "Privacy Policy",
+    "contactCta": "Contact",
+    "privacyInlineBefore": "The Company collects, uses, and destroys personal information under the Privacy Policy and does not use it outside the stated purposes or provide it to third parties. See the ",
+    "privacyInlineLink": "Privacy Policy",
+    "privacyInlineAfter": " for details.",
+    "sections": [
+      {
+        "id": "1",
+        "title": "Article 1 (Purpose)",
+        "paragraphs": [
+          "These Terms set out the rights, obligations, and responsibilities between WOW3D Co., Ltd. (the “Company”) and users (members and guests) regarding WOW3D PRO (the “Service”), and other necessary matters."
+        ]
+      },
+      {
+        "id": "2",
+        "title": "Article 2 (Definitions)",
+        "listType": "disc",
+        "items": [
+          {
+            "label": "Service",
+            "text": "3D printing quote, order, production, shipping, and related information services provided by the Company."
+          },
+          {
+            "label": "User",
+            "text": "Anyone who accesses or uses the Service, whether a member or guest."
+          },
+          {
+            "label": "Member",
+            "text": "A person who signs up and receives a user account under the Company’s procedures."
+          },
+          {
+            "label": "Guest",
+            "text": "A person who uses quotes, orders, or other services without signing up."
+          },
+          {
+            "label": "Quote",
+            "text": "Estimated cost and lead time calculated by the Company from an uploaded 3D model (STL, OBJ, 3MF, PLY, etc.)."
+          },
+          {
+            "label": "Order",
+            "text": "A contract formed when a user requests final production and shipping after reviewing a quote and the Company accepts it."
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": "Article 3 (Effect and Changes)",
+        "listType": "decimal",
+        "plainItems": [
+          "These Terms take effect when posted on the Service or otherwise notified to users.",
+          "The Company may amend these Terms within applicable law. Changes will be posted with the effective date and details at least 7 days in advance (30 days if adverse to users).",
+          "Users who disagree with amended Terms may stop using the Service and withdraw. Continued use after notice is deemed acceptance."
+        ]
+      },
+      {
+        "id": "4",
+        "title": "Article 4 (Service Provision)",
+        "intro": "The Company provides services including:",
+        "listType": "disc",
+        "plainItems": [
+          "3D model upload and analysis, AI-assisted real-time quotes",
+          "Quotes and orders by process (FDM, SLA, DLP) and material",
+          "Order intake, production, shipping, and related support",
+          "Other ancillary services designated by the Company"
+        ],
+        "outro": "Quotes are for reference and may be reviewed before production. The Company may temporarily suspend the Service for force majeure, facility/system failures, or similar unavoidable reasons, with notice before or after as appropriate."
+      },
+      {
+        "id": "5",
+        "title": "Article 5 (Membership)",
+        "listType": "decimal",
+        "plainItems": [
+          "Users apply via the Company’s form and become members upon approval.",
+          "The Company may refuse or later terminate membership for identity theft, false information, legal/Terms violations, or other policy breaches.",
+          "Members must correct inaccurate personal information; disadvantages from failing to do so are borne by the member."
+        ]
+      },
+      {
+        "id": "6",
+        "title": "Article 6 (Quotes, Orders, Payment & Shipping)",
+        "listType": "decimal",
+        "items": [
+          {
+            "label": "Quote",
+            "text": "Quotes based on uploaded 3D files are reference estimates of cost and time; final cost and schedule may be confirmed separately after order acceptance."
+          },
+          {
+            "label": "Order",
+            "text": "After a quote is reviewed and an order requested, the Company reviews manufacturability, final amount, and schedule before acceptance. No contract exists until acceptance."
+          },
+          {
+            "label": "Payment",
+            "text": "Payment must follow Company methods (bank transfer, card, etc.); the order is confirmed when payment completes. Guests must provide accurate contact and shipping details."
+          },
+          {
+            "label": "Shipping",
+            "text": "Finished parts ship to the address entered by the user; fees and timing are advised at order. Delays or loss from unreachable contact or wrong address may be the user’s responsibility."
+          },
+          {
+            "label": "Cancel / refund",
+            "text": "Cancellation before production starts may be fully or partly refunded per policy. After production starts, refunds may be limited by progress; details are available at order time or via support."
+          }
+        ]
+      },
+      {
+        "id": "7",
+        "title": "Article 7 (Copyright and IP)",
+        "listType": "decimal",
+        "plainItems": [
+          "Copyright and other IP in Company-created content, logos, and designs on the Service belong to the Company.",
+          "Rights in files and designs uploaded by users remain with the user; the user grants the Company a license needed to produce and ship. The Company will not use, publish, or transfer user files beyond the service purpose.",
+          "If a user uploads files that infringe others’ rights and cause damage to the Company or third parties, that user is responsible for compensation."
+        ]
+      },
+      {
+        "id": "8",
+        "title": "Article 8 (Personal Information)",
+        "privacyLink": true
+      },
+      {
+        "id": "9",
+        "title": "Article 9 (Disclaimer)",
+        "listType": "decimal",
+        "plainItems": [
+          "The Company is not liable for damages from service disruption caused by force majeure, war, facility/telecom failures, or third-party illegal acts without Company fault.",
+          "The Company does not warrant accuracy, legality, or commercial fitness of uploaded 3D files; related disputes must be resolved between users or with third parties.",
+          "Quote and production results may differ from expectations. The Company strives for quote accuracy but does not treat this as a legal guarantee."
+        ]
+      },
+      {
+        "id": "10",
+        "title": "Article 10 (Use Restrictions)",
+        "intro": "The Company may restrict or suspend service use or revoke membership without prior notice if a user:",
+        "listType": "disc",
+        "plainItems": [
+          "Steals others’ information, provides false data, or violates Terms/laws",
+          "Engages in false messaging, defamation, copyright infringement, or similar misconduct toward the Company, other users, or third parties",
+          "Interferes with service operations/systems or uses the Service for illegal purposes",
+          "Otherwise harms legitimate Service operations"
+        ]
+      },
+      {
+        "id": "11",
+        "title": "Article 11 (Governing Law and Jurisdiction)",
+        "paragraphs": [
+          "These Terms and disputes between the Company and users are governed by the laws of the Republic of Korea. Lawsuits arising from Service use fall under the exclusive jurisdiction of the courts where the Company’s head office is located."
+        ]
+      }
+    ]
+  },
+  "MaterialsSafety": {
+    "metaTitle": "3D Printing Material Safety Information",
+    "metaDescription": "WOW3D material safety guidance for FDM (PLA, ABS, PETG, TPU) and resin (SLA/DLP): handling, ventilation, storage, and disposal.",
+    "ogTitle": "Material Safety | WOW3D",
+    "ogDescription": "Handling, ventilation, storage, and disposal guidance for FDM and resin materials.",
+    "home": "Home",
+    "title": "Material Safety Information",
+    "subtitle": "Safety practices for handling, storing, and disposing of FDM filaments and UV resins used in WOW3D PRO.",
+    "noticeLabel": "Note:",
+    "noticeBody": "Composition and hazard levels vary by manufacturer and formulation. Ask the material maker or supplier for the exact Safety Data Sheet (SDS/MSDS). This page summarizes general 3D printing material practices.",
+    "materialsCta": "Browse materials",
+    "termsCta": "Terms of Use",
+    "contactCta": "Contact",
+    "msdsBefore": "SDS/MSDS documents and manufacturer-specific safety instructions come from each material’s maker or supplier. WOW3D PRO may use materials from multiple brands — to confirm exact product name, batch, and manufacturer, ask when ordering or via ",
+    "msdsLink": "Contact",
+    "msdsAfter": ".",
+    "sections": [
+      {
+        "id": "1",
+        "title": "1. Overview",
+        "listType": "disc",
+        "items": [
+          {
+            "label": "Purpose",
+            "text": "Minimum practices to reduce risks when handling, storing, and disposing of FDM filaments (PLA, ABS, PETG, TPU) and UV-curable resins for SLA/DLP, and to maintain a safer workspace."
+          },
+          {
+            "label": "Scope",
+            "text": "Based on materials WOW3D Co., Ltd. uses for WOW3D PRO production. Composition can vary by maker and batch — check the manufacturer SDS when purchasing or using materials."
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": "2. Common FDM safety practices",
+        "icon": "printer",
+        "listType": "decimal",
+        "items": [
+          {
+            "label": "Hot nozzle & heated bed",
+            "text": "Melt temperatures (typically 180–260°C) can cause burns. Do not touch parts during or immediately after printing."
+          },
+          {
+            "label": "Ventilation",
+            "text": "Melting/layering may release ultrafine particles (UFPs) or VOCs. Keep good ventilation (natural or local exhaust); for long sessions, consider an exhaust hood or air cleaner."
+          },
+          {
+            "label": "Storage",
+            "text": "Avoid moisture, direct sun, and heat. Sealed, humidity-controlled containers help preserve filament life and quality."
+          },
+          {
+            "label": "Food & oral contact",
+            "text": "Do not use FDM prints for food or oral contact unless the material and coating are approved for that use. Some PLA/PETG products are food-contact grade, but surface roughness, cracks, and bacteria risk make ordinary prints unsuitable for food use."
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": "3. FDM material summaries",
+        "materials": [
+          {
+            "name": "PLA (polylactic acid)",
+            "accent": "emerald",
+            "summary": "Plant-derived and often biodegradable; typically lower emissions and milder odor.",
+            "notes": "Melt ~180–220°C; ventilation recommended; heat/moisture storage can degrade performance; dispose per general plastic or designated biodegradable rules."
+          },
+          {
+            "name": "ABS (acrylonitrile-butadiene-styrene)",
+            "accent": "amber",
+            "summary": "Styrene/VOCs may be released at high melt temperatures — adequate ventilation is essential.",
+            "summaryEmphasis": "adequate ventilation is essential",
+            "notes": "Melt ~220–260°C; ventilate/exhaust to avoid odor and fumes; avoid long use in sealed unventilated spaces; some regions apply workplace exposure limits for ABS fumes."
+          },
+          {
+            "name": "PETG",
+            "accent": "blue",
+            "summary": "Between PLA and ABS; some fine emissions possible at high temperature.",
+            "notes": "Melt ~220–250°C; maintain normal ventilation; watch moisture uptake and dry storage; food/medical grades exist but limits depend on production and finishing."
+          },
+          {
+            "name": "TPU (thermoplastic polyurethane)",
+            "accent": "pink",
+            "summary": "Flexible material; high-temperature emissions are often relatively lower than some others, but ventilation is still recommended for hot prints.",
+            "notes": "Melt ~210–240°C; keep ventilation; long moisture/UV exposure can age the material."
+          }
+        ]
+      },
+      {
+        "id": "4",
+        "title": "4. Common resin (SLA/DLP) safety practices",
+        "icon": "droplets",
+        "listType": "decimal",
+        "items": [
+          {
+            "label": "Uncured resin",
+            "text": "Liquid resin contains photoinitiators and monomers that can irritate skin/eyes or cause allergies. Wear nitrile gloves and safety glasses (or a face shield). Wash skin with soap and water immediately; if in eyes, rinse thoroughly and seek medical care.",
+            "emphasize": true
+          },
+          {
+            "label": "Inhalation",
+            "text": "Avoid inhaling resin odor/fumes; keep the workspace ventilated (e.g., exhaust hood)."
+          },
+          {
+            "label": "Curing (UV / sunlight)",
+            "text": "Resin cures under UV. Keep uncured resin away from direct sun and UV lamps; use opaque containers for storage and transport."
+          },
+          {
+            "label": "Storage",
+            "text": "Avoid direct sun and heat; keep lids tightly closed. Check manufacturer shelf life / use-by dates."
+          },
+          {
+            "label": "Fully cured parts",
+            "text": "Fully washed and cured parts are lower risk than uncured resin, but for food, oral, or prolonged skin contact confirm food-contact / biocompatibility with the manufacturer."
+          }
+        ]
+      },
+      {
+        "id": "5",
+        "title": "5. Notes by resin type",
+        "intro": "Hardness, strength, viscosity, and cure conditions differ for Standard, Tough, Clear, Flexible, and similar resins. Apply the common resin practices above and follow each maker’s SDS and instructions.",
+        "listType": "disc",
+        "items": [
+          {
+            "label": "Standard",
+            "text": "Handle with ordinary eye protection, gloves, and ventilation."
+          },
+          {
+            "label": "Tough",
+            "text": "Formulation may differ due to strength additives — check the manufacturer SDS."
+          },
+          {
+            "label": "Clear",
+            "text": "Higher UV transmission — be extra careful about light exposure during cure and storage."
+          },
+          {
+            "label": "Flexible",
+            "text": "May include plasticizers; follow manufacturer guidance."
+          }
+        ]
+      },
+      {
+        "id": "6",
+        "title": "6. Shared handling precautions",
+        "listType": "disc",
+        "items": [
+          {
+            "label": "Ventilation",
+            "text": "Indoors, use open windows, fans, local exhaust, or air cleaners to bring in fresh air and reduce fumes/dust."
+          },
+          {
+            "label": "Storage",
+            "text": "Keep away from children and pets; avoid sun, heat, and open flames. Store resin in opaque containers."
+          },
+          {
+            "label": "Disposal",
+            "text": "Follow local recycling / designated waste rules for used filament, resin, and cured byproducts. Dispose of resin bottles and uncured residue per maker and local guidance."
+          },
+          {
+            "label": "Emergencies",
+            "text": "For severe burns, eye/skin irritation, or symptoms after inhalation, seek medical care immediately and share SDS/ingredient info when possible."
+          }
+        ]
+      },
+      {
+        "id": "7",
+        "title": "7. SDS and detailed inquiries",
+        "msdsLink": true
+      }
+    ]
   }
 }

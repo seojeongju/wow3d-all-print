@@ -1,16 +1,58 @@
 import type { Metadata } from 'next'
-import { absoluteUrl } from '@/lib/site-url'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { getPathname } from '@/i18n/navigation'
+import { routing, type AppLocale } from '@/i18n/routing'
+import { SITE_URL } from '@/lib/site-url'
 
-export const metadata: Metadata = {
-  title: '이용약관 | WOW3D PRO',
-  description: 'WOW3D PRO 서비스 이용약관. 3D 프린팅 견적·주문·제작·배송에 관한 이용 규정입니다.',
-  alternates: { canonical: absoluteUrl('/terms') },
+type Props = {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
 }
 
-export default function TermsLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function resolveLocale(localeParam: string): AppLocale {
+  return (routing.locales.includes(localeParam as AppLocale)
+    ? localeParam
+    : routing.defaultLocale) as AppLocale
+}
+
+function termsPath(locale: AppLocale) {
+  return getPathname({ locale, href: '/terms' })
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: localeParam } = await params
+  const locale = resolveLocale(localeParam)
+  setRequestLocale(locale)
+  const t = await getTranslations({ locale, namespace: 'Terms' })
+
+  const title = t('metaTitle')
+  const description = t('metaDescription')
+  const path = termsPath(locale)
+  const canonical = `${SITE_URL}${path}`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        ko: `${SITE_URL}${termsPath('ko')}`,
+        en: `${SITE_URL}${termsPath('en')}`,
+        'x-default': `${SITE_URL}${termsPath('ko')}`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: 'website',
+      locale: locale === 'en' ? 'en_US' : 'ko_KR',
+    },
+  }
+}
+
+export default async function TermsLayout({ children, params }: Props) {
+  const { locale: localeParam } = await params
+  setRequestLocale(resolveLocale(localeParam))
   return <>{children}</>
 }
