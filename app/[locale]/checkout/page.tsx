@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, Suspense, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useCartStore } from '@/store/useCartStore'
 import { Button } from '@/components/ui/button'
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail, Search } from 'lucide-react'
-import Link from 'next/link'
+import { Link, useRouter } from '@/i18n/navigation'
 import { showToast } from '@/lib/toast-helper'
 import { isTokenExpired, validateAuthToken, isAuthTokenError } from '@/lib/auth-session'
 import { motion } from 'framer-motion'
@@ -21,7 +22,7 @@ import {
     formatFreeShippingHint,
     parseShippingSettings,
 } from '@/lib/shipping-settings'
-import { MESHY_AI_DISCLAIMER_CHECKOUT } from '@/lib/meshy-disclaimer'
+import { MESHY_AI_DISCLAIMER_CHECKOUT, MESHY_AI_DISCLAIMER_CHECKOUT_EN } from '@/lib/meshy-disclaimer'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
 import {
     CHECKOUT_CONVERSION_EVENTS,
@@ -53,6 +54,8 @@ declare global {
 }
 
 function CheckoutContent() {
+    const t = useTranslations('Checkout')
+    const locale = useLocale()
     const router = useRouter()
     const { user, isAuthenticated, token, logout } = useAuthStore()
     const { items, removeFromCartByIds } = useCartStore()
@@ -116,7 +119,7 @@ function CheckoutContent() {
 
     const handleAddressSearch = () => {
         if (!window.daum?.Postcode) {
-            showToast.info('로딩 중', '주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+            showToast.info(t('toastAddressLoadingTitle'), t('toastAddressLoadingDesc'));
             return
         }
 
@@ -168,7 +171,7 @@ function CheckoutContent() {
 
     const redirectToLoginForExpiredSession = () => {
         logout({ keepCart: true })
-        showToast.error('로그인 만료', '세션이 만료되었습니다. 다시 로그인한 후 주문을 완료해 주세요.')
+        showToast.error(t('toastLoginExpiredTitle'), t('toastLoginExpiredDesc'))
         router.push(`/auth?return=${encodeURIComponent(checkoutReturnPath)}`)
     }
 
@@ -176,17 +179,17 @@ function CheckoutContent() {
         e.preventDefault()
 
         if (!agreedToTerms || !agreedToPrivacy) {
-            showToast.error('약관 동의 확인', '필수 약관에 모두 동의해 주세요.');
+            showToast.error(t('toastTermsTitle'), t('toastTermsDesc'));
             return;
         }
 
         if (!formData.ordererName || !formData.ordererPhone || (!isAuthenticated && !formData.ordererEmail)) {
-            showToast.error('입력 확인', '주문자 필수 정보를 모두 입력해 주세요.');
+            showToast.error(t('toastOrdererRequiredTitle'), t('toastOrdererRequiredDesc'));
             return;
         }
 
         if (!formData.recipientName || !formData.recipientPhone || !formData.shippingAddress) {
-            showToast.error('입력 확인', '배송을 위한 필수 정보를 모두 입력해 주세요.');
+            showToast.error(t('toastShippingRequiredTitle'), t('toastShippingRequiredDesc'));
             return;
         }
 
@@ -201,7 +204,7 @@ function CheckoutContent() {
                 const validation = await validateAuthToken(token)
                 if (!validation.ok) {
                     if (validation.reason === 'network_error') {
-                        showToast.error('네트워크 오류', '연결을 확인한 뒤 다시 시도해 주세요.')
+                        showToast.error(t('toastNetworkTitle'), t('toastNetworkDesc'))
                         return
                     }
                     redirectToLoginForExpiredSession()
@@ -236,14 +239,15 @@ function CheckoutContent() {
                     const syncErr = await syncRes.json().catch(() => ({}))
                     throw new Error(
                         (syncErr as { error?: string })?.error ||
-                            '장바구니 동기화에 실패했습니다. 장바구니에 다시 담아 주세요.'
+                            t('errCartSync')
                     )
                 }
             }
 
             let finalNote = formData.customerNote || '';
-            if (!finalNote.includes('[주문자 정보]')) {
-                finalNote = `[주문자 정보] 이름: ${formData.ordererName} / 연락처: ${formData.ordererPhone}\n${finalNote}`.trim();
+            const ordererPrefix = t('ordererNotePrefix', { name: formData.ordererName, phone: formData.ordererPhone })
+            if (!finalNote.includes(ordererPrefix) && !finalNote.includes('[주문자 정보]') && !finalNote.includes('[Buyer]')) {
+                finalNote = `${ordererPrefix}\n${finalNote}`.trim();
             }
 
             const body: Record<string, unknown> = {
@@ -274,13 +278,13 @@ function CheckoutContent() {
                     redirectToLoginForExpiredSession()
                     return
                 }
-                throw new Error(err?.error || '주문 생성 실패')
+                throw new Error(err?.error || t('errOrderCreate'))
             }
 
             const result = await response.json()
             removeFromCartByIds(orderItems.map((i) => i.id))
 
-            showToast.success('주문 성공', `주문이 접수되었습니다 (${result.data.orderNumber})`);
+            showToast.success(t('toastOrderOkTitle'), t('toastOrderOkDesc', { orderNumber: result.data.orderNumber }));
 
             const q = new URLSearchParams({
                 orderId: String(result.data.orderId),
@@ -291,7 +295,7 @@ function CheckoutContent() {
             router.push(`/order-complete?${q.toString()}`)
 
         } catch (error) {
-            showToast.error('주문 실패', error);
+            showToast.error(t('toastOrderFailTitle'), error);
         } finally {
             setIsSubmitting(false)
         }
@@ -320,12 +324,12 @@ function CheckoutContent() {
                         <Link href="/cart">
                             <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/10 rounded-full px-4 text-[10px] font-black uppercase tracking-widest gap-2">
                                 <ArrowLeft className="w-3.5 h-3.5" />
-                                돌아가기
+                                {t('back')}
                             </Button>
                         </Link>
                         <div className="ml-auto flex items-center gap-4">
                             <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">안전 결제</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{t('securePay')}</span>
                         </div>
                     </div>
                 </div>
@@ -341,8 +345,8 @@ function CheckoutContent() {
                                 className="space-y-12"
                             >
                                 <div className="space-y-2">
-                                    <h1 className="text-4xl font-black tracking-tight leading-none uppercase">주문 정보</h1>
-                                    <p className="text-white/30 text-xs font-bold uppercase tracking-widest">배송에 필요한 정보를 입력해 주세요</p>
+                                    <h1 className="text-4xl font-black tracking-tight leading-none uppercase">{t('title')}</h1>
+                                    <p className="text-white/30 text-xs font-bold uppercase tracking-widest">{t('subtitle')}</p>
                                 </div>
 
                                 <form onSubmit={handleSubmit} className="space-y-10">
@@ -351,40 +355,40 @@ function CheckoutContent() {
                                         <div className="space-y-6">
                                             <div className="flex items-center gap-3 text-primary">
                                                 <User className="w-5 h-5" />
-                                                <h3 className="text-sm font-black uppercase tracking-widest">주문자 정보</h3>
+                                                <h3 className="text-sm font-black uppercase tracking-widest">{t('ordererSection')}</h3>
                                             </div>
                                             
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2.5">
                                                     <Label htmlFor="ordererName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                        이름 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                        {t('name')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                     </Label>
-                                                    <Input id="ordererName" name="ordererName" value={formData.ordererName} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="홍길동" required readOnly={isAuthenticated && !!user?.name} />
+                                                    <Input id="ordererName" name="ordererName" value={formData.ordererName} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder={t('placeholderName')} required readOnly={isAuthenticated && !!user?.name} />
                                                 </div>
                                                 <div className="space-y-2.5">
                                                     <Label htmlFor="ordererPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                        연락처 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                        {t('phone')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                     </Label>
-                                                    <Input id="ordererPhone" name="ordererPhone" value={formData.ordererPhone} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="010-0000-0000" required readOnly={isAuthenticated && !!user?.phone} />
+                                                    <Input id="ordererPhone" name="ordererPhone" value={formData.ordererPhone} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder={t('placeholderPhone')} required readOnly={isAuthenticated && !!user?.phone} />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="ordererEmail" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5 flex-wrap">
-                                                    <Mail className="w-3 h-3" /> 이메일 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                    <Mail className="w-3 h-3" /> {t('email')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                     {!isAuthenticated ? (
-                                                        <span className="normal-case tracking-normal text-white/35 font-medium">주문/결제 안내용</span>
+                                                        <span className="normal-case tracking-normal text-white/35 font-medium">{t('emailHintGuest')}</span>
                                                     ) : null}
                                                 </Label>
-                                                <Input id="ordererEmail" name="ordererEmail" type="email" value={formData.ordererEmail} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="order@example.com" required={!isAuthenticated} readOnly={isAuthenticated && !!user?.email} />
+                                                <Input id="ordererEmail" name="ordererEmail" type="email" value={formData.ordererEmail} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder={t('placeholderEmail')} required={!isAuthenticated} readOnly={isAuthenticated && !!user?.email} />
                                             </div>
                                             
                                             {!isAuthenticated && (
                                                 <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5">
-                                                    <h4 className="text-[10px] font-bold text-amber-500 mb-1">⚡ 비회원 주문 안내</h4>
+                                                    <h4 className="text-[10px] font-bold text-amber-500 mb-1">{t('guestNoticeTitle')}</h4>
                                                     <ul className="text-[10px] text-white/40 list-disc pl-3 space-y-0.5 tracking-tight">
-                                                        <li>입력하신 이메일로 관리자 검토 후 최종 결제 링크가 포함된 안내문이 발송됩니다.</li>
-                                                        <li>포인트 적립 및 회원 전용 혜택은 적용되지 않습니다.</li>
+                                                        <li>{t('guestNotice1')}</li>
+                                                        <li>{t('guestNotice2')}</li>
                                                     </ul>
                                                 </div>
                                             )}
@@ -397,7 +401,7 @@ function CheckoutContent() {
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3 text-primary">
                                                     <MapPin className="w-5 h-5" />
-                                                    <h3 className="text-sm font-black uppercase tracking-widest">배송지 정보</h3>
+                                                    <h3 className="text-sm font-black uppercase tracking-widest">{t('shippingSection')}</h3>
                                                 </div>
                                                 <label className="flex items-center gap-2 cursor-pointer group">
                                                     <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black/50 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer" checked={isSameAsOrderer} onChange={(e) => {
@@ -408,28 +412,28 @@ function CheckoutContent() {
                                                             setFormData(p => ({ ...p, recipientName: '', recipientPhone: '' }));
                                                         }
                                                     }} />
-                                                    <span className="text-xs font-bold text-white/60 group-hover:text-white transition-colors">주문자 정보와 동일합니다</span>
+                                                    <span className="text-xs font-bold text-white/60 group-hover:text-white transition-colors">{t('sameAsOrderer')}</span>
                                                 </label>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2.5">
                                                     <Label htmlFor="recipientName" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                        받는 사람 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                        {t('recipient')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                     </Label>
-                                                    <Input id="recipientName" name="recipientName" value={formData.recipientName} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="홍길동" required />
+                                                    <Input id="recipientName" name="recipientName" value={formData.recipientName} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder={t('placeholderName')} required />
                                                 </div>
                                                 <div className="space-y-2.5">
                                                     <Label htmlFor="recipientPhone" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                        연락처 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                        {t('phone')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                     </Label>
-                                                    <Input id="recipientPhone" name="recipientPhone" type="tel" value={formData.recipientPhone} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder="010-0000-0000" required />
+                                                    <Input id="recipientPhone" name="recipientPhone" type="tel" value={formData.recipientPhone} onChange={handleInputChange} className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary px-5 font-bold" placeholder={t('placeholderPhone')} required />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="shippingPostalCode" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    우편번호 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                    {t('postalCode')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                 </Label>
                                                 <div className="flex gap-2">
                                                     <Input
@@ -438,7 +442,7 @@ function CheckoutContent() {
                                                         value={formData.shippingPostalCode}
                                                         onChange={handleInputChange}
                                                         className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                        placeholder="00000"
+                                                        placeholder={t('placeholderPostal')}
                                                         readOnly
                                                     />
                                                     <Button
@@ -447,14 +451,14 @@ function CheckoutContent() {
                                                         className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold whitespace-nowrap flex items-center gap-2"
                                                     >
                                                         <Search className="w-4 h-4" />
-                                                        주소 찾기
+                                                        {t('findAddress')}
                                                     </Button>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="shippingAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <MapPin className="w-3 h-3" /> 배송 주소 <span className="normal-case tracking-normal text-teal-400 font-bold">(필수입력)</span>
+                                                    <MapPin className="w-3 h-3" /> {t('shippingAddress')} <span className="normal-case tracking-normal text-teal-400 font-bold">{t('required')}</span>
                                                 </Label>
                                                 <Input
                                                     id="shippingAddress"
@@ -462,7 +466,7 @@ function CheckoutContent() {
                                                     value={formData.shippingAddress}
                                                     onChange={handleInputChange}
                                                     className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                    placeholder="주소 찾기를 클릭하세요"
+                                                    placeholder={t('placeholderAddress')}
                                                     required
                                                     readOnly
                                                 />
@@ -470,7 +474,7 @@ function CheckoutContent() {
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="detailAddress" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    상세 주소
+                                                    {t('detailAddress')}
                                                 </Label>
                                                 <Input
                                                     id="detailAddress"
@@ -478,20 +482,20 @@ function CheckoutContent() {
                                                     value={detailAddress}
                                                     onChange={(e) => setDetailAddress(e.target.value)}
                                                     className="h-14 bg-white/[0.03] border-white/10 rounded-2xl focus:ring-primary focus:border-primary transition-all px-5 font-bold"
-                                                    placeholder="동/호수, 상세주소를 입력하세요"
+                                                    placeholder={t('placeholderDetail')}
                                                 />
                                             </div>
 
                                             <div className="space-y-2.5">
                                                 <Label htmlFor="customerNote" className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1 flex items-center gap-1.5">
-                                                    <MessageSquare className="w-3 h-3" /> 배송 시 요청사항 (선택)
+                                                    <MessageSquare className="w-3 h-3" /> {t('noteLabel')}
                                                 </Label>
                                                 <textarea
                                                     id="customerNote"
                                                     name="customerNote"
                                                     value={formData.customerNote}
                                                     onChange={handleInputChange}
-                                                    placeholder="배송사에 전달할 요청 사항을 입력하세요..."
+                                                    placeholder={t('notePlaceholder')}
                                                     className="w-full min-h-32 px-5 py-4 rounded-3xl bg-white/[0.03] border border-white/10 text-sm font-bold ring-offset-black focus:outline-none focus:ring-2 focus:ring-primary transition-all placeholder:text-white/10"
                                                 />
                                             </div>
@@ -501,15 +505,15 @@ function CheckoutContent() {
                                     <div className="space-y-6 pt-6">
                                         <div className="flex items-center gap-3 text-white/40">
                                             <CreditCard className="w-5 h-5" />
-                                            <h3 className="text-sm font-black uppercase tracking-widest">결제 안내</h3>
+                                            <h3 className="text-sm font-black uppercase tracking-widest">{t('paymentInfo')}</h3>
                                         </div>
                                         <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-2xl bg-black border border-white/10 flex items-center justify-center">
                                                 <CreditCard className="w-5 h-5 text-white/20" />
                                             </div>
                                             <div className="flex-1">
-                                                <span className="text-xs font-bold text-white/60 block">견적 검토 후 결제</span>
-                                                <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">기술 검토 후 최종 견적·결제를 안내해 드립니다</p>
+                                                <span className="text-xs font-bold text-white/60 block">{t('payAfterReview')}</span>
+                                                <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest mt-0.5">{t('payAfterReviewDesc')}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -523,7 +527,7 @@ function CheckoutContent() {
                                 className="relative"
                             >
                                 <div className="sticky top-12 p-8 rounded-[40px] bg-white/[0.03] border border-white/10 ring-1 ring-white/5 space-y-8">
-                                    <h2 className="text-xl font-black uppercase tracking-wide">주문 검토</h2>
+                                    <h2 className="text-xl font-black uppercase tracking-wide">{t('reviewTitle')}</h2>
 
                                     <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                                         {orderItems.map((item) => (
@@ -533,7 +537,12 @@ function CheckoutContent() {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-xs font-bold truncate group-hover:text-primary transition-colors">{item.quote?.fileName}</div>
-                                                    <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">{item.quote?.printMethod.toUpperCase()} • 수량 {item.quantity}</div>
+                                                    <div className="text-[10px] text-white/30 font-black uppercase mt-0.5">
+                                                        {t('qtyLine', {
+                                                            method: String(item.quote?.printMethod ?? '').toUpperCase(),
+                                                            qty: item.quantity,
+                                                        })}
+                                                    </div>
                                                 </div>
                                                 <div className="text-xs font-mono font-bold">
                                                     ₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}
@@ -546,34 +555,34 @@ function CheckoutContent() {
 
                                     <div className="space-y-3">
                                         <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                            <span>주문 금액 ({totalItems}개)</span>
+                                            <span>{t('orderAmount', { count: totalItems })}</span>
                                             <span className="text-white">₩{totalPriceKWR.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                            <span>기본 배송비</span>
+                                            <span>{t('baseShipping')}</span>
                                             {shippingFee === 0 ? (
-                                                <span className="text-emerald-400 font-black">{formatFreeShippingBenefit(storeSettings.freeThreshold)}</span>
+                                                <span className="text-emerald-400 font-black">{formatFreeShippingBenefit(storeSettings.freeThreshold, locale)}</span>
                                             ) : (
                                                 <div className="text-right">
                                                     <span className="text-white block">₩{shippingFee.toLocaleString()}</span>
-                                                    <span className="text-[9px] text-white/10 mt-0.5 block italic">({formatFreeShippingHint(storeSettings.freeThreshold)})</span>
+                                                    <span className="text-[9px] text-white/10 mt-0.5 block italic">({formatFreeShippingHint(storeSettings.freeThreshold, locale)})</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex justify-between items-baseline pt-4 border-t border-white/5 mt-4">
-                                            <span className="text-xs font-black uppercase tracking-widest">선결제 예상 금액</span>
+                                            <span className="text-xs font-black uppercase tracking-widest">{t('estimatedPrepaid')}</span>
                                             <span className="text-2xl font-black text-primary">₩{finalAmount.toLocaleString()}</span>
                                         </div>
                                     </div>
 
                                     <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary/90 leading-relaxed font-medium space-y-1.5">
-                                        <span className="font-bold block">※ 결제 안내</span>
+                                        <span className="font-bold block">{t('paymentNoticeTitle')}</span>
                                         <p>
-                                            현재 주문 단계에서는 결제가 이루어지지 않습니다. 전문가의 모델링 검토 및 시뮬레이션을 통해 산출된 <b>최종 견적서(배송비/옵션 확정)</b>를 메일로 받으신 후 실제 결제가 진행됩니다.
+                                            {t.rich('paymentNoticeBody', { b: (chunks) => <b>{chunks}</b> })}
                                         </p>
                                         {hasMeshyAiModel && (
                                             <p className="text-amber-100/95 bg-amber-500/15 border border-amber-400/25 rounded-lg px-2.5 py-2">
-                                                {MESHY_AI_DISCLAIMER_CHECKOUT}
+                                                {locale === 'en' ? MESHY_AI_DISCLAIMER_CHECKOUT_EN : MESHY_AI_DISCLAIMER_CHECKOUT}
                                             </p>
                                         )}
                                     </div>
@@ -583,13 +592,13 @@ function CheckoutContent() {
                                         <label className="flex items-start gap-2.5 cursor-pointer group">
                                             <input type="checkbox" className="w-[14px] h-[14px] mt-0.5 rounded border-white/20 bg-black/50 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} />
                                             <div className="text-[11px] text-white/60 leading-tight group-hover:text-white transition-colors">
-                                                <span className="text-emerald-500/80 font-bold">[필수]</span> 구매(제작) 조건 및 취소/환불 규정에 동의합니다.
+                                                <span className="text-emerald-500/80 font-bold">{t('agreeRequired')}</span> {t('agreeTerms')}
                                             </div>
                                         </label>
                                         <label className="flex items-start gap-2.5 cursor-pointer group">
                                             <input type="checkbox" className="w-[14px] h-[14px] mt-0.5 rounded border-white/20 bg-black/50 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer" checked={agreedToPrivacy} onChange={(e) => setAgreedToPrivacy(e.target.checked)} />
                                             <div className="text-[11px] text-white/60 leading-tight group-hover:text-white transition-colors">
-                                                <span className="text-emerald-500/80 font-bold">[필수]</span> 개인정보 수집에 동의합니다.
+                                                <span className="text-emerald-500/80 font-bold">{t('agreeRequired')}</span> {t('agreePrivacy')}
                                             </div>
                                         </label>
                                     </div>
@@ -605,7 +614,7 @@ function CheckoutContent() {
                                                 <Loader2 className="w-5 h-5 animate-spin" />
                                             ) : (
                                                 <>
-                                                    주문 확정
+                                                    {t('confirmOrder')}
                                                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                                 </>
                                             )}
@@ -613,7 +622,7 @@ function CheckoutContent() {
 
                                         <div className="mt-6 flex items-center justify-center gap-1.5 text-[9px] text-white/20 font-bold uppercase tracking-widest">
                                             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
-                                            엔터프라이즈급 데이터 암호화
+                                            {t('encryptionNote')}
                                         </div>
                                     </div>
                                 </div>

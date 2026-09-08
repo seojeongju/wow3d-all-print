@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, type ReactNode } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X, ExternalLink } from 'lucide-react'
+import { Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X, ExternalLink } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
 import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
 import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon'
@@ -22,13 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const CATEGORY_OPTIONS: { value: string; label: string }[] = [
-  { value: 'general', label: '일반 문의' },
-  { value: 'quote', label: '견적·제작' },
-  { value: 'tech', label: '기술·파일' },
-  { value: 'partnership', label: '파트너십' },
-  { value: 'other', label: '기타' },
-]
+const CATEGORY_KEYS = ['general', 'quote', 'tech', 'partnership', 'other'] as const
 
 const MAX_FILES = 3
 const MAX_FILE_BYTES = 50 * 1024 * 1024
@@ -49,18 +44,18 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function RequiredBadge() {
+function RequiredBadge({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center rounded-md bg-rose-500/20 border border-rose-400/40 px-2 py-0.5 text-[10px] font-black tracking-widest text-rose-300 uppercase">
-      필수
+      {label}
     </span>
   )
 }
 
-function OptionalBadge() {
+function OptionalBadge({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center rounded-md bg-white/5 border border-white/15 px-2 py-0.5 text-[10px] font-black tracking-widest text-white/45 uppercase">
-      선택
+      {label}
     </span>
   )
 }
@@ -70,11 +65,15 @@ function FieldLabel({
   icon,
   children,
   required,
+  requiredLabel,
+  optionalLabel,
 }: {
   htmlFor?: string
   icon: ReactNode
   children: ReactNode
   required?: boolean
+  requiredLabel: string
+  optionalLabel: string
 }) {
   return (
     <Label
@@ -83,7 +82,7 @@ function FieldLabel({
     >
       <span className="text-teal-400">{icon}</span>
       <span>{children}</span>
-      {required ? <RequiredBadge /> : <OptionalBadge />}
+      {required ? <RequiredBadge label={requiredLabel} /> : <OptionalBadge label={optionalLabel} />}
     </Label>
   )
 }
@@ -94,6 +93,7 @@ const optionalInputClass =
   'h-16 bg-white/[0.05] border-white/10 rounded-2xl focus:ring-teal-400/20 focus:border-teal-400/50 px-6 font-bold text-white text-lg transition-all'
 
 export default function ContactPage() {
+  const t = useTranslations('Contact')
   const router = useRouter()
   const { user, isAuthenticated, token } = useAuthStore()
 
@@ -132,16 +132,16 @@ export default function ContactPage() {
     const next = [...files]
     for (const file of selected) {
       if (next.length >= MAX_FILES) {
-        showToast.error('파일 확인', `첨부 파일은 최대 ${MAX_FILES}개까지 가능합니다.`)
+        showToast.error(t('toast.fileCheck'), t('toast.fileMax', { max: MAX_FILES }))
         break
       }
       if (file.size > MAX_FILE_BYTES) {
-        showToast.error('파일 확인', `${file.name}: 50MB 이하여야 합니다.`)
+        showToast.error(t('toast.fileCheck'), t('toast.fileTooLarge', { name: file.name }))
         continue
       }
       const ext = getExt(file.name)
       if (!ALLOWED_EXT.has(ext)) {
-        showToast.error('파일 확인', `${file.name}: 지원하지 않는 형식입니다.`)
+        showToast.error(t('toast.fileCheck'), t('toast.fileType', { name: file.name }))
         continue
       }
       if (next.some((f) => f.name === file.name && f.size === file.size)) continue
@@ -158,23 +158,23 @@ export default function ContactPage() {
     e.preventDefault()
 
     if (!formData.name?.trim()) {
-      showToast.error('입력 확인', '이름을 입력해 주세요.')
+      showToast.error(t('toast.inputCheck'), t('toast.needName'))
       return
     }
     if (!formData.email?.trim()) {
-      showToast.error('입력 확인', '이메일을 입력해 주세요.')
+      showToast.error(t('toast.inputCheck'), t('toast.needEmail'))
       return
     }
     if (!formData.phone?.trim()) {
-      showToast.error('입력 확인', '연락처를 입력해 주세요.')
+      showToast.error(t('toast.inputCheck'), t('toast.needPhone'))
       return
     }
     if (formData.phone.replace(/\D/g, '').length < 9) {
-      showToast.error('입력 확인', '올바른 연락처를 입력해 주세요.')
+      showToast.error(t('toast.inputCheck'), t('toast.needValidPhone'))
       return
     }
     if (!formData.message?.trim()) {
-      showToast.error('입력 확인', '문의 내용을 입력해 주세요.')
+      showToast.error(t('toast.inputCheck'), t('toast.needMessage'))
       return
     }
 
@@ -202,16 +202,19 @@ export default function ContactPage() {
       const json = await res.json()
 
       if (!res.ok) {
-        throw new Error(json.error || '문의 접수에 실패했습니다.')
+        throw new Error(json.error || t('toast.submitFailDefault'))
       }
 
-      showToast.success('문의가 접수되었습니다.', '입력하신 이메일로 답변드리겠습니다.')
+      showToast.success(t('toast.submitSuccess'), t('toast.submitSuccessDesc'))
       router.push('/')
     } catch (err) {
-      showToast.error('문의 접수 실패', err)
+      showToast.error(t('toast.submitFail'), err)
       setIsSubmitting(false)
     }
   }
+
+  const requiredLabel = t('required')
+  const optionalLabel = t('optional')
 
   return (
     <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-teal-500/30 overflow-hidden relative font-sans">
@@ -234,12 +237,11 @@ export default function ContactPage() {
                 >
                     <div className="space-y-6 text-center">
                         <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-2">
-                            <Mail className="w-4 h-4" /> Support Center
+                            <Mail className="w-4 h-4" /> {t('eyebrow')}
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white">문의하기</h1>
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white">{t('title')}</h1>
                         <p className="text-white/40 text-lg font-bold max-w-2xl mx-auto leading-relaxed break-keep">
-                            3D 프린팅 견적은 어떻게 받는지, 파일 업로드 전 무엇을 준비해야 하는지,
-                            제작 기간과 공정 선택은 어떻게 해야 하는지 궁금하다면 WOW3D에 바로 문의하실 수 있습니다.
+                            {t('subtitle')}
                         </p>
                     </div>
 
@@ -255,9 +257,9 @@ export default function ContactPage() {
                                     <NaverTalkTalkIcon className="w-7 h-7" />
                                 </div>
                                 <div className="min-w-0 text-left">
-                                    <p className="text-sm sm:text-base font-black text-white">네이버 톡톡 실시간 상담</p>
+                                    <p className="text-sm sm:text-base font-black text-white">{t('talkTitle')}</p>
                                     <p className="text-[11px] sm:text-xs font-medium text-white/45 mt-0.5">
-                                        앱 설치 없이 바로 1:1 채팅으로 문의하세요
+                                        {t('talkDesc')}
                                     </p>
                                 </div>
                             </div>
@@ -267,14 +269,14 @@ export default function ContactPage() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Link href="/guides/3d-printing-turnaround-time" className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors">
-                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Guide</p>
-                            <h2 className="text-xl font-black text-white mb-2">제작 기간과 납기 안내</h2>
-                            <p className="text-sm text-white/55 break-keep">출력부터 후처리, 검수, 배송까지 3D 프린팅 납기에 영향을 주는 요소를 정리했습니다.</p>
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">{t('guideLabel')}</p>
+                            <h2 className="text-xl font-black text-white mb-2">{t('guideTurnaroundTitle')}</h2>
+                            <p className="text-sm text-white/55 break-keep">{t('guideTurnaroundDesc')}</p>
                         </Link>
                         <Link href="/guides/fdm-vs-sla-vs-dlp" className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors">
-                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">Compare</p>
-                            <h2 className="text-xl font-black text-white mb-2">FDM · SLA · DLP 비교</h2>
-                            <p className="text-sm text-white/55 break-keep">문의 전에 각 공정의 특징과 추천 용도를 비교해서 더 빠르게 방향을 잡을 수 있습니다.</p>
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-400 mb-2">{t('compareLabel')}</p>
+                            <h2 className="text-xl font-black text-white mb-2">{t('compareTitle')}</h2>
+                            <p className="text-sm text-white/55 break-keep">{t('compareDesc')}</p>
                         </Link>
                     </div>
 
@@ -284,16 +286,18 @@ export default function ContactPage() {
                         </div>
 
                         <div className="relative z-10 flex flex-wrap items-center gap-3 rounded-2xl bg-rose-500/10 border border-rose-400/25 px-5 py-4">
-                            <RequiredBadge />
+                            <RequiredBadge label={requiredLabel} />
                             <p className="text-sm font-bold text-rose-100/90">
-                              이름 · 이메일 · 연락처 · 문의 내용은 <span className="text-rose-300">필수</span> 항목입니다.
+                              {t.rich('requiredBanner', {
+                                required: (chunks) => <span className="text-rose-300">{chunks}</span>,
+                              })}
                             </p>
                         </div>
 
                         <div className="grid sm:grid-cols-2 gap-8 relative z-10">
                             <div className="space-y-3">
-                                <FieldLabel htmlFor="name" icon={<User className="w-3.5 h-3.5" />} required>
-                                  이름
+                                <FieldLabel htmlFor="name" icon={<User className="w-3.5 h-3.5" />} required requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('name')}
                                 </FieldLabel>
                                 <Input
                                     id="name"
@@ -301,13 +305,13 @@ export default function ContactPage() {
                                     value={formData.name}
                                     onChange={handleInputChange}
                                     className={requiredInputClass}
-                                    placeholder="이름을 입력하세요"
+                                    placeholder={t('namePlaceholder')}
                                     required
                                 />
                             </div>
                             <div className="space-y-3">
-                                <FieldLabel htmlFor="email" icon={<Mail className="w-3.5 h-3.5" />} required>
-                                  이메일
+                                <FieldLabel htmlFor="email" icon={<Mail className="w-3.5 h-3.5" />} required requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('email')}
                                 </FieldLabel>
                                 <Input
                                     id="email"
@@ -323,8 +327,8 @@ export default function ContactPage() {
                         </div>
 
                             <div className="space-y-3 relative z-10">
-                                <FieldLabel htmlFor="phone" icon={<Phone className="w-3.5 h-3.5" />} required>
-                                  연락처
+                                <FieldLabel htmlFor="phone" icon={<Phone className="w-3.5 h-3.5" />} required requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('phone')}
                                 </FieldLabel>
                                 <Input
                                     id="phone"
@@ -339,17 +343,17 @@ export default function ContactPage() {
                             </div>
 
                             <div className="space-y-3 relative z-10">
-                                <FieldLabel icon={<FileText className="w-3.5 h-3.5" />}>
-                                  문의 유형
+                                <FieldLabel icon={<FileText className="w-3.5 h-3.5" />} requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('category')}
                                 </FieldLabel>
                                 <Select value={formData.category} onValueChange={(v) => setFormData((p) => ({ ...p, category: v }))}>
                                     <SelectTrigger className={optionalInputClass}>
-                                        <SelectValue placeholder="카테고리를 선택하세요" />
+                                        <SelectValue placeholder={t('categoryPlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-slate-900 border-white/10 text-white font-bold">
-                                        {CATEGORY_OPTIONS.map((o) => (
-                                            <SelectItem key={o.value} value={o.value} className="focus:bg-teal-400 focus:text-slate-950">
-                                                {o.label}
+                                        {CATEGORY_KEYS.map((key) => (
+                                            <SelectItem key={key} value={key} className="focus:bg-teal-400 focus:text-slate-950">
+                                                {t(`categories.${key}`)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -357,8 +361,8 @@ export default function ContactPage() {
                             </div>
 
                             <div className="space-y-3 relative z-10">
-                                <FieldLabel htmlFor="subject" icon={<FileText className="w-3.5 h-3.5" />}>
-                                  제목
+                                <FieldLabel htmlFor="subject" icon={<FileText className="w-3.5 h-3.5" />} requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('subject')}
                                 </FieldLabel>
                                 <Input
                                     id="subject"
@@ -366,20 +370,20 @@ export default function ContactPage() {
                                     value={formData.subject}
                                     onChange={handleInputChange}
                                     className={optionalInputClass}
-                                    placeholder="문의 주제를 입력하세요"
+                                    placeholder={t('subjectPlaceholder')}
                                 />
                             </div>
 
                             <div className="space-y-3 relative z-10">
-                                <FieldLabel htmlFor="message" icon={<MessageSquare className="w-3.5 h-3.5" />} required>
-                                  문의 내용
+                                <FieldLabel htmlFor="message" icon={<MessageSquare className="w-3.5 h-3.5" />} required requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('message')}
                                 </FieldLabel>
                                 <textarea
                                     id="message"
                                     name="message"
                                     value={formData.message}
                                     onChange={handleInputChange}
-                                    placeholder="상세 내용을 입력해 주세요."
+                                    placeholder={t('messagePlaceholder')}
                                     rows={6}
                                     className="w-full px-6 py-6 rounded-[1.5rem] bg-white/[0.05] border border-rose-400/25 border-l-[3px] border-l-rose-400 text-lg font-bold text-white ring-offset-slate-950 focus:outline-none focus:ring-2 focus:ring-rose-400/25 focus:border-rose-400/50 transition-all placeholder:text-white/10 resize-none min-h-[180px]"
                                     required
@@ -387,8 +391,8 @@ export default function ContactPage() {
                             </div>
 
                             <div className="space-y-3 relative z-10">
-                                <FieldLabel icon={<Upload className="w-3.5 h-3.5" />}>
-                                  파일·이미지 첨부 (최대 {MAX_FILES}개)
+                                <FieldLabel icon={<Upload className="w-3.5 h-3.5" />} requiredLabel={requiredLabel} optionalLabel={optionalLabel}>
+                                  {t('attachLabel', { max: MAX_FILES })}
                                 </FieldLabel>
                                 <div className="relative group">
                                     <input
@@ -397,7 +401,7 @@ export default function ContactPage() {
                                         accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.zip,.stl,.obj,.3mf,.step,.stp,image/*"
                                         onChange={handleFileChange}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        aria-label="문의 첨부 파일"
+                                        aria-label={t('attachAria')}
                                     />
                                     <div className="min-h-24 rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.02] flex items-center justify-center gap-4 px-6 py-5 group-hover:border-teal-400/50 group-hover:bg-teal-400/5 transition-all duration-300">
                                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/30 group-hover:text-teal-400 transition-colors shrink-0">
@@ -406,11 +410,11 @@ export default function ContactPage() {
                                         <div className="text-left min-w-0 flex-1">
                                             <p className="text-sm font-black text-white/50 group-hover:text-white transition-colors">
                                                 {files.length
-                                                    ? `${files.length}개 선택됨 · 추가하려면 다시 클릭`
-                                                    : '파일을 클릭하거나 여기로 드래그하세요'}
+                                                    ? t('filesSelected', { count: files.length })
+                                                    : t('filesEmpty')}
                                             </p>
                                             <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
-                                                Max {MAX_FILES} files · 각 50MB · JPG PNG PDF ZIP STL OBJ 3MF STEP
+                                                {t('filesHint', { max: MAX_FILES })}
                                             </p>
                                         </div>
                                     </div>
@@ -431,9 +435,9 @@ export default function ContactPage() {
                                                     type="button"
                                                     onClick={() => removeFile(i)}
                                                     className="inline-flex items-center gap-1 text-xs font-bold text-white/40 hover:text-white transition-colors"
-                                                    aria-label={`${f.name} 삭제`}
+                                                    aria-label={t('removeFileAria', { name: f.name })}
                                                 >
-                                                    <X className="w-3.5 h-3.5" /> 삭제
+                                                    <X className="w-3.5 h-3.5" /> {t('removeFile')}
                                                 </button>
                                             </li>
                                         ))}
@@ -452,7 +456,7 @@ export default function ContactPage() {
                                         <Loader2 className="w-8 h-8 animate-spin" />
                                     ) : (
                                         <>
-                                            문의 메시지 보내기
+                                            {t('submit')}
                                             <Send className="w-6 h-6" />
                                         </>
                                     )}
@@ -461,14 +465,14 @@ export default function ContactPage() {
                     </form>
 
                     <div className="text-center space-y-4 relative z-10">
-                        <p className="text-white/20 text-sm font-bold">문의 접수 시 관리자 승인 후 기재하신 이메일로 회신이 발송됩니다.</p>
+                        <p className="text-white/20 text-sm font-bold">{t('footerNote')}</p>
                         <div className="flex justify-center gap-6">
                             <Link href="/qna" className="text-[12px] font-black text-teal-400/60 hover:text-teal-400 uppercase tracking-widest transition-colors flex items-center gap-2 group">
-                                <HelpCircle className="w-3.5 h-3.5" /> 자주 묻는 질문 확인
+                                <HelpCircle className="w-3.5 h-3.5" /> {t('faqLink')}
                             </Link>
                             <span className="text-white/10">|</span>
                             <Link href="/" className="text-[12px] font-black text-white/20 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-2">
-                                <Home className="w-3.5 h-3.5" /> 메인으로 돌아가기
+                                <Home className="w-3.5 h-3.5" /> {t('homeLink')}
                             </Link>
                         </div>
                     </div>

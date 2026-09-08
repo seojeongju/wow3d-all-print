@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, Suspense, useEffect } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,6 +41,7 @@ function BrandMark({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 }
 
 function AuthContent() {
+  const t = useTranslations('Auth')
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const { setUser } = useAuthStore()
@@ -61,7 +63,7 @@ function AuthContent() {
         const meRes = await fetch('/api/auth/me', {
           headers: { Authorization: `Bearer ${tokenFromUrl}` },
         })
-        if (!meRes.ok) throw new Error('토큰 검증 실패')
+        if (!meRes.ok) throw new Error('token')
         const json = await meRes.json()
         const user = json?.data
         if (user?.id && user?.email) {
@@ -79,32 +81,32 @@ function AuthContent() {
             tokenFromUrl
           )
           showToast.success(
-            '로그인 성공',
+            t('toast.loginSuccess'),
             kakaoOAuth
-              ? `${user.name}님, 카카오 계정으로 로그인했습니다.`
-              : `${user.name}님, 환영합니다.`
+              ? t('toast.kakaoWelcome', { name: user.name })
+              : t('toast.welcome', { name: user.name })
           )
           router.replace(returnPath)
         }
       } catch {
-        showToast.error('로그인 처리 실패', '다시 시도해 주세요.')
+        showToast.error(t('toast.loginProcessFail'), t('toast.tryAgain'))
         router.replace('/auth')
       }
     }
     run()
-  }, [tokenFromUrl, returnPath, setUser, router, kakaoOAuth])
+  }, [tokenFromUrl, returnPath, setUser, router, kakaoOAuth, t])
 
   useEffect(() => {
     if (sessionExpired) {
-      showToast.error('로그인 만료', '세션이 만료되었습니다. 다시 로그인해 주세요.')
-    } else if (authError === 'google_cancel') showToast.error('Google 로그인 취소', '다시 시도해 주세요.')
-    else if (authError === 'kakao_cancel') showToast.error('카카오 로그인 취소', '다시 시도해 주세요.')
+      showToast.error(t('toast.sessionExpiredTitle'), t('toast.sessionExpiredDesc'))
+    } else if (authError === 'google_cancel') showToast.error(t('toast.googleCancel'), t('toast.tryAgain'))
+    else if (authError === 'kakao_cancel') showToast.error(t('toast.kakaoCancel'), t('toast.tryAgain'))
     else if (authError === 'config')
-      showToast.error('로그인 설정 오류', '소셜 로그인 환경 변수를 확인해 주세요.')
+      showToast.error(t('toast.configError'), t('toast.configErrorDesc'))
     else if (authError === 'db')
-      showToast.error('데이터베이스 오류', '소셜 로그인용 DB 설정이 필요합니다. 관리자에게 문의하세요.')
-    else if (authError === 'server') showToast.error('일시 오류', '잠시 후 다시 시도해 주세요.')
-  }, [authError, sessionExpired])
+      showToast.error(t('toast.dbError'), t('toast.dbErrorDesc'))
+    else if (authError === 'server') showToast.error(t('toast.serverError'), t('toast.serverErrorDesc'))
+  }, [authError, sessionExpired, t])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -124,13 +126,13 @@ function AuthContent() {
 
       if (!response.ok) {
         const text = await response.text()
-        let msg = '로그인에 실패했습니다.'
+        let msg = t('toast.loginFailDefault')
         try {
           const d = JSON.parse(text)
           if (d?.error && typeof d.error === 'string') msg = d.error
         } catch {
           if (text && text.length < 300) msg = text
-          else if (response.status >= 500) msg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+          else if (response.status >= 500) msg = t('toast.serverErrorLong')
         }
         throw new Error(msg)
       }
@@ -138,14 +140,14 @@ function AuthContent() {
       const result = await response.json()
       setUser(result.data.user, result.data.token)
 
-      showToast.success('로그인 성공', `${result.data.user.name}님, 다시 만나서 반갑습니다.`)
+      showToast.success(t('toast.loginSuccess'), t('toast.welcomeBack', { name: result.data.user.name }))
 
       const target = returnTo || (result.data.user?.role === 'admin' || result.data.user?.role === 'super_admin' ? '/admin' : '/')
       router.push(target)
     } catch (error) {
       showToast.error(
-        '로그인 실패',
-        error instanceof Error ? error.message : '이메일 또는 비밀번호를 확인해 주세요.'
+        t('toast.loginFail'),
+        error instanceof Error ? error.message : t('toast.loginFailHint')
       )
     } finally {
       setIsLoading(false)
@@ -165,13 +167,13 @@ function AuthContent() {
 
       if (!response.ok) {
         const text = await response.text()
-        let msg = '회원가입에 실패했습니다.'
+        let msg = t('toast.signupFailDefault')
         try {
           const d = JSON.parse(text)
           if (d?.error && typeof d.error === 'string') msg = d.error
         } catch {
           if (text && text.length < 300) msg = text
-          else if (response.status >= 500) msg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+          else if (response.status >= 500) msg = t('toast.serverErrorLong')
         }
         throw new Error(msg)
       }
@@ -179,13 +181,13 @@ function AuthContent() {
       const result = await response.json()
       setUser(result.data.user, result.data.token)
 
-      showToast.success('회원가입 완료', '계정이 생성되었습니다. 로그인된 상태로 이동합니다.')
+      showToast.success(t('toast.signupSuccess'), t('toast.signupSuccessDesc'))
 
       router.push(returnTo || '/')
     } catch (error) {
       showToast.error(
-        '회원가입 실패',
-        error instanceof Error ? error.message : '입력 내용을 확인해 주세요.'
+        t('toast.signupFail'),
+        error instanceof Error ? error.message : t('toast.signupFailHint')
       )
     } finally {
       setIsLoading(false)
@@ -198,7 +200,7 @@ function AuthContent() {
         <div className="flex flex-col items-center gap-4">
           <BrandMark />
           <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
-          <p className="text-sm text-white/60">로그인 처리 중...</p>
+          <p className="text-sm text-white/60">{t('processing')}</p>
         </div>
       </div>
     )
@@ -235,23 +237,23 @@ function AuthContent() {
                 WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
               </p>
               <p className="text-[11px] text-white/55 font-medium mt-1.5">
-                (주)와우쓰리디 / <span className="text-teal-400/90">3D쿠키홍대</span>
+                {t('brandSub')}
+                <span className="text-teal-400/90">{t('brandStore')}</span>
               </p>
             </div>
           </Link>
 
           <div className="space-y-4">
             <p className="text-teal-400 text-xs font-black uppercase tracking-[0.28em]">
-              3D 프린팅 자동 견적
+              {t('eyebrow')}
             </p>
             <h1 className="text-4xl xl:text-[2.75rem] font-extrabold leading-[1.2] tracking-tight text-white">
-              파일·사진(이미지)만으로,
+              {t('heroTitleBefore')}
               <br />
-              <span className="text-teal-300">견적까지 바로.</span>
+              <span className="text-teal-300">{t('heroTitleAccent')}</span>
             </h1>
             <p className="text-white/50 text-[15px] leading-relaxed max-w-sm break-keep">
-              STL·OBJ·STEP 업로드 또는 제품 사진(이미지)(JPG/PNG)만으로 AI 3D 모델링 후 실시간 견적·주문까지
-              이어집니다. 로그인 회원은 사진(이미지)→AI 3D를 하루 1회(한국 시간) 이용할 수 있습니다.
+              {t('heroDesc')}
             </p>
           </div>
 
@@ -266,8 +268,8 @@ function AuthContent() {
                 <Zap className="w-5 h-5 text-teal-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white/90">초단위 실시간 견적</p>
-                <p className="text-xs text-white/40">부피·소재·공정 반영</p>
+                <p className="text-sm font-semibold text-white/90">{t('featureQuoteTitle')}</p>
+                <p className="text-xs text-white/40">{t('featureQuoteDesc')}</p>
               </div>
             </motion.div>
             <motion.div
@@ -280,8 +282,8 @@ function AuthContent() {
                 <Printer className="w-5 h-5 text-teal-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white/90">FDM · SLA · DLP</p>
-                <p className="text-xs text-white/40">용도에 맞는 공정 선택</p>
+                <p className="text-sm font-semibold text-white/90">{t('featureProcessTitle')}</p>
+                <p className="text-xs text-white/40">{t('featureProcessDesc')}</p>
               </div>
             </motion.div>
             <motion.div
@@ -294,8 +296,8 @@ function AuthContent() {
                 <Camera className="w-5 h-5 text-indigo-300" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white/90">3D 파일 없어도 OK</p>
-                <p className="text-xs text-white/40 break-keep">사진(이미지) 업로드 → AI 3D → 자동견적</p>
+                <p className="text-sm font-semibold text-white/90">{t('featurePhotoTitle')}</p>
+                <p className="text-xs text-white/40 break-keep">{t('featurePhotoDesc')}</p>
               </div>
             </motion.div>
           </div>
@@ -305,7 +307,7 @@ function AuthContent() {
             className="inline-flex items-center gap-2 text-xs font-bold text-indigo-300/90 hover:text-indigo-200 transition-colors"
           >
             <ImageIcon className="w-3.5 h-3.5" />
-            사진(이미지)→3D 견적 가이드 보기
+            {t('guideLink')}
             <ArrowRight className="w-3 h-3" />
           </Link>
         </motion.div>
@@ -324,7 +326,7 @@ function AuthContent() {
             className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-teal-400 transition-colors mb-6"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            메인으로
+            {t('backToHome')}
           </Link>
 
           {/* Mobile brand */}
@@ -334,7 +336,7 @@ function AuthContent() {
               <p className="font-black text-lg leading-none">
                 WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
               </p>
-              <p className="text-[10px] text-white/45 mt-1">파일·사진(이미지) AI 3D 자동 견적</p>
+              <p className="text-[10px] text-white/45 mt-1">{t('mobileBrandSub')}</p>
             </div>
           </div>
 
@@ -342,11 +344,10 @@ function AuthContent() {
             {isPhotoQuoteReturn && (
               <div className="mb-6 rounded-2xl border border-indigo-400/25 bg-indigo-500/10 px-4 py-3.5 space-y-1">
                 <p className="text-sm font-bold text-indigo-100 break-keep">
-                  사진(이미지)→AI 3D 견적은 로그인 후 이용 가능합니다
+                  {t('photoGateTitle')}
                 </p>
                 <p className="text-xs text-white/55 leading-relaxed break-keep">
-                  제품 사진(이미지)(JPG/PNG)만 업로드하면 AI가 입체 3D 모델(STL)을 만들고 자동견적으로 이어집니다.
-                  회원당 하루 1회(한국 시간)입니다.
+                  {t('photoGateDesc')}
                 </p>
               </div>
             )}
@@ -361,7 +362,7 @@ function AuthContent() {
                     : 'text-white/45 hover:text-white/80'
                 }`}
               >
-                로그인
+                {t('tabLogin')}
               </button>
               <button
                 type="button"
@@ -372,14 +373,14 @@ function AuthContent() {
                     : 'text-white/45 hover:text-white/80'
                 }`}
               >
-                회원가입
+                {t('tabSignup')}
               </button>
             </div>
 
             <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-xs font-semibold text-white/60">
-                  이메일
+                  {t('email')}
                 </Label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
@@ -407,7 +408,7 @@ function AuthContent() {
                   >
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-xs font-semibold text-white/60">
-                        이름
+                        {t('name')}
                       </Label>
                       <div className="relative group">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
@@ -417,7 +418,7 @@ function AuthContent() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           className="h-12 pl-12 bg-black/25 border-white/10 rounded-xl focus:ring-2 focus:ring-teal-400/40 focus:border-teal-400/40 font-medium text-white"
-                          placeholder="홍길동"
+                          placeholder={t('namePlaceholder')}
                           autoComplete="name"
                           required
                         />
@@ -425,7 +426,7 @@ function AuthContent() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone" className="text-xs font-semibold text-white/60">
-                        전화번호 <span className="text-white/35 font-normal">(선택)</span>
+                        {t('phone')} <span className="text-white/35 font-normal">{t('phoneOptional')}</span>
                       </Label>
                       <div className="relative group">
                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
@@ -446,7 +447,7 @@ function AuthContent() {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-xs font-semibold text-white/60">
-                  비밀번호
+                  {t('password')}
                 </Label>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
@@ -472,7 +473,7 @@ function AuthContent() {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    {isLogin ? '로그인' : '가입하기'}
+                    {isLogin ? t('submitLogin') : t('submitSignup')}
                     <ArrowRight className="w-4 h-4" />
                   </span>
                 )}
@@ -483,7 +484,7 @@ function AuthContent() {
                   <span className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-[11px]">
-                  <span className="bg-[#12171f] px-3 text-white/35 rounded-full">또는</span>
+                  <span className="bg-[#12171f] px-3 text-white/35 rounded-full">{t('or')}</span>
                 </div>
               </div>
 
@@ -510,7 +511,7 @@ function AuthContent() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Google로 계속하기
+                  {t('continueGoogle')}
                 </a>
                 <a
                   href={`/api/auth/kakao${oauthQs}`}
@@ -522,7 +523,7 @@ function AuthContent() {
                       d="M12 4.5c-4.15 0-7.5 2.69-7.5 6.01 0 2.28 1.5 4.28 3.75 5.36-.15.55-.97 3.55-.99 3.78 0 0-.02.16.08.22.11.06.24.01.24.01.31-.04 3.59-2.34 4.17-2.73.76.11 1.54.17 2.35.17 4.15 0 7.5-2.69 7.5-6.01S16.15 4.5 12 4.5z"
                     />
                   </svg>
-                  카카오로 계속하기
+                  {t('continueKakao')}
                 </a>
               </div>
             </form>
@@ -534,17 +535,16 @@ function AuthContent() {
                 </div>
                 <div className="min-w-0 space-y-1">
                   <p className="text-sm font-bold text-white/90 break-keep">
-                    3D 파일 없이 사진(이미지)만으로 AI 3D 모델링
+                    {t('photoPromoTitle')}
                   </p>
                   <p className="text-xs text-white/50 leading-relaxed break-keep">
-                    로그인 후 자동견적에서 「3D 모델이 없어요」를 선택하고 제품 사진(이미지)을 올리면 AI 3D 생성 →
-                    견적·주문까지 진행할 수 있습니다.
+                    {t('photoPromoDesc')}
                   </p>
                   <Link
                     href={photoQuoteReturn}
                     className="inline-flex items-center gap-1 text-xs font-bold text-indigo-300 hover:text-indigo-200 pt-1"
                   >
-                    사진(이미지)→3D 견적 바로가기
+                    {t('photoPromoLink')}
                     <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
@@ -553,19 +553,19 @@ function AuthContent() {
           </div>
 
           <p className="mt-6 text-center text-[12px] text-white/40">
-            {isLogin ? '아직 회원이 아니에요?' : '이미 계정이 있어요?'}{' '}
+            {isLogin ? t('switchToSignup') : t('switchToLogin')}{' '}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               className="text-teal-400 hover:text-teal-300 font-semibold underline-offset-2 hover:underline transition-colors"
             >
-              {isLogin ? '회원가입' : '로그인'}
+              {isLogin ? t('tabSignup') : t('tabLogin')}
             </button>
           </p>
 
           <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-white/25">
             <ShieldCheck className="w-3.5 h-3.5" />
-            암호화된 안전한 연결 · WOW3D PRO
+            {t('secureNote')}
           </div>
         </motion.div>
       </div>

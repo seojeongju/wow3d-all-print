@@ -53,21 +53,27 @@ export function resolveShippingFee(
     return calculateShippingFee(itemsSubtotal, settings)
 }
 
-export function formatKoreanWonShort(amount: number): string {
+export function formatKoreanWonShort(amount: number, locale: string = 'ko'): string {
+    if (locale === 'en') {
+        return `₩${amount.toLocaleString('en-US')}`
+    }
     if (amount >= 10000 && amount % 10000 === 0) {
         return `${amount / 10000}만원`
     }
     return `${amount.toLocaleString('ko-KR')}원`
 }
 
-export function formatShippingChargeHint(threshold: number): string {
-    return `${formatKoreanWonShort(threshold)} 미만 부과`
+export function formatShippingChargeHint(threshold: number, locale: string = 'ko'): string {
+    const amount = formatKoreanWonShort(threshold, locale)
+    return locale === 'en' ? `Charged under ${amount}` : `${amount} 미만 부과`
 }
 
-export function formatFreeShippingHint(threshold: number): string {
-    return `${formatKoreanWonShort(threshold)} 이상 무료배송`
+export function formatFreeShippingHint(threshold: number, locale: string = 'ko'): string {
+    const amount = formatKoreanWonShort(threshold, locale)
+    return locale === 'en' ? `Free shipping from ${amount}` : `${amount} 이상 무료배송`
 }
 
-export function formatFreeShippingBenefit(threshold: number): string {
-    return `${formatKoreanWonShort(threshold)} ↑ 무료배송 혜택`
+export function formatFreeShippingBenefit(threshold: number, locale: string = 'ko'): string {
+    const amount = formatKoreanWonShort(threshold, locale)
+    return locale === 'en' ? `Free shipping ${amount}+` : `${amount} ↑ 무료배송 혜택`
 }

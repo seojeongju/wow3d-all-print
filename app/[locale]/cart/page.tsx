@@ -5,8 +5,9 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Home, ChevronRight, Box, ShieldCheck, LogIn, FileText, Loader2, Package, RotateCcw } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import { useState, useEffect, Suspense } from 'react'
 import { showToast } from '@/lib/toast-helper'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,7 +24,7 @@ import {
     formatFreeShippingHint,
     parseShippingSettings,
 } from '@/lib/shipping-settings'
-import { MESHY_AI_DISCLAIMER_SHORT } from '@/lib/meshy-disclaimer'
+import { MESHY_AI_DISCLAIMER_SHORT, MESHY_AI_DISCLAIMER_SHORT_EN } from '@/lib/meshy-disclaimer'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
 
 type QuoteRow = {
@@ -88,15 +89,26 @@ function toQuote(r: QuoteRow): Quote {
     }
 }
 
+function CartSuspenseFallback() {
+    const t = useTranslations('Cart')
+    return (
+        <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white/20 font-black uppercase tracking-widest animate-pulse italic">
+            {t('loading')}
+        </div>
+    )
+}
+
 export default function CartPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#020617] flex items-center justify-center text-white/20 font-black uppercase tracking-widest animate-pulse italic">Loading WOW3D Cart...</div>}>
+        <Suspense fallback={<CartSuspenseFallback />}>
             <CartPageContent />
         </Suspense>
     )
 }
 
 function CartPageContent() {
+    const t = useTranslations('Cart')
+    const locale = useLocale()
     const router = useRouter()
     const { items, removeFromCart, removeFromCartByIds, updateQuantity, setQuoteThumbnail, clearCart, getTotalPriceForItems, getTotalItems, addToCart, refreshQuoteSnapshots } = useCartStore()
     const { isAuthenticated, sessionId, token, user } = useAuthStore()
@@ -245,13 +257,13 @@ function CartPageContent() {
 
     const handleRemoveItem = (itemId: number) => {
         removeFromCart(itemId)
-        showToast.success('항목 삭제됨', '장바구니에서 제거되었습니다')
+        showToast.success(t('toastItemRemovedTitle'), t('toastItemRemovedDesc'))
     }
 
     const handleDeleteSelected = () => {
         if (selectedIds.size === 0) return
         removeFromCartByIds(Array.from(selectedIds))
-        showToast.success('선택 항목 삭제됨', `${selectedIds.size}개 항목이 제거되었습니다`)
+        showToast.success(t('toastSelectedRemovedTitle'), t('toastSelectedRemovedDesc', { count: selectedIds.size }))
     }
 
     const toggleSelect = (itemId: number) => {
@@ -272,11 +284,11 @@ function CartPageContent() {
 
         try {
             const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE', headers })
-            if (!res.ok) throw new Error('삭제 실패')
+            if (!res.ok) throw new Error(t('errDeleteFailed'))
             setSavedQuotes(prev => prev.filter(q => q.id !== id))
-            showToast.success('삭제 성공', '견적이 목록에서 제거되었습니다')
+            showToast.success(t('toastDeleteOkTitle'), t('toastDeleteOkDesc'))
         } catch (error) {
-            showToast.error('삭제 오류', error)
+            showToast.error(t('toastDeleteFailTitle'), error)
         }
     }
 
@@ -285,7 +297,7 @@ function CartPageContent() {
         setTimeout(() => {
             clearCart()
             setIsClearing(false)
-            showToast.success('장바구니 비움', '모든 항목이 초기화되었습니다')
+            showToast.success(t('toastClearTitle'), t('toastClearDesc'))
         }, 300)
     }
 
@@ -305,12 +317,12 @@ function CartPageContent() {
                 headers,
                 body: JSON.stringify({ quoteId: row.id, quantity: 1 }),
             })
-            if (!res.ok) throw new Error('장바구니 추가 실패')
+            if (!res.ok) throw new Error(t('errAddFailed'))
             addToCart(toQuote(row), 1)
-            showToast.success('장바구니 담기', `${row.file_name}이(가) 추가되었습니다`)
+            showToast.success(t('toastAddTitle'), t('toastAddDesc', { name: row.file_name }))
             setActiveTab('cart')
         } catch (error) {
-            showToast.error('추가 실패', error)
+            showToast.error(t('toastAddFailTitle'), error)
         } finally {
             setAddingId(null)
         }
@@ -346,19 +358,19 @@ function CartPageContent() {
                             <ShoppingCart className="w-14 h-14 text-teal-400/60 relative z-10" />
                         </motion.div>
                         <div className="space-y-4">
-                            <h2 className="text-4xl font-black text-white tracking-tight uppercase">장바구니가 비어있습니다</h2>
+                            <h2 className="text-4xl font-black text-white tracking-tight uppercase">{t('emptyTitle')}</h2>
                             <p className="text-white/40 text-lg font-bold leading-relaxed break-keep">
-                                아직 담긴 모델이나 저장된 견적이 없습니다.<br />
-                                지금 바로 견적을 내고 최상의 출력을 경험하세요.
+                                {t('emptyDesc1')}<br />
+                                {t('emptyDesc2')}
                             </p>
                         </div>
                         <div className="flex flex-col gap-4">
                             <Link href="/quote" className="block">
                                 <Button size="lg" className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 gap-3 font-black uppercase tracking-widest transition-all shadow-[0_20px_50px_rgba(45,212,191,0.2)]">
-                                    견적 시작하기 <ArrowRight className="w-6 h-6" />
+                                    {t('startQuote')} <ArrowRight className="w-6 h-6" />
                                 </Button>
                             </Link>
-                            <Link href="/" className="text-xs font-black text-white/20 hover:text-white uppercase tracking-[0.3em] transition-colors py-4">홈으로 돌아가기</Link>
+                            <Link href="/" className="text-xs font-black text-white/20 hover:text-white uppercase tracking-[0.3em] transition-colors py-4">{t('backHome')}</Link>
                         </div>
                     </div>
                 </div>
@@ -385,11 +397,14 @@ function CartPageContent() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                         <div className="space-y-4">
                             <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[11px] font-black uppercase tracking-[0.3em] mb-2">
-                                <ShoppingCart className="w-4 h-4" /> 주문 관리
+                                <ShoppingCart className="w-4 h-4" /> {t('badge')}
                             </div>
-                            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white uppercase">장바구니</h1>
+                            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none text-white uppercase">{t('title')}</h1>
                             <p className="text-white/40 text-lg font-bold">
-                                총 <span className="text-teal-400">{getTotalItems()}</span>개의 정밀 부품이 결제를 대기 중입니다.
+                                {t.rich('subtitle', {
+                                    count: getTotalItems(),
+                                    highlight: (chunks) => <span className="text-teal-400">{chunks}</span>,
+                                })}
                             </p>
                         </div>
                         <div className="flex items-center gap-4">
@@ -399,7 +414,7 @@ function CartPageContent() {
                                 disabled={selectedIds.size === 0 || isClearing}
                                 className="h-14 px-6 rounded-2xl bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 border border-white/10 font-bold gap-2 transition-all"
                             >
-                                <Trash2 className="w-4 h-4" /> 선택 삭제
+                                <Trash2 className="w-4 h-4" /> {t('deleteSelected')}
                             </Button>
                             <Button
                                 variant="ghost"
@@ -407,7 +422,7 @@ function CartPageContent() {
                                 disabled={isClearing}
                                 className="h-14 px-6 rounded-2xl bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-400 border border-white/10 font-bold gap-2 transition-all"
                             >
-                                <Trash2 className="w-4 h-4" /> 전체 비우기
+                                <Trash2 className="w-4 h-4" /> {t('clearAll')}
                             </Button>
                         </div>
                     </div>
@@ -424,21 +439,21 @@ function CartPageContent() {
                                 className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'cart' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
                             >
                                 <ShoppingCart className="w-5 h-5" />
-                                장바구니 ({items.length})
+                                {t('tabCart', { count: items.length })}
                             </button>
                             <button
                                 onClick={() => setActiveTab('saved')}
                                 className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'saved' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
                             >
                                 <FileText className="w-5 h-5" />
-                                저장 목록 ({savedQuotes.length})
+                                {t('tabSaved', { count: savedQuotes.length })}
                             </button>
                             <button
                                 onClick={() => setActiveTab('orders')}
                                 className={`px-8 py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all flex items-center gap-2.5 ${activeTab === 'orders' ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white'}`}
                             >
                                 <Package className="w-5 h-5" />
-                                주문 내역 ({orders.length})
+                                {t('tabOrders', { count: orders.length })}
                             </button>
                         </div>
 
@@ -452,10 +467,10 @@ function CartPageContent() {
                                             onClick={toggleSelectAll}
                                             className="text-[11px] font-black uppercase tracking-widest text-teal-400/60 hover:text-teal-400 transition-colors"
                                         >
-                                            {selectedIds.size >= items.length ? '전체 해제' : '전체 선택'}
+                                            {selectedIds.size >= items.length ? t('deselectAll') : t('selectAll')}
                                         </button>
                                         <span className="text-white/10">|</span>
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-white/30">{selectedIds.size}개 품목 선택됨</span>
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-white/30">{t('selectedCount', { count: selectedIds.size })}</span>
                                     </div>
                                     <AnimatePresence mode="popLayout">
                                         {items.length > 0 ? (
@@ -502,9 +517,9 @@ function CartPageContent() {
                                                                 <div className="flex items-start justify-between gap-4">
                                                                     <div className="space-y-1 min-w-0">
                                                                         <h3 className="text-xl font-bold text-white truncate group-hover:text-teal-400 transition-colors">
-                                                                            {item.quote?.fileName || (item.quote as any)?.file_name || '3D 모델 구성'}
+                                                                            {item.quote?.fileName || (item.quote as any)?.file_name || t('modelFallback')}
                                                                         </h3>
-                                                                        <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">상세 견적 정보</p>
+                                                                        <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">{t('quoteDetails')}</p>
                                                                     </div>
                                                                     <button onClick={() => handleRemoveItem(item.id)} className="p-3 rounded-xl bg-white/5 text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all active:scale-90">
                                                                         <Trash2 className="w-5 h-5" />
@@ -512,22 +527,22 @@ function CartPageContent() {
                                                                 </div>
                                                                 <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">작업 방식</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{t('printMethod')}</dt>
                                                                         <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.printMethod?.toUpperCase()}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">소재</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{t('material')}</dt>
                                                                         <dd className="text-sm font-bold text-white/80 mt-1 truncate">{item.quote?.fdmMaterial || item.quote?.resinType || 'Standard'}</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">부피</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{t('volume')}</dt>
                                                                         <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.volumeCm3?.toFixed(1)} cm³</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">단가</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{t('unitPrice')}</dt>
                                                                         <dd className="text-sm font-black text-teal-400 mt-1">
                                                                             ₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}
-                                                                            <span className="text-[8px] ml-1 opacity-60 font-bold">(VAT 포함)</span>
+                                                                            <span className="text-[8px] ml-1 opacity-60 font-bold">{t('vatIncluded')}</span>
                                                                         </dd>
                                                                     </div>
                                                                 </div>
@@ -543,7 +558,7 @@ function CartPageContent() {
                                                                             className="h-10 rounded-xl border-white/15 bg-white/5 text-white/80 hover:bg-teal-500/15 hover:text-teal-200 font-black text-[11px] gap-1.5"
                                                                         >
                                                                             <RotateCcw className="w-3.5 h-3.5" />
-                                                                            크기·옵션 수정
+                                                                            {t('editSizeOptions')}
                                                                         </Button>
                                                                     ) : null}
                                                                 <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-2xl p-1.5 px-3">
@@ -553,7 +568,7 @@ function CartPageContent() {
                                                                 </div>
                                                                 </div>
                                                                 <div className="text-right">
-                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">소계 (VAT 포함)</p>
+                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">{t('subtotalVat')}</p>
                                                                     <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
                                                                 </div>
                                                             </div>
@@ -566,7 +581,7 @@ function CartPageContent() {
                                                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                                                     <ShoppingCart className="w-8 h-8 text-white/20" />
                                                 </div>
-                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">장바구니가 비어있습니다.</p>
+                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">{t('cartEmptyTab')}</p>
                                             </div>
                                         )}
                                     </AnimatePresence>
@@ -592,7 +607,7 @@ function CartPageContent() {
                                                     <div className="flex-1 min-w-0 space-y-3">
                                                         <div className="space-y-1">
                                                             <h3 className="text-xl font-bold text-white truncate">{row.file_name}</h3>
-                                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">생성일 {new Date(row.created_at).toLocaleDateString()}</p>
+                                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">{t('createdAt', { date: new Date(row.created_at).toLocaleDateString(locale) })}</p>
                                                         </div>
                                                         <QuotePrintSettingsChips
                                                             settings={quoteRowPrintSettings(row)}
@@ -607,7 +622,7 @@ function CartPageContent() {
                                                                     </span>
                                                                     <span className="px-3 py-1.5 rounded-lg bg-teal-400/10 border border-teal-400/20 text-[11px] font-black text-teal-400 uppercase tracking-widest">
                                                                         ₩{Math.round(row.total_price).toLocaleString()}
-                                                                        <span className="text-[8px] ml-1.5 opacity-60 font-black">VAT 포함</span>
+                                                                        <span className="text-[8px] ml-1.5 opacity-60 font-black">{t('vatIncludedShort')}</span>
                                                                     </span>
                                                                 </>
                                                             }
@@ -621,15 +636,15 @@ function CartPageContent() {
                                                             className="h-14 px-5 rounded-2xl border-white/15 bg-white/5 text-white/80 hover:bg-teal-500/15 hover:text-teal-200 font-black text-xs gap-2"
                                                         >
                                                             <RotateCcw className="w-4 h-4" />
-                                                            크기·옵션 수정
+                                                            {t('editSizeOptions')}
                                                         </Button>
                                                         <Button
                                                             onClick={() => handleAddToCartFromSaved(row)}
                                                             disabled={addingId === row.id || inCart(row.id)}
                                                             className={`flex-1 md:flex-none h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-sm gap-2 transition-all shadow-xl ${inCart(row.id) ? 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed' : 'bg-teal-400 text-slate-950 hover:bg-teal-300 hover:scale-105 shadow-teal-400/20'}`}
                                                         >
-                                                            {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? '장바구니 담김' : (
-                                                                <>담기 <Plus className="w-5 h-5" /></>
+                                                            {addingId === row.id ? <Loader2 className="w-5 h-5 animate-spin" /> : inCart(row.id) ? t('inCart') : (
+                                                                <>{t('addToCart')} <Plus className="w-5 h-5" /></>
                                                             )}
                                                         </Button>
                                                         <Button
@@ -645,7 +660,7 @@ function CartPageContent() {
                                             ))
                                         ) : (
                                             <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">저장된 견적이 없습니다.</p>
+                                                <p className="text-white/30 font-bold text-lg uppercase tracking-widest">{t('noSavedQuotes')}</p>
                                             </div>
                                         )}
                                     </AnimatePresence>
@@ -657,11 +672,11 @@ function CartPageContent() {
                                             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-8">
                                                 <Package className="w-10 h-10 text-white/20" />
                                             </div>
-                                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-3">로그인이 필요합니다</h3>
-                                            <p className="text-white/40 font-bold mb-10 max-w-xs mx-auto text-lg leading-relaxed">로그인 후 주문 내역을 실시간으로 확인하실 수 있습니다.</p>
+                                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-3">{t('loginRequired')}</h3>
+                                            <p className="text-white/40 font-bold mb-10 max-w-xs mx-auto text-lg leading-relaxed">{t('loginRequiredDesc')}</p>
                                             <Link href="/auth?return=/cart">
                                                 <Button className="h-16 px-10 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest shadow-xl shadow-teal-400/20 gap-3 text-lg">
-                                                    <LogIn className="w-6 h-6" /> 사용자 로그인
+                                                    <LogIn className="w-6 h-6" /> {t('userLogin')}
                                                 </Button>
                                             </Link>
                                         </div>
@@ -685,22 +700,22 @@ function CartPageContent() {
                                                         </div>
                                                         <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">주문 날짜</span>
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{t('orderDate')}</span>
                                                                 <span className="text-sm font-bold text-white/60">{new Date(order.createdAt).toLocaleDateString()}</span>
                                                             </div>
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">진행 상태</span>
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{t('orderStatus')}</span>
                                                                 <span className="text-sm font-black text-teal-400 uppercase">{order.status}</span>
                                                             </div>
                                                             <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">결제 금액</span>
+                                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{t('paymentAmount')}</span>
                                                                 <span className="text-sm font-black text-white">₩{Math.round((order.totalAmount || 0)).toLocaleString()}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <Link href="/my-account" className="shrink-0 w-full md:w-auto">
                                                         <Button variant="outline" className="w-full md:w-auto h-14 px-8 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs gap-2 transition-all">
-                                                            상세보기 <ChevronRight className="w-4 h-4" />
+                                                            {t('viewDetails')} <ChevronRight className="w-4 h-4" />
                                                         </Button>
                                                     </Link>
                                                 </motion.div>
@@ -708,10 +723,10 @@ function CartPageContent() {
                                         </AnimatePresence>
                                     ) : (
                                         <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
-                                            <p className="text-white/30 font-bold text-lg uppercase tracking-widest mb-6">주문 내역이 없습니다.</p>
+                                            <p className="text-white/30 font-bold text-lg uppercase tracking-widest mb-6">{t('noOrders')}</p>
                                             <Link href="/quote">
                                                 <Button variant="outline" className="h-12 px-6 rounded-xl border-white/10 text-white/40 hover:text-white uppercase font-black tracking-widest text-[11px]">
-                                                    새 견적 받기
+                                                    {t('newQuote')}
                                                 </Button>
                                             </Link>
                                         </div>
@@ -729,43 +744,43 @@ function CartPageContent() {
                             </div>
                             
                             <div className="space-y-4 relative z-10">
-                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em]">Step 01</span>
-                                <h2 className="text-3xl font-black text-white tracking-tight uppercase">주문 요약</h2>
-                                <p className="text-white/30 text-sm font-bold leading-relaxed break-keep">품목 리스트를 확인하셨다면 아래 결제 단계로 진행해 주세요.</p>
+                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em]">{t('step01')}</span>
+                                <h2 className="text-3xl font-black text-white tracking-tight uppercase">{t('orderSummary')}</h2>
+                                <p className="text-white/30 text-sm font-bold leading-relaxed break-keep">{t('orderSummaryDesc')}</p>
                             </div>
 
                             <div className="space-y-6 relative z-10">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-white/30 font-black uppercase tracking-widest">총 품목 수</span>
+                                    <span className="text-white/30 font-black uppercase tracking-widest">{t('totalItems')}</span>
                                     <span className="font-black text-white text-lg">{selectedCount}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-white/30 font-black uppercase tracking-widest">배송비</span>
+                                    <span className="text-white/30 font-black uppercase tracking-widest">{t('shipping')}</span>
                                     <div className="text-right">
                                         <span className={`font-black uppercase tracking-widest ${shippingFee === 0 && selectedCount > 0 ? 'text-teal-400' : 'text-white'}`}>
-                                            {selectedCount === 0 ? '-' : shippingFee === 0 ? '무료' : `₩${shippingFee.toLocaleString()}`}
+                                            {selectedCount === 0 ? t('dash') : shippingFee === 0 ? t('free') : `₩${shippingFee.toLocaleString()}`}
                                         </span>
                                         {selectedCount > 0 && shippingFee > 0 && (
                                             <span className="block text-[9px] text-white/20 mt-0.5">
-                                                {formatShippingChargeHint(storeSettings.freeThreshold)}
+                                                {formatShippingChargeHint(storeSettings.freeThreshold, locale)}
                                             </span>
                                         )}
                                     </div>
                                 </div>
                                 <Separator className="bg-white/5" />
                                 <div className="space-y-1 text-right">
-                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">최종 합계 (배송비 및 VAT 포함)</p>
+                                    <p className="text-[11px] font-black text-white/20 uppercase tracking-widest">{t('finalTotal')}</p>
                                     <p className="text-5xl font-black tracking-tighter text-white">₩{Math.round(finalTotal).toLocaleString()}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-4 pt-4 relative z-10">
-                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">Step 02: 결제하기</span>
+                                <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">{t('step02')}</span>
                                 {selectedCount === 0 && (
                                     <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-200/95 text-[12px] font-bold leading-relaxed text-center break-keep">
                                         {activeTab === 'saved' || (items.length === 0 && savedQuotes.length > 0)
-                                            ? '저장된 항목에서 장바구니에 담은 뒤, 장바구니 탭에서 선택해 주문해 주세요.'
-                                            : '주문할 항목을 장바구니에서 선택해 주세요.'}
+                                            ? t('selectFromSavedHint')
+                                            : t('selectItemsHint')}
                                     </div>
                                 )}
                                 
@@ -776,24 +791,24 @@ function CartPageContent() {
                                             disabled={selectedCount === 0}
                                             className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-2 shadow-xl shadow-teal-400/20 transition-all active:scale-95 disabled:opacity-20"
                                         >
-                                            주문 및 결제하기 <ChevronRight className="w-5 h-5" />
+                                            {t('checkoutCta')} <ChevronRight className="w-5 h-5" />
                                         </Button>
                                     </Link>
                                 ) : (
                                     <div className="space-y-4">
                                         <Link href="/auth?return=/cart" className="block">
                                             <Button size="lg" className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 ring-4 ring-teal-400/20 transition-all">
-                                                <LogIn className="w-6 h-6" /> 사용자 로그인
+                                                <LogIn className="w-6 h-6" /> {t('userLogin')}
                                             </Button>
                                         </Link>
                                         <div className="flex items-center gap-4 py-2">
                                             <Separator className="bg-white/5 flex-1" />
-                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">비회원 주문</span>
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{t('guestOrder')}</span>
                                             <Separator className="bg-white/5 flex-1" />
                                         </div>
                                         <Link href={selectedCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'} className={selectedCount === 0 ? 'pointer-events-none' : ''}>
                                             <Button variant="outline" disabled={selectedCount === 0} className="w-full h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-black uppercase tracking-widest text-[11px] disabled:opacity-20 transition-all">
-                                                비회원 주문하기 <ChevronRight className="w-4 h-4" />
+                                                {t('guestCheckout')} <ChevronRight className="w-4 h-4" />
                                             </Button>
                                         </Link>
                                     </div>
@@ -802,23 +817,23 @@ function CartPageContent() {
 
                             <div className="pt-10 space-y-6 relative z-10 border-t border-white/5">
                                 <div className="p-6 rounded-[1.5rem] bg-white/[0.03] border border-white/5 text-[11px] text-white/40 leading-relaxed font-bold space-y-2">
-                                    <span className="font-black text-teal-400 block mb-2 uppercase tracking-widest">※ Guide</span>
+                                    <span className="font-black text-teal-400 block mb-2 uppercase tracking-widest">{t('guideTitle')}</span>
                                     <p>
-                                        자동견적 금액은 참조용이며, 전문가의 모델링 검토 및 시뮬레이션을 통해서 정확한 견적 산출 후 최종 견적서가 발송됩니다.
+                                        {t('guideBody')}
                                     </p>
                                     {items.some(
                                         (i) => parseMeshyJobIdFromFileName(i.quote?.fileName || '') != null
                                     ) && (
                                         <p className="text-amber-100/90 bg-amber-500/10 border border-amber-400/20 rounded-xl px-3 py-2.5">
-                                            {MESHY_AI_DISCLAIMER_SHORT}
+                                            {locale === 'en' ? MESHY_AI_DISCLAIMER_SHORT_EN : MESHY_AI_DISCLAIMER_SHORT}
                                         </p>
                                     )}
                                 </div>
                                 <div className="flex items-start gap-4 px-2">
                                     <ShieldCheck className="w-6 h-6 text-teal-400/40 shrink-0" />
                                     <div className="text-[10px] text-white/20 font-bold leading-relaxed uppercase tracking-widest">
-                                        <span className="font-black text-white/40">안전한 거래</span><br />
-                                        견적은 소재 단가 기준이며, 배송비는 {formatFreeShippingHint(storeSettings.freeThreshold)} 기준으로 적용됩니다.
+                                        <span className="font-black text-white/40">{t('safeTrade')}</span><br />
+                                        {t('shippingPolicy', { hint: formatFreeShippingHint(storeSettings.freeThreshold, locale) })}
                                     </div>
                                 </div>
                             </div>
