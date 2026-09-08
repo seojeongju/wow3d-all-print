@@ -412,7 +412,14 @@ export default function Scene({ compact = false }: SceneProps) {
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
                 {/* 파일 업로드마다 Canvas를 재생성하지 않음 — WebGL Context Lost + Trackball connect(null) 방지 */}
                 <div ref={canvasRef} className="absolute inset-0 z-0 h-full min-h-[400px]">
-                    <ViewerErrorBoundary onRetry={() => setViewerEpoch((n) => n + 1)}>
+                    <ViewerErrorBoundary
+                        onRetry={() => setViewerEpoch((n) => n + 1)}
+                        labels={{
+                            title: t('viewerErrorTitle'),
+                            body: t('viewerErrorBody'),
+                            retry: t('viewerErrorRetry'),
+                        }}
+                    >
                         <Canvas
                             key={viewerEpoch}
                             shadows

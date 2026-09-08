@@ -76,13 +76,13 @@ function QuickQuoteFaqCard({ item }: { item: QuoteFaqItem }) {
     );
 }
 
-const GUIDE_SOURCE_LABELS: Record<string, string> = {
-    prototypes: '시제품용 소재 추천',
-    transparent_parts: '투명 부품용 소재 추천',
-    housings_cases: '하우징·케이스용 소재 추천',
-    heat_impact_parts: '내열·내충격 부품용 소재 추천',
-    miniatures_figurines: '정밀 모형·피규어용 소재 추천',
-};
+const GUIDE_SOURCE_KEYS = [
+    'prototypes',
+    'transparent_parts',
+    'housings_cases',
+    'heat_impact_parts',
+    'miniatures_figurines',
+] as const
 
 function QuoteContent() {
     useCpuModelAnalysis();
@@ -115,7 +115,9 @@ function QuoteContent() {
     const [handoffPhoto, setHandoffPhoto] = useState<File | null>(null);
     const [showQuoteFaqs, setShowQuoteFaqs] = useState(false);
     const consumePendingPhoto = usePhotoHandoffStore((s) => s.consumePendingPhoto);
-    const guideLabel = guideTopic || GUIDE_SOURCE_LABELS[guideSource] || '';
+    const guideSourceKey = GUIDE_SOURCE_KEYS.find((k) => k === guideSource);
+    const guideLabel =
+        guideTopic || (guideSourceKey ? t(`guideSources.${guideSourceKey}`) : '');
     const SAMPLE_NAMES = ['sample_cube.stl', 'test_cube.stl', 'jet_engine_rotor.stl'];
 
     useEffect(() => {

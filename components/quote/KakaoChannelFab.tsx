@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { MessageCircle, X, UserPlus } from 'lucide-react';
 import { getKakaoChannelAddFriendUrl, getKakaoChannelChatUrl } from '@/lib/kakao-channel';
 
@@ -15,6 +15,7 @@ type Props = {
  * NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID 가 없으면 렌더하지 않습니다.
  */
 export function KakaoChannelFab({ visible }: Props) {
+    const t = useTranslations('Quote');
     const [open, setOpen] = useState(false);
     const chatUrl = getKakaoChannelChatUrl();
     const addUrl = getKakaoChannelAddFriendUrl();
@@ -27,14 +28,14 @@ export function KakaoChannelFab({ visible }: Props) {
                 <div className="w-[min(18rem,calc(100vw-2.5rem))] rounded-2xl border border-[#FEE500]/40 bg-[#0c0c0c]/95 p-4 shadow-2xl backdrop-blur-md">
                     <div className="flex items-start justify-between gap-2 mb-3">
                         <p className="text-sm font-bold text-white leading-snug">
-                            견적이 궁금하신가요?
+                            {t('kakaoTitle')}
                             <span className="block text-[11px] font-medium text-white/50 mt-1">
-                                카카오 채널에서 1:1로 문의하시거나, 채널을 추가해 주시면 안내를 받으실 수 있습니다.
+                                {t('kakaoBody')}
                             </span>
                         </p>
                         <button
                             type="button"
-                            aria-label="닫기"
+                            aria-label={t('kakaoClose')}
                             className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 shrink-0"
                             onClick={() => setOpen(false)}
                         >
@@ -42,25 +43,25 @@ export function KakaoChannelFab({ visible }: Props) {
                         </button>
                     </div>
                     <div className="flex flex-col gap-2">
-                        <Link
+                        <a
                             href={chatUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-center gap-2 rounded-xl bg-[#FEE500] text-[#191919] font-black text-sm py-3 px-4 hover:bg-[#ffe033] transition-colors"
                         >
                             <MessageCircle className="w-4 h-4" />
-                            카카오톡 채널 문의
-                        </Link>
+                            {t('kakaoChat')}
+                        </a>
                         {addUrl ? (
-                            <Link
+                            <a
                                 href={addUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 rounded-xl border border-white/15 text-white/90 text-xs font-bold py-2.5 px-4 hover:bg-white/10 transition-colors"
                             >
                                 <UserPlus className="w-3.5 h-3.5" />
-                                채널 친구 추가
-                            </Link>
+                                {t('kakaoAddFriend')}
+                            </a>
                         ) : null}
                     </div>
                 </div>
@@ -69,7 +70,7 @@ export function KakaoChannelFab({ visible }: Props) {
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FEE500] text-[#191919] shadow-lg shadow-black/40 ring-2 ring-black/20 hover:scale-105 active:scale-95 transition-transform"
-                aria-label={open ? '카카오 문의 패널 닫기' : '카카오 문의 열기'}
+                aria-label={open ? t('kakaoCloseAria') : t('kakaoOpenAria')}
             >
                 <MessageCircle className="w-7 h-7" strokeWidth={2.2} />
             </button>

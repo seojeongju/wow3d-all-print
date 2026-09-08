@@ -453,7 +453,24 @@
     "transformAlignAxes": "축 정렬",
     "transformAlignAxesTitle": "회전을 0°로 맞춰 축 정렬",
     "transformAppliedDims": "적용 치수",
-    "transformMeshVolume": "메쉬 부피"
+    "transformMeshVolume": "메쉬 부피",
+    "viewerErrorTitle": "3D 뷰어를 다시 불러오는 중 오류가 났습니다",
+    "viewerErrorBody": "일시적인 WebGL 오류일 수 있습니다. 다시 시도해 주세요.",
+    "viewerErrorRetry": "뷰어 다시 시도",
+    "kakaoTitle": "견적이 궁금하신가요?",
+    "kakaoBody": "카카오 채널에서 1:1로 문의하시거나, 채널을 추가해 주시면 안내를 받으실 수 있습니다.",
+    "kakaoClose": "닫기",
+    "kakaoChat": "카카오톡 채널 문의",
+    "kakaoAddFriend": "채널 친구 추가",
+    "kakaoOpenAria": "카카오 문의 열기",
+    "kakaoCloseAria": "카카오 문의 패널 닫기",
+    "guideSources": {
+      "prototypes": "시제품용 소재 추천",
+      "transparent_parts": "투명 부품용 소재 추천",
+      "housings_cases": "하우징·케이스용 소재 추천",
+      "heat_impact_parts": "내열·내충격 부품용 소재 추천",
+      "miniatures_figurines": "정밀 모형·피규어용 소재 추천"
+    }
   },
   "QuotePanel": {
     "volume": "부피",

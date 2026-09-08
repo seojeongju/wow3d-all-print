@@ -452,7 +452,24 @@
     "transformAlignAxes": "Align axes",
     "transformAlignAxesTitle": "Reset rotation to 0° and align axes",
     "transformAppliedDims": "Applied size",
-    "transformMeshVolume": "Mesh volume"
+    "transformMeshVolume": "Mesh volume",
+    "viewerErrorTitle": "Something went wrong reloading the 3D viewer",
+    "viewerErrorBody": "This may be a temporary WebGL issue. Please try again.",
+    "viewerErrorRetry": "Retry viewer",
+    "kakaoTitle": "Questions about your quote?",
+    "kakaoBody": "Chat 1:1 on the Kakao channel, or add the channel for updates.",
+    "kakaoClose": "Close",
+    "kakaoChat": "KakaoTalk channel chat",
+    "kakaoAddFriend": "Add channel friend",
+    "kakaoOpenAria": "Open Kakao inquiry",
+    "kakaoCloseAria": "Close Kakao inquiry panel",
+    "guideSources": {
+      "prototypes": "Best materials for prototypes",
+      "transparent_parts": "Best materials for transparent parts",
+      "housings_cases": "Best materials for housings & cases",
+      "heat_impact_parts": "Best materials for heat & impact parts",
+      "miniatures_figurines": "Best materials for miniatures & figurines"
+    }
   },
   "QuotePanel": {
     "volume": "Volume",
