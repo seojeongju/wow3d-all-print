@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import {
+    buildGalleryImageUrls,
+    loadGalleryExtraImagesByItemIds,
+} from '@/lib/gallery-images';
 
 export async function GET(request: NextRequest) {
     try {
@@ -59,6 +63,21 @@ export async function GET(request: NextRequest) {
             ]);
             items = (rows.results as any[]) ?? [];
             total = countRow?.cnt ?? 0;
+
+            const extraMap = await loadGalleryExtraImagesByItemIds(
+                env.DB,
+                items.map((it) => Number(it.id)).filter((id) => Number.isFinite(id))
+            );
+            items = items.map((it) => {
+                const extras = extraMap.get(Number(it.id)) || [];
+                return {
+                    ...it,
+                    extra_images: extras,
+                    images: buildGalleryImageUrls(it.image_url, extras),
+                    image_count: 1 + extras.length,
+                };
+            });
+
             dbDebug = { 
                 storeId: admin.storeId, 
                 totalInTable: globalCount?.cnt || 0,

@@ -1,4 +1,14 @@
-## Meshy AI 이미지→3D (사진 견적)
+## 시제품 갤러리 다중 이미지
+
+항목당 대표 이미지(`image_url`) 외에 추가 사진을 `gallery_item_images`에 저장합니다.
+
+```bash
+npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_gallery_item_images.sql
+```
+
+- 관리자: `/admin/gallery`에서 여러 장 업로드·개별 삭제
+- 공개: 갤러리 자세히 보기 모달에서 썸네일·좌우 화살표로 확인
+
 
 ```bash
 npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_meshy_jobs.sql

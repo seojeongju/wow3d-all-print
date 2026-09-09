@@ -1,11 +1,20 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { isPhotoTo3DGalleryTag } from '@/lib/photo-to-3d-showcase';
+import {
+    buildGalleryImageUrls,
+    loadGalleryExtraImagesByItemIds,
+    type GalleryImagePublic,
+} from '@/lib/gallery-images';
 
 export type PublicGalleryItem = {
     id: string | number;
     title: string;
     description?: string;
     image_url: string;
+    /** 대표 + 추가 이미지 (자세히 보기 캐러셀용) */
+    images?: string[];
+    /** 관리자 편집용 추가 이미지 메타 */
+    extra_images?: GalleryImagePublic[];
     source_image_url?: string | null;
     material?: string | null;
     print_method?: string | null;
@@ -17,6 +26,8 @@ export type PublicGalleryResult = {
     items: PublicGalleryItem[];
     pagination: { page: number; limit: number; total: number; totalPages: number };
 };
+
+type GalleryDbRow = PublicGalleryItem & { id: number };
 
 function cleanText(text: string) {
     if (!text) return '';
@@ -30,6 +41,46 @@ function cleanText(text: string) {
         .replace(/&quot;/g, '"')
         .replace(/\s+/g, ' ')
         .trim();
+}
+
+async function attachExtraImages(items: PublicGalleryItem[]): Promise<PublicGalleryItem[]> {
+    const numericIds = items
+        .map((it) => (typeof it.id === 'number' ? it.id : Number(it.id)))
+        .filter((id) => Number.isFinite(id) && id > 0);
+
+    if (numericIds.length === 0) {
+        return items.map((it) => ({
+            ...it,
+            images: buildGalleryImageUrls(it.image_url, undefined),
+        }));
+    }
+
+    try {
+        const { env } = await getCloudflareContext({ async: true });
+        if (!env?.DB) {
+            return items.map((it) => ({
+                ...it,
+                images: buildGalleryImageUrls(it.image_url, undefined),
+            }));
+        }
+
+        const map = await loadGalleryExtraImagesByItemIds(env.DB, numericIds);
+        return items.map((it) => {
+            const nid = typeof it.id === 'number' ? it.id : Number(it.id);
+            const extras = Number.isFinite(nid) ? map.get(nid) : undefined;
+            return {
+                ...it,
+                extra_images: extras,
+                images: buildGalleryImageUrls(it.image_url, extras),
+            };
+        });
+    } catch (e) {
+        console.warn('attachExtraImages', e);
+        return items.map((it) => ({
+            ...it,
+            images: buildGalleryImageUrls(it.image_url, undefined),
+        }));
+    }
 }
 
 async function fetchRemoteGalleryItems(): Promise<PublicGalleryItem[]> {
@@ -50,8 +101,10 @@ async function fetchRemoteGalleryItems(): Promise<PublicGalleryItem[]> {
 
         return allPosts
             .map((post: any) => {
-                const img =
-                    post.images?.find((i: string) => i && i.startsWith('http')) || '';
+                const remoteImages: string[] = Array.isArray(post.images)
+                    ? post.images.filter((i: string) => i && String(i).startsWith('http'))
+                    : [];
+                const img = remoteImages[0] || '';
                 if (!img) return null;
 
                 let method: string | null = null;
@@ -65,6 +118,7 @@ async function fetchRemoteGalleryItems(): Promise<PublicGalleryItem[]> {
                     title: cleanText(post.title || '무제'),
                     description: cleanText(post.content || '').substring(0, 150),
                     image_url: img,
+                    images: remoteImages.length > 0 ? remoteImages : [img],
                     material: null,
                     print_method: method,
                     tags: '[]',
@@ -111,14 +165,16 @@ export async function getPublicGallery(options?: {
                 .bind(...params)
                 .all();
 
-            localItems = ((rows.results as PublicGalleryItem[]) || []);
+            localItems = ((rows.results as GalleryDbRow[]) || []);
 
             if (localItems.length === 0 && storeId != null) {
                 const fallbackRows = await env.DB.prepare(
                     `SELECT * FROM gallery_items WHERE is_visible = 1 ORDER BY created_at DESC`
                 ).all();
-                localItems = ((fallbackRows.results as PublicGalleryItem[]) || []);
+                localItems = ((fallbackRows.results as GalleryDbRow[]) || []);
             }
+
+            localItems = await attachExtraImages(localItems);
         }
     } catch (dbErr) {
         console.error('Local DB gallery fetch error:', dbErr);
@@ -165,8 +221,11 @@ export async function getPublicGalleryItemById(
                 `SELECT * FROM gallery_items WHERE id = ? AND is_visible = 1`
             )
                 .bind(Number(idStr))
-                .first<PublicGalleryItem>();
-            if (row) return row;
+                .first<GalleryDbRow>();
+            if (row) {
+                const [withImages] = await attachExtraImages([row]);
+                return withImages;
+            }
         }
     } catch (dbErr) {
         console.error('getPublicGalleryItemById DB error:', dbErr);

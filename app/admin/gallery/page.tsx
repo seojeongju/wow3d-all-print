@@ -17,11 +17,21 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 
+type ExtraImage = {
+    id: number;
+    url: string;
+    r2_key?: string;
+    sort_order?: number;
+};
+
 type GalleryItem = {
     id: number;
     title: string;
     description: string;
     image_url: string;
+    images?: string[];
+    extra_images?: ExtraImage[];
+    image_count?: number;
     source_image_url?: string | null;
     material: string;
     print_method: string;
@@ -56,8 +66,10 @@ export default function AdminGalleryPage() {
 
     // Add / Edit Form 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const extraFileInputRef = useRef<HTMLInputElement>(null);
     const sourceFileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [extraPreviews, setExtraPreviews] = useState<{ url: string; file?: File; id?: number }[]>([]);
     const [sourcePreviewUrl, setSourcePreviewUrl] = useState<string | null>(null);
     const [clearSourceImage, setClearSourceImage] = useState(false);
     const [editId, setEditId] = useState<number | null>(null);
@@ -69,6 +81,7 @@ export default function AdminGalleryPage() {
         print_method: '',
         tags: '',
         image: null as File | null,
+        images: [] as File[],
         source_image: null as File | null,
     });
 
@@ -111,17 +124,77 @@ export default function AdminGalleryPage() {
     }, [search, filterMethod, filterMaterial]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setFormData(prev => ({ ...prev, image: file }));
-            setPreviewUrl(URL.createObjectURL(file));
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        if (files.length === 0) return;
+
+        // 신규: 여러 장 선택 시 첫 장=대표, 나머지=추가
+        if (!editId && files.length > 1) {
+            const [cover, ...rest] = files;
+            setFormData(prev => ({ ...prev, image: cover, images: rest }));
+            setPreviewUrl(URL.createObjectURL(cover));
+            setExtraPreviews(rest.map((f) => ({ url: URL.createObjectURL(f), file: f })));
+            return;
+        }
+
+        const file = files[0];
+        setFormData(prev => ({ ...prev, image: file }));
+        setPreviewUrl(URL.createObjectURL(file));
+    };
+
+    const handleExtraFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        if (files.length === 0) return;
+        setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+        setExtraPreviews((prev) => [
+            ...prev,
+            ...files.map((f) => ({ url: URL.createObjectURL(f), file: f })),
+        ]);
+        e.target.value = '';
+    };
+
+    const removePendingExtra = (index: number) => {
+        setExtraPreviews((prev) => {
+            const next = prev.filter((_, i) => i !== index);
+            setFormData((fd) => ({
+                ...fd,
+                images: next.map((p) => p.file).filter((f): f is File => !!f),
+            }));
+            return next;
+        });
+    };
+
+    const deleteExistingExtra = async (imageId: number) => {
+        if (!confirm('이 추가 사진을 삭제할까요?')) return;
+        try {
+            const res = await fetch(`/api/admin/gallery/images/${imageId}`, {
+                method: 'DELETE',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (res.ok) {
+                setExtraPreviews((prev) => prev.filter((p) => p.id !== imageId));
+                toast({ title: '추가 사진을 삭제했습니다.' });
+            } else {
+                toast({ title: '삭제 실패', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: '삭제 중 오류', variant: 'destructive' });
         }
     };
 
     const openAddModal = () => {
         setEditId(null);
-        setFormData({ title: '', description: '', material: '', print_method: '', tags: '', image: null, source_image: null });
+        setFormData({
+            title: '',
+            description: '',
+            material: '',
+            print_method: '',
+            tags: '',
+            image: null,
+            images: [],
+            source_image: null,
+        });
         setPreviewUrl(null);
+        setExtraPreviews([]);
         setSourcePreviewUrl(null);
         setClearSourceImage(false);
         setIsAddOpen(true);
@@ -146,9 +219,16 @@ export default function AdminGalleryPage() {
             print_method: item.print_method || '',
             tags: tagsStr,
             image: null,
+            images: [],
             source_image: null,
         });
         setPreviewUrl(resolveAdminImageUrl(item.image_url));
+        setExtraPreviews(
+            (item.extra_images || []).map((img) => ({
+                id: img.id,
+                url: resolveAdminImageUrl(img.r2_key || img.url) || '',
+            }))
+        );
         setSourcePreviewUrl(resolveAdminImageUrl(item.source_image_url));
         setClearSourceImage(false);
         setIsAddOpen(true);
@@ -169,7 +249,7 @@ export default function AdminGalleryPage() {
             return;
         }
 
-        if (!editId && !formData.image) {
+        if (!editId && !formData.image && formData.images.length === 0) {
             toast({ title: '업로드할 이미지를 선택해주세요', variant: 'destructive' });
             return;
         }
@@ -189,8 +269,13 @@ export default function AdminGalleryPage() {
                 .filter(Boolean);
             data.append('tags', JSON.stringify(tagsArray));
 
-            if (formData.image) {
-                data.append('image', formData.image);
+            if (!editId) {
+                // 신규: 대표 + 추가를 images로 일괄 전송 (첫 장=커버)
+                if (formData.image) data.append('images', formData.image);
+                for (const f of formData.images) data.append('images', f);
+            } else {
+                if (formData.image) data.append('image', formData.image);
+                for (const f of formData.images) data.append('images', f);
             }
             if (formData.source_image) {
                 data.append('source_image', formData.source_image);
@@ -358,7 +443,7 @@ export default function AdminGalleryPage() {
                                                             />
                                                         </div>
                                                     )}
-                                                    <div className="w-14 h-14 rounded-lg bg-black/40 overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
+                                                    <div className="w-14 h-14 rounded-lg bg-black/40 overflow-hidden border border-white/10 flex items-center justify-center shrink-0 relative">
                                                         {item.image_url ? (
                                                             <img
                                                                 src={resolveAdminImageUrl(item.image_url) || ''}
@@ -367,6 +452,11 @@ export default function AdminGalleryPage() {
                                                             />
                                                         ) : (
                                                             <ImageIcon className="w-6 h-6 text-white/20" />
+                                                        )}
+                                                        {(item.image_count ?? 1) > 1 && (
+                                                            <span className="absolute bottom-0.5 right-0.5 px-1 rounded bg-black/70 text-[9px] text-white font-bold">
+                                                                +{(item.image_count ?? 1) - 1}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -459,14 +549,14 @@ export default function AdminGalleryPage() {
             )}
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg">
+                <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="text-white">출력물 갤러리 {editId ? '정보 수정' : '업로드'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-zinc-300">출력물 · AI 3D 결과 (필수)</Label>
+                                <Label className="text-zinc-300">대표 출력물 이미지 (필수)</Label>
                                 <div
                                     className="w-full h-40 rounded-xl border-2 border-dashed border-white/20 bg-white/5 hover:bg-white/10 transition-colors flex flex-col items-center justify-center cursor-pointer overflow-hidden relative"
                                     onClick={() => fileInputRef.current?.click()}
@@ -475,17 +565,24 @@ export default function AdminGalleryPage() {
                                         <>
                                             <img src={previewUrl} alt="출력물 미리보기" className="w-full h-full object-contain" />
                                             <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                <span className="text-white text-sm font-medium">출력물 변경</span>
+                                                <span className="text-white text-sm font-medium">대표 이미지 변경</span>
                                             </div>
                                         </>
                                     ) : (
                                         <>
                                             <ImageIcon className="w-8 h-8 text-white/40 mb-2" />
-                                            <span className="text-sm text-white/50 text-center px-2">출력물·3D 결과 이미지</span>
+                                            <span className="text-sm text-white/50 text-center px-2">클릭하거나 여러 장 선택</span>
                                         </>
                                     )}
                                 </div>
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    multiple={!editId}
+                                    onChange={handleFileChange}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-zinc-300">원본 사진(이미지) Before (선택)</Label>
@@ -526,8 +623,56 @@ export default function AdminGalleryPage() {
                             </div>
                         </div>
 
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                                <Label className="text-zinc-300">추가 사진 (여러 장)</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-white/20 text-zinc-200 hover:bg-white/10 h-8 text-xs"
+                                    onClick={() => extraFileInputRef.current?.click()}
+                                >
+                                    <Plus className="w-3.5 h-3.5 mr-1" /> 사진 추가
+                                </Button>
+                                <input
+                                    type="file"
+                                    ref={extraFileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleExtraFilesChange}
+                                />
+                            </div>
+                            {extraPreviews.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {extraPreviews.map((p, i) => (
+                                        <div
+                                            key={`${p.id ?? 'new'}-${i}`}
+                                            className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/15 bg-black/40 group"
+                                        >
+                                            <img src={p.url} alt="" className="w-full h-full object-cover" />
+                                            <button
+                                                type="button"
+                                                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-300 transition-opacity"
+                                                onClick={() => {
+                                                    if (p.id) deleteExistingExtra(p.id);
+                                                    else removePendingExtra(i);
+                                                }}
+                                                title="삭제"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-white/40">다른 각도·디테일 사진을 추가로 올릴 수 있습니다.</p>
+                            )}
+                        </div>
+
                         <p className="text-xs text-white/40 break-keep">
-                            사진(이미지)→3D 쇼케이스에 노출하려면 태그에 <code className="text-indigo-300">photo-to-3d</code>를 포함하고 원본 사진(이미지)을 함께 업로드하세요.
+                            신규 등록 시 대표 영역에서 여러 장을 한 번에 선택하면 첫 장이 대표, 나머지가 추가 사진이 됩니다. 사진(이미지)→3D 쇼케이스에는 태그에 <code className="text-indigo-300">photo-to-3d</code>와 원본 Before를 함께 넣어 주세요.
                         </p>
 
                         <div className="grid gap-2">

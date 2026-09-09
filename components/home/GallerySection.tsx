@@ -17,6 +17,8 @@ export interface GalleryItem {
     title: string;
     description?: string;
     image_url: string;
+    /** 대표+추가 이미지 (자세히 보기 캐러셀) */
+    images?: string[];
     source_image_url?: string | null;
     material?: string | null;
     print_method?: string | null;
@@ -128,6 +130,11 @@ export function GalleryCard({
                             Before/After
                         </div>
                     )}
+                    {!item.source_image_url && (item.images?.length ?? 0) > 1 && (
+                        <div className="pointer-events-none absolute top-3 right-3 px-2 py-1 rounded-lg bg-black/70 text-[9px] font-black tracking-wider text-white">
+                            {item.images!.length}장
+                        </div>
+                    )}
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
                             <ZoomIn className="w-5 h-5 text-white" />
@@ -232,15 +239,48 @@ export function DetailViewModal({
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
 
+    const printImages = useMemo(() => {
+        if (item.images && item.images.length > 0) return item.images;
+        return item.image_url ? [item.image_url] : [];
+    }, [item.images, item.image_url]);
+
+    const [photoIndex, setPhotoIndex] = useState(0);
+    const hasMultiPhotos = printImages.length > 1;
+    const activePhoto = printImages[Math.min(photoIndex, printImages.length - 1)] || item.image_url;
+
+    useEffect(() => {
+        setPhotoIndex(0);
+    }, [item.id]);
+
+    const goPrevPhoto = useCallback(() => {
+        setPhotoIndex((i) => (i <= 0 ? printImages.length - 1 : i - 1));
+    }, [printImages.length]);
+
+    const goNextPhoto = useCallback(() => {
+        setPhotoIndex((i) => (i >= printImages.length - 1 ? 0 : i + 1));
+    }, [printImages.length]);
+
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
+            if (hasMultiPhotos) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    goPrevPhoto();
+                    return;
+                }
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    goNextPhoto();
+                    return;
+                }
+            }
             if (e.key === 'ArrowLeft' && onPrev) onPrev();
             if (e.key === 'ArrowRight' && onNext) onNext();
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [onClose, onPrev, onNext]);
+    }, [onClose, onPrev, onNext, hasMultiPhotos, goPrevPhoto, goNextPhoto]);
 
     return (
         <motion.div
@@ -269,69 +309,132 @@ export function DetailViewModal({
                     {/* 좌측: 이미지 영역 */}
                     <div className="md:w-3/5 bg-slate-950 relative group overflow-hidden flex flex-col min-h-[300px] md:min-h-[500px]">
                         {item.source_image_url ? (
-                            <div className="flex flex-1 flex-col md:flex-row min-h-0">
-                                <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-white/10 min-h-[180px]">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center py-2 shrink-0">
-                                        {t('originalPhoto')}
-                                    </p>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        key={item.source_image_url}
-                                        src={resolveImageUrl(item.source_image_url)}
-                                        alt={`${item.title} ${t('originalPhoto')}`}
-                                        className="flex-1 w-full object-contain p-3 min-h-0"
-                                    />
+                            <div className="flex flex-1 flex-col min-h-0">
+                                <div className="flex flex-1 flex-col md:flex-row min-h-0">
+                                    <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-white/10 min-h-[180px]">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center py-2 shrink-0">
+                                            {t('originalPhoto')}
+                                        </p>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            key={item.source_image_url}
+                                            src={resolveImageUrl(item.source_image_url)}
+                                            alt={`${item.title} ${t('originalPhoto')}`}
+                                            className="flex-1 w-full object-contain p-3 min-h-0"
+                                        />
+                                    </div>
+                                    <div className="flex-1 flex flex-col min-h-[180px]">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-teal-400/80 text-center py-2 shrink-0">
+                                            {t('aiPrint')}
+                                            {hasMultiPhotos ? ` ${photoIndex + 1}/${printImages.length}` : ''}
+                                        </p>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            key={activePhoto}
+                                            src={resolveImageUrl(activePhoto)}
+                                            alt={item.title}
+                                            className="flex-1 w-full object-contain p-3 min-h-0"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="flex-1 flex flex-col min-h-[180px]">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-teal-400/80 text-center py-2 shrink-0">
-                                        {t('aiPrint')}
-                                    </p>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        key={item.image_url}
-                                        src={resolveImageUrl(item.image_url)}
-                                        alt={item.title}
-                                        className="flex-1 w-full object-contain p-3 min-h-0"
-                                    />
-                                </div>
+                                {hasMultiPhotos && (
+                                    <div className="flex gap-2 p-3 overflow-x-auto border-t border-white/10 shrink-0">
+                                        {printImages.map((url, i) => (
+                                            <button
+                                                key={`${url}-${i}`}
+                                                type="button"
+                                                onClick={() => setPhotoIndex(i)}
+                                                className={cn(
+                                                    'w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all',
+                                                    i === photoIndex
+                                                        ? 'border-teal-400 ring-2 ring-teal-400/30'
+                                                        : 'border-white/10 opacity-70 hover:opacity-100'
+                                                )}
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={resolveImageUrl(url)}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                    key={item.image_url}
-                                    src={resolveImageUrl(item.image_url)}
+                                    key={activePhoto}
+                                    src={resolveImageUrl(activePhoto)}
                                     alt={item.title}
-                                    className="w-full h-full object-contain"
+                                    className="w-full flex-1 object-contain min-h-[240px]"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+                                {hasMultiPhotos && (
+                                    <div className="absolute bottom-16 left-0 right-0 flex justify-center gap-2 px-4 z-10">
+                                        {printImages.map((url, i) => (
+                                            <button
+                                                key={`${url}-${i}`}
+                                                type="button"
+                                                onClick={() => setPhotoIndex(i)}
+                                                className={cn(
+                                                    'w-12 h-12 rounded-lg overflow-hidden border-2 shrink-0 transition-all bg-black/40',
+                                                    i === photoIndex
+                                                        ? 'border-white ring-2 ring-white/30'
+                                                        : 'border-white/20 opacity-70 hover:opacity-100'
+                                                )}
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={resolveImageUrl(url)}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </>
                         )}
 
-                        {/* 내비게이션 화살표 */}
-                        {onPrev && (
+                        {/* 사진 네비게이션 (다중일 때) / 작품 네비게이션 (단일일 때) */}
+                        {(hasMultiPhotos ? goPrevPhoto : onPrev) && (
                             <button
-                                onClick={(e) => { e.stopPropagation(); onPrev(); }}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (hasMultiPhotos) goPrevPhoto();
+                                    else onPrev?.();
+                                }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100 z-10"
                             >
                                 <ChevronLeft className="w-6 h-6" />
                             </button>
                         )}
-                        {onNext && (
+                        {(hasMultiPhotos ? goNextPhoto : onNext) && (
                             <button
-                                onClick={(e) => { e.stopPropagation(); onNext(); }}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (hasMultiPhotos) goNextPhoto();
+                                    else onNext?.();
+                                }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100 z-10"
                             >
                                 <ChevronRight className="w-6 h-6" />
                             </button>
                         )}
 
                         {/* 카운터 */}
-                        {typeof currentIndex === 'number' && totalCount && (
+                        {hasMultiPhotos ? (
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/60 text-[10px] font-bold tracking-widest z-10">
+                                {t('photoCounter', { current: photoIndex + 1, total: printImages.length })}
+                            </div>
+                        ) : typeof currentIndex === 'number' && totalCount ? (
                             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/60 text-[10px] font-bold tracking-widest">
                                 {currentIndex + 1} / {totalCount}
                             </div>
-                        )}
+                        ) : null}
                     </div>
 
                     {/* 우측: 상세 정보 영역 */}
@@ -386,7 +489,31 @@ export function DetailViewModal({
                         </div>
 
                         {/* 하단 버튼 */}
-                        <div className="mt-8 pt-8 border-t border-white/10">
+                        <div className="mt-8 pt-8 border-t border-white/10 space-y-3">
+                            {(onPrev || onNext) && hasMultiPhotos && (
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1 border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+                                        disabled={!onPrev}
+                                        onClick={onPrev}
+                                    >
+                                        <ChevronLeft className="w-4 h-4 mr-1" />
+                                        {t('prevItem')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="flex-1 border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+                                        disabled={!onNext}
+                                        onClick={onNext}
+                                    >
+                                        {t('nextItem')}
+                                        <ChevronRight className="w-4 h-4 ml-1" />
+                                    </Button>
+                                </div>
+                            )}
                             <Button asChild className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2">
                                 <Link href="/quote" onClick={onClose}>
                                     {t('similarQuote')}

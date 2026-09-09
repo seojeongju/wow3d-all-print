@@ -230,7 +230,10 @@
       "quoteCta": "Get AI live quote",
       "originalPhoto": "Original photo",
       "aiPrint": "AI 3D · print",
-      "similarQuote": "Ask about a similar prototype"
+      "similarQuote": "Ask about a similar prototype",
+      "photoCounter": "Photo {current} / {total}",
+      "prevItem": "Previous item",
+      "nextItem": "Next item"
     },
     "servicesSection": {
       "title": "Our services",

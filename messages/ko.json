@@ -230,7 +230,10 @@
       "quoteCta": "AI 실시간 자동견적 받기",
       "originalPhoto": "원본 사진(이미지)",
       "aiPrint": "AI 3D · 출력",
-      "similarQuote": "유사 시제품 견적 문의하기"
+      "similarQuote": "유사 시제품 견적 문의하기",
+      "photoCounter": "사진 {current} / {total}",
+      "prevItem": "이전 작품",
+      "nextItem": "다음 작품"
     },
     "servicesSection": {
       "title": "서비스 안내",

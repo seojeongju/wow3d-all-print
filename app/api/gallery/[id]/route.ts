@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { uploadGalleryImage } from '@/lib/gallery-upload';
 import { getPublicGalleryItemById } from '@/lib/gallery-public';
+import { insertGalleryExtraImage } from '@/lib/gallery-images';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -93,6 +94,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
             const imageFile = formData.get('image');
             const sourceImageFile = formData.get('source_image');
             const clearSourceImage = formData.get('clear_source_image') === '1';
+            const extraImageFiles = formData.getAll('images').filter(
+                (f): f is File => typeof File !== 'undefined' && f instanceof File && f.size > 0
+            );
 
             const isUploadable = (f: FormDataEntryValue | null): f is File =>
                 typeof File !== 'undefined' && f instanceof File && f.size > 0;
@@ -167,11 +171,30 @@ export async function PUT(request: NextRequest, { params }: Params) {
                 }
             }
 
+            const extraKeys: string[] = [];
+            if (extraImageFiles.length > 0 && env.BUCKET) {
+                for (const file of extraImageFiles) {
+                    const key = await uploadGalleryImage(env.BUCKET, file);
+                    try {
+                        await insertGalleryExtraImage(env.DB, parseInt(id, 10), key, file.type || null);
+                        extraKeys.push(key);
+                    } catch (e: unknown) {
+                        const msg = e instanceof Error ? e.message : String(e);
+                        if (msg.includes('no such table')) {
+                            console.warn('gallery_item_images 테이블 없음 — 추가 이미지 생략');
+                            break;
+                        }
+                        throw e;
+                    }
+                }
+            }
+
             return NextResponse.json({
                 success: true,
                 data: {
                     ...(imageUrl ? { imageUrl } : {}),
                     ...(sourceImageUrl ? { sourceImageUrl } : {}),
+                    ...(extraKeys.length ? { extraImages: extraKeys } : {}),
                 },
             });
         } else {
@@ -194,9 +217,36 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         const admin = await requireAdminAuth(request, env.DB);
         if (admin instanceof Response) return admin;
 
+        const itemId = parseInt(id, 10);
+
+        try {
+            const media = await env.DB.prepare(
+                `SELECT i.r2_key FROM gallery_item_images i
+                 INNER JOIN gallery_items g ON g.id = i.gallery_item_id
+                 WHERE i.gallery_item_id = ? AND g.store_id = ?`
+            )
+                .bind(itemId, admin.storeId)
+                .all();
+            if (env.BUCKET) {
+                for (const row of (media.results as { r2_key: string }[]) || []) {
+                    try {
+                        await env.BUCKET.delete(row.r2_key);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
+            await env.DB.prepare(`DELETE FROM gallery_item_images WHERE gallery_item_id = ?`)
+                .bind(itemId)
+                .run();
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (!msg.includes('no such table')) console.warn('gallery images cleanup', e);
+        }
+
         await env.DB.prepare(
             `DELETE FROM gallery_items WHERE id=? AND store_id=?`
-        ).bind(parseInt(id), admin.storeId).run();
+        ).bind(itemId, admin.storeId).run();
 
         return NextResponse.json({ success: true });
     } catch (e) {
