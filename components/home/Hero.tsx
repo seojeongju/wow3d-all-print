@@ -495,18 +495,20 @@ export default function Hero() {
                                 onChange={handleFileInputChange}
                             />
 
-                            {/* 3D 배경 — 약하게 + 중앙 비네팅으로 텍스트 대비 확보 */}
+                            {/* 3D 배경 — 회전 모델 클러스터 노출 + 텍스트만 살짝 대비 */}
                             <div className="pointer-events-none absolute inset-0" aria-hidden>
-                                <div className="absolute inset-0 opacity-[0.18] sm:opacity-[0.22]">
+                                <div className="absolute inset-0 opacity-70 sm:opacity-80">
                                     <LandingHeroScene />
                                 </div>
-                                <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/80 via-[#020617]/45 to-[#020617]/88" />
-                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_10%,rgba(2,6,23,0.72)_72%)]" />
+                                {/* 가장자리만 살짝 어둡게 — 중앙 모델은 보이게 */}
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/35 via-transparent to-[#020617]/50" />
+                                {/* 텍스트 카드 뒤만 약한 스크림 */}
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.45)_0%,transparent_55%)]" />
                             </div>
 
                             <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-4 py-10 text-center sm:min-h-[340px] sm:px-6 sm:py-14">
-                                {/* 텍스트 플레이트 — 배경 그래픽과 분리해 가독성 확보 */}
-                                <div className="flex w-full max-w-md flex-col items-center rounded-2xl border border-white/12 bg-[#020617]/82 px-5 py-8 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:px-8 sm:py-10">
+                                {/* 컴팩트 플레이트로 모델이 주변에서 보이도록 */}
+                                <div className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/14 bg-[#020617]/72 px-5 py-7 shadow-[0_12px_36px_rgba(0,0,0,0.4)] backdrop-blur-md sm:max-w-md sm:px-7 sm:py-8">
                                     {/* AI 신뢰 배지 */}
                                     <div className="mb-5 inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.06] px-3.5 py-2.5 shadow-md">
                                         <div
