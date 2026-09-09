@@ -12,6 +12,7 @@ import {
     CheckCircle2,
     ShieldCheck,
     Printer,
+    Lightbulb,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -292,7 +293,7 @@ export default function Hero() {
                     </p>
 
                     {/* Primary fork — 카드가 곧 CTA (중복 버튼 제거) */}
-                    <div className="mb-6 grid gap-3 sm:grid-cols-2">
+                    <div className="mb-3 grid gap-3 sm:grid-cols-2">
                         <Link
                             href="/quote?entry=file"
                             onClick={() => {
@@ -339,6 +340,27 @@ export default function Hero() {
                             </span>
                         </Link>
                     </div>
+
+                    {/* 아이디어만 있는 경우 — 보조 스트립 (주 CTA보다 낮은 비중) */}
+                    <Link
+                        href="/expert"
+                        onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'expert' })}
+                        className="group mb-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 transition-all hover:border-teal-400/30 hover:bg-teal-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 sm:items-center sm:px-4"
+                    >
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/[0.05] text-teal-300/90 sm:mt-0">
+                            <Lightbulb className="h-4 w-4" aria-hidden />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-white/90 break-keep">{t('ideaTitle')}</p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-white/55 break-keep sm:text-[13px]">
+                                {t('ideaDesc')}
+                            </p>
+                        </div>
+                        <span className="hidden shrink-0 items-center gap-1 text-xs font-bold text-teal-300/90 transition group-hover:text-teal-200 sm:inline-flex">
+                            {t('ideaCta')}
+                            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                    </Link>
 
                     <p className="mb-4 text-xs font-medium text-white/45 break-keep lg:hidden">
                         {t('dropZoneHint')}
