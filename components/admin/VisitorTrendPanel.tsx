@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import {
     AdminChartTooltip,
     ChartDayHitArea,
-    formatChartTooltipDate,
     useAdminChartHover,
 } from '@/components/admin/AdminChartTooltip';
 import {
@@ -16,8 +15,12 @@ import {
     fillVisitorTrend,
     sumVisitorTrend,
     formatTrendAxisCount,
-    formatTrendDateLabel,
 } from '@/lib/visitor-trend';
+import {
+    type StatsGranularity,
+    formatStatsPeriodLabel,
+} from '@/lib/admin-stats-range';
+import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle';
 
 type SeriesKey = 'pageViews' | 'uniqueSessions' | 'memberSessions' | 'quotePageViews';
 
@@ -40,9 +43,18 @@ const PAD = { top: 16, right: 44, bottom: 28, left: 52 };
 type Props = {
     data: VisitorTrendPoint[];
     dayCount?: number;
+    granularity?: StatsGranularity;
+    periodLabel?: string;
+    onGranularityChange?: (value: StatsGranularity) => void;
 };
 
-export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
+export default function VisitorTrendPanel({
+    data,
+    dayCount = 14,
+    granularity = 'day',
+    periodLabel,
+    onGranularityChange,
+}: Props) {
     const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
         pageViews: true,
         uniqueSessions: true,
@@ -51,8 +63,13 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
     });
     const chartHover = useAdminChartHover();
 
-    const points = useMemo(() => fillVisitorTrend(data, dayCount), [data, dayCount]);
+    const rangeText = periodLabel ?? `최근 ${dayCount}일`;
+    const points = useMemo(() => {
+        if (granularity === 'day') return fillVisitorTrend(data, dayCount);
+        return data;
+    }, [data, dayCount, granularity]);
     const totals = useMemo(() => sumVisitorTrend(points), [points]);
+    const axisLabel = (dateStr: string) => formatStatsPeriodLabel(dateStr, granularity);
 
     const maxBar = useMemo(() => {
         let max = 1;
@@ -117,35 +134,44 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                     aria-label="견적 유입 분석 보기"
                 >
                     <CardTitle className="text-base font-bold text-white group-hover/visitors:text-primary transition-colors flex items-center gap-2">
-                        일별 방문자 추이
+                        방문자 추이
                         <ChevronRight className="w-3.5 h-3.5 text-white/0 group-hover/visitors:text-white/40 transition-colors" />
                     </CardTitle>
                     <p className="text-[11px] text-white/40 mt-0.5">
-                        최근 {dayCount}일 · PV·세션·회원·견적 페이지 동시 비교
+                        {rangeText} · PV·세션·회원·견적 페이지 동시 비교
                     </p>
                 </Link>
 
-                <div className="flex flex-wrap gap-1.5">
-                    {SERIES.map((s) => (
-                        <button
-                            key={s.key}
-                            type="button"
-                            onClick={() => toggleSeries(s.key)}
-                            className={cn(
-                                'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[9px] font-bold transition-all',
-                                visible[s.key]
-                                    ? 'border-white/15 bg-white/[0.06] text-white/80'
-                                    : 'border-white/5 bg-transparent text-white/30 line-through'
-                            )}
-                            aria-pressed={visible[s.key]}
-                        >
-                            <span
-                                className="w-2 h-2 rounded-sm shrink-0"
-                                style={{ backgroundColor: visible[s.key] ? s.color : '#444' }}
-                            />
-                            {s.shortLabel}
-                        </button>
-                    ))}
+                <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                    {onGranularityChange && (
+                        <AdminStatsRangeToggle
+                            value={granularity}
+                            onChange={onGranularityChange}
+                            size="sm"
+                        />
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                        {SERIES.map((s) => (
+                            <button
+                                key={s.key}
+                                type="button"
+                                onClick={() => toggleSeries(s.key)}
+                                className={cn(
+                                    'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[9px] font-bold transition-all',
+                                    visible[s.key]
+                                        ? 'border-white/15 bg-white/[0.06] text-white/80'
+                                        : 'border-white/5 bg-transparent text-white/30 line-through'
+                                )}
+                                aria-pressed={visible[s.key]}
+                            >
+                                <span
+                                    className="w-2 h-2 rounded-sm shrink-0"
+                                    style={{ backgroundColor: visible[s.key] ? s.color : '#444' }}
+                                />
+                                {s.shortLabel}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </CardHeader>
 
@@ -153,7 +179,7 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                 {!hasAnyData ? (
                     <div className="h-[280px] flex flex-col items-center justify-center text-white/20 gap-2 border border-dashed border-white/5 rounded-xl">
                         <Activity className="w-6 h-6 opacity-20" />
-                        <span className="text-xs">최근 {dayCount}일 방문 데이터 없음</span>
+                        <span className="text-xs">{rangeText} 방문 데이터 없음</span>
                     </div>
                 ) : (
                     <>
@@ -243,7 +269,7 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                                                 textAnchor="middle"
                                                 className="fill-white/30 text-[8px] font-medium"
                                             >
-                                                {formatTrendDateLabel(p.date)}
+                                                {axisLabel(p.date)}
                                             </text>
                                         </g>
                                     );
@@ -316,7 +342,10 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                                 hover={chartHover.hover}
                                 title={
                                     chartHover.hover
-                                        ? formatChartTooltipDate(points[chartHover.hover.index]?.date ?? '')
+                                        ? formatStatsPeriodLabel(
+                                              points[chartHover.hover.index]?.date ?? '',
+                                              granularity
+                                          )
                                         : ''
                                 }
                                 rows={
@@ -344,7 +373,7 @@ export default function VisitorTrendPanel({ data, dayCount = 14 }: Props) {
                                             </th>
                                             {points.map((p) => (
                                                 <th key={p.date} className="px-2 py-2 text-center font-bold whitespace-nowrap">
-                                                    {formatTrendDateLabel(p.date)}
+                                                    {axisLabel(p.date)}
                                                 </th>
                                             ))}
                                             <th className="px-3 py-2 text-center font-black bg-orange-700/80 whitespace-nowrap">

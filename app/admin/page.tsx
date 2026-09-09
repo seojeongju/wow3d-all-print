@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
     Card, CardContent, CardHeader, CardTitle,
@@ -21,6 +21,7 @@ import SalesTrendPanel from '@/components/admin/SalesTrendPanel';
 import VisitorTrendPanel from '@/components/admin/VisitorTrendPanel';
 import TrafficSourcePanel from '@/components/admin/TrafficSourcePanel';
 import AdminFunnelOverviewPanel from '@/components/admin/AdminFunnelOverviewPanel';
+import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle';
 import { type SalesTrendPoint } from '@/lib/sales-trend';
 import { type VisitorTrendPoint } from '@/lib/visitor-trend';
 import {
@@ -33,6 +34,10 @@ import {
     type QuoteFunnelSummary as QuoteDbSummary,
     type QuoteTrafficSource,
 } from '@/lib/quote-funnel-trend';
+import {
+    type StatsGranularity,
+    STATS_RANGE,
+} from '@/lib/admin-stats-range';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -88,6 +93,8 @@ type Stats = {
     quoteConversionEvents: FunnelEventRow[];
     quoteConversionSummary: QuoteBehaviorSummary;
     conversionFunnelTrend: ConversionFunnelTrendPoint[];
+    granularity?: StatsGranularity;
+    periodLabel?: string;
 };
 
 const EMPTY_STATS: Stats = {
@@ -156,16 +163,24 @@ function SectionHeading({
 export default function AdminDashboard() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [rangeLoading, setRangeLoading] = useState(false);
     const [loadFailed, setLoadFailed] = useState(false);
+    const [granularity, setGranularity] = useState<StatsGranularity>('day');
+    const hasLoadedOnceRef = useRef(false);
     const { token, user } = useAuthStore();
     const { toast } = useToast();
     const isSuperAdmin = user?.role === 'super_admin' || user?.store_id === 1;
 
     useEffect(() => {
         const load = async () => {
+            if (!hasLoadedOnceRef.current) {
+                setLoading(true);
+            } else {
+                setRangeLoading(true);
+            }
             setLoadFailed(false);
             try {
-                const res = await fetch('/api/admin/stats', {
+                const res = await fetch(`/api/admin/stats?granularity=${granularity}`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                     cache: 'no-store',
                 });
@@ -183,11 +198,13 @@ export default function AdminDashboard() {
                 setLoadFailed(true);
                 toast({ title: '대시보드 데이터를 불러오지 못했습니다.', variant: 'destructive' });
             } finally {
+                hasLoadedOnceRef.current = true;
                 setLoading(false);
+                setRangeLoading(false);
             }
         };
         load();
-    }, [token, toast]);
+    }, [token, toast, granularity]);
 
     if (loading) {
         return (
@@ -198,6 +215,10 @@ export default function AdminDashboard() {
     }
 
     const s: Stats = stats ?? EMPTY_STATS;
+    const rangeMeta = STATS_RANGE[granularity];
+    const periodLabel = s.periodLabel ?? rangeMeta.label;
+    const chartDayCount = rangeMeta.bucketCount;
+    const trafficDayCount = rangeMeta.lookbackDays;
     const hasUrgent =
         s.pendingOrdersCount > 0 || (s.inquiriesNew != null && s.inquiriesNew > 0);
 
@@ -222,28 +243,36 @@ export default function AdminDashboard() {
                         매출·주문·전환을 한눈에 확인하고 바로 조치할 수 있습니다.
                     </p>
                 </div>
-                {hasUrgent && (
-                    <div className="flex flex-wrap gap-2">
-                        {s.pendingOrdersCount > 0 && (
-                            <Link
-                                href="/admin/orders?status=pending"
-                                className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-500/15"
-                            >
-                                접수대기 {s.pendingOrdersCount}건
-                                <ChevronRight className="h-3.5 w-3.5" />
-                            </Link>
-                        )}
-                        {s.inquiriesNew != null && s.inquiriesNew > 0 && (
-                            <Link
-                                href="/admin/inquiries?status=new"
-                                className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-200 transition-colors hover:bg-cyan-500/15"
-                            >
-                                미확인 문의 {s.inquiriesNew}건
-                                <ChevronRight className="h-3.5 w-3.5" />
-                            </Link>
+                <div className="flex flex-col items-stretch gap-3 sm:items-end">
+                    <div className="flex items-center gap-2">
+                        <AdminStatsRangeToggle value={granularity} onChange={setGranularity} />
+                        {rangeLoading && (
+                            <Loader2 className="h-4 w-4 animate-spin text-teal-400" aria-label="기간 데이터 로딩" />
                         )}
                     </div>
-                )}
+                    {hasUrgent && (
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                            {s.pendingOrdersCount > 0 && (
+                                <Link
+                                    href="/admin/orders?status=pending"
+                                    className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-500/15"
+                                >
+                                    접수대기 {s.pendingOrdersCount}건
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                </Link>
+                            )}
+                            {s.inquiriesNew != null && s.inquiriesNew > 0 && (
+                                <Link
+                                    href="/admin/inquiries?status=new"
+                                    className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-200 transition-colors hover:bg-cyan-500/15"
+                                >
+                                    미확인 문의 {s.inquiriesNew}건
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                </Link>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* 핵심 KPI */}
@@ -391,10 +420,19 @@ export default function AdminDashboard() {
             </section>
 
             {/* 매출 + 빠른 조치 */}
-            <section className="space-y-4">
-                <SectionHeading title="매출 &amp; 최근 활동" description="최근 14일 매출 추이와 주문 처리" />
+            <section className={`space-y-4 transition-opacity ${rangeLoading ? 'opacity-60' : ''}`}>
+                <SectionHeading
+                    title="매출 &amp; 최근 활동"
+                    description={`${periodLabel} 매출 추이와 주문 처리`}
+                />
                 <div className="grid gap-5 lg:grid-cols-12">
-                    <SalesTrendPanel data={s.salesTrend} dayCount={14} />
+                    <SalesTrendPanel
+                        data={s.salesTrend}
+                        dayCount={chartDayCount}
+                        granularity={granularity}
+                        periodLabel={periodLabel}
+                        onGranularityChange={setGranularity}
+                    />
 
                     <div className="space-y-5 lg:col-span-5">
                         <Card className="border-white/5 bg-[#0f0f0f]">
@@ -509,7 +547,7 @@ export default function AdminDashboard() {
             </section>
 
             {/* 통합 전환·견적 */}
-            <section className="space-y-4">
+            <section className={`space-y-4 transition-opacity ${rangeLoading ? 'opacity-60' : ''}`}>
                 <AdminFunnelOverviewPanel
                     heroSummary={s.heroFunnelSummary}
                     quoteSummary={s.quoteConversionSummary}
@@ -518,19 +556,28 @@ export default function AdminDashboard() {
                     trend={s.conversionFunnelTrend ?? []}
                     heroRows={s.heroFunnelEvents ?? []}
                     quoteRows={s.quoteConversionEvents ?? []}
-                    dayCount={14}
+                    dayCount={chartDayCount}
+                    granularity={granularity}
+                    periodLabel={periodLabel}
+                    onGranularityChange={setGranularity}
                 />
             </section>
 
             {/* 유입 분석 */}
-            <section className="space-y-4">
+            <section className={`space-y-4 transition-opacity ${rangeLoading ? 'opacity-60' : ''}`}>
                 <SectionHeading
                     title="유입 분석"
-                    description="사이트 전체 트래픽 · 방문자 추이 (최근 14~30일)"
+                    description={`사이트 전체 트래픽 · 방문자 추이 (${periodLabel})`}
                 />
                 <div className="grid gap-6 lg:grid-cols-12">
-                    <TrafficSourcePanel sources={s.trafficSources} token={token} dayCount={30} />
-                    <VisitorTrendPanel data={s.visitorTrend ?? []} dayCount={14} />
+                    <TrafficSourcePanel sources={s.trafficSources} token={token} dayCount={trafficDayCount} />
+                    <VisitorTrendPanel
+                        data={s.visitorTrend ?? []}
+                        dayCount={chartDayCount}
+                        granularity={granularity}
+                        periodLabel={periodLabel}
+                        onGranularityChange={setGranularity}
+                    />
                 </div>
             </section>
         </div>

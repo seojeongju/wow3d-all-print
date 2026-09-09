@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import {
     AdminChartTooltip,
     ChartDayHitArea,
-    formatChartTooltipDate,
     useAdminChartHover,
 } from '@/components/admin/AdminChartTooltip';
 import {
@@ -16,8 +15,12 @@ import {
     fillSalesTrend,
     sumSalesTrend,
     formatTrendAxisMoney,
-    formatTrendDateLabel,
-} from '@/lib/sales-trend';
+} from '@/lib/sales-trend'
+import {
+    type StatsGranularity,
+    formatStatsPeriodLabel,
+} from '@/lib/admin-stats-range'
+import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle'
 
 type SeriesKey = 'amount' | 'paidAmount' | 'outstandingAmount' | 'orderCount';
 
@@ -41,9 +44,18 @@ const PAD = { top: 16, right: 44, bottom: 28, left: 52 };
 type Props = {
     data: SalesTrendPoint[];
     dayCount?: number;
+    granularity?: StatsGranularity;
+    periodLabel?: string;
+    onGranularityChange?: (value: StatsGranularity) => void;
 };
 
-export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
+export default function SalesTrendPanel({
+    data,
+    dayCount = 14,
+    granularity = 'day',
+    periodLabel,
+    onGranularityChange,
+}: Props) {
     const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
         amount: true,
         paidAmount: true,
@@ -52,8 +64,13 @@ export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
     });
     const chartHover = useAdminChartHover();
 
-    const points = useMemo(() => fillSalesTrend(data, dayCount), [data, dayCount]);
+    const rangeText = periodLabel ?? `최근 ${dayCount}일`;
+    const points = useMemo(() => {
+        if (granularity === 'day') return fillSalesTrend(data, dayCount);
+        return data;
+    }, [data, dayCount, granularity]);
     const totals = useMemo(() => sumSalesTrend(points), [points]);
+    const axisLabel = (dateStr: string) => formatStatsPeriodLabel(dateStr, granularity);
 
     const maxMoney = useMemo(() => {
         let max = 1;
@@ -118,31 +135,40 @@ export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
                         <ChevronRight className="w-3.5 h-3.5 text-white/0 group-hover/chart:text-white/40 transition-colors" />
                     </CardTitle>
                     <p className="text-[11px] text-white/40 mt-0.5">
-                        최근 {dayCount}일 · 금액·입금·미수·건수 동시 비교
+                        {rangeText} · 금액·입금·미수·건수 동시 비교
                     </p>
                 </Link>
 
-                <div className="flex flex-wrap gap-1.5">
-                    {SERIES.map((s) => (
-                        <button
-                            key={s.key}
-                            type="button"
-                            onClick={() => toggleSeries(s.key)}
-                            className={cn(
-                                'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[9px] font-bold transition-all',
-                                visible[s.key]
-                                    ? 'border-white/15 bg-white/[0.06] text-white/80'
-                                    : 'border-white/5 bg-transparent text-white/30 line-through'
-                            )}
-                            aria-pressed={visible[s.key]}
-                        >
-                            <span
-                                className="w-2 h-2 rounded-sm shrink-0"
-                                style={{ backgroundColor: visible[s.key] ? s.color : '#444' }}
-                            />
-                            {s.shortLabel}
-                        </button>
-                    ))}
+                <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                    {onGranularityChange && (
+                        <AdminStatsRangeToggle
+                            value={granularity}
+                            onChange={onGranularityChange}
+                            size="sm"
+                        />
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                        {SERIES.map((s) => (
+                            <button
+                                key={s.key}
+                                type="button"
+                                onClick={() => toggleSeries(s.key)}
+                                className={cn(
+                                    'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[9px] font-bold transition-all',
+                                    visible[s.key]
+                                        ? 'border-white/15 bg-white/[0.06] text-white/80'
+                                        : 'border-white/5 bg-transparent text-white/30 line-through'
+                                )}
+                                aria-pressed={visible[s.key]}
+                            >
+                                <span
+                                    className="w-2 h-2 rounded-sm shrink-0"
+                                    style={{ backgroundColor: visible[s.key] ? s.color : '#444' }}
+                                />
+                                {s.shortLabel}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </CardHeader>
 
@@ -150,7 +176,7 @@ export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
                 {!hasAnyData ? (
                     <div className="h-[280px] flex flex-col items-center justify-center text-white/20 gap-2 border border-dashed border-white/5 rounded-xl">
                         <Activity className="w-6 h-6 opacity-20" />
-                        <span className="text-xs">최근 {dayCount}일 주문 데이터 없음</span>
+                        <span className="text-xs">{rangeText} 주문 데이터 없음</span>
                     </div>
                 ) : (
                     <>
@@ -245,7 +271,7 @@ export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
                                                 textAnchor="middle"
                                                 className="fill-white/30 text-[8px] font-medium"
                                             >
-                                                {formatTrendDateLabel(p.date)}
+                                                {axisLabel(p.date)}
                                             </text>
                                         </g>
                                     );
@@ -320,7 +346,10 @@ export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
                                 hover={chartHover.hover}
                                 title={
                                     chartHover.hover
-                                        ? formatChartTooltipDate(points[chartHover.hover.index]?.date ?? '')
+                                        ? formatStatsPeriodLabel(
+                                              points[chartHover.hover.index]?.date ?? '',
+                                              granularity
+                                          )
                                         : ''
                                 }
                                 rows={
@@ -353,7 +382,7 @@ export default function SalesTrendPanel({ data, dayCount = 14 }: Props) {
                                             </th>
                                             {points.map((p) => (
                                                 <th key={p.date} className="px-2 py-2 text-center font-bold whitespace-nowrap">
-                                                    {formatTrendDateLabel(p.date)}
+                                                    {axisLabel(p.date)}
                                                 </th>
                                             ))}
                                             <th className="px-3 py-2 text-center font-black bg-orange-700/80 whitespace-nowrap">

@@ -14,14 +14,22 @@ import {
     type HeroFunnelSummary,
     type QuoteFunnelSummary as QuoteConversionSummary,
 } from '@/lib/conversion-events';
+import {
+    aggregateConversionFunnelTrend,
+    aggregateSalesTrend,
+    aggregateVisitorTrend,
+    parseStatsGranularity,
+    STATS_RANGE,
+    statsSqlOffsetDays,
+} from '@/lib/admin-stats-range';
 
 const STORE_ORDERS = '(o.store_id = ? OR o.store_id IS NULL)';
 const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
 const STORE_USERS = '(store_id = ? OR store_id IS NULL)';
 
 /**
- * GET /api/admin/stats — 대시보드 집계 (스토어 기준)
- * 설정·집계 불가 필드는 null → 클라이언트에서 "없음" 표시
+ * GET /api/admin/stats?granularity=day|week|month
+ * 대시보드 집계 (스토어 기준). 추이 차트는 granularity에 따라 일/주/월 버킷.
  */
 export async function GET(req: NextRequest) {
     const { env } = getCloudflareContext();
@@ -32,6 +40,11 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdminAuth(req, env.DB);
     if (auth instanceof Response) return auth;
     const { storeId } = auth;
+
+    const granularity = parseStatsGranularity(req.nextUrl.searchParams.get('granularity'));
+    const rangeMeta = STATS_RANGE[granularity];
+    const sqlOffset = statsSqlOffsetDays(granularity);
+    const sinceExpr = `date('now', '-${sqlOffset} days')`;
 
     try {
         let totalSalesThisMonth = 0;
@@ -122,7 +135,7 @@ export async function GET(req: NextRequest) {
                         AND o.status NOT IN ('payment_confirmed', 'production', 'shipping', 'delivered', 'completed')
                     THEN o.total_amount ELSE 0 END), 0) as outstanding_amount
             FROM orders o
-            WHERE o.created_at >= date('now', '-13 days')
+            WHERE o.created_at >= ${sinceExpr}
               ${storeFilter ? `AND ${STORE_ORDERS}` : ''}
             GROUP BY d
             ORDER BY d ASC
@@ -333,7 +346,7 @@ export async function GET(req: NextRequest) {
             const { results: sourceRows } = await env.DB.prepare(`
                 SELECT source, COUNT(*) as count
                 FROM traffic_logs
-                WHERE created_at >= date('now', '-30 days')
+                WHERE created_at >= ${sinceExpr}
                 GROUP BY source
                 ORDER BY count DESC
             `).all() as { results: { source: string; count: number }[] };
@@ -362,7 +375,7 @@ export async function GET(req: NextRequest) {
                           OR path = '/quotes'
                         THEN 1 ELSE 0 END) as quote_page_views
                 FROM traffic_logs
-                WHERE created_at >= date('now', '-13 days')
+                WHERE created_at >= ${sinceExpr}
                 GROUP BY d
                 ORDER BY d ASC
             `).all() as {
@@ -411,7 +424,7 @@ export async function GET(req: NextRequest) {
                         AND COALESCE(q.total_price, 0) > 0 THEN 1 ELSE 0 END) as abandoned_cnt,
                     SUM(CASE WHEN COALESCE(q.total_price, 0) = 0 THEN 1 ELSE 0 END) as draft_cnt
                 FROM quotes q
-                WHERE q.created_at >= date('now', '-13 days')
+                WHERE q.created_at >= ${sinceExpr}
                 GROUP BY d
                 ORDER BY d ASC
             `).all() as {
@@ -462,7 +475,7 @@ export async function GET(req: NextRequest) {
                 LEFT JOIN (
                     SELECT session_id, source FROM traffic_logs GROUP BY session_id
                 ) t ON q.session_id = t.session_id
-                WHERE q.created_at >= date('now', '-13 days')
+                WHERE q.created_at >= ${sinceExpr}
                 GROUP BY source
                 ORDER BY cnt DESC
                 LIMIT 6
@@ -507,7 +520,7 @@ export async function GET(req: NextRequest) {
                     COUNT(DISTINCT session_id) AS session_cnt
                 FROM conversion_events
                 WHERE event_category = 'hero'
-                  AND created_at >= date('now', '-13 days')
+                  AND created_at >= ${sinceExpr}
                 GROUP BY event_name
                 ORDER BY cnt DESC
             `,
@@ -531,7 +544,7 @@ export async function GET(req: NextRequest) {
                     COUNT(DISTINCT session_id) AS session_cnt
                 FROM conversion_events
                 WHERE event_category IN ('quote', 'checkout')
-                  AND created_at >= date('now', '-13 days')
+                  AND created_at >= ${sinceExpr}
                 GROUP BY event_name
                 ORDER BY cnt DESC
             `,
@@ -553,7 +566,7 @@ export async function GET(req: NextRequest) {
                 `
                 SELECT date(created_at) AS d, event_name, COUNT(*) AS cnt
                 FROM conversion_events
-                WHERE created_at >= date('now', '-13 days')
+                WHERE created_at >= ${sinceExpr}
                   AND event_name IN (
                     'hero_view',
                     'quote_page_view',
@@ -568,23 +581,31 @@ export async function GET(req: NextRequest) {
                 results?: Array<{ d: string; event_name: string; cnt: number }>;
             };
 
-            conversionFunnelTrend = buildConversionFunnelTrend(
+            const dailyFunnel = buildConversionFunnelTrend(
                 (dailyRows || []).map((r) => ({
                     date: r.d,
                     eventName: r.event_name,
                     count: Number(r.cnt ?? 0),
                 })),
-                14,
+                rangeMeta.lookbackDays,
             );
+            conversionFunnelTrend = aggregateConversionFunnelTrend(dailyFunnel, granularity);
         } catch {
             heroFunnelEvents = [];
             quoteConversionEvents = [];
             conversionFunnelTrend = [];
         }
 
+        salesTrend = aggregateSalesTrend(salesTrend, granularity);
+        visitorTrend = aggregateVisitorTrend(visitorTrend, granularity);
+
         return NextResponse.json({
             success: true,
             data: {
+                granularity,
+                periodLabel: rangeMeta.label,
+                periodCount: rangeMeta.bucketCount,
+                periodUnit: rangeMeta.unitLabel,
                 totalSales: Math.round(totalSalesThisMonth),
                 salesChangePercent,
                 newOrdersCount,
@@ -599,7 +620,10 @@ export async function GET(req: NextRequest) {
                 recentOrders,
                 trafficSources,
                 visitorTrend,
-                dailyVisitors,
+                dailyVisitors: visitorTrend.map((v) => ({
+                    date: v.date,
+                    count: v.uniqueSessions,
+                })),
                 quoteFunnelTrend,
                 quoteFunnelSummary,
                 quoteTrafficSources,

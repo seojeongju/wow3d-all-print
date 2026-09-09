@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
     AdminChartTooltip,
     ChartDayHitArea,
-    formatChartTooltipDate,
     useAdminChartHover,
 } from '@/components/admin/AdminChartTooltip';
 import {
@@ -27,7 +26,6 @@ import {
     HERO_EVENT_LABELS,
     QUOTE_CONVERSION_EVENTS,
     QUOTE_EVENT_LABELS,
-    formatFunnelDateLabel,
     type ConversionFunnelTrendPoint,
     type FunnelEventRow,
     type HeroFunnelSummary,
@@ -37,6 +35,11 @@ import {
     type QuoteFunnelSummary as QuoteDbSummary,
     type QuoteTrafficSource,
 } from '@/lib/quote-funnel-trend';
+import {
+    type StatsGranularity,
+    formatStatsPeriodLabel,
+} from '@/lib/admin-stats-range';
+import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle';
 
 type Props = {
     heroSummary: HeroFunnelSummary;
@@ -47,6 +50,9 @@ type Props = {
     heroRows: FunnelEventRow[];
     quoteRows: FunnelEventRow[];
     dayCount?: number;
+    granularity?: StatsGranularity;
+    periodLabel?: string;
+    onGranularityChange?: (value: StatsGranularity) => void;
 };
 
 type FunnelStep = {
@@ -101,12 +107,17 @@ export default function AdminFunnelOverviewPanel({
     heroRows,
     quoteRows,
     dayCount = 14,
+    granularity = 'day',
+    periodLabel,
+    onGranularityChange,
 }: Props) {
     const [showDetails, setShowDetails] = useState(false);
     const [visibleSeries, setVisibleSeries] = useState<Record<string, boolean>>(() =>
         Object.fromEntries(TREND_SERIES.map((s) => [s.key, true])),
     );
     const chartHover = useAdminChartHover();
+    const rangeText = periodLabel ?? `최근 ${dayCount}일`;
+    const axisLabel = (dateStr: string) => formatStatsPeriodLabel(dateStr, granularity);
 
     const orderComplete =
         quoteRows.find((r) => r.eventName === CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE)?.count ?? 0;
@@ -180,20 +191,29 @@ export default function AdminFunnelOverviewPanel({
                             <TrendingUp className="h-4 w-4 text-teal-400" />
                             전환 &amp; 견적 현황
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
-                                최근 {dayCount}일
+                                {rangeText}
                             </span>
                         </CardTitle>
                         <p className="mt-1 text-xs leading-relaxed text-white/45 break-keep">
                             사이트 행동 퍼널과 DB 견적 데이터를 한곳에서 확인합니다.
                         </p>
                     </div>
-                    <Link
-                        href="/admin/quotes/analytics"
-                        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] font-bold text-white/60 transition-colors hover:border-primary/30 hover:text-primary"
-                    >
-                        견적 상세 분석
-                        <ChevronRight className="h-3.5 w-3.5" />
-                    </Link>
+                    <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+                        {onGranularityChange && (
+                            <AdminStatsRangeToggle
+                                value={granularity}
+                                onChange={onGranularityChange}
+                                size="sm"
+                            />
+                        )}
+                        <Link
+                            href="/admin/quotes/analytics"
+                            className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] font-bold text-white/60 transition-colors hover:border-primary/30 hover:text-primary"
+                        >
+                            견적 상세 분석
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
                 </div>
             </CardHeader>
 
@@ -361,7 +381,7 @@ export default function AdminFunnelOverviewPanel({
                                                     textAnchor="middle"
                                                     className="fill-white/30 text-[8px] font-medium"
                                                 >
-                                                    {formatFunnelDateLabel(col.date)}
+                                                    {axisLabel(col.date)}
                                                 </text>
                                             </g>
                                         );
@@ -387,7 +407,10 @@ export default function AdminFunnelOverviewPanel({
                                     hover={chartHover.hover}
                                     title={
                                         chartHover.hover
-                                            ? formatChartTooltipDate(chart.columns[chartHover.hover.index]?.date ?? '')
+                                            ? formatStatsPeriodLabel(
+                                                  chart.columns[chartHover.hover.index]?.date ?? '',
+                                                  granularity
+                                              )
                                             : ''
                                     }
                                     rows={
