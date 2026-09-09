@@ -473,9 +473,11 @@ export default function Hero() {
                                 'relative mx-4 mt-4 flex flex-1 cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300',
                                 isDragging
                                     ? uploadMode === 'file'
-                                        ? 'border-teal-400 bg-teal-400/10 ring-2 ring-teal-400/30'
-                                        : 'border-indigo-400 bg-indigo-500/10 ring-2 ring-indigo-400/30'
-                                    : 'border-white/15 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.05]',
+                                        ? 'border-teal-400 bg-teal-400/15 ring-2 ring-teal-400/40 shadow-[inset_0_0_40px_rgba(45,212,191,0.12)]'
+                                        : 'border-indigo-400 bg-indigo-500/15 ring-2 ring-indigo-400/40 shadow-[inset_0_0_40px_rgba(129,140,248,0.12)]'
+                                    : uploadMode === 'file'
+                                      ? 'border-teal-400/35 bg-[#020617]/55 hover:border-teal-300/55 hover:bg-[#020617]/45'
+                                      : 'border-indigo-400/35 bg-[#020617]/55 hover:border-indigo-300/55 hover:bg-[#020617]/45',
                             )}
                         >
                             <input
@@ -493,58 +495,65 @@ export default function Hero() {
                                 onChange={handleFileInputChange}
                             />
 
-                            {/* 3D 프리뷰 배경 */}
-                            <div className="pointer-events-none absolute inset-0 opacity-40">
-                                <LandingHeroScene />
+                            {/* 3D 배경 — 약하게 + 중앙 비네팅으로 텍스트 대비 확보 */}
+                            <div className="pointer-events-none absolute inset-0" aria-hidden>
+                                <div className="absolute inset-0 opacity-[0.18] sm:opacity-[0.22]">
+                                    <LandingHeroScene />
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/80 via-[#020617]/45 to-[#020617]/88" />
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_10%,rgba(2,6,23,0.72)_72%)]" />
                             </div>
 
-                            <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-6 py-14 text-center sm:min-h-[340px] sm:py-16">
-                                {/* AI 신뢰 배지 */}
-                                <div className="mb-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0b1220]/85 px-3.5 py-2.5 shadow-lg backdrop-blur-md">
-                                    <div
-                                        className={cn(
-                                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
-                                            uploadMode === 'file'
-                                                ? 'border-teal-400/25 bg-teal-400/10 text-teal-300'
-                                                : 'border-indigo-400/25 bg-indigo-500/10 text-indigo-300',
-                                        )}
-                                    >
-                                        <Sparkles className="h-[18px] w-[18px]" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-sm font-black leading-tight text-white">
-                                            {uploadMode === 'file' ? t('aiQuote') : t('aiConvert')}
-                                        </p>
-                                        <p
+                            <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-4 py-10 text-center sm:min-h-[340px] sm:px-6 sm:py-14">
+                                {/* 텍스트 플레이트 — 배경 그래픽과 분리해 가독성 확보 */}
+                                <div className="flex w-full max-w-md flex-col items-center rounded-2xl border border-white/12 bg-[#020617]/82 px-5 py-8 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:px-8 sm:py-10">
+                                    {/* AI 신뢰 배지 */}
+                                    <div className="mb-5 inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.06] px-3.5 py-2.5 shadow-md">
+                                        <div
                                             className={cn(
-                                                'mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em]',
-                                                uploadMode === 'file' ? 'text-teal-400/80' : 'text-indigo-300/80',
+                                                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-[0_0_20px_rgba(45,212,191,0.15)]',
+                                                uploadMode === 'file'
+                                                    ? 'border-teal-400/40 bg-teal-400/20 text-teal-200'
+                                                    : 'border-indigo-400/40 bg-indigo-500/20 text-indigo-200',
                                             )}
                                         >
-                                            {uploadMode === 'file' ? t('readyFile') : t('readyPhoto')}
-                                        </p>
+                                            <Sparkles className="h-[18px] w-[18px]" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-black leading-tight text-white">
+                                                {uploadMode === 'file' ? t('aiQuote') : t('aiConvert')}
+                                            </p>
+                                            <p
+                                                className={cn(
+                                                    'mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em]',
+                                                    uploadMode === 'file' ? 'text-teal-300' : 'text-indigo-300',
+                                                )}
+                                            >
+                                                {uploadMode === 'file' ? t('readyFile') : t('readyPhoto')}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div
-                                    className={cn(
-                                        'mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border sm:h-[4.5rem] sm:w-[4.5rem]',
-                                        uploadMode === 'file'
-                                            ? 'border-teal-400/30 bg-teal-400/15 text-teal-300'
-                                            : 'border-indigo-400/30 bg-indigo-500/15 text-indigo-300',
-                                    )}
-                                >
-                                    <Upload className="h-8 w-8 sm:h-9 sm:w-9" />
+                                    <div
+                                        className={cn(
+                                            'mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border shadow-lg sm:h-[4.5rem] sm:w-[4.5rem]',
+                                            uploadMode === 'file'
+                                                ? 'border-teal-400/45 bg-teal-400/20 text-teal-200 shadow-teal-500/20'
+                                                : 'border-indigo-400/45 bg-indigo-500/20 text-indigo-200 shadow-indigo-500/20',
+                                        )}
+                                    >
+                                        <Upload className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={2.25} />
+                                    </div>
+                                    <p className="text-xl font-black tracking-tight text-white drop-shadow-sm sm:text-2xl">
+                                        {uploadMode === 'file' ? t('dropFile') : t('dropPhoto')}
+                                    </p>
+                                    <p className="mt-3 max-w-sm text-sm font-semibold leading-relaxed text-white/75 break-keep sm:text-[15px]">
+                                        {uploadMode === 'file' ? t('formatsFile') : t('formatsPhoto')}
+                                    </p>
+                                    <p className="mt-5 max-w-xs text-xs font-semibold leading-relaxed text-white/60 break-keep sm:text-[13px]">
+                                        {t('clickHint')}
+                                    </p>
                                 </div>
-                                <p className="text-lg font-black text-white sm:text-xl">
-                                    {uploadMode === 'file' ? t('dropFile') : t('dropPhoto')}
-                                </p>
-                                <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/50 break-keep sm:text-sm">
-                                    {uploadMode === 'file' ? t('formatsFile') : t('formatsPhoto')}
-                                </p>
-                                <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-white/35">
-                                    {t('clickHint')}
-                                </p>
                             </div>
                         </div>
 
