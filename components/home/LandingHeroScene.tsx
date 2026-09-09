@@ -53,7 +53,7 @@ export default function LandingHeroScene() {
                         enableZoom={true}
                         enablePan={false}
                         autoRotate
-                        autoRotateSpeed={1.2}
+                        autoRotateSpeed={0.55}
                         makeDefault
                         dampingFactor={0.05}
                         enableDamping={true}

@@ -9,6 +9,9 @@ import {
     FileBox,
     Upload,
     ChevronRight,
+    CheckCircle2,
+    ShieldCheck,
+    Printer,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -210,91 +213,106 @@ export default function Hero() {
         }
     };
 
+    const steps = [
+        { n: '01', label: t('step1') },
+        { n: '02', label: t('step2') },
+        { n: '03', label: t('step3') },
+    ];
+
     return (
         <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 sm:pt-32 pb-16 sm:pb-20">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0b1220] via-[#111827] to-[#0f172a]" />
             <div
-                className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.06] mix-blend-screen"
+                className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-screen"
                 style={{ backgroundAttachment: 'fixed' }}
             />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.08),transparent_50%)]" />
-            <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute left-0 top-1/4 h-[500px] w-[500px] rounded-full bg-teal-500/20 blur-[130px]" />
-                <div className="absolute bottom-0 right-0 h-[600px] w-[600px] rounded-full bg-indigo-600/15 blur-[150px]" />
-            </div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(20,184,166,0.14),transparent_48%),radial-gradient(circle_at_82%_68%,rgba(79,70,229,0.12),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:28px_28px]" />
+            <div className="absolute left-[-8%] top-[12%] h-[420px] w-[420px] rounded-full bg-teal-500/15 blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-6%] h-[480px] w-[480px] rounded-full bg-indigo-600/12 blur-[140px]" />
 
             <div className="container relative z-10 mx-auto grid items-stretch gap-10 px-4 lg:grid-cols-2 lg:gap-12 xl:gap-14">
-                {/* ── Left: 카피 + CTA (하단을 드롭존과 맞춤) ── */}
+                {/* ── Left: 브랜드 · 가치 · 전환 CTA ── */}
                 <motion.div
-                    initial={{ opacity: 0, x: -32 }}
+                    initial={{ opacity: 0, x: -28 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                    transition={{ duration: 0.65, ease: 'easeOut' }}
                     className="flex h-full min-h-0 flex-col text-left"
                 >
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="mb-5 flex flex-wrap items-center gap-2"
-                    >
-                        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur-md">
-                            <Sparkles className="h-3.5 w-3.5 text-teal-400" />
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/80 sm:text-xs">
-                                NEXT-GEN 3D PRINTING
-                            </span>
+                    <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-teal-400/25 bg-teal-400/10 px-3.5 py-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-teal-300" aria-hidden />
+                        <span className="text-[11px] font-bold tracking-wide text-teal-100 sm:text-xs">
+                            {t('badgePhoto')}
                         </span>
-                        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/15 px-3 py-1 backdrop-blur-md">
-                            <ImageIcon className="h-3.5 w-3.5 text-indigo-300" />
-                            <span className="text-[10px] font-semibold tracking-wide text-indigo-200/90 sm:text-xs">
-                                {t('badgePhoto')}
-                            </span>
-                        </span>
-                    </motion.div>
+                    </div>
 
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-teal-400 sm:text-xs">
-                        WOW3D PRO
+                    <p className="mb-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                        WOW3D<span className="ml-1 font-light text-teal-400">PRO</span>
                     </p>
 
-                    <h1 className="mb-4 text-[1.85rem] font-black leading-[1.15] tracking-tight text-white sm:text-4xl md:text-[2.6rem] lg:text-[2.85rem] break-keep">
-                        {t('titleLine1')}
+                    <h1 className="mb-4 text-[1.7rem] font-black leading-[1.18] tracking-tight text-white sm:text-[2.35rem] md:text-[2.55rem] lg:text-[2.7rem] break-keep">
+                        {t('titleLine1')}{' '}
+                        <span className="text-white/90">{t('titleLine2')}</span>
                         <br />
-                        {t('titleLine2')}
-                        <br />
-                        <span className="text-teal-400 underline decoration-teal-400/40 decoration-2 underline-offset-[6px]">
-                            {t('titleAccent')}
-                        </span>
+                        <span className="text-teal-300">{t('titleAccent')}</span>
                     </h1>
 
-                    <p className="mb-6 max-w-lg text-base font-medium leading-relaxed text-white/65 break-keep sm:mb-8 sm:text-lg">
-                        {t('subtitleLead')}
-                        <br />
-                        <span className="font-bold text-white/90">{t('subtitleFile')}</span>
-                        {t('subtitleMid')}
-                        <span className="font-bold text-white/90">{t('subtitlePhoto')}</span>
-                        {t('subtitleEnd')}
+                    <p className="mb-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/72 break-keep sm:text-base">
+                        <span className="font-semibold text-white">{t('subtitleLead')}</span>
+                        <br className="hidden sm:block" />
+                        <span className="mt-1 inline-block sm:mt-1.5">
+                            <span className="font-bold text-teal-200">{t('subtitleFile')}</span>
+                            {t('subtitleMid')}
+                            <span className="font-bold text-indigo-200">{t('subtitlePhoto')}</span>
+                            {t('subtitleEnd')}
+                        </span>
                     </p>
 
-                    {/* 2갈래 Fork 카드 — 드롭존 외곽과 동일 radius */}
-                    <div className="mb-5 grid gap-3 sm:grid-cols-2">
+                    {/* 전환 여정 3단계 */}
+                    <ol className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3" aria-label={t('subtitleLead')}>
+                        {steps.map((step, idx) => (
+                            <li key={step.n} className="flex items-center gap-2 sm:gap-3">
+                                <span className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-3 py-2">
+                                    <span className="text-[10px] font-black tabular-nums text-teal-300/90">
+                                        {step.n}
+                                    </span>
+                                    <span className="text-xs font-bold text-white/90 sm:text-[13px]">
+                                        {step.label}
+                                    </span>
+                                </span>
+                                {idx < steps.length - 1 && (
+                                    <ChevronRight className="hidden h-4 w-4 text-white/25 sm:block" aria-hidden />
+                                )}
+                            </li>
+                        ))}
+                    </ol>
+
+                    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">
+                        {t('choosePath')}
+                    </p>
+
+                    {/* Primary fork — 카드가 곧 CTA (중복 버튼 제거) */}
+                    <div className="mb-6 grid gap-3 sm:grid-cols-2">
                         <Link
                             href="/quote?entry=file"
                             onClick={() => {
                                 clearSampleIfPresent();
                                 setUploadMode('file');
                                 trackHero(HERO_CONVERSION_EVENTS.FORK_FILE);
+                                trackHero(HERO_CONVERSION_EVENTS.CTA_FILE);
                             }}
-                            className="group rounded-2xl border border-teal-400/25 bg-teal-400/10 p-5 transition-all hover:-translate-y-0.5 hover:border-teal-400/40 hover:bg-teal-400/15"
+                            className="group relative flex flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 shadow-[0_10px_30px_rgba(20,184,166,0.12)] transition-all hover:-translate-y-0.5 hover:border-teal-300/55 hover:from-teal-400/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60"
                         >
-                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-teal-400/30 bg-teal-400/15 text-teal-300">
-                                <FileBox className="h-5 w-5" />
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-teal-300/40 bg-teal-400/20 text-teal-200">
+                                <FileBox className="h-6 w-6" />
                             </div>
                             <p className="text-lg font-black text-white">{t('hasFile')}</p>
-                            <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
+                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep">
                                 {t('hasFileDesc')}
                             </p>
-                            <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-teal-300 group-hover:gap-2">
-                                {t('getQuote')} <ChevronRight className="h-3.5 w-3.5" />
+                            <span className="mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-teal-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-teal-300">
+                                {t('getQuote')}
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                             </span>
                         </Link>
 
@@ -304,84 +322,67 @@ export default function Hero() {
                                 clearSampleIfPresent();
                                 setUploadMode('photo');
                                 trackHero(HERO_CONVERSION_EVENTS.FORK_PHOTO);
+                                trackHero(HERO_CONVERSION_EVENTS.CTA_PHOTO);
                             }}
-                            className="group rounded-2xl border border-indigo-400/25 bg-indigo-500/10 p-5 transition-all hover:-translate-y-0.5 hover:border-indigo-400/40 hover:bg-indigo-500/15"
+                            className="group relative flex flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 shadow-[0_10px_30px_rgba(99,102,241,0.12)] transition-all hover:-translate-y-0.5 hover:border-indigo-300/55 hover:from-indigo-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60"
                         >
-                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-indigo-400/30 bg-indigo-500/15 text-indigo-300">
-                                <ImageIcon className="h-5 w-5" />
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-300/40 bg-indigo-500/20 text-indigo-200">
+                                <ImageIcon className="h-6 w-6" />
                             </div>
                             <p className="text-lg font-black text-white">{t('hasPhoto')}</p>
-                            <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
+                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep">
                                 {t('hasPhotoDesc')}
                             </p>
-                            <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-indigo-300 group-hover:gap-2">
-                                {t('make3d')} <ChevronRight className="h-3.5 w-3.5" />
+                            <span className="mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300">
+                                {t('make3d')}
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                             </span>
                         </Link>
                     </div>
 
-                    {/* Primary CTA */}
-                    <div className="mb-5 flex flex-col gap-3 sm:flex-row">
-                        <Link href="/quote?entry=file" className="flex-1" onClick={() => { clearSampleIfPresent(); trackHero(HERO_CONVERSION_EVENTS.CTA_FILE); }}>
-                            <Button
-                                size="lg"
-                                className="h-14 w-full rounded-2xl bg-teal-400 text-[15px] font-black text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.3)] hover:bg-teal-300"
-                            >
-                                <FileBox className="mr-2 h-5 w-5" />
-                                {t('tabFileQuote')}
-                                <ArrowRight className="ml-1 h-4 w-4" />
-                            </Button>
-                        </Link>
-                        <Link href="/quote?entry=photo" className="flex-1" onClick={() => { clearSampleIfPresent(); trackHero(HERO_CONVERSION_EVENTS.CTA_PHOTO); }}>
-                            <Button
-                                size="lg"
-                                className="h-14 w-full rounded-2xl bg-indigo-500 text-[15px] font-black text-white shadow-[0_0_30px_rgba(99,102,241,0.35)] hover:bg-indigo-400"
-                            >
-                                <ImageIcon className="mr-2 h-5 w-5" />
-                                {t('tabPhoto3d')}
-                            </Button>
-                        </Link>
-                    </div>
+                    <p className="mb-4 text-xs font-medium text-white/45 break-keep lg:hidden">
+                        {t('dropZoneHint')}
+                    </p>
 
-                    <div className="mb-5 flex items-center gap-5 text-white/50">
-                        <div className="flex -space-x-3">
-                            {[1, 2, 3, 4].map((i) => (
-                                <div
-                                    key={i}
-                                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#111827] bg-white/10"
-                                >
-                                    <div className="h-full w-full bg-gradient-to-br from-white/20 to-white/10" />
-                                </div>
-                            ))}
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold leading-tight text-white">{t('customers')}</p>
-                            <p className="text-[10px] font-medium uppercase tracking-widest text-teal-500/80">
-                                FDM · SLA · DLP
-                            </p>
+                    {/* 신뢰 시그널 — 빈 아바타 대신 명확한 근거 */}
+                    <div className="mb-6 space-y-3">
+                        <p className="text-sm font-bold text-white/90">{t('customers')}</p>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-teal-400" aria-hidden />
+                                {t('trustInstant')}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75">
+                                <ShieldCheck className="h-3.5 w-3.5 text-teal-400" aria-hidden />
+                                {t('trustExpert')}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75">
+                                <Printer className="h-3.5 w-3.5 text-teal-400" aria-hidden />
+                                {t('trustProcess')}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Tertiary — 드롭존 하단과 동일 선상 */}
+                    {/* 보조 탐색 — 시각적 비중 낮춤 */}
                     <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <Link
                             href="/print-methods"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
-                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
                         >
                             {t('linkMethods')}
                         </Link>
                         <Link
                             href="/materials"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
-                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
                         >
                             {t('linkMaterials')}
                         </Link>
                         <Link
                             href="/#ai-3d-maker"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
-                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 sm:text-[13px]"
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
                         >
                             {t('linkMaker')}
                         </Link>
@@ -389,7 +390,7 @@ export default function Hero() {
                             type="button"
                             onClick={handleTrySample}
                             disabled={isLoadingSample}
-                            className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-2 text-center text-[12px] font-bold text-white/80 transition-all hover:border-teal-400/35 hover:bg-teal-400/10 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
+                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
                         >
                             {isLoadingSample ? t('sampleLoading') : t('sampleCta')}
                         </button>
@@ -398,17 +399,16 @@ export default function Hero() {
 
                 {/* ── Right: 통합 Drop Zone ── */}
                 <motion.div
-                    initial={{ opacity: 0, y: 24 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, delay: 0.1 }}
-                    className="flex h-full w-full min-h-[420px] sm:min-h-[480px]"
+                    transition={{ duration: 0.65, delay: 0.08 }}
+                    className="flex h-full w-full min-h-[420px] sm:min-h-[500px]"
                 >
-                    <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0f172a]/90 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5 backdrop-blur-2xl">
-                        {/* 탭 — 활성/비활성 대비를 높인 세그먼트 컨트롤 */}
+                    <div className="flex h-full w-full flex-col overflow-hidden rounded-[1.35rem] border border-white/12 bg-[#0b1220]/92 shadow-[0_24px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/5 backdrop-blur-2xl">
                         <div
                             role="tablist"
                             aria-label={t('uploadModeAria')}
-                            className="flex shrink-0 gap-1.5 border-b border-white/10 bg-black/35 p-2"
+                            className="flex shrink-0 gap-1.5 border-b border-white/10 bg-black/40 p-2"
                         >
                             {(
                                 [
@@ -425,28 +425,21 @@ export default function Hero() {
                                         aria-selected={isActive}
                                         onClick={() => setUploadMode(id)}
                                         className={cn(
-                                            'flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-extrabold tracking-tight transition-all sm:text-[15px]',
+                                            'flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3.5 text-sm font-extrabold tracking-tight transition-all sm:text-[15px]',
                                             isActive
                                                 ? id === 'file'
                                                     ? 'bg-teal-400 text-slate-950 shadow-[0_0_0_1px_rgba(45,212,191,0.55)]'
                                                     : 'bg-indigo-300 text-slate-950 shadow-[0_0_0_1px_rgba(165,180,252,0.55)]'
-                                                : 'border border-white/15 bg-white/[0.04] text-white/85 hover:border-white/25 hover:bg-white/[0.08] hover:text-white',
+                                                : 'border border-white/12 bg-white/[0.03] text-white/70 hover:border-white/20 hover:bg-white/[0.07] hover:text-white',
                                         )}
                                     >
-                                        <Icon
-                                            className={cn(
-                                                'h-4 w-4 shrink-0',
-                                                isActive ? 'opacity-100' : 'opacity-90',
-                                            )}
-                                            aria-hidden
-                                        />
+                                        <Icon className="h-4 w-4 shrink-0" aria-hidden />
                                         <span>{label}</span>
                                     </button>
                                 );
                             })}
                         </div>
 
-                        {/* Drop Zone — 확대 */}
                         <div
                             role="button"
                             tabIndex={0}
@@ -473,9 +466,11 @@ export default function Hero() {
                                 'relative mx-4 mt-4 flex flex-1 cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300',
                                 isDragging
                                     ? uploadMode === 'file'
-                                        ? 'border-teal-400 bg-teal-400/10 ring-2 ring-teal-400/30'
-                                        : 'border-indigo-400 bg-indigo-500/10 ring-2 ring-indigo-400/30'
-                                    : 'border-white/15 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.05]',
+                                        ? 'border-teal-400 bg-teal-400/12 ring-2 ring-teal-400/35'
+                                        : 'border-indigo-400 bg-indigo-500/12 ring-2 ring-indigo-400/35'
+                                    : uploadMode === 'file'
+                                      ? 'border-teal-400/40 bg-white/[0.02] hover:border-teal-300/60 hover:bg-teal-400/[0.04]'
+                                      : 'border-indigo-400/40 bg-white/[0.02] hover:border-indigo-300/60 hover:bg-indigo-500/[0.04]',
                             )}
                         >
                             <input
@@ -493,20 +488,23 @@ export default function Hero() {
                                 onChange={handleFileInputChange}
                             />
 
-                            {/* 3D 프리뷰 배경 */}
-                            <div className="pointer-events-none absolute inset-0 opacity-40">
-                                <LandingHeroScene />
+                            {/* 3D 배경 — 보이되 텍스트와 충돌하지 않게 */}
+                            <div className="pointer-events-none absolute inset-0" aria-hidden>
+                                <div className="absolute inset-0 opacity-55 sm:opacity-60">
+                                    <LandingHeroScene />
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#0b1220]/30 via-transparent to-[#0b1220]/55" />
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,18,32,0.35)_0%,transparent_58%)]" />
                             </div>
 
-                            <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-6 py-14 text-center sm:min-h-[340px] sm:py-16">
-                                {/* AI 신뢰 배지 */}
-                                <div className="mb-6 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0b1220]/85 px-3.5 py-2.5 shadow-lg backdrop-blur-md">
+                            <div className="relative flex min-h-[280px] w-full flex-col items-center justify-center px-5 py-12 text-center sm:min-h-[340px] sm:px-8 sm:py-14">
+                                <div className="mb-5 inline-flex items-center gap-3 rounded-2xl border border-white/14 bg-[#0b1220]/78 px-3.5 py-2.5 shadow-lg backdrop-blur-md">
                                     <div
                                         className={cn(
                                             'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
                                             uploadMode === 'file'
-                                                ? 'border-teal-400/25 bg-teal-400/10 text-teal-300'
-                                                : 'border-indigo-400/25 bg-indigo-500/10 text-indigo-300',
+                                                ? 'border-teal-400/35 bg-teal-400/15 text-teal-200'
+                                                : 'border-indigo-400/35 bg-indigo-500/15 text-indigo-200',
                                         )}
                                     >
                                         <Sparkles className="h-[18px] w-[18px]" />
@@ -517,8 +515,8 @@ export default function Hero() {
                                         </p>
                                         <p
                                             className={cn(
-                                                'mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em]',
-                                                uploadMode === 'file' ? 'text-teal-400/80' : 'text-indigo-300/80',
+                                                'mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em]',
+                                                uploadMode === 'file' ? 'text-teal-300' : 'text-indigo-300',
                                             )}
                                         >
                                             {uploadMode === 'file' ? t('readyFile') : t('readyPhoto')}
@@ -528,21 +526,22 @@ export default function Hero() {
 
                                 <div
                                     className={cn(
-                                        'mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border sm:h-[4.5rem] sm:w-[4.5rem]',
+                                        'mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border shadow-[0_0_28px_rgba(45,212,191,0.18)] sm:h-[4.5rem] sm:w-[4.5rem]',
                                         uploadMode === 'file'
-                                            ? 'border-teal-400/30 bg-teal-400/15 text-teal-300'
-                                            : 'border-indigo-400/30 bg-indigo-500/15 text-indigo-300',
+                                            ? 'border-teal-400/40 bg-teal-400/18 text-teal-100'
+                                            : 'border-indigo-400/40 bg-indigo-500/18 text-indigo-100',
                                     )}
                                 >
-                                    <Upload className="h-8 w-8 sm:h-9 sm:w-9" />
+                                    <Upload className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={2.25} />
                                 </div>
-                                <p className="text-lg font-black text-white sm:text-xl">
+
+                                <p className="max-w-md text-xl font-black tracking-tight text-white [text-shadow:0_2px_16px_rgba(0,0,0,0.65)] sm:text-2xl">
                                     {uploadMode === 'file' ? t('dropFile') : t('dropPhoto')}
                                 </p>
-                                <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/50 break-keep sm:text-sm">
+                                <p className="mt-3 max-w-sm text-sm font-semibold leading-relaxed text-white/80 [text-shadow:0_1px_10px_rgba(0,0,0,0.55)] break-keep sm:text-[15px]">
                                     {uploadMode === 'file' ? t('formatsFile') : t('formatsPhoto')}
                                 </p>
-                                <p className="mt-5 text-[11px] font-black uppercase tracking-widest text-white/35">
+                                <p className="mt-5 max-w-xs text-xs font-semibold leading-relaxed text-white/65 [text-shadow:0_1px_8px_rgba(0,0,0,0.5)] break-keep sm:text-[13px]">
                                     {t('clickHint')}
                                 </p>
                             </div>
@@ -566,8 +565,8 @@ export default function Hero() {
                                     className={cn(
                                         'h-14 w-full rounded-2xl text-sm font-black sm:text-base',
                                         uploadMode === 'file'
-                                            ? 'bg-teal-400 text-slate-950 hover:bg-teal-300'
-                                            : 'bg-indigo-500 text-white hover:bg-indigo-400',
+                                            ? 'bg-teal-400 text-slate-950 hover:bg-teal-300 shadow-[0_0_28px_rgba(45,212,191,0.28)]'
+                                            : 'bg-indigo-500 text-white hover:bg-indigo-400 shadow-[0_0_28px_rgba(99,102,241,0.3)]',
                                     )}
                                 >
                                     {uploadMode === 'file' ? t('ctaFile') : t('ctaPhoto')}
