@@ -3470,8 +3470,17 @@
     "backToExpert": "Back to expert services",
     "heroImageAlt": "{title} hero image",
     "examplesTitle": "Production examples",
-    "examplesSubtitle": "Sample and case images and videos from real projects. This section may be empty if no admin content is registered yet.",
-    "examplesEmpty": "No production examples yet. Updates coming soon."
+    "examplesSubtitle": "Sample and case images and videos from real projects.",
+    "examplesModeledSubtitle": "A four-stage product-development model for this field. Real case media appears here after admin upload.",
+    "examplesEmpty": "No production examples yet. Updates coming soon.",
+    "detailBadge": "Product development case",
+    "detailCtaInquiry": "Ask about development",
+    "detailCtaQuote": "Start auto quote",
+    "processEyebrow": "Development model",
+    "processTitle": "Product development process",
+    "processSubtitle": "From requirements to prototype validation—WOW3D supports a one-stop fabrication model.",
+    "detailBottomTitle": "Want to run a project the same way?",
+    "detailBottomDesc": "Even with just an idea, drawings, or photos, we can help from consult to prototype."
   },
   "Hardware": {
     "metaTitle": "3D Printer Products · MSLA-DLP P7 Pro·P10 Pro·P13 Pro",

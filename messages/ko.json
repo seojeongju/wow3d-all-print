@@ -3471,8 +3471,17 @@
     "backToExpert": "전문가 서비스로 돌아가기",
     "heroImageAlt": "{title} 대표 이미지",
     "examplesTitle": "제작 예시",
-    "examplesSubtitle": "실제 진행한 샘플·사례 이미지와 영상입니다. 관리자가 등록한 콘텐츠가 없으면 이 섹션은 비어 있을 수 있습니다.",
-    "examplesEmpty": "등록된 제작 예시가 없습니다. 곧 업데이트될 예정입니다."
+    "examplesSubtitle": "실제 진행한 샘플·사례 이미지와 영상입니다.",
+    "examplesModeledSubtitle": "분야별 제품개발 흐름을 4단계로 모델링한 예시입니다. 실제 사례 이미지는 관리자 등록 후 이 영역에 표시됩니다.",
+    "examplesEmpty": "등록된 제작 예시가 없습니다. 곧 업데이트될 예정입니다.",
+    "detailBadge": "Product development case",
+    "detailCtaInquiry": "제품개발 문의",
+    "detailCtaQuote": "자동견적 시작",
+    "processEyebrow": "Development model",
+    "processTitle": "제품개발 프로세스",
+    "processSubtitle": "요구 분석부터 시제품·검증까지, WOW3D가 원스톱으로 지원하는 제작 모델입니다.",
+    "detailBottomTitle": "같은 방식으로 프로젝트를 진행해 볼까요?",
+    "detailBottomDesc": "아이디어·도면·사진만 있어도 상담부터 시제품까지 도와드립니다."
   },
   "Hardware": {
     "metaTitle": "3D프린터 제품소개 · MSLA-DLP P7 Pro·P10 Pro·P13 Pro",
