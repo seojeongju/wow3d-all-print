@@ -141,8 +141,8 @@ export default function Header() {
                 ? 'bg-[#0d1117] py-5'
                 : isPastHero
                     ? isScrolled
-                        ? 'bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm py-3'
-                        : 'bg-white/70 backdrop-blur-md py-5'
+                        ? 'bg-slate-50/95 backdrop-blur-xl border-b border-slate-200/80 shadow-sm py-3'
+                        : 'bg-slate-50/90 backdrop-blur-md py-5'
                     : isScrolled
                         ? 'bg-[#0d1117]/90 backdrop-blur-xl border-b border-white/10 py-3'
                         : 'bg-[#0d1117]/10 lg:bg-transparent backdrop-blur-md py-5'}
@@ -175,7 +175,7 @@ export default function Header() {
                 {/* Desktop Nav - 가독성 중심 */}
                 <nav className={`relative z-[110] hidden lg:flex items-center gap-0.5 rounded-2xl p-1.5 transition-all ${
                     isPastHero
-                        ? 'bg-slate-50/80 border border-slate-200 shadow-sm'
+                        ? 'bg-white border border-slate-200 shadow-sm'
                         : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
                 }`}>
                     {navItems.map((item) =>

@@ -29,10 +29,10 @@ export default function Footer() {
     ] as const
 
     return (
-        <footer className="relative overflow-hidden border-t border-slate-200/80 bg-white">
-            {/* 헤더와 동일한 밝은 톤 — 은은한 슬레이트 그라데이션만 유지 */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50 pointer-events-none" />
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/40 to-transparent pointer-events-none" />
+        <footer className="relative overflow-hidden border-t border-slate-200/80 bg-slate-50">
+            {/* 헤더(라이트)와 동일 베이스: slate-50 */}
+            <div className="absolute inset-0 bg-slate-50 pointer-events-none" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/35 to-transparent pointer-events-none" />
 
             <div className="container mx-auto px-5 sm:px-6 relative z-10 pt-14 sm:pt-16 pb-10 sm:pb-12">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
@@ -68,7 +68,7 @@ export default function Footer() {
                                     rel="noopener noreferrer"
                                     aria-label={name}
                                     title={name}
-                                    className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50 transition-all active:scale-95"
+                                    className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50 transition-all active:scale-95 shadow-sm"
                                 >
                                     <Icon className="w-4.5 h-4.5" />
                                 </a>
@@ -158,7 +158,7 @@ export default function Footer() {
 
                     {/* Newsletter */}
                     <div className="lg:col-span-3">
-                        <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm">
+                        <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-sm">
                             <h3 className="text-sm font-bold text-slate-800 mb-2">{t('newsletter')}</h3>
                             <p className="text-sm text-slate-600 font-medium mb-4 leading-relaxed break-keep">
                                 {t('newsletterDesc')}
@@ -167,7 +167,7 @@ export default function Footer() {
                                 <input
                                     type="email"
                                     placeholder={t('emailPlaceholder')}
-                                    className="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-all"
+                                    className="flex-1 h-11 bg-slate-50 border border-slate-200 rounded-xl px-3.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-all"
                                 />
                                 <button
                                     type="button"
