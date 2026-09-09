@@ -363,24 +363,26 @@ export function DetailViewModal({
                                 )}
                             </div>
                         ) : (
-                            <>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    key={activePhoto}
-                                    src={resolveImageUrl(activePhoto)}
-                                    alt={item.title}
-                                    className="w-full flex-1 object-contain min-h-[240px]"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+                            <div className="flex flex-1 flex-col min-h-0">
+                                <div className="relative flex-1 min-h-[240px] flex items-center justify-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        key={activePhoto}
+                                        src={resolveImageUrl(activePhoto)}
+                                        alt={item.title}
+                                        className="w-full h-full object-contain"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+                                </div>
                                 {hasMultiPhotos && (
-                                    <div className="absolute bottom-16 left-0 right-0 flex justify-center gap-2 px-4 z-10">
+                                    <div className="flex gap-2 p-3 overflow-x-auto border-t border-white/10 shrink-0 justify-center">
                                         {printImages.map((url, i) => (
                                             <button
                                                 key={`${url}-${i}`}
                                                 type="button"
                                                 onClick={() => setPhotoIndex(i)}
                                                 className={cn(
-                                                    'w-12 h-12 rounded-lg overflow-hidden border-2 shrink-0 transition-all bg-black/40',
+                                                    'w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all bg-black/40',
                                                     i === photoIndex
                                                         ? 'border-white ring-2 ring-white/30'
                                                         : 'border-white/20 opacity-70 hover:opacity-100'
@@ -396,7 +398,7 @@ export function DetailViewModal({
                                         ))}
                                     </div>
                                 )}
-                            </>
+                            </div>
                         )}
 
                         {/* 사진 네비게이션 (다중일 때) / 작품 네비게이션 (단일일 때) */}
@@ -407,7 +409,10 @@ export function DetailViewModal({
                                     if (hasMultiPhotos) goPrevPhoto();
                                     else onPrev?.();
                                 }}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100 z-10"
+                                className={cn(
+                                    'absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-all z-10',
+                                    hasMultiPhotos ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                )}
                             >
                                 <ChevronLeft className="w-6 h-6" />
                             </button>
@@ -419,7 +424,10 @@ export function DetailViewModal({
                                     if (hasMultiPhotos) goNextPhoto();
                                     else onNext?.();
                                 }}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100 z-10"
+                                className={cn(
+                                    'absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 transition-all z-10',
+                                    hasMultiPhotos ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                )}
                             >
                                 <ChevronRight className="w-6 h-6" />
                             </button>

@@ -101,6 +101,26 @@ export default function GalleryPageClient({
             const tag = searchParams.get('tag')
             if (tag) query.tag = tag
             replaceGalleryQuery(query)
+
+            // 목록 캐시에 추가 이미지가 빠져 있어도 상세 API로 보강
+            const idStr = String(item.id)
+            if (/^\d+$/.test(idStr)) {
+                void (async () => {
+                    try {
+                        const res = await fetch(`/api/gallery/${encodeURIComponent(idStr)}`)
+                        const json = await res.json()
+                        if (res.ok && json.success && json.data) {
+                            const full = json.data as GalleryItem
+                            setSelectedItem(full)
+                            setItems((prev) =>
+                                prev.map((it) => (String(it.id) === idStr ? { ...it, ...full } : it))
+                            )
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                })()
+            }
         },
         [replaceGalleryQuery, searchParams],
     )
@@ -121,6 +141,30 @@ export default function GalleryPageClient({
         const inList = items.find((i) => String(i.id) === String(idFromUrl))
         if (inList) {
             setSelectedItem(inList)
+            // 목록에 다중 이미지가 없으면 단건 API로 보강
+            if (/^\d+$/.test(String(idFromUrl)) && (inList.images?.length ?? 0) <= 1) {
+                let cancelled = false
+                void (async () => {
+                    try {
+                        const res = await fetch(`/api/gallery/${encodeURIComponent(String(idFromUrl))}`)
+                        const json = await res.json()
+                        if (!cancelled && res.ok && json.success && json.data) {
+                            const full = json.data as GalleryItem
+                            setSelectedItem(full)
+                            setItems((prev) =>
+                                prev.map((it) =>
+                                    String(it.id) === String(idFromUrl) ? { ...it, ...full } : it
+                                )
+                            )
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                })()
+                return () => {
+                    cancelled = true
+                }
+            }
             return
         }
 

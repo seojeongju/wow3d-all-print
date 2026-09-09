@@ -33,6 +33,7 @@ export function galleryImageDisplayUrl(r2Key: string): string {
 
 /**
  * 항목들의 추가 이미지를 일괄 조회해 Map으로 반환.
+ * D1 bind 한도를 피하기 위해 청크 단위로 조회.
  * 테이블이 없으면 빈 Map (마이그레이션 전 호환).
  */
 export async function loadGalleryExtraImagesByItemIds(
@@ -43,27 +44,31 @@ export async function loadGalleryExtraImagesByItemIds(
     const ids = [...new Set(itemIds.filter((id) => Number.isFinite(id) && id > 0))];
     if (ids.length === 0) return map;
 
+    const CHUNK = 80;
     try {
-        const placeholders = ids.map(() => '?').join(',');
-        const res = await db
-            .prepare(
-                `SELECT id, gallery_item_id, r2_key, mime_type, sort_order
-                 FROM gallery_item_images
-                 WHERE gallery_item_id IN (${placeholders})
-                 ORDER BY sort_order ASC, id ASC`
-            )
-            .bind(...ids)
-            .all();
+        for (let i = 0; i < ids.length; i += CHUNK) {
+            const chunk = ids.slice(i, i + CHUNK);
+            const placeholders = chunk.map(() => '?').join(',');
+            const res = await db
+                .prepare(
+                    `SELECT id, gallery_item_id, r2_key, mime_type, sort_order
+                     FROM gallery_item_images
+                     WHERE gallery_item_id IN (${placeholders})
+                     ORDER BY sort_order ASC, id ASC`
+                )
+                .bind(...chunk)
+                .all();
 
-        for (const row of (res.results as GalleryImageRow[]) || []) {
-            const list = map.get(row.gallery_item_id) || [];
-            list.push({
-                id: row.id,
-                url: galleryImageDisplayUrl(row.r2_key),
-                r2_key: row.r2_key,
-                sort_order: row.sort_order,
-            });
-            map.set(row.gallery_item_id, list);
+            for (const row of (res.results as GalleryImageRow[]) || []) {
+                const list = map.get(row.gallery_item_id) || [];
+                list.push({
+                    id: row.id,
+                    url: galleryImageDisplayUrl(row.r2_key),
+                    r2_key: row.r2_key,
+                    sort_order: row.sort_order,
+                });
+                map.set(row.gallery_item_id, list);
+            }
         }
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);

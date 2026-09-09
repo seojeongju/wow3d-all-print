@@ -173,8 +173,7 @@ export async function getPublicGallery(options?: {
                 ).all();
                 localItems = ((fallbackRows.results as GalleryDbRow[]) || []);
             }
-
-            localItems = await attachExtraImages(localItems);
+            // 추가 이미지는 페이지 슬라이스 이후에만 조인 (대량 IN 바인딩 실패 방지)
         }
     } catch (dbErr) {
         console.error('Local DB gallery fetch error:', dbErr);
@@ -201,8 +200,11 @@ export async function getPublicGallery(options?: {
     });
 
     const total = merged.length;
+    const pageItems = merged.slice(offset, offset + limit);
+    const withImages = await attachExtraImages(pageItems);
+
     return {
-        items: merged.slice(offset, offset + limit),
+        items: withImages,
         pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     };
 }
