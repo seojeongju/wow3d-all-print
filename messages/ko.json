@@ -3468,6 +3468,24 @@
     "showcaseMetaFallback": "쇼케이스 | 와우쓰리디",
     "showcaseMetaTitle": "{title} | 3D프린팅 제작 사례",
     "showcaseOgTitle": "{title} | WOW3D 제작 사례",
+    "categoryMeta": {
+      "industrial": {
+        "title": "산업용 부품 & 지그(Jig)",
+        "description": "최종 생산 라인에 즉시 투입 가능한 고강도 엔지니어링 플라스틱 부품 제조. 와우쓰리디 산업용 3D프린팅 제작 사례."
+      },
+      "medical": {
+        "title": "의료 & 덴탈 솔루션",
+        "description": "CT/MRI 데이터 기반 안면 모델링·맞춤형 수술 가이드 제작. 와우쓰리디 의료·덴탈 3D프린팅 사례."
+      },
+      "art": {
+        "title": "아트 & 캐릭터 피규어",
+        "description": "복잡한 디테일의 예술 작품·게임/애니메이션 캐릭터 풀컬러·고해상도 3D프린팅 제작 사례."
+      },
+      "architecture": {
+        "title": "건축 & 목업(Mock-up)",
+        "description": "분양 단지 모형·신제품 디자인 검토용 화이트 데스크 목업. 와우쓰리디 건축 3D프린팅 사례."
+      }
+    },
     "backToExpert": "전문가 서비스로 돌아가기",
     "heroImageAlt": "{title} 대표 이미지",
     "examplesTitle": "제작 예시",

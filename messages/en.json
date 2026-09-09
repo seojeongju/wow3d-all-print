@@ -3467,6 +3467,24 @@
     "showcaseMetaFallback": "Showcase | WOW3D",
     "showcaseMetaTitle": "{title} | 3D printing case study",
     "showcaseOgTitle": "{title} | WOW3D case study",
+    "categoryMeta": {
+      "industrial": {
+        "title": "Industrial parts & jigs",
+        "description": "High-strength engineering plastic parts ready for production lines. WOW3D industrial 3D printing case studies."
+      },
+      "medical": {
+        "title": "Medical & dental solutions",
+        "description": "Facial modeling and custom surgical guides from CT/MRI data. WOW3D medical and dental 3D printing cases."
+      },
+      "art": {
+        "title": "Art & character figures",
+        "description": "High-detail art pieces and game/animation characters in full color and high resolution. WOW3D art 3D printing cases."
+      },
+      "architecture": {
+        "title": "Architecture & mock-ups",
+        "description": "Housing-complex models and white desk mock-ups for design review. WOW3D architecture 3D printing cases."
+      }
+    },
     "backToExpert": "Back to expert services",
     "heroImageAlt": "{title} hero image",
     "examplesTitle": "Production examples",

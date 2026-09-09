@@ -32,11 +32,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return { title: t('showcaseMetaFallback') }
     }
 
-    const data = await getShowcaseDetail(slug)
     const path = showcasePath(locale, slug)
     const canonical = `${SITE_URL}${path}`
-    const title = t('showcaseMetaTitle', { title: data.title })
-    const description = data.description
+    // 메타는 로케일 메시지 사용 (DB 한글 설명이 KO/EN에 동일 적용되는 중복 방지)
+    const categoryTitle = t(`categoryMeta.${slug}.title`)
+    const description = t(`categoryMeta.${slug}.description`)
+    const title = t('showcaseMetaTitle', { title: categoryTitle })
 
     return {
         title,
@@ -50,11 +51,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         },
         openGraph: {
-            title: t('showcaseOgTitle', { title: data.title }),
+            title: t('showcaseOgTitle', { title: categoryTitle }),
             description,
             url: canonical,
             type: 'website',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
         },
     }
 }

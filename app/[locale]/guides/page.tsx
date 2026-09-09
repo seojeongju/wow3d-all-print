@@ -42,6 +42,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                 'x-default': `${SITE_URL}${guidesPath('ko')}`,
             },
         },
+        openGraph: {
+            title,
+            description,
+            url: canonical,
+            type: 'website',
+            locale: locale === 'en' ? 'en_US' : 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+        },
     }
 }
 

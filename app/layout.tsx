@@ -51,23 +51,20 @@ export const metadata: Metadata = {
     "와우쓰리디",
     "WOW3D",
     "시제품제작",
+    "목업제작",
     "3D프린팅 자동견적",
     "3D프린팅 출력대행",
   ],
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: SITE_URL,
     siteName: "(주)와우쓰리디",
-    // 네이버: title과 og:title을 동일하게 권장
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    // title/description/url은 페이지별 generateMetadata에서 설정.
+    // 루트에 고정하면 하위 페이지가 SITE_TITLE을 og:title로 상속해 중복 진단이 난다.
     images: ogImages,
   },
   twitter: {
     card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
     images: [primaryImage],
   },
   robots: {
