@@ -209,106 +209,84 @@ function AuthContent() {
   const oauthQs = returnTo ? `?return=${encodeURIComponent(returnTo)}` : ''
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white selection:bg-teal-400/30 flex relative overflow-hidden">
-      {/* Atmosphere — teal brand, not purple */}
+    <div className="min-h-screen bg-[#070b12] text-white selection:bg-teal-400/30 flex relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute inset-0 opacity-[0.07] mix-blend-screen bg-cover bg-center"
+          className="absolute inset-0 opacity-[0.05] mix-blend-screen bg-cover bg-center"
           style={{ backgroundImage: "url('/images/hero-bg.png')" }}
         />
-        <div className="absolute -top-32 -left-24 w-[560px] h-[560px] rounded-full bg-teal-500/15 blur-[110px]" />
-        <div className="absolute bottom-0 right-0 w-[480px] h-[480px] rounded-full bg-teal-600/10 blur-[100px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_20%_20%,rgba(20,184,166,0.12),transparent_55%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px] opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#070b12] via-[#0c1420] to-[#0a1018]" />
+        <div className="absolute -top-40 -left-28 w-[520px] h-[520px] rounded-full bg-teal-500/12 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[460px] h-[460px] rounded-full bg-teal-700/10 blur-[110px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
       </div>
 
       {/* Left brand panel */}
-      <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] relative items-center justify-center p-12 xl:p-16 border-r border-white/5">
+      <div className="hidden lg:flex lg:w-[46%] xl:w-[48%] relative items-center justify-center p-12 xl:p-16 border-r border-white/[0.06]">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-md w-full relative z-10 space-y-10"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="max-w-[420px] w-full relative z-10 space-y-9"
         >
-          <Link href="/" className="inline-flex items-center gap-3 group">
+          <Link href="/" className="inline-flex items-center gap-3.5 group">
             <BrandMark size="lg" />
             <div>
-              <p className="font-black text-2xl tracking-tight leading-none text-white group-hover:text-teal-50 transition-colors">
-                WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
+              <p className="font-black text-[1.65rem] tracking-tight leading-none text-white">
+                WOW3D<span className="text-teal-400 font-light ml-1">PRO</span>
               </p>
-              <p className="text-[11px] text-white/55 font-medium mt-1.5">
+              <p className="text-[12px] text-white/60 font-medium mt-2">
                 {t('brandSub')}
-                <span className="text-teal-400/90">{t('brandStore')}</span>
+                <span className="text-teal-300">{t('brandStore')}</span>
               </p>
             </div>
           </Link>
 
           <div className="space-y-4">
-            <p className="text-teal-400 text-xs font-black uppercase tracking-[0.28em]">
+            <p className="inline-flex items-center rounded-full border border-teal-400/25 bg-teal-400/10 px-3 py-1 text-[11px] font-bold tracking-[0.14em] text-teal-200 uppercase">
               {t('eyebrow')}
             </p>
-            <h1 className="text-4xl xl:text-[2.75rem] font-extrabold leading-[1.2] tracking-tight text-white">
+            <h1 className="text-[2.15rem] xl:text-[2.55rem] font-extrabold leading-[1.2] tracking-tight text-white break-keep">
               {t('heroTitleBefore')}
               <br />
               <span className="text-teal-300">{t('heroTitleAccent')}</span>
             </h1>
-            <p className="text-white/50 text-[15px] leading-relaxed max-w-sm break-keep">
+            <p className="text-white/70 text-[15px] leading-relaxed max-w-sm break-keep">
               {t('heroDesc')}
             </p>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-400/20 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-teal-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white/90">{t('featureQuoteTitle')}</p>
-                <p className="text-xs text-white/40">{t('featureQuoteDesc')}</p>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.35, duration: 0.4 }}
-              className="flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-400/20 flex items-center justify-center">
-                <Printer className="w-5 h-5 text-teal-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white/90">{t('featureProcessTitle')}</p>
-                <p className="text-xs text-white/40">{t('featureProcessDesc')}</p>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-              className="flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center">
-                <Camera className="w-5 h-5 text-indigo-300" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white/90">{t('featurePhotoTitle')}</p>
-                <p className="text-xs text-white/40 break-keep">{t('featurePhotoDesc')}</p>
-              </div>
-            </motion.div>
-          </div>
+          <ul className="space-y-2.5">
+            {[
+              { icon: Zap, title: t('featureQuoteTitle'), desc: t('featureQuoteDesc') },
+              { icon: Printer, title: t('featureProcessTitle'), desc: t('featureProcessDesc') },
+              { icon: Camera, title: t('featurePhotoTitle'), desc: t('featurePhotoDesc') },
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <motion.li
+                key={title}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 + i * 0.08, duration: 0.35 }}
+                className="flex items-center gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-400/25 flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5 text-teal-300" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white">{title}</p>
+                  <p className="text-xs text-white/55 mt-0.5 break-keep">{desc}</p>
+                </div>
+              </motion.li>
+            ))}
+          </ul>
 
           <Link
             href="/guides/photo-to-3d-printing-quote"
-            className="inline-flex items-center gap-2 text-xs font-bold text-indigo-300/90 hover:text-indigo-200 transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-teal-300 hover:text-teal-200 transition-colors"
           >
-            <ImageIcon className="w-3.5 h-3.5" />
+            <ImageIcon className="w-4 h-4" />
             {t('guideLink')}
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </motion.div>
       </div>
@@ -316,50 +294,47 @@ function AuthContent() {
       {/* Right form */}
       <div className="flex-1 flex items-center justify-center p-5 sm:p-8 md:p-12 relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[420px]"
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[400px]"
         >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-teal-400 transition-colors mb-6"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            {t('backToHome')}
-          </Link>
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-white/55 hover:text-teal-300 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('backToHome')}
+            </Link>
+          </div>
 
-          {/* Mobile brand */}
-          <div className="lg:hidden flex items-center gap-3 mb-8">
+          <div className="lg:hidden flex items-center gap-3 mb-7">
             <BrandMark size="sm" />
             <div>
               <p className="font-black text-lg leading-none">
-                WOW3D<span className="text-teal-400 font-semibold ml-0.5">PRO</span>
+                WOW3D<span className="text-teal-400 font-light ml-1">PRO</span>
               </p>
-              <p className="text-[10px] text-white/45 mt-1">{t('mobileBrandSub')}</p>
+              <p className="text-[11px] text-white/55 mt-1.5">{t('mobileBrandSub')}</p>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-6 sm:p-8 shadow-2xl shadow-black/40">
+          <div className="rounded-[1.35rem] border border-white/[0.1] bg-[#0e1520]/92 backdrop-blur-xl p-6 sm:p-8 shadow-[0_24px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/[0.04]">
             {isPhotoQuoteReturn && (
-              <div className="mb-6 rounded-2xl border border-indigo-400/25 bg-indigo-500/10 px-4 py-3.5 space-y-1">
-                <p className="text-sm font-bold text-indigo-100 break-keep">
-                  {t('photoGateTitle')}
-                </p>
-                <p className="text-xs text-white/55 leading-relaxed break-keep">
-                  {t('photoGateDesc')}
-                </p>
+              <div className="mb-6 rounded-2xl border border-teal-400/30 bg-teal-500/10 px-4 py-3.5 space-y-1">
+                <p className="text-sm font-bold text-teal-50 break-keep">{t('photoGateTitle')}</p>
+                <p className="text-xs text-white/65 leading-relaxed break-keep">{t('photoGateDesc')}</p>
               </div>
             )}
 
-            <div className="flex p-1 rounded-2xl bg-black/30 border border-white/5 mb-8">
+            <div className="flex p-1 rounded-2xl bg-black/40 border border-white/[0.06] mb-7">
               <button
                 type="button"
                 onClick={() => setIsLogin(true)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 ${
                   isLogin
-                    ? 'bg-teal-500 text-white shadow-md shadow-teal-500/25'
-                    : 'text-white/45 hover:text-white/80'
+                    ? 'bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20'
+                    : 'text-white/50 hover:text-white/85'
                 }`}
               >
                 {t('tabLogin')}
@@ -367,10 +342,10 @@ function AuthContent() {
               <button
                 type="button"
                 onClick={() => setIsLogin(false)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-250 ${
                   !isLogin
-                    ? 'bg-teal-500 text-white shadow-md shadow-teal-500/25'
-                    : 'text-white/45 hover:text-white/80'
+                    ? 'bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20'
+                    : 'text-white/50 hover:text-white/85'
                 }`}
               >
                 {t('tabSignup')}
@@ -379,17 +354,17 @@ function AuthContent() {
 
             <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-semibold text-white/60">
+                <Label htmlFor="email" className="text-xs font-bold text-white/70">
                   {t('email')}
                 </Label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-teal-300 transition-colors" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 pl-12 bg-black/25 border-white/10 rounded-xl focus:ring-2 focus:ring-teal-400/40 focus:border-teal-400/40 font-medium placeholder:text-white/20 text-white"
+                    className="h-12 pl-12 bg-white/[0.05] border-white/15 rounded-xl focus-visible:ring-2 focus-visible:ring-teal-400/45 focus-visible:border-teal-400/50 font-medium placeholder:text-white/30 text-white"
                     placeholder="you@example.com"
                     autoComplete="email"
                     required
@@ -407,17 +382,17 @@ function AuthContent() {
                     className="space-y-4 overflow-hidden"
                   >
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-xs font-semibold text-white/60">
+                      <Label htmlFor="name" className="text-xs font-bold text-white/70">
                         {t('name')}
                       </Label>
                       <div className="relative group">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-teal-300 transition-colors" />
                         <Input
                           id="name"
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="h-12 pl-12 bg-black/25 border-white/10 rounded-xl focus:ring-2 focus:ring-teal-400/40 focus:border-teal-400/40 font-medium text-white"
+                          className="h-12 pl-12 bg-white/[0.05] border-white/15 rounded-xl focus-visible:ring-2 focus-visible:ring-teal-400/45 focus-visible:border-teal-400/50 font-medium text-white placeholder:text-white/30"
                           placeholder={t('namePlaceholder')}
                           autoComplete="name"
                           required
@@ -425,17 +400,17 @@ function AuthContent() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-xs font-semibold text-white/60">
-                        {t('phone')} <span className="text-white/35 font-normal">{t('phoneOptional')}</span>
+                      <Label htmlFor="phone" className="text-xs font-bold text-white/70">
+                        {t('phone')} <span className="text-white/40 font-normal">{t('phoneOptional')}</span>
                       </Label>
                       <div className="relative group">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-teal-300 transition-colors" />
                         <Input
                           id="phone"
                           type="tel"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          className="h-12 pl-12 bg-black/25 border-white/10 rounded-xl focus:ring-2 focus:ring-teal-400/40 focus:border-teal-400/40 font-medium text-white"
+                          className="h-12 pl-12 bg-white/[0.05] border-white/15 rounded-xl focus-visible:ring-2 focus-visible:ring-teal-400/45 focus-visible:border-teal-400/50 font-medium text-white placeholder:text-white/30"
                           placeholder="010-0000-0000"
                           autoComplete="tel"
                         />
@@ -446,17 +421,17 @@ function AuthContent() {
               </AnimatePresence>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-semibold text-white/60">
+                <Label htmlFor="password" className="text-xs font-bold text-white/70">
                   {t('password')}
                 </Label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-teal-400 transition-colors" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-teal-300 transition-colors" />
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 pl-12 bg-black/25 border-white/10 rounded-xl focus:ring-2 focus:ring-teal-400/40 focus:border-teal-400/40 font-medium text-white"
+                    className="h-12 pl-12 bg-white/[0.05] border-white/15 rounded-xl focus-visible:ring-2 focus-visible:ring-teal-400/45 focus-visible:border-teal-400/50 font-medium text-white placeholder:text-white/30"
                     placeholder="••••••••"
                     autoComplete={isLogin ? 'current-password' : 'new-password'}
                     required
@@ -466,7 +441,7 @@ function AuthContent() {
 
               <Button
                 type="submit"
-                className="w-full h-12 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-bold shadow-lg shadow-teal-500/25 hover:shadow-teal-400/30 active:scale-[0.98] transition-all duration-200 border-0 mt-2"
+                className="w-full h-12 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black shadow-[0_10px_28px_rgba(45,212,191,0.28)] active:scale-[0.985] transition-all duration-200 border-0 mt-1"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -484,14 +459,14 @@ function AuthContent() {
                   <span className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-[11px]">
-                  <span className="bg-[#12171f] px-3 text-white/35 rounded-full">{t('or')}</span>
+                  <span className="bg-[#0e1520] px-3 text-white/45 font-medium">{t('or')}</span>
                 </div>
               </div>
 
               <div className="grid gap-2.5">
                 <a
                   href={`/api/auth/google${oauthQs}`}
-                  className="flex items-center justify-center gap-3 w-full h-12 rounded-xl bg-white hover:bg-white/95 text-gray-800 font-semibold border border-white/20 transition-all"
+                  className="flex items-center justify-center gap-3 w-full h-11 rounded-xl bg-white/[0.96] hover:bg-white text-slate-800 font-semibold border border-white/20 transition-all text-sm"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden>
                     <path
@@ -515,7 +490,7 @@ function AuthContent() {
                 </a>
                 <a
                   href={`/api/auth/kakao${oauthQs}`}
-                  className="flex items-center justify-center gap-3 w-full h-12 rounded-xl bg-[#FEE500] hover:bg-[#ffe033] text-[#191919] font-semibold border border-[#e6cf00]/80 transition-all"
+                  className="flex items-center justify-center gap-3 w-full h-11 rounded-xl bg-[#FEE500]/95 hover:bg-[#FEE500] text-[#191919] font-semibold border border-[#cbb700]/50 transition-all text-sm"
                 >
                   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden>
                     <path
@@ -527,45 +502,33 @@ function AuthContent() {
                 </a>
               </div>
             </form>
-
-            <div className="mt-6 rounded-2xl border border-indigo-400/20 bg-indigo-500/[0.07] p-4 space-y-2">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <Camera className="w-4 h-4 text-indigo-300" />
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <p className="text-sm font-bold text-white/90 break-keep">
-                    {t('photoPromoTitle')}
-                  </p>
-                  <p className="text-xs text-white/50 leading-relaxed break-keep">
-                    {t('photoPromoDesc')}
-                  </p>
-                  <Link
-                    href={photoQuoteReturn}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-300 hover:text-indigo-200 pt-1"
-                  >
-                    {t('photoPromoLink')}
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <p className="mt-6 text-center text-[12px] text-white/40">
-            {isLogin ? t('switchToSignup') : t('switchToLogin')}{' '}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-teal-400 hover:text-teal-300 font-semibold underline-offset-2 hover:underline transition-colors"
-            >
-              {isLogin ? t('tabSignup') : t('tabLogin')}
-            </button>
-          </p>
-
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-white/25">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            {t('secureNote')}
+          <div className="mt-5 flex flex-col items-center gap-3">
+            {!isPhotoQuoteReturn && (
+              <Link
+                href={photoQuoteReturn}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/50 hover:text-teal-300 transition-colors"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                {t('photoPromoLink')}
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
+            <p className="text-center text-[13px] text-white/55">
+              {isLogin ? t('switchToSignup') : t('switchToLogin')}{' '}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-teal-300 hover:text-teal-200 font-bold underline-offset-2 hover:underline transition-colors"
+              >
+                {isLogin ? t('tabSignup') : t('tabLogin')}
+              </button>
+            </p>
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-white/40">
+              <ShieldCheck className="w-3.5 h-3.5 text-teal-400/70" />
+              {t('secureNote')}
+            </div>
           </div>
         </motion.div>
       </div>

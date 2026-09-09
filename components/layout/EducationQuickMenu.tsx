@@ -156,8 +156,14 @@ export default function EducationQuickMenu() {
         pathname === '/en/experience' ||
         pathname?.startsWith('/en/experience/');
 
-    // 견적 받기 페이지에서는 사이트 연결 아이콘 비표시
-    if (isAdmin || isQuotePage) return null;
+    const isAuthPage =
+        pathname === '/auth' ||
+        pathname?.startsWith('/auth/') ||
+        pathname === '/en/auth' ||
+        pathname?.startsWith('/en/auth/');
+
+    // 견적·인증 페이지에서는 사이트 연결 아이콘 비표시
+    if (isAdmin || isQuotePage || isAuthPage) return null;
 
     const dock: DockMode = isViewerPage ? 'corner' : 'right';
 
