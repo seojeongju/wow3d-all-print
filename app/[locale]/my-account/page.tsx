@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Dialog,
     DialogContent,
@@ -30,6 +29,7 @@ import ModelThumbnail from '@/components/ModelThumbnail';
 import QuotePrintSettingsChips from '@/components/quote/QuotePrintSettingsChips';
 import type { QuotePrintSettings } from '@/lib/quote-print-settings';
 import { useCartStore } from '@/store/useCartStore';
+import { cn } from '@/lib/utils';
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
@@ -677,37 +677,46 @@ export default function MyAccountPage() {
                             ))}
                         </div>
 
-                        {/* 탭 네비게이션 (패널은 Tabs 밖에 렌더 — Radix가 비 TabsContent를 가리는 문제 방지) */}
-                        <Tabs
-                            value={accountTab}
-                            onValueChange={(v) => {
-                                setAccountTab(v);
-                                if (v === 'history') {
-                                    setOrderSearch('');
-                                    setStatusFilter('all');
-                                }
-                            }}
-                            className="w-full min-w-0"
+                        {/* 탭 네비게이션 — Radix Tabs 미사용(콘텐츠 미표시 버그 방지) */}
+                        <div
+                            className="w-full min-w-0 flex flex-wrap gap-1 bg-white/5 border border-white/10 p-1.5 rounded-[2rem] backdrop-blur-xl"
+                            role="tablist"
+                            aria-label="마이페이지 메뉴"
                         >
-                            <TabsList className="w-full min-w-0 max-w-full h-auto flex flex-wrap justify-start gap-1 bg-white/5 border border-white/10 p-1.5 rounded-[2rem] backdrop-blur-xl">
-                                {[
-                                    { val: 'active-orders', label: t('tabActive') },
-                                    { val: 'history', label: t('tabHistory') },
-                                    { val: 'quotes', label: t('tabQuotes') },
-                                    { val: 'profile', label: t('tabProfile') },
-                                ].map((tab) => (
-                                    <TabsTrigger
+                            {[
+                                { val: 'active-orders', label: t('tabActive') },
+                                { val: 'history', label: t('tabHistory') },
+                                { val: 'quotes', label: t('tabQuotes') },
+                                { val: 'profile', label: t('tabProfile') },
+                            ].map((tab) => {
+                                const active = accountTab === tab.val;
+                                return (
+                                    <button
                                         key={tab.val}
-                                        value={tab.val}
-                                        className="rounded-[1.5rem] px-4 sm:px-6 md:px-8 py-3 sm:py-3.5 text-[11px] sm:text-[13px] font-black tracking-wide sm:tracking-widest uppercase transition-all whitespace-normal data-[state=active]:bg-teal-400 data-[state=active]:text-slate-950 data-[state=active]:shadow-[0_10px_30px_rgba(45,212,191,0.3)] active:scale-95"
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={active}
+                                        onClick={() => {
+                                            setAccountTab(tab.val);
+                                            if (tab.val === 'history') {
+                                                setOrderSearch('');
+                                                setStatusFilter('all');
+                                            }
+                                        }}
+                                        className={cn(
+                                            'rounded-[1.5rem] px-4 sm:px-6 md:px-8 py-3 sm:py-3.5 text-[11px] sm:text-[13px] font-black tracking-wide sm:tracking-widest uppercase transition-all',
+                                            active
+                                                ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]'
+                                                : 'text-white/55 hover:text-white hover:bg-white/5'
+                                        )}
                                     >
                                         {tab.label}
-                                    </TabsTrigger>
-                                ))}
-                            </TabsList>
-                        </Tabs>
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                        <div className="w-full min-w-0 space-y-10">
+                        <div className="w-full min-w-0 space-y-10" key={accountTab}>
                             {/* 견적 발송 알림 배너 */}
                             {quoteSentOrders.length > 0 && (
                                 <div className="rounded-[2rem] bg-emerald-500/10 border border-emerald-500/30 p-6 flex items-center gap-5">
