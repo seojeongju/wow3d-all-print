@@ -11,6 +11,7 @@ import { absoluteUrl } from '@/lib/site-url';
 
 /**
  * GET /api/orders - 주문 목록 조회
+ * 목록은 가벼운 컬럼만 반환 (expert_quote_data 전체 제외)해 Worker 타임아웃·연결 종료를 방지합니다.
  */
 export async function GET(request: NextRequest) {
     try {
@@ -21,7 +22,6 @@ export async function GET(request: NextRequest) {
             env = undefined;
         }
 
-        // 인증 확인
         const auth = await requireAuth(request);
         if (auth instanceof Response) {
             return auth;
@@ -31,78 +31,127 @@ export async function GET(request: NextRequest) {
             return successResponse([]);
         }
 
-        await processAutoOrderStatusTransitions(env.DB);
+        try {
+            await processAutoOrderStatusTransitions(env.DB);
+        } catch {
+            /* best-effort */
+        }
 
-        // 주문 목록 조회
         const orders = await env.DB
-            .prepare(`
-        SELECT * FROM orders 
-        WHERE user_id = ? 
-        ORDER BY created_at DESC
-      `)
+            .prepare(
+                `SELECT
+                    id, user_id, order_number, recipient_name, recipient_phone,
+                    shipping_address, shipping_postal_code, total_amount, status,
+                    payment_method, payment_status, customer_note, admin_note,
+                    created_at, updated_at, has_expert_quote, quotation_sent_at,
+                    CASE
+                      WHEN has_expert_quote = 1 AND expert_quote_data IS NOT NULL
+                      THEN json_extract(expert_quote_data, '$.total_amount')
+                      ELSE NULL
+                    END AS expert_total_amount
+                 FROM orders
+                 WHERE user_id = ?
+                 ORDER BY created_at DESC
+                 LIMIT 100`
+            )
             .bind(auth.userId)
             .all();
 
-        // 데이터 변환 (snake_case -> camelCase)
-        const formattedOrders = await Promise.all(
-            (orders.results || []).map(async (order: any) => {
-                const items = await env.DB!
-                    .prepare(`
-            SELECT oi.*, q.file_name, q.file_size, q.file_url, q.print_method, q.total_price
-            FROM order_items oi
-            LEFT JOIN quotes q ON oi.quote_id = q.id
-            WHERE oi.order_id = ?
-          `)
-                    .bind(order.id)
-                    .all();
+        const orderRows = (orders.results || []) as any[];
+        if (orderRows.length === 0) {
+            return successResponse([]);
+        }
 
-                return {
-                    id: order.id,
-                    userId: order.user_id,
-                    orderNumber: order.order_number,
-                    recipientName: order.recipient_name,
-                    recipientPhone: order.recipient_phone,
-                    shippingAddress: order.shipping_address,
-                    shippingPostalCode: order.shipping_postal_code,
-                    totalAmount: order.total_amount,
-                    status: order.status,
-                    paymentMethod: order.payment_method,
-                    paymentStatus: order.payment_status,
-                    customerNote: order.customer_note,
-                    adminNote: order.admin_note,
-                    createdAt: order.created_at,
-                    updatedAt: order.updated_at,
-                    hasExpertQuote: !!order.has_expert_quote,
-                    expertQuoteData: order.expert_quote_data ?? null,
-                    quotationSentAt: order.quotation_sent_at ?? null,
-                    canViewEstimate:
-                        !!order.quotation_sent_at ||
-                        !!order.has_expert_quote ||
-                        ['quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered', 'completed'].includes(
-                            String(order.status)
-                        ),
-                    items: (items.results || []).map((item: any) => ({
-                        id: item.id,
-                        orderId: item.order_id,
-                        quoteId: item.quote_id,
-                        quantity: item.quantity,
-                        unitPrice: item.unit_price,
-                        subtotal: item.subtotal,
-                        createdAt: item.created_at,
-                        quote: item.quote_id
-                            ? {
-                                  id: item.quote_id,
-                                  fileName: item.file_name || `견적 #${item.quote_id}`,
-                                  fileSize: item.file_size || 0,
-                                  fileUrl: item.file_url || undefined,
-                                  printMethod: item.print_method || 'fdm',
-                                  totalPrice: item.total_price || 0,
-                              }
-                            : undefined,
-                    })),
-                };
-            })
-        );
+        const orderIds = orderRows
+            .map((o) => Number(o.id))
+            .filter((id) => Number.isInteger(id) && id > 0);
+        const placeholders = orderIds.map(() => '?').join(',');
+
+        let itemResults: any[] = [];
+        try {
+            const itemRows = await env.DB
+                .prepare(
+                    `SELECT
+                        oi.id, oi.order_id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, oi.created_at,
+                        q.file_name, q.file_size, q.file_url, q.print_method, q.total_price
+                     FROM order_items oi
+                     LEFT JOIN quotes q ON q.id = oi.quote_id
+                     WHERE oi.order_id IN (${placeholders})
+                     ORDER BY oi.id ASC`
+                )
+                .bind(...orderIds)
+                .all();
+            itemResults = (itemRows.results || []) as any[];
+        } catch (e) {
+            console.warn('GET /api/orders items batch failed', e);
+        }
+
+        const itemsByOrder = new Map<number, any[]>();
+        for (const item of itemResults) {
+            const orderId = Number(item.order_id);
+            const list = itemsByOrder.get(orderId) || [];
+            list.push({
+                id: item.id,
+                orderId: item.order_id,
+                quoteId: item.quote_id,
+                quantity: item.quantity,
+                unitPrice: item.unit_price,
+                subtotal: item.subtotal,
+                createdAt: item.created_at,
+                quote: item.quote_id
+                    ? {
+                          id: item.quote_id,
+                          fileName: item.file_name || `견적 #${item.quote_id}`,
+                          fileSize: item.file_size || 0,
+                          fileUrl: item.file_url || undefined,
+                          printMethod: item.print_method || 'fdm',
+                          totalPrice: item.total_price || 0,
+                      }
+                    : undefined,
+            });
+            itemsByOrder.set(orderId, list);
+        }
+
+        const formattedOrders = orderRows.map((order) => {
+            const status = String(order.status || 'pending');
+            const hasExpertQuote = !!order.has_expert_quote;
+            const quotationSentAt = order.quotation_sent_at ?? null;
+            const expertTotal =
+                order.expert_total_amount != null &&
+                Number.isFinite(Number(order.expert_total_amount)) &&
+                Number(order.expert_total_amount) > 0
+                    ? Number(order.expert_total_amount)
+                    : null;
+
+            return {
+                id: order.id,
+                userId: order.user_id,
+                orderNumber: order.order_number,
+                recipientName: order.recipient_name,
+                recipientPhone: order.recipient_phone,
+                shippingAddress: order.shipping_address,
+                shippingPostalCode: order.shipping_postal_code,
+                totalAmount: order.total_amount,
+                status,
+                paymentMethod: order.payment_method,
+                paymentStatus: order.payment_status,
+                customerNote: order.customer_note,
+                adminNote: order.admin_note,
+                createdAt: order.created_at,
+                updatedAt: order.updated_at,
+                hasExpertQuote,
+                expertTotalAmount: expertTotal,
+                expertQuoteData: null,
+                quotationSentAt,
+                canViewEstimate:
+                    !!quotationSentAt ||
+                    hasExpertQuote ||
+                    ['quote_sent', 'payment_confirmed', 'production', 'shipping', 'delivered', 'completed'].includes(
+                        status
+                    ),
+                items: itemsByOrder.get(Number(order.id)) || [],
+            };
+        });
 
         return successResponse(formattedOrders);
     } catch (error: any) {

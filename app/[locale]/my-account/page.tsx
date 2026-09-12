@@ -80,6 +80,8 @@ function quoteToPrintSettings(quote: Quote): QuotePrintSettings {
 function getOrderFinalAmount(order: Order): number {
     try {
         const o = order as any;
+        const expertTotal = Number(o.expertTotalAmount ?? o.expert_total_amount ?? 0);
+        if (expertTotal > 0) return expertTotal;
         if (o.expertQuoteData) {
             const d = typeof o.expertQuoteData === 'string' ? JSON.parse(o.expertQuoteData) : o.expertQuoteData;
             const ea = Number(d?.total_amount || 0);
@@ -128,7 +130,8 @@ function normalizeOrderFromApi(raw: any): Order {
           }))
         : [];
 
-    return {
+    const expertTotal = Number(raw.expertTotalAmount ?? raw.expert_total_amount ?? 0);
+    const normalized = {
         id: Number(raw.id),
         userId: raw.userId ?? raw.user_id ?? undefined,
         orderNumber: String(raw.orderNumber ?? raw.order_number ?? ''),
@@ -156,7 +159,9 @@ function normalizeOrderFromApi(raw: any): Order {
             raw.has_expert_quote
         ),
         items: items as Order['items'],
-    } as Order;
+        ...(expertTotal > 0 ? { expertTotalAmount: expertTotal } : {}),
+    };
+    return normalized as Order;
 }
 
 /** 상태별 스타일 */
@@ -252,6 +257,7 @@ export default function MyAccountPage() {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [authReady, setAuthReady] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -265,19 +271,26 @@ export default function MyAccountPage() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [accountTab, setAccountTab] = useState('active-orders');
 
+    // Zustand persist hydration 완료 전에는 SSR/CSR 불일치(#418) 방지를 위해 대기
     useEffect(() => {
+        const finish = () => setAuthReady(true);
+        const unsub = useAuthStore.persist.onFinishHydration(finish);
+        if (useAuthStore.persist.hasHydrated()) finish();
+        return unsub;
+    }, []);
+
+    useEffect(() => {
+        if (!authReady) return;
         if (!isAuthenticated) {
             router.push('/auth');
             return;
         }
         if (user?.role === 'admin') {
-            // 관리자는 locale 밖 — i18n router 사용 시 /en/admin 이 됨
             window.location.replace('/admin');
             return;
         }
         loadData();
 
-        // 30초마다 주문 상태 자동 갱신 (관리자 변경사항 실시간 반영)
         const interval = setInterval(async () => {
             try {
                 const res = await fetch('/api/orders', {
@@ -292,7 +305,8 @@ export default function MyAccountPage() {
         }, 30000);
 
         return () => clearInterval(interval);
-    }, [isAuthenticated, user?.role, user?.id, token, sessionId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authReady, isAuthenticated, user?.role, user?.id, token, sessionId]);
 
     const loadData = async () => {
         try {
@@ -542,7 +556,13 @@ export default function MyAccountPage() {
         return matchesSearch && matchesStatus;
     });
 
-    if (!isAuthenticated) return null;
+    if (!authReady || !isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-teal-400" />
+            </div>
+        );
+    }
     if (user?.role === 'admin') return null;
 
     // derived stats
@@ -559,7 +579,7 @@ export default function MyAccountPage() {
     const quoteSentOrders = orders.filter(o => o.status === 'quote_sent');
 
     return (
-        <div className="min-h-screen bg-[#020617] text-white selection:bg-teal-500/30 selection:text-teal-400 overflow-x-hidden pb-20">
+        <div className="min-h-screen bg-[#020617] text-white selection:bg-teal-500/30 selection:text-teal-400 pb-20">
             {/* ── 배경 시스템 ───────────────────────────── */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 bg-[#020617]" />
@@ -773,12 +793,9 @@ export default function MyAccountPage() {
                                                     <div className="text-3xl font-black text-white">
                                                         ₩{getOrderFinalAmount(order).toLocaleString(dateLocale)}
                                                     </div>
-                                                    {(order as any).expertQuoteData && (() => {
-                                                        try {
-                                                            const d = JSON.parse((order as any).expertQuoteData);
-                                                            if (d?.total_amount > 0) return <div className="text-[11px] text-emerald-400 font-black mt-1">{t('expertAmount')}</div>;
-                                                        } catch { } return null;
-                                                    })()}
+                                                    {(order.hasExpertQuote || Number((order as any).expertTotalAmount) > 0) && (
+                                                        <div className="text-[11px] text-emerald-400 font-black mt-1">{t('expertAmount')}</div>
+                                                    )}
                                                     <span className="text-[11px] text-white/50 font-bold">{t('vatIncluded')}</span>
                                                 </div>
                                             </div>
@@ -807,12 +824,8 @@ export default function MyAccountPage() {
                                                 <div className="flex flex-col gap-4 mt-8">
                                                     {order.items?.map(item => (
                                                         <div key={item.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.03] border border-white/5 group/item hover:bg-white/5 transition-colors">
-                                                            <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0 shadow-inner">
-                                                                {item.quote?.fileUrl ? (
-                                                                    <ModelThumbnail fileUrl={item.quote.fileUrl} size={100} />
-                                                                ) : (
-                                                                    <Box className="w-full h-full p-6 text-slate-200" />
-                                                                )}
+                                                            <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0 shadow-inner flex items-center justify-center">
+                                                                <Box className="w-10 h-10 text-slate-300" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="text-lg font-black truncate text-white mb-2">{item.quote?.fileName || t('productFallback', { id: item.quoteId })}</div>
@@ -967,12 +980,8 @@ export default function MyAccountPage() {
                                                             </div>
                                                             <div className="flex gap-2 mb-3">
                                                                 {order.items?.slice(0, 4).map((item, idx) => (
-                                                                    <div key={item.id ?? idx} className="w-11 h-11 rounded-xl bg-white border border-white/10 flex items-center justify-center overflow-hidden">
-                                                                        {item.quote?.fileUrl ? (
-                                                                            <ModelThumbnail fileUrl={item.quote.fileUrl} size={56} />
-                                                                        ) : (
-                                                                            <Box className="w-5 h-5 text-slate-300" />
-                                                                        )}
+                                                                    <div key={item.id ?? idx} className="w-11 h-11 rounded-xl bg-white/90 border border-white/10 flex items-center justify-center overflow-hidden">
+                                                                        <Box className="w-5 h-5 text-slate-500" />
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -1110,8 +1119,8 @@ export default function MyAccountPage() {
                                     <h2 className="text-2xl font-black text-white mb-2">{t('profileTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('profileDesc')}</p>
                                 </div>
-                                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] gap-6 lg:gap-8">
-                                    <div className="min-w-0 p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
+                                <div className="flex flex-col gap-6 max-w-3xl">
+                                    <div className="w-full p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
                                         <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
                                             <User className="w-14 h-14" />
                                         </div>
@@ -1142,7 +1151,7 @@ export default function MyAccountPage() {
                                         </div>
                                     </div>
 
-                                    <div className="min-w-0 p-6 sm:p-8 md:p-10 rounded-[2rem] bg-slate-900/80 border border-white/15 shadow-xl">
+                                    <div className="w-full p-6 sm:p-8 md:p-10 rounded-[2rem] bg-slate-900 border border-white/20 shadow-xl">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                                             <div>
                                                 <h3 className="text-xl sm:text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">
