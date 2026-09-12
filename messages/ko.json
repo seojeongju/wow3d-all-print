@@ -2805,7 +2805,11 @@
     "recipientName": "수령인 이름",
     "notePlaceholder": "배송 시 요청사항을 입력하세요...",
     "adjustQty": "품목 수량 조절",
-    "unitPrice": "단가: ₩{price}"
+    "unitPrice": "단가: ₩{price}",
+    "modelPreviewTitle": "3D 모델 미리보기",
+    "modelPreviewHint": "주문에 포함된 변환·업로드 모델을 확인할 수 있습니다.",
+    "modelPreviewClose": "닫기",
+    "modelFileMissing": "모델 파일이 없습니다."
   },
   "OrderComplete": {
     "metaTitle": "주문 완료",

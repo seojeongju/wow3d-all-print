@@ -15,7 +15,7 @@ import {
 import {
     User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock,
     Trash2, Edit2, ShieldCheck, Minus, Plus, Search,
-    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, Box, ArrowLeft
+    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, ArrowLeft
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { showToast } from '@/lib/toast-helper';
@@ -26,10 +26,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModelThumbnail from '@/components/ModelThumbnail';
+import OrderItemModelThumb from '@/components/OrderItemModelThumb';
 import QuotePrintSettingsChips from '@/components/quote/QuotePrintSettingsChips';
 import type { QuotePrintSettings } from '@/lib/quote-print-settings';
 import { useCartStore } from '@/store/useCartStore';
 import { cn } from '@/lib/utils';
+
+type ModelPreviewTarget = { fileUrl: string; fileName: string };
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
@@ -270,6 +273,15 @@ export default function MyAccountPage() {
     const [orderSearch, setOrderSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [accountTab, setAccountTab] = useState('active-orders');
+    const [modelPreview, setModelPreview] = useState<ModelPreviewTarget | null>(null);
+
+    const openModelPreview = (fileUrl?: string | null, fileName?: string | null) => {
+        if (!fileUrl) return;
+        setModelPreview({
+            fileUrl,
+            fileName: fileName?.trim() || t('productDefault'),
+        });
+    };
 
     // Zustand persist hydration 완료 전에는 SSR/CSR 불일치(#418) 방지를 위해 대기
     useEffect(() => {
@@ -845,9 +857,13 @@ export default function MyAccountPage() {
                                                 <div className="flex flex-col gap-4 mt-8">
                                                     {order.items?.map(item => (
                                                         <div key={item.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.03] border border-white/5 group/item hover:bg-white/5 transition-colors">
-                                                            <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0 shadow-inner flex items-center justify-center">
-                                                                <Box className="w-10 h-10 text-slate-300" />
-                                                            </div>
+                                                            <OrderItemModelThumb
+                                                                fileUrl={item.quote?.fileUrl}
+                                                                fileName={item.quote?.fileName}
+                                                                size={320}
+                                                                className="w-20 h-20 rounded-2xl shadow-inner"
+                                                                onClick={() => openModelPreview(item.quote?.fileUrl, item.quote?.fileName)}
+                                                            />
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="text-lg font-black truncate text-white mb-2">{item.quote?.fileName || t('productFallback', { id: item.quoteId })}</div>
                                                                 <div className="flex items-center gap-3">
@@ -1005,9 +1021,14 @@ export default function MyAccountPage() {
                                                             </div>
                                                             <div className="flex gap-2 mb-3">
                                                                 {order.items?.slice(0, 4).map((item, idx) => (
-                                                                    <div key={item.id ?? idx} className="w-11 h-11 rounded-xl bg-white/90 border border-white/10 flex items-center justify-center overflow-hidden">
-                                                                        <Box className="w-5 h-5 text-slate-500" />
-                                                                    </div>
+                                                                    <OrderItemModelThumb
+                                                                        key={item.id ?? idx}
+                                                                        fileUrl={item.quote?.fileUrl}
+                                                                        fileName={item.quote?.fileName}
+                                                                        size={160}
+                                                                        className="w-11 h-11 rounded-xl border border-white/10"
+                                                                        onClick={() => openModelPreview(item.quote?.fileUrl, item.quote?.fileName)}
+                                                                    />
                                                                 ))}
                                                             </div>
                                                             <p className="text-sm font-bold text-white/80 truncate">
@@ -1345,10 +1366,23 @@ export default function MyAccountPage() {
                                             {selectedOrder.items?.map((item) => (
                                                 <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group/row">
                                                     <td className="p-8">
-                                                        <div className="text-base font-black text-white mb-2 group-hover/row:text-teal-400 transition-colors">{item.quote?.fileName || t('productFallback', { id: item.quoteId })}</div>
-                                                        <div className="flex items-center gap-3">
-                                                            {item.quote?.printMethod && <Badge variant="outline" className="text-[9px] h-5 px-2 font-black uppercase border-white/10 text-white/30 group-hover/row:border-teal-400/30 group-hover/row:text-teal-400/60 transition-colors">{item.quote.printMethod}</Badge>}
-                                                            {item.quote?.fileSize && <span className="text-[10px] font-black text-white/10 group-hover/row:text-white/30 transition-colors">{(item.quote.fileSize / 1024 / 1024).toFixed(2)} MB</span>}
+                                                        <div className="flex items-center gap-4 min-w-0">
+                                                            <OrderItemModelThumb
+                                                                fileUrl={item.quote?.fileUrl}
+                                                                fileName={item.quote?.fileName}
+                                                                size={280}
+                                                                className="w-16 h-16 rounded-2xl border border-white/10"
+                                                                onClick={() => openModelPreview(item.quote?.fileUrl, item.quote?.fileName)}
+                                                            />
+                                                            <div className="min-w-0">
+                                                                <div className="text-base font-black text-white mb-2 group-hover/row:text-teal-400 transition-colors truncate">
+                                                                    {item.quote?.fileName || t('productFallback', { id: item.quoteId })}
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    {item.quote?.printMethod && <Badge variant="outline" className="text-[9px] h-5 px-2 font-black uppercase border-white/10 text-white/30 group-hover/row:border-teal-400/30 group-hover/row:text-teal-400/60 transition-colors">{item.quote.printMethod}</Badge>}
+                                                                    {item.quote?.fileSize ? <span className="text-[10px] font-black text-white/10 group-hover/row:text-white/30 transition-colors">{(item.quote.fileSize / 1024 / 1024).toFixed(2)} MB</span> : null}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="p-8 text-center text-sm font-black text-white/40">{item.quantity}</td>
@@ -1382,6 +1416,42 @@ export default function MyAccountPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={!!modelPreview} onOpenChange={(open) => !open && setModelPreview(null)}>
+                <DialogContent className="max-w-xl bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 overflow-hidden">
+                    <DialogHeader className="p-8 pb-0">
+                        <DialogTitle className="text-xl font-black">{t('modelPreviewTitle')}</DialogTitle>
+                        <DialogDescription className="text-xs font-bold text-white/45 pt-2">
+                            {modelPreview?.fileName || t('modelPreviewHint')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="p-8 pt-6 space-y-4">
+                        <div className="aspect-square w-full rounded-[1.75rem] bg-white overflow-hidden border border-white/10">
+                            {modelPreview?.fileUrl ? (
+                                <ModelThumbnail
+                                    fileUrl={modelPreview.fileUrl}
+                                    fileName={modelPreview.fileName}
+                                    size={640}
+                                    className="w-full h-full object-contain p-6"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">
+                                    {t('modelFileMissing')}
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-[11px] font-bold text-white/35 text-center">{t('modelPreviewHint')}</p>
+                        <Button
+                            type="button"
+                            className="w-full h-12 rounded-2xl bg-teal-400 text-slate-950 font-black"
+                            onClick={() => setModelPreview(null)}
+                        >
+                            {t('modelPreviewClose')}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* Order Edit Dialog */}
             <Dialog open={!!editingOrder} onOpenChange={(open) => !open && setEditingOrder(null)}>
                 <DialogContent className="max-w-lg bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 shadow-2xl overflow-hidden">

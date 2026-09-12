@@ -2804,7 +2804,11 @@
     "recipientName": "Recipient name",
     "notePlaceholder": "Enter delivery requests...",
     "adjustQty": "Adjust quantities",
-    "unitPrice": "Unit: ₩{price}"
+    "unitPrice": "Unit: ₩{price}",
+    "modelPreviewTitle": "3D model preview",
+    "modelPreviewHint": "View the converted or uploaded model included in this order.",
+    "modelPreviewClose": "Close",
+    "modelFileMissing": "Model file is unavailable."
   },
   "OrderComplete": {
     "metaTitle": "Order complete",
