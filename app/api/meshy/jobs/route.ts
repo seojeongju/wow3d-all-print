@@ -48,22 +48,39 @@ export async function GET(request: NextRequest) {
             result_file_key: string | null
             source_file_name: string | null
             error_message: string | null
+            quote_id: number | null
             created_at: string
             updated_at: string
         }
 
-        const rows = await env.DB.prepare(
-            `SELECT id, status, progress, thumbnail_url, result_file_name, result_file_key,
-                    source_file_name, error_message, created_at, updated_at
-             FROM meshy_jobs
-             WHERE user_id = ?
-             ORDER BY id DESC
-             LIMIT ?`
-        )
-            .bind(auth.userId, limit)
-            .all<JobListRow>()
+        let list: JobListRow[] = []
+        try {
+            const rows = await env.DB.prepare(
+                `SELECT id, status, progress, thumbnail_url, result_file_name, result_file_key,
+                        source_file_name, error_message, quote_id, created_at, updated_at
+                 FROM meshy_jobs
+                 WHERE user_id = ?
+                 ORDER BY id DESC
+                 LIMIT ?`
+            )
+                .bind(auth.userId, limit)
+                .all<JobListRow>()
+            list = rows.results ?? []
+        } catch {
+            // quote_id 컬럼 없는 구 DB 호환
+            const rows = await env.DB.prepare(
+                `SELECT id, status, progress, thumbnail_url, result_file_name, result_file_key,
+                        source_file_name, error_message, created_at, updated_at
+                 FROM meshy_jobs
+                 WHERE user_id = ?
+                 ORDER BY id DESC
+                 LIMIT ?`
+            )
+                .bind(auth.userId, limit)
+                .all<Omit<JobListRow, 'quote_id'>>()
+            list = (rows.results ?? []).map((j: Omit<JobListRow, 'quote_id'>) => ({ ...j, quote_id: null }))
+        }
 
-        const list: JobListRow[] = rows.results ?? []
         const items = list.map((j: JobListRow) => ({
             jobId: j.id,
             status: j.status,
@@ -72,6 +89,7 @@ export async function GET(request: NextRequest) {
             resultFileName: resolveUserAiPhotoFileName(j.id, j.result_file_name),
             sourceFileName: j.source_file_name,
             modelReady: j.status === 'succeeded' && !!j.result_file_key,
+            quoteId: j.quote_id != null && Number(j.quote_id) > 0 ? Number(j.quote_id) : null,
             error: sanitizeImageTo3DUserMessage(j.error_message),
             createdAt: j.created_at,
             updatedAt: j.updated_at,

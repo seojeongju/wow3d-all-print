@@ -15,7 +15,7 @@ import {
 import {
     User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock,
     Trash2, Edit2, ShieldCheck, Minus, Plus, Search,
-    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, ArrowLeft
+    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, ArrowLeft, Camera, Sparkles
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { showToast } from '@/lib/toast-helper';
@@ -27,12 +27,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModelThumbnail from '@/components/ModelThumbnail';
 import OrderItemModelThumb from '@/components/OrderItemModelThumb';
+import MeshyJobThumb from '@/components/MeshyJobThumb';
 import QuotePrintSettingsChips from '@/components/quote/QuotePrintSettingsChips';
 import type { QuotePrintSettings } from '@/lib/quote-print-settings';
 import { useCartStore } from '@/store/useCartStore';
 import { cn } from '@/lib/utils';
+import { saveMeshyActiveJob } from '@/lib/meshy-active-job';
 
 type ModelPreviewTarget = { fileUrl: string; fileName: string };
+
+type MeshyJobListItem = {
+    jobId: number;
+    status: string;
+    progress: number;
+    thumbnailUrl?: string | null;
+    resultFileName?: string | null;
+    sourceFileName?: string | null;
+    modelReady: boolean;
+    quoteId?: number | null;
+    error?: string | null;
+    createdAt?: string;
+};
 
 /** 견적/주문 금액 단위 → 원화 표시용 (다른 페이지와 동일) */
 // 금액은 원화(KRW)로 저장·표시
@@ -259,11 +274,13 @@ export default function MyAccountPage() {
 
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [meshyJobs, setMeshyJobs] = useState<MeshyJobListItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [authReady, setAuthReady] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [meshyJobActionId, setMeshyJobActionId] = useState<number | null>(null);
 
     // Profile Edit State
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -383,6 +400,36 @@ export default function MyAccountPage() {
                 const ordersData = await ordersRes.json();
                 const rows = Array.isArray(ordersData.data) ? ordersData.data : [];
                 setOrders(rows.map(normalizeOrderFromApi));
+            }
+
+            // AI 이미지→3D 변환 작업 내역
+            if (token) {
+                try {
+                    const meshyRes = await fetch('/api/meshy/jobs?limit=50', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        cache: 'no-store',
+                    });
+                    if (meshyRes.ok) {
+                        const meshyJson = await meshyRes.json();
+                        const items = Array.isArray(meshyJson?.data?.items) ? meshyJson.data.items : [];
+                        setMeshyJobs(
+                            items.map((j: any) => ({
+                                jobId: Number(j.jobId),
+                                status: String(j.status || ''),
+                                progress: Number(j.progress) || 0,
+                                thumbnailUrl: j.thumbnailUrl ?? null,
+                                resultFileName: j.resultFileName ?? null,
+                                sourceFileName: j.sourceFileName ?? null,
+                                modelReady: !!j.modelReady,
+                                quoteId: j.quoteId != null && Number(j.quoteId) > 0 ? Number(j.quoteId) : null,
+                                error: j.error ?? null,
+                                createdAt: j.createdAt ?? '',
+                            }))
+                        );
+                    }
+                } catch {
+                    /* 변환 내역 실패는 주문/견적과 분리 */
+                }
             }
         } catch (error) {
             console.error('Failed to load data:', error);
@@ -544,6 +591,63 @@ export default function MyAccountPage() {
         router.push('/cart');
     };
 
+    const meshyJobStatusMeta = (status: string) => {
+        if (status === 'succeeded') {
+            return { label: t('aiJobsStatusSucceeded'), className: 'bg-teal-500/15 text-teal-300 border-teal-400/30' };
+        }
+        if (status === 'failed' || status === 'canceled') {
+            return { label: t('aiJobsStatusFailed'), className: 'bg-rose-500/15 text-rose-300 border-rose-400/30' };
+        }
+        if (['uploading', 'queued', 'processing', 'pending'].includes(status)) {
+            return { label: t('aiJobsStatusProcessing'), className: 'bg-amber-500/15 text-amber-300 border-amber-400/30' };
+        }
+        return { label: t('aiJobsStatusOther'), className: 'bg-white/10 text-white/50 border-white/15' };
+    };
+
+    const handleContinueMeshyJob = (job: MeshyJobListItem) => {
+        showToast.success(t('aiJobsToastContinue'));
+        if (job.quoteId) {
+            router.push(`/quote?load_quote_id=${job.quoteId}`);
+            return;
+        }
+        if (job.modelReady) {
+            router.push(`/quote?meshy_job_id=${job.jobId}`);
+            return;
+        }
+        if (['uploading', 'queued', 'processing', 'pending'].includes(job.status)) {
+            saveMeshyActiveJob(job.jobId);
+            router.push('/quote?entry=photo');
+            return;
+        }
+        router.push('/quote?entry=photo');
+    };
+
+    const handleAddMeshyJobToCart = async (job: MeshyJobListItem) => {
+        if (!job.quoteId || !token) {
+            handleContinueMeshyJob(job);
+            return;
+        }
+        setMeshyJobActionId(job.jobId);
+        try {
+            const res = await fetch(`/api/quotes/${job.quoteId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store',
+            });
+            if (!res.ok) throw new Error('quote');
+            const json = await res.json();
+            if (!json?.success || !json.data) throw new Error('quote');
+            const quote = mapQuoteFromApi(json.data);
+            addToCart(quote, 1);
+            showToast.success(t('aiJobsToastCartOk'), quote.fileName);
+            router.push('/cart');
+        } catch {
+            showToast.error(t('aiJobsToastCartFail'));
+            handleContinueMeshyJob(job);
+        } finally {
+            setMeshyJobActionId(null);
+        }
+    };
+
     const handleReOrder = (order: Order) => {
         if (!order.items) return;
 
@@ -698,6 +802,7 @@ export default function MyAccountPage() {
                             {[
                                 { val: 'active-orders', label: t('tabActive') },
                                 { val: 'history', label: t('tabHistory') },
+                                { val: 'ai-jobs', label: t('tabAiJobs') },
                                 { val: 'quotes', label: t('tabQuotes') },
                                 { val: 'profile', label: t('tabProfile') },
                             ].map((tab) => {
@@ -1069,6 +1174,131 @@ export default function MyAccountPage() {
                                                                     </Button>
                                                                 </div>
                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div
+                                id="account-ai-jobs"
+                                className="w-full min-w-0 relative z-20"
+                                style={{ display: accountTab === 'ai-jobs' ? 'block' : 'none' }}
+                                aria-hidden={accountTab !== 'ai-jobs'}
+                            >
+                                <div className="mb-8 px-2">
+                                    <h2 className="text-2xl font-black text-white mb-2 flex items-center gap-3">
+                                        <Sparkles className="w-6 h-6 text-teal-400" />
+                                        {t('aiJobsTitle')}
+                                    </h2>
+                                    <p className="text-sm font-bold text-white/50 break-keep">{t('aiJobsDesc')}</p>
+                                </div>
+
+                                {meshyJobs.length === 0 ? (
+                                    <div className="py-24 rounded-[3rem] bg-white/[0.02] border border-white/5 border-dashed flex flex-col items-center justify-center text-center px-6">
+                                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                            <Camera className="w-10 h-10 text-white/20" />
+                                        </div>
+                                        <p className="text-white/40 font-bold mb-8">{t('aiJobsEmpty')}</p>
+                                        <Link href="/quote?entry=photo">
+                                            <Button className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black uppercase tracking-widest hover:bg-teal-300">
+                                                {t('aiJobsEmptyCta')}
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {meshyJobs.map((job) => {
+                                            const statusMeta = meshyJobStatusMeta(job.status);
+                                            const title =
+                                                job.sourceFileName ||
+                                                job.resultFileName ||
+                                                `AI #${job.jobId}`;
+                                            return (
+                                                <div
+                                                    key={job.jobId}
+                                                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-xl flex flex-col"
+                                                >
+                                                    <MeshyJobThumb
+                                                        jobId={job.jobId}
+                                                        modelReady={job.modelReady}
+                                                        resultFileName={job.resultFileName}
+                                                        thumbnailUrl={job.thumbnailUrl}
+                                                        className="h-48 w-full"
+                                                    />
+                                                    <div className="p-5 flex flex-1 flex-col gap-4">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                                <h3 className="text-base font-black text-white truncate" title={title}>
+                                                                    {title}
+                                                                </h3>
+                                                                <span className={`shrink-0 inline-flex px-2.5 py-1 rounded-full text-[10px] font-black border ${statusMeta.className}`}>
+                                                                    {statusMeta.label}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] font-bold text-white/35">
+                                                                #{job.jobId}
+                                                                {job.createdAt
+                                                                    ? ` · ${new Date(job.createdAt).toLocaleString(dateLocale)}`
+                                                                    : ''}
+                                                            </p>
+                                                            {job.quoteId ? (
+                                                                <p className="text-[11px] font-bold text-teal-400/80 mt-1">
+                                                                    {t('aiJobsLinkedQuote')} #{job.quoteId}
+                                                                </p>
+                                                            ) : null}
+                                                            {job.error ? (
+                                                                <p className="text-[11px] font-bold text-rose-300/80 mt-2 line-clamp-2">
+                                                                    {job.error}
+                                                                </p>
+                                                            ) : null}
+                                                            {!job.modelReady &&
+                                                            ['uploading', 'queued', 'processing', 'pending'].includes(job.status) ? (
+                                                                <p className="text-[11px] font-bold text-amber-300/80 mt-2">
+                                                                    {job.progress}%
+                                                                </p>
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="mt-auto flex flex-col gap-2">
+                                                            {job.modelReady ||
+                                                            ['uploading', 'queued', 'processing', 'pending'].includes(job.status) ? (
+                                                                <Button
+                                                                    className="w-full h-11 rounded-xl bg-teal-400 text-slate-950 font-black text-xs gap-2"
+                                                                    onClick={() => handleContinueMeshyJob(job)}
+                                                                >
+                                                                    {job.modelReady
+                                                                        ? t('aiJobsContinue')
+                                                                        : t('aiJobsResumeProgress')}
+                                                                </Button>
+                                                            ) : null}
+                                                            {job.quoteId ? (
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        className="flex-1 h-11 rounded-xl border-white/15 bg-white/5 text-white font-black text-xs"
+                                                                        onClick={() =>
+                                                                            router.push(`/quote?load_quote_id=${job.quoteId}`)
+                                                                        }
+                                                                    >
+                                                                        {t('aiJobsOpenQuote')}
+                                                                    </Button>
+                                                                    <Button
+                                                                        className="flex-1 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 font-black text-xs gap-1.5"
+                                                                        disabled={meshyJobActionId === job.jobId}
+                                                                        onClick={() => handleAddMeshyJobToCart(job)}
+                                                                    >
+                                                                        {meshyJobActionId === job.jobId ? (
+                                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                        ) : (
+                                                                            <ShoppingBag className="w-3.5 h-3.5" />
+                                                                        )}
+                                                                        {t('aiJobsAddCart')}
+                                                                    </Button>
+                                                                </div>
+                                                            ) : null}
                                                         </div>
                                                     </div>
                                                 </div>

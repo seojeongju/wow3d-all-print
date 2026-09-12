@@ -102,13 +102,20 @@ function QuoteContent() {
     const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');
     const searchParams = useSearchParams();
     const loadQuoteId = searchParams.get('load_quote_id');
+    const loadMeshyJobIdRaw = searchParams.get('meshy_job_id');
+    const loadMeshyJobId = (() => {
+        const n = Number(loadMeshyJobIdRaw);
+        return Number.isInteger(n) && n > 0 ? n : null;
+    })();
     const { token, sessionId, user } = useAuthStore();
     const guideSource = searchParams.get('guide_source') || '';
     const guideTopic = searchParams.get('guide_topic') || '';
     const entryParam = searchParams.get('entry');
-    const [entryMode, setEntryMode] = useState<QuoteEntryMode | null>(
-        entryParam === 'file' || entryParam === 'photo' ? entryParam : null
-    );
+    const [entryMode, setEntryMode] = useState<QuoteEntryMode | null>(() => {
+        if (loadMeshyJobId) return 'photo';
+        if (entryParam === 'file' || entryParam === 'photo') return entryParam;
+        return null;
+    });
     const [loadedQuote, setLoadedQuote] = useState<Quote | null>(null); // DB quote data
     const [reloadQuoteId, setReloadQuoteId] = useState<number | null>(null);
     const [isViewerDragging, setIsViewerDragging] = useState(false);
@@ -122,7 +129,57 @@ function QuoteContent() {
 
     useEffect(() => {
         if (entryParam === 'file' || entryParam === 'photo') setEntryMode(entryParam);
-    }, [entryParam]);
+        else if (loadMeshyJobId) setEntryMode('photo');
+    }, [entryParam, loadMeshyJobId]);
+
+    // 마이페이지 AI 작업 내역 → 견적 재개
+    useEffect(() => {
+        if (!loadMeshyJobId || loadQuoteId) return;
+
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const authHeaders = buildQuoteModelAuthHeaders({
+                    token,
+                    sessionId,
+                    userId: user?.id ?? null,
+                });
+                const res = await fetch(`/api/meshy/jobs/${loadMeshyJobId}/model`, {
+                    headers: authHeaders,
+                    cache: 'no-store',
+                });
+                if (!res.ok) {
+                    const j = await res.json().catch(() => ({}));
+                    throw new Error(
+                        (j as { error?: string }).error || t('modelLoadFailDesc')
+                    );
+                }
+                const blob = await res.blob();
+                if (!blob.size) throw new Error(t('modelLoadFailDesc'));
+                if (cancelled) return;
+                const fileName = `ai-photo-${loadMeshyJobId}.stl`;
+                const newFile = new File([blob], fileName, {
+                    type: blob.type || 'model/stl',
+                });
+                setFile(newFile, { kind: 'meshy-photo', meshyJobId: loadMeshyJobId });
+                setEntryMode('file');
+                setActiveTab('viewer');
+            } catch (e) {
+                console.error('Failed to load meshy job model:', e);
+                if (!cancelled) {
+                    showToast.error(
+                        t('modelLoadFailTitle'),
+                        e instanceof Error ? e.message : t('modelLoadFailDesc')
+                    );
+                }
+            }
+        };
+
+        void load();
+        return () => {
+            cancelled = true;
+        };
+    }, [loadMeshyJobId, loadQuoteId, setFile, token, sessionId, user?.id, t]);
 
     useEffect(() => {
         if (entryParam !== 'photo') return;
