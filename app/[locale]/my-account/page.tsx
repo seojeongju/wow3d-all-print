@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Dialog,
     DialogContent,
@@ -740,8 +740,8 @@ export default function MyAccountPage() {
                                 </div>
                             )}
 
-                            {/* Active Orders Tab */}
-                            <TabsContent value="active-orders" className="w-full min-w-0 space-y-6">
+                            {accountTab === 'active-orders' && (
+                            <div className="w-full min-w-0 space-y-6">
                                 <div className="mb-8 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('activeTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('activeDesc')}</p>
@@ -878,10 +878,11 @@ export default function MyAccountPage() {
                                         </motion.div>
                                     ))
                                 )}
-                            </TabsContent>
+                            </div>
+                            )}
 
-                            {/* History Tab */}
-                            <TabsContent value="history" className="w-full min-w-0 space-y-6 outline-none">
+                            {accountTab === 'history' && (
+                            <div className="w-full min-w-0 space-y-6 outline-none">
                                 <div className="px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('historyTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">
@@ -1030,10 +1031,11 @@ export default function MyAccountPage() {
                                         })}
                                     </div>
                                 )}
-                            </TabsContent>
+                            </div>
+                            )}
 
-                            {/* Saved Quotes Tab */}
-                            <TabsContent value="quotes" className="w-full min-w-0">
+                            {accountTab === 'quotes' && (
+                            <div className="w-full min-w-0">
                                 <div className="mb-8 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('quotesTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('quotesDesc')}</p>
@@ -1111,155 +1113,136 @@ export default function MyAccountPage() {
                                         </div>
                                     )}
                                 </div>
-                            </TabsContent>
+                            </div>
+                            )}
 
-                            {/* Profile Tab */}
-                            <TabsContent value="profile" className="w-full min-w-0 space-y-8 outline-none">
+                            {accountTab === 'profile' && (
+                            <div className="w-full min-w-0 space-y-8 outline-none">
                                 <div className="mb-4 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('profileTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('profileDesc')}</p>
                                 </div>
-                                <div className="flex flex-col gap-6 max-w-3xl">
-                                    <div className="w-full p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
-                                        <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
-                                            <User className="w-14 h-14" />
-                                        </div>
-                                        <h3 className="text-xl font-black text-white mb-2 text-center break-keep">
-                                            {t('nameSuffix', { name: user?.name ?? '' })}
-                                        </h3>
-                                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-8 break-all text-center">
-                                            <Mail className="w-3 h-3 shrink-0" /> {user?.email}
-                                        </div>
 
-                                        <div className="w-full space-y-4 pt-8 border-t border-white/10">
-                                            <div className="flex justify-between items-center gap-3">
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{t('totalOrders')}</span>
-                                                <span className="text-lg font-black text-white">{t('countUnit', { count: orders.length })}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center gap-3">
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{t('savedQuotesCount')}</span>
-                                                <span className="text-lg font-black text-white">{t('countUnit', { count: quotes.length })}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center gap-3">
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] shrink-0">{t('joinedAt')}</span>
-                                                <span className="text-sm font-black text-white/60 text-right">
+                                <div className="w-full max-w-2xl rounded-[2rem] border border-white/15 bg-slate-900 p-6 sm:p-8 shadow-xl">
+                                    <div className="flex flex-col sm:flex-row sm:items-start gap-6 pb-8 border-b border-white/10">
+                                        <div className="w-24 h-24 mx-auto sm:mx-0 bg-white/10 rounded-full flex items-center justify-center text-teal-400 border-4 border-white/5 shrink-0">
+                                            <User className="w-12 h-12" />
+                                        </div>
+                                        <div className="flex-1 min-w-0 text-center sm:text-left">
+                                            <h3 className="text-xl font-black text-white mb-1 break-keep">
+                                                {t('nameSuffix', { name: user?.name ?? '' })}
+                                            </h3>
+                                            <p className="text-xs font-bold text-white/45 break-all mb-4">{user?.email}</p>
+                                            <div className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-[11px] font-bold text-white/50">
+                                                <span>{t('totalOrders')} {t('countUnit', { count: orders.length })}</span>
+                                                <span>{t('savedQuotesCount')} {t('countUnit', { count: quotes.length })}</span>
+                                                <span>
+                                                    {t('joinedAt')}{' '}
                                                     {user?.createdAt
                                                         ? new Date(user.createdAt).toLocaleDateString(dateLocale)
                                                         : '-'}
                                                 </span>
                                             </div>
                                         </div>
+                                        {!isEditingProfile && (
+                                            <Button
+                                                type="button"
+                                                className="h-12 px-6 rounded-xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black text-sm gap-2 shrink-0 w-full sm:w-auto"
+                                                onClick={() => {
+                                                    if (user) {
+                                                        setProfileForm({ name: user.name, phone: user.phone || '' });
+                                                    }
+                                                    setIsEditingProfile(true);
+                                                }}
+                                            >
+                                                <Edit2 className="w-4 h-4" /> {t('editProfile')}
+                                            </Button>
+                                        )}
                                     </div>
 
-                                    <div className="w-full p-6 sm:p-8 md:p-10 rounded-[2rem] bg-slate-900 border border-white/20 shadow-xl">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                                            <div>
-                                                <h3 className="text-xl sm:text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">
-                                                    {t('memberInfo')}
-                                                </h3>
-                                                <p className="text-xs font-bold text-white/45 mt-3">{t('memberInfoDesc')}</p>
-                                            </div>
-                                            {!isEditingProfile && (
-                                                <Button
-                                                    variant="outline"
-                                                    className="h-12 px-6 rounded-xl border-white/15 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest gap-2 transition-all shrink-0"
-                                                    onClick={() => {
-                                                        if (user) {
-                                                            setProfileForm({ name: user.name, phone: user.phone || '' });
-                                                        }
-                                                        setIsEditingProfile(true);
-                                                    }}
-                                                >
-                                                    <Edit2 className="w-4 h-4" /> {t('editProfile')}
-                                                </Button>
+                                    <form onSubmit={handleUpdateProfile} className="space-y-6 pt-8">
+                                        <div className="grid gap-3">
+                                            <Label htmlFor="profile-name" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                                {t('labelName')}
+                                            </Label>
+                                            {isEditingProfile ? (
+                                                <Input
+                                                    id="profile-name"
+                                                    value={profileForm.name}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                                                    className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                    required
+                                                    autoComplete="name"
+                                                    maxLength={80}
+                                                />
+                                            ) : (
+                                                <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg">
+                                                    {user?.name || '-'}
+                                                </div>
                                             )}
                                         </div>
 
-                                        <form onSubmit={handleUpdateProfile} className="space-y-8">
-                                            <div className="grid gap-8">
-                                                <div className="grid gap-3">
-                                                    <Label htmlFor="profile-name" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
-                                                        {t('labelName')}
-                                                    </Label>
-                                                    {isEditingProfile ? (
-                                                        <Input
-                                                            id="profile-name"
-                                                            value={profileForm.name}
-                                                            onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                                                            className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
-                                                            required
-                                                            autoComplete="name"
-                                                            maxLength={80}
-                                                        />
-                                                    ) : (
-                                                        <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg">
-                                                            {user?.name || '-'}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="grid gap-3">
-                                                    <Label htmlFor="profile-phone" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
-                                                        {t('labelPhone')}
-                                                    </Label>
-                                                    {isEditingProfile ? (
-                                                        <Input
-                                                            id="profile-phone"
-                                                            type="tel"
-                                                            placeholder={t('phonePlaceholder')}
-                                                            value={profileForm.phone}
-                                                            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                                                            className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
-                                                            autoComplete="tel"
-                                                            maxLength={30}
-                                                        />
-                                                    ) : (
-                                                        <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg gap-3">
-                                                            <Phone className="w-5 h-5 text-teal-400/60 shrink-0" />
-                                                            {user?.phone || t('noPhone')}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="grid gap-3">
-                                                    <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
-                                                        {t('labelEmailLocked')}
-                                                    </Label>
-                                                    <div className="h-14 flex items-center px-5 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] font-bold text-white/70 gap-3 break-all">
-                                                        <Mail className="w-5 h-5 text-white/35 shrink-0" />
-                                                        {user?.email || '-'}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {isEditingProfile && (
-                                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-8 border-t border-white/10">
-                                                    <Button
-                                                        variant="ghost"
-                                                        type="button"
-                                                        className="h-14 px-8 rounded-2xl text-white/50 font-black hover:bg-white/5"
-                                                        disabled={isUpdating}
-                                                        onClick={() => {
-                                                            setIsEditingProfile(false);
-                                                            if (user) setProfileForm({ name: user.name, phone: user.phone || '' });
-                                                        }}
-                                                    >
-                                                        {t('cancel')}
-                                                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        className="h-14 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 transition-all active:scale-95 shadow-xl shadow-teal-400/20 gap-3"
-                                                        disabled={isUpdating}
-                                                    >
-                                                        {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-                                                        {t('saveChanges')}
-                                                    </Button>
+                                        <div className="grid gap-3">
+                                            <Label htmlFor="profile-phone" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                                {t('labelPhone')}
+                                            </Label>
+                                            {isEditingProfile ? (
+                                                <Input
+                                                    id="profile-phone"
+                                                    type="tel"
+                                                    placeholder={t('phonePlaceholder')}
+                                                    value={profileForm.phone}
+                                                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                                    className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                    autoComplete="tel"
+                                                    maxLength={30}
+                                                />
+                                            ) : (
+                                                <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg gap-3">
+                                                    <Phone className="w-5 h-5 text-teal-400/60 shrink-0" />
+                                                    {user?.phone || t('noPhone')}
                                                 </div>
                                             )}
-                                        </form>
-                                    </div>
+                                        </div>
+
+                                        <div className="grid gap-3">
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                                {t('labelEmailLocked')}
+                                            </Label>
+                                            <div className="h-14 flex items-center px-5 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] font-bold text-white/70 gap-3 break-all">
+                                                <Mail className="w-5 h-5 text-white/35 shrink-0" />
+                                                {user?.email || '-'}
+                                            </div>
+                                        </div>
+
+                                        {isEditingProfile && (
+                                            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-white/10">
+                                                <Button
+                                                    variant="ghost"
+                                                    type="button"
+                                                    className="h-12 px-8 rounded-2xl text-white/50 font-black hover:bg-white/5"
+                                                    disabled={isUpdating}
+                                                    onClick={() => {
+                                                        setIsEditingProfile(false);
+                                                        if (user) setProfileForm({ name: user.name, phone: user.phone || '' });
+                                                    }}
+                                                >
+                                                    {t('cancel')}
+                                                </Button>
+                                                <Button
+                                                    type="submit"
+                                                    className="h-12 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 gap-2"
+                                                    disabled={isUpdating}
+                                                >
+                                                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                                                    {t('saveChanges')}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </form>
                                 </div>
-                            </TabsContent>
+                            </div>
+                            )}
                         </Tabs>
                     </div>
                 )}
