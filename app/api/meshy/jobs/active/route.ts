@@ -66,7 +66,10 @@ export async function GET(request: NextRequest) {
                     resultFileName: displayName,
                     sourceFileName: job.source_file_name,
                     modelReady: job.status === 'succeeded' && !!job.result_file_key,
-                    error: sanitizeImageTo3DUserMessage(job.error_message),
+                    error:
+                        job.error_message && String(job.error_message).trim()
+                            ? sanitizeImageTo3DUserMessage(job.error_message)
+                            : null,
                 },
             },
         })

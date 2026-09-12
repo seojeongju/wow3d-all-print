@@ -1250,7 +1250,9 @@ export default function MyAccountPage() {
                                                                     {t('aiJobsLinkedQuote')} #{job.quoteId}
                                                                 </p>
                                                             ) : null}
-                                                            {job.error ? (
+                                                            {job.error &&
+                                                            (job.status === 'failed' ||
+                                                                job.status === 'canceled') ? (
                                                                 <p className="text-[11px] font-bold text-rose-300/80 mt-2 line-clamp-2">
                                                                     {job.error}
                                                                 </p>

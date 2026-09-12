@@ -81,19 +81,27 @@ export async function GET(request: NextRequest) {
             list = (rows.results ?? []).map((j: Omit<JobListRow, 'quote_id'>) => ({ ...j, quote_id: null }))
         }
 
-        const items = list.map((j: JobListRow) => ({
-            jobId: j.id,
-            status: j.status,
-            progress: j.progress || 0,
-            thumbnailUrl: j.thumbnail_url,
-            resultFileName: resolveUserAiPhotoFileName(j.id, j.result_file_name),
-            sourceFileName: j.source_file_name,
-            modelReady: j.status === 'succeeded' && !!j.result_file_key,
-            quoteId: j.quote_id != null && Number(j.quote_id) > 0 ? Number(j.quote_id) : null,
-            error: sanitizeImageTo3DUserMessage(j.error_message),
-            createdAt: j.created_at,
-            updatedAt: j.updated_at,
-        }))
+        const items = list.map((j: JobListRow) => {
+            const hasErrorText = !!(j.error_message && String(j.error_message).trim())
+            const isFailed = j.status === 'failed' || j.status === 'canceled'
+            return {
+                jobId: j.id,
+                status: j.status,
+                progress: j.progress || 0,
+                thumbnailUrl: j.thumbnail_url,
+                resultFileName: resolveUserAiPhotoFileName(j.id, j.result_file_name),
+                sourceFileName: j.source_file_name,
+                modelReady: j.status === 'succeeded' && !!j.result_file_key,
+                quoteId: j.quote_id != null && Number(j.quote_id) > 0 ? Number(j.quote_id) : null,
+                // sanitize는 null에도 기본 실패 문구를 반환하므로, 실제 실패/에러 텍스트가 있을 때만 전달
+                error:
+                    isFailed || hasErrorText
+                        ? sanitizeImageTo3DUserMessage(j.error_message)
+                        : null,
+                createdAt: j.created_at,
+                updatedAt: j.updated_at,
+            }
+        })
 
         return NextResponse.json({ success: true, data: { items } })
     } catch (e) {
