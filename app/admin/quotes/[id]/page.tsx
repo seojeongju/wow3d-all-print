@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft, RotateCcw, Pencil } from 'lucide-react';
+import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft, RotateCcw, Pencil, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatKoreanDate } from '@/lib/date-utils';
@@ -21,6 +21,7 @@ import {
     resolveShippingFee,
     type ShippingSettings,
 } from '@/lib/shipping-settings';
+import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
 
 export default function QuoteEditPage() {
     const { toast } = useToast();
@@ -28,6 +29,7 @@ export default function QuoteEditPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id;
+    const orderId = typeof id === 'string' ? Number(id) : Array.isArray(id) ? Number(id[0]) : NaN;
 
     const [loading, setLoading] = useState(true);
     const [orderInfo, setOrderInfo] = useState<any>(null);
@@ -41,6 +43,7 @@ export default function QuoteEditPage() {
     const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING_SETTINGS);
     const [shippingFeeOverride, setShippingFeeOverride] = useState<number | null>(null);
     const [shippingFeeManual, setShippingFeeManual] = useState(false);
+    const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -193,6 +196,22 @@ export default function QuoteEditPage() {
         }
     };
 
+    const openSendDialog = () => {
+        if (!Number.isFinite(orderId)) {
+            toast({ title: '주문 정보를 확인할 수 없습니다.', variant: 'destructive' });
+            return;
+        }
+        if (!hasExpertQuote) {
+            toast({
+                title: '먼저 수정견적을 저장해 주세요',
+                description: '이메일 발송은 저장된 견적 내용을 기준으로 합니다.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        setSendDialogOpen(true);
+    };
+
     const handlePrint = () => {
         const printData = {
             order: {
@@ -262,6 +281,13 @@ export default function QuoteEditPage() {
                         <Printer className="w-3.5 h-3.5 mr-1.5" />
                         견적서 인쇄
                     </Button>
+                    <Button
+                        onClick={openSendDialog}
+                        className="bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 font-bold text-sm"
+                    >
+                        <Mail className="w-3.5 h-3.5 mr-1.5" />
+                        이메일 발송
+                    </Button>
                 </div>
             </div>
 
@@ -322,13 +348,22 @@ export default function QuoteEditPage() {
                         <span className={`text-xs font-bold uppercase tracking-wider ${hasExpertQuote ? 'text-emerald-400' : 'text-white/20'}`}>전문가 수정견적</span>
                         <div className={`h-px flex-1 ${hasExpertQuote ? 'bg-emerald-500/20' : 'bg-white/5'}`}></div>
                         {hasExpertQuote && (
-                            <Button
-                                variant="ghost" size="sm"
-                                className="text-emerald-400 hover:text-emerald-300 text-xs h-6 px-2"
-                                onClick={handlePrint}
-                            >
-                                <Printer className="w-3 h-3 mr-1" /> 출력
-                            </Button>
+                            <>
+                                <Button
+                                    variant="ghost" size="sm"
+                                    className="text-emerald-400 hover:text-emerald-300 text-xs h-6 px-2"
+                                    onClick={handlePrint}
+                                >
+                                    <Printer className="w-3 h-3 mr-1" /> 출력
+                                </Button>
+                                <Button
+                                    variant="ghost" size="sm"
+                                    className="text-indigo-300 hover:text-indigo-200 text-xs h-6 px-2"
+                                    onClick={openSendDialog}
+                                >
+                                    <Mail className="w-3 h-3 mr-1" /> 이메일
+                                </Button>
+                            </>
                         )}
                     </div>
                     {hasExpertQuote ? (
@@ -554,11 +589,21 @@ export default function QuoteEditPage() {
                         <div className="text-primary text-lg">💡</div>
                         <div className="text-sm">
                             <p className="text-white font-medium">수정 후 반드시 <span className="text-emerald-400 font-bold">수정견적 저장</span> 버튼을 클릭하세요.</p>
-                            <p className="text-white/50 text-xs mt-0.5">저장된 전문가 견적과 자동 견적 원본이 모두 유지됩니다.</p>
+                            <p className="text-white/50 text-xs mt-0.5">저장 후 <span className="text-indigo-300 font-semibold">이메일 발송</span>으로 고객에게 견적서를 보낼 수 있습니다.</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
+
+            <SendQuotationDialog
+                orderId={Number.isFinite(orderId) ? orderId : null}
+                open={sendDialogOpen}
+                onOpenChange={setSendDialogOpen}
+                token={token}
+                onSent={(r) => {
+                    toast({ title: r?.message || '견적서 이메일이 발송되었습니다.' });
+                }}
+            />
         </div>
     );
 }
