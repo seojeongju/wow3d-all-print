@@ -677,7 +677,7 @@ export default function MyAccountPage() {
                             ))}
                         </div>
 
-                        {/* Main Content Tabs */}
+                        {/* 탭 네비게이션 (패널은 Tabs 밖에 렌더 — Radix가 비 TabsContent를 가리는 문제 방지) */}
                         <Tabs
                             value={accountTab}
                             onValueChange={(v) => {
@@ -687,7 +687,7 @@ export default function MyAccountPage() {
                                     setStatusFilter('all');
                                 }
                             }}
-                            className="w-full min-w-0 max-w-full space-y-10"
+                            className="w-full min-w-0"
                         >
                             <TabsList className="w-full min-w-0 max-w-full h-auto flex flex-wrap justify-start gap-1 bg-white/5 border border-white/10 p-1.5 rounded-[2rem] backdrop-blur-xl">
                                 {[
@@ -705,7 +705,9 @@ export default function MyAccountPage() {
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
+                        </Tabs>
 
+                        <div className="w-full min-w-0 space-y-10">
                             {/* 견적 발송 알림 배너 */}
                             {quoteSentOrders.length > 0 && (
                                 <div className="rounded-[2rem] bg-emerald-500/10 border border-emerald-500/30 p-6 flex items-center gap-5">
@@ -1243,7 +1245,7 @@ export default function MyAccountPage() {
                                 </div>
                             </div>
                             )}
-                        </Tabs>
+                        </div>
                     </div>
                 )}
             </div>
