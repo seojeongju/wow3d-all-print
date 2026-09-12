@@ -642,7 +642,7 @@ export default function MyAccountPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 -mt-8 min-w-0">
+            <div className="relative z-10 container mx-auto px-4 -mt-8 min-w-0 pb-8">
                 {isLoading ? (
                     <div className="flex justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -677,7 +677,7 @@ export default function MyAccountPage() {
                             ))}
                         </div>
 
-                        {/* 탭 네비게이션 — Radix Tabs 미사용(콘텐츠 미표시 버그 방지) */}
+                        {/* 탭 네비게이션 */}
                         <div
                             className="w-full min-w-0 flex flex-wrap gap-1 bg-white/5 border border-white/10 p-1.5 rounded-[2rem] backdrop-blur-xl"
                             role="tablist"
@@ -702,6 +702,11 @@ export default function MyAccountPage() {
                                                 setOrderSearch('');
                                                 setStatusFilter('all');
                                             }
+                                            if (tab.val === 'profile') {
+                                                requestAnimationFrame(() => {
+                                                    document.getElementById('account-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                });
+                                            }
                                         }}
                                         className={cn(
                                             'rounded-[1.5rem] px-4 sm:px-6 md:px-8 py-3 sm:py-3.5 text-[11px] sm:text-[13px] font-black tracking-wide sm:tracking-widest uppercase transition-all',
@@ -709,6 +714,7 @@ export default function MyAccountPage() {
                                                 ? 'bg-teal-400 text-slate-950 shadow-[0_10px_30px_rgba(45,212,191,0.3)]'
                                                 : 'text-white/55 hover:text-white hover:bg-white/5'
                                         )}
+                                        style={active ? { backgroundColor: '#2dd4bf', color: '#020617' } : undefined}
                                     >
                                         {tab.label}
                                     </button>
@@ -716,7 +722,7 @@ export default function MyAccountPage() {
                             })}
                         </div>
 
-                        <div className="w-full min-w-0 space-y-10" key={accountTab}>
+                        <div className="w-full min-w-0 space-y-10 relative z-10">
                             {/* 견적 발송 알림 배너 */}
                             {quoteSentOrders.length > 0 && (
                                 <div className="rounded-[2rem] bg-emerald-500/10 border border-emerald-500/30 p-6 flex items-center gap-5">
@@ -751,8 +757,12 @@ export default function MyAccountPage() {
                                 </div>
                             )}
 
-                            {accountTab === 'active-orders' && (
-                            <div className="w-full min-w-0 space-y-6">
+                            <div
+                                id="account-active-orders"
+                                className="w-full min-w-0 space-y-6 relative z-20"
+                                style={{ display: accountTab === 'active-orders' ? 'block' : 'none' }}
+                                aria-hidden={accountTab !== 'active-orders'}
+                            >
                                 <div className="mb-8 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('activeTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('activeDesc')}</p>
@@ -890,10 +900,13 @@ export default function MyAccountPage() {
                                     ))
                                 )}
                             </div>
-                            )}
 
-                            {accountTab === 'history' && (
-                            <div className="w-full min-w-0 space-y-6 outline-none">
+                            <div
+                                id="account-history"
+                                className="w-full min-w-0 space-y-6 outline-none relative z-20"
+                                style={{ display: accountTab === 'history' ? 'block' : 'none' }}
+                                aria-hidden={accountTab !== 'history'}
+                            >
                                 <div className="px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('historyTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">
@@ -1043,10 +1056,13 @@ export default function MyAccountPage() {
                                     </div>
                                 )}
                             </div>
-                            )}
 
-                            {accountTab === 'quotes' && (
-                            <div className="w-full min-w-0">
+                            <div
+                                id="account-quotes"
+                                className="w-full min-w-0 relative z-20"
+                                style={{ display: accountTab === 'quotes' ? 'block' : 'none' }}
+                                aria-hidden={accountTab !== 'quotes'}
+                            >
                                 <div className="mb-8 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('quotesTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('quotesDesc')}</p>
@@ -1125,26 +1141,28 @@ export default function MyAccountPage() {
                                     )}
                                 </div>
                             </div>
-                            )}
 
-                            {accountTab === 'profile' && (
-                            <div className="w-full min-w-0 space-y-8 outline-none">
-                                <div className="mb-4 px-2">
+                            <section
+                                id="account-profile"
+                                className="w-full min-w-0 space-y-6 outline-none relative z-20"
+                                style={{ display: accountTab === 'profile' ? 'block' : 'none' }}
+                                aria-hidden={accountTab !== 'profile'}
+                            >
+                                <div className="mb-2 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('profileTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('profileDesc')}</p>
                                 </div>
-
-                                <div className="w-full max-w-2xl rounded-[2rem] border border-white/15 bg-slate-900 p-6 sm:p-8 shadow-xl">
+                                <div className="w-full max-w-2xl rounded-[2rem] border-2 border-teal-400/50 bg-[#0b1224] p-6 sm:p-8 shadow-xl">
                                     <div className="flex flex-col sm:flex-row sm:items-start gap-6 pb-8 border-b border-white/10">
-                                        <div className="w-24 h-24 mx-auto sm:mx-0 bg-white/10 rounded-full flex items-center justify-center text-teal-400 border-4 border-white/5 shrink-0">
+                                        <div className="w-24 h-24 mx-auto sm:mx-0 bg-teal-400/15 rounded-full flex items-center justify-center text-teal-400 border-4 border-teal-400/20 shrink-0">
                                             <User className="w-12 h-12" />
                                         </div>
                                         <div className="flex-1 min-w-0 text-center sm:text-left">
                                             <h3 className="text-xl font-black text-white mb-1 break-keep">
-                                                {t('nameSuffix', { name: user?.name ?? '' })}
+                                                {t('nameSuffix', { name: user?.name ?? '-' })}
                                             </h3>
-                                            <p className="text-xs font-bold text-white/45 break-all mb-4">{user?.email}</p>
-                                            <div className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-[11px] font-bold text-white/50">
+                                            <p className="text-xs font-bold text-white/60 break-all mb-4">{user?.email || '-'}</p>
+                                            <div className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-[11px] font-bold text-white/55">
                                                 <span>{t('totalOrders')} {t('countUnit', { count: orders.length })}</span>
                                                 <span>{t('savedQuotesCount')} {t('countUnit', { count: quotes.length })}</span>
                                                 <span>
@@ -1156,9 +1174,9 @@ export default function MyAccountPage() {
                                             </div>
                                         </div>
                                         {!isEditingProfile && (
-                                            <Button
+                                            <button
                                                 type="button"
-                                                className="h-12 px-6 rounded-xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black text-sm gap-2 shrink-0 w-full sm:w-auto"
+                                                className="h-12 px-6 rounded-xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black text-sm inline-flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto"
                                                 onClick={() => {
                                                     if (user) {
                                                         setProfileForm({ name: user.name, phone: user.phone || '' });
@@ -1167,36 +1185,34 @@ export default function MyAccountPage() {
                                                 }}
                                             >
                                                 <Edit2 className="w-4 h-4" /> {t('editProfile')}
-                                            </Button>
+                                            </button>
                                         )}
                                     </div>
-
                                     <form onSubmit={handleUpdateProfile} className="space-y-6 pt-8">
                                         <div className="grid gap-3">
-                                            <Label htmlFor="profile-name" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                            <label htmlFor="profile-name" className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">
                                                 {t('labelName')}
-                                            </Label>
+                                            </label>
                                             {isEditingProfile ? (
                                                 <Input
                                                     id="profile-name"
                                                     value={profileForm.name}
                                                     onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                                                    className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                    className="h-14 bg-white/5 border-white/15 rounded-2xl text-white font-bold"
                                                     required
                                                     autoComplete="name"
                                                     maxLength={80}
                                                 />
                                             ) : (
-                                                <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg">
+                                                <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.06] border border-white/15 font-black text-white text-lg">
                                                     {user?.name || '-'}
                                                 </div>
                                             )}
                                         </div>
-
                                         <div className="grid gap-3">
-                                            <Label htmlFor="profile-phone" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                            <label htmlFor="profile-phone" className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">
                                                 {t('labelPhone')}
-                                            </Label>
+                                            </label>
                                             {isEditingProfile ? (
                                                 <Input
                                                     id="profile-phone"
@@ -1204,32 +1220,29 @@ export default function MyAccountPage() {
                                                     placeholder={t('phonePlaceholder')}
                                                     value={profileForm.phone}
                                                     onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                                                    className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                    className="h-14 bg-white/5 border-white/15 rounded-2xl text-white font-bold"
                                                     autoComplete="tel"
                                                     maxLength={30}
                                                 />
                                             ) : (
-                                                <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg gap-3">
-                                                    <Phone className="w-5 h-5 text-teal-400/60 shrink-0" />
+                                                <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.06] border border-white/15 font-black text-white text-lg gap-3">
+                                                    <Phone className="w-5 h-5 text-teal-400 shrink-0" />
                                                     {user?.phone || t('noPhone')}
                                                 </div>
                                             )}
                                         </div>
-
                                         <div className="grid gap-3">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                            <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">
                                                 {t('labelEmailLocked')}
-                                            </Label>
-                                            <div className="h-14 flex items-center px-5 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] font-bold text-white/70 gap-3 break-all">
-                                                <Mail className="w-5 h-5 text-white/35 shrink-0" />
+                                            </span>
+                                            <div className="h-14 flex items-center px-5 rounded-2xl border border-dashed border-white/25 bg-white/[0.03] font-bold text-white/80 gap-3 break-all">
+                                                <Mail className="w-5 h-5 text-white/40 shrink-0" />
                                                 {user?.email || '-'}
                                             </div>
                                         </div>
-
                                         {isEditingProfile && (
                                             <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-white/10">
-                                                <Button
-                                                    variant="ghost"
+                                                <button
                                                     type="button"
                                                     className="h-12 px-8 rounded-2xl text-white/50 font-black hover:bg-white/5"
                                                     disabled={isUpdating}
@@ -1239,21 +1252,20 @@ export default function MyAccountPage() {
                                                     }}
                                                 >
                                                     {t('cancel')}
-                                                </Button>
-                                                <Button
+                                                </button>
+                                                <button
                                                     type="submit"
-                                                    className="h-12 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 gap-2"
+                                                    className="h-12 px-10 rounded-2xl bg-teal-400 text-slate-950 font-black hover:bg-teal-300 inline-flex items-center justify-center gap-2"
                                                     disabled={isUpdating}
                                                 >
                                                     {isUpdating ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
                                                     {t('saveChanges')}
-                                                </Button>
+                                                </button>
                                             </div>
                                         )}
                                     </form>
                                 </div>
-                            </div>
-                            )}
+                            </section>
                         </div>
                     </div>
                 )}
