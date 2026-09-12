@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
             (orders.results || []).map(async (order: any) => {
                 const items = await env.DB!
                     .prepare(`
-            SELECT oi.*, q.*
+            SELECT oi.*, q.file_name, q.file_size, q.file_url, q.print_method, q.total_price
             FROM order_items oi
-            JOIN quotes q ON oi.quote_id = q.id
+            LEFT JOIN quotes q ON oi.quote_id = q.id
             WHERE oi.order_id = ?
           `)
                     .bind(order.id)
@@ -89,14 +89,16 @@ export async function GET(request: NextRequest) {
                         unitPrice: item.unit_price,
                         subtotal: item.subtotal,
                         createdAt: item.created_at,
-                        quote: {
-                            id: item.quote_id,
-                            fileName: item.file_name,
-                            fileSize: item.file_size,
-                            fileUrl: item.file_url,
-                            printMethod: item.print_method,
-                            totalPrice: item.total_price,
-                        }
+                        quote: item.quote_id
+                            ? {
+                                  id: item.quote_id,
+                                  fileName: item.file_name || `견적 #${item.quote_id}`,
+                                  fileSize: item.file_size || 0,
+                                  fileUrl: item.file_url || undefined,
+                                  printMethod: item.print_method || 'fdm',
+                                  totalPrice: item.total_price || 0,
+                              }
+                            : undefined,
                     })),
                 };
             })

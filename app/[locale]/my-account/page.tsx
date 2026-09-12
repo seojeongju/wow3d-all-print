@@ -104,6 +104,61 @@ function openOrderEstimate(orderId: number) {
     window.open(`/print/estimate/${orderId}`, '_blank', 'noopener,noreferrer');
 }
 
+/** API 주문 응답을 UI Order 형태로 정규화 */
+function normalizeOrderFromApi(raw: any): Order {
+    const items = Array.isArray(raw?.items)
+        ? raw.items.map((item: any) => ({
+              id: Number(item.id),
+              orderId: Number(item.orderId ?? item.order_id ?? raw.id),
+              quoteId: Number(item.quoteId ?? item.quote_id ?? 0),
+              quantity: Number(item.quantity) || 1,
+              unitPrice: Number(item.unitPrice ?? item.unit_price ?? 0),
+              subtotal: Number(item.subtotal ?? 0),
+              createdAt: String(item.createdAt ?? item.created_at ?? ''),
+              quote: item.quote
+                  ? {
+                        id: Number(item.quote.id ?? item.quoteId ?? item.quote_id ?? 0),
+                        fileName: item.quote.fileName ?? item.quote.file_name ?? '',
+                        fileSize: Number(item.quote.fileSize ?? item.quote.file_size ?? 0),
+                        fileUrl: item.quote.fileUrl ?? item.quote.file_url ?? undefined,
+                        printMethod: item.quote.printMethod ?? item.quote.print_method ?? 'fdm',
+                        totalPrice: Number(item.quote.totalPrice ?? item.quote.total_price ?? 0),
+                    }
+                  : undefined,
+          }))
+        : [];
+
+    return {
+        id: Number(raw.id),
+        userId: raw.userId ?? raw.user_id ?? undefined,
+        orderNumber: String(raw.orderNumber ?? raw.order_number ?? ''),
+        recipientName: String(raw.recipientName ?? raw.recipient_name ?? ''),
+        recipientPhone: String(raw.recipientPhone ?? raw.recipient_phone ?? ''),
+        shippingAddress: String(raw.shippingAddress ?? raw.shipping_address ?? ''),
+        shippingPostalCode: String(raw.shippingPostalCode ?? raw.shipping_postal_code ?? ''),
+        totalAmount: Number(raw.totalAmount ?? raw.total_amount ?? 0),
+        status: String(raw.status ?? 'pending') as Order['status'],
+        paymentMethod: raw.paymentMethod ?? raw.payment_method ?? undefined,
+        paymentStatus: (raw.paymentStatus ?? raw.payment_status ?? 'pending') as Order['paymentStatus'],
+        customerNote: raw.customerNote ?? raw.customer_note ?? undefined,
+        adminNote: raw.adminNote ?? raw.admin_note ?? undefined,
+        createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
+        updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
+        hasExpertQuote: !!(raw.hasExpertQuote ?? raw.has_expert_quote),
+        expertQuoteData: raw.expertQuoteData ?? raw.expert_quote_data ?? null,
+        quotationSentAt: raw.quotationSentAt ?? raw.quotation_sent_at ?? null,
+        canViewEstimate: !!(
+            raw.canViewEstimate ??
+            raw.can_view_estimate ??
+            raw.quotationSentAt ??
+            raw.quotation_sent_at ??
+            raw.hasExpertQuote ??
+            raw.has_expert_quote
+        ),
+        items: items as Order['items'],
+    } as Order;
+}
+
 /** 상태별 스타일 */
 function getStatusStyle(status: string): { bg: string; text: string; border: string; dot: string } {
     switch (status) {
@@ -221,9 +276,6 @@ export default function MyAccountPage() {
             return;
         }
         loadData();
-        if (user) {
-            setProfileForm({ name: user.name, phone: user.phone || '' });
-        }
 
         // 30초마다 주문 상태 자동 갱신 (관리자 변경사항 실시간 반영)
         const interval = setInterval(async () => {
@@ -233,7 +285,8 @@ export default function MyAccountPage() {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    setOrders(data.data || []);
+                    const rows = Array.isArray(data.data) ? data.data : [];
+                    setOrders(rows.map(normalizeOrderFromApi));
                 }
             } catch { /* 네트워크 오류 시 조용히 실패 */ }
         }, 30000);
@@ -251,6 +304,43 @@ export default function MyAccountPage() {
                 quoteHeaders['X-Session-ID'] = sessionId;
             }
 
+            // 프로필(가입일·전화 등) 최신화
+            if (token) {
+                try {
+                    const meRes = await fetch('/api/auth/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        cache: 'no-store',
+                    });
+                    if (meRes.ok) {
+                        const meJson = await meRes.json();
+                        if (meJson.success && meJson.data) {
+                            const next = meJson.data;
+                            updateUser({
+                                id: Number(next.id ?? user?.id),
+                                email: String(next.email ?? user?.email ?? ''),
+                                name: String(next.name ?? user?.name ?? ''),
+                                phone:
+                                    next.phone != null && String(next.phone).trim() !== ''
+                                        ? String(next.phone)
+                                        : undefined,
+                                role: next.role ?? user?.role,
+                                store_id: next.store_id ?? user?.store_id,
+                                createdAt: String(next.createdAt ?? next.created_at ?? user?.createdAt ?? ''),
+                                updatedAt: String(next.updatedAt ?? next.updated_at ?? user?.updatedAt ?? ''),
+                            });
+                            setProfileForm({
+                                name: String(next.name ?? user?.name ?? ''),
+                                phone: next.phone != null ? String(next.phone) : '',
+                            });
+                        }
+                    }
+                } catch {
+                    if (user) {
+                        setProfileForm({ name: user.name, phone: user.phone || '' });
+                    }
+                }
+            }
+
             // Load saved quotes
             const quotesRes = await fetch('/api/quotes', { headers: quoteHeaders });
             if (quotesRes.ok) {
@@ -265,7 +355,8 @@ export default function MyAccountPage() {
             });
             if (ordersRes.ok) {
                 const ordersData = await ordersRes.json();
-                setOrders(ordersData.data || []);
+                const rows = Array.isArray(ordersData.data) ? ordersData.data : [];
+                setOrders(rows.map(normalizeOrderFromApi));
             }
         } catch (error) {
             console.error('Failed to load data:', error);
@@ -441,8 +532,12 @@ export default function MyAccountPage() {
     };
 
     const filteredOrders = orders.filter((order) => {
+        const q = orderSearch.trim().toLowerCase();
         const number = String(order.orderNumber || '').toLowerCase();
-        const matchesSearch = !orderSearch.trim() || number.includes(orderSearch.trim().toLowerCase());
+        const itemNames = (order.items || [])
+            .map((item) => String(item.quote?.fileName || '').toLowerCase())
+            .join(' ');
+        const matchesSearch = !q || number.includes(q) || itemNames.includes(q);
         const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -527,13 +622,13 @@ export default function MyAccountPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 -mt-8">
+            <div className="container mx-auto px-4 -mt-8 min-w-0">
                 {isLoading ? (
                     <div className="flex justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="grid gap-12">
+                    <div className="grid gap-12 min-w-0">
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {[
@@ -572,9 +667,9 @@ export default function MyAccountPage() {
                                     setStatusFilter('all');
                                 }
                             }}
-                            className="space-y-10"
+                            className="w-full min-w-0 max-w-full space-y-10"
                         >
-                            <TabsList className="bg-white/5 border border-white/10 p-1.5 rounded-[2rem] h-auto flex flex-wrap justify-start gap-1 backdrop-blur-xl">
+                            <TabsList className="w-full min-w-0 max-w-full h-auto flex flex-wrap justify-start gap-1 bg-white/5 border border-white/10 p-1.5 rounded-[2rem] backdrop-blur-xl">
                                 {[
                                     { val: 'active-orders', label: t('tabActive') },
                                     { val: 'history', label: t('tabHistory') },
@@ -584,7 +679,7 @@ export default function MyAccountPage() {
                                     <TabsTrigger
                                         key={tab.val}
                                         value={tab.val}
-                                        className="rounded-[1.5rem] px-8 py-3.5 text-[13px] font-black tracking-widest uppercase transition-all data-[state=active]:bg-teal-400 data-[state=active]:text-slate-950 data-[state=active]:shadow-[0_10px_30px_rgba(45,212,191,0.3)] active:scale-95"
+                                        className="rounded-[1.5rem] px-4 sm:px-6 md:px-8 py-3 sm:py-3.5 text-[11px] sm:text-[13px] font-black tracking-wide sm:tracking-widest uppercase transition-all whitespace-normal data-[state=active]:bg-teal-400 data-[state=active]:text-slate-950 data-[state=active]:shadow-[0_10px_30px_rgba(45,212,191,0.3)] active:scale-95"
                                     >
                                         {tab.label}
                                     </TabsTrigger>
@@ -626,7 +721,7 @@ export default function MyAccountPage() {
                             )}
 
                             {/* Active Orders Tab */}
-                            <TabsContent value="active-orders" className="space-y-6">
+                            <TabsContent value="active-orders" className="w-full min-w-0 space-y-6">
                                 <div className="mb-8 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('activeTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('activeDesc')}</p>
@@ -773,7 +868,7 @@ export default function MyAccountPage() {
                             </TabsContent>
 
                             {/* History Tab */}
-                            <TabsContent value="history" className="space-y-6 outline-none">
+                            <TabsContent value="history" className="w-full min-w-0 space-y-6 outline-none">
                                 <div className="px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('historyTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">
@@ -929,7 +1024,7 @@ export default function MyAccountPage() {
                             </TabsContent>
 
                             {/* Saved Quotes Tab */}
-                            <TabsContent value="quotes">
+                            <TabsContent value="quotes" className="w-full min-w-0">
                                 <div className="mb-8 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('quotesTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('quotesDesc')}</p>
@@ -1010,27 +1105,29 @@ export default function MyAccountPage() {
                             </TabsContent>
 
                             {/* Profile Tab */}
-                            <TabsContent value="profile" className="space-y-8 outline-none">
+                            <TabsContent value="profile" className="w-full min-w-0 space-y-8 outline-none">
                                 <div className="mb-4 px-2">
                                     <h2 className="text-2xl font-black text-white mb-2">{t('profileTitle')}</h2>
                                     <p className="text-sm font-bold text-white/50">{t('profileDesc')}</p>
                                 </div>
-                                <div className="grid md:grid-cols-3 gap-10">
-                                    <div className="md:col-span-1 p-8 rounded-[3rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
-                                        <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
-                                            <User className="w-16 h-16" />
+                                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] gap-6 lg:gap-8">
+                                    <div className="min-w-0 p-8 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-2xl flex flex-col items-center">
+                                        <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center text-teal-400 mb-6 border-4 border-white/5 shadow-2xl">
+                                            <User className="w-14 h-14" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-white mb-2">{t('nameSuffix', { name: user?.name ?? '' })}</h3>
-                                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-10 break-all text-center">
+                                        <h3 className="text-xl font-black text-white mb-2 text-center break-keep">
+                                            {t('nameSuffix', { name: user?.name ?? '' })}
+                                        </h3>
+                                        <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest mb-8 break-all text-center">
                                             <Mail className="w-3 h-3 shrink-0" /> {user?.email}
                                         </div>
 
-                                        <div className="w-full space-y-4 pt-10 border-t border-white/10">
-                                            <div className="flex justify-between items-center">
+                                        <div className="w-full space-y-4 pt-8 border-t border-white/10">
+                                            <div className="flex justify-between items-center gap-3">
                                                 <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{t('totalOrders')}</span>
                                                 <span className="text-lg font-black text-white">{t('countUnit', { count: orders.length })}</span>
                                             </div>
-                                            <div className="flex justify-between items-center">
+                                            <div className="flex justify-between items-center gap-3">
                                                 <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{t('savedQuotesCount')}</span>
                                                 <span className="text-lg font-black text-white">{t('countUnit', { count: quotes.length })}</span>
                                             </div>
@@ -1045,16 +1142,18 @@ export default function MyAccountPage() {
                                         </div>
                                     </div>
 
-                                    <div className="md:col-span-2 p-10 rounded-[3rem] bg-white/[0.03] border border-white/5">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-12">
+                                    <div className="min-w-0 p-6 sm:p-8 md:p-10 rounded-[2rem] bg-slate-900/80 border border-white/15 shadow-xl">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                                             <div>
-                                                <h3 className="text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">{t('memberInfo')}</h3>
-                                                <p className="text-xs font-bold text-white/40 mt-4">{t('memberInfoDesc')}</p>
+                                                <h3 className="text-xl sm:text-2xl font-black text-white mb-2 underline decoration-teal-400 decoration-4 underline-offset-8">
+                                                    {t('memberInfo')}
+                                                </h3>
+                                                <p className="text-xs font-bold text-white/45 mt-3">{t('memberInfoDesc')}</p>
                                             </div>
                                             {!isEditingProfile && (
                                                 <Button
                                                     variant="outline"
-                                                    className="h-12 px-6 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest gap-2 transition-all shrink-0"
+                                                    className="h-12 px-6 rounded-xl border-white/15 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-widest gap-2 transition-all shrink-0"
                                                     onClick={() => {
                                                         if (user) {
                                                             setProfileForm({ name: user.name, phone: user.phone || '' });
@@ -1067,57 +1166,65 @@ export default function MyAccountPage() {
                                             )}
                                         </div>
 
-                                        <form onSubmit={handleUpdateProfile} className="space-y-10">
-                                            <div className="grid gap-10">
-                                                <div className="grid gap-4">
-                                                    <Label htmlFor="name" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">{t('labelName')}</Label>
+                                        <form onSubmit={handleUpdateProfile} className="space-y-8">
+                                            <div className="grid gap-8">
+                                                <div className="grid gap-3">
+                                                    <Label htmlFor="profile-name" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                                        {t('labelName')}
+                                                    </Label>
                                                     {isEditingProfile ? (
                                                         <Input
-                                                            id="name"
+                                                            id="profile-name"
                                                             value={profileForm.name}
                                                             onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                            className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
                                                             required
                                                             autoComplete="name"
+                                                            maxLength={80}
                                                         />
                                                     ) : (
-                                                        <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white text-lg">
+                                                        <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg">
                                                             {user?.name || '-'}
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                <div className="grid gap-4">
-                                                    <Label htmlFor="phone" className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">{t('labelPhone')}</Label>
+                                                <div className="grid gap-3">
+                                                    <Label htmlFor="profile-phone" className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                                        {t('labelPhone')}
+                                                    </Label>
                                                     {isEditingProfile ? (
                                                         <Input
-                                                            id="phone"
+                                                            id="profile-phone"
                                                             type="tel"
                                                             placeholder={t('phonePlaceholder')}
                                                             value={profileForm.phone}
                                                             onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                                                            className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
+                                                            className="h-14 bg-white/5 border-white/15 rounded-2xl text-white placeholder:text-white/30 focus-visible:ring-teal-400 font-bold"
                                                             autoComplete="tel"
+                                                            maxLength={30}
                                                         />
                                                     ) : (
-                                                        <div className="h-14 flex items-center px-6 bg-white/[0.02] rounded-2xl font-black text-white/60 text-lg gap-3">
-                                                            <Phone className="w-5 h-5 text-teal-400/40 shrink-0" />
+                                                        <div className="h-14 flex items-center px-5 rounded-2xl bg-white/[0.04] border border-white/10 font-black text-white text-lg gap-3">
+                                                            <Phone className="w-5 h-5 text-teal-400/60 shrink-0" />
                                                             {user?.phone || t('noPhone')}
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                <div className="grid gap-4">
-                                                    <Label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">{t('labelEmailLocked')}</Label>
-                                                    <div className="h-14 flex items-center px-6 bg-transparent border border-white/10 border-dashed rounded-2xl font-bold text-white/50 gap-3">
-                                                        <Mail className="w-5 h-5 text-white/20 shrink-0" />
+                                                <div className="grid gap-3">
+                                                    <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+                                                        {t('labelEmailLocked')}
+                                                    </Label>
+                                                    <div className="h-14 flex items-center px-5 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] font-bold text-white/70 gap-3 break-all">
+                                                        <Mail className="w-5 h-5 text-white/35 shrink-0" />
                                                         {user?.email || '-'}
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {isEditingProfile && (
-                                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-10 border-t border-white/10">
+                                                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-8 border-t border-white/10">
                                                     <Button
                                                         variant="ghost"
                                                         type="button"

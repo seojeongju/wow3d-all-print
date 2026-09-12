@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
                         phone: raw.phone != null ? String(raw.phone) : undefined,
                         role: (raw.role as string) ?? 'user',
                         store_id: (raw.store_id as number) ?? 1,
+                        createdAt: String(raw.created_at ?? ''),
+                        updatedAt: String(raw.updated_at ?? ''),
                     },
                     token,
                 },
