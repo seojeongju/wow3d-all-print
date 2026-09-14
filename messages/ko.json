@@ -4203,27 +4203,33 @@
     "options": {
       "color": {
         "label": "색상",
-        "values": "블랙, 화이트, 그레이, 커스텀 컬러(상담)"
+        "values": "블랙, 화이트, 그레이, 커스텀 컬러(상담)",
+        "choices": "블랙|화이트|그레이|커스텀"
       },
       "size": {
         "label": "사이즈",
-        "values": "S / M / L 또는 치수 지정"
+        "values": "S / M / L 또는 치수 지정",
+        "choices": "S|M|L|치수 지정"
       },
       "engraving": {
         "label": "각인·텍스트",
-        "values": "이름, 로고, 짧은 문구 각인"
+        "values": "이름, 로고, 짧은 문구 각인",
+        "choices": "각인 없음|이름 각인|로고 각인|문구 각인"
       },
       "photoUpload": {
         "label": "사진 업로드",
-        "values": "정면·측면 사진으로 AI 3D 변환 가능"
+        "values": "정면·측면 사진으로 AI 3D 변환 가능",
+        "choices": "사진 준비됨|상담 후 업로드"
       },
       "material": {
         "label": "소재",
-        "values": "PLA / PETG / 레진 등 용도에 맞게 선택"
+        "values": "PLA / PETG / 레진 등 용도에 맞게 선택",
+        "choices": "PLA|PETG|레진|상담"
       },
       "quantity": {
         "label": "수량",
-        "values": "1개부터 소량 배치까지"
+        "values": "1개부터 소량 배치까지",
+        "choices": "1개|5개|10개|20개+|상담"
       }
     },
     "products": {
@@ -4235,7 +4241,9 @@
           "fit": "기종별 핏 맞춤",
           "grip": "그립·버튼 레이아웃 조정",
           "fast": "시제품 빠른 검증"
-        }
+        },
+        "priceNote": "맞춤 견적가",
+        "detailBody": "기종에 맞는 핏과 그립감을 중심으로 설계합니다.\n원하시는 색상·각인·소재를 선택해 주시면 견적으로 이어집니다.\n시제품 확인 후 소량 제작도 가능합니다."
       },
       "name-tag": {
         "title": "각인 네임택·키링",
@@ -4245,7 +4253,9 @@
           "text": "자유 텍스트·로고 각인",
           "durable": "내구성 있는 소재 선택",
           "gift": "선물·이벤트 소량 제작"
-        }
+        },
+        "priceNote": "개당 견적가",
+        "detailBody": "이름·로고·짧은 문구를 고해상도로 각인합니다.\n선물·행사·브랜드 키트에 맞는 수량으로 제작할 수 있습니다.\n소재와 마감은 용도에 맞게 안내드립니다."
       },
       "pet-figure": {
         "title": "반려동물 피규어",
@@ -4255,7 +4265,9 @@
           "photo": "사진→3D 변환",
           "likeness": "크기·포즈 조정",
           "keepsake": "기념·선물용 마감"
-        }
+        },
+        "priceNote": "사진 변환 + 출력 견적가",
+        "detailBody": "사진을 기반으로 AI 3D 모델을 만든 뒤 출력합니다.\n크기와 포즈를 조정해 기념·선물용으로 마감할 수 있습니다.\n정면·측면 사진이 있으면 변환 품질이 좋아집니다."
       },
       "desk-stand": {
         "title": "맞춤 데스크 스탠드",
@@ -4265,7 +4277,9 @@
           "angle": "시야각·각도 맞춤",
           "stable": "안정적인 구조",
           "office": "오피스·홈오피스용"
-        }
+        },
+        "priceNote": "맞춤 견적가",
+        "detailBody": "모니터·폰·태블릿 거치 각도에 맞춰 치수를 조정합니다.\n책상 환경에 맞는 안정적인 구조로 제작합니다.\n로고 각인 옵션도 함께 요청할 수 있습니다."
       },
       "industrial-bracket": {
         "title": "맞춤 브라켓·지그",
@@ -4275,8 +4289,19 @@
           "strength": "강도·소재 제안",
           "fitment": "치수 맞춤 핏",
           "iterate": "시제품 반복 개선"
-        }
+        },
+        "priceNote": "도면 기반 견적가",
+        "detailBody": "현장 치수와 하중 조건을 반영해 브라켓·지그를 제작합니다.\n도면 또는 참고 치수를 주시면 소재와 구조를 제안합니다.\n시제품 반복 후 소량 배치로 확장할 수 있습니다."
       }
-    }
+    },
+    "priceLabel": "판매가 안내",
+    "priceHint": "최종 금액은 옵션·수량·소재에 따라 견적 후 확정됩니다.",
+    "optionSelectTitle": "옵션 선택",
+    "optionRequired": "선택",
+    "detailSectionTitle": "상품 상세 정보",
+    "detailSectionHint": "DETAIL",
+    "subImageLabel": "상품 이미지 {n}",
+    "detailImageAlt": "상세 이미지 {n}",
+    "share": "공유하기"
   }
 }

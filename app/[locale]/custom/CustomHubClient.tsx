@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import {
     ArrowRight,
     Camera,
-    CheckCircle2,
     Gift,
     MessageSquare,
     Sparkles,
@@ -17,6 +16,7 @@ import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import {
     getAllCustomProducts,
+    getProductMainImage,
     type CustomProductDef,
 } from '@/lib/custom-products'
 
@@ -105,6 +105,8 @@ function ProductCard({
 }) {
     const title = t(`products.${product.slug}.title`)
     const summary = t(`products.${product.slug}.summary`)
+    const priceNote = t(`products.${product.slug}.priceNote`)
+    const mainImage = getProductMainImage(product)
 
     return (
         <Link href={`/custom/${product.slug}`} className="block group h-full">
@@ -113,50 +115,37 @@ function ProductCard({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.06 }}
-                className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.03] overflow-hidden hover:border-teal-400/40 hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                className="h-full rounded-2xl border border-white/10 bg-[#121826]/80 overflow-hidden hover:border-teal-400/40 hover:bg-[#121826] transition-all duration-300 hover:-translate-y-1 flex flex-col"
             >
-                <div className="relative h-44 md:h-48 overflow-hidden">
+                <div className="relative aspect-square overflow-hidden bg-black/30">
                     <img
-                        src={product.image}
+                        src={mainImage}
                         alt={title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
                             ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                         }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent" />
-                    <span className="absolute top-3 left-3 rounded-full border border-teal-400/30 bg-black/50 backdrop-blur px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-teal-300">
+                    <span className="absolute top-3 left-3 rounded-md border border-teal-400/30 bg-black/55 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
                         {methodLabel(product.method, t)}
                     </span>
                 </div>
-                <div className="p-5 md:p-6 flex flex-col flex-1 gap-4">
-                    <div className="space-y-2">
-                        <h2 className="text-xl font-black text-white group-hover:text-teal-300 transition-colors break-keep">
-                            {title}
-                        </h2>
-                        <p className="text-sm font-bold text-white/50 leading-relaxed break-keep line-clamp-3">
-                            {summary}
-                        </p>
-                    </div>
-                    <ul className="space-y-1.5 mt-auto">
-                        {product.highlightKeys.slice(0, 3).map((key) => (
-                            <li
-                                key={key}
-                                className="flex items-center gap-2 text-[12px] font-black text-teal-400/75"
-                            >
-                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                                {t(`products.${product.slug}.highlights.${key}`)}
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="pt-1 flex items-center gap-2 text-sm font-black text-teal-300">
+                <div className="p-4 md:p-5 flex flex-col flex-1 gap-3">
+                    <h2 className="text-[15px] md:text-base font-black text-white group-hover:text-teal-300 transition-colors break-keep leading-snug line-clamp-2">
+                        {title}
+                    </h2>
+                    <p className="text-[12px] font-bold text-white/45 leading-relaxed break-keep line-clamp-2">
+                        {summary}
+                    </p>
+                    <p className="mt-auto text-sm font-black text-teal-300 break-keep">{priceNote}</p>
+                    <div className="flex items-center gap-1.5 text-[12px] font-black text-white/50">
                         {product.primaryCta === 'photo' ? (
-                            <Camera className="w-4 h-4" />
+                            <Camera className="w-3.5 h-3.5 text-teal-400" />
                         ) : (
-                            <Sparkles className="w-4 h-4" />
+                            <Sparkles className="w-3.5 h-3.5 text-teal-400" />
                         )}
                         {t('viewDetail')}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                 </div>
             </motion.article>

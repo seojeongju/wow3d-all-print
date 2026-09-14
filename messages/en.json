@@ -4202,27 +4202,33 @@
     "options": {
       "color": {
         "label": "Color",
-        "values": "Black, white, gray, or custom (consult)"
+        "values": "Black, white, gray, or custom (consult)",
+        "choices": "Black|White|Gray|Custom"
       },
       "size": {
         "label": "Size",
-        "values": "S / M / L or exact dimensions"
+        "values": "S / M / L or exact dimensions",
+        "choices": "S|M|L|Custom size"
       },
       "engraving": {
         "label": "Engraving",
-        "values": "Name, logo, or short text"
+        "values": "Name, logo, or short text",
+        "choices": "None|Name|Logo|Short text"
       },
       "photoUpload": {
         "label": "Photo upload",
-        "values": "Front/side photos for AI 3D conversion"
+        "values": "Front/side photos for AI 3D conversion",
+        "choices": "Photos ready|Upload after consult"
       },
       "material": {
         "label": "Material",
-        "values": "PLA / PETG / resin by use case"
+        "values": "PLA / PETG / resin by use case",
+        "choices": "PLA|PETG|Resin|Consult"
       },
       "quantity": {
         "label": "Quantity",
-        "values": "From 1 piece to small batches"
+        "values": "From 1 piece to small batches",
+        "choices": "1|5|10|20+|Consult"
       }
     },
     "products": {
@@ -4234,7 +4240,9 @@
           "fit": "Device-specific fit",
           "grip": "Grip and button layout tweaks",
           "fast": "Fast prototype validation"
-        }
+        },
+        "priceNote": "Custom quote",
+        "detailBody": "Designed around device fit and grip.\nChoose color, engraving, and material to continue to a quote.\nSmall-batch production is available after prototype review."
       },
       "name-tag": {
         "title": "Engraved name tag & keyring",
@@ -4244,7 +4252,9 @@
           "text": "Free text & logo engraving",
           "durable": "Durable material choices",
           "gift": "Gifts & small-event runs"
-        }
+        },
+        "priceNote": "Per-unit quote",
+        "detailBody": "High-detail engraving for names, logos, and short text.\nIdeal quantities for gifts, events, and brand kits.\nWe recommend materials and finishes for your use case."
       },
       "pet-figure": {
         "title": "Pet figure",
@@ -4254,7 +4264,9 @@
           "photo": "Photo-to-3D conversion",
           "likeness": "Size and pose adjustments",
           "keepsake": "Keepsake-ready finishing"
-        }
+        },
+        "priceNote": "Photo-to-3D + print quote",
+        "detailBody": "Create an AI 3D model from photos, then print.\nAdjust size and pose for keepsakes and gifts.\nFront and side photos improve conversion quality."
       },
       "desk-stand": {
         "title": "Custom desk stand",
@@ -4264,7 +4276,9 @@
           "angle": "Viewing-angle fit",
           "stable": "Stable structure",
           "office": "Office & home office ready"
-        }
+        },
+        "priceNote": "Custom quote",
+        "detailBody": "Sized for your preferred monitor, phone, or tablet angle.\nBuilt for a stable desk setup.\nLogo engraving is available on request."
       },
       "industrial-bracket": {
         "title": "Custom bracket & jig",
@@ -4274,8 +4288,19 @@
           "strength": "Strength & material advice",
           "fitment": "Dimension-accurate fit",
           "iterate": "Prototype iteration"
-        }
+        },
+        "priceNote": "Drawing-based quote",
+        "detailBody": "Brackets and jigs fitted to on-site dimensions and load needs.\nShare drawings or reference sizes for material and structure advice.\nIterate from prototype to small-batch production."
       }
-    }
+    },
+    "priceLabel": "Price",
+    "priceHint": "Final price is confirmed after quote based on options, qty, and material.",
+    "optionSelectTitle": "Select options",
+    "optionRequired": "Select",
+    "detailSectionTitle": "Product details",
+    "detailSectionHint": "DETAIL",
+    "subImageLabel": "Product image {n}",
+    "detailImageAlt": "Detail image {n}",
+    "share": "Share"
   }
 }
