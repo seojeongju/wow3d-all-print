@@ -4,17 +4,19 @@ import { SERVICE_LANDINGS } from "@/lib/seo-service-pages";
 import { NEW_SEO_GUIDES } from "@/lib/seo-guide-pages";
 import { SHOWCASE_SLUGS } from "@/lib/showcase";
 import { CUSTOM_PRODUCT_SLUGS } from "@/lib/custom-products";
+import { getCustomProductList } from "@/lib/custom-products-public";
 
-/** 검색엔진에 노출할 공개 페이지 — www 대표 URL만 수록 */
-const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily" | "weekly" | "monthly" }[] = [
+type PublicPage = {
+  path: string;
+  priority?: number;
+  changeFrequency?: "daily" | "weekly" | "monthly";
+};
+
+/** 검색엔진에 노출할 공개 페이지 — www 대표 URL만 수록 (/custom/[slug]는 DB 동적 주입) */
+const PUBLIC_PAGES: PublicPage[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/quote", priority: 0.98, changeFrequency: "weekly" },
   { path: "/custom", priority: 0.95, changeFrequency: "weekly" },
-  ...CUSTOM_PRODUCT_SLUGS.map((slug) => ({
-    path: `/custom/${slug}`,
-    priority: 0.9,
-    changeFrequency: "weekly" as const,
-  })),
   { path: "/services", priority: 0.96, changeFrequency: "weekly" },
   ...SERVICE_LANDINGS.map((s) => ({
     path: s.path,
@@ -60,31 +62,65 @@ const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily"
   { path: "/terms", priority: 0.5, changeFrequency: "monthly" },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const entries: MetadataRoute.Sitemap = []
+async function resolveCustomProductPages(): Promise<PublicPage[]> {
+  try {
+    const products = await getCustomProductList();
+    const slugs =
+      products.length > 0
+        ? products.map((p) => p.slug)
+        : [...CUSTOM_PRODUCT_SLUGS];
+    const unique = Array.from(new Set(slugs.filter(Boolean)));
+    return unique.map((slug) => ({
+      path: `/custom/${slug}`,
+      priority: 0.9,
+      changeFrequency: "weekly" as const,
+    }));
+  } catch (e) {
+    console.warn("sitemap custom products", e);
+    return CUSTOM_PRODUCT_SLUGS.map((slug) => ({
+      path: `/custom/${slug}`,
+      priority: 0.9,
+      changeFrequency: "weekly" as const,
+    }));
+  }
+}
 
-  for (const { path, priority = 0.8, changeFrequency = "weekly" } of PUBLIC_PAGES) {
-    const koPath = path === "/" ? "" : path
-    const enPath = path === "/" ? "/en" : `/en${path}`
-    const koUrl = `${SITE_URL}${koPath}`
-    const enUrl = `${SITE_URL}${enPath}`
-    const lastModified = new Date()
+function pushLocalizedEntries(
+  entries: MetadataRoute.Sitemap,
+  page: PublicPage,
+  lastModified: Date
+) {
+  const { path, priority = 0.8, changeFrequency = "weekly" } = page;
+  const koPath = path === "/" ? "" : path;
+  const enPath = path === "/" ? "/en" : `/en${path}`;
+  const koUrl = `${SITE_URL}${koPath}`;
+  const enUrl = `${SITE_URL}${enPath}`;
 
-    entries.push({
-      url: koUrl,
-      lastModified,
-      changeFrequency,
-      priority,
-      alternates: { languages: { ko: koUrl, en: enUrl } },
-    })
-    entries.push({
-      url: enUrl,
-      lastModified,
-      changeFrequency,
-      priority: Math.max(0.4, (priority ?? 0.8) - 0.05),
-      alternates: { languages: { ko: koUrl, en: enUrl } },
-    })
+  entries.push({
+    url: koUrl,
+    lastModified,
+    changeFrequency,
+    priority,
+    alternates: { languages: { ko: koUrl, en: enUrl } },
+  });
+  entries.push({
+    url: enUrl,
+    lastModified,
+    changeFrequency,
+    priority: Math.max(0.4, (priority ?? 0.8) - 0.05),
+    alternates: { languages: { ko: koUrl, en: enUrl } },
+  });
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const entries: MetadataRoute.Sitemap = [];
+  const lastModified = new Date();
+  const customPages = await resolveCustomProductPages();
+  const pages = [...PUBLIC_PAGES, ...customPages];
+
+  for (const page of pages) {
+    pushLocalizedEntries(entries, page, lastModified);
   }
 
-  return entries
+  return entries;
 }

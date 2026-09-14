@@ -3,9 +3,13 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
-import { SITE_URL } from '@/lib/site-url'
+import { absoluteUrl, SITE_URL } from '@/lib/site-url'
 import { getCustomProductBySlug } from '@/lib/custom-products-public'
-import { normalizeCustomProductSlug } from '@/lib/custom-products'
+import { getProductMainImage, normalizeCustomProductSlug } from '@/lib/custom-products'
+import {
+    buildBreadcrumbSchema,
+    buildCustomProductSchema,
+} from '@/lib/aeo-schema'
 import CustomProductDetailClient from './CustomProductDetailClient'
 
 /** DB에 새로 등록한 상품도 배포 없이 바로 열리도록 런타임 렌더 */
@@ -35,9 +39,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const t = await getTranslations({ locale, namespace: 'CustomProducts' })
     const title = product.title
-    const description = product.summary
+    const description = product.summary || product.description
     const path = getPathname({ locale, href: `/custom/${product.slug}` })
     const canonical = `${SITE_URL}${path}`
+    const mainImage = absoluteUrl(getProductMainImage(product))
 
     return {
         title: `${title} | ${t('metaBrand')}`,
@@ -56,17 +61,59 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'website',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: [
+                {
+                    url: mainImage,
+                    alt: title,
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [mainImage],
         },
     }
 }
 
 export default async function CustomProductDetailPage({ params }: Props) {
     const { locale: localeParam, slug: slugRaw } = await params
-    setRequestLocale(resolveLocale(localeParam))
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
 
     const slug = normalizeCustomProductSlug(slugRaw)
     const product = await getCustomProductBySlug(slug)
     if (!product) notFound()
 
-    return <CustomProductDetailClient product={product} />
+    const t = await getTranslations({ locale, namespace: 'CustomProducts' })
+    const detailPath = getPathname({ locale, href: `/custom/${product.slug}` })
+    const hubPath = getPathname({ locale, href: '/custom' })
+
+    const schemas = [
+        buildCustomProductSchema({
+            name: product.title,
+            description: product.summary || product.description,
+            path: detailPath,
+            imageUrls: product.images.slice(0, 8),
+            priceNote: product.priceNote,
+            brandName: t('metaBrand'),
+            sku: product.slug,
+        }),
+        buildBreadcrumbSchema([
+            { name: '홈', path: locale === 'en' ? '/en' : '/' },
+            { name: t('backToHub'), path: hubPath },
+            { name: product.title, path: detailPath },
+        ]),
+    ]
+
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+            />
+            <CustomProductDetailClient product={product} />
+        </>
+    )
 }

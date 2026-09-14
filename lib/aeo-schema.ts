@@ -164,6 +164,71 @@ export function buildCollectionPageSchema(input: {
     };
 }
 
+/** 맞춤 상품 상세 — 고정가 없음(견적형)이므로 숫자 가격은 넣지 않음 */
+export function buildCustomProductSchema(input: {
+    name: string;
+    description: string;
+    path: string;
+    imageUrls: string[];
+    priceNote?: string;
+    brandName?: string;
+    sku?: string;
+}) {
+    const images = (input.imageUrls.length > 0 ? input.imageUrls : [absoluteUrl(OG_IMAGE_PATH)]).map(
+        (src) => (src.startsWith('http') ? src : absoluteUrl(src))
+    );
+    const url = absoluteUrl(input.path);
+
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: input.name,
+        description: input.description,
+        image: images,
+        sku: input.sku || undefined,
+        brand: {
+            '@type': 'Brand',
+            name: input.brandName || 'WOW3D',
+        },
+        category: '3D Printing Custom Product',
+        offers: {
+            '@type': 'Offer',
+            url,
+            priceCurrency: 'KRW',
+            availability: 'https://schema.org/InStock',
+            itemCondition: 'https://schema.org/NewCondition',
+            description: input.priceNote || '맞춤 견적가',
+        },
+        url,
+    };
+}
+
+/** 맞춤 상품 허브 ItemList */
+export function buildCustomProductItemListSchema(
+    items: Array<{ name: string; path: string; imageUrl?: string }>,
+    listPath = '/custom'
+) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        url: absoluteUrl(listPath),
+        numberOfItems: items.length,
+        itemListElement: items.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.name,
+            url: absoluteUrl(item.path),
+            ...(item.imageUrl
+                ? {
+                      image: item.imageUrl.startsWith('http')
+                          ? item.imageUrl
+                          : absoluteUrl(item.imageUrl),
+                  }
+                : {}),
+        })),
+    };
+}
+
 export function buildArticleSchema(input: {
     headline: string;
     description: string;
