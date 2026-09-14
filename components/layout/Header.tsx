@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, type ReactNode, type AnchorHTMLAttributes } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode, type AnchorHTMLAttributes, type RefObject } from "react";
 import NextLink from "next/link";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -48,6 +48,46 @@ function HeaderNavLink({
     )
 }
 
+/** 데스크톱 네비가 넘치면 폰트·패딩을 단계적으로 축소 */
+function useDesktopNavFit(navRef: RefObject<HTMLElement | null>, deps: unknown[]) {
+    useLayoutEffect(() => {
+        const nav = navRef.current
+        if (!nav) return
+
+        const fit = () => {
+            if (typeof window === 'undefined' || window.innerWidth < 1024) {
+                nav.style.setProperty('--nav-fit', '1')
+                return
+            }
+            let scale = 1
+            nav.style.setProperty('--nav-fit', '1')
+            // 레이아웃 반영 후 측정
+            void nav.offsetWidth
+            while (scale > 0.68 && nav.scrollWidth > nav.clientWidth + 1) {
+                scale = Math.round((scale - 0.035) * 1000) / 1000
+                nav.style.setProperty('--nav-fit', String(scale))
+                void nav.offsetWidth
+            }
+        }
+
+        const ro = new ResizeObserver(() => {
+            requestAnimationFrame(fit)
+        })
+        ro.observe(nav)
+        if (nav.parentElement) ro.observe(nav.parentElement)
+        window.addEventListener('resize', fit)
+        // 폰트 로드 후에도 재측정
+        document.fonts?.ready?.then(fit).catch(() => {})
+        fit()
+
+        return () => {
+            ro.disconnect()
+            window.removeEventListener('resize', fit)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, deps)
+}
+
 export default function Header() {
     const t = useTranslations('Nav')
     const tCommon = useTranslations('Common')
@@ -62,6 +102,7 @@ export default function Header() {
     const [mounted, setMounted] = useState(false)
     const [openDropdown, setOpenDropdown] = useState<string | null>(null)
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
+    const desktopNavRef = useRef<HTMLElement | null>(null)
 
     const NAV_ITEMS: NavItem[] = useMemo(
         () => [
@@ -117,6 +158,8 @@ export default function Header() {
         )
         : NAV_ITEMS
 
+    useDesktopNavFit(desktopNavRef, [navItems, mounted, isPastHero, isScrolled])
+
     useEffect(() => {
         setMounted(true)
         const handleScroll = () => {
@@ -152,12 +195,12 @@ export default function Header() {
         >
             {/* 상단 바: 모바일에서 오버레이보다 위에 표시되도록 z-[101]
                 overflow-hidden 금지 — 대리점 모집 등 데스크톱 드롭다운이 잘림 */}
-            <div className="relative z-[101] container mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 min-w-0 max-w-full">
+            <div className="relative z-[101] container mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 xl:gap-4 min-w-0 max-w-full">
                 {/* Logo — 클릭 시 메뉴 닫고 메인으로 */}
                 <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 sm:gap-3 min-w-0 shrink max-w-[calc(100%-11rem)] sm:max-w-[50%] lg:max-w-none overflow-hidden"
+                    className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0 max-w-[calc(100%-11rem)] sm:max-w-[50%] lg:max-w-[220px] xl:max-w-none overflow-hidden"
                     aria-label="WOW3D PRO 메인으로 이동"
                 >
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/25 shrink-0">
@@ -173,24 +216,32 @@ export default function Header() {
                     </div>
                 </Link>
 
-                {/* Desktop Nav - 가독성 중심 */}
-                <nav className={`relative z-[110] hidden lg:flex items-center gap-0.5 rounded-2xl p-1.5 transition-all ${
-                    isPastHero
-                        ? 'bg-white border border-slate-200 shadow-sm'
-                        : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
-                }`}>
+                {/* Desktop Nav — 폭에 맞춰 폰트·패딩 자동 축소, 한글은 어절 단위로만 줄바꿈 */}
+                <nav
+                    ref={desktopNavRef}
+                    className={`relative z-[110] hidden lg:flex items-center flex-1 min-w-0 max-w-full justify-center overflow-hidden rounded-2xl p-1.5 transition-all ${
+                        isPastHero
+                            ? 'bg-white border border-slate-200 shadow-sm'
+                            : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
+                    }`}
+                    style={{
+                        ['--nav-fit' as string]: 1,
+                        gap: 'calc(0.125rem * var(--nav-fit, 1))',
+                        fontSize: 'clamp(0.68rem, calc(0.72rem + 0.12vw), 0.8125rem)',
+                    }}
+                >
                     {navItems.map((item) =>
                         item.children?.length ? (
                             <div
                                 key={item.label}
-                                className="relative"
+                                className="relative shrink min-w-0"
                                 onMouseEnter={() => setOpenDropdown(item.label)}
                                 onMouseLeave={() => setOpenDropdown(null)}
                             >
                                 <HeaderNavLink
                                     href={item.href}
                                     external={item.external}
-                                    className={`inline-flex items-center gap-1 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
+                                    className={`inline-flex items-center gap-0.5 rounded-xl font-semibold transition-colors duration-200 whitespace-nowrap break-keep [font-size:calc(1em*var(--nav-fit,1))] px-[calc(0.55rem*var(--nav-fit,1))] xl:px-[calc(0.85rem*var(--nav-fit,1))] 2xl:px-[calc(1.1rem*var(--nav-fit,1))] py-2 ${
                                         isPastHero
                                             ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
                                             : 'text-white/90 hover:text-white hover:bg-white/15'
@@ -198,9 +249,9 @@ export default function Header() {
                                     aria-expanded={openDropdown === item.label}
                                     aria-haspopup="true"
                                 >
-                                    {item.label}
+                                    <span className="break-keep">{item.label}</span>
                                     <ChevronDown
-                                        className={`w-3.5 h-3.5 transition-transform ${
+                                        className={`shrink-0 transition-transform w-[1em] h-[1em] ${
                                             openDropdown === item.label ? 'rotate-180' : ''
                                         }`}
                                         aria-hidden
@@ -227,7 +278,7 @@ export default function Header() {
                                                     onClick={() => setOpenDropdown(null)}
                                                 >
                                                     <span
-                                                        className={`block text-[13px] font-bold ${
+                                                        className={`block text-[13px] font-bold break-keep ${
                                                             isPastHero ? 'text-slate-800' : 'text-white'
                                                         }`}
                                                     >
@@ -235,7 +286,7 @@ export default function Header() {
                                                     </span>
                                                     {child.desc && (
                                                         <span
-                                                            className={`mt-0.5 block text-[11px] font-medium ${
+                                                            className={`mt-0.5 block text-[11px] font-medium break-keep ${
                                                                 isPastHero ? 'text-slate-500' : 'text-white/45'
                                                             }`}
                                                         >
@@ -253,7 +304,7 @@ export default function Header() {
                                 key={item.label}
                                 href={item.href}
                                 external={item.external}
-                                className={`px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors duration-200 ${
+                                className={`rounded-xl font-semibold transition-colors duration-200 whitespace-nowrap break-keep shrink min-w-0 [font-size:calc(1em*var(--nav-fit,1))] px-[calc(0.55rem*var(--nav-fit,1))] xl:px-[calc(0.85rem*var(--nav-fit,1))] 2xl:px-[calc(1.1rem*var(--nav-fit,1))] py-2 ${
                                     isPastHero
                                         ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
                                         : 'text-white/90 hover:text-white hover:bg-white/15'

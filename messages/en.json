@@ -5,7 +5,7 @@
     "en": "English"
   },
   "Nav": {
-    "servicesGuides": "Services · Guides",
+    "servicesGuides": "Services\u00A0·\u00A0Guides",
     "coreServices": "Core Services",
     "coreServicesDesc": "Print service, prototypes & instant quotes",
     "printMethods": "Print Methods",
@@ -15,7 +15,7 @@
     "quote": "Instant Quote",
     "customProducts": "Custom Products",
     "products": "Hardware",
-    "expert": "Product Dev & Inquiry",
+    "expert": "Product\u00A0Dev\u00A0&\u00A0Inquiry",
     "orders": "My Orders",
     "support": "Support",
     "faq": "FAQ",

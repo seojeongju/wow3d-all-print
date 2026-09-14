@@ -5,7 +5,7 @@
     "en": "English"
   },
   "Nav": {
-    "servicesGuides": "서비스 · 가이드",
+    "servicesGuides": "서비스\u00A0·\u00A0가이드",
     "coreServices": "핵심서비스",
     "coreServicesDesc": "출력대행·시제품·자동견적 연계",
     "printMethods": "출력 공정",
@@ -15,7 +15,7 @@
     "quote": "자동견적",
     "customProducts": "맞춤 상품",
     "products": "장비",
-    "expert": "제품개발 및 문의",
+    "expert": "제품개발\u00A0및\u00A0문의",
     "orders": "주문조회",
     "support": "고객지원",
     "faq": "FAQ",

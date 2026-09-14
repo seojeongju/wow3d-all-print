@@ -6,7 +6,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
-import { TextStyle } from '@tiptap/extension-text-style'
+import { TextStyle, FontFamily, FontSize } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import { Table } from '@tiptap/extension-table'
@@ -41,6 +41,34 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { detailBodyToEditorHtml, sanitizeDetailHtml } from '@/lib/sanitize-html'
+
+const FONT_DEFAULT = '__default__'
+
+const FONT_FAMILIES: { label: string; value: string }[] = [
+    { label: '기본', value: FONT_DEFAULT },
+    { label: '맑은 고딕', value: '"Malgun Gothic", "맑은 고딕", sans-serif' },
+    { label: '돋움', value: 'Dotum, "돋움", sans-serif' },
+    { label: '굴림', value: 'Gulim, "굴림", sans-serif' },
+    { label: '바탕', value: 'Batang, "바탕", serif' },
+    { label: '나눔고딕', value: '"Nanum Gothic", "나눔고딕", sans-serif' },
+    { label: '나눔명조', value: '"Nanum Myeongjo", "나눔명조", serif' },
+    { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
+    { label: 'Georgia', value: 'Georgia, serif' },
+    { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
+    { label: 'Courier New', value: '"Courier New", Courier, monospace' },
+]
+
+const FONT_SIZES = ['12px', '14px', '15px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px']
+const SIZE_DEFAULT = '__default__'
+
+function normalizeFontFamily(raw: string | null | undefined): string {
+    if (!raw) return FONT_DEFAULT
+    const compact = raw.replace(/\s+/g, ' ').trim()
+    const found = FONT_FAMILIES.find(
+        (f) => f.value !== FONT_DEFAULT && f.value.replace(/\s+/g, ' ') === compact
+    )
+    return found?.value || compact
+}
 
 function readFileAsDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -128,6 +156,7 @@ export default function DetailSmartEditor({
 
     const editor = useEditor({
         immediatelyRender: false,
+        shouldRerenderOnTransaction: true,
         extensions: [
             // TipTap v3 StarterKit에 link·underline 포함 — 별도 등록 시 중복 경고/오류
             StarterKit.configure({
@@ -138,6 +167,8 @@ export default function DetailSmartEditor({
                 },
             }),
             TextStyle,
+            FontFamily,
+            FontSize,
             Color,
             Highlight.configure({ multicolor: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -309,6 +340,36 @@ export default function DetailSmartEditor({
         }
     }
 
+    const applyBlockType = (v: 'p' | 'h1' | 'h2' | 'h3') => {
+        if (!editor || editor.isDestroyed) return
+        // clearNodes로 목록·제목·인용 등 블록을 정리한 뒤 목표 단락/제목으로 설정
+        // (toggleHeading은 이미 제목일 때 다시 누르면 해제되어 셀렉트와 맞지 않음)
+        if (v === 'p') {
+            editor.chain().focus().clearNodes().setParagraph().run()
+            return
+        }
+        const level = v === 'h1' ? 1 : v === 'h2' ? 2 : 3
+        editor.chain().focus().clearNodes().setHeading({ level }).run()
+    }
+
+    const applyFontFamily = (v: string) => {
+        if (!editor || editor.isDestroyed) return
+        if (v === FONT_DEFAULT || !v) {
+            editor.chain().focus().extendMarkRange('textStyle').unsetFontFamily().run()
+            return
+        }
+        editor.chain().focus().setFontFamily(v).run()
+    }
+
+    const applyFontSize = (v: string) => {
+        if (!editor || editor.isDestroyed) return
+        if (v === SIZE_DEFAULT || !v) {
+            editor.chain().focus().extendMarkRange('textStyle').unsetFontSize().run()
+            return
+        }
+        editor.chain().focus().setFontSize(v).run()
+    }
+
     const setLink = () => {
         if (!editor) return
         const prev = editor.getAttributes('link').href as string | undefined
@@ -449,6 +510,7 @@ export default function DetailSmartEditor({
                 <div className="px-3 py-1.5 flex flex-wrap items-center gap-0.5 border-t border-[#f0f1f3]">
                     <select
                         className="h-8 rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
+                        title="단락 스타일"
                         value={
                             editor?.isActive('heading', { level: 1 })
                                 ? 'h1'
@@ -459,20 +521,46 @@ export default function DetailSmartEditor({
                                     : 'p'
                         }
                         onChange={(e) => {
-                            const v = e.target.value
-                            if (v === 'p') editor?.chain().focus().setParagraph().run()
-                            if (v === 'h1')
-                                editor?.chain().focus().toggleHeading({ level: 1 }).run()
-                            if (v === 'h2')
-                                editor?.chain().focus().toggleHeading({ level: 2 }).run()
-                            if (v === 'h3')
-                                editor?.chain().focus().toggleHeading({ level: 3 }).run()
+                            applyBlockType(e.target.value as 'p' | 'h1' | 'h2' | 'h3')
                         }}
                     >
                         <option value="p">본문</option>
                         <option value="h1">제목1</option>
                         <option value="h2">제목2</option>
                         <option value="h3">제목3</option>
+                    </select>
+
+                    <select
+                        className="h-8 max-w-[130px] rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
+                        title="글꼴"
+                        value={normalizeFontFamily(
+                            (editor?.getAttributes('textStyle').fontFamily as string | undefined) ||
+                                ''
+                        )}
+                        onChange={(e) => applyFontFamily(e.target.value)}
+                    >
+                        {FONT_FAMILIES.map((f) => (
+                            <option key={f.label} value={f.value}>
+                                {f.label}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        className="h-8 rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
+                        title="글자 크기"
+                        value={
+                            (editor?.getAttributes('textStyle').fontSize as string | undefined) ||
+                            SIZE_DEFAULT
+                        }
+                        onChange={(e) => applyFontSize(e.target.value)}
+                    >
+                        <option value={SIZE_DEFAULT}>크기</option>
+                        {FONT_SIZES.map((size) => (
+                            <option key={size} value={size}>
+                                {size.replace('px', '')}
+                            </option>
+                        ))}
                     </select>
 
                     <ToolBtn
@@ -749,6 +837,30 @@ export default function DetailSmartEditor({
                     height: 0;
                     pointer-events: none;
                 }
+                .detail-smart-editor p {
+                    font-size: 15px;
+                    font-weight: 400;
+                    line-height: 1.7;
+                    margin: 0 0 0.75em;
+                }
+                .detail-smart-editor h1 {
+                    font-size: 28px;
+                    font-weight: 800;
+                    line-height: 1.3;
+                    margin: 0.6em 0 0.4em;
+                }
+                .detail-smart-editor h2 {
+                    font-size: 22px;
+                    font-weight: 800;
+                    line-height: 1.35;
+                    margin: 0.55em 0 0.35em;
+                }
+                .detail-smart-editor h3 {
+                    font-size: 18px;
+                    font-weight: 700;
+                    line-height: 1.4;
+                    margin: 0.5em 0 0.3em;
+                }
                 .detail-smart-editor img,
                 .detail-smart-editor .detail-editor-img {
                     max-width: 100%;
@@ -777,6 +889,10 @@ export default function DetailSmartEditor({
                     border: none;
                     border-top: 1px solid #e5e8eb;
                     margin: 20px 0;
+                }
+                .detail-smart-editor span[style*='font-size'],
+                .detail-smart-editor span[style*='font-family'] {
+                    line-height: 1.5;
                 }
             `}</style>
         </div>

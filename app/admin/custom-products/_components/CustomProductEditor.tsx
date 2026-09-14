@@ -53,15 +53,32 @@ function ImageSlot({
     src,
     onRemove,
     onPick,
+    onPickMany,
+    multiple,
     disabled,
     label,
 }: {
     src?: string
     onRemove?: () => void
-    onPick: (file: File) => void
+    onPick?: (file: File) => void
+    onPickMany?: (files: File[]) => void
+    multiple?: boolean
     disabled?: boolean
     label?: string
 }) {
+    const handleFiles = (list: FileList | null) => {
+        if (!list?.length) return
+        const files = Array.from(list).filter(
+            (f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(f.name)
+        )
+        if (files.length === 0) return
+        if (multiple && onPickMany) {
+            onPickMany(files)
+            return
+        }
+        onPick?.(files[0])
+    }
+
     return (
         <div className="relative">
             {src ? (
@@ -82,8 +99,7 @@ function ImageSlot({
                             className="hidden"
                             disabled={disabled}
                             onChange={(e) => {
-                                const f = e.target.files?.[0]
-                                if (f) onPick(f)
+                                handleFiles(e.target.files)
                                 e.target.value = ''
                             }}
                         />
@@ -108,16 +124,18 @@ function ImageSlot({
                 >
                     <Plus className="w-6 h-6 text-[#868b94]" />
                     {label ? (
-                        <span className="text-[11px] font-bold text-[#868b94]">{label}</span>
+                        <span className="text-[11px] font-bold text-[#868b94] text-center px-1 leading-tight">
+                            {label}
+                        </span>
                     ) : null}
                     <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         disabled={disabled}
+                        multiple={multiple}
                         onChange={(e) => {
-                            const f = e.target.files?.[0]
-                            if (f) onPick(f)
+                            handleFiles(e.target.files)
                             e.target.value = ''
                         }}
                     />
@@ -284,6 +302,85 @@ export default function CustomProductEditor({ productId }: { productId?: number 
             })
             if (created && !opts?.skipNavigate) router.replace(`/admin/custom-products/${id}`)
             return null
+        } finally {
+            setUploading(false)
+        }
+    }
+
+    /** 추가/상세 이미지 여러 장 일괄 업로드 */
+    const ensureSavedThenUploadMany = async (
+        role: 'sub' | 'detail',
+        files: File[],
+        remainingSlots: number
+    ) => {
+        if (files.length === 0) return
+        if (remainingSlots <= 0) {
+            toast({
+                title: '업로드 불가',
+                description: '더 이상 추가할 수 있는 슬롯이 없습니다.',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        const queue = files.slice(0, remainingSlots)
+        const skipped = files.length - queue.length
+
+        let id = productId
+        let created = false
+        if (!id || id < 1) {
+            const createdId = await saveProduct({ silent: true, navigateOnCreate: false })
+            if (!createdId) return
+            id = createdId
+            created = true
+        }
+
+        setUploading(true)
+        let ok = 0
+        let fail = 0
+        try {
+            for (const file of queue) {
+                try {
+                    const fd = new FormData()
+                    fd.append('image', file)
+                    fd.append('role', role)
+                    const res = await fetch(`/api/admin/custom-products/${id}/images`, {
+                        method: 'POST',
+                        headers: authHeader,
+                        body: fd,
+                    })
+                    const j = await res.json()
+                    if (!res.ok) throw new Error(j.error || '업로드 실패')
+                    ok += 1
+                } catch {
+                    fail += 1
+                }
+            }
+
+            if (ok > 0) {
+                toast({
+                    title: created ? '상품 저장 및 이미지 업로드 완료' : '업로드 완료',
+                    description:
+                        skipped > 0
+                            ? `${ok}장 업로드 · 슬롯 초과 ${skipped}장 제외` +
+                              (fail > 0 ? ` · 실패 ${fail}장` : '')
+                            : fail > 0
+                              ? `${ok}장 성공 · ${fail}장 실패`
+                              : `${ok}장 업로드되었습니다.`,
+                })
+            } else {
+                toast({
+                    title: '업로드 실패',
+                    description: '선택한 이미지를 올리지 못했습니다.',
+                    variant: 'destructive',
+                })
+            }
+
+            if (created) {
+                router.replace(`/admin/custom-products/${id}`)
+            } else {
+                await loadProduct()
+            }
         } finally {
             setUploading(false)
         }
@@ -513,11 +610,22 @@ export default function CustomProductEditor({ productId }: { productId?: number 
                                 {subImages.length < SUB_MAX ? (
                                     <ImageSlot
                                         disabled={uploading}
-                                        onPick={(f) => void ensureSavedThenUpload('sub', f)}
+                                        multiple
+                                        label="여러 장"
+                                        onPickMany={(files) =>
+                                            void ensureSavedThenUploadMany(
+                                                'sub',
+                                                files,
+                                                SUB_MAX - subImages.length
+                                            )
+                                        }
                                     />
                                 ) : null}
                             </div>
-                            <Tip>갤러리 썸네일로 노출됩니다. 여러 장 등록 가능합니다.</Tip>
+                            <Tip>
+                                파일 선택 창에서 Ctrl(⌘) 또는 Shift로 여러 장을 한 번에 올릴 수
+                                있습니다. 갤러리 썸네일로 노출됩니다.
+                            </Tip>
                         </div>
                     </div>
 
@@ -542,11 +650,22 @@ export default function CustomProductEditor({ productId }: { productId?: number 
                                 {detailImages.length < DETAIL_MAX ? (
                                     <ImageSlot
                                         disabled={uploading}
-                                        onPick={(f) => void ensureSavedThenUpload('detail', f)}
+                                        multiple
+                                        label="여러 장"
+                                        onPickMany={(files) =>
+                                            void ensureSavedThenUploadMany(
+                                                'detail',
+                                                files,
+                                                DETAIL_MAX - detailImages.length
+                                            )
+                                        }
                                     />
                                 ) : null}
                             </div>
-                            <Tip>상세설명 영역에 세로로 나열됩니다. 권장 가로 폭 848px 이상</Tip>
+                            <Tip>
+                                여러 장 선택 업로드 가능 · 상세설명 영역에 세로로 나열됩니다. 권장
+                                가로 폭 848px 이상
+                            </Tip>
                         </div>
                     </div>
 
