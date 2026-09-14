@@ -144,12 +144,12 @@ export default function ExpertPageClient({
                 <div className="absolute bottom-[10%] left-[10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[140px] animate-pulse" />
             </div>
 
-            <section className="relative pt-60 pb-32 px-6 z-10">
-                <div className="container mx-auto max-w-6xl text-center space-y-12">
+            <section className="relative pt-40 md:pt-48 pb-12 md:pb-16 px-6 z-10">
+                <div className="container mx-auto max-w-6xl text-center space-y-8 md:space-y-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-teal-400/20 border border-teal-400/30 text-teal-300 text-xs font-black uppercase tracking-[0.4em] mb-4"
+                        className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-teal-400/20 border border-teal-400/30 text-teal-300 text-xs font-black uppercase tracking-[0.4em]"
                     >
                         <Sparkles className="w-4 h-4" /> {t('heroEyebrow')}
                     </motion.div>
@@ -157,7 +157,7 @@ export default function ExpertPageClient({
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-6xl md:text-9xl font-black tracking-tighter leading-[1] text-white"
+                        className="text-5xl md:text-8xl font-black tracking-tighter leading-[1] text-white"
                     >
                         {t('heroTitleBefore')}
                         <br />
@@ -167,42 +167,42 @@ export default function ExpertPageClient({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="text-white/50 text-xl md:text-2xl font-bold max-w-2xl mx-auto break-keep leading-[1.8] tracking-tight"
+                        className="text-white/50 text-lg md:text-xl font-bold max-w-2xl mx-auto break-keep leading-relaxed tracking-tight"
                     >
                         {t('heroSubtitle')}
                     </motion.p>
                 </div>
             </section>
 
-            <section className="relative py-48 px-6 z-10">
-                <div className="container mx-auto max-w-7xl space-y-24">
-                    <div className="text-center space-y-6">
-                        <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">
+            <section className="relative py-12 md:py-20 px-6 z-10">
+                <div className="container mx-auto max-w-7xl space-y-8 md:space-y-10">
+                    <div className="text-center space-y-3 md:space-y-4">
+                        <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">
                             {t('showcaseTitle')}{' '}
                             <span className="text-teal-400">{t('showcaseTitleAccent')}</span>
                         </h2>
-                        <div className="w-32 h-1.5 bg-teal-400 mx-auto rounded-full" />
+                        <div className="w-20 h-1 bg-teal-400 mx-auto rounded-full" />
                         <p className="text-sm text-white/40 font-bold max-w-lg mx-auto break-keep">
                             {t('showcaseSubtitle')}
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
                         {showcaseCards.map((cat, idx) => (
                             <Link
                                 key={cat.slug}
                                 href={`/expert/showcase/${cat.slug}`}
-                                className="block rounded-[3rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617]"
+                                className="block rounded-[1.75rem] md:rounded-[2rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617]"
                             >
                                 <motion.div
                                     initial={{ opacity: 0, y: 40 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.1 }}
                                     viewport={{ once: true }}
-                                    className="group relative rounded-[3rem] bg-white/[0.03] border border-white/10 p-3 overflow-hidden hover:bg-white/[0.08] hover:border-teal-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-teal-400/10 hover:-translate-y-3 cursor-pointer h-full"
+                                    className="group relative rounded-[1.75rem] md:rounded-[2rem] bg-white/[0.03] border border-white/10 p-2 overflow-hidden hover:bg-white/[0.08] hover:border-teal-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-teal-400/10 hover:-translate-y-2 cursor-pointer h-full flex flex-col"
                                 >
-                                    <div className="relative h-72 rounded-[2.5rem] overflow-hidden mb-8">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                                    <div className="relative h-44 sm:h-48 md:h-52 rounded-[1.35rem] md:rounded-[1.5rem] overflow-hidden mb-3">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent z-10" />
                                         <img
                                             src={cat.image}
                                             alt={cat.title}
@@ -211,26 +211,26 @@ export default function ExpertPageClient({
                                                 ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                                             }}
                                         />
-                                        <div className="absolute bottom-8 left-8 z-20 text-white">
-                                            <div className="w-14 h-14 rounded-2xl bg-teal-400/20 backdrop-blur-xl border border-teal-400/40 flex items-center justify-center mb-4 group-hover:bg-teal-400 group-hover:text-slate-950 transition-all duration-500">
+                                        <div className="absolute bottom-3 left-3 right-3 z-20 text-white">
+                                            <div className="w-10 h-10 rounded-xl bg-teal-400/20 backdrop-blur-xl border border-teal-400/40 flex items-center justify-center mb-2 group-hover:bg-teal-400 group-hover:text-slate-950 transition-all duration-500 [&>svg]:w-5 [&>svg]:h-5">
                                                 {SHOWCASE_ICONS[cat.slug]}
                                             </div>
-                                            <h3 className="text-2xl font-black tracking-tight group-hover:text-teal-400 transition-colors">
+                                            <h3 className="text-lg md:text-xl font-black tracking-tight leading-snug group-hover:text-teal-400 transition-colors break-keep">
                                                 {cat.title}
                                             </h3>
                                         </div>
                                     </div>
-                                    <div className="px-8 pb-8 space-y-6">
-                                        <p className="text-sm font-bold text-white/50 leading-[1.8] min-h-[60px] break-keep">
+                                    <div className="px-3 pb-3 md:px-4 md:pb-4 space-y-3 flex-1 flex flex-col">
+                                        <p className="text-[13px] font-bold text-white/55 leading-relaxed break-keep">
                                             {cat.desc}
                                         </p>
-                                        <ul className="space-y-3">
+                                        <ul className="space-y-1.5 mt-auto">
                                             {cat.features.map((f, i) => (
                                                 <li
                                                     key={i}
-                                                    className="flex items-center gap-3 text-[13px] font-black text-teal-400/70 group-hover:text-teal-400 transition-colors tracking-tight"
+                                                    className="flex items-center gap-2 text-[12px] font-black text-teal-400/70 group-hover:text-teal-400 transition-colors tracking-tight"
                                                 >
-                                                    <CheckCircle2 className="w-4 h-4 shadow-sm" /> {f}
+                                                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> {f}
                                                 </li>
                                             ))}
                                         </ul>
@@ -242,27 +242,27 @@ export default function ExpertPageClient({
                 </div>
             </section>
 
-            <section className="relative py-48 px-6 z-10 bg-white/[0.02]">
+            <section className="relative py-12 md:py-20 px-6 z-10 bg-white/[0.02]">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="grid lg:grid-cols-2 gap-24 items-center">
-                        <div className="space-y-12">
-                            <h2 className="text-5xl md:text-7xl font-black text-white leading-[1.1] tracking-tighter">
+                    <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+                        <div className="space-y-8">
+                            <h2 className="text-4xl md:text-6xl font-black text-white leading-[1.1] tracking-tighter">
                                 {t('processTitleBefore')}
                                 <br />
                                 <span className="text-teal-400">{t('processTitleAccent')}</span>
                             </h2>
-                            <p className="text-white/40 text-xl font-bold leading-relaxed max-w-lg">
+                            <p className="text-white/40 text-lg font-bold leading-relaxed max-w-lg">
                                 {t('processSubtitle')}
                             </p>
-                            <div className="space-y-8">
+                            <div className="space-y-5">
                                 {processSteps.map((step, idx) => (
-                                    <div key={idx} className="flex gap-8 group">
-                                        <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-2xl font-black text-white group-hover:bg-teal-400 group-hover:text-slate-950 transition-all">
+                                    <div key={idx} className="flex gap-5 group">
+                                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-xl font-black text-white group-hover:bg-teal-400 group-hover:text-slate-950 transition-all">
                                             {idx + 1}
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <h4 className="text-xl font-black text-white">{step.title}</h4>
-                                            <p className="text-base font-bold text-white/30 leading-relaxed">
+                                        <div className="space-y-1">
+                                            <h4 className="text-lg font-black text-white">{step.title}</h4>
+                                            <p className="text-sm font-bold text-white/35 leading-relaxed">
                                                 {step.desc}
                                             </p>
                                         </div>
@@ -270,9 +270,9 @@ export default function ExpertPageClient({
                                 ))}
                             </div>
                         </div>
-                        <div className="relative aspect-square rounded-[5rem] border border-teal-400/20 overflow-hidden shadow-2xl bg-slate-900 group">
+                        <div className="relative aspect-[4/3] lg:aspect-square rounded-[2.5rem] md:rounded-[3.5rem] border border-teal-400/20 overflow-hidden shadow-2xl bg-slate-900 group">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#1e293b_0%,#020617_100%)] opacity-50" />
-                            <div className="absolute inset-0 flex items-center justify-center p-16">
+                            <div className="absolute inset-0 flex items-center justify-center p-10 md:p-16">
                                 <svg
                                     width="100%"
                                     height="100%"
@@ -297,7 +297,7 @@ export default function ExpertPageClient({
                                 </svg>
                             </div>
                             <div className="absolute inset-0 bg-gradient-to-t from-teal-400/20 to-transparent mix-blend-overlay" />
-                            <div className="absolute bottom-12 left-12 p-8 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] max-w-[240px]">
+                            <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-10 md:right-auto p-5 md:p-6 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl md:rounded-[2rem] md:max-w-[240px]">
                                 <div className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] mb-2">
                                     {t('processLogicLabel')}
                                 </div>
@@ -310,22 +310,22 @@ export default function ExpertPageClient({
                 </div>
             </section>
 
-            <section className="relative py-48 px-6 z-10" id="inquiry">
+            <section className="relative py-12 md:py-20 px-6 z-10" id="inquiry">
                 <div className="container mx-auto max-w-4xl">
-                    <div className="p-12 md:p-20 rounded-[5rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl shadow-2xl space-y-16">
-                        <div className="text-center space-y-6">
-                            <div className="w-24 h-24 rounded-[2.5rem] bg-teal-400/10 border border-teal-400/20 flex items-center justify-center mx-auto text-teal-400 mb-8">
-                                <Zap className="w-12 h-12 fill-current" />
+                    <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl shadow-2xl space-y-10 md:space-y-12">
+                        <div className="text-center space-y-4">
+                            <div className="w-16 h-16 rounded-2xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-center mx-auto text-teal-400">
+                                <Zap className="w-8 h-8 fill-current" />
                             </div>
-                            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight">
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">
                                 {t('inquiryTitle')}
                             </h2>
-                            <p className="text-white/40 font-bold text-lg max-w-xl mx-auto leading-relaxed">
+                            <p className="text-white/40 font-bold text-base md:text-lg max-w-xl mx-auto leading-relaxed">
                                 {t('inquirySubtitle')}
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="grid gap-8">
+                        <form onSubmit={handleSubmit} className="grid gap-6 md:gap-8">
                             <div className="grid sm:grid-cols-2 gap-8">
                                 <div className="space-y-3">
                                     <Label className="text-[11px] font-black uppercase text-white/30 tracking-[0.2em] ml-1 flex items-center gap-2">
@@ -427,13 +427,13 @@ export default function ExpertPageClient({
                                 type="submit"
                                 size="lg"
                                 disabled={isSubmitting}
-                                className="h-20 rounded-3xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black text-xl uppercase tracking-[0.2em] gap-4 shadow-2xl shadow-teal-400/20 active:scale-95 transition-all disabled:opacity-50 mt-4"
+                                className="h-14 md:h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black text-lg uppercase tracking-[0.15em] gap-3 shadow-2xl shadow-teal-400/20 active:scale-95 transition-all disabled:opacity-50 mt-2"
                             >
                                 {isSubmitting ? (
-                                    <Loader2 className="w-8 h-8 animate-spin" />
+                                    <Loader2 className="w-6 h-6 animate-spin" />
                                 ) : (
                                     <>
-                                        {t('submit')} <Send className="w-6 h-6" />
+                                        {t('submit')} <Send className="w-5 h-5" />
                                     </>
                                 )}
                             </Button>
