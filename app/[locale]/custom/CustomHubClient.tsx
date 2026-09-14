@@ -15,19 +15,24 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import {
-    getAllCustomProducts,
     getProductMainImage,
-    type CustomProductDef,
+    type CustomProductPublic,
 } from '@/lib/custom-products'
 
-function methodLabel(method: CustomProductDef['method'], t: ReturnType<typeof useTranslations<'CustomProducts'>>) {
+function methodLabel(
+    method: CustomProductPublic['method'],
+    t: ReturnType<typeof useTranslations<'CustomProducts'>>
+) {
     if (method === 'mixed') return t('methodMixed')
     return t(`method.${method}` as 'method.fdm')
 }
 
-export default function CustomHubClient() {
+export default function CustomHubClient({
+    products,
+}: {
+    products: CustomProductPublic[]
+}) {
     const t = useTranslations('CustomProducts')
-    const products = getAllCustomProducts()
 
     return (
         <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col relative overflow-hidden">
@@ -99,13 +104,10 @@ function ProductCard({
     index,
     t,
 }: {
-    product: CustomProductDef
+    product: CustomProductPublic
     index: number
     t: ReturnType<typeof useTranslations<'CustomProducts'>>
 }) {
-    const title = t(`products.${product.slug}.title`)
-    const summary = t(`products.${product.slug}.summary`)
-    const priceNote = t(`products.${product.slug}.priceNote`)
     const mainImage = getProductMainImage(product)
 
     return (
@@ -120,7 +122,7 @@ function ProductCard({
                 <div className="relative aspect-square overflow-hidden bg-black/30">
                     <img
                         src={mainImage}
-                        alt={title}
+                        alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
                             ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
@@ -132,12 +134,12 @@ function ProductCard({
                 </div>
                 <div className="p-4 md:p-5 flex flex-col flex-1 gap-3">
                     <h2 className="text-[15px] md:text-base font-black text-white group-hover:text-teal-300 transition-colors break-keep leading-snug line-clamp-2">
-                        {title}
+                        {product.title}
                     </h2>
                     <p className="text-[12px] font-bold text-white/45 leading-relaxed break-keep line-clamp-2">
-                        {summary}
+                        {product.summary}
                     </p>
-                    <p className="mt-auto text-sm font-black text-teal-300 break-keep">{priceNote}</p>
+                    <p className="mt-auto text-sm font-black text-teal-300 break-keep">{product.priceNote}</p>
                     <div className="flex items-center gap-1.5 text-[12px] font-black text-white/50">
                         {product.primaryCta === 'photo' ? (
                             <Camera className="w-3.5 h-3.5 text-teal-400" />

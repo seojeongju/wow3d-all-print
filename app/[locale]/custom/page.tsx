@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import { getCustomProductList } from '@/lib/custom-products-public'
 import CustomHubClient from './CustomHubClient'
 
 type Props = {
@@ -54,5 +55,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CustomProductsPage({ params }: Props) {
     const { locale: localeParam } = await params
     setRequestLocale(resolveLocale(localeParam))
-    return <CustomHubClient />
+    const products = await getCustomProductList()
+    return <CustomHubClient products={products} />
 }

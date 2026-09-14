@@ -16,6 +16,7 @@ import {
     BarChart3,
     Mail,
     Megaphone,
+    Package,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -97,6 +98,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 href: '/admin/showcase',
                 icon: Sparkles,
                 match: (p) => p.startsWith('/admin/showcase'),
+            },
+            {
+                title: '맞춤 상품',
+                href: '/admin/custom-products',
+                icon: Package,
+                match: (p) => p.startsWith('/admin/custom-products'),
             },
             {
                 title: '팝업 관리',
