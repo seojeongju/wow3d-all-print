@@ -9,6 +9,7 @@ import {
     Plus,
     Trash2,
     X,
+    PencilLine,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
@@ -26,6 +27,9 @@ import {
     productToForm,
     type CustomProductFormState,
 } from './form-types'
+import OptionSection from './OptionSection'
+import DetailSmartEditor from './DetailSmartEditor'
+import { isProbablyHtml, sanitizeDetailHtml } from '@/lib/sanitize-html'
 
 const TITLE_MAX = 100
 const SUMMARY_MAX = 80
@@ -134,7 +138,9 @@ export default function CustomProductEditor({ productId }: { productId?: number 
     const [uploading, setUploading] = useState(false)
     const [form, setForm] = useState<CustomProductFormState>(emptyCustomProductForm)
     const [product, setProduct] = useState<CustomProductPublic | null>(null)
-    const [detailMode, setDetailMode] = useState<'write' | 'html'>('write')
+    const [detailMode, setDetailMode] = useState<'editor' | 'html'>('editor')
+    const [editorOpen, setEditorOpen] = useState(false)
+    const [editorKey, setEditorKey] = useState(0)
 
     const authHeader = useMemo(
         () => (token ? { Authorization: `Bearer ${token}` } : ({} as Record<string, string>)),
@@ -173,6 +179,9 @@ export default function CustomProductEditor({ productId }: { productId?: number 
         value: CustomProductFormState[K]
     ) => setForm((prev) => ({ ...prev, [key]: value }))
 
+    const patchMany = (partial: Partial<CustomProductFormState>) =>
+        setForm((prev) => ({ ...prev, ...partial }))
+
     const saveProduct = async (opts?: { silent?: boolean; navigateOnCreate?: boolean }) => {
         if (!form.title.trim()) {
             toast({ title: '입력 오류', description: '상품명을 입력하세요.', variant: 'destructive' })
@@ -203,7 +212,13 @@ export default function CustomProductEditor({ productId }: { productId?: number 
                 return newId
             }
 
-            if (isEdit) await loadProduct()
+            if (isEdit) {
+                if (!opts?.silent) {
+                    router.replace('/admin/custom-products')
+                } else {
+                    await loadProduct()
+                }
+            }
             return newId
         } catch (e) {
             toast({
@@ -217,12 +232,22 @@ export default function CustomProductEditor({ productId }: { productId?: number 
         }
     }
 
-    const ensureSavedThenUpload = async (role: CustomProductImageRole, file: File) => {
+    const ensureSavedThenUpload = async (
+        role: CustomProductImageRole,
+        file: File,
+        opts?: {
+            quiet?: boolean
+            skipNavigate?: boolean
+            preserveDetailBody?: string
+            /** 에디터 삽입용: 상품 재조회(loadProduct) 생략 — 본문 덮어쓰기 방지 */
+            skipReload?: boolean
+        }
+    ): Promise<string | null> => {
         let id = productId
         let created = false
         if (!id || id < 1) {
             const createdId = await saveProduct({ silent: true, navigateOnCreate: false })
-            if (!createdId) return
+            if (!createdId) return null
             id = createdId
             created = true
         }
@@ -238,21 +263,68 @@ export default function CustomProductEditor({ productId }: { productId?: number 
             })
             const j = await res.json()
             if (!res.ok) throw new Error(j.error || '업로드 실패')
-            toast({ title: created ? '상품 저장 및 이미지 업로드 완료' : '업로드 완료' })
-            if (created) {
-                router.replace(`/admin/custom-products/${id}`)
-            } else {
-                await loadProduct()
+            if (!opts?.quiet) {
+                toast({ title: created ? '상품 저장 및 이미지 업로드 완료' : '업로드 완료' })
             }
+            const url = (j.data?.url as string | undefined) || null
+            if (created && !opts?.skipNavigate) {
+                router.replace(`/admin/custom-products/${id}`)
+            } else if (!created && !opts?.skipReload) {
+                await loadProduct()
+                if (opts?.preserveDetailBody != null) {
+                    setForm((prev) => ({ ...prev, detailBody: opts.preserveDetailBody! }))
+                }
+            }
+            return url
         } catch (e) {
             toast({
                 title: '업로드 실패',
                 description: e instanceof Error ? e.message : '업로드에 실패했습니다.',
                 variant: 'destructive',
             })
-            if (created) router.replace(`/admin/custom-products/${id}`)
+            if (created && !opts?.skipNavigate) router.replace(`/admin/custom-products/${id}`)
+            return null
         } finally {
             setUploading(false)
+        }
+    }
+
+    const persistDetailBody = async (html: string) => {
+        const nextForm = { ...form, detailBody: html }
+        setForm(nextForm)
+        setSaving(true)
+        try {
+            const payload = formToPayload(nextForm)
+            if (!form.title.trim()) {
+                toast({
+                    title: '상세 반영됨',
+                    description: '상품명을 입력한 뒤 저장하기를 눌러 주세요.',
+                })
+                setEditorOpen(false)
+                return
+            }
+            const res = await fetch(
+                isEdit ? `/api/admin/custom-products/${productId}` : '/api/admin/custom-products',
+                {
+                    method: isEdit ? 'PUT' : 'POST',
+                    headers: { ...authHeader, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                }
+            )
+            const j = await res.json()
+            if (!res.ok) throw new Error(j.error || '저장 실패')
+
+            toast({ title: '상세 내용 저장 완료', description: '상품 상세가 저장되었습니다.' })
+            setEditorOpen(false)
+            router.replace('/admin/custom-products')
+        } catch (e) {
+            toast({
+                title: '저장 실패',
+                description: e instanceof Error ? e.message : '상세 저장에 실패했습니다.',
+                variant: 'destructive',
+            })
+        } finally {
+            setSaving(false)
         }
     }
 
@@ -554,25 +626,20 @@ export default function CustomProductEditor({ productId }: { productId?: number 
 
                 {/* 옵션 */}
                 <CollapsibleSection
-                    title="상품 옵션"
-                    summary={form.optionsText.trim() ? '설정함' : '설정안함'}
+                    title="옵션"
+                    help="선택형 옵션을 구성합니다."
+                    summary={
+                        form.optionsEnabled
+                            ? form.options.length > 0
+                                ? `설정함 · ${form.options.length}개 옵션명`
+                                : '설정함'
+                            : '설정안함'
+                    }
                     defaultOpen
                 >
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
-                        <FieldLabel>옵션 구성</FieldLabel>
-                        <div className="flex-1 space-y-2">
-                            <textarea
-                                value={form.optionsText}
-                                onChange={(e) => patch('optionsText', e.target.value)}
-                                rows={6}
-                                placeholder={'색상: 블랙, 화이트, 그레이\n사이즈: S, M, L'}
-                                className={cn(textareaClass, 'font-mono text-[13px]')}
-                            />
-                            <Tip>한 줄에 하나 · 형식: 옵션명: 선택1, 선택2, 선택3</Tip>
-                        </div>
-                    </div>
+                    <OptionSection form={form} onChange={patchMany} />
 
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mt-6">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mt-8 border-t border-[#eef0f2] pt-6">
                         <FieldLabel>하이라이트</FieldLabel>
                         <div className="flex-1 space-y-2">
                             <textarea
@@ -592,15 +659,15 @@ export default function CustomProductEditor({ productId }: { productId?: number 
                     <div className="border-b border-[#e5e8eb] mb-4 flex gap-5">
                         <button
                             type="button"
-                            onClick={() => setDetailMode('write')}
+                            onClick={() => setDetailMode('editor')}
                             className={cn(
                                 'pb-2.5 text-[13px] font-bold border-b-2 -mb-px',
-                                detailMode === 'write'
+                                detailMode === 'editor'
                                     ? 'text-[#1e2124] border-[#03c75a]'
                                     : 'text-[#868b94] border-transparent'
                             )}
                         >
-                            직접 작성
+                            에디터 작성
                         </button>
                         <button
                             type="button"
@@ -612,7 +679,7 @@ export default function CustomProductEditor({ productId }: { productId?: number 
                                     : 'text-[#868b94] border-transparent'
                             )}
                         >
-                            고급(원문)
+                            HTML 작성
                         </button>
                     </div>
 
@@ -631,31 +698,64 @@ export default function CustomProductEditor({ productId }: { productId?: number 
 
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mt-6">
                         <FieldLabel required>상세 본문</FieldLabel>
-                        <div className="flex-1 space-y-2">
-                            {detailMode === 'write' ? (
-                                <textarea
-                                    value={form.detailBody}
-                                    onChange={(e) => patch('detailBody', e.target.value)}
-                                    rows={10}
-                                    placeholder={
-                                        '상세 페이지에 표시할 본문을 입력하세요.\n줄바꿈으로 문단을 구분합니다.'
-                                    }
-                                    className={textareaClass}
-                                />
+                        <div className="flex-1 space-y-3">
+                            {detailMode === 'editor' ? (
+                                <div className="rounded-lg border border-[#e5e8eb] bg-[#fafbfc] overflow-hidden">
+                                    {form.detailBody.trim() ? (
+                                        <div className="max-h-[240px] overflow-y-auto bg-white border-b border-[#eef0f2] px-4 py-3">
+                                            {isProbablyHtml(form.detailBody) ? (
+                                                <div
+                                                    className="detail-html-preview text-[13px] text-[#333] leading-relaxed [&_img]:max-w-full [&_img]:h-auto [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_p]:mb-2"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeDetailHtml(form.detailBody),
+                                                    }}
+                                                />
+                                            ) : (
+                                                <pre className="whitespace-pre-wrap text-[13px] text-[#555] font-sans">
+                                                    {form.detailBody}
+                                                </pre>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="px-4 py-10 text-center text-[13px] text-[#868b94] bg-white border-b border-[#eef0f2]">
+                                            작성된 상세 내용이 없습니다.
+                                        </div>
+                                    )}
+                                    <div className="p-4 flex flex-col sm:flex-row gap-2 justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditorKey((k) => k + 1)
+                                                setEditorOpen(true)
+                                            }}
+                                            className="h-11 px-5 rounded-md bg-[#03c75a] text-white text-[13px] font-bold inline-flex items-center justify-center gap-2 hover:bg-[#02b351]"
+                                        >
+                                            <PencilLine className="w-4 h-4" />
+                                            스마트에디터로 작성
+                                        </button>
+                                    </div>
+                                    <div className="px-4 pb-3 space-y-1">
+                                        <Tip tone="red">
+                                            외부 쇼핑몰 링크·개인정보 수집 문구는 넣지 마세요.
+                                        </Tip>
+                                        <Tip>
+                                            권장 가로 폭: 848px · 「완료」를 누르면 상세가 저장되고 목록으로
+                                            돌아갑니다.
+                                        </Tip>
+                                    </div>
+                                </div>
                             ) : (
-                                <textarea
-                                    value={form.detailBody}
-                                    onChange={(e) => patch('detailBody', e.target.value)}
-                                    rows={12}
-                                    className={cn(textareaClass, 'font-mono text-[12px]')}
-                                />
+                                <div className="space-y-2">
+                                    <textarea
+                                        value={form.detailBody}
+                                        onChange={(e) => patch('detailBody', e.target.value)}
+                                        rows={12}
+                                        className={cn(textareaClass, 'font-mono text-[12px]')}
+                                        placeholder="HTML을 직접 입력할 수 있습니다."
+                                    />
+                                    <Tip tone="gray">고급 사용자용 · 스크립트 태그는 공개 시 제거됩니다.</Tip>
+                                </div>
                             )}
-                            <div className="space-y-1 pt-1">
-                                <Tip tone="red">
-                                    외부 쇼핑몰 링크·개인정보 수집 문구는 넣지 마세요.
-                                </Tip>
-                                <Tip>권장 가로 폭: 848px · 상세이미지는 위 「상품이미지」에서 등록</Tip>
-                            </div>
                         </div>
                     </div>
                 </CollapsibleSection>
@@ -754,6 +854,23 @@ export default function CustomProductEditor({ productId }: { productId?: number 
                     </div>
                 </div>
             </div>
+
+            {editorOpen ? (
+                <DetailSmartEditor
+                    key={`detail-editor-${editorKey}`}
+                    initialHtml={form.detailBody}
+                    productTitle={form.title}
+                    onClose={() => setEditorOpen(false)}
+                    onRegister={(html) => persistDetailBody(html)}
+                    onUploadImage={async (file) =>
+                        ensureSavedThenUpload('content', file, {
+                            quiet: true,
+                            skipNavigate: true,
+                            skipReload: true,
+                        })
+                    }
+                />
+            ) : null}
         </div>
     )
 }

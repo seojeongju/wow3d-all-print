@@ -108,7 +108,9 @@ function ProductCard({
     index: number
     t: ReturnType<typeof useTranslations<'CustomProducts'>>
 }) {
-    const mainImage = getProductMainImage(product)
+    const gallery = (product.images || []).filter(Boolean)
+    const mainImage = gallery[0] || getProductMainImage(product)
+    const extraImages = gallery.slice(1, 7)
 
     return (
         <Link href={`/custom/${product.slug}`} className="block group h-full">
@@ -119,18 +121,44 @@ function ProductCard({
                 transition={{ delay: index * 0.06 }}
                 className="h-full rounded-2xl border border-white/10 bg-[#121826]/80 overflow-hidden hover:border-teal-400/40 hover:bg-[#121826] transition-all duration-300 hover:-translate-y-1 flex flex-col"
             >
-                <div className="relative aspect-square overflow-hidden bg-black/30">
-                    <img
-                        src={mainImage}
-                        alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                            ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
-                        }}
-                    />
-                    <span className="absolute top-3 left-3 rounded-md border border-teal-400/30 bg-black/55 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
-                        {methodLabel(product.method, t)}
-                    </span>
+                <div className="relative bg-[#0a0e17]">
+                    {/* 메인: 원본 비율 유지 자동맞춤 (잘림 없음) */}
+                    <div className="relative w-full min-h-[160px] max-h-[260px] flex items-center justify-center overflow-hidden">
+                        <img
+                            src={mainImage}
+                            alt={product.title}
+                            className="w-full h-auto max-h-[260px] object-contain group-hover:scale-[1.02] transition-transform duration-500"
+                            onError={(e) => {
+                                ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
+                            }}
+                        />
+                        <span className="absolute top-3 left-3 rounded-md border border-teal-400/30 bg-black/55 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-300">
+                            {methodLabel(product.method, t)}
+                        </span>
+                    </div>
+
+                    {/* 추가 이미지 가로 나열 */}
+                    {extraImages.length > 0 ? (
+                        <div className="flex gap-1.5 px-2.5 pb-2.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            {extraImages.map((src, i) => (
+                                <div
+                                    key={`${product.slug}-extra-${i}`}
+                                    className="shrink-0 w-[52px] h-[52px] rounded-md overflow-hidden border border-white/10 bg-black/50"
+                                >
+                                    <img
+                                        src={src}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        onError={(e) => {
+                                            ;(e.target as HTMLImageElement).src =
+                                                '/placeholder-3d.svg'
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
                 <div className="p-4 md:p-5 flex flex-col flex-1 gap-3">
                     <h2 className="text-[15px] md:text-base font-black text-white group-hover:text-teal-300 transition-colors break-keep leading-snug line-clamp-2">

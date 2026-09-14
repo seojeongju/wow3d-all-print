@@ -39,7 +39,10 @@ export async function POST(request: NextRequest, { params }: Ctx) {
         const roleRaw = String(formData.get('role') || 'sub')
         if (!file) return NextResponse.json({ error: '이미지 파일이 필요합니다' }, { status: 400 })
         if (!isValidImageRole(roleRaw)) {
-            return NextResponse.json({ error: 'role은 main|sub|detail 이어야 합니다' }, { status: 400 })
+            return NextResponse.json(
+                { error: 'role은 main|sub|detail|content 이어야 합니다' },
+                { status: 400 }
+            )
         }
 
         const err = validateCustomProductImage(file)
@@ -51,6 +54,20 @@ export async function POST(request: NextRequest, { params }: Ctx) {
         await env.BUCKET.put(r2Key, buf, {
             httpMetadata: { contentType: file.type || 'image/jpeg' },
         })
+
+        // 에디터 본문용(content): R2만 저장하고 상품 갤러리(main/sub/detail)에는 올리지 않음
+        if (roleRaw === 'content') {
+            return NextResponse.json({
+                success: true,
+                data: {
+                    id: null,
+                    role: roleRaw,
+                    r2Key,
+                    url: customProductMediaUrlFromKey(r2Key),
+                    sortOrder: 0,
+                },
+            })
+        }
 
         // main은 1장만 — 기존 main 교체
         if (roleRaw === 'main') {

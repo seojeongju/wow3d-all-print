@@ -14,9 +14,26 @@ export function isCustomProductSlug(s: string): s is CustomProductSlug {
     return (CUSTOM_PRODUCT_SLUGS as readonly string[]).includes(s)
 }
 
+/** URL/라우트 파라미터 슬러그 정규화 (퍼센트 인코딩·이중 인코딩 대응) */
+export function normalizeCustomProductSlug(raw: string): string {
+    let s = String(raw || '').trim()
+    for (let i = 0; i < 2; i++) {
+        try {
+            if (/%[0-9A-Fa-f]{2}/.test(s)) {
+                s = decodeURIComponent(s)
+            } else {
+                break
+            }
+        } catch {
+            break
+        }
+    }
+    return s.trim()
+}
+
 export type CustomProductCta = 'quote' | 'photo' | 'inquiry'
 export type CustomProductMethod = 'fdm' | 'sla' | 'dlp' | 'mixed'
-export type CustomProductImageRole = 'main' | 'sub' | 'detail'
+export type CustomProductImageRole = 'main' | 'sub' | 'detail' | 'content'
 
 export type CustomProductOption = {
     id: string
@@ -249,5 +266,5 @@ export function isValidMethod(v: unknown): v is CustomProductMethod {
 }
 
 export function isValidImageRole(v: unknown): v is CustomProductImageRole {
-    return v === 'main' || v === 'sub' || v === 'detail'
+    return v === 'main' || v === 'sub' || v === 'detail' || v === 'content'
 }

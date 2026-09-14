@@ -98,57 +98,101 @@ export default function AdminCustomProductsPage() {
                 </Card>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {items.map((p) => (
-                        <Card
-                            key={p.id ?? p.slug}
-                            className="bg-white/5 border-white/10 overflow-hidden"
-                        >
-                            <div className="aspect-[4/3] bg-black/30 relative">
-                                <img
-                                    src={p.images[0] || '/placeholder-3d.svg'}
-                                    alt={p.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <span
-                                    className={cn(
-                                        'absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded',
-                                        p.isActive
-                                            ? 'bg-[#03c75a] text-white'
-                                            : 'bg-white/20 text-white'
-                                    )}
-                                >
-                                    {p.isActive ? '노출' : '숨김'}
-                                </span>
-                            </div>
-                            <CardContent className="p-4 space-y-3">
-                                <div>
-                                    <h2 className="font-bold text-white truncate">{p.title}</h2>
-                                    <p className="text-xs text-white/40 font-mono">/{p.slug}</p>
-                                    <p className="text-sm text-[#03c75a] font-bold mt-1">{p.priceNote}</p>
+                    {items.map((p) => {
+                        const gallery = (p.images || []).filter(Boolean)
+                        const mainImage = gallery[0] || '/placeholder-3d.svg'
+                        const extraImages = gallery.slice(1, 7)
+
+                        return (
+                            <Card
+                                key={p.id ?? p.slug}
+                                className="bg-white/5 border-white/10 overflow-hidden"
+                            >
+                                <div className="relative bg-black/40">
+                                    <div className="relative w-full min-h-[140px] max-h-[220px] flex items-center justify-center overflow-hidden">
+                                        <img
+                                            src={mainImage}
+                                            alt={p.title}
+                                            className="w-full h-auto max-h-[220px] object-contain"
+                                            onError={(e) => {
+                                                ;(e.target as HTMLImageElement).src =
+                                                    '/placeholder-3d.svg'
+                                            }}
+                                        />
+                                        <span
+                                            className={cn(
+                                                'absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded',
+                                                p.isActive
+                                                    ? 'bg-[#03c75a] text-white'
+                                                    : 'bg-white/20 text-white'
+                                            )}
+                                        >
+                                            {p.isActive ? '노출' : '숨김'}
+                                        </span>
+                                    </div>
+
+                                    {extraImages.length > 0 ? (
+                                        <div className="flex gap-1.5 px-2.5 pb-2.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                            {extraImages.map((src, i) => (
+                                                <div
+                                                    key={`${p.id ?? p.slug}-extra-${i}`}
+                                                    className="shrink-0 w-[48px] h-[48px] rounded-md overflow-hidden border border-white/10 bg-black/50"
+                                                >
+                                                    <img
+                                                        src={src}
+                                                        alt=""
+                                                        className="w-full h-full object-cover"
+                                                        loading="lazy"
+                                                        onError={(e) => {
+                                                            ;(e.target as HTMLImageElement).src =
+                                                                '/placeholder-3d.svg'
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : null}
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <Link href={`/admin/custom-products/${p.id}`}>
-                                        <Button size="sm" variant="outline" className="border-white/15">
-                                            <Pencil className="w-3.5 h-3.5 mr-1" /> 수정
+                                <CardContent className="p-4 space-y-3">
+                                    <div>
+                                        <h2 className="font-bold text-white truncate">{p.title}</h2>
+                                        <p className="text-xs text-white/40 font-mono">/{p.slug}</p>
+                                        <p className="text-sm text-[#03c75a] font-bold mt-1">
+                                            {p.priceNote}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Link href={`/admin/custom-products/${p.id}`}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-white/15"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5 mr-1" /> 수정
+                                            </Button>
+                                        </Link>
+                                        <Link href={`/custom/${p.slug}`} target="_blank">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-white/15"
+                                            >
+                                                <Eye className="w-3.5 h-3.5 mr-1" /> 보기
+                                            </Button>
+                                        </Link>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-rose-300 hover:text-rose-200"
+                                            onClick={() => deleteProduct(p)}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </Button>
-                                    </Link>
-                                    <Link href={`/custom/${p.slug}`} target="_blank">
-                                        <Button size="sm" variant="outline" className="border-white/15">
-                                            <Eye className="w-3.5 h-3.5 mr-1" /> 보기
-                                        </Button>
-                                    </Link>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="text-rose-300 hover:text-rose-200"
-                                        onClick={() => deleteProduct(p)}
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
                 </div>
             )}
         </div>

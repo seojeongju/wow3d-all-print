@@ -54,6 +54,7 @@ function mapProduct(row: ProductRow, images: ImageRow[]): CustomProductPublic {
         .sort((a, b) => a.sortOrder - b.sortOrder)
 
     const gallery = [...mains, ...subs].map((i) => i.url)
+    // content 역할은 에디터 HTML 전용 — 상세 이미지 목록에 포함하지 않음
     const detailImages = details.map((i) => i.url)
 
     return {
@@ -141,22 +142,55 @@ export async function getCustomProductList(): Promise<CustomProductPublic[]> {
 export async function getCustomProductBySlug(
     slug: string
 ): Promise<CustomProductPublic | null> {
+    const normalized = (() => {
+        let s = String(slug || '').trim()
+        for (let i = 0; i < 2; i++) {
+            try {
+                if (/%[0-9A-Fa-f]{2}/.test(s)) s = decodeURIComponent(s)
+                else break
+            } catch {
+                break
+            }
+        }
+        return s.trim()
+    })()
+
     try {
         const { env } = await getCloudflareContext({ async: true })
         if (!env?.DB) {
-            const seed = CUSTOM_PRODUCT_SEEDS.find((p) => p.slug === slug && p.isActive)
+            const seed = CUSTOM_PRODUCT_SEEDS.find(
+                (p) => p.slug === normalized && p.isActive
+            )
             return seed ? { ...seed, id: null } : null
         }
 
-        const row = (await env.DB.prepare(
+        let row = (await env.DB.prepare(
             `SELECT * FROM custom_products
              WHERE store_id = ? AND slug = ? AND is_active = 1`
         )
-            .bind(DEFAULT_STORE_ID, slug)
+            .bind(DEFAULT_STORE_ID, normalized)
             .first()) as ProductRow | null
 
+        // 관리자 미리보기: 비활성도 slug로 조회 시도하지 않음(공개만)
+        // 인코딩 차이로 못 찾는 경우 목록에서 매칭
         if (!row) {
-            const seed = CUSTOM_PRODUCT_SEEDS.find((p) => p.slug === slug && p.isActive)
+            const all = await env.DB.prepare(
+                `SELECT * FROM custom_products
+                 WHERE store_id = ? AND is_active = 1`
+            )
+                .bind(DEFAULT_STORE_ID)
+                .all()
+            const rows = (all?.results || []) as ProductRow[]
+            row =
+                rows.find((r) => r.slug === normalized) ||
+                rows.find((r) => decodeURIComponentSafe(r.slug) === normalized) ||
+                null
+        }
+
+        if (!row) {
+            const seed = CUSTOM_PRODUCT_SEEDS.find(
+                (p) => p.slug === normalized && p.isActive
+            )
             return seed ? { ...seed, id: null } : null
         }
 
@@ -164,8 +198,18 @@ export async function getCustomProductBySlug(
         return mapProduct(row, imgMap.get(row.id) || [])
     } catch (e) {
         console.warn('getCustomProductBySlug', e)
-        const seed = CUSTOM_PRODUCT_SEEDS.find((p) => p.slug === slug && p.isActive)
+        const seed = CUSTOM_PRODUCT_SEEDS.find(
+            (p) => p.slug === normalized && p.isActive
+        )
         return seed ? { ...seed, id: null } : null
+    }
+}
+
+function decodeURIComponentSafe(s: string): string {
+    try {
+        return decodeURIComponent(s)
+    } catch {
+        return s
     }
 }
 

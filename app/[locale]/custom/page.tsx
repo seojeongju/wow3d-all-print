@@ -6,6 +6,8 @@ import { SITE_URL } from '@/lib/site-url'
 import { getCustomProductList } from '@/lib/custom-products-public'
 import CustomHubClient from './CustomHubClient'
 
+export const dynamic = 'force-dynamic'
+
 type Props = {
     params: Promise<{ locale: string }>
 }

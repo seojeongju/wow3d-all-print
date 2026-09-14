@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { CustomProductCta, CustomProductPublic } from '@/lib/custom-products'
 import { getProductMainImage } from '@/lib/custom-products'
+import { isProbablyHtml, sanitizeDetailHtml } from '@/lib/sanitize-html'
 
 function ctaHref(cta: CustomProductCta, slug: string): string {
     if (cta === 'photo') return `/quote?entry=photo&from=custom&product=${slug}`
@@ -110,25 +111,28 @@ export default function CustomProductDetailClient({
 
                 <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-6 lg:gap-10 items-start mb-10 md:mb-14">
                     <div className="space-y-3">
-                        <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/10 bg-[#121826]">
-                            <img
-                                src={activeImage}
-                                alt={title}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
-                                }}
-                            />
+                        {/* 메인: 원본 비율 유지 자동맞춤 (미리보기·공개 상세 동일) */}
+                        <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#0a0e17]">
+                            <div className="relative w-full min-h-[220px] max-h-[520px] flex items-center justify-center">
+                                <img
+                                    src={activeImage}
+                                    alt={title}
+                                    className="w-full h-auto max-h-[520px] object-contain"
+                                    onError={(e) => {
+                                        ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
+                                    }}
+                                />
+                            </div>
                         </div>
                         {gallery.length > 1 ? (
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                            <div className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {gallery.map((src, idx) => (
                                     <button
                                         key={`${src}-${idx}`}
                                         type="button"
                                         onClick={() => setActiveIndex(idx)}
                                         className={cn(
-                                            'relative aspect-square rounded-xl overflow-hidden border transition-all',
+                                            'relative shrink-0 w-[64px] h-[64px] sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden border bg-black/40 transition-all',
                                             idx === activeIndex
                                                 ? 'border-teal-400 ring-2 ring-teal-400/40'
                                                 : 'border-white/10 hover:border-white/30'
@@ -288,38 +292,57 @@ export default function CustomProductDetailClient({
                             </p>
                         </div>
 
-                        <div className="prose-invert space-y-4">
-                            {detailBody
-                                .split('\n')
-                                .filter(Boolean)
-                                .map((line, i) => (
-                                    <p
-                                        key={i}
-                                        className="text-[14px] sm:text-[15px] font-medium text-white/65 leading-relaxed break-keep text-center"
-                                    >
-                                        {line}
-                                    </p>
-                                ))}
-                        </div>
-
-                        <div className="space-y-4">
-                            {(product.detailImages.length > 0 ? product.detailImages : gallery).map(
-                                (src, idx) => (
-                                    <div
-                                        key={`detail-${idx}`}
-                                        className="rounded-xl overflow-hidden border border-white/10 bg-black/30"
-                                    >
-                                        <img
-                                            src={src}
-                                            alt={`${title} ${t('detailImageAlt', { n: idx + 1 })}`}
-                                            className="w-full h-auto object-cover"
-                                            onError={(e) => {
-                                                ;(e.target as HTMLImageElement).src =
-                                                    '/placeholder-3d.svg'
-                                            }}
-                                        />
+                        <div className="prose-invert max-w-none">
+                            {isProbablyHtml(detailBody) ? (
+                                <div
+                                    className="detail-body-html text-[14px] sm:text-[15px] font-medium text-white/70 leading-relaxed break-keep space-y-3 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-white [&_h2]:text-xl [&_h2]:font-black [&_h2]:text-white [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_p]:mb-3 [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:object-contain [&_img]:rounded-xl [&_img]:border [&_img]:border-white/10 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_blockquote]:border-l-2 [&_blockquote]:border-teal-400 [&_blockquote]:pl-4 [&_blockquote]:text-white/55 [&_a]:text-teal-300 [&_a]:underline [&_table]:w-full [&_th]:border [&_th]:border-white/15 [&_th]:px-2 [&_th]:py-1.5 [&_td]:border [&_td]:border-white/15 [&_td]:px-2 [&_td]:py-1.5 [&_hr]:border-white/15"
+                                    dangerouslySetInnerHTML={{
+                                        __html: sanitizeDetailHtml(detailBody),
+                                    }}
+                                />
+                            ) : (
+                                <>
+                                    <div className="space-y-4">
+                                        {detailBody
+                                            .split('\n')
+                                            .filter(Boolean)
+                                            .map((line, i) => (
+                                                <p
+                                                    key={i}
+                                                    className="text-[14px] sm:text-[15px] font-medium text-white/65 leading-relaxed break-keep text-center"
+                                                >
+                                                    {line}
+                                                </p>
+                                            ))}
                                     </div>
-                                )
+                                    {/* 평문 상세일 때만 별도 상세이미지 슬롯 노출 (에디터 HTML과 중복 방지) */}
+                                    {(product.detailImages.length > 0
+                                        ? product.detailImages
+                                        : gallery
+                                    ).length > 0 ? (
+                                        <div className="space-y-4 mt-8">
+                                            {(product.detailImages.length > 0
+                                                ? product.detailImages
+                                                : gallery
+                                            ).map((src, idx) => (
+                                                <div
+                                                    key={`detail-${idx}`}
+                                                    className="rounded-xl overflow-hidden border border-white/10 bg-black/30"
+                                                >
+                                                    <img
+                                                        src={src}
+                                                        alt={`${title} ${t('detailImageAlt', { n: idx + 1 })}`}
+                                                        className="w-full h-auto object-contain"
+                                                        onError={(e) => {
+                                                            ;(e.target as HTMLImageElement).src =
+                                                                '/placeholder-3d.svg'
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </>
                             )}
                         </div>
 
