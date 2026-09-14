@@ -79,12 +79,16 @@ export default function ShowcaseDetailClient({
                         animate={{ opacity: 1, y: 0 }}
                         className="mb-20 grid items-center gap-10 lg:mb-24 lg:grid-cols-2 lg:gap-14"
                     >
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:rounded-[2.5rem]">
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:rounded-[2.5rem]">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={data.heroImageUrl}
                                 alt={t('heroImageAlt', { title: data.title })}
-                                className="h-full w-full object-cover"
+                                className={
+                                    slug === 'art'
+                                        ? 'h-full w-full object-contain object-center'
+                                        : 'h-full w-full object-cover'
+                                }
                                 onError={(e) => {
                                     ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                                 }}

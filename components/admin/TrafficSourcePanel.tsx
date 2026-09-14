@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { trafficMediumLabel, trafficSourceHint, trafficSourceLabel } from '@/lib/traffic-source-labels';
+import { ADMIN_CHART_SEQUENCE } from '@/lib/admin-chart-theme';
 
 type TrafficSource = {
     source: string;
@@ -41,7 +42,7 @@ type SourceDetail = {
     }[];
 };
 
-const BAR_COLORS = ['bg-primary', 'bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500'];
+const BAR_COLORS = [...ADMIN_CHART_SEQUENCE];
 
 type Props = {
     sources: TrafficSource[];
@@ -201,7 +202,8 @@ export default function TrafficSourcePanel({ sources, token, dayCount = 30 }: Pr
                                         <div className="flex justify-between text-xs font-bold">
                                             <span className="text-white/60 flex items-center gap-2">
                                                 <span
-                                                    className={`w-2 h-2 rounded-full ${colors[idx % colors.length]}`}
+                                                    className="w-2 h-2 rounded-sm shrink-0"
+                                                    style={{ backgroundColor: colors[idx % colors.length] }}
                                                 />
                                                 <span>
                                                     <span className="text-white/80">{trafficSourceLabel(ts.source)}</span>
@@ -221,8 +223,11 @@ export default function TrafficSourcePanel({ sources, token, dayCount = 30 }: Pr
                                         </div>
                                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                                             <div
-                                                className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-1000`}
-                                                style={{ width: `${percent}%` }}
+                                                className="h-full rounded-full transition-all duration-1000"
+                                                style={{
+                                                    width: `${percent}%`,
+                                                    backgroundColor: colors[idx % colors.length],
+                                                }}
                                             />
                                         </div>
                                     </button>

@@ -21,6 +21,7 @@ import {
     formatStatsPeriodLabel,
 } from '@/lib/admin-stats-range';
 import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle';
+import { ADMIN_CHART, ADMIN_VISITOR_SERIES_COLORS } from '@/lib/admin-chart-theme';
 
 type SeriesKey = 'pageViews' | 'uniqueSessions' | 'memberSessions' | 'quotePageViews';
 
@@ -31,10 +32,10 @@ const SERIES: {
     color: string;
     type: 'bar' | 'line';
 }[] = [
-    { key: 'pageViews', label: '페이지뷰', shortLabel: 'PV', color: '#22c55e', type: 'bar' },
-    { key: 'uniqueSessions', label: '고유 세션', shortLabel: '세션', color: '#f97316', type: 'bar' },
-    { key: 'memberSessions', label: '회원 세션', shortLabel: '회원', color: '#3b82f6', type: 'bar' },
-    { key: 'quotePageViews', label: '견적·체험 페이지', shortLabel: '견적PV', color: '#a855f7', type: 'line' },
+    { key: 'pageViews', label: '페이지뷰', shortLabel: 'PV', color: ADMIN_VISITOR_SERIES_COLORS.pageViews, type: 'bar' },
+    { key: 'uniqueSessions', label: '고유 세션', shortLabel: '세션', color: ADMIN_VISITOR_SERIES_COLORS.uniqueSessions, type: 'bar' },
+    { key: 'memberSessions', label: '회원 세션', shortLabel: '회원', color: ADMIN_VISITOR_SERIES_COLORS.memberSessions, type: 'bar' },
+    { key: 'quotePageViews', label: '견적·체험 페이지', shortLabel: '견적PV', color: ADMIN_VISITOR_SERIES_COLORS.quotePageViews, type: 'line' },
 ];
 
 const CHART_H = 220;
@@ -199,8 +200,8 @@ export default function VisitorTrendPanel({
                                             x2={PAD.left + innerW}
                                             y1={y}
                                             y2={y}
-                                            stroke="rgba(255,255,255,0.06)"
-                                            strokeDasharray="4 4"
+                                            stroke={ADMIN_CHART.grid}
+                                            strokeDasharray="3 6"
                                         />
                                     );
                                 })}
@@ -229,7 +230,7 @@ export default function VisitorTrendPanel({
                                                 x={PAD.left + innerW + 8}
                                                 y={y + 3}
                                                 textAnchor="start"
-                                                className="fill-purple-400/60 text-[9px] font-medium"
+                                                className="fill-[#B07D31]/70 text-[9px] font-medium"
                                             >
                                                 {tick}
                                             </text>
@@ -239,9 +240,9 @@ export default function VisitorTrendPanel({
                                 {points.map((p, i) => {
                                     const gx = PAD.left + groupW * i + groupW / 2;
                                     const bars: { key: SeriesKey; value: number; color: string; offset: number }[] = [];
-                                    if (visible.pageViews) bars.push({ key: 'pageViews', value: p.pageViews, color: '#22c55e', offset: -1.5 });
-                                    if (visible.uniqueSessions) bars.push({ key: 'uniqueSessions', value: p.uniqueSessions, color: '#f97316', offset: -0.5 });
-                                    if (visible.memberSessions) bars.push({ key: 'memberSessions', value: p.memberSessions, color: '#3b82f6', offset: 0.5 });
+                                    if (visible.pageViews) bars.push({ key: 'pageViews', value: p.pageViews, color: ADMIN_VISITOR_SERIES_COLORS.pageViews, offset: -1.5 });
+                                    if (visible.uniqueSessions) bars.push({ key: 'uniqueSessions', value: p.uniqueSessions, color: ADMIN_VISITOR_SERIES_COLORS.uniqueSessions, offset: -0.5 });
+                                    if (visible.memberSessions) bars.push({ key: 'memberSessions', value: p.memberSessions, color: ADMIN_VISITOR_SERIES_COLORS.memberSessions, offset: 0.5 });
 
                                     return (
                                         <g key={p.date}>
@@ -257,8 +258,8 @@ export default function VisitorTrendPanel({
                                                         width={barW}
                                                         height={Math.max(h, b.value > 0 ? 2 : 0)}
                                                         fill={b.color}
-                                                        rx={2}
-                                                        opacity={0.85}
+                                                        rx={3}
+                                                        opacity={0.92}
                                                         pointerEvents="none"
                                                     />
                                                 );
@@ -280,9 +281,10 @@ export default function VisitorTrendPanel({
                                         <path
                                             d={linePath}
                                             fill="none"
-                                            stroke="#a855f7"
-                                            strokeWidth={2}
+                                            stroke={ADMIN_VISITOR_SERIES_COLORS.quotePageViews}
+                                            strokeWidth={2.25}
                                             strokeLinejoin="round"
+                                            strokeLinecap="round"
                                         />
                                         {points.map((p, i) => {
                                             if (p.quotePageViews <= 0) return null;
@@ -294,8 +296,8 @@ export default function VisitorTrendPanel({
                                                         cx={x}
                                                         cy={y}
                                                         r={4}
-                                                        fill="#a855f7"
-                                                        stroke="#0f0f0f"
+                                                        fill={ADMIN_VISITOR_SERIES_COLORS.quotePageViews}
+                                                        stroke={ADMIN_CHART.lineStroke}
                                                         strokeWidth={2}
                                                         pointerEvents="none"
                                                     />
@@ -303,7 +305,7 @@ export default function VisitorTrendPanel({
                                                         x={x}
                                                         y={y - 8}
                                                         textAnchor="middle"
-                                                        className="fill-purple-300 text-[8px] font-bold"
+                                                        className="fill-[#CDBE9A] text-[8px] font-bold"
                                                     >
                                                         {p.quotePageViews}
                                                     </text>
@@ -320,7 +322,7 @@ export default function VisitorTrendPanel({
                                     <text
                                         x={PAD.left + innerW + 8}
                                         y={PAD.top + 4}
-                                        className="fill-purple-400/50 text-[8px] font-bold"
+                                        className="fill-[#B07D31]/55 text-[8px] font-bold"
                                     >
                                         견적
                                     </text>
@@ -367,8 +369,11 @@ export default function VisitorTrendPanel({
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[640px] text-[10px]">
                                     <thead>
-                                        <tr className="bg-orange-600/90 text-white">
-                                            <th className="px-3 py-2 text-left font-bold w-24 sticky left-0 bg-orange-600/95 z-10">
+                                        <tr style={{ backgroundColor: ADMIN_CHART.tableHeader }} className="text-white">
+                                            <th
+                                                className="px-3 py-2 text-left font-bold w-24 sticky left-0 z-10"
+                                                style={{ backgroundColor: ADMIN_CHART.tableHeader }}
+                                            >
                                                 구분
                                             </th>
                                             {points.map((p) => (
@@ -376,7 +381,10 @@ export default function VisitorTrendPanel({
                                                     {axisLabel(p.date)}
                                                 </th>
                                             ))}
-                                            <th className="px-3 py-2 text-center font-black bg-orange-700/80 whitespace-nowrap">
+                                            <th
+                                                className="px-3 py-2 text-center font-black whitespace-nowrap"
+                                                style={{ backgroundColor: ADMIN_CHART.tableHeaderDeep }}
+                                            >
                                                 합계
                                             </th>
                                         </tr>

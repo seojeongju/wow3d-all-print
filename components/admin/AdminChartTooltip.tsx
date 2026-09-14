@@ -67,8 +67,8 @@ export function ChartDayHitArea({
                     y={y}
                     width={width}
                     height={height}
-                    fill="rgba(255,255,255,0.07)"
-                    rx={3}
+                    fill="rgba(38, 92, 67, 0.16)"
+                    rx={4}
                     pointerEvents="none"
                 />
             )}
@@ -111,16 +111,16 @@ export function AdminChartTooltip({
     return createPortal(
         <div
             role="tooltip"
-            className="pointer-events-none fixed z-[80] min-w-[168px] max-w-[240px] rounded-xl border border-white/12 bg-[#161616]/95 px-3 py-2.5 shadow-2xl shadow-black/50 backdrop-blur-md"
+            className="pointer-events-none fixed z-[80] min-w-[168px] max-w-[240px] rounded-xl border border-[#265C43]/35 bg-[#121812]/96 px-3 py-2.5 shadow-2xl shadow-black/50 backdrop-blur-md"
             style={{ left, top }}
         >
             <p className="mb-2 text-[11px] font-black tracking-wide text-white">{title}</p>
-            <ul className="space-y-1">
+            <ul className="space-y-1.5">
                 {rows.map((r) => (
                     <li key={r.label} className="flex items-center justify-between gap-4 text-[11px]">
                         <span className="flex min-w-0 items-center gap-1.5 font-medium text-white/55">
                             <span
-                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                className="h-2 w-2 shrink-0 rounded-sm"
                                 style={{ backgroundColor: r.color }}
                             />
                             <span className="truncate">{r.label}</span>

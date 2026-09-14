@@ -201,12 +201,16 @@ export default function ExpertPageClient({
                                     viewport={{ once: true }}
                                     className="group relative rounded-[1.75rem] md:rounded-[2rem] bg-white/[0.03] border border-white/10 p-2 overflow-hidden hover:bg-white/[0.08] hover:border-teal-400/40 transition-all duration-500 hover:shadow-2xl hover:shadow-teal-400/10 hover:-translate-y-2 cursor-pointer h-full flex flex-col"
                                 >
-                                    <div className="relative h-44 sm:h-48 md:h-52 rounded-[1.35rem] md:rounded-[1.5rem] overflow-hidden mb-3">
+                                    <div className="relative h-44 sm:h-48 md:h-52 rounded-[1.35rem] md:rounded-[1.5rem] overflow-hidden mb-3 bg-slate-900">
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent z-10" />
                                         <img
                                             src={cat.image}
                                             alt={cat.title}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                            className={`w-full h-full group-hover:scale-110 transition-transform duration-700 ${
+                                                cat.slug === 'art'
+                                                    ? 'object-contain object-center'
+                                                    : 'object-cover'
+                                            }`}
                                             onError={(e) => {
                                                 ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                                             }}

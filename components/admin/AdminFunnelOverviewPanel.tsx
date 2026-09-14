@@ -40,6 +40,11 @@ import {
     formatStatsPeriodLabel,
 } from '@/lib/admin-stats-range';
 import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle';
+import {
+    ADMIN_CHART,
+    ADMIN_CHART_SEQUENCE,
+    ADMIN_FUNNEL_SERIES_COLORS,
+} from '@/lib/admin-chart-theme';
 
 type Props = {
     heroSummary: HeroFunnelSummary;
@@ -69,11 +74,11 @@ const TREND_SERIES: {
     shortLabel: string;
     color: string;
 }[] = [
-    { key: 'heroView', label: '히어로', shortLabel: '히어로', color: '#2dd4bf' },
-    { key: 'quotePageView', label: '견적 진입', shortLabel: '견적', color: '#60a5fa' },
-    { key: 'quoteEstimate', label: '견적 확인', shortLabel: '확인', color: '#a78bfa' },
-    { key: 'quoteAddToCart', label: '장바구니', shortLabel: '장바구니', color: '#f97316' },
-    { key: 'orderComplete', label: '주문', shortLabel: '주문', color: '#34d399' },
+    { key: 'heroView', label: '히어로', shortLabel: '히어로', color: ADMIN_FUNNEL_SERIES_COLORS.heroView },
+    { key: 'quotePageView', label: '견적 진입', shortLabel: '견적', color: ADMIN_FUNNEL_SERIES_COLORS.quotePageView },
+    { key: 'quoteEstimate', label: '견적 확인', shortLabel: '확인', color: ADMIN_FUNNEL_SERIES_COLORS.quoteEstimate },
+    { key: 'quoteAddToCart', label: '장바구니', shortLabel: '장바구니', color: ADMIN_FUNNEL_SERIES_COLORS.quoteAddToCart },
+    { key: 'orderComplete', label: '주문', shortLabel: '주문', color: ADMIN_FUNNEL_SERIES_COLORS.orderComplete },
 ];
 
 const HERO_DETAIL_ORDER = [
@@ -93,7 +98,7 @@ const QUOTE_DETAIL_ORDER = [
     QUOTE_CONVERSION_EVENTS.ANALYSIS_COMPLETE,
 ];
 
-const SOURCE_COLORS = ['bg-primary', 'bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500'];
+const SOURCE_COLORS = [...ADMIN_CHART_SEQUENCE];
 
 const CHART_H = 200;
 const PAD = { top: 12, right: 12, bottom: 24, left: 40 };
@@ -132,34 +137,34 @@ export default function AdminFunnelOverviewPanel({
             den > 0 ? `${Math.round((num / den) * 1000) / 10}%` : '—';
 
         return [
-            { key: 'hero', label: '히어로', value: hero, color: '#2dd4bf' },
+            { key: 'hero', label: '히어로', value: hero, color: ADMIN_FUNNEL_SERIES_COLORS.heroView },
             {
                 key: 'quote',
                 label: '견적 진입',
                 value: quote,
                 rateLabel: pct(quote, hero),
-                color: '#60a5fa',
+                color: ADMIN_FUNNEL_SERIES_COLORS.quotePageView,
             },
             {
                 key: 'estimate',
                 label: '견적 확인',
                 value: estimate,
                 rateLabel: `${quoteSummary.estimateRate}%`,
-                color: '#a78bfa',
+                color: ADMIN_FUNNEL_SERIES_COLORS.quoteEstimate,
             },
             {
                 key: 'cart',
                 label: '장바구니',
                 value: cart,
                 rateLabel: `${quoteSummary.cartRate}%`,
-                color: '#f97316',
+                color: ADMIN_FUNNEL_SERIES_COLORS.quoteAddToCart,
             },
             {
                 key: 'order',
                 label: '주문',
                 value: orderComplete,
                 rateLabel: pct(orderComplete, quote),
-                color: '#34d399',
+                color: ADMIN_FUNNEL_SERIES_COLORS.orderComplete,
             },
         ];
     }, [heroSummary.views, quoteSummary, orderComplete]);
@@ -175,10 +180,10 @@ export default function AdminFunnelOverviewPanel({
     );
 
     const dbKpis = [
-        { label: '신규 견적', value: quoteDbSummary.total, icon: FileText, tone: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-        { label: '주문 전환', value: quoteDbSummary.ordered, sub: `${quoteDbSummary.conversionRate}%`, icon: ShoppingCart, tone: 'text-orange-400', bg: 'bg-orange-500/10' },
-        { label: '장바구니', value: quoteDbSummary.incart, icon: MousePointer2, tone: 'text-blue-400', bg: 'bg-blue-500/10' },
-        { label: '견적 이탈', value: quoteDbSummary.abandoned, icon: XCircle, tone: 'text-rose-400', bg: 'bg-rose-500/10' },
+        { label: '신규 견적', value: quoteDbSummary.total, icon: FileText, tone: 'text-[#A3C1AD]', bg: 'bg-[#265C43]/20' },
+        { label: '주문 전환', value: quoteDbSummary.ordered, sub: `${quoteDbSummary.conversionRate}%`, icon: ShoppingCart, tone: 'text-[#CDBE9A]', bg: 'bg-[#B07D31]/15' },
+        { label: '장바구니', value: quoteDbSummary.incart, icon: MousePointer2, tone: 'text-[#A3C1AD]', bg: 'bg-[#5A906E]/20' },
+        { label: '견적 이탈', value: quoteDbSummary.abandoned, icon: XCircle, tone: 'text-[#E8A0A0]', bg: 'bg-[#A62626]/20' },
         { label: '작성 중', value: quoteDbSummary.draft, icon: PenLine, tone: 'text-white/50', bg: 'bg-white/5' },
     ];
 
@@ -188,7 +193,7 @@ export default function AdminFunnelOverviewPanel({
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base font-bold text-white">
-                            <TrendingUp className="h-4 w-4 text-teal-400" />
+                            <TrendingUp className="h-4 w-4 text-[#A3C1AD]" />
                             전환 &amp; 견적 현황
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
                                 {rangeText}
@@ -239,7 +244,7 @@ export default function AdminFunnelOverviewPanel({
                                                 {step.label}
                                             </span>
                                             {step.rateLabel && i > 0 && (
-                                                <span className="text-[10px] font-bold text-teal-400/80">{step.rateLabel}</span>
+                                                <span className="text-[10px] font-bold text-[#A3C1AD]/90">{step.rateLabel}</span>
                                             )}
                                         </div>
                                         <p className="text-xl font-black tabular-nums text-white">{step.value.toLocaleString('ko-KR')}</p>
@@ -324,8 +329,8 @@ export default function AdminFunnelOverviewPanel({
                                                 x2={PAD.left + chart.width}
                                                 y1={y}
                                                 y2={y}
-                                                stroke="rgba(255,255,255,0.06)"
-                                                strokeDasharray="4 4"
+                                                stroke={ADMIN_CHART.grid}
+                                                strokeDasharray="3 6"
                                             />
                                         );
                                     })}
@@ -369,8 +374,8 @@ export default function AdminFunnelOverviewPanel({
                                                             width={barW}
                                                             height={Math.max(h, col.values[s.key] > 0 ? 2 : 0)}
                                                             fill={s.color}
-                                                            rx={2}
-                                                            opacity={0.9}
+                                                            rx={3}
+                                                            opacity={0.92}
                                                             pointerEvents="none"
                                                         />
                                                     );
@@ -433,7 +438,7 @@ export default function AdminFunnelOverviewPanel({
                     <div className="space-y-4 lg:col-span-4">
                         <div className="rounded-xl border border-white/5 p-4">
                             <div className="mb-3 flex items-center gap-2">
-                                <Database className="h-3.5 w-3.5 text-orange-400" />
+                                <Database className="h-3.5 w-3.5 text-[#CDBE9A]" />
                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/35">
                                     견적 DB
                                     <span className="ml-1.5 font-medium normal-case tracking-normal text-white/25">· 실제 저장</span>
@@ -478,10 +483,11 @@ export default function AdminFunnelOverviewPanel({
                                                 <div className="flex justify-between text-[10px] font-bold">
                                                     <span className="flex min-w-0 items-center gap-1.5 truncate text-white/60 capitalize">
                                                         <span
-                                                            className={cn(
-                                                                'h-1.5 w-1.5 shrink-0 rounded-full',
-                                                                SOURCE_COLORS[idx % SOURCE_COLORS.length],
-                                                            )}
+                                                            className="h-2 w-2 shrink-0 rounded-sm"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    SOURCE_COLORS[idx % SOURCE_COLORS.length],
+                                                            }}
                                                         />
                                                         {src.source}
                                                     </span>
@@ -490,13 +496,14 @@ export default function AdminFunnelOverviewPanel({
                                                         <span className="ml-1 font-medium text-white/30">({src.count})</span>
                                                     </span>
                                                 </div>
-                                                <div className="h-1 overflow-hidden rounded-full bg-white/5">
+                                                <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
                                                     <div
-                                                        className={cn(
-                                                            'h-full rounded-full',
-                                                            SOURCE_COLORS[idx % SOURCE_COLORS.length],
-                                                        )}
-                                                        style={{ width: `${pct}%` }}
+                                                        className="h-full rounded-full"
+                                                        style={{
+                                                            width: `${pct}%`,
+                                                            backgroundColor:
+                                                                SOURCE_COLORS[idx % SOURCE_COLORS.length],
+                                                        }}
                                                     />
                                                 </div>
                                             </div>

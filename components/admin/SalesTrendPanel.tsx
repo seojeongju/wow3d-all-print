@@ -21,6 +21,7 @@ import {
     formatStatsPeriodLabel,
 } from '@/lib/admin-stats-range'
 import AdminStatsRangeToggle from '@/components/admin/AdminStatsRangeToggle'
+import { ADMIN_CHART, ADMIN_SALES_SERIES_COLORS } from '@/lib/admin-chart-theme'
 
 type SeriesKey = 'amount' | 'paidAmount' | 'outstandingAmount' | 'orderCount';
 
@@ -29,13 +30,12 @@ const SERIES: {
     label: string;
     shortLabel: string;
     color: string;
-    barClass: string;
     type: 'bar' | 'line';
 }[] = [
-    { key: 'amount', label: '주문금액', shortLabel: '금액', color: '#22c55e', barClass: 'bg-emerald-500', type: 'bar' },
-    { key: 'paidAmount', label: '입금액', shortLabel: '입금', color: '#f97316', barClass: 'bg-orange-500', type: 'bar' },
-    { key: 'outstandingAmount', label: '미수금', shortLabel: '미수', color: '#3b82f6', barClass: 'bg-blue-500', type: 'bar' },
-    { key: 'orderCount', label: '주문건수', shortLabel: '건수', color: '#a855f7', barClass: 'bg-purple-500', type: 'line' },
+    { key: 'amount', label: '주문금액', shortLabel: '금액', color: ADMIN_SALES_SERIES_COLORS.amount, type: 'bar' },
+    { key: 'paidAmount', label: '입금액', shortLabel: '입금', color: ADMIN_SALES_SERIES_COLORS.paidAmount, type: 'bar' },
+    { key: 'outstandingAmount', label: '미수금', shortLabel: '미수', color: ADMIN_SALES_SERIES_COLORS.outstandingAmount, type: 'bar' },
+    { key: 'orderCount', label: '주문건수', shortLabel: '건수', color: ADMIN_SALES_SERIES_COLORS.orderCount, type: 'line' },
 ];
 
 const CHART_H = 220;
@@ -197,8 +197,8 @@ export default function SalesTrendPanel({
                                             x2={PAD.left + innerW}
                                             y1={y}
                                             y2={y}
-                                            stroke="rgba(255,255,255,0.06)"
-                                            strokeDasharray="4 4"
+                                            stroke={ADMIN_CHART.grid}
+                                            strokeDasharray="3 6"
                                         />
                                     );
                                 })}
@@ -229,7 +229,7 @@ export default function SalesTrendPanel({
                                                 x={PAD.left + innerW + 8}
                                                 y={y + 3}
                                                 textAnchor="start"
-                                                className="fill-purple-400/60 text-[9px] font-medium"
+                                                className="fill-[#B07D31]/70 text-[9px] font-medium"
                                             >
                                                 {tick}
                                             </text>
@@ -240,9 +240,9 @@ export default function SalesTrendPanel({
                                 {points.map((p, i) => {
                                     const gx = PAD.left + groupW * i + groupW / 2;
                                     const bars: { key: SeriesKey; value: number; color: string; offset: number }[] = [];
-                                    if (visible.amount) bars.push({ key: 'amount', value: p.amount, color: '#22c55e', offset: -1.5 });
-                                    if (visible.paidAmount) bars.push({ key: 'paidAmount', value: p.paidAmount, color: '#f97316', offset: -0.5 });
-                                    if (visible.outstandingAmount) bars.push({ key: 'outstandingAmount', value: p.outstandingAmount, color: '#3b82f6', offset: 0.5 });
+                                    if (visible.amount) bars.push({ key: 'amount', value: p.amount, color: ADMIN_SALES_SERIES_COLORS.amount, offset: -1.5 });
+                                    if (visible.paidAmount) bars.push({ key: 'paidAmount', value: p.paidAmount, color: ADMIN_SALES_SERIES_COLORS.paidAmount, offset: -0.5 });
+                                    if (visible.outstandingAmount) bars.push({ key: 'outstandingAmount', value: p.outstandingAmount, color: ADMIN_SALES_SERIES_COLORS.outstandingAmount, offset: 0.5 });
 
                                     return (
                                         <g key={p.date}>
@@ -258,8 +258,8 @@ export default function SalesTrendPanel({
                                                         width={barW}
                                                         height={Math.max(h, b.value > 0 ? 2 : 0)}
                                                         fill={b.color}
-                                                        rx={2}
-                                                        opacity={0.85}
+                                                        rx={3}
+                                                        opacity={0.92}
                                                         pointerEvents="none"
                                                     />
                                                 );
@@ -283,9 +283,10 @@ export default function SalesTrendPanel({
                                         <path
                                             d={linePath}
                                             fill="none"
-                                            stroke="#a855f7"
-                                            strokeWidth={2}
+                                            stroke={ADMIN_SALES_SERIES_COLORS.orderCount}
+                                            strokeWidth={2.25}
                                             strokeLinejoin="round"
+                                            strokeLinecap="round"
                                         />
                                         {points.map((p, i) => {
                                             if (p.orderCount <= 0) return null;
@@ -297,8 +298,8 @@ export default function SalesTrendPanel({
                                                         cx={x}
                                                         cy={y}
                                                         r={4}
-                                                        fill="#a855f7"
-                                                        stroke="#0f0f0f"
+                                                        fill={ADMIN_SALES_SERIES_COLORS.orderCount}
+                                                        stroke={ADMIN_CHART.lineStroke}
                                                         strokeWidth={2}
                                                         pointerEvents="none"
                                                     />
@@ -306,7 +307,7 @@ export default function SalesTrendPanel({
                                                         x={x}
                                                         y={y - 8}
                                                         textAnchor="middle"
-                                                        className="fill-purple-300 text-[8px] font-bold"
+                                                        className="fill-[#CDBE9A] text-[8px] font-bold"
                                                     >
                                                         {p.orderCount}
                                                     </text>
@@ -324,7 +325,7 @@ export default function SalesTrendPanel({
                                     <text
                                         x={PAD.left + innerW + 8}
                                         y={PAD.top + 4}
-                                        className="fill-purple-400/50 text-[8px] font-bold"
+                                        className="fill-[#B07D31]/55 text-[8px] font-bold"
                                     >
                                         건
                                     </text>
@@ -376,8 +377,11 @@ export default function SalesTrendPanel({
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[640px] text-[10px]">
                                     <thead>
-                                        <tr className="bg-orange-600/90 text-white">
-                                            <th className="px-3 py-2 text-left font-bold w-24 sticky left-0 bg-orange-600/95 z-10">
+                                        <tr style={{ backgroundColor: ADMIN_CHART.tableHeader }} className="text-white">
+                                            <th
+                                                className="px-3 py-2 text-left font-bold w-24 sticky left-0 z-10"
+                                                style={{ backgroundColor: ADMIN_CHART.tableHeader }}
+                                            >
                                                 구분
                                             </th>
                                             {points.map((p) => (
@@ -385,7 +389,10 @@ export default function SalesTrendPanel({
                                                     {axisLabel(p.date)}
                                                 </th>
                                             ))}
-                                            <th className="px-3 py-2 text-center font-black bg-orange-700/80 whitespace-nowrap">
+                                            <th
+                                                className="px-3 py-2 text-center font-black whitespace-nowrap"
+                                                style={{ backgroundColor: ADMIN_CHART.tableHeaderDeep }}
+                                            >
                                                 합계
                                             </th>
                                         </tr>
