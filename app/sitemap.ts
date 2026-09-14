@@ -3,11 +3,18 @@ import { SITE_URL } from "@/lib/site-url";
 import { SERVICE_LANDINGS } from "@/lib/seo-service-pages";
 import { NEW_SEO_GUIDES } from "@/lib/seo-guide-pages";
 import { SHOWCASE_SLUGS } from "@/lib/showcase";
+import { CUSTOM_PRODUCT_SLUGS } from "@/lib/custom-products";
 
 /** 검색엔진에 노출할 공개 페이지 — www 대표 URL만 수록 */
 const PUBLIC_PAGES: { path: string; priority?: number; changeFrequency?: "daily" | "weekly" | "monthly" }[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/quote", priority: 0.98, changeFrequency: "weekly" },
+  { path: "/custom", priority: 0.95, changeFrequency: "weekly" },
+  ...CUSTOM_PRODUCT_SLUGS.map((slug) => ({
+    path: `/custom/${slug}`,
+    priority: 0.9,
+    changeFrequency: "weekly" as const,
+  })),
   { path: "/services", priority: 0.96, changeFrequency: "weekly" },
   ...SERVICE_LANDINGS.map((s) => ({
     path: s.path,

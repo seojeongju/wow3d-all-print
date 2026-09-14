@@ -5,7 +5,7 @@ import NextLink from "next/link";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Search, MessageSquare, ChevronRight, Printer, Sparkles, Handshake, ChevronDown, MapPin } from "lucide-react";
+import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Search, MessageSquare, ChevronRight, Printer, Sparkles, Handshake, ChevronDown, MapPin, Gift } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
@@ -75,6 +75,7 @@ export default function Header() {
                 ],
             },
             { label: t('quote'), href: '/quote' },
+            { label: t('customProducts'), href: '/custom' },
             { label: t('products'), href: '/hardware/3d-printer' },
             { label: t('expert'), href: '/expert' },
             { label: t('orders'), href: '/my-account' },
@@ -487,6 +488,7 @@ export default function Header() {
                                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
                                                 {item.label === t('servicesGuides') && <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                                 {item.label === t('quote') && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                {item.label === t('customProducts') && <Gift className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                                 {item.label === t('products') && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                                 {item.label === t('expert') && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
                                                 {item.label === t('orders') && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}

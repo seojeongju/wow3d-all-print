@@ -13,7 +13,8 @@
     "guides": "가이드",
     "guidesDesc": "견적·소재·파일 준비 안내",
     "quote": "자동견적",
-    "products": "제품소개",
+    "customProducts": "맞춤 상품",
+    "products": "장비",
     "expert": "제품개발 및 문의",
     "orders": "주문조회",
     "support": "고객지원",
@@ -3446,7 +3447,7 @@
     "showcaseSubtitle": "카드를 클릭하면 분야별 제작 예시·샘플 페이지로 이동합니다.",
     "processTitleBefore": "빠르고 정확한",
     "processTitleAccent": "원스톱 프로세스",
-    "processSubtitle": "복잡한 절차를 획기적으로 줄였습니다. 도면 한 장으로 시작하는 가장 빠른 제품 출시.",
+    "processSubtitle": "요구 분석부터 시제품·검증까지, WOW3D가 원스톱으로 지원하는 제작 모델입니다.",
     "processLogicLabel": "Precision Logic",
     "processLogicDesc": "디지털 설계가 현실이 되는 가장 완벽한 과정",
     "processSteps": [
@@ -3522,7 +3523,6 @@
     "detailCtaQuote": "자동견적 시작",
     "processEyebrow": "Development model",
     "processTitle": "제품개발 프로세스",
-    "processSubtitle": "요구 분석부터 시제품·검증까지, WOW3D가 원스톱으로 지원하는 제작 모델입니다.",
     "detailBottomTitle": "같은 방식으로 프로젝트를 진행해 볼까요?",
     "detailBottomDesc": "아이디어·도면·사진만 있어도 상담부터 시제품까지 도와드립니다."
   },
@@ -4171,5 +4171,112 @@
     "signLine": "위와 같이 견적합니다.",
     "defaultCompany": "와우쓰리디 (Wow3D)",
     "metaTitle": "견적서 인쇄"
+  },
+  "CustomProducts": {
+    "metaTitle": "맞춤 상품 | 3D프린팅 커스터마이징",
+    "metaDescription": "폰케이스, 네임택, 반려동물 피규어 등 3D프린팅 맞춤 상품을 확인하고 견적·문의로 이어가세요.",
+    "metaBrand": "WOW3D",
+    "ogTitle": "3D프린팅 맞춤 상품",
+    "ogDescription": "원하는 옵션으로 맞추는 3D프린팅 상품 라인업",
+    "hubEyebrow": "Custom Products",
+    "hubTitle": "3D프린팅",
+    "hubTitleAccent": "맞춤 상품",
+    "hubSubtitle": "색상·사이즈·각인·사진 업로드까지, 원하는 방식으로 커스터마이징할 수 있는 상품을 모았습니다.",
+    "hubCtaTitle": "원하는 상품이 없나요?",
+    "hubCtaDesc": "파일을 올리면 자동견적으로, 상담이 필요하면 제품개발 문의로 바로 이어갈 수 있습니다.",
+    "viewDetail": "상품 자세히 보기",
+    "backToHub": "맞춤 상품 목록",
+    "optionsTitle": "커스터마이징 옵션",
+    "optionsDesc": "아래에서 가능한 옵션을 확인한 뒤, 견적 또는 문의로 요청사항을 전달해 주세요.",
+    "nextTitle": "다음 단계",
+    "nextDesc": "옵션을 정하셨다면 견적·사진변환·상담 중 편한 방법으로 진행하세요.",
+    "browseMore": "다른 상품 보기",
+    "ctaQuote": "자동견적 시작",
+    "ctaPhoto": "사진으로 3D 만들기",
+    "ctaInquiry": "맞춤 제작 문의",
+    "methodMixed": "복합 공정",
+    "method": {
+      "fdm": "FDM",
+      "sla": "SLA",
+      "dlp": "DLP"
+    },
+    "options": {
+      "color": {
+        "label": "색상",
+        "values": "블랙, 화이트, 그레이, 커스텀 컬러(상담)"
+      },
+      "size": {
+        "label": "사이즈",
+        "values": "S / M / L 또는 치수 지정"
+      },
+      "engraving": {
+        "label": "각인·텍스트",
+        "values": "이름, 로고, 짧은 문구 각인"
+      },
+      "photoUpload": {
+        "label": "사진 업로드",
+        "values": "정면·측면 사진으로 AI 3D 변환 가능"
+      },
+      "material": {
+        "label": "소재",
+        "values": "PLA / PETG / 레진 등 용도에 맞게 선택"
+      },
+      "quantity": {
+        "label": "수량",
+        "values": "1개부터 소량 배치까지"
+      }
+    },
+    "products": {
+      "phone-case": {
+        "title": "커스텀 폰케이스",
+        "summary": "기종·그립감·각인까지 맞춰 만드는 실용 케이스",
+        "description": "사용 중인 기종과 원하는 스타일을 알려주시면 견적·제작으로 이어드립니다. 파일 업로드 또는 상담 모두 가능합니다.",
+        "highlights": {
+          "fit": "기종별 핏 맞춤",
+          "grip": "그립·버튼 레이아웃 조정",
+          "fast": "시제품 빠른 검증"
+        }
+      },
+      "name-tag": {
+        "title": "각인 네임택·키링",
+        "summary": "이름·로고를 새긴 고해상도 네임택과 키링",
+        "description": "선물용·행사 굿즈·브랜드 키트에 적합합니다. 텍스트와 수량만 정해 주셔도 제작을 시작할 수 있습니다.",
+        "highlights": {
+          "text": "자유 텍스트·로고 각인",
+          "durable": "내구성 있는 소재 선택",
+          "gift": "선물·이벤트 소량 제작"
+        }
+      },
+      "pet-figure": {
+        "title": "반려동물 피규어",
+        "summary": "사진으로 만드는 우리 아이 3D 피규어",
+        "description": "사진을 올리면 AI로 3D 모델을 생성한 뒤 출력까지 이어갈 수 있습니다. 기념일·선물용으로 인기입니다.",
+        "highlights": {
+          "photo": "사진→3D 변환",
+          "likeness": "크기·포즈 조정",
+          "keepsake": "기념·선물용 마감"
+        }
+      },
+      "desk-stand": {
+        "title": "맞춤 데스크 스탠드",
+        "summary": "각도·폭을 맞춘 모니터·폰·태블릿 거치대",
+        "description": "책상 환경에 맞춘 치수와 각도로 제작합니다. 로고 각인 옵션도 함께 요청할 수 있습니다.",
+        "highlights": {
+          "angle": "시야각·각도 맞춤",
+          "stable": "안정적인 구조",
+          "office": "오피스·홈오피스용"
+        }
+      },
+      "industrial-bracket": {
+        "title": "맞춤 브라켓·지그",
+        "summary": "현장 치수에 맞춘 기능성 브라켓과 지그",
+        "description": "도면·치수·사용 환경을 알려주시면 소재와 구조를 제안하고 시제품부터 소량 제작까지 진행합니다.",
+        "highlights": {
+          "strength": "강도·소재 제안",
+          "fitment": "치수 맞춤 핏",
+          "iterate": "시제품 반복 개선"
+        }
+      }
+    }
   }
 }

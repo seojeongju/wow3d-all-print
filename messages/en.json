@@ -13,7 +13,8 @@
     "guides": "Guides",
     "guidesDesc": "Quotes, materials & file prep",
     "quote": "Instant Quote",
-    "products": "Products",
+    "customProducts": "Custom Products",
+    "products": "Hardware",
     "expert": "Product Dev & Inquiry",
     "orders": "My Orders",
     "support": "Support",
@@ -3445,7 +3446,7 @@
     "showcaseSubtitle": "Click a card to open field-specific production examples and samples.",
     "processTitleBefore": "Fast, accurate",
     "processTitleAccent": "one-stop process",
-    "processSubtitle": "Dramatically fewer steps. The fastest path to launch—starting from a single drawing.",
+    "processSubtitle": "From requirements to prototype validation—WOW3D supports a one-stop fabrication model.",
     "processLogicLabel": "Precision Logic",
     "processLogicDesc": "The most complete path from digital design to reality",
     "processSteps": [
@@ -3521,7 +3522,6 @@
     "detailCtaQuote": "Start auto quote",
     "processEyebrow": "Development model",
     "processTitle": "Product development process",
-    "processSubtitle": "From requirements to prototype validation—WOW3D supports a one-stop fabrication model.",
     "detailBottomTitle": "Want to run a project the same way?",
     "detailBottomDesc": "Even with just an idea, drawings, or photos, we can help from consult to prototype."
   },
@@ -4170,5 +4170,112 @@
     "signLine": "We hereby submit this estimate.",
     "defaultCompany": "WOW3D (Wow3D)",
     "metaTitle": "Print estimate"
+  },
+  "CustomProducts": {
+    "metaTitle": "Custom Products | 3D Printing Personalization",
+    "metaDescription": "Browse customizable 3D-printed products—phone cases, name tags, pet figures—and continue to quote or inquiry.",
+    "metaBrand": "WOW3D",
+    "ogTitle": "Custom 3D Printing Products",
+    "ogDescription": "A lineup of products you can personalize with 3D printing",
+    "hubEyebrow": "Custom Products",
+    "hubTitle": "3D Printing",
+    "hubTitleAccent": "Custom Products",
+    "hubSubtitle": "Browse products you can personalize by color, size, engraving, or photo upload.",
+    "hubCtaTitle": "Looking for something else?",
+    "hubCtaDesc": "Upload a file for an instant quote, or contact us for custom product development.",
+    "viewDetail": "View product",
+    "backToHub": "All custom products",
+    "optionsTitle": "Customization options",
+    "optionsDesc": "Review available options, then continue with a quote or inquiry.",
+    "nextTitle": "Next step",
+    "nextDesc": "Once options look good, continue with a quote, photo-to-3D, or consultation.",
+    "browseMore": "Browse more",
+    "ctaQuote": "Start instant quote",
+    "ctaPhoto": "Create 3D from photo",
+    "ctaInquiry": "Custom inquiry",
+    "methodMixed": "Mixed process",
+    "method": {
+      "fdm": "FDM",
+      "sla": "SLA",
+      "dlp": "DLP"
+    },
+    "options": {
+      "color": {
+        "label": "Color",
+        "values": "Black, white, gray, or custom (consult)"
+      },
+      "size": {
+        "label": "Size",
+        "values": "S / M / L or exact dimensions"
+      },
+      "engraving": {
+        "label": "Engraving",
+        "values": "Name, logo, or short text"
+      },
+      "photoUpload": {
+        "label": "Photo upload",
+        "values": "Front/side photos for AI 3D conversion"
+      },
+      "material": {
+        "label": "Material",
+        "values": "PLA / PETG / resin by use case"
+      },
+      "quantity": {
+        "label": "Quantity",
+        "values": "From 1 piece to small batches"
+      }
+    },
+    "products": {
+      "phone-case": {
+        "title": "Custom phone case",
+        "summary": "A practical case fitted to your device, grip, and engraving",
+        "description": "Share your device model and style preferences to continue with a quote or consultation.",
+        "highlights": {
+          "fit": "Device-specific fit",
+          "grip": "Grip and button layout tweaks",
+          "fast": "Fast prototype validation"
+        }
+      },
+      "name-tag": {
+        "title": "Engraved name tag & keyring",
+        "summary": "High-detail name tags and keyrings with custom text or logos",
+        "description": "Ideal for gifts, events, and brand kits. Text and quantity are enough to get started.",
+        "highlights": {
+          "text": "Free text & logo engraving",
+          "durable": "Durable material choices",
+          "gift": "Gifts & small-event runs"
+        }
+      },
+      "pet-figure": {
+        "title": "Pet figure",
+        "summary": "A 3D figure of your pet created from photos",
+        "description": "Upload photos to generate an AI 3D model, then print. Popular for keepsakes and gifts.",
+        "highlights": {
+          "photo": "Photo-to-3D conversion",
+          "likeness": "Size and pose adjustments",
+          "keepsake": "Keepsake-ready finishing"
+        }
+      },
+      "desk-stand": {
+        "title": "Custom desk stand",
+        "summary": "Monitor, phone, or tablet stands with your preferred angle and width",
+        "description": "Built to your desk setup. Logo engraving is available on request.",
+        "highlights": {
+          "angle": "Viewing-angle fit",
+          "stable": "Stable structure",
+          "office": "Office & home office ready"
+        }
+      },
+      "industrial-bracket": {
+        "title": "Custom bracket & jig",
+        "summary": "Functional brackets and jigs fitted to on-site dimensions",
+        "description": "Share drawings, dimensions, and use conditions—we propose materials and iterate from prototype to small batch.",
+        "highlights": {
+          "strength": "Strength & material advice",
+          "fitment": "Dimension-accurate fit",
+          "iterate": "Prototype iteration"
+        }
+      }
+    }
   }
 }
