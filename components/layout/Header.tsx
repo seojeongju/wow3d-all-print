@@ -49,7 +49,11 @@ function HeaderNavLink({
 }
 
 /** 데스크톱 네비가 넘치면 폰트·패딩을 단계적으로 축소 */
-function useDesktopNavFit(navRef: RefObject<HTMLElement | null>, deps: unknown[]) {
+function useDesktopNavFit(
+    navRef: RefObject<HTMLElement | null>,
+    deps: unknown[],
+    paused = false,
+) {
     useLayoutEffect(() => {
         const nav = navRef.current
         if (!nav) return
@@ -59,6 +63,10 @@ function useDesktopNavFit(navRef: RefObject<HTMLElement | null>, deps: unknown[]
                 nav.style.setProperty('--nav-fit', '1')
                 return
             }
+            // 드롭다운 표시 중에는 재계산 금지 — scrollWidth에 패널이 포함되며
+            // 스케일 요동으로 호버가 끊겨 깜박임이 발생함
+            if (paused) return
+
             let scale = 1
             nav.style.setProperty('--nav-fit', '1')
             // 레이아웃 반영 후 측정
@@ -85,7 +93,7 @@ function useDesktopNavFit(navRef: RefObject<HTMLElement | null>, deps: unknown[]
             window.removeEventListener('resize', fit)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, deps)
+    }, [...deps, paused])
 }
 
 export default function Header() {
@@ -103,6 +111,27 @@ export default function Header() {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null)
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
     const desktopNavRef = useRef<HTMLElement | null>(null)
+    const dropdownCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const clearDropdownCloseTimer = () => {
+        if (dropdownCloseTimer.current) {
+            clearTimeout(dropdownCloseTimer.current)
+            dropdownCloseTimer.current = null
+        }
+    }
+
+    const openNavDropdown = (label: string) => {
+        clearDropdownCloseTimer()
+        setOpenDropdown(label)
+    }
+
+    const scheduleCloseNavDropdown = () => {
+        clearDropdownCloseTimer()
+        dropdownCloseTimer.current = setTimeout(() => {
+            setOpenDropdown(null)
+            dropdownCloseTimer.current = null
+        }, 120)
+    }
 
     const NAV_ITEMS: NavItem[] = useMemo(
         () => [
@@ -158,7 +187,11 @@ export default function Header() {
         )
         : NAV_ITEMS
 
-    useDesktopNavFit(desktopNavRef, [navItems, mounted, isPastHero, isScrolled])
+    useDesktopNavFit(desktopNavRef, [navItems, mounted, isPastHero, isScrolled], Boolean(openDropdown))
+
+    useEffect(() => {
+        return () => clearDropdownCloseTimer()
+    }, [])
 
     useEffect(() => {
         setMounted(true)
@@ -217,12 +250,10 @@ export default function Header() {
                 </Link>
 
                 {/* Desktop Nav — 폭에 맞춰 폰트·패딩 자동 축소.
-                    드롭다운 열림 시 overflow-visible 필수(overflow-hidden이면 서브메뉴가 잘림) */}
+                    overflow는 항상 visible: 숨김/표시 전환 시 레이아웃 요동으로 드롭다운이 깜박임 */}
                 <nav
                     ref={desktopNavRef}
-                    className={`relative z-[110] hidden lg:flex items-center flex-1 min-w-0 max-w-full justify-center rounded-2xl p-1.5 transition-all ${
-                        openDropdown ? 'overflow-visible' : 'overflow-hidden'
-                    } ${
+                    className={`relative z-[110] hidden lg:flex items-center flex-1 min-w-0 max-w-full justify-center overflow-visible rounded-2xl p-1.5 transition-all ${
                         isPastHero
                             ? 'bg-white border border-slate-200 shadow-sm'
                             : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
@@ -238,8 +269,8 @@ export default function Header() {
                             <div
                                 key={item.label}
                                 className="relative shrink min-w-0"
-                                onMouseEnter={() => setOpenDropdown(item.label)}
-                                onMouseLeave={() => setOpenDropdown(null)}
+                                onMouseEnter={() => openNavDropdown(item.label)}
+                                onMouseLeave={scheduleCloseNavDropdown}
                             >
                                 <HeaderNavLink
                                     href={item.href}
@@ -261,7 +292,14 @@ export default function Header() {
                                     />
                                 </HeaderNavLink>
                                 {openDropdown === item.label && (
-                                    <div className="absolute left-0 top-full z-[200] min-w-[280px] pt-2">
+                                    <div
+                                        className={`absolute top-full z-[200] min-w-[min(280px,70vw)] pt-2 ${
+                                            item.label === t('partnership') ||
+                                            item.label === t('makerspace')
+                                                ? 'right-0'
+                                                : 'left-0'
+                                        }`}
+                                    >
                                         <div
                                             className={`rounded-2xl border p-2 shadow-2xl ${
                                                 isPastHero
@@ -278,7 +316,10 @@ export default function Header() {
                                                             ? 'hover:bg-teal-50'
                                                             : 'hover:bg-white/10'
                                                     }`}
-                                                    onClick={() => setOpenDropdown(null)}
+                                                    onClick={() => {
+                                                        clearDropdownCloseTimer()
+                                                        setOpenDropdown(null)
+                                                    }}
                                                 >
                                                     <span
                                                         className={`block text-[13px] font-bold break-keep ${
