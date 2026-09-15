@@ -216,10 +216,13 @@ export default function Header() {
                     </div>
                 </Link>
 
-                {/* Desktop Nav — 폭에 맞춰 폰트·패딩 자동 축소, 한글은 어절 단위로만 줄바꿈 */}
+                {/* Desktop Nav — 폭에 맞춰 폰트·패딩 자동 축소.
+                    드롭다운 열림 시 overflow-visible 필수(overflow-hidden이면 서브메뉴가 잘림) */}
                 <nav
                     ref={desktopNavRef}
-                    className={`relative z-[110] hidden lg:flex items-center flex-1 min-w-0 max-w-full justify-center overflow-hidden rounded-2xl p-1.5 transition-all ${
+                    className={`relative z-[110] hidden lg:flex items-center flex-1 min-w-0 max-w-full justify-center rounded-2xl p-1.5 transition-all ${
+                        openDropdown ? 'overflow-visible' : 'overflow-hidden'
+                    } ${
                         isPastHero
                             ? 'bg-white border border-slate-200 shadow-sm'
                             : 'bg-white/10 border border-white/15 shadow-lg shadow-black/20'
@@ -258,12 +261,12 @@ export default function Header() {
                                     />
                                 </HeaderNavLink>
                                 {openDropdown === item.label && (
-                                    <div className="absolute left-0 top-full z-[120] min-w-[280px] pt-2">
+                                    <div className="absolute left-0 top-full z-[200] min-w-[280px] pt-2">
                                         <div
                                             className={`rounded-2xl border p-2 shadow-2xl ${
                                                 isPastHero
-                                                    ? 'border-slate-200 bg-white'
-                                                    : 'border-white/10 bg-[#0d1117]/95 backdrop-blur-xl'
+                                                    ? 'border-slate-200 bg-white shadow-slate-200/80'
+                                                    : 'border-white/10 bg-[#0d1117]/95 backdrop-blur-xl shadow-black/40'
                                             }`}
                                         >
                                             {item.children.map((child) => (
