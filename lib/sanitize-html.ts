@@ -74,14 +74,28 @@ export function detailBodyToEditorHtml(raw: string): string {
 }
 
 export function sanitizeDetailHtml(dirty: string): string {
+    // SSR: 스크립트·고정폭 스타일 제거
+    const ssrClean = dirty
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+        .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\s(?:width|height)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(
+            /(style\s*=\s*")([^"]*)(")/gi,
+            (_m, open: string, css: string, close: string) => {
+                const cleaned = css
+                    .replace(/(?:min-|max-)?width\s*:\s*[^;]+;?/gi, '')
+                    .replace(/white-space\s*:\s*nowrap;?/gi, '')
+                    .trim()
+                    .replace(/^;+|;+$/g, '')
+                return cleaned ? `${open}${cleaned}${close}` : ''
+            }
+        )
+
     if (typeof window === 'undefined') {
-        // SSR: 스크립트 태그만 제거
-        return dirty
-            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-            .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        return ssrClean
     }
 
-    const doc = new DOMParser().parseFromString(`<div id="root">${dirty}</div>`, 'text/html')
+    const doc = new DOMParser().parseFromString(`<div id="root">${ssrClean}</div>`, 'text/html')
     const root = doc.getElementById('root')
     if (!root) return ''
 
@@ -113,8 +127,23 @@ export function sanitizeDetailHtml(dirty: string): string {
                         // drop expression/url javascript
                         if (/expression|javascript:/i.test(attr.value)) {
                             el.removeAttribute('style')
+                            continue
                         }
+                        // 모바일 오버플로우 유발 고정 폭 제거
+                        const cleaned = attr.value
+                            .replace(/(?:min-|max-)?width\s*:\s*[^;]+;?/gi, '')
+                            .replace(/white-space\s*:\s*nowrap;?/gi, '')
+                            .trim()
+                            .replace(/^;+|;+$/g, '')
+                        if (cleaned) el.setAttribute('style', cleaned)
+                        else el.removeAttribute('style')
                     }
+                }
+                if (tag === 'img') {
+                    el.removeAttribute('width')
+                    el.removeAttribute('height')
+                    el.style.maxWidth = '100%'
+                    el.style.height = 'auto'
                 }
                 if (tag === 'a') {
                     el.setAttribute('rel', 'noopener noreferrer')

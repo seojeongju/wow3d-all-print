@@ -238,7 +238,7 @@ export default function SitePopup() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 8 }}
           transition={{ duration: 0.2 }}
-          className={`fixed z-[200] flex max-h-[min(85vh,720px)] w-[min(92vw,400px)] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#0d1117]/95 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md ${
+          className={`fixed z-[200] flex max-h-[min(85vh,720px)] w-[min(calc(100vw-1.5rem),400px)] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#0d1117]/95 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md ${
             dragging ? 'cursor-grabbing select-none' : ''
           }`}
           style={{ left: pos.x, top: pos.y }}

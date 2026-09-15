@@ -78,7 +78,7 @@ function QuickLinkButton({
                         initial={{ width: 0, opacity: 0, x: expandRight ? -10 : 10 }}
                         animate={{ width: 'auto', opacity: 1, x: 0 }}
                         exit={{ width: 0, opacity: 0, x: expandRight ? -10 : 10 }}
-                        className={`flex flex-col whitespace-nowrap overflow-hidden ${
+                        className={`hidden sm:flex flex-col whitespace-nowrap overflow-hidden ${
                             expandRight ? 'pr-1 text-right' : 'pl-1'
                         }`}
                     >
@@ -206,7 +206,7 @@ export default function EducationQuickMenu() {
               'right-[4.75rem] sm:right-[5.75rem]',
               'bottom-[calc(5.75rem+env(safe-area-inset-bottom))] sm:bottom-[7.5rem]',
           ].join(' ')
-        : 'fixed top-24 sm:top-28 z-[90] flex flex-col gap-3 pointer-events-none right-0 items-end';
+        : 'fixed top-24 sm:top-28 z-[90] flex flex-col gap-3 pointer-events-none right-2 sm:right-0 items-end max-[380px]:right-1.5';
 
     return (
         <div className={positionClass}>

@@ -35,52 +35,52 @@ export default function CustomHubClient({
     const t = useTranslations('CustomProducts')
 
     return (
-        <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col relative overflow-hidden">
+        <main className="min-h-screen w-full max-w-[100vw] bg-[#020617] text-slate-50 flex flex-col relative overflow-x-hidden">
             <Header />
 
-            <div className="fixed inset-0 z-0 pointer-events-none">
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1e293b_0%,#020617_100%)]" />
                 <div className="absolute inset-0 bg-[url('/grid.svg')] bg-[length:40px_40px] opacity-[0.05]" />
-                <div className="absolute top-[12%] right-[8%] w-[36%] h-[36%] bg-teal-500/10 rounded-full blur-[120px]" />
+                <div className="absolute top-[12%] right-[8%] w-[36%] max-w-[280px] h-[36%] bg-teal-500/10 rounded-full blur-[120px]" />
             </div>
 
-            <section className="relative z-10 pt-36 md:pt-44 pb-10 md:pb-14 px-6">
-                <div className="container mx-auto max-w-6xl text-center space-y-5 md:space-y-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-400/15 border border-teal-400/30 text-teal-300 text-[11px] font-black uppercase tracking-[0.25em]">
-                        <Gift className="w-3.5 h-3.5" />
-                        {t('hubEyebrow')}
+            <section className="relative z-10 pt-32 sm:pt-36 md:pt-44 pb-10 md:pb-14 px-4 sm:px-6">
+                <div className="container mx-auto max-w-6xl min-w-0 text-center space-y-4 sm:space-y-5 md:space-y-6">
+                    <div className="inline-flex max-w-full items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-teal-400/15 border border-teal-400/30 text-teal-300 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.18em] sm:tracking-[0.25em]">
+                        <Gift className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{t('hubEyebrow')}</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white">
+                    <h1 className="text-[1.75rem] leading-tight sm:text-4xl md:text-6xl font-black tracking-tight text-white break-keep px-1">
                         {t('hubTitle')}{' '}
                         <span className="text-teal-400">{t('hubTitleAccent')}</span>
                     </h1>
-                    <p className="text-white/50 text-base md:text-lg font-bold max-w-2xl mx-auto break-keep leading-relaxed">
+                    <p className="text-white/50 text-sm sm:text-base md:text-lg font-bold max-w-2xl mx-auto break-keep leading-relaxed px-1">
                         {t('hubSubtitle')}
                     </p>
                 </div>
             </section>
 
-            <section className="relative z-10 pb-16 md:pb-24 px-6">
-                <div className="container mx-auto max-w-7xl">
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+            <section className="relative z-10 pb-16 md:pb-24 px-4 sm:px-6">
+                <div className="container mx-auto max-w-7xl min-w-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
                         {products.map((product, idx) => (
                             <ProductCard key={product.slug} product={product} index={idx} t={t} />
                         ))}
                     </div>
 
-                    <div className="mt-12 md:mt-16 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-5 md:gap-8">
-                        <div className="flex-1 space-y-2">
-                            <h2 className="text-xl md:text-2xl font-black text-white">{t('hubCtaTitle')}</h2>
+                    <div className="mt-12 md:mt-16 rounded-2xl md:rounded-[2rem] border border-white/10 bg-white/[0.03] p-5 sm:p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-5 md:gap-8 min-w-0">
+                        <div className="flex-1 space-y-2 min-w-0">
+                            <h2 className="text-xl md:text-2xl font-black text-white break-keep">{t('hubCtaTitle')}</h2>
                             <p className="text-sm font-bold text-white/45 break-keep">{t('hubCtaDesc')}</p>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-                            <Link href="/quote">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+                            <Link href="/quote" className="block w-full sm:w-auto">
                                 <Button className="h-12 px-6 rounded-xl bg-teal-400 text-slate-950 font-black gap-2 w-full sm:w-auto">
                                     <Zap className="w-4 h-4" />
                                     {t('ctaQuote')}
                                 </Button>
                             </Link>
-                            <Link href="/expert#inquiry">
+                            <Link href="/expert#inquiry" className="block w-full sm:w-auto">
                                 <Button
                                     variant="outline"
                                     className="h-12 px-6 rounded-xl border-white/15 bg-white/5 text-white font-black gap-2 w-full sm:w-auto"
@@ -113,21 +113,21 @@ function ProductCard({
     const extraImages = gallery.slice(1, 7)
 
     return (
-        <Link href={`/custom/${product.slug}`} className="block group h-full">
+        <Link href={`/custom/${product.slug}`} className="block group h-full min-w-0">
             <motion.article
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.06 }}
-                className="h-full rounded-2xl border border-white/10 bg-[#121826]/80 overflow-hidden hover:border-teal-400/40 hover:bg-[#121826] transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                className="h-full rounded-2xl border border-white/10 bg-[#121826]/80 overflow-hidden hover:border-teal-400/40 hover:bg-[#121826] transition-all duration-300 hover:-translate-y-1 flex flex-col min-w-0"
             >
-                <div className="relative bg-[#0a0e17]">
+                <div className="relative bg-[#0a0e17] min-w-0">
                     {/* 메인: 원본 비율 유지 자동맞춤 (잘림 없음) */}
                     <div className="relative w-full min-h-[160px] max-h-[260px] flex items-center justify-center overflow-hidden">
                         <img
                             src={mainImage}
                             alt={product.title}
-                            className="w-full h-auto max-h-[260px] object-contain group-hover:scale-[1.02] transition-transform duration-500"
+                            className="max-w-full w-auto h-auto max-h-[260px] object-contain group-hover:scale-[1.02] transition-transform duration-500"
                             onError={(e) => {
                                 ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                             }}

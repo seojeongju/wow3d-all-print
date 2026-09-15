@@ -97,27 +97,27 @@ export default function CustomProductDetailClient({
     }
 
     return (
-        <main className="min-h-screen bg-[#0b0f17] text-slate-50 flex flex-col relative">
+        <main className="min-h-screen w-full max-w-[100vw] bg-[#0b0f17] text-slate-50 flex flex-col relative overflow-x-hidden">
             <Header />
 
-            <div className="relative z-10 container mx-auto max-w-6xl px-4 sm:px-6 pt-28 md:pt-36 pb-16 md:pb-24">
-                <nav className="flex flex-wrap items-center gap-1.5 text-[12px] font-bold text-white/40 mb-5">
-                    <Link href="/custom" className="hover:text-teal-300 transition-colors">
+            <div className="relative z-10 container mx-auto max-w-6xl w-full min-w-0 px-4 sm:px-6 pt-28 md:pt-36 pb-16 md:pb-24">
+                <nav className="flex flex-wrap items-center gap-1.5 text-[12px] font-bold text-white/40 mb-5 min-w-0">
+                    <Link href="/custom" className="hover:text-teal-300 transition-colors shrink-0">
                         {t('backToHub')}
                     </Link>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                    <span className="text-white/70 truncate">{title}</span>
+                    <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+                    <span className="text-white/70 truncate min-w-0">{title}</span>
                 </nav>
 
-                <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-6 lg:gap-10 items-start mb-10 md:mb-14">
-                    <div className="space-y-3">
+                <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] gap-6 lg:gap-10 items-start mb-10 md:mb-14 min-w-0">
+                    <div className="space-y-3 min-w-0">
                         {/* 메인: 원본 비율 유지 자동맞춤 (미리보기·공개 상세 동일) */}
                         <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#0a0e17]">
-                            <div className="relative w-full min-h-[220px] max-h-[520px] flex items-center justify-center">
+                            <div className="relative w-full min-h-[200px] sm:min-h-[220px] max-h-[min(70vw,520px)] flex items-center justify-center overflow-hidden">
                                 <img
                                     src={activeImage}
                                     alt={title}
-                                    className="w-full h-auto max-h-[520px] object-contain"
+                                    className="max-w-full w-auto h-auto max-h-[min(70vw,520px)] object-contain"
                                     onError={(e) => {
                                         ;(e.target as HTMLImageElement).src = '/placeholder-3d.svg'
                                     }}
@@ -154,16 +154,18 @@ export default function CustomProductDetailClient({
                         ) : null}
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-[#121826]/80 p-5 sm:p-6 md:p-7 space-y-5 lg:sticky lg:top-28">
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-2 min-w-0">
-                                <div className="inline-flex items-center gap-1.5 rounded-md border border-teal-400/25 bg-teal-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-200">
-                                    <Sparkles className="w-3 h-3" />
-                                    {product.method === 'mixed'
-                                        ? t('methodMixed')
-                                        : t(`method.${product.method}` as 'method.fdm')}
+                    <div className="rounded-2xl border border-white/10 bg-[#121826]/80 p-5 sm:p-6 md:p-7 space-y-5 lg:sticky lg:top-28 min-w-0 overflow-hidden">
+                        <div className="flex items-start justify-between gap-3 min-w-0">
+                            <div className="space-y-2 min-w-0 flex-1">
+                                <div className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-teal-400/25 bg-teal-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-teal-200">
+                                    <Sparkles className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">
+                                        {product.method === 'mixed'
+                                            ? t('methodMixed')
+                                            : t(`method.${product.method}` as 'method.fdm')}
+                                    </span>
                                 </div>
-                                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight break-keep leading-snug">
+                                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight break-keep leading-snug">
                                     {title}
                                 </h1>
                             </div>
@@ -226,7 +228,7 @@ export default function CustomProductDetailClient({
                                                             }))
                                                         }
                                                         className={cn(
-                                                            'h-9 px-3 rounded-lg text-[12px] font-black border transition-colors',
+                                                            'h-auto min-h-9 max-w-full px-3 py-1.5 rounded-lg text-[12px] font-black border transition-colors break-keep text-left',
                                                             active
                                                                 ? 'bg-teal-400 text-slate-950 border-teal-400'
                                                                 : 'bg-white/[0.04] text-white/70 border-white/10 hover:border-teal-400/40 hover:text-white'
@@ -274,8 +276,8 @@ export default function CustomProductDetailClient({
                     </div>
                 </div>
 
-                <section className="rounded-2xl border border-white/10 bg-[#121826]/60 overflow-hidden">
-                    <div className="border-b border-white/10 px-5 sm:px-8 py-4 flex items-center gap-3">
+                <section className="rounded-2xl border border-white/10 bg-[#121826]/60 overflow-hidden min-w-0">
+                    <div className="border-b border-white/10 px-4 sm:px-8 py-4 flex flex-wrap items-center gap-2 sm:gap-3">
                         <h2 className="text-lg sm:text-xl font-black text-white">
                             {t('detailSectionTitle')}
                         </h2>
@@ -284,18 +286,18 @@ export default function CustomProductDetailClient({
                         </span>
                     </div>
 
-                    <div className="px-5 sm:px-8 py-8 space-y-8 max-w-3xl mx-auto">
+                    <div className="px-4 sm:px-8 py-8 space-y-8 max-w-3xl mx-auto w-full min-w-0">
                         <div className="space-y-3 text-center">
-                            <h3 className="text-2xl font-black text-white break-keep">{title}</h3>
+                            <h3 className="text-xl sm:text-2xl font-black text-white break-keep">{title}</h3>
                             <p className="text-sm font-bold text-white/50 leading-relaxed break-keep">
                                 {description}
                             </p>
                         </div>
 
-                        <div className="prose-invert max-w-none">
+                        <div className="prose-invert max-w-none min-w-0 overflow-x-auto">
                             {isProbablyHtml(detailBody) ? (
                                 <div
-                                    className="detail-body-html text-[14px] sm:text-[15px] font-medium text-white/70 leading-relaxed break-keep space-y-3 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-white [&_h2]:text-xl [&_h2]:font-black [&_h2]:text-white [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_p]:mb-3 [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:object-contain [&_img]:rounded-xl [&_img]:border [&_img]:border-white/10 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_blockquote]:border-l-2 [&_blockquote]:border-teal-400 [&_blockquote]:pl-4 [&_blockquote]:text-white/55 [&_a]:text-teal-300 [&_a]:underline [&_table]:w-full [&_th]:border [&_th]:border-white/15 [&_th]:px-2 [&_th]:py-1.5 [&_td]:border [&_td]:border-white/15 [&_td]:px-2 [&_td]:py-1.5 [&_hr]:border-white/15"
+                                    className="detail-body-html text-[14px] sm:text-[15px] font-medium text-white/70 leading-relaxed break-keep break-words space-y-3 [&_*]:max-w-full [&_h1]:text-xl sm:[&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-white [&_h2]:text-lg sm:[&_h2]:text-xl [&_h2]:font-black [&_h2]:text-white [&_h3]:text-base sm:[&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_p]:mb-3 [&_img]:mx-auto [&_img]:!max-w-full [&_img]:h-auto [&_img]:w-auto [&_img]:object-contain [&_img]:rounded-xl [&_img]:border [&_img]:border-white/10 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_blockquote]:border-l-2 [&_blockquote]:border-teal-400 [&_blockquote]:pl-4 [&_blockquote]:text-white/55 [&_a]:text-teal-300 [&_a]:underline [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto [&_th]:border [&_th]:border-white/15 [&_th]:px-2 [&_th]:py-1.5 [&_td]:border [&_td]:border-white/15 [&_td]:px-2 [&_td]:py-1.5 [&_hr]:border-white/15 [&_pre]:overflow-x-auto [&_iframe]:max-w-full"
                                     dangerouslySetInnerHTML={{
                                         __html: sanitizeDetailHtml(detailBody),
                                     }}
