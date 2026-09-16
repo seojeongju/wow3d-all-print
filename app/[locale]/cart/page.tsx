@@ -795,22 +795,38 @@ function CartPageContent() {
                                         </Button>
                                     </Link>
                                 ) : (
-                                    <div className="space-y-4">
-                                        <Link href="/auth?return=/cart" className="block">
-                                            <Button size="lg" className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 ring-4 ring-teal-400/20 transition-all">
-                                                <LogIn className="w-6 h-6" /> {t('userLogin')}
+                                    <div className="space-y-3">
+                                        <Link
+                                            href={
+                                                selectedCount > 0
+                                                    ? `/auth?return=${encodeURIComponent(`/checkout?ids=${Array.from(selectedIds).join(',')}`)}`
+                                                    : '/auth?return=/cart'
+                                            }
+                                            className={selectedCount === 0 ? 'pointer-events-none' : 'block'}
+                                        >
+                                            <Button
+                                                size="lg"
+                                                disabled={selectedCount === 0}
+                                                className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 transition-all active:scale-95 disabled:opacity-20"
+                                            >
+                                                <LogIn className="w-6 h-6" /> {t('loginAndOrder')}
                                             </Button>
                                         </Link>
-                                        <div className="flex items-center gap-4 py-2">
-                                            <Separator className="bg-white/5 flex-1" />
-                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{t('guestOrder')}</span>
-                                            <Separator className="bg-white/5 flex-1" />
+                                        <div className="flex justify-center pt-1">
+                                            <Link
+                                                href={selectedCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'}
+                                                className={selectedCount === 0 ? 'pointer-events-none' : undefined}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    disabled={selectedCount === 0}
+                                                    className="inline-flex h-5 items-center gap-1 text-[10px] font-bold text-white/35 underline-offset-2 transition-colors hover:text-white/55 hover:underline disabled:opacity-20 disabled:no-underline"
+                                                >
+                                                    {t('guestCheckout')}
+                                                    <ChevronRight className="h-3 w-3" />
+                                                </button>
+                                            </Link>
                                         </div>
-                                        <Link href={selectedCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'} className={selectedCount === 0 ? 'pointer-events-none' : ''}>
-                                            <Button variant="outline" disabled={selectedCount === 0} className="w-full h-14 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-black uppercase tracking-widest text-[11px] disabled:opacity-20 transition-all">
-                                                {t('guestCheckout')} <ChevronRight className="w-4 h-4" />
-                                            </Button>
-                                        </Link>
                                     </div>
                                 )}
                             </div>

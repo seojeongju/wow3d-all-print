@@ -7,7 +7,7 @@ import { Link } from '@/i18n/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { CheckCircle2, Package, Clock, Loader2, ArrowRight, ShieldCheck } from 'lucide-react'
+import { CheckCircle2, Package, Clock, Loader2, ArrowRight, ShieldCheck, Copy, LogIn, Mail } from 'lucide-react'
 import type { Order } from '@/lib/types'
 import { motion } from 'framer-motion'
 
@@ -17,11 +17,13 @@ function OrderCompleteContent() {
     const orderId = searchParams.get('orderId')
     const orderNumber = searchParams.get('orderNumber')
     const totalAmount = searchParams.get('totalAmount')
+    const guestEmail = searchParams.get('email')
     const isGuest = searchParams.get('guest') === '1'
     const { token } = useAuthStore()
 
     const [order, setOrder] = useState<Order | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [copied, setCopied] = useState(false)
 
     // order_complete 전환 이벤트는 POST /api/orders 서버에서 기록 (페이지 미도달 누락 방지)
     useEffect(() => {
@@ -48,6 +50,18 @@ function OrderCompleteContent() {
         }
     }
 
+    const displayOrderNumber = orderNumber || order?.orderNumber || '---'
+
+    const handleCopyOrderNumber = async () => {
+        try {
+            await navigator.clipboard.writeText(String(displayOrderNumber))
+            setCopied(true)
+            window.setTimeout(() => setCopied(false), 2000)
+        } catch {
+            /* ignore */
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -68,6 +82,8 @@ function OrderCompleteContent() {
         { title: t('step3Title'), desc: t('step3Desc'), icon: '03' },
         { title: t('step4Title'), desc: t('step4Desc'), icon: '04' },
     ]
+
+    const authReturn = `/auth?return=${encodeURIComponent('/cart?tab=orders')}`
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30 relative overflow-hidden">
@@ -97,8 +113,18 @@ function OrderCompleteContent() {
                             <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 ring-1 ring-white/5 space-y-6">
                                 <div>
                                     <div className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1.5">{t('orderNumber')}</div>
-                                    <div className="font-mono text-sm font-bold text-primary">
-                                        #{orderNumber || order?.orderNumber || '---'}
+                                    <div className="flex items-center gap-2">
+                                        <div className="font-mono text-sm font-bold text-primary">
+                                            #{displayOrderNumber}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopyOrderNumber}
+                                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 text-[10px] font-bold text-white/50 hover:bg-white/10 hover:text-white/80 transition-colors"
+                                        >
+                                            <Copy className="h-3 w-3" />
+                                            {copied ? t('copied') : t('copyOrderNumber')}
+                                        </button>
                                     </div>
                                 </div>
                                 <div>
@@ -115,21 +141,67 @@ function OrderCompleteContent() {
                             </div>
 
                             {isGuest ? (
-                                <div className="space-y-3">
-                                    <p className="text-[11px] text-white/50">{t('guestNote')}</p>
+                                <div className="space-y-4">
+                                    <div className="rounded-2xl border border-teal-400/20 bg-teal-400/5 p-4 space-y-3">
+                                        <div className="text-[11px] font-black text-teal-300 tracking-wide">
+                                            {t('guestLookupTitle')}
+                                        </div>
+                                        <p className="text-[12px] text-white/55 leading-relaxed break-keep">
+                                            {t('guestLookupBody')}
+                                        </p>
+                                        <div className="rounded-xl bg-black/30 border border-white/5 p-3 space-y-2">
+                                            <div className="flex items-start gap-2 text-[12px]">
+                                                <Package className="w-3.5 h-3.5 text-teal-400/80 mt-0.5 shrink-0" />
+                                                <div>
+                                                    <span className="text-white/35 font-bold">{t('orderNumber')}: </span>
+                                                    <span className="font-mono font-bold text-white/85">#{displayOrderNumber}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-2 text-[12px]">
+                                                <Mail className="w-3.5 h-3.5 text-teal-400/80 mt-0.5 shrink-0" />
+                                                <div className="min-w-0 break-all">
+                                                    <span className="text-white/35 font-bold">{t('guestEmailLabel')}: </span>
+                                                    <span className="font-bold text-white/85">
+                                                        {guestEmail || t('guestEmailFallback')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                                        <div className="text-[11px] font-black text-white/70 tracking-wide">
+                                            {t('loginNudgeTitle')}
+                                        </div>
+                                        <p className="text-[12px] text-white/45 leading-relaxed break-keep">
+                                            {t('loginNudgeBody')}
+                                        </p>
+                                        <Link href={authReturn} className="block">
+                                            <Button
+                                                variant="outline"
+                                                className="w-full h-11 rounded-xl border-white/15 bg-white/5 hover:bg-white/10 text-white text-[12px] font-bold gap-2"
+                                            >
+                                                <LogIn className="w-4 h-4" />
+                                                {t('loginNudgeCta')}
+                                            </Button>
+                                        </Link>
+                                    </div>
+
                                     <Link href="/" className="block">
-                                        <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
+                                        <Button variant="ghost" className="w-full h-11 rounded-xl text-white/45 hover:text-white hover:bg-white/5 text-[11px] font-bold gap-2">
                                             <Package className="w-4 h-4" /> {t('goHome')}
                                         </Button>
                                     </Link>
                                 </div>
                             ) : (
-                                <Link href="/cart?tab=orders" className="block transform transition-transform active:scale-95">
-                                    <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
-                                        <Package className="w-4 h-4" />
-                                        {t('viewOrders')}
-                                    </Button>
-                                </Link>
+                                <div className="space-y-3">
+                                    <Link href="/cart?tab=orders" className="block transform transition-transform active:scale-95">
+                                        <Button variant="ghost" className="w-full h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold uppercase tracking-widest gap-2">
+                                            <Package className="w-4 h-4" />
+                                            {t('viewOrders')}
+                                        </Button>
+                                    </Link>
+                                </div>
                             )}
                         </div>
 

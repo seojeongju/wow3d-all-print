@@ -291,7 +291,11 @@ function CheckoutContent() {
                 orderNumber: result.data.orderNumber,
                 totalAmount: String(result.data.totalAmount),
             })
-            if (result.data.isGuest) q.set('guest', '1')
+            if (result.data.isGuest) {
+                q.set('guest', '1')
+                const guestEmail = formData.ordererEmail?.trim()
+                if (guestEmail) q.set('email', guestEmail)
+            }
             router.push(`/order-complete?${q.toString()}`)
 
         } catch (error) {
