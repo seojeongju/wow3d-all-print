@@ -206,6 +206,19 @@ export async function POST(request: NextRequest) {
         const clientSessionId = request.headers.get('X-Session-ID')?.trim() || null
         const sessionIdForCart = isGuest ? auth.sessionId : clientSessionId || null
 
+        // 회원 주문: JWT userId가 users에 실제 존재하는지 확인 (삭제된 계정의 잔존 토큰 → FK 실패 방지)
+        if (!isGuest) {
+            const userRow = await env.DB.prepare('SELECT id FROM users WHERE id = ?')
+                .bind(auth.userId)
+                .first<{ id: number }>()
+            if (!userRow?.id) {
+                return errorResponse(
+                    '로그인 정보가 유효하지 않습니다. 다시 로그인한 뒤 주문해 주세요.',
+                    401
+                )
+            }
+        }
+
         const orderItems = validCartItems.map((item) => ({
             quoteId: Number(item.quoteId),
             quantity: Number(item.quantity),
@@ -265,6 +278,12 @@ export async function POST(request: NextRequest) {
                 .run();
         } catch (e) {
             const msg = e instanceof Error ? e.message : ''
+            if (/FOREIGN KEY|SQLITE_CONSTRAINT/i.test(msg)) {
+                return errorResponse(
+                    '주문 계정을 확인할 수 없습니다. 다시 로그인한 뒤 주문해 주세요.',
+                    401
+                )
+            }
             if (!/no such column|orderer_name|orderer_phone/i.test(msg)) throw e
             orderResult = await env.DB
                 .prepare(`
@@ -278,10 +297,31 @@ export async function POST(request: NextRequest) {
                 .run();
         }
 
-        const orderId = orderResult.meta?.last_row_id || orderResult.meta?.lastRowId;
-        if (!orderId) {
+        const orderIdRaw = orderResult.meta?.last_row_id ?? orderResult.meta?.lastRowId
+        let orderId = Number(orderIdRaw)
+        // D1/OpenNext에서 last_row_id가 비거나 어긋나면 order_items FK가 깨짐 → order_number로 재확인
+        if (!Number.isInteger(orderId) || orderId <= 0) {
+            const row = await env.DB.prepare('SELECT id FROM orders WHERE order_number = ? LIMIT 1')
+                .bind(orderNumber)
+                .first<{ id: number }>()
+            orderId = Number(row?.id)
+        }
+        if (!Number.isInteger(orderId) || orderId <= 0) {
             console.error('주문 생성 후 ID 추출 실패:', orderResult);
             return errorResponse('주문 생성 실패 (ID 생성 오류)', 500);
+        }
+
+        // 견적 존재 재확인 (동시 삭제 등으로 order_items FK 실패 예방)
+        for (const line of resolved.lines) {
+            const q = await env.DB.prepare('SELECT id FROM quotes WHERE id = ?')
+                .bind(line.quoteId)
+                .first<{ id: number }>()
+            if (!q?.id) {
+                return errorResponse(
+                    `견적(#${line.quoteId})을 찾을 수 없습니다. 견적을 다시 저장한 뒤 주문해 주세요.`,
+                    400
+                )
+            }
         }
 
         const statements = [];
@@ -320,11 +360,23 @@ export async function POST(request: NextRequest) {
         }
 
         // 배치 실행
-        const batchResults = await env.DB.batch(statements);
-        const failedStep = batchResults.findIndex((r: any) => r?.success === false || !!r?.error);
-        if (failedStep !== -1) {
-            console.error('주문 처리 단계 실패:', batchResults[failedStep]);
-            throw new Error(`상세 주문 처리 중 오류 발생 (단계: ${failedStep})`);
+        try {
+            const batchResults = await env.DB.batch(statements);
+            const failedStep = batchResults.findIndex((r: any) => r?.success === false || !!r?.error);
+            if (failedStep !== -1) {
+                console.error('주문 처리 단계 실패:', batchResults[failedStep]);
+                throw new Error(`상세 주문 처리 중 오류 발생 (단계: ${failedStep})`);
+            }
+        } catch (batchErr: unknown) {
+            const msg = batchErr instanceof Error ? batchErr.message : String(batchErr)
+            console.error('주문 항목/장바구니 처리 실패:', batchErr)
+            if (/FOREIGN KEY|SQLITE_CONSTRAINT/i.test(msg)) {
+                return errorResponse(
+                    '주문 항목을 저장하지 못했습니다. 장바구니의 견적을 다시 담은 뒤 시도해 주세요.',
+                    400
+                )
+            }
+            throw batchErr
         }
 
         // 배송 정보 초기화 (환경별 스키마 누락으로 주문 전체 실패하지 않도록 분리)
@@ -429,6 +481,13 @@ export async function POST(request: NextRequest) {
         );
     } catch (error: any) {
         console.error('POST /api/orders error:', error);
-        return errorResponse(error.message || '주문 생성 실패', 500);
+        const msg = error?.message || '주문 생성 실패'
+        if (/FOREIGN KEY|SQLITE_CONSTRAINT/i.test(String(msg))) {
+            return errorResponse(
+                '주문 저장 중 데이터 연결 오류가 발생했습니다. 다시 로그인하거나 견적을 장바구니에 다시 담아 주세요.',
+                400
+            )
+        }
+        return errorResponse(msg, 500);
     }
 }

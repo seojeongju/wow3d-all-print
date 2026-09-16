@@ -216,12 +216,12 @@ function CheckoutContent() {
             const authState = useAuthStore.getState()
             if (authState.isAuthenticated && authState.token) {
                 headers['Authorization'] = `Bearer ${authState.token}`
+                if (authState.user?.id) {
+                    headers['X-User-ID'] = String(authState.user.id)
+                }
             }
             if (authState.sessionId) {
                 headers['X-Session-ID'] = authState.sessionId
-            }
-            if (authState.user?.id) {
-                headers['X-User-ID'] = String(authState.user.id)
             }
 
             // 브라우저 장바구니 → DB cart 동기화 (로컬만 있고 DB에 없어 주문이 거절되던 문제 방지)

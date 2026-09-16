@@ -22,14 +22,12 @@ async function resolveCartOwner(request: NextRequest): Promise<{
                 sessionId: request.headers.get('X-Session-ID')?.trim() || null,
             };
         }
+        // 만료·위조 토큰이면 X-User-ID를 신뢰하지 않음 (존재하지 않는 user_id → cart FK 실패 방지)
     }
 
-    const headerUserId = request.headers.get('X-User-ID');
-    const parsed = headerUserId ? parseInt(headerUserId, 10) : NaN;
     const sessionId = request.headers.get('X-Session-ID')?.trim() || null;
-
     return {
-        userId: Number.isInteger(parsed) && parsed > 0 ? parsed : null,
+        userId: null,
         sessionId,
     };
 }
