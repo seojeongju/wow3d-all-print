@@ -32,7 +32,7 @@ const SERIES: {
     color: string;
     type: 'bar' | 'line';
 }[] = [
-    { key: 'amount', label: '주문금액', shortLabel: '금액', color: ADMIN_SALES_SERIES_COLORS.amount, type: 'bar' },
+    { key: 'amount', label: '최종견적', shortLabel: '견적', color: ADMIN_SALES_SERIES_COLORS.amount, type: 'bar' },
     { key: 'paidAmount', label: '입금액', shortLabel: '입금', color: ADMIN_SALES_SERIES_COLORS.paidAmount, type: 'bar' },
     { key: 'outstandingAmount', label: '미수금', shortLabel: '미수', color: ADMIN_SALES_SERIES_COLORS.outstandingAmount, type: 'bar' },
     { key: 'orderCount', label: '주문건수', shortLabel: '건수', color: ADMIN_SALES_SERIES_COLORS.orderCount, type: 'line' },
@@ -113,7 +113,7 @@ export default function SalesTrendPanel({
 
     const tableRows: { key: SeriesKey; label: string; format: (v: number) => string }[] = [
         { key: 'orderCount', label: '주문건수', format: (v) => `${v}건` },
-        { key: 'amount', label: '주문금액', format: (v) => `₩${Math.round(v).toLocaleString()}` },
+        { key: 'amount', label: '최종견적', format: (v) => `₩${Math.round(v).toLocaleString()}` },
         { key: 'paidAmount', label: '입금액', format: (v) => `₩${Math.round(v).toLocaleString()}` },
         { key: 'outstandingAmount', label: '미수금', format: (v) => `₩${Math.round(v).toLocaleString()}` },
     ];

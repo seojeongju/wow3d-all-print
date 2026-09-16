@@ -28,6 +28,30 @@ const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
 const STORE_USERS = '(store_id = ? OR store_id IS NULL)';
 
 /**
+ * 매출 집계 금액: 관리자 최종견적(expert_quote_data.total_amount) 우선,
+ * 없으면 사용자 자동견적 주문금액(orders.total_amount).
+ */
+const ORDER_SALES_AMOUNT = `COALESCE(
+    CASE
+        WHEN IFNULL(o.has_expert_quote, 0) = 1
+            AND json_extract(o.expert_quote_data, '$.total_amount') IS NOT NULL
+            AND CAST(json_extract(o.expert_quote_data, '$.total_amount') AS REAL) > 0
+        THEN CAST(json_extract(o.expert_quote_data, '$.total_amount') AS REAL)
+    END,
+    o.total_amount
+)`;
+
+const ORDER_SALES_AMOUNT_PLAIN = `COALESCE(
+    CASE
+        WHEN IFNULL(has_expert_quote, 0) = 1
+            AND json_extract(expert_quote_data, '$.total_amount') IS NOT NULL
+            AND CAST(json_extract(expert_quote_data, '$.total_amount') AS REAL) > 0
+        THEN CAST(json_extract(expert_quote_data, '$.total_amount') AS REAL)
+    END,
+    total_amount
+)`;
+
+/**
  * GET /api/admin/stats?granularity=day|week|month
  * 대시보드 집계 (스토어 기준). 추이 차트는 granularity에 따라 일/주/월 버킷.
  */
@@ -56,8 +80,8 @@ export async function GET(req: NextRequest) {
         try {
             const agg = await env.DB.prepare(`
             SELECT 
-                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month') THEN o.total_amount ELSE 0 END), 0) as total_sales_this_month,
-                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month','-1 month') AND o.created_at < date('now','start of month') THEN o.total_amount ELSE 0 END), 0) as total_sales_last_month,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month') THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_this_month,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month','-1 month') AND o.created_at < date('now','start of month') THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_last_month,
                 SUM(CASE WHEN o.created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
                 SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
             FROM orders o
@@ -70,18 +94,33 @@ export async function GET(req: NextRequest) {
             newOrdersCount = Number(agg?.new_orders_count ?? 0);
             pendingOrdersCount = Number(agg?.pending_orders_count ?? 0);
         } catch {
-            const agg = await env.DB.prepare(`
-            SELECT 
-                COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_this_month,
-                COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_last_month,
-                SUM(CASE WHEN created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
-            FROM orders
-        `).first() as Record<string, unknown> | null;
-            totalSalesThisMonth = Number(agg?.total_sales_this_month ?? 0);
-            totalSalesLastMonth = Number(agg?.total_sales_last_month ?? 0);
-            newOrdersCount = Number(agg?.new_orders_count ?? 0);
-            pendingOrdersCount = Number(agg?.pending_orders_count ?? 0);
+            try {
+                const agg = await env.DB.prepare(`
+                SELECT 
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_this_month,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_last_month,
+                    SUM(CASE WHEN created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
+                FROM orders
+            `).first() as Record<string, unknown> | null;
+                totalSalesThisMonth = Number(agg?.total_sales_this_month ?? 0);
+                totalSalesLastMonth = Number(agg?.total_sales_last_month ?? 0);
+                newOrdersCount = Number(agg?.new_orders_count ?? 0);
+                pendingOrdersCount = Number(agg?.pending_orders_count ?? 0);
+            } catch {
+                const agg = await env.DB.prepare(`
+                SELECT 
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_this_month,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_last_month,
+                    SUM(CASE WHEN created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
+                FROM orders
+            `).first() as Record<string, unknown> | null;
+                totalSalesThisMonth = Number(agg?.total_sales_this_month ?? 0);
+                totalSalesLastMonth = Number(agg?.total_sales_last_month ?? 0);
+                newOrdersCount = Number(agg?.new_orders_count ?? 0);
+                pendingOrdersCount = Number(agg?.pending_orders_count ?? 0);
+            }
         }
 
         if (totalSalesLastMonth > 0) {
@@ -120,66 +159,67 @@ export async function GET(req: NextRequest) {
             outstandingAmount: number;
         }[] = [];
 
-        const trendSql = (storeFilter: boolean) => `
+        const trendSql = (storeFilter: boolean, useExpertAmount: boolean) => {
+            const amountExpr = useExpertAmount ? ORDER_SALES_AMOUNT : 'o.total_amount';
+            return `
             SELECT date(o.created_at) as d,
                 SUM(CASE WHEN o.status != 'cancelled' THEN 1 ELSE 0 END) as order_count,
-                COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN o.total_amount ELSE 0 END), 0) as amount,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN ${amountExpr} ELSE 0 END), 0) as amount,
                 COALESCE(SUM(CASE
                     WHEN o.status != 'cancelled' AND (
                         o.payment_status = 'paid'
                         OR o.status IN ('payment_confirmed', 'production', 'shipping', 'delivered', 'completed')
-                    ) THEN o.total_amount ELSE 0 END), 0) as paid_amount,
+                    ) THEN ${amountExpr} ELSE 0 END), 0) as paid_amount,
                 COALESCE(SUM(CASE
                     WHEN o.status != 'cancelled'
                         AND IFNULL(o.payment_status, 'pending') != 'paid'
                         AND o.status NOT IN ('payment_confirmed', 'production', 'shipping', 'delivered', 'completed')
-                    THEN o.total_amount ELSE 0 END), 0) as outstanding_amount
+                    THEN ${amountExpr} ELSE 0 END), 0) as outstanding_amount
             FROM orders o
             WHERE o.created_at >= ${sinceExpr}
               ${storeFilter ? `AND ${STORE_ORDERS}` : ''}
             GROUP BY d
             ORDER BY d ASC
         `;
+        };
 
-        try {
-            const { results: trendRows } = await env.DB.prepare(trendSql(true))
-                .bind(storeId)
-                .all() as {
-                results: {
-                    d: string;
-                    order_count: number;
-                    amount: number;
-                    paid_amount: number;
-                    outstanding_amount: number;
-                }[];
-            };
-            salesTrend = (trendRows || []).map((r) => ({
+        type TrendRow = {
+            d: string;
+            order_count: number;
+            amount: number;
+            paid_amount: number;
+            outstanding_amount: number;
+        };
+
+        const mapTrendRows = (trendRows: TrendRow[] | undefined) =>
+            (trendRows || []).map((r) => ({
                 date: r.d,
                 orderCount: Number(r.order_count ?? 0),
                 amount: Number(r.amount ?? 0),
                 paidAmount: Number(r.paid_amount ?? 0),
                 outstandingAmount: Number(r.outstanding_amount ?? 0),
             }));
+
+        try {
+            const { results: trendRows } = await env.DB.prepare(trendSql(true, true))
+                .bind(storeId)
+                .all() as { results: TrendRow[] };
+            salesTrend = mapTrendRows(trendRows);
         } catch {
             try {
-                const { results: trendRows } = await env.DB.prepare(trendSql(false)).all() as {
-                    results: {
-                        d: string;
-                        order_count: number;
-                        amount: number;
-                        paid_amount: number;
-                        outstanding_amount: number;
-                    }[];
+                const { results: trendRows } = await env.DB.prepare(trendSql(false, true)).all() as {
+                    results: TrendRow[];
                 };
-                salesTrend = (trendRows || []).map((r) => ({
-                    date: r.d,
-                    orderCount: Number(r.order_count ?? 0),
-                    amount: Number(r.amount ?? 0),
-                    paidAmount: Number(r.paid_amount ?? 0),
-                    outstandingAmount: Number(r.outstanding_amount ?? 0),
-                }));
+                salesTrend = mapTrendRows(trendRows);
             } catch {
-                salesTrend = [];
+                try {
+                    const { results: trendRows } = await env.DB.prepare(trendSql(false, false)).all() as {
+                        results: TrendRow[];
+                    };
+                    salesTrend = mapTrendRows(trendRows);
+                } catch {
+                    salesTrend = [];
+                }
             }
         }
 
@@ -343,8 +383,9 @@ export async function GET(req: NextRequest) {
 
         let trafficSources: { source: string; count: number }[] = [];
         try {
+            // PV가 아닌 고유 세션 기준 채널 비중 (first-touch 행이 세션마다 여러 번 복제됨)
             const { results: sourceRows } = await env.DB.prepare(`
-                SELECT source, COUNT(*) as count
+                SELECT source, COUNT(DISTINCT session_id) as count
                 FROM traffic_logs
                 WHERE created_at >= ${sinceExpr}
                 GROUP BY source
@@ -371,8 +412,12 @@ export async function GET(req: NextRequest) {
                     COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN session_id END) as member_sessions,
                     SUM(CASE
                         WHEN path LIKE '/quote%'
+                          OR path LIKE '/en/quote%'
+                          OR path LIKE '/ko/quote%'
                           OR path LIKE '/experience%'
-                          OR path = '/quotes'
+                          OR path LIKE '/en/experience%'
+                          OR path LIKE '/ko/experience%'
+                          OR path IN ('/quotes', '/en/quotes', '/ko/quotes')
                         THEN 1 ELSE 0 END) as quote_page_views
                 FROM traffic_logs
                 WHERE created_at >= ${sinceExpr}
@@ -473,7 +518,13 @@ export async function GET(req: NextRequest) {
                 SELECT COALESCE(NULLIF(TRIM(t.source), ''), 'direct') as source, COUNT(*) as cnt
                 FROM quotes q
                 LEFT JOIN (
-                    SELECT session_id, source FROM traffic_logs GROUP BY session_id
+                    SELECT tl.session_id, tl.source
+                    FROM traffic_logs tl
+                    INNER JOIN (
+                        SELECT session_id, MIN(created_at) as first_at
+                        FROM traffic_logs
+                        GROUP BY session_id
+                    ) first ON first.session_id = tl.session_id AND first.first_at = tl.created_at
                 ) t ON q.session_id = t.session_id
                 WHERE q.created_at >= ${sinceExpr}
                 GROUP BY source

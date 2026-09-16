@@ -17,9 +17,13 @@ const FILTER_SQL: Record<FilterKey, string> = {
 
 const TRAFFIC_JOIN = `
             LEFT JOIN (
-                SELECT session_id, source, medium
-                FROM traffic_logs
-                GROUP BY session_id
+                SELECT tl.session_id, tl.source, tl.medium
+                FROM traffic_logs tl
+                INNER JOIN (
+                    SELECT session_id, MIN(created_at) as first_at
+                    FROM traffic_logs
+                    GROUP BY session_id
+                ) first ON first.session_id = tl.session_id AND first.first_at = tl.created_at
             ) t ON q.session_id = t.session_id`;
 
 const SELECT_LIST = `

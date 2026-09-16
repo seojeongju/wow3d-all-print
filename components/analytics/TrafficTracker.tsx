@@ -1,84 +1,126 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getOrCreateSessionId } from '@/lib/session-id';
 
+const FIRST_SOURCE_KEY = 'wow3d_traffic_source';
+const FIRST_MEDIUM_KEY = 'wow3d_traffic_medium';
+const FIRST_CAMPAIGN_KEY = 'wow3d_traffic_campaign';
+
+/** next-intl as-needed: /en/quote → /quote */
+function normalizePath(pathname: string): string {
+    return pathname.replace(/^\/(en|ko)(?=\/|$)/, '') || '/';
+}
+
+function classifyFromReferrer(referrer: string): { source: string; medium: string } {
+    try {
+        const host = new URL(referrer).hostname;
+        if (host.includes('naver')) return { source: 'naver', medium: 'organic' };
+        if (host.includes('google')) return { source: 'google', medium: 'organic' };
+        if (host.includes('daum') || host.includes('kakao')) return { source: 'kakao', medium: 'organic' };
+        if (host.includes('instagram') || host.includes('ig.')) return { source: 'instagram', medium: 'social' };
+        if (host.includes('facebook') || host.includes('fb.')) return { source: 'facebook', medium: 'social' };
+        if (host.includes('youtube') || host.includes('youtu.be')) return { source: 'youtube', medium: 'social' };
+        if (host !== window.location.hostname) return { source: 'referral', medium: 'referral' };
+    } catch {
+        /* ignore */
+    }
+    return { source: 'direct', medium: 'none' };
+}
+
+function resolveAcquisition(
+    utmSource: string | null,
+    utmMedium: string | null,
+    utmCampaign: string | null,
+): { source: string; medium: string; campaign: string | null } {
+    // 새 UTM이 있으면 해당 유입으로 갱신 (캠페인 재유입)
+    if (utmSource) {
+        const medium = utmMedium || 'none';
+        sessionStorage.setItem(FIRST_SOURCE_KEY, utmSource);
+        sessionStorage.setItem(FIRST_MEDIUM_KEY, medium);
+        if (utmCampaign) sessionStorage.setItem(FIRST_CAMPAIGN_KEY, utmCampaign);
+        else sessionStorage.removeItem(FIRST_CAMPAIGN_KEY);
+        return { source: utmSource, medium, campaign: utmCampaign };
+    }
+
+    const storedSource = sessionStorage.getItem(FIRST_SOURCE_KEY);
+    if (storedSource) {
+        return {
+            source: storedSource,
+            medium: sessionStorage.getItem(FIRST_MEDIUM_KEY) || 'none',
+            campaign: sessionStorage.getItem(FIRST_CAMPAIGN_KEY),
+        };
+    }
+
+    const fromRef = document.referrer
+        ? classifyFromReferrer(document.referrer)
+        : { source: 'direct', medium: 'none' };
+
+    sessionStorage.setItem(FIRST_SOURCE_KEY, fromRef.source);
+    sessionStorage.setItem(FIRST_MEDIUM_KEY, fromRef.medium);
+
+    return { source: fromRef.source, medium: fromRef.medium, campaign: null };
+}
+
 /**
- * 사용자 유입 경로 추적 컴포넌트
+ * 페이지 이동마다 PV를 기록합니다.
+ * 유입 채널은 탭 세션 first-touch를 유지하되, 새 UTM이 있으면 갱신합니다.
  */
 export default function TrafficTracker() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { user } = useAuthStore();
+    const userId = useAuthStore((s) => s.user?.id);
+    const lastLoggedPath = useRef<string | null>(null);
 
     useEffect(() => {
-        // 관리자 페이지는 제외
-        if (pathname.startsWith('/admin')) return;
-
-        // 세션 내 중복 기록 방지 (한 세션에 한 번만 기록하거나 유입 소스가 바뀔 때만 기록)
-        const sessionKey = 'wow3d_traffic_tracked';
-        const isTracked = sessionStorage.getItem(sessionKey);
-        
-        // 현재 유입 정보 분석
-        const utmSource = searchParams.get('utm_source');
-        const utmMedium = searchParams.get('utm_medium');
-        const utmCampaign = searchParams.get('utm_campaign');
-        const referrer = document.referrer;
-        
-        let source = utmSource || 'direct';
-        let medium = utmMedium || 'none';
-        
-        // 검색 엔진 판별 로직 (단순화)
-        if (!utmSource && referrer) {
-            if (referrer.includes('naver.com')) {
-                source = 'naver';
-                medium = 'organic';
-            } else if (referrer.includes('google.com')) {
-                source = 'google';
-                medium = 'organic';
-            } else if (referrer.includes('daum.net') || referrer.includes('kakao.com')) {
-                source = 'kakao';
-                medium = 'organic';
-            } else {
-                source = 'referral';
-                medium = 'referral';
-            }
+        const rawPath = pathname;
+        if (
+            rawPath.startsWith('/admin') ||
+            rawPath.startsWith('/en/admin') ||
+            rawPath.startsWith('/ko/admin')
+        ) {
+            return;
         }
 
-        // 이미 기록된 세션이고, 새로운 UTM 파라미터가 없다면 무시
-        if (isTracked && !utmSource) return;
+        const path = normalizePath(rawPath);
 
-        // 세션 ID 관리 (localStorage에 저장하여 유지)
-        const sessionId = getOrCreateSessionId();
+        // 동일 path 중복 마운트 방지 (Strict Mode · user 하이드레이션)
+        if (lastLoggedPath.current === path) return;
+        lastLoggedPath.current = path;
 
-        // 서버로 전송
-        const recordTraffic = async () => {
+        const logTraffic = async () => {
             try {
+                const sessionId = getOrCreateSessionId();
+                const { source, medium, campaign } = resolveAcquisition(
+                    searchParams.get('utm_source'),
+                    searchParams.get('utm_medium'),
+                    searchParams.get('utm_campaign'),
+                );
+
                 await fetch('/api/traffic', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        ...(user?.id ? { 'X-User-ID': user.id.toString() } : {}),
+                        ...(userId ? { 'X-User-ID': String(userId) } : {}),
                     },
                     body: JSON.stringify({
+                        sessionId,
+                        path,
                         source,
                         medium,
-                        campaign: utmCampaign,
-                        referrerUrl: referrer,
-                        path: pathname,
-                        sessionId: sessionId,
+                        campaign,
+                        referrerUrl: document.referrer || null,
                     }),
                 });
-                sessionStorage.setItem(sessionKey, 'true');
             } catch (error) {
-                console.error('Failed to record traffic:', error);
+                console.error('[TrafficTracker] Failed to log:', error);
             }
         };
 
-        recordTraffic();
-    }, [pathname, searchParams, user?.id]);
+        void logTraffic();
+    }, [pathname, searchParams, userId]);
 
-    return null; // UI 없음
+    return null;
 }
