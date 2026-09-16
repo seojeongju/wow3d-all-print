@@ -200,7 +200,7 @@ export default function AdminFunnelOverviewPanel({
                             </span>
                         </CardTitle>
                         <p className="mt-1 text-xs leading-relaxed text-white/45 break-keep">
-                            사이트 행동 퍼널과 DB 견적 데이터를 한곳에서 확인합니다.
+                            사이트 행동 퍼널(히어로~장바구니: 이벤트, 주문: 실주문 DB)과 견적 DB를 함께 봅니다.
                         </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">

@@ -8,6 +8,11 @@ import { ensureCartRowsForOrder } from '@/lib/ensure-order-cart';
 import { sendEmail, escapeHtml } from '@/lib/mail-utils';
 import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
 import { absoluteUrl } from '@/lib/site-url';
+import {
+    CHECKOUT_CONVERSION_EVENTS,
+    CONVERSION_EVENT_CATEGORY,
+} from '@/lib/conversion-events';
+import { recordConversionEventServer } from '@/lib/record-conversion-event-server';
 
 /**
  * GET /api/orders - 주문 목록 조회
@@ -395,6 +400,27 @@ export async function POST(request: NextRequest) {
             }, env);
         } catch (err) {
             console.warn('관리자 알림 메일 발송 실패:', err);
+        }
+
+        // 전환 퍼널: 주문 완료는 서버에서 기록 (order-complete 페이지 미도달·세션 키 불일치 보완)
+        try {
+            const funnelSessionId = isGuest ? auth.sessionId : sessionIdForCart;
+            await recordConversionEventServer({
+                db: env.DB,
+                eventName: CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE,
+                eventCategory: CONVERSION_EVENT_CATEGORY.CHECKOUT,
+                sessionId: funnelSessionId,
+                userId: isGuest ? null : auth.userId,
+                path: '/order-complete',
+                metadata: {
+                    orderId,
+                    orderNumber,
+                    guest: isGuest,
+                    source: 'server',
+                },
+            });
+        } catch (eventErr) {
+            console.warn('order_complete 이벤트 기록 실패(주문은 정상):', eventErr);
         }
 
         return successResponse(

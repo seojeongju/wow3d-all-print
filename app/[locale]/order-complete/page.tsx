@@ -10,11 +10,6 @@ import { Separator } from '@/components/ui/separator'
 import { CheckCircle2, Package, Clock, Loader2, ArrowRight, ShieldCheck } from 'lucide-react'
 import type { Order } from '@/lib/types'
 import { motion } from 'framer-motion'
-import {
-    CHECKOUT_CONVERSION_EVENTS,
-    CONVERSION_EVENT_CATEGORY,
-} from '@/lib/conversion-events'
-import { trackConversionEventOnce } from '@/lib/track-conversion-event'
 
 function OrderCompleteContent() {
     const t = useTranslations('OrderComplete')
@@ -28,20 +23,7 @@ function OrderCompleteContent() {
     const [order, setOrder] = useState<Order | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
-    useEffect(() => {
-        if (orderId || orderNumber) {
-            trackConversionEventOnce('wow3d_order_complete', {
-                eventName: CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE,
-                category: CONVERSION_EVENT_CATEGORY.CHECKOUT,
-                metadata: {
-                    orderId: orderId ?? '',
-                    orderNumber: orderNumber ?? '',
-                    guest: isGuest,
-                },
-            })
-        }
-    }, [orderId, orderNumber, isGuest])
-
+    // order_complete 전환 이벤트는 POST /api/orders 서버에서 기록 (페이지 미도달 누락 방지)
     useEffect(() => {
         if (orderId && token && !isGuest) {
             loadOrderDetails()

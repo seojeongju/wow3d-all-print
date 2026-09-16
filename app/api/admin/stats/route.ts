@@ -613,9 +613,21 @@ export async function GET(req: NextRequest) {
                 quoteConversionEvents.filter((r) => r.eventName.startsWith('quote_')),
             );
 
+            // 추이 버킷: 일/주/월 단위로 DISTINCT 세션을 직접 집계 (일별 합산 과대 방지)
+            const trendDateExpr =
+                granularity === 'month'
+                    ? `date(created_at, 'start of month')`
+                    : granularity === 'week'
+                      ? `date(created_at, '-' || ((cast(strftime('%w', created_at) as integer) + 6) % 7) || ' days')`
+                      : `date(created_at)`;
+
             const { results: dailyRows } = await env.DB.prepare(
                 `
-                SELECT date(created_at) AS d, event_name, COUNT(*) AS cnt
+                SELECT
+                    ${trendDateExpr} AS d,
+                    event_name,
+                    COUNT(*) AS cnt,
+                    COUNT(DISTINCT session_id) AS session_cnt
                 FROM conversion_events
                 WHERE created_at >= ${sinceExpr}
                   AND event_name IN (
@@ -629,18 +641,78 @@ export async function GET(req: NextRequest) {
                 ORDER BY d ASC
             `,
             ).all() as {
-                results?: Array<{ d: string; event_name: string; cnt: number }>;
+                results?: Array<{
+                    d: string;
+                    event_name: string;
+                    cnt: number;
+                    session_cnt: number;
+                }>;
             };
 
+            // 히어로·견적·장바구니는 세션 기준, 주문은 orders로 덮어씀
+            const SESSION_TREND_EVENTS = new Set([
+                'hero_view',
+                'quote_page_view',
+                'quote_estimate_view',
+                'quote_add_to_cart',
+            ]);
+
+            const bucketedRows = (dailyRows || []).map((r) => ({
+                date: r.d,
+                eventName: r.event_name,
+                count: SESSION_TREND_EVENTS.has(r.event_name)
+                    ? Number(r.session_cnt ?? 0)
+                    : Number(r.cnt ?? 0),
+            }));
+
+            // 이미 버킷 단위이므로 day 기준으로 채운 뒤 빈 버킷만 보정
             const dailyFunnel = buildConversionFunnelTrend(
-                (dailyRows || []).map((r) => ({
-                    date: r.d,
-                    eventName: r.event_name,
-                    count: Number(r.cnt ?? 0),
-                })),
+                bucketedRows,
                 rangeMeta.lookbackDays,
             );
             conversionFunnelTrend = aggregateConversionFunnelTrend(dailyFunnel, granularity);
+
+            // 주문 단계는 orders 테이블이 진실 소스 (클라이언트 order_complete 누락 보정)
+            let orderBucketRows: { d: string; cnt: number }[] = [];
+            try {
+                const { results: orderRows } = await env.DB.prepare(
+                    `
+                    SELECT ${trendDateExpr} AS d, COUNT(*) AS cnt
+                    FROM orders
+                    WHERE created_at >= ${sinceExpr}
+                      AND IFNULL(status, '') != 'cancelled'
+                    GROUP BY d
+                    ORDER BY d ASC
+                `,
+                ).all() as { results?: Array<{ d: string; cnt: number }> };
+                orderBucketRows = orderRows || [];
+            } catch {
+                orderBucketRows = [];
+            }
+
+            const orderByBucket = new Map(
+                orderBucketRows.map((r) => [r.d.slice(0, 10), Number(r.cnt ?? 0)]),
+            );
+            for (const point of conversionFunnelTrend) {
+                const key = point.date.slice(0, 10);
+                point.orderComplete = orderByBucket.get(key) ?? 0;
+            }
+
+            const ordersInPeriod = orderBucketRows.reduce((sum, r) => sum + Number(r.cnt ?? 0), 0);
+
+            // 행동 퍼널 "주문" 행: 이벤트 대신 실주문 건수로 맞춤
+            const withoutOrderEvent = quoteConversionEvents.filter(
+                (r) => r.eventName !== 'order_complete',
+            );
+            quoteConversionEvents = [
+                ...withoutOrderEvent,
+                {
+                    eventName: 'order_complete',
+                    label: ALL_FUNNEL_EVENT_LABELS.order_complete ?? '주문 완료',
+                    count: ordersInPeriod,
+                    sessions: ordersInPeriod,
+                },
+            ];
         } catch {
             heroFunnelEvents = [];
             quoteConversionEvents = [];

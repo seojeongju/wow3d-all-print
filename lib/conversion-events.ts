@@ -170,7 +170,9 @@ export function buildQuoteFunnelSummary(rows: FunnelEventRow[]): QuoteFunnelSumm
     const byName = new Map(rows.map((r) => [r.eventName, r]));
     const pageViews = byName.get(QUOTE_CONVERSION_EVENTS.PAGE_VIEW)?.sessions ?? 0;
     const estimateView = byName.get(QUOTE_CONVERSION_EVENTS.ESTIMATE_VIEW)?.sessions ?? 0;
-    const addToCart = byName.get(QUOTE_CONVERSION_EVENTS.ADD_TO_CART)?.count ?? 0;
+    // 장바구니: 세션 기준(동일 세션 중복 클릭 과대 집계 방지). 없으면 count 폴백
+    const addToCartRow = byName.get(QUOTE_CONVERSION_EVENTS.ADD_TO_CART);
+    const addToCart = addToCartRow?.sessions || addToCartRow?.count || 0;
 
     return {
         pageViews,
