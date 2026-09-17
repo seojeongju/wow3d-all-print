@@ -489,10 +489,10 @@ export default function QuoteAnalyticsPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                        <BarChart3 className="w-8 h-8 text-primary" /> 견적 유입 분석
+                        <BarChart3 className="w-8 h-8 text-primary" /> 견적 전환 유입 분석
                     </h1>
                     <p className="text-white/50 text-sm mt-2 font-medium">
-                        사용자의 업로드 및 견적 산출 흐름을 실시간으로 모니터링합니다.
+                        견적 산출·전환 흐름과 견적 세션의 유입 채널을 모니터링합니다.
                     </p>
                 </div>
                 <Button onClick={() => fetchData()} variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10">

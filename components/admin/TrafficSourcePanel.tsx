@@ -161,20 +161,20 @@ export default function TrafficSourcePanel({ sources, token, dayCount = 30 }: Pr
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                                유입 경로 분석
+                                전체 방문 유입
                                 <span className="text-[10px] font-medium text-white/40 bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-widest">
                                     Last {dayCount} Days
                                 </span>
                             </CardTitle>
                             <p className="text-xs text-white/40 mt-1">
-                                항목을 클릭하면 medium·campaign·referrer·경로를 확인할 수 있습니다
+                                사이트에 들어온 전체 방문 세션의 유입 채널입니다. 클릭하면 medium·campaign·referrer·경로를 확인할 수 있습니다
                             </p>
                         </div>
                         <Link
                             href="/admin/quotes/analytics"
                             className="shrink-0 text-[10px] font-bold text-primary hover:text-white flex items-center gap-1 uppercase tracking-tighter"
                         >
-                            견적 유입
+                            견적 전환 유입
                             <ChevronRight className="w-3 h-3" />
                         </Link>
                     </div>

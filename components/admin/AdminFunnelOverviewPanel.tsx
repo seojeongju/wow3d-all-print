@@ -468,8 +468,11 @@ export default function AdminFunnelOverviewPanel({
                         </div>
 
                         <div className="rounded-xl border border-white/5 p-4">
-                            <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/35">
-                                견적 유입 경로
+                            <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-white/35">
+                                견적 전환 유입
+                            </p>
+                            <p className="mb-3 text-[10px] leading-relaxed text-white/30 break-keep">
+                                견적을 저장한 세션의 첫 유입 채널입니다 (전체 방문과 별개)
                             </p>
                             {quoteTrafficSources.length > 0 ? (
                                 <div className="space-y-2.5">
@@ -511,7 +514,7 @@ export default function AdminFunnelOverviewPanel({
                                     })}
                                 </div>
                             ) : (
-                                <p className="py-4 text-center text-xs text-white/25">유입 경로 데이터 없음</p>
+                                <p className="py-4 text-center text-xs text-white/25">견적 전환 유입 데이터 없음</p>
                             )}
                         </div>
                     </div>

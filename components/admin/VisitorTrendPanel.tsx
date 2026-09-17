@@ -132,7 +132,7 @@ export default function VisitorTrendPanel({
                 <Link
                     href="/admin/quotes/analytics"
                     className="rounded-lg hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-label="견적 유입 분석 보기"
+                    aria-label="견적 전환 유입 분석 보기"
                 >
                     <CardTitle className="text-base font-bold text-white group-hover/visitors:text-primary transition-colors flex items-center gap-2">
                         방문자 추이

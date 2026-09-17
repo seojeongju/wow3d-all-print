@@ -57,7 +57,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                     (p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics')),
             },
             {
-                title: '견적 유입 분석',
+                title: '견적 전환 유입 분석',
                 href: '/admin/quotes/analytics',
                 icon: BarChart3,
                 match: (p) => p.startsWith('/admin/quotes/analytics'),

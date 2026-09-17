@@ -343,7 +343,7 @@ export default function AdminDashboard() {
                         secondary={{
                             label: '유입·전환 분석',
                             href: '/admin/quotes/analytics',
-                            ariaLabel: '견적 유입 분석',
+                            ariaLabel: '견적 전환 유입 분석',
                             tone: 'default',
                         }}
                     />
@@ -567,7 +567,7 @@ export default function AdminDashboard() {
             <section className={`space-y-4 transition-opacity ${rangeLoading ? 'opacity-60' : ''}`}>
                 <SectionHeading
                     title="유입 분석"
-                    description={`사이트 전체 트래픽 · 방문자 추이 (${periodLabel})`}
+                    description={`전체 방문 유입 · 방문자 추이 (${periodLabel})`}
                 />
                 <div className="grid gap-6 lg:grid-cols-12">
                     <TrafficSourcePanel sources={s.trafficSources} token={token} dayCount={trafficDayCount} />
