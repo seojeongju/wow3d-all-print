@@ -28,8 +28,8 @@ SELECT
     1,
     '시제품 · 부품 외관 검증 (사진→3D)',
     '실물·레퍼런스 사진으로 형상을 빠르게 확인하고 FDM 견적·출력까지 이어지는 사례 유형입니다.',
-    '/og-image-v2.jpg',
-    '/images/expert/industrial.png',
+    '/images/photo-to-3d/engine-prototype-mesh.png',
+    '/images/photo-to-3d/engine-prototype.jpg',
     'PLA',
     'FDM',
     '["photo-to-3d","시제품","부품"]',
@@ -46,3 +46,13 @@ SET
     image_url = '/images/photo-to-3d/keycap-golden-retriever-mesh.png',
     source_image_url = '/images/photo-to-3d/keycap-golden-retriever.png'
 WHERE title = '피규어 · 캐릭터 형상 확인 (사진→3D)';
+
+-- 시제품·부품 외관 검증 카드 → 엔진 원본/메시 예시로 갱신
+UPDATE gallery_items
+SET
+    description = '실물·레퍼런스 사진으로 형상을 빠르게 확인하고 FDM 견적·출력까지 이어지는 사례 유형입니다.',
+    image_url = '/images/photo-to-3d/engine-prototype-mesh.png',
+    source_image_url = '/images/photo-to-3d/engine-prototype.jpg',
+    material = 'PLA',
+    print_method = 'FDM'
+WHERE title = '시제품 · 부품 외관 검증 (사진→3D)';
