@@ -663,37 +663,41 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 </p>
             </div>
 
-            {/* 남은 횟수 */}
+            {/* 남은 횟수 — persist 하이드레이션 전에는 SSR과 동일한 플레이스홀더 (React #418 방지) */}
             <div
                 className={cn(
                     'flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-3',
-                    token && remainingTotal > 0
-                        ? 'border-indigo-400/30 bg-indigo-500/10'
-                        : token && quota && remainingTotal <= 0
-                          ? 'border-amber-400/30 bg-amber-500/10'
-                          : 'border-white/10 bg-white/[0.03]'
+                    !authHydrated
+                        ? 'border-white/10 bg-white/[0.03]'
+                        : token && remainingTotal > 0
+                          ? 'border-indigo-400/30 bg-indigo-500/10'
+                          : token && quota && remainingTotal <= 0
+                            ? 'border-amber-400/30 bg-amber-500/10'
+                            : 'border-white/10 bg-white/[0.03]'
                 )}
             >
                 <div>
                     <p className="text-[12px] font-black text-white">
-                        {!token
-                            ? t('loginRequired')
-                            : quota
-                              ? t('remainingToday', {
-                                    remaining: quota.remainingDaily ?? quota.remainingToday,
-                                    limit: quota.limit,
-                                }) +
-                                ((quota.bonusRemaining || 0) > 0
-                                    ? t('bonus', { count: quota.bonusRemaining ?? 0 })
-                                    : '')
-                              : t('checkingQuota')}
+                        {!authHydrated
+                            ? t('checkingQuota')
+                            : !token
+                              ? t('loginRequired')
+                              : quota
+                                ? t('remainingToday', {
+                                      remaining: quota.remainingDaily ?? quota.remainingToday,
+                                      limit: quota.limit,
+                                  }) +
+                                  ((quota.bonusRemaining || 0) > 0
+                                      ? t('bonus', { count: quota.bonusRemaining ?? 0 })
+                                      : '')
+                                : t('checkingQuota')}
                     </p>
                     <p className="text-[11px] font-bold text-white/50 mt-0.5 break-keep">
                         {quota?.resetsHint ||
                             t('quotaDefault', { limit: MESHY_USER_DAILY_LIMIT })}
                     </p>
                 </div>
-                {!token && (
+                {authHydrated && !token && (
                     <Link
                         href={`/auth?return=${encodeURIComponent('/quote?entry=photo')}`}
                         className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-[12px] font-black text-white"
@@ -703,8 +707,6 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     </Link>
                 )}
             </div>
-
-            <PhotoTo3DGuide />
 
             {resuming && (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 text-white/60">
@@ -736,6 +738,9 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     </p>
                 </div>
             )}
+
+            {/* 업로드가 먼저 보이도록 가이드는 아래 + 기본 접힘 */}
+            <PhotoTo3DGuide />
 
             {(hasSelectedImage || status === 'ready' || busy) && !resuming && (
                 <div className="space-y-4">
@@ -1000,7 +1005,12 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     )}
 
                     {status === 'idle' && (
-                        token ? (
+                        !authHydrated ? (
+                            <div className="w-full h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 text-white/40 text-[13px] font-black">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                {t('checkingQuota')}
+                            </div>
+                        ) : token ? (
                             <button
                                 type="button"
                                 onClick={startGeneration}

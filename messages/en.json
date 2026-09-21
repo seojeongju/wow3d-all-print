@@ -704,6 +704,7 @@
   "PhotoGuide": {
     "title": "Photo & conversion tips",
     "summary": "One object · plain background · full framing",
+    "expandHint": "Expand",
     "heroTip": "Don’t put multiple parts in one photo. Shoot each item separately for printable results.",
     "chipOneObject": "One photo = one object",
     "chipPlainBg": "Plain background",

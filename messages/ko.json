@@ -705,6 +705,7 @@
   "PhotoGuide": {
     "title": "촬영·변환 가이드",
     "summary": "한 장에 한 물체 · 단색 배경 · 전체가 보이게",
+    "expandHint": "펼치기",
     "heroTip": "한 장에 여러 부품을 넣지 마세요. 각각 나눠 찍어야 출력 품질이 나옵니다.",
     "chipOneObject": "한 장 = 물체 1개",
     "chipPlainBg": "단색 배경",

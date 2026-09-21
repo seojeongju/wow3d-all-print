@@ -17,7 +17,7 @@ interface AuthState {
     updateUser: (userData: Partial<User>) => void;
 }
 
-// 세션 ID 생성
+/** 브라우저에서만 호출 — SSR/CSR 초기 렌더가 동일하도록 create 시점에는 쓰지 않음 */
 const generateSessionId = () => {
     const stored = localStorage.getItem('wow3d-session-id');
     if (stored) return stored;
@@ -27,12 +27,20 @@ const generateSessionId = () => {
     return newId;
 };
 
+const ensureClientSessionId = () => {
+    if (typeof window === 'undefined') return;
+    const current = useAuthStore.getState().sessionId;
+    if (current) return;
+    useAuthStore.setState({ sessionId: generateSessionId() });
+};
+
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
             user: null,
             token: null,
-            sessionId: typeof window !== 'undefined' ? generateSessionId() : '',
+            // SSR·첫 CSR 모두 빈 문자열 — window/localStorage 분기 시 React #418 발생
+            sessionId: '',
             isAuthenticated: false,
 
             setUser: (user, token) => set({
@@ -61,7 +69,7 @@ export const useAuthStore = create<AuthState>()(
                 set({
                     user: null,
                     token: null,
-                    sessionId: newSessionId, // 세션 ID를 새로 생성하여 할당
+                    sessionId: newSessionId,
                     isAuthenticated: false
                 });
             },
@@ -72,6 +80,11 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: 'wow3d-auth',
+            onRehydrateStorage: () => (state) => {
+                // persist 복원 후 세션이 없으면 클라이언트에서만 발급
+                if (state && !state.sessionId) ensureClientSessionId();
+                else if (!state) ensureClientSessionId();
+            },
         }
     )
 );
