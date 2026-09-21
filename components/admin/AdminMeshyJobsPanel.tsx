@@ -31,6 +31,7 @@ import {
 } from '@/lib/admin-meshy-thumbnail-cache'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { formatQuotePrintSizeMm } from '@/lib/quote-print-settings'
+import { cn } from '@/lib/utils'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
 
 const AdminMeshyStlPreview = dynamic(() => import('@/components/admin/AdminMeshyStlPreview'), {
