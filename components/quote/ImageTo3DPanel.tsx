@@ -544,9 +544,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             return
         }
         if (quota && !quota.loginRequired && (quota.remainingTotal ?? quota.remainingToday) <= 0) {
-            setError(
-                t('errQuotaUsed', { limit: quota.limit, hint: quota.resetsHint || '' })
-            )
+            setError(t('errQuotaUsed'))
             return
         }
 
@@ -663,46 +661,54 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 </p>
             </div>
 
-            {/* 남은 횟수 — persist 하이드레이션 전에는 SSR과 동일한 플레이스홀더 (React #418 방지) */}
+            {/* 남은 횟수 — 작은 칩 형태 (돋보이지 않게) */}
             <div
                 className={cn(
-                    'flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-3',
+                    'inline-flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 max-w-full',
                     !authHydrated
                         ? 'border-white/10 bg-white/[0.03]'
                         : token && remainingTotal > 0
-                          ? 'border-indigo-400/30 bg-indigo-500/10'
+                          ? 'border-white/10 bg-white/[0.04]'
                           : token && quota && remainingTotal <= 0
-                            ? 'border-amber-400/30 bg-amber-500/10'
+                            ? 'border-amber-400/25 bg-amber-500/10'
                             : 'border-white/10 bg-white/[0.03]'
                 )}
             >
-                <div>
-                    <p className="text-[12px] font-black text-white">
-                        {!authHydrated
-                            ? t('checkingQuota')
-                            : !token
-                              ? t('loginRequired')
-                              : quota
-                                ? t('remainingToday', {
-                                      remaining: quota.remainingDaily ?? quota.remainingToday,
-                                      limit: quota.limit,
-                                  }) +
-                                  ((quota.bonusRemaining || 0) > 0
-                                      ? t('bonus', { count: quota.bonusRemaining ?? 0 })
-                                      : '')
-                                : t('checkingQuota')}
-                    </p>
-                    <p className="text-[11px] font-bold text-white/50 mt-0.5 break-keep">
-                        {quota?.resetsHint ||
-                            t('quotaDefault', { limit: MESHY_USER_DAILY_LIMIT })}
-                    </p>
-                </div>
+                <p
+                    className={cn(
+                        'text-[11px] font-bold break-keep',
+                        token && quota && remainingTotal <= 0
+                            ? 'text-amber-100/90'
+                            : 'text-white/55'
+                    )}
+                >
+                    {!authHydrated
+                        ? t('checkingQuota')
+                        : !token
+                          ? t('loginRequired')
+                          : quota && remainingTotal <= 0
+                            ? t('quotaExhausted')
+                            : quota
+                              ? t('remainingToday', {
+                                    remaining: quota.remainingDaily ?? quota.remainingToday,
+                                    limit: quota.limit,
+                                }) +
+                                ((quota.bonusRemaining || 0) > 0
+                                    ? t('bonus', { count: quota.bonusRemaining ?? 0 })
+                                    : '')
+                              : t('checkingQuota')}
+                </p>
+                {authHydrated && token && quota && remainingTotal > 0 && (
+                    <span className="text-[10px] font-bold text-white/30 break-keep">
+                        {quota.resetsHint || t('quotaDefault', { limit: MESHY_USER_DAILY_LIMIT })}
+                    </span>
+                )}
                 {authHydrated && !token && (
                     <Link
                         href={`/auth?return=${encodeURIComponent('/quote?entry=photo')}`}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-500 px-3 text-[12px] font-black text-white"
+                        className="inline-flex h-7 items-center gap-1 rounded-md bg-indigo-500/90 px-2 text-[11px] font-black text-white"
                     >
-                        <LogIn className="w-3.5 h-3.5" />
+                        <LogIn className="w-3 h-3" />
                         {t('login')}
                     </Link>
                 )}
@@ -716,6 +722,26 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
             )}
 
             {showDrop && (
+                <div className="space-y-3">
+                    {authHydrated && token && quota && remainingTotal <= 0 && (
+                        <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/25 bg-amber-500/10 px-3.5 py-3">
+                            <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                            <div className="min-w-0 space-y-1">
+                                <p className="text-[13px] font-black text-amber-100 break-keep">
+                                    {t('quotaExhausted')}
+                                </p>
+                                <p className="text-[11px] font-bold text-amber-100/60 break-keep">
+                                    {t('quotaExhaustedHint')}
+                                </p>
+                                <Link
+                                    href="/quote?entry=file"
+                                    className="inline-flex mt-1 text-[11px] font-black text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline"
+                                >
+                                    {t('quotaExhaustedCta')} →
+                                </Link>
+                            </div>
+                        </div>
+                    )}
                 <div
                     {...getRootProps()}
                     className={cn(
@@ -736,6 +762,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                         <br />
                         {t('uploadHint2')}
                     </p>
+                </div>
                 </div>
             )}
 
@@ -1009,6 +1036,26 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                             <div className="w-full h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 text-white/40 text-[13px] font-black">
                                 <Loader2 className="w-4 h-4 animate-spin" />
                                 {t('checkingQuota')}
+                            </div>
+                        ) : token && remainingTotal <= 0 && quota ? (
+                            <div className="space-y-2">
+                                <div className="flex items-start gap-2.5 rounded-xl border border-amber-400/25 bg-amber-500/10 px-3.5 py-3">
+                                    <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                                    <div className="min-w-0 space-y-1">
+                                        <p className="text-[13px] font-black text-amber-100 break-keep">
+                                            {t('quotaExhausted')}
+                                        </p>
+                                        <p className="text-[11px] font-bold text-amber-100/60 break-keep">
+                                            {t('quotaExhaustedHint')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link
+                                    href="/quote?entry=file"
+                                    className="w-full h-11 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-black flex items-center justify-center gap-2 transition-all text-[13px]"
+                                >
+                                    {t('quotaExhaustedCta')}
+                                </Link>
                             </div>
                         ) : token ? (
                             <button
