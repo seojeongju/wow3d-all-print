@@ -725,30 +725,36 @@
       "Too dark or blurry",
       "Extreme close-up or cropped"
     ],
+    "badBadge": "Avoid",
+    "goodBadge": "Good",
     "visualCards": [
       {
         "id": "single",
         "title": "① One object per photo",
         "badLabel": "Many parts together",
-        "goodLabel": "Single object centered"
+        "goodLabel": "Single object centered",
+        "tip": "Multiple parts in one shot often merge into one mesh or create thin fragments. Shoot each part separately."
       },
       {
         "id": "background",
         "title": "② Keep background simple",
         "badLabel": "Clutter / hands",
-        "goodLabel": "Plain bright backdrop"
+        "goodLabel": "Plain bright backdrop",
+        "tip": "Hands, tools, or table texture can become part of the mesh. Use white paper or a plain wall."
       },
       {
         "id": "framing",
         "title": "③ Show the whole object",
         "badLabel": "Cropped / extreme close-up",
-        "goodLabel": "Fill 60–80% of frame"
+        "goodLabel": "Fill 60–80% of frame",
+        "tip": "Cropped edges often punch holes or warp faces. Leave a margin and let the object fill about 60–80% of the frame."
       },
       {
         "id": "lighting",
         "title": "④ Bright and sharp",
         "badLabel": "Dark / blurry",
-        "goodLabel": "Even bright light"
+        "goodLabel": "Even bright light",
+        "tip": "Dark or blurry shots lose silhouette. Use even window or ring light, focus carefully, and avoid hard shadows."
       }
     ],
     "footnote": "Results are for prototype / shape checks. For tight tolerances, upload a 3D file.",
@@ -1531,7 +1537,8 @@
     "goodHeading": "Good photo examples",
     "badHeading": "Photos to avoid",
     "visualHeading": "Photo rules at a glance",
-    "visualIntro": "Putting multiple parts in one photo often merges them into a messy mesh or thin fragments. Shoot each item separately for better conversion and print quality.",
+    "visualEyebrow": "Shooting checklist",
+    "visualIntro": "Multiple parts in one shot often merge into one messy mesh or thin fragments. Follow the four rules below for much better conversion and print quality.",
     "goodPhoto": [
       "Object large and centered",
       "Plain, bright background",

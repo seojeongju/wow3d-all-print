@@ -10,142 +10,257 @@ type CardCopy = {
     title: string
     badLabel: string
     goodLabel: string
+    /** 왜 중요한지 — 가이드 페이지에서만 표시 */
+    tip?: string
 }
 
 type Props = {
     cards: CardCopy[]
     compact?: boolean
     className?: string
+    badBadge?: string
+    goodBadge?: string
 }
 
-/** 한 장에 여러 물체 vs 단일 물체 */
+/** 카메라 뷰파인더 코너 */
+function ViewfinderCorners({ tone }: { tone: 'bad' | 'good' }) {
+    const c = tone === 'good' ? '#5eead4' : '#fca5a5'
+    return (
+        <g opacity="0.55" stroke={c} strokeWidth="1.5" fill="none">
+            <path d="M14 28 V18 H24" />
+            <path d="M146 28 V18 H136" />
+            <path d="M14 72 V82 H24" />
+            <path d="M146 72 V82 H136" />
+        </g>
+    )
+}
+
+/** ① 한 장 = 물체 하나 — L자 브라켓 */
 function IllustSingle({ good }: { good: boolean }) {
+    const uid = good ? 'g' : 'b'
     if (good) {
         return (
             <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-                <rect width="160" height="100" rx="10" fill="#0f172a" />
-                <rect x="8" y="8" width="144" height="84" rx="6" fill="#f1f5f9" />
-                <ellipse cx="80" cy="72" rx="28" ry="6" fill="#cbd5e1" opacity="0.55" />
+                <defs>
+                    <linearGradient id={`pg-sg-bg-${uid}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f8fafc" />
+                        <stop offset="100%" stopColor="#e2e8f0" />
+                    </linearGradient>
+                    <linearGradient id={`pg-sg-part-${uid}`} x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#5eead4" />
+                        <stop offset="100%" stopColor="#14b8a6" />
+                    </linearGradient>
+                </defs>
+                <rect width="160" height="100" rx="12" fill="#0b1220" />
+                <rect x="10" y="10" width="140" height="80" rx="8" fill={`url(#pg-sg-bg-${uid})`} />
+                <ellipse cx="80" cy="78" rx="34" ry="5" fill="#94a3b8" opacity="0.35" />
                 <path
-                    d="M58 68 L68 38 L92 38 L102 68 Z"
-                    fill="#2dd4bf"
+                    d="M52 72 V38 H72 V48 H88 V72 Z"
+                    fill={`url(#pg-sg-part-${uid})`}
                     stroke="#0f766e"
-                    strokeWidth="1.5"
+                    strokeWidth="1.4"
                 />
-                <rect x="72" y="28" width="16" height="12" rx="2" fill="#14b8a6" />
+                <circle cx="62" cy="58" r="3.2" fill="#ccfbf1" />
+                <circle cx="80" cy="62" r="3.2" fill="#ccfbf1" />
+                <ViewfinderCorners tone="good" />
             </svg>
         )
     }
     return (
         <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-            <rect width="160" height="100" rx="10" fill="#1c1010" />
-            <rect x="8" y="8" width="144" height="84" rx="6" fill="#2a1a1a" />
-            {/* 여러 파편 */}
-            <path d="M28 70 L36 42 L52 70 Z" fill="#f87171" opacity="0.9" />
-            <rect x="58" y="48" width="22" height="22" rx="2" fill="#fb7185" opacity="0.85" />
-            <circle cx="108" cy="58" r="12" fill="#f43f5e" opacity="0.8" />
-            <path d="M118 78 L128 52 L142 78 Z" fill="#e11d48" opacity="0.75" />
-            <rect x="40" y="72" width="14" height="8" rx="1" fill="#fda4af" opacity="0.7" />
-            <ellipse cx="88" cy="78" rx="10" ry="5" fill="#fecdd3" opacity="0.5" />
-        </svg>
-    )
-}
-
-/** 단색 배경 vs 잡동사니 */
-function IllustBackground({ good }: { good: boolean }) {
-    if (good) {
-        return (
-            <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-                <rect width="160" height="100" rx="10" fill="#0f172a" />
-                <rect x="8" y="8" width="144" height="84" rx="6" fill="#f8fafc" />
-                <ellipse cx="80" cy="74" rx="32" ry="7" fill="#e2e8f0" />
-                <rect x="58" y="36" width="44" height="36" rx="6" fill="#38bdf8" stroke="#0284c7" strokeWidth="1.5" />
-            </svg>
-        )
-    }
-    return (
-        <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-            <rect width="160" height="100" rx="10" fill="#1c1010" />
-            <rect x="8" y="8" width="144" height="84" rx="6" fill="#3f2a1a" />
-            <rect x="16" y="18" width="18" height="28" rx="2" fill="#78716c" opacity="0.7" />
-            <rect x="40" y="22" width="12" height="20" rx="1" fill="#a8a29e" opacity="0.5" />
-            <circle cx="130" cy="30" r="10" fill="#57534e" opacity="0.6" />
-            <path d="M20 88 Q80 60 140 88" stroke="#57534e" strokeWidth="8" fill="none" opacity="0.4" />
-            <rect x="64" y="40" width="32" height="28" rx="4" fill="#f87171" opacity="0.85" />
-            {/* 손 실루엣 */}
+            <rect width="160" height="100" rx="12" fill="#1a0c0c" />
+            <rect x="10" y="10" width="140" height="80" rx="8" fill="#2a1515" />
+            <path d="M30 74 L40 44 L54 74 Z" fill="#f87171" />
+            <rect x="52" y="48" width="20" height="20" rx="2.5" fill="#fb7185" />
+            <circle cx="92" cy="56" r="11" fill="#f43f5e" />
+            <path d="M104 76 L116 48 L132 76 Z" fill="#e11d48" opacity="0.9" />
+            <rect x="68" y="68" width="16" height="10" rx="1.5" fill="#fda4af" opacity="0.85" />
+            <ellipse cx="48" cy="78" rx="9" ry="4" fill="#fecdd3" opacity="0.45" />
             <path
-                d="M118 78 C118 62 108 54 98 56 C92 48 82 52 84 62 L88 88 Z"
-                fill="#a16207"
-                opacity="0.55"
+                d="M44 52 Q70 40 96 52"
+                stroke="#fecaca"
+                strokeWidth="1.2"
+                strokeDasharray="3 2"
+                fill="none"
+                opacity="0.7"
             />
+            <ViewfinderCorners tone="bad" />
         </svg>
     )
 }
 
-/** 전체 프레이밍 vs 잘림 */
-function IllustFraming({ good }: { good: boolean }) {
+/** ② 배경 단순 */
+function IllustBackground({ good }: { good: boolean }) {
+    const uid = good ? 'g' : 'b'
     if (good) {
         return (
             <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-                <rect width="160" height="100" rx="10" fill="#0f172a" />
-                <rect x="8" y="8" width="144" height="84" rx="6" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1" strokeDasharray="4 3" />
+                <defs>
+                    <linearGradient id={`pg-bg-g-${uid}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ffffff" />
+                        <stop offset="100%" stopColor="#f1f5f9" />
+                    </linearGradient>
+                </defs>
+                <rect width="160" height="100" rx="12" fill="#0b1220" />
+                <rect x="10" y="10" width="140" height="80" rx="8" fill={`url(#pg-bg-g-${uid})`} />
+                <ellipse cx="80" cy="76" rx="30" ry="5" fill="#cbd5e1" opacity="0.5" />
+                <rect
+                    x="58"
+                    y="34"
+                    width="44"
+                    height="38"
+                    rx="5"
+                    fill="#38bdf8"
+                    stroke="#0284c7"
+                    strokeWidth="1.4"
+                />
+                <path d="M58 42 H102" stroke="#7dd3fc" strokeWidth="1" opacity="0.7" />
+                <ViewfinderCorners tone="good" />
+            </svg>
+        )
+    }
+    return (
+        <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
+            <rect width="160" height="100" rx="12" fill="#1a0c0c" />
+            <rect x="10" y="10" width="140" height="80" rx="8" fill="#3b2416" />
+            <rect x="18" y="18" width="16" height="26" rx="2" fill="#78716c" opacity="0.75" />
+            <rect x="38" y="22" width="11" height="18" rx="1" fill="#a8a29e" opacity="0.55" />
+            <circle cx="128" cy="28" r="9" fill="#57534e" opacity="0.65" />
+            <path d="M22 86 Q80 58 138 86" stroke="#57534e" strokeWidth="10" fill="none" opacity="0.35" />
+            <rect x="64" y="40" width="32" height="28" rx="4" fill="#f87171" opacity="0.9" />
+            <path
+                d="M122 80 C120 62 108 54 98 56 C90 46 80 52 82 64 L86 88 Z"
+                fill="#a16207"
+                opacity="0.65"
+            />
+            <ViewfinderCorners tone="bad" />
+        </svg>
+    )
+}
+
+/** ③ 프레이밍 */
+function IllustFraming({ good }: { good: boolean }) {
+    const uid = good ? 'g' : 'b'
+    if (good) {
+        return (
+            <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
+                <defs>
+                    <linearGradient id={`pg-fr-g-${uid}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f8fafc" />
+                        <stop offset="100%" stopColor="#e2e8f0" />
+                    </linearGradient>
+                </defs>
+                <rect width="160" height="100" rx="12" fill="#0b1220" />
+                <rect
+                    x="10"
+                    y="10"
+                    width="140"
+                    height="80"
+                    rx="8"
+                    fill={`url(#pg-fr-g-${uid})`}
+                    stroke="#94a3b8"
+                    strokeWidth="1"
+                    strokeDasharray="4 3"
+                />
+                <rect
+                    x="28"
+                    y="22"
+                    width="104"
+                    height="60"
+                    rx="4"
+                    fill="none"
+                    stroke="#a78bfa"
+                    strokeWidth="0.8"
+                    strokeDasharray="2 2"
+                    opacity="0.45"
+                />
                 <path
-                    d="M52 72 L62 34 L98 34 L108 72 Z"
+                    d="M54 70 L64 34 L96 34 L106 70 Z"
                     fill="#a78bfa"
                     stroke="#7c3aed"
-                    strokeWidth="1.5"
+                    strokeWidth="1.4"
                 />
-                <circle cx="80" cy="28" r="8" fill="#8b5cf6" />
+                <circle cx="80" cy="28" r="7" fill="#8b5cf6" />
+                <text x="80" y="88" textAnchor="middle" fill="#64748b" fontSize="7" fontWeight="700">
+                    60–80%
+                </text>
+                <ViewfinderCorners tone="good" />
             </svg>
         )
     }
     return (
         <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-            <rect width="160" height="100" rx="10" fill="#1c1010" />
-            <rect x="8" y="8" width="144" height="84" rx="6" fill="#2a1a1a" />
-            {/* 잘린 부분만 */}
-            <path d="M40 100 L55 20 L105 20 L120 100" fill="#f87171" opacity="0.9" />
-            <rect x="0" y="0" width="160" height="18" fill="#1c1010" />
-            <rect x="0" y="82" width="160" height="18" fill="#1c1010" />
-            <text x="80" y="14" textAnchor="middle" fill="#fda4af" fontSize="8" fontWeight="700">
+            <rect width="160" height="100" rx="12" fill="#1a0c0c" />
+            <rect x="10" y="10" width="140" height="80" rx="8" fill="#2a1515" />
+            <path d="M36 100 L52 8 L108 8 L124 100" fill="#f87171" opacity="0.92" />
+            <rect x="0" y="0" width="160" height="16" fill="#1a0c0c" />
+            <rect x="0" y="84" width="160" height="16" fill="#1a0c0c" />
+            <rect x="48" y="4" width="64" height="14" rx="4" fill="#7f1d1d" />
+            <text x="80" y="14" textAnchor="middle" fill="#fecaca" fontSize="8" fontWeight="800">
                 CROP
             </text>
+            <ViewfinderCorners tone="bad" />
         </svg>
     )
 }
 
-/** 밝은 조명 vs 어두움 */
+/** ④ 조명 */
 function IllustLighting({ good }: { good: boolean }) {
+    const uid = good ? 'g' : 'b'
     if (good) {
         return (
             <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-                <rect width="160" height="100" rx="10" fill="#0f172a" />
-                <rect x="8" y="8" width="144" height="84" rx="6" fill="#fffbeb" />
-                <circle cx="128" cy="24" r="14" fill="#fde68a" />
-                <circle cx="128" cy="24" r="8" fill="#fbbf24" />
-                <ellipse cx="80" cy="74" rx="26" ry="5" fill="#fcd34d" opacity="0.35" />
+                <defs>
+                    <radialGradient id={`pg-lt-sun-${uid}`} cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="#fde68a" />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+                    </radialGradient>
+                    <linearGradient id={`pg-lt-bg-${uid}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#fffbeb" />
+                        <stop offset="100%" stopColor="#fef3c7" />
+                    </linearGradient>
+                </defs>
+                <rect width="160" height="100" rx="12" fill="#0b1220" />
+                <rect x="10" y="10" width="140" height="80" rx="8" fill={`url(#pg-lt-bg-${uid})`} />
+                <circle cx="126" cy="26" r="18" fill={`url(#pg-lt-sun-${uid})`} />
+                <circle cx="126" cy="26" r="7" fill="#fbbf24" />
+                <g stroke="#fcd34d" strokeWidth="1.5" opacity="0.7">
+                    <line x1="126" y1="10" x2="126" y2="4" />
+                    <line x1="140" y1="26" x2="148" y2="26" />
+                    <line x1="138" y1="14" x2="144" y2="8" />
+                </g>
+                <ellipse cx="80" cy="76" rx="28" ry="5" fill="#fbbf24" opacity="0.3" />
                 <path
-                    d="M60 70 L70 40 L90 40 L100 70 Z"
+                    d="M58 70 L68 38 L92 38 L102 70 Z"
                     fill="#f59e0b"
                     stroke="#b45309"
-                    strokeWidth="1.5"
+                    strokeWidth="1.4"
                 />
+                <ViewfinderCorners tone="good" />
             </svg>
         )
     }
     return (
         <svg viewBox="0 0 160 100" className="w-full h-auto" aria-hidden>
-            <rect width="160" height="100" rx="10" fill="#0a0a0a" />
-            <rect x="8" y="8" width="144" height="84" rx="6" fill="#171717" />
+            <defs>
+                <filter id={`pg-lt-blur-${uid}`}>
+                    <feGaussianBlur stdDeviation="1.8" />
+                </filter>
+            </defs>
+            <rect width="160" height="100" rx="12" fill="#050505" />
+            <rect x="10" y="10" width="140" height="80" rx="8" fill="#121212" />
             <path
-                d="M60 70 L70 40 L90 40 L100 70 Z"
+                d="M58 70 L68 38 L92 38 L102 70 Z"
                 fill="#525252"
-                opacity="0.45"
+                opacity="0.4"
+                filter={`url(#pg-lt-blur-${uid})`}
             />
-            <ellipse cx="80" cy="55" rx="36" ry="22" fill="#000" opacity="0.35" />
-            <text x="80" y="92" textAnchor="middle" fill="#737373" fontSize="8" fontWeight="700">
+            <ellipse cx="80" cy="54" rx="40" ry="24" fill="#000" opacity="0.45" />
+            <rect x="48" y="84" width="64" height="12" rx="4" fill="#262626" />
+            <text x="80" y="93" textAnchor="middle" fill="#737373" fontSize="7" fontWeight="800">
                 DARK / BLUR
             </text>
+            <ViewfinderCorners tone="bad" />
         </svg>
     )
 }
@@ -163,37 +278,72 @@ function Illustration({ kind, good }: { kind: CardKind; good: boolean }) {
     }
 }
 
-function CompareCard({ card, compact }: { card: CardCopy; compact?: boolean }) {
+function CompareCard({
+    card,
+    compact,
+    badBadge,
+    goodBadge,
+}: {
+    card: CardCopy
+    compact?: boolean
+    badBadge: string
+    goodBadge: string
+}) {
     return (
         <article
             className={cn(
-                'shrink-0 rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden',
-                compact ? 'w-[240px] sm:w-auto sm:min-w-0 sm:flex-1' : 'w-full'
+                'group shrink-0 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] overflow-hidden transition-all duration-300',
+                'hover:border-indigo-400/30 hover:shadow-[0_12px_40px_-16px_rgba(99,102,241,0.45)]',
+                compact ? 'w-[260px] sm:w-auto sm:min-w-0 sm:flex-1' : 'w-full'
             )}
         >
-            <div className="px-3 pt-3 pb-1.5">
-                <p className="text-[11px] sm:text-xs font-black text-white tracking-tight">{card.title}</p>
+            <div className="px-3.5 pt-3.5 pb-2">
+                <p className="text-[12px] sm:text-[13px] font-black text-white tracking-tight break-keep leading-snug">
+                    {card.title}
+                </p>
             </div>
-            <div className="grid grid-cols-2 gap-1.5 px-2.5 pb-2.5">
-                <div className="rounded-xl overflow-hidden border border-red-400/25 bg-red-500/5">
+
+            <div className="relative grid grid-cols-2 gap-2 px-2.5 pb-2">
+                <div className="relative rounded-xl overflow-hidden border border-red-400/30 bg-red-500/[0.06] transition-colors group-hover:border-red-400/45">
+                    <div className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 rounded-md bg-red-500/90 px-1.5 py-0.5 text-[9px] font-black text-white shadow-sm">
+                        <X className="w-2.5 h-2.5" strokeWidth={3} />
+                        {badBadge}
+                    </div>
                     <Illustration kind={card.id} good={false} />
-                    <div className="flex items-center gap-1 px-2 py-1.5">
-                        <X className="w-3 h-3 text-red-300 shrink-0" />
-                        <span className="text-[10px] font-bold text-red-200/90 leading-tight break-keep">
+                    <div className="px-2 py-1.5 border-t border-red-400/15">
+                        <span className="text-[10px] font-bold text-red-200/95 leading-tight break-keep block">
                             {card.badLabel}
                         </span>
                     </div>
                 </div>
-                <div className="rounded-xl overflow-hidden border border-teal-400/25 bg-teal-500/5">
+
+                <div className="relative rounded-xl overflow-hidden border border-teal-400/35 bg-teal-500/[0.07] transition-colors group-hover:border-teal-400/55">
+                    <div className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 rounded-md bg-teal-400 px-1.5 py-0.5 text-[9px] font-black text-slate-950 shadow-sm">
+                        <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                        {goodBadge}
+                    </div>
                     <Illustration kind={card.id} good={true} />
-                    <div className="flex items-center gap-1 px-2 py-1.5">
-                        <Check className="w-3 h-3 text-teal-300 shrink-0" />
-                        <span className="text-[10px] font-bold text-teal-200/90 leading-tight break-keep">
+                    <div className="px-2 py-1.5 border-t border-teal-400/15">
+                        <span className="text-[10px] font-bold text-teal-100 leading-tight break-keep block">
                             {card.goodLabel}
                         </span>
                     </div>
                 </div>
+
+                <div
+                    className="pointer-events-none absolute left-1/2 top-[42%] z-20 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-slate-950/90 text-[8px] font-black text-white/70 shadow-lg"
+                    aria-hidden
+                >
+                    VS
+                </div>
             </div>
+
+            {card.tip && !compact && (
+                <p className="mx-3 mb-3 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2 text-[11px] font-bold leading-relaxed text-white/55 break-keep">
+                    <span className="text-indigo-300/90">Tip · </span>
+                    {card.tip}
+                </p>
+            )}
         </article>
     )
 }
@@ -202,7 +352,13 @@ function CompareCard({ card, compact }: { card: CardCopy; compact?: boolean }) {
  * 사진→3D 촬영 가이드 — 굿/배드 대비 일러스트 카드
  * compact: 업로드 패널용 가로 스크롤
  */
-export function PhotoGuideVisualCards({ cards, compact = false, className }: Props) {
+export function PhotoGuideVisualCards({
+    cards,
+    compact = false,
+    className,
+    badBadge = 'BAD',
+    goodBadge = 'GOOD',
+}: Props) {
     if (compact) {
         return (
             <div
@@ -212,7 +368,13 @@ export function PhotoGuideVisualCards({ cards, compact = false, className }: Pro
                 )}
             >
                 {cards.map((card) => (
-                    <CompareCard key={card.id} card={card} compact />
+                    <CompareCard
+                        key={card.id}
+                        card={card}
+                        compact
+                        badBadge={badBadge}
+                        goodBadge={goodBadge}
+                    />
                 ))}
             </div>
         )
@@ -221,7 +383,12 @@ export function PhotoGuideVisualCards({ cards, compact = false, className }: Pro
     return (
         <div className={cn('grid gap-4 sm:grid-cols-2', className)}>
             {cards.map((card) => (
-                <CompareCard key={card.id} card={card} />
+                <CompareCard
+                    key={card.id}
+                    card={card}
+                    badBadge={badBadge}
+                    goodBadge={goodBadge}
+                />
             ))}
         </div>
     )

@@ -91,6 +91,7 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
         title: string
         badLabel: string
         goodLabel: string
+        tip?: string
     }[]
 
     const path = guidePath(locale)
@@ -226,14 +227,21 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
                         afterLabel={t('afterLabel')}
                     />
 
-                    <article className="rounded-[2rem] border border-indigo-400/20 bg-indigo-500/[0.06] p-6 md:p-8 space-y-5">
-                        <div>
-                            <h2 className="text-2xl font-black">{t('visualHeading')}</h2>
-                            <p className="mt-2 text-white/65 text-sm leading-relaxed break-keep">
+                    <article className="rounded-[2rem] border border-indigo-400/25 bg-gradient-to-br from-indigo-500/[0.10] via-slate-950/40 to-teal-500/[0.06] p-6 md:p-8 space-y-6">
+                        <div className="space-y-2">
+                            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-300/80">
+                                {t('visualEyebrow')}
+                            </p>
+                            <h2 className="text-2xl font-black tracking-tight">{t('visualHeading')}</h2>
+                            <p className="text-white/65 text-sm leading-relaxed break-keep max-w-2xl">
                                 {t('visualIntro')}
                             </p>
                         </div>
-                        <PhotoGuideVisualCards cards={visualCards} />
+                        <PhotoGuideVisualCards
+                            cards={visualCards}
+                            badBadge={tPhoto('badBadge')}
+                            goodBadge={tPhoto('goodBadge')}
+                        />
                     </article>
 
                     <div className="grid md:grid-cols-2 gap-5">

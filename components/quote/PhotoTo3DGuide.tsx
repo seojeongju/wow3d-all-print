@@ -12,6 +12,7 @@ type VisualCard = {
     title: string
     badLabel: string
     goodLabel: string
+    tip?: string
 }
 
 /**
@@ -61,7 +62,12 @@ export function PhotoTo3DGuide() {
                     <p className="text-[12px] font-bold text-white/80 break-keep px-0.5">
                         {t('heroTip')}
                     </p>
-                    <PhotoGuideVisualCards cards={visualCards} compact />
+                    <PhotoGuideVisualCards
+                        cards={visualCards}
+                        compact
+                        badBadge={t('badBadge')}
+                        goodBadge={t('goodBadge')}
+                    />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div className="rounded-xl border border-teal-400/20 bg-teal-500/5 p-3 space-y-1.5">
