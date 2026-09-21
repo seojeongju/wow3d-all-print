@@ -401,7 +401,7 @@ export default function Header() {
                         </button>
                     </Link>
 
-                    {mounted && isAuthenticated ? (
+                    {showAuthed ? (
                         <div className="flex items-center gap-1 sm:gap-2">
                             {user?.role === 'admin' ? (
                                 <NextLink href="/admin">
