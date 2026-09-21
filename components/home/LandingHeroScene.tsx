@@ -28,7 +28,15 @@ export default function LandingHeroScene() {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        // hydration 완료·다음 프레임 이후에 Canvas 생성 (Context Lost·#418 연쇄 완화)
+        let raf = 0;
+        const timer = window.setTimeout(() => {
+            raf = window.requestAnimationFrame(() => setMounted(true));
+        }, 0);
+        return () => {
+            window.clearTimeout(timer);
+            if (raf) window.cancelAnimationFrame(raf);
+        };
     }, []);
 
     if (!mounted) return null;

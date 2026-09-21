@@ -235,7 +235,7 @@ export default function Hero() {
             <div className="container relative z-10 mx-auto grid items-stretch gap-10 px-4 lg:grid-cols-2 lg:gap-12 xl:gap-14">
                 {/* ── Left: 브랜드 · 가치 · 전환 CTA ── */}
                 <motion.div
-                    initial={{ opacity: 0, x: -28 }}
+                    initial={false}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.65, ease: 'easeOut' }}
                     className="flex h-full min-h-0 flex-col text-left"
@@ -421,7 +421,7 @@ export default function Hero() {
 
                 {/* ── Right: 통합 Drop Zone ── */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.65, delay: 0.08 }}
                     className="flex h-full w-full min-h-[420px] sm:min-h-[500px]"

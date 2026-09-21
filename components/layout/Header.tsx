@@ -205,6 +205,18 @@ export default function Header() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
+    // auth persist 복원 전에는 로그인 UI 유지 (일반 모드 localStorage로 #418 나지 않도록)
+    const [authReady, setAuthReady] = useState(false)
+    useEffect(() => {
+        if (useAuthStore.persist.hasHydrated()) {
+            setAuthReady(true)
+            return
+        }
+        return useAuthStore.persist.onFinishHydration(() => setAuthReady(true))
+    }, [])
+
+    const showAuthed = mounted && authReady && isAuthenticated
+
     useEffect(() => {
         if (mobileOpen) document.body.style.overflow = 'hidden'
         else document.body.style.overflow = ''
@@ -618,7 +630,7 @@ export default function Header() {
                                 </Link>
                             </motion.div>
 
-                            {mounted && isAuthenticated ? (
+                            {showAuthed ? (
                                 <>
                                     <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
                                         {user?.role === 'admin' ? (
