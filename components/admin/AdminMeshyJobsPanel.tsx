@@ -30,7 +30,7 @@ import {
     withThumbnailTimeout,
 } from '@/lib/admin-meshy-thumbnail-cache'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
-import { cn } from '@/lib/utils'
+import { formatQuotePrintSizeMm } from '@/lib/quote-print-settings'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
 
 const AdminMeshyStlPreview = dynamic(() => import('@/components/admin/AdminMeshyStlPreview'), {
@@ -57,6 +57,10 @@ export type AdminMeshyJob = {
     hasModel: boolean
     thumbnailUrl: string | null
     quoteId: number | null
+    quoteSizeX: number | null
+    quoteSizeY: number | null
+    quoteSizeZ: number | null
+    quoteScalePercent: number | null
     orderId: number | null
     orderNumber: string | null
     createdAt: string
@@ -579,6 +583,20 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                         <p className="text-[10px] text-white/45 truncate">
                                             {j.sourceFileName || j.resultFileName || '—'}
                                         </p>
+                                        {(() => {
+                                            const sizeLine = formatQuotePrintSizeMm(
+                                                j.quoteSizeX,
+                                                j.quoteSizeY,
+                                                j.quoteSizeZ,
+                                                j.quoteScalePercent
+                                            )
+                                            if (!sizeLine) return null
+                                            return (
+                                                <p className="text-[10px] font-bold text-amber-200/90 leading-snug">
+                                                    견적 적용 사이즈 {sizeLine}
+                                                </p>
+                                            )
+                                        })()}
                                         {j.errorMessage && (
                                             <p className="text-[10px] text-red-300/80 line-clamp-1">
                                                 {j.errorMessage}

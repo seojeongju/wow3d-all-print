@@ -87,6 +87,37 @@ export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefin
     return []
 }
 
+/** 견적에 저장된 최종 출력 사이즈 (사용자가 스케일 조정 후 견적에 적용한 mm) */
+export function formatQuotePrintSizeMm(
+    x: unknown,
+    y: unknown,
+    z: unknown,
+    scalePercent?: unknown
+): string {
+    const nx = Number(x)
+    const ny = Number(y)
+    const nz = Number(z)
+    if (!(nx > 0.05) || !(ny > 0.05) || !(nz > 0.05)) return ''
+    const fmt = (n: number) => (Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : n.toFixed(1))
+    const size = `${fmt(nx)} × ${fmt(ny)} × ${fmt(nz)} mm`
+    const scale = Number(scalePercent)
+    if (Number.isFinite(scale) && scale > 0 && Math.abs(scale - 100) >= 0.5) {
+        return `${size} · 스케일 ${Math.round(scale)}%`
+    }
+    return size
+}
+
+export function scalePercentFromModelTransform(raw: unknown): number | null {
+    if (raw == null) return null
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+        const scale = Number((parsed as { scalePercent?: unknown })?.scalePercent)
+        return Number.isFinite(scale) && scale > 0 ? scale : null
+    } catch {
+        return null
+    }
+}
+
 export function formatQuoteGuideContext(q: QuotePrintSettings | null | undefined): string {
     if (!q) return ''
     const topic = String(q.guide_topic || '').trim()

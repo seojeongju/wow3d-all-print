@@ -2,7 +2,12 @@
 
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate } from '@/lib/date-utils';
-import { formatQuoteGuideContext, formatQuotePrintSettings } from '@/lib/quote-print-settings';
+import {
+    formatQuoteGuideContext,
+    formatQuotePrintSettings,
+    formatQuotePrintSizeMm,
+    scalePercentFromModelTransform,
+} from '@/lib/quote-print-settings';
 import { resolveOrdererPhone, stripOrdererInfoFromNote } from '@/lib/orderer-contact';
 import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -105,6 +110,10 @@ type AdminOrderItem = Record<string, unknown> & {
     subtotal?: number;
     estimated_time_hours?: number | null;
     volume_cm3?: number | null;
+    dimensions_x?: number | null;
+    dimensions_y?: number | null;
+    dimensions_z?: number | null;
+    model_transform?: string | null;
     guide_source?: string | null;
     guide_topic?: string | null;
 };
@@ -1000,12 +1009,35 @@ function OrderListInner() {
                                                                     <span className="text-[11px] text-white/35">출력 설정 정보 없음</span>
                                                                 )}
                                                             </div>
-                                                            {it.estimated_time_hours != null && Number(it.estimated_time_hours) > 0 && (
-                                                                <div className="mt-1 text-[10px] text-white/40">
-                                                                    예상 출력 {Number(it.estimated_time_hours).toFixed(2)}h
-                                                                    {it.volume_cm3 != null ? ` · 부피 ${Number(it.volume_cm3).toFixed(1)} cm³` : ''}
-                                                                </div>
-                                                            )}
+                                                            {(() => {
+                                                                const sizeLine = formatQuotePrintSizeMm(
+                                                                    it.dimensions_x,
+                                                                    it.dimensions_y,
+                                                                    it.dimensions_z,
+                                                                    scalePercentFromModelTransform(it.model_transform)
+                                                                );
+                                                                const hasTime = it.estimated_time_hours != null && Number(it.estimated_time_hours) > 0;
+                                                                if (!sizeLine && !hasTime && it.volume_cm3 == null) return null;
+                                                                return (
+                                                                    <div className="mt-1 space-y-0.5 text-[10px] text-white/40">
+                                                                        {sizeLine ? (
+                                                                            <div className="font-bold text-amber-200/90">
+                                                                                견적 적용 사이즈 {sizeLine}
+                                                                            </div>
+                                                                        ) : null}
+                                                                        {hasTime || it.volume_cm3 != null ? (
+                                                                            <div>
+                                                                                {hasTime
+                                                                                    ? `예상 출력 ${Number(it.estimated_time_hours).toFixed(2)}h`
+                                                                                    : ''}
+                                                                                {it.volume_cm3 != null
+                                                                                    ? `${hasTime ? ' · ' : ''}부피 ${Number(it.volume_cm3).toFixed(1)} cm³`
+                                                                                    : ''}
+                                                                            </div>
+                                                                        ) : null}
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                             {guideLine ? (
                                                                 <div className="mt-1 text-[10px] text-teal-300/75">
                                                                     가이드 유입: {guideLine}

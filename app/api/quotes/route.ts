@@ -297,6 +297,12 @@ export async function POST(request: NextRequest) {
                         rotY: Number(body.modelTransform.rotY) || 0,
                         rotZ: Number(body.modelTransform.rotZ) || 0,
                         snapToBed: body.modelTransform.snapToBed !== false,
+                        /** 사용자가 사이즈 조정 후 견적에 적용한 최종 출력 치수(mm) */
+                        printSizeMm: {
+                            x: Number(dimensionsX) || 0,
+                            y: Number(dimensionsY) || 0,
+                            z: Number(dimensionsZ) || 0,
+                        },
                     })
                     await env.DB.prepare('UPDATE quotes SET model_transform = ? WHERE id = ?')
                         .bind(payload, quoteId)

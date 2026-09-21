@@ -84,12 +84,17 @@ export async function GET(req: NextRequest) {
                 j.updated_at,
                 u.email AS user_email,
                 u.name AS user_name,
+                q.dimensions_x AS quote_dimensions_x,
+                q.dimensions_y AS quote_dimensions_y,
+                q.dimensions_z AS quote_dimensions_z,
+                q.model_transform AS quote_model_transform,
                 (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_id,
                 (SELECT o.order_number FROM order_items oi
                     JOIN orders o ON o.id = oi.order_id
                     WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_number
              FROM meshy_jobs j
              LEFT JOIN users u ON u.id = j.user_id
+             LEFT JOIN quotes q ON q.id = j.quote_id
              ${whereSql}
              ORDER BY j.id DESC
              LIMIT ? OFFSET ?`
@@ -112,6 +117,20 @@ export async function GET(req: NextRequest) {
                 hasModel: Boolean(r.result_file_key) && String(r.status) === 'succeeded',
                 thumbnailUrl: (r.thumbnail_url as string) || null,
                 quoteId: r.quote_id != null ? Number(r.quote_id) : null,
+                quoteSizeX: r.quote_dimensions_x != null ? Number(r.quote_dimensions_x) : null,
+                quoteSizeY: r.quote_dimensions_y != null ? Number(r.quote_dimensions_y) : null,
+                quoteSizeZ: r.quote_dimensions_z != null ? Number(r.quote_dimensions_z) : null,
+                quoteScalePercent: (() => {
+                    try {
+                        const raw = r.quote_model_transform
+                        if (typeof raw !== 'string' || !raw) return null
+                        const parsed = JSON.parse(raw) as { scalePercent?: unknown }
+                        const n = Number(parsed.scalePercent)
+                        return Number.isFinite(n) && n > 0 ? n : null
+                    } catch {
+                        return null
+                    }
+                })(),
                 orderId: r.order_id != null ? Number(r.order_id) : null,
                 orderNumber: (r.order_number as string) || null,
                 createdAt: String(r.created_at || ''),
