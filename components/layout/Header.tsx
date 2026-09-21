@@ -618,7 +618,7 @@ export default function Header() {
                                 </Link>
                             </motion.div>
 
-                            {isAuthenticated ? (
+                            {mounted && isAuthenticated ? (
                                 <>
                                     <motion.div variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
                                         {user?.role === 'admin' ? (

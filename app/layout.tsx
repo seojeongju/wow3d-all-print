@@ -6,6 +6,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
+import { ZustandPersistGate } from "@/components/ZustandPersistGate";
 import {
   absoluteUrl,
   buildOgImages,
@@ -127,6 +128,7 @@ export default async function RootLayout({
             ]),
           }}
         />
+        <ZustandPersistGate />
         <ClearCartWhenGuest />
         <Suspense fallback={null}>
           <TrafficTracker />

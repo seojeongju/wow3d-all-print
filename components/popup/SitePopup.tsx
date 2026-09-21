@@ -26,9 +26,10 @@ function isExcludedPath(pathname: string | null): boolean {
 
 function isSameOriginUrl(url: string): boolean {
   if (!/^https?:\/\//i.test(url)) return true
-  if (typeof window === 'undefined') return false
   try {
-    return new URL(url, window.location.origin).origin === window.location.origin
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    // SSR/CSR 동일 판정 — window 분기 시 React #418 유발
+    return host === 'wow3dp.co.kr' || host.endsWith('.wow3dp.co.kr')
   } catch {
     return false
   }

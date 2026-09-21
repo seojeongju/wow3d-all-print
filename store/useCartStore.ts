@@ -131,6 +131,7 @@ export const useCartStore = create<CartState>()(
         }),
         {
             name: 'wow3d-cart',
+            skipHydration: true,
         }
     )
 );

@@ -405,7 +405,7 @@ function QuoteContent() {
                                 {showQuotePanel ? (
                                     <motion.div
                                         key="quote-settings"
-                                        initial={{ opacity: 0, x: 30 }}
+                                        initial={false}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 30 }}
                                         className="space-y-6 sm:space-y-8"
@@ -442,7 +442,7 @@ function QuoteContent() {
                                 ) : file && !analysis ? (
                                         <motion.div
                                             key="analyzing"
-                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            initial={false}
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             className="space-y-6 sm:space-y-8 flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px]"
@@ -484,7 +484,7 @@ function QuoteContent() {
                                 ) : !entryMode ? (
                                         <motion.div
                                             key="chooser"
-                                            initial={{ opacity: 0, x: -30 }}
+                                            initial={false}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -30 }}
                                         >
@@ -523,7 +523,7 @@ function QuoteContent() {
                                     ) : entryMode === 'photo' ? (
                                         <motion.div
                                             key="photo"
-                                            initial={{ opacity: 0, x: -30 }}
+                                            initial={false}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -30 }}
                                         >
@@ -539,7 +539,7 @@ function QuoteContent() {
                                     ) : (
                                         <motion.div
                                             key="upload"
-                                            initial={{ opacity: 0, x: -30 }}
+                                            initial={false}
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -30 }}
                                             className="space-y-6 sm:space-y-8"

@@ -121,7 +121,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
     } | null>(null)
     const [removeBgConfigured, setRemoveBgConfigured] = useState(false)
     const [applying, setApplying] = useState(false)
-    const [resuming, setResuming] = useState(true)
+    const [resuming, setResuming] = useState(false)
     const [authHydrated, setAuthHydrated] = useState(false)
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const autoApplyJobRef = useRef<number | null>(null)
@@ -370,6 +370,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
         }
 
         let cancelled = false
+        setResuming(true)
         ;(async () => {
             try {
                 const controller = new AbortController()

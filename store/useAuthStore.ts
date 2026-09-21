@@ -80,6 +80,7 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: 'wow3d-auth',
+            skipHydration: true,
             onRehydrateStorage: () => (state) => {
                 // persist 복원 후 세션이 없으면 클라이언트에서만 발급
                 if (state && !state.sessionId) ensureClientSessionId();
