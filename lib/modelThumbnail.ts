@@ -111,68 +111,104 @@ async function loadGeometryFromBufferAsync(
   return g ? Promise.resolve(g) : null
 }
 
+function forceReleaseWebGl(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElement): void {
+  try {
+    renderer.dispose()
+  } catch {
+    /* ignore */
+  }
+  try {
+    const gl = renderer.getContext()
+    const loseExt = gl?.getExtension?.('WEBGL_lose_context') as { loseContext?: () => void } | null
+    loseExt?.loseContext?.()
+  } catch {
+    /* ignore */
+  }
+  try {
+    canvas.width = 0
+    canvas.height = 0
+  } catch {
+    /* ignore */
+  }
+}
+
 function renderGeometryToDataUrl(geometry: THREE.BufferGeometry, size: number): string {
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
 
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    alpha: false,
-    antialias: true,
-    preserveDrawingBuffer: true,
-  })
-  renderer.setSize(size, size)
-  renderer.setPixelRatio(1)
-  renderer.setClearColor(0x0b1220, 1)
-  renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
+  // 의도적 해제 시 THREE 콘솔 경고 억제
+  const onContextLost = (e: Event) => {
+    e.preventDefault()
+  }
+  canvas.addEventListener('webglcontextlost', onContextLost, false)
 
-  const scene = new THREE.Scene()
+  let renderer: THREE.WebGLRenderer | null = null
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: false,
+      antialias: false,
+      preserveDrawingBuffer: true,
+      powerPreference: 'low-power',
+      failIfMajorPerformanceCaveat: false,
+    })
+    renderer.setSize(size, size)
+    renderer.setPixelRatio(1)
+    renderer.setClearColor(0x0b1220, 1)
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.05
 
-  // 낮은 앰비언트 + 키/필/림 — 흰 실루엣으로 날아가지 않고 윤곽이 살아나도록
-  scene.add(new THREE.HemisphereLight(0xc5d4ff, 0x1a2030, 0.5))
+    const scene = new THREE.Scene()
 
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.05)
-  keyLight.position.set(1.4, 1.8, 1.1)
-  scene.add(keyLight)
+    // 낮은 앰비언트 + 키/필/림 — 흰 실루엣으로 날아가지 않고 윤곽이 살아나도록
+    scene.add(new THREE.HemisphereLight(0xc5d4ff, 0x1a2030, 0.5))
 
-  const fillLight = new THREE.DirectionalLight(0x9bb7ff, 0.32)
-  fillLight.position.set(-1.6, 0.35, 0.5)
-  scene.add(fillLight)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.05)
+    keyLight.position.set(1.4, 1.8, 1.1)
+    scene.add(keyLight)
 
-  const rimLight = new THREE.DirectionalLight(0xe8f0ff, 0.95)
-  rimLight.position.set(-0.55, 0.7, -1.5)
-  scene.add(rimLight)
+    const fillLight = new THREE.DirectionalLight(0x9bb7ff, 0.32)
+    fillLight.position.set(-1.6, 0.35, 0.5)
+    scene.add(fillLight)
 
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x7c8cff,
-    roughness: 0.42,
-    metalness: 0.22,
-    side: THREE.DoubleSide,
-  })
-  const mesh = new THREE.Mesh(geometry, material)
-  scene.add(mesh)
+    const rimLight = new THREE.DirectionalLight(0xe8f0ff, 0.95)
+    rimLight.position.set(-0.55, 0.7, -1.5)
+    scene.add(rimLight)
 
-  const box = new THREE.Box3().setFromObject(mesh)
-  const s = new THREE.Vector3()
-  box.getSize(s)
-  const maxDim = Math.max(s.x, s.y, s.z, 1)
-  const dist = maxDim * 1.7
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x7c8cff,
+      roughness: 0.42,
+      metalness: 0.22,
+      side: THREE.DoubleSide,
+    })
+    const mesh = new THREE.Mesh(geometry, material)
+    scene.add(mesh)
 
-  const camera = new THREE.PerspectiveCamera(42, 1, maxDim / 200, maxDim * 20)
-  camera.position.set(dist * 0.82, dist * 0.52, dist * 1.08)
-  camera.lookAt(0, 0, 0)
-  camera.updateProjectionMatrix()
+    const box = new THREE.Box3().setFromObject(mesh)
+    const s = new THREE.Vector3()
+    box.getSize(s)
+    const maxDim = Math.max(s.x, s.y, s.z, 1)
+    const dist = maxDim * 1.7
 
-  renderer.render(scene, camera)
-  const dataUrl = canvas.toDataURL('image/png')
+    const camera = new THREE.PerspectiveCamera(42, 1, maxDim / 200, maxDim * 20)
+    camera.position.set(dist * 0.82, dist * 0.52, dist * 1.08)
+    camera.lookAt(0, 0, 0)
+    camera.updateProjectionMatrix()
 
-  geometry.dispose()
-  material.dispose()
-  renderer.dispose()
-  return dataUrl
+    renderer.render(scene, camera)
+    const dataUrl = canvas.toDataURL('image/png')
+
+    geometry.dispose()
+    material.dispose()
+    forceReleaseWebGl(renderer, canvas)
+    renderer = null
+    return dataUrl
+  } finally {
+    canvas.removeEventListener('webglcontextlost', onContextLost, false)
+    if (renderer) forceReleaseWebGl(renderer, canvas)
+  }
 }
 
 /**

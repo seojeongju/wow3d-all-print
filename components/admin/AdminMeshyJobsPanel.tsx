@@ -98,6 +98,10 @@ async function fetchAuthedBlob(
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         cache: 'no-store',
     })
+    // 썸네일 캐시 미스(204) — 브라우저 콘솔에 404 노이즈를 남기지 않음
+    if (res.status === 204) {
+        throw new Error('thumbnail_missing')
+    }
     if (!res.ok) {
         let msg = '파일 요청 실패'
         try {
@@ -112,6 +116,9 @@ async function fetchAuthedBlob(
     const m = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(cd)
     const fileName = m ? decodeURIComponent(m[1] || m[2] || '') : null
     const blob = await res.blob()
+    if (!blob.size) {
+        throw new Error('empty_file')
+    }
     return { blob, fileName }
 }
 

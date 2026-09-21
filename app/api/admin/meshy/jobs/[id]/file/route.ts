@@ -98,7 +98,11 @@ export async function GET(
                 return new NextResponse(object.body as BodyInit, { headers })
             }
 
-            return NextResponse.json({ error: '썸네일이 없습니다' }, { status: 404 })
+            // 캐시 미스 — 404 대신 204로 브라우저 콘솔 노이즈 방지 (클라이언트가 WebGL 폴백)
+            return new NextResponse(null, {
+                status: 204,
+                headers: { 'Cache-Control': 'private, no-store' },
+            })
         }
 
         if (job.status !== 'succeeded' || !job.result_file_key) {
