@@ -642,7 +642,7 @@
     "resuming": "이전 작업을 확인하는 중…",
     "uploadTitle": "제품 사진(이미지) 업로드",
     "uploadHint": "JPG · PNG · 최대 8MB",
-    "uploadHint2": "위 가이드를 참고하면 품질이 좋아집니다",
+    "uploadHint2": "한 장에 물체 1개 · 위 가이드를 보면 품질이 좋아집니다",
     "previewAlt": "업로드 미리보기",
     "ariaRestart": "다른 사진으로 새로 시작",
     "ariaRemove": "이미지 제거",
@@ -703,8 +703,11 @@
     "disclaimerShort": "AI 모델은 시제품·형상 참고용 · 치수는 반드시 확인하세요"
   },
   "PhotoGuide": {
-    "title": "촬영 가이드",
-    "summary": "중앙·단색 배경 · 한 장에 한 물체",
+    "title": "촬영·변환 가이드",
+    "summary": "한 장에 한 물체 · 단색 배경 · 전체가 보이게",
+    "heroTip": "한 장에 여러 부품을 넣지 마세요. 각각 나눠 찍어야 출력 품질이 나옵니다.",
+    "chipOneObject": "한 장 = 물체 1개",
+    "chipPlainBg": "단색 배경",
     "good": "좋은 예",
     "bad": "피하세요",
     "goodItems": [
@@ -719,7 +722,34 @@
       "너무 어둡거나 흐림",
       "극단적 클로즈업·잘림"
     ],
-    "footnote": "결과는 시제품·형상 확인용입니다. 정밀 치수·조립 공차는 3D 파일 업로드를 권장합니다."
+    "visualCards": [
+      {
+        "id": "single",
+        "title": "① 한 장에 물체 하나",
+        "badLabel": "여러 부품 한 번에",
+        "goodLabel": "하나만 중앙에"
+      },
+      {
+        "id": "background",
+        "title": "② 배경은 단순하게",
+        "badLabel": "잡동사니·손",
+        "goodLabel": "단색·밝은 배경"
+      },
+      {
+        "id": "framing",
+        "title": "③ 전체가 보이게",
+        "badLabel": "잘림·과클로즈업",
+        "goodLabel": "프레임 60~80%"
+      },
+      {
+        "id": "lighting",
+        "title": "④ 밝고 선명하게",
+        "badLabel": "어두움·흐림",
+        "goodLabel": "밝은 조명"
+      }
+    ],
+    "footnote": "결과는 시제품·형상 확인용입니다. 정밀 치수·조립 공차는 3D 파일 업로드를 권장합니다.",
+    "moreLink": "자세한 가이드 보기"
   },
   "GuidesHub": {
     "titleLine": "WOW3D 3D 프린팅",
@@ -1497,6 +1527,8 @@
     ],
     "goodHeading": "좋은 사진(이미지) 예",
     "badHeading": "피해야 할 사진(이미지)",
+    "visualHeading": "그림으로 보는 촬영 규칙",
+    "visualIntro": "한 장에 여러 부품을 넣으면 AI가 한 덩어리로 뭉치거나 얇은 파편이 생깁니다. 아래처럼 나눠 찍으면 변환·출력 품질이 크게 좋아집니다.",
     "goodPhoto": [
       "물체가 화면 중앙에 크게",
       "단색·밝은 배경",

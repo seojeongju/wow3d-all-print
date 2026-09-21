@@ -641,7 +641,7 @@
     "resuming": "Restoring previous job…",
     "uploadTitle": "Upload product photo",
     "uploadHint": "JPG · PNG · max 8MB",
-    "uploadHint2": "Follow the guide above for better quality",
+    "uploadHint2": "One object per photo · follow the tips above for better quality",
     "previewAlt": "Upload preview",
     "ariaRestart": "Start over with another photo",
     "ariaRemove": "Remove image",
@@ -702,8 +702,11 @@
     "disclaimerShort": "AI models are for prototype reference — always verify dimensions"
   },
   "PhotoGuide": {
-    "title": "Photo tips",
-    "summary": "Centered · plain background · one object",
+    "title": "Photo & conversion tips",
+    "summary": "One object · plain background · full framing",
+    "heroTip": "Don’t put multiple parts in one photo. Shoot each item separately for printable results.",
+    "chipOneObject": "One photo = one object",
+    "chipPlainBg": "Plain background",
     "good": "Good",
     "bad": "Avoid",
     "goodItems": [
@@ -718,7 +721,34 @@
       "Too dark or blurry",
       "Extreme close-up or cropped"
     ],
-    "footnote": "Results are for prototype / shape checks. For tight tolerances, upload a 3D file."
+    "visualCards": [
+      {
+        "id": "single",
+        "title": "① One object per photo",
+        "badLabel": "Many parts together",
+        "goodLabel": "Single object centered"
+      },
+      {
+        "id": "background",
+        "title": "② Keep background simple",
+        "badLabel": "Clutter / hands",
+        "goodLabel": "Plain bright backdrop"
+      },
+      {
+        "id": "framing",
+        "title": "③ Show the whole object",
+        "badLabel": "Cropped / extreme close-up",
+        "goodLabel": "Fill 60–80% of frame"
+      },
+      {
+        "id": "lighting",
+        "title": "④ Bright and sharp",
+        "badLabel": "Dark / blurry",
+        "goodLabel": "Even bright light"
+      }
+    ],
+    "footnote": "Results are for prototype / shape checks. For tight tolerances, upload a 3D file.",
+    "moreLink": "Read full guide"
   },
   "GuidesHub": {
     "titleLine": "WOW3D 3D printing",
@@ -1496,6 +1526,8 @@
     ],
     "goodHeading": "Good photo examples",
     "badHeading": "Photos to avoid",
+    "visualHeading": "Photo rules at a glance",
+    "visualIntro": "Putting multiple parts in one photo often merges them into a messy mesh or thin fragments. Shoot each item separately for better conversion and print quality.",
     "goodPhoto": [
       "Object large and centered",
       "Plain, bright background",

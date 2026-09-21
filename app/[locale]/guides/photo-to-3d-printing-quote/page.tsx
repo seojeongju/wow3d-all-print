@@ -11,6 +11,7 @@ import {
     PHOTO_TO_3D_QUOTE_PATH,
 } from '@/lib/seo-photo-to-3d'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
+import { PhotoGuideVisualCards } from '@/components/quote/PhotoGuideVisualCards'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
@@ -77,6 +78,7 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
 
     const t = await getTranslations({ locale, namespace: 'PhotoTo3DGuide' })
     const tChrome = await getTranslations({ locale, namespace: 'GuideChrome' })
+    const tPhoto = await getTranslations({ locale, namespace: 'PhotoGuide' })
 
     const steps = t.raw('steps') as StepItem[]
     const goodPhoto = t.raw('goodPhoto') as string[]
@@ -84,6 +86,12 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
     const faqs = t.raw('faqs') as FaqItem[]
     const makerVsPhotoRows = t.raw('makerVsPhotoRows') as CompareRow[]
     const howToSteps = t.raw('howToSteps') as HowToStep[]
+    const visualCards = tPhoto.raw('visualCards') as {
+        id: 'single' | 'background' | 'framing' | 'lighting'
+        title: string
+        badLabel: string
+        goodLabel: string
+    }[]
 
     const path = guidePath(locale)
     const homePath = getPathname({ locale, href: '/' })
@@ -217,6 +225,16 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
                         beforeLabel={t('beforeLabel')}
                         afterLabel={t('afterLabel')}
                     />
+
+                    <article className="rounded-[2rem] border border-indigo-400/20 bg-indigo-500/[0.06] p-6 md:p-8 space-y-5">
+                        <div>
+                            <h2 className="text-2xl font-black">{t('visualHeading')}</h2>
+                            <p className="mt-2 text-white/65 text-sm leading-relaxed break-keep">
+                                {t('visualIntro')}
+                            </p>
+                        </div>
+                        <PhotoGuideVisualCards cards={visualCards} />
+                    </article>
 
                     <div className="grid md:grid-cols-2 gap-5">
                         <article className="rounded-2xl border border-teal-400/20 bg-teal-500/5 p-6 space-y-3">
