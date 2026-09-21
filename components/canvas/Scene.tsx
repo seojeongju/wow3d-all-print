@@ -2,7 +2,7 @@
 
 import { Canvas, useThree } from '@react-three/fiber'
 import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
-import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect } from 'react'
+import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import * as THREE from 'three'
@@ -299,7 +299,8 @@ const SUPPORTED_EXT = ['stl', 'obj', '3mf', 'ply', 'step', 'stp'] as const
 
 /** Canvas 내부에서는 gl.domElement가 항상 있음 — connect(null) 방지 */
 function SafeTrackballControls() {
-    const domElement = useThree((s) => s.gl.domElement)
+    const domElement = useThree((s) => s.gl?.domElement)
+    if (!domElement) return null
 
     return (
         <TrackballControls
@@ -313,6 +314,29 @@ function SafeTrackballControls() {
             maxDistance={1000}
         />
     )
+}
+
+/** WebGL 컨텍스트 손실 시 Canvas를 안전하게 재생성 */
+function WebGlContextGuard({ onContextLost }: { onContextLost: () => void }) {
+    const gl = useThree((s) => s.gl)
+
+    useEffect(() => {
+        const el = gl?.domElement
+        if (!el) return
+
+        const handleLost = (e: Event) => {
+            e.preventDefault()
+            // 이벤트 핸들러 안에서 즉시 unmount 하지 않음
+            window.setTimeout(() => onContextLost(), 0)
+        }
+
+        el.addEventListener('webglcontextlost', handleLost, false)
+        return () => {
+            el.removeEventListener('webglcontextlost', handleLost, false)
+        }
+    }, [gl, onContextLost])
+
+    return null
 }
 
 // 뷰어 컨텐츠 컴포넌트
@@ -358,6 +382,9 @@ export default function Scene({ compact = false }: SceneProps) {
     const [showGuide, setShowGuide] = useState(true)
     const [colorPanelOpen, setColorPanelOpen] = useState(false)
     const [viewerEpoch, setViewerEpoch] = useState(0)
+    const remountViewer = useCallback(() => {
+        setViewerEpoch((n) => n + 1)
+    }, [])
 
     useEffect(() => {
         const timer = setTimeout(() => setShowGuide(false), 5000)
@@ -413,7 +440,7 @@ export default function Scene({ compact = false }: SceneProps) {
                 {/* 파일 업로드마다 Canvas를 재생성하지 않음 — WebGL Context Lost + Trackball connect(null) 방지 */}
                 <div ref={canvasRef} className="absolute inset-0 z-0 h-full min-h-[400px]">
                     <ViewerErrorBoundary
-                        onRetry={() => setViewerEpoch((n) => n + 1)}
+                        onRetry={remountViewer}
                         labels={{
                             title: t('viewerErrorTitle'),
                             body: t('viewerErrorBody'),
@@ -422,29 +449,34 @@ export default function Scene({ compact = false }: SceneProps) {
                     >
                         <Canvas
                             key={viewerEpoch}
-                            shadows
-                            dpr={[1, 1.5]}
-                            frameloop="always"
+                            shadows={Boolean(fileUrl)}
+                            dpr={fileUrl ? ([1, 1.5] as [number, number]) : 1}
+                            frameloop={fileUrl ? 'always' : 'demand'}
                             camera={{ position: [50, 50, 50], fov: 45 }}
                             gl={{
                                 preserveDrawingBuffer: true,
-                                antialias: true,
+                                antialias: Boolean(fileUrl),
                                 powerPreference: 'default',
                                 stencil: false,
+                                failIfMajorPerformanceCaveat: false,
                             }}
-                            onCreated={({ gl, invalidate }) => {
+                            onCreated={({ invalidate }) => {
                                 invalidate()
-                                const el = gl?.domElement
-                                if (!el) return
-                                const onLost = (e: Event) => {
-                                    e.preventDefault()
+                                // 대기 화면에서도 한 프레임은 그려 스탠바이 UI가 보이게
+                                if (!fileUrl) {
+                                    requestAnimationFrame(() => invalidate())
                                 }
-                                el.addEventListener('webglcontextlost', onLost)
                             }}
                         >
+                            <WebGlContextGuard onContextLost={remountViewer} />
                             <Suspense fallback={<LoadingSpinner />}>
                                 <ambientLight intensity={0.5} />
-                                <directionalLight position={[10, 10, 10]} intensity={1.2} castShadow shadow-mapSize={1024} />
+                                <directionalLight
+                                    position={[10, 10, 10]}
+                                    intensity={1.2}
+                                    castShadow={Boolean(fileUrl)}
+                                    shadow-mapSize={1024}
+                                />
                                 <directionalLight position={[-10, -5, -10]} intensity={0.4} />
                                 <pointLight position={[0, 20, 0]} intensity={0.6} />
                                 <Bounds fit clip margin={1.5}>

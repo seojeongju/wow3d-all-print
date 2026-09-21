@@ -111,22 +111,16 @@ async function loadGeometryFromBufferAsync(
   return g ? Promise.resolve(g) : null
 }
 
-function forceReleaseWebGl(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElement): void {
+function releaseWebGlResources(renderer: THREE.WebGLRenderer, canvas: HTMLCanvasElement): void {
   try {
     renderer.dispose()
   } catch {
     /* ignore */
   }
+  // loseContext()는 THREE 콘솔 경고·다른 뷰어 컨텍스트 불안정 유발 → dispose만 수행
   try {
-    const gl = renderer.getContext()
-    const loseExt = gl?.getExtension?.('WEBGL_lose_context') as { loseContext?: () => void } | null
-    loseExt?.loseContext?.()
-  } catch {
-    /* ignore */
-  }
-  try {
-    canvas.width = 0
-    canvas.height = 0
+    canvas.width = 1
+    canvas.height = 1
   } catch {
     /* ignore */
   }
@@ -136,12 +130,6 @@ function renderGeometryToDataUrl(geometry: THREE.BufferGeometry, size: number): 
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
-
-  // 의도적 해제 시 THREE 콘솔 경고 억제
-  const onContextLost = (e: Event) => {
-    e.preventDefault()
-  }
-  canvas.addEventListener('webglcontextlost', onContextLost, false)
 
   let renderer: THREE.WebGLRenderer | null = null
   try {
@@ -202,12 +190,11 @@ function renderGeometryToDataUrl(geometry: THREE.BufferGeometry, size: number): 
 
     geometry.dispose()
     material.dispose()
-    forceReleaseWebGl(renderer, canvas)
+    releaseWebGlResources(renderer, canvas)
     renderer = null
     return dataUrl
   } finally {
-    canvas.removeEventListener('webglcontextlost', onContextLost, false)
-    if (renderer) forceReleaseWebGl(renderer, canvas)
+    if (renderer) releaseWebGlResources(renderer, canvas)
   }
 }
 
