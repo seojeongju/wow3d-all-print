@@ -188,12 +188,12 @@ export default function AdminFunnelOverviewPanel({
     ];
 
     return (
-        <Card className="overflow-hidden border-white/5 bg-[#0f0f0f]">
+        <Card className="min-w-0 max-w-full overflow-hidden border-white/5 bg-[#0f0f0f]">
             <CardHeader className="border-b border-white/5 pb-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <CardTitle className="flex items-center gap-2 text-base font-bold text-white">
-                            <TrendingUp className="h-4 w-4 text-[#A3C1AD]" />
+                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                        <CardTitle className="flex flex-wrap items-center gap-2 text-base font-bold text-white">
+                            <TrendingUp className="h-4 w-4 shrink-0 text-[#A3C1AD]" />
                             전환 &amp; 견적 현황
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
                                 {rangeText}
@@ -203,17 +203,18 @@ export default function AdminFunnelOverviewPanel({
                             사이트 행동 퍼널(히어로~장바구니: 이벤트, 주문: 실주문 DB)과 견적 DB를 함께 봅니다.
                         </p>
                     </div>
-                    <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+                    <div className="flex min-w-0 shrink-0 flex-col items-stretch gap-2 sm:items-end">
                         {onGranularityChange && (
                             <AdminStatsRangeToggle
                                 value={granularity}
                                 onChange={onGranularityChange}
                                 size="sm"
+                                className="w-full justify-center sm:w-auto"
                             />
                         )}
                         <Link
                             href="/admin/quotes/analytics"
-                            className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] font-bold text-white/60 transition-colors hover:border-primary/30 hover:text-primary"
+                            className="inline-flex items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] font-bold text-white/60 transition-colors hover:border-primary/30 hover:text-primary"
                         >
                             견적 상세 분석
                             <ChevronRight className="h-3.5 w-3.5" />
@@ -222,14 +223,14 @@ export default function AdminFunnelOverviewPanel({
                 </div>
             </CardHeader>
 
-            <CardContent className="space-y-5 p-5">
+            <CardContent className="min-w-0 space-y-5 p-4 sm:p-5">
                 {/* 행동 퍼널 — 단일 시각화 */}
-                <div>
+                <div className="min-w-0">
                     <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/35">
                         사이트 행동 퍼널
                         <span className="ml-2 font-medium normal-case tracking-normal text-white/25">· 이벤트 추적</span>
                     </p>
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
+                    <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-stretch">
                         {steps.map((step, i) => {
                             const maxVal = steps[0]?.value || 1;
                             const widthPct = maxVal > 0 ? Math.max(8, Math.round((step.value / maxVal) * 100)) : 8;
@@ -240,11 +241,11 @@ export default function AdminFunnelOverviewPanel({
                                     )}
                                     <div className="min-w-0 flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-3 lg:w-full">
                                         <div className="mb-2 flex items-center justify-between gap-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wide text-white/40">
+                                            <span className="truncate text-[10px] font-bold uppercase tracking-wide text-white/40">
                                                 {step.label}
                                             </span>
                                             {step.rateLabel && i > 0 && (
-                                                <span className="text-[10px] font-bold text-[#A3C1AD]/90">{step.rateLabel}</span>
+                                                <span className="shrink-0 text-[10px] font-bold text-[#A3C1AD]/90">{step.rateLabel}</span>
                                             )}
                                         </div>
                                         <p className="text-xl font-black tabular-nums text-white">{step.value.toLocaleString('ko-KR')}</p>
@@ -277,9 +278,9 @@ export default function AdminFunnelOverviewPanel({
                     )}
                 </div>
 
-                <div className="grid gap-5 lg:grid-cols-12">
+                <div className="grid min-w-0 gap-5 lg:grid-cols-12">
                     {/* 일별 추이 */}
-                    <div className="lg:col-span-8 rounded-xl border border-white/5 p-4">
+                    <div className="min-w-0 lg:col-span-8 rounded-xl border border-white/5 p-3 sm:p-4">
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/35">일별 추이</p>
                             <div className="flex flex-wrap gap-1">
@@ -312,10 +313,10 @@ export default function AdminFunnelOverviewPanel({
                         {!hasTrend ? (
                             <p className="py-10 text-center text-xs text-white/30">일별 행동 데이터 없음</p>
                         ) : (
-                            <div className="overflow-x-auto">
+                            <div className="max-w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
                                 <svg
                                     viewBox={`0 0 ${chart.width + PAD.left + PAD.right} ${CHART_H}`}
-                                    className="h-[200px] w-full min-w-[480px]"
+                                    className="h-[180px] w-full min-w-0 sm:h-[200px] sm:min-w-[480px]"
                                     role="img"
                                     aria-label="전환 퍼널 일별 추이. 날짜 위에 포인터를 올리면 값이 표시됩니다."
                                 >
@@ -435,8 +436,8 @@ export default function AdminFunnelOverviewPanel({
                     </div>
 
                     {/* DB 견적 + 유입 경로 */}
-                    <div className="space-y-4 lg:col-span-4">
-                        <div className="rounded-xl border border-white/5 p-4">
+                    <div className="min-w-0 space-y-4 lg:col-span-4">
+                        <div className="rounded-xl border border-white/5 p-3 sm:p-4">
                             <div className="mb-3 flex items-center gap-2">
                                 <Database className="h-3.5 w-3.5 text-[#CDBE9A]" />
                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/35">

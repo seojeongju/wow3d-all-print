@@ -65,7 +65,7 @@ function ActionLink({
                     className
                 )}
             >
-                <span>{action.label}</span>
+                <span className="truncate">{action.label}</span>
                 {action.href && tone !== 'muted' && (
                     <ChevronRight className="w-3 h-3 opacity-40 group-hover/sec:opacity-100 group-hover/sec:translate-x-0.5 transition-all shrink-0" />
                 )}
@@ -113,7 +113,7 @@ export default function DashboardStatCard({
     const valueBlock = (
         <div
             className={cn(
-                'text-xl font-black text-white transition-colors',
+                'text-lg font-black text-white transition-colors sm:text-xl tabular-nums break-all',
                 primaryClickable && 'group-hover/pri:text-primary/90',
                 valueClassName
             )}
@@ -123,7 +123,7 @@ export default function DashboardStatCard({
     );
 
     return (
-        <Card className="bg-[#0f0f0f] border-white/5 h-full flex flex-col overflow-hidden relative group/card">
+        <Card className="bg-[#0f0f0f] border-white/5 h-full flex flex-col overflow-hidden relative group/card min-w-0">
             <div
                 className={cn(
                     'absolute top-0 right-0 w-24 h-24 blur-[40px] opacity-20 rounded-full -mr-4 -mt-4 transition-opacity',
@@ -132,27 +132,27 @@ export default function DashboardStatCard({
                 )}
             />
 
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                <CardTitle className="text-[11px] font-bold text-white/40 uppercase tracking-wider">{title}</CardTitle>
-                <div className={cn('p-1.5 rounded-lg', iconBg, iconColor)}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10 gap-2">
+                <CardTitle className="text-[11px] font-bold text-white/40 uppercase tracking-wider truncate">{title}</CardTitle>
+                <div className={cn('p-1.5 rounded-lg shrink-0', iconBg, iconColor)}>
                     <Icon className="h-3.5 w-3.5" />
                 </div>
             </CardHeader>
 
-            <CardContent className="flex flex-col flex-1 gap-3 relative z-10 pt-0">
+            <CardContent className="flex flex-col flex-1 gap-3 relative z-10 pt-0 min-w-0">
                 {primaryClickable ? (
                     <Link
                         href={primary.href!}
                         aria-label={primary.ariaLabel ?? primary.label}
-                        className="group/pri block rounded-lg -mx-1 px-1 py-0.5 hover:bg-white/[0.03] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="group/pri block rounded-lg -mx-1 px-1 py-0.5 hover:bg-white/[0.03] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-w-0"
                     >
                         {valueBlock}
-                        <div className="mt-1.5 flex items-center gap-0.5">
+                        <div className="mt-1.5 flex min-w-0 items-center gap-0.5">
                             <ActionLink action={primary} variant="primary" />
                         </div>
                     </Link>
                 ) : (
-                    <div>
+                    <div className="min-w-0">
                         {valueBlock}
                         <div className="mt-1.5">
                             <ActionLink action={primary} variant="primary" />
@@ -161,7 +161,7 @@ export default function DashboardStatCard({
                 )}
 
                 {secondary && (
-                    <div className="mt-auto pt-1 border-t border-white/5">
+                    <div className="mt-auto pt-1 border-t border-white/5 min-w-0">
                         <ActionLink action={secondary} variant="secondary" />
                     </div>
                 )}

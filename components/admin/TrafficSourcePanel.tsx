@@ -156,17 +156,17 @@ export default function TrafficSourcePanel({ sources, token, dayCount = 30 }: Pr
 
     return (
         <>
-            <Card className="lg:col-span-5 bg-[#0f0f0f] border-white/5 group/traffic">
+            <Card className="lg:col-span-5 bg-[#0f0f0f] border-white/5 group/traffic min-w-0 max-w-full overflow-hidden">
                 <CardHeader>
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                            <CardTitle className="text-lg font-bold text-white flex flex-wrap items-center gap-2">
                                 전체 방문 유입
                                 <span className="text-[10px] font-medium text-white/40 bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-widest">
                                     Last {dayCount} Days
                                 </span>
                             </CardTitle>
-                            <p className="text-xs text-white/40 mt-1">
+                            <p className="text-xs text-white/40 mt-1 break-keep">
                                 사이트에 들어온 전체 방문 세션의 유입 채널입니다. 클릭하면 medium·campaign·referrer·경로를 확인할 수 있습니다
                             </p>
                         </div>

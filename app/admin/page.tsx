@@ -223,31 +223,31 @@ export default function AdminDashboard() {
         s.pendingOrdersCount > 0 || (s.inquiriesNew != null && s.inquiriesNew > 0);
 
     return (
-        <div className="space-y-8 pb-12">
+        <div className="min-w-0 max-w-full space-y-8 pb-12">
             {loadFailed && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90 break-keep">
                     대시보드 API 응답을 받지 못했습니다. 로그인·네트워크를 확인한 뒤 새로고침 해 주세요.
                 </div>
             )}
 
             {/* 헤더 */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                <div>
-                    <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-white">
+            <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="min-w-0">
+                    <h1 className="flex flex-wrap items-center gap-2 text-2xl font-black tracking-tight text-white sm:gap-3 sm:text-3xl">
                         대시보드
                         <span className="rounded border border-primary/20 bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
                             LIVE
                         </span>
                     </h1>
-                    <p className="mt-1.5 text-sm font-medium text-white/40">
+                    <p className="mt-1.5 text-sm font-medium text-white/40 break-keep">
                         매출·주문·전환을 한눈에 확인하고 바로 조치할 수 있습니다.
                     </p>
                 </div>
-                <div className="flex flex-col items-stretch gap-3 sm:items-end">
-                    <div className="flex items-center gap-2">
-                        <AdminStatsRangeToggle value={granularity} onChange={setGranularity} />
+                <div className="flex min-w-0 flex-col items-stretch gap-3 sm:items-end">
+                    <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
+                        <AdminStatsRangeToggle value={granularity} onChange={setGranularity} className="shrink-0" />
                         {rangeLoading && (
-                            <Loader2 className="h-4 w-4 animate-spin text-teal-400" aria-label="기간 데이터 로딩" />
+                            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-teal-400" aria-label="기간 데이터 로딩" />
                         )}
                     </div>
                     {hasUrgent && (
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
                     title="핵심 지표"
                     description="이번 달 비즈니스 현황 · 카드 클릭 시 해당 관리 화면으로 이동"
                 />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <DashboardStatCard
                         title="이번 달 매출"
                         icon={DollarSign}
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                     title="매출 &amp; 최근 활동"
                     description={`${periodLabel} 매출 추이와 주문 처리`}
                 />
-                <div className="grid gap-5 lg:grid-cols-12">
+                <div className="grid min-w-0 gap-5 lg:grid-cols-12">
                     <SalesTrendPanel
                         data={s.salesTrend}
                         dayCount={chartDayCount}
@@ -434,7 +434,7 @@ export default function AdminDashboard() {
                         onGranularityChange={setGranularity}
                     />
 
-                    <div className="space-y-5 lg:col-span-5">
+                    <div className="min-w-0 space-y-5 lg:col-span-5">
                         <Card className="border-white/5 bg-[#0f0f0f]">
                             <CardHeader className="border-b border-white/5 pb-3">
                                 <CardTitle className="text-sm font-bold uppercase tracking-wider text-white">
@@ -488,20 +488,20 @@ export default function AdminDashboard() {
                                                         ? `/admin/orders?detail=${o.id}`
                                                         : '/admin/orders'
                                                 }
-                                                className="group flex items-center justify-between rounded-xl border border-transparent px-3 py-3 transition-all hover:border-white/5 hover:bg-white/[0.03]"
+                                                className="group flex min-w-0 items-center justify-between gap-2 rounded-xl border border-transparent px-2 py-3 transition-all hover:border-white/5 hover:bg-white/[0.03] sm:px-3"
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-[10px] font-black text-white/20 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                                                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[10px] font-black text-white/20 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                                                         {o.recipientName.charAt(0)}
                                                     </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2 text-xs font-bold text-white transition-colors group-hover:text-primary">
-                                                            {o.recipientName}
-                                                            <span className="rounded-full border border-primary/20 bg-primary/20 px-1.5 py-0.5 text-[9px] font-black text-primary">
+                                                    <div className="min-w-0">
+                                                        <div className="flex min-w-0 items-center gap-2 text-xs font-bold text-white transition-colors group-hover:text-primary">
+                                                            <span className="truncate">{o.recipientName}</span>
+                                                            <span className="shrink-0 rounded-full border border-primary/20 bg-primary/20 px-1.5 py-0.5 text-[9px] font-black text-primary">
                                                                 {o.orderNumber.slice(-4)}
                                                             </span>
                                                         </div>
-                                                        <span className="mt-0.5 block text-[9px] font-medium text-white/30">
+                                                        <span className="mt-0.5 block truncate text-[9px] font-medium text-white/30">
                                                             {o.createdAt
                                                                 ? new Date(o.createdAt).toLocaleString('ko-KR', {
                                                                       month: 'short',
@@ -513,8 +513,8 @@ export default function AdminDashboard() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className="text-xs font-black text-white">
+                                                <div className="shrink-0 text-right">
+                                                    <div className="text-xs font-black tabular-nums text-white">
                                                         ₩ {Number(o.totalAmount || 0).toLocaleString()}
                                                     </div>
                                                     <div
@@ -569,7 +569,7 @@ export default function AdminDashboard() {
                     title="유입 분석"
                     description={`전체 방문 유입 · 방문자 추이 (${periodLabel})`}
                 />
-                <div className="grid gap-6 lg:grid-cols-12">
+                <div className="grid min-w-0 gap-6 lg:grid-cols-12">
                     <TrafficSourcePanel sources={s.trafficSources} token={token} dayCount={trafficDayCount} />
                     <VisitorTrendPanel
                         data={s.visitorTrend ?? []}

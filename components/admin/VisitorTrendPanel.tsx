@@ -127,7 +127,7 @@ export default function VisitorTrendPanel({
     );
 
     return (
-        <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden group/visitors">
+        <Card className="lg:col-span-7 bg-[#0f0f0f] border-white/5 overflow-hidden group/visitors min-w-0 max-w-full">
             <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-2 px-4 pt-4 border-b border-white/5">
                 <Link
                     href="/admin/quotes/analytics"
@@ -184,10 +184,10 @@ export default function VisitorTrendPanel({
                     </div>
                 ) : (
                     <>
-                        <div className="w-full overflow-x-auto">
+                        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
                             <svg
                                 viewBox={`0 0 ${innerW + PAD.left + PAD.right} ${CHART_H}`}
-                                className="h-[220px] w-full min-w-[520px]"
+                                className="h-[200px] w-full min-w-0 sm:h-[220px] sm:min-w-[520px]"
                                 role="img"
                                 aria-label="일별 방문자 추이 차트. 날짜 위에 포인터를 올리면 값이 표시됩니다."
                             >
@@ -365,8 +365,8 @@ export default function VisitorTrendPanel({
                             />
                         </div>
 
-                        <div className="rounded-xl border border-white/10 overflow-hidden">
-                            <div className="overflow-x-auto">
+                        <div className="rounded-xl border border-white/10 overflow-hidden max-w-full">
+                            <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
                                 <table className="w-full min-w-[640px] text-[10px]">
                                     <thead>
                                         <tr style={{ backgroundColor: ADMIN_CHART.tableHeader }} className="text-white">

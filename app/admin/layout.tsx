@@ -74,20 +74,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const isSuperAdmin = user?.store_id === 1 || user?.role === 'super_admin';
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="min-h-screen max-w-[100vw] overflow-x-hidden bg-[#0a0a0a] text-white">
             <AdminHeader />
-            <div className="flex">
+            <div className="flex min-w-0">
                 <aside className="w-64 shrink-0 hidden lg:flex flex-col border-r border-white/5 bg-[#0c0c0c] min-h-[calc(100vh-3.5rem)]">
                     <div className="p-5 border-b border-white/5">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
                                 <Boxes className="w-5 h-5 text-white" />
                             </div>
-                            <div>
-                                <div className="font-black text-sm tracking-tight text-white">
+                            <div className="min-w-0">
+                                <div className="font-black text-sm tracking-tight text-white truncate">
                                     {isSuperAdmin ? 'WOW3D PLATFORM' : 'SELLER ADMIN'}
                                 </div>
-                                <div className="text-[10px] text-white/40 uppercase tracking-wider">
+                                <div className="text-[10px] text-white/40 uppercase tracking-wider truncate">
                                     {user?.name} STORE
                                 </div>
                             </div>
@@ -112,8 +112,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                     : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'
                                             )}
                                         >
-                                            <item.icon className="w-4 h-4" />
-                                            {item.title}
+                                            <item.icon className="w-4 h-4 shrink-0" />
+                                            <span className="truncate">{item.title}</span>
                                         </Link>
                                     ))}
                                 </nav>
@@ -138,8 +138,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                     : 'text-white/75 hover:bg-white/5 hover:text-white border border-transparent'
                                             )}
                                         >
-                                            <item.icon className="w-4 h-4" />
-                                            {item.title}
+                                            <item.icon className="w-4 h-4 shrink-0" />
+                                            <span className="truncate">{item.title}</span>
                                         </Link>
                                     ))}
                                 </nav>
@@ -153,15 +153,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     href={ADMIN_HOME_NAV_ITEM.href}
                                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/75 hover:bg-white/5 hover:text-white border border-transparent transition-all"
                                 >
-                                    <Home className="w-4 h-4" />
-                                    {ADMIN_HOME_NAV_ITEM.title}
+                                    <Home className="w-4 h-4 shrink-0" />
+                                    <span className="truncate">{ADMIN_HOME_NAV_ITEM.title}</span>
                                 </Link>
                             </nav>
                         </div>
                     </div>
                 </aside>
 
-                <main className="flex-1 p-6 lg:p-8 overflow-auto">{children}</main>
+                <main className="min-w-0 max-w-full flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
+                    {children}
+                </main>
             </div>
         </div>
     );

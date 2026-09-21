@@ -45,12 +45,12 @@ export default function AdminHeader() {
                 mobileOpen ? 'z-[210]' : 'z-50'
             )}
         >
-            <div className="relative z-[52] container mx-auto px-4 min-h-14 flex items-center justify-between gap-2">
-                <Link href="/admin" className="flex items-center gap-2 shrink-0">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
-                        <Boxes className="w-5 h-5 text-white" />
+            <div className="relative z-[52] mx-auto flex min-h-14 w-full max-w-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4 lg:px-6">
+                <Link href="/admin" className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-indigo-600">
+                        <Boxes className="h-5 w-5 text-white" />
                     </div>
-                    <span className="font-bold text-white tracking-tight hidden sm:inline">WOW3D PRO</span>
+                    <span className="hidden truncate font-bold tracking-tight text-white sm:inline">WOW3D PRO</span>
                 </Link>
 
                 {/* 데스크톱(lg+): 사이드바와 함께 쓰는 상단 액션 */}
