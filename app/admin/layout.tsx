@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Boxes, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,8 +18,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const router = useRouter();
     const { isAuthenticated, user, token, logout } = useAuthStore();
+    const [authReady, setAuthReady] = useState(false);
+
+    // persist(skipHydration) 복원 전에는 비로그인으로 보이므로 리다이렉트하지 않음
+    useEffect(() => {
+        const finish = () => setAuthReady(true);
+        const unsub = useAuthStore.persist.onFinishHydration(finish);
+        if (useAuthStore.persist.hasHydrated()) {
+            finish();
+        } else {
+            void useAuthStore.persist.rehydrate();
+        }
+        return () => {
+            unsub();
+        };
+    }, []);
 
     useEffect(() => {
+        if (!authReady) return;
+
         const checkAuth = async () => {
             const returnPath = safeAuthReturnPath(
                 typeof window !== 'undefined'
@@ -60,10 +77,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             }
         };
 
-        checkAuth();
-    }, [isAuthenticated, token, router, logout, pathname]);
+        void checkAuth();
+    }, [authReady, isAuthenticated, token, router, logout, pathname]);
 
-    if (!isAuthenticated || (user && user.role !== 'admin' && user.role !== 'super_admin')) {
+    if (
+        !authReady ||
+        !isAuthenticated ||
+        (user && user.role !== 'admin' && user.role !== 'super_admin')
+    ) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
                 <p className="text-white/40">로딩 중...</p>
