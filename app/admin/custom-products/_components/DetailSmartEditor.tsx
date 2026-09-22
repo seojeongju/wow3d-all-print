@@ -13,6 +13,7 @@ import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
+import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { NodeSelection } from '@tiptap/pm/state'
 import {
     AlignCenter,
@@ -21,6 +22,7 @@ import {
     AlignRight,
     Bold,
     Check,
+    CheckSquare,
     Code2,
     Heading2,
     Highlighter,
@@ -30,18 +32,29 @@ import {
     List,
     ListOrdered,
     Minus,
+    Omega,
     Plus,
     Quote,
     Redo2,
+    Smile,
     Strikethrough,
     Underline as UnderlineIcon,
     Undo2,
     X,
     Library,
     Table2,
+    Youtube,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { detailBodyToEditorHtml, sanitizeDetailHtml } from '@/lib/sanitize-html'
+import {
+    EMOJI_GROUPS,
+    HIGHLIGHT_COLORS,
+    SPECIAL_CHAR_GROUPS,
+    extractYoutubeId,
+    youtubeEmbedHtml,
+} from '@/lib/editor-insert-presets'
+import { CharInsertPopover, HighlightColorPopover } from './EditorCharPickers'
 
 const FONT_DEFAULT = '__default__'
 
@@ -231,6 +244,7 @@ export default function DetailSmartEditor({
     const [sidebar, setSidebar] = useState<'none' | 'library' | 'template' | 'blocks'>('none')
     const [registering, setRegistering] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
+    const [picker, setPicker] = useState<'none' | 'emoji' | 'special' | 'highlight'>('none')
     const initialContent = detailBodyToEditorHtml(initialHtml)
 
     const editor = useEditor({
@@ -266,6 +280,8 @@ export default function DetailSmartEditor({
             TableRow,
             TableHeader,
             TableCell,
+            TaskList,
+            TaskItem.configure({ nested: true }),
         ],
         content: initialContent,
         editorProps: {
@@ -529,6 +545,39 @@ export default function DetailSmartEditor({
         })
     }
 
+    const insertPlainChar = (ch: string) => {
+        withEditor((ed) => {
+            ed.chain().focus().insertContent(ch).run()
+        })
+    }
+
+    const insertYoutube = () => {
+        withEditor((ed) => {
+            const raw = window.prompt('YouTube URL 또는 영상 ID', 'https://www.youtube.com/watch?v=')
+            if (raw === null) return
+            const id = extractYoutubeId(raw)
+            if (!id) {
+                window.alert('유효한 YouTube 링크를 입력해 주세요.')
+                return
+            }
+            ed.chain().focus().insertContent(youtubeEmbedHtml(id)).run()
+        })
+    }
+
+    const applyHighlight = (color: string) => {
+        withEditor((ed) => {
+            ed.chain().focus().toggleHighlight({ color }).run()
+        })
+        setPicker('none')
+    }
+
+    const clearHighlight = () => {
+        withEditor((ed) => {
+            ed.chain().focus().unsetHighlight().run()
+        })
+        setPicker('none')
+    }
+
     const applyAlign = (align: 'left' | 'center' | 'right' | 'justify') => {
         withEditor((ed) => {
             if (isTableNodeSelected(ed)) {
@@ -571,9 +620,34 @@ export default function DetailSmartEditor({
             html: '<blockquote><p>고객에게 전달할 핵심 메시지를 적어 주세요.</p></blockquote><p></p>',
         },
         {
+            id: 'callout-tip',
+            label: '팁 박스',
+            html: '<div class="detail-callout detail-callout-tip"><p><strong>💡 TIP</strong> — 고객에게 알려줄 팁을 적어 주세요.</p></div><p></p>',
+        },
+        {
+            id: 'callout-warn',
+            label: '주의 박스',
+            html: '<div class="detail-callout detail-callout-warn"><p><strong>⚠️ 주의</strong> — 확인이 필요한 안내를 적어 주세요.</p></div><p></p>',
+        },
+        {
+            id: 'callout-info',
+            label: '안내 박스',
+            html: '<div class="detail-callout detail-callout-info"><p><strong>ℹ️ 안내</strong> — 배송·제작 안내 문구를 적어 주세요.</p></div><p></p>',
+        },
+        {
+            id: 'badge-row',
+            label: '배지 행',
+            html: '<p style="text-align: center"><span class="detail-badge">맞춤 제작</span> <span class="detail-badge detail-badge-teal">빠른 출고</span> <span class="detail-badge detail-badge-pink">선물 추천</span></p><p></p>',
+        },
+        {
+            id: 'cta',
+            label: '문의 CTA',
+            html: '<p style="text-align: center"><a class="detail-cta" href="/contact">지금 문의하기</a></p><p></p>',
+        },
+        {
             id: 'checklist',
             label: '체크 리스트',
-            html: '<h3>확인 사항</h3><ul><li>항목 1</li><li>항목 2</li><li>항목 3</li></ul><p></p>',
+            html: '<h3>확인 사항</h3><ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>항목 1</p></div></li><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>항목 2</p></div></li><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>항목 3</p></div></li></ul><p></p>',
         },
         {
             id: 'steps',
@@ -636,8 +710,8 @@ export default function DetailSmartEditor({
                 </div>
 
                 {/* 삽입 툴바 */}
-                <div className="px-3 py-1.5 flex items-center justify-between gap-2 border-t border-[#f0f1f3] overflow-x-auto">
-                    <div className="flex items-center gap-0.5">
+                <div className="px-3 py-1.5 flex items-center justify-between gap-2 border-t border-[#f0f1f3]">
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1 overflow-x-auto pb-0.5">
                         <InsertBtn
                             icon={ImageIcon}
                             label="사진"
@@ -662,6 +736,7 @@ export default function DetailSmartEditor({
                         />
                         <InsertBtn icon={Link2} label="링크" onClick={setLink} />
                         <InsertBtn icon={Table2} label="표" onClick={insertTable} />
+                        <InsertBtn icon={Youtube} label="영상" onClick={insertYoutube} />
                         <InsertBtn
                             icon={Code2}
                             label="HTML"
@@ -685,6 +760,44 @@ export default function DetailSmartEditor({
                                 setSidebar((s) => (s === 'blocks' ? 'none' : 'blocks'))
                             }
                         />
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                        <div className="relative">
+                            <InsertBtn
+                                icon={Smile}
+                                label="이모지"
+                                active={picker === 'emoji'}
+                                onClick={() =>
+                                    setPicker((p) => (p === 'emoji' ? 'none' : 'emoji'))
+                                }
+                            />
+                            <CharInsertPopover
+                                title="이모지 삽입"
+                                groups={EMOJI_GROUPS}
+                                open={picker === 'emoji'}
+                                onClose={() => setPicker('none')}
+                                onPick={insertPlainChar}
+                                anchorClassName="right-0"
+                            />
+                        </div>
+                        <div className="relative">
+                            <InsertBtn
+                                icon={Omega}
+                                label="특수문자"
+                                active={picker === 'special'}
+                                onClick={() =>
+                                    setPicker((p) => (p === 'special' ? 'none' : 'special'))
+                                }
+                            />
+                            <CharInsertPopover
+                                title="특수문자 삽입"
+                                groups={SPECIAL_CHAR_GROUPS}
+                                open={picker === 'special'}
+                                onClose={() => setPicker('none')}
+                                onPick={insertPlainChar}
+                                anchorClassName="right-0"
+                            />
+                        </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                         <button
@@ -823,17 +936,24 @@ export default function DetailSmartEditor({
                             }
                         />
                     </label>
-                    <ToolBtn
-                        title="형광펜"
-                        active={editor?.isActive('highlight')}
-                        onClick={() =>
-                            withEditor((ed) =>
-                                ed.chain().focus().toggleHighlight({ color: '#fff59d' }).run()
-                            )
-                        }
-                    >
-                        <Highlighter className="w-4 h-4" />
-                    </ToolBtn>
+                    <div className="relative">
+                        <ToolBtn
+                            title="형광펜"
+                            active={editor?.isActive('highlight') || picker === 'highlight'}
+                            onClick={() =>
+                                setPicker((p) => (p === 'highlight' ? 'none' : 'highlight'))
+                            }
+                        >
+                            <Highlighter className="w-4 h-4" />
+                        </ToolBtn>
+                        <HighlightColorPopover
+                            open={picker === 'highlight'}
+                            colors={HIGHLIGHT_COLORS}
+                            onClose={() => setPicker('none')}
+                            onPick={applyHighlight}
+                            onClear={clearHighlight}
+                        />
+                    </div>
 
                     <span className="w-px h-5 bg-[#e5e8eb] mx-1" />
 
@@ -902,6 +1022,13 @@ export default function DetailSmartEditor({
                         onClick={() => withEditor((ed) => ed.chain().focus().toggleOrderedList().run())}
                     >
                         <ListOrdered className="w-4 h-4" />
+                    </ToolBtn>
+                    <ToolBtn
+                        title="체크리스트"
+                        active={editor?.isActive('taskList')}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleTaskList().run())}
+                    >
+                        <CheckSquare className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="제목"
@@ -1223,6 +1350,81 @@ export default function DetailSmartEditor({
                 .detail-smart-editor span[style*='font-size'],
                 .detail-smart-editor span[style*='font-family'] {
                     line-height: 1.5;
+                }
+                .detail-smart-editor ul[data-type='taskList'] {
+                    list-style: none;
+                    padding-left: 0;
+                    margin: 0.5em 0 0.75em;
+                }
+                .detail-smart-editor ul[data-type='taskList'] li {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 0.5rem;
+                }
+                .detail-smart-editor ul[data-type='taskList'] li > label {
+                    flex: 0 0 auto;
+                    margin-top: 0.2em;
+                }
+                .detail-smart-editor ul[data-type='taskList'] li > div {
+                    flex: 1 1 auto;
+                }
+                .detail-smart-editor .detail-callout {
+                    border-radius: 8px;
+                    padding: 12px 14px;
+                    margin: 12px 0;
+                    border-left: 4px solid #03c75a;
+                    background: #f3faf6;
+                }
+                .detail-smart-editor .detail-callout-warn {
+                    border-left-color: #f59e0b;
+                    background: #fff8eb;
+                }
+                .detail-smart-editor .detail-callout-info {
+                    border-left-color: #0ea5e9;
+                    background: #eff9ff;
+                }
+                .detail-smart-editor .detail-badge {
+                    display: inline-block;
+                    padding: 2px 10px;
+                    margin: 0 4px;
+                    border-radius: 999px;
+                    font-size: 12px;
+                    font-weight: 800;
+                    background: #eef0f2;
+                    color: #333;
+                }
+                .detail-smart-editor .detail-badge-teal {
+                    background: #e0f7f4;
+                    color: #0f766e;
+                }
+                .detail-smart-editor .detail-badge-pink {
+                    background: #fce7f3;
+                    color: #be185d;
+                }
+                .detail-smart-editor .detail-cta {
+                    display: inline-block;
+                    padding: 10px 20px;
+                    border-radius: 999px;
+                    background: #03c75a;
+                    color: #fff !important;
+                    font-weight: 800;
+                    text-decoration: none !important;
+                }
+                .detail-smart-editor .detail-youtube {
+                    position: relative;
+                    width: 100%;
+                    aspect-ratio: 16 / 9;
+                    margin: 16px 0;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: #111;
+                }
+                .detail-smart-editor .detail-youtube iframe {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    border: 0;
                 }
             `}</style>
         </div>

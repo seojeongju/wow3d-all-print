@@ -30,6 +30,9 @@ const ALLOWED_TAGS = new Set([
     'div',
     'figure',
     'figcaption',
+    'iframe',
+    'label',
+    'input',
 ])
 
 const ALLOWED_ATTRS = new Set([
@@ -47,7 +50,22 @@ const ALLOWED_ATTRS = new Set([
     'rowspan',
     'data-align',
     'align',
+    'data-type',
+    'data-checked',
+    'data-youtube-id',
+    'type',
+    'checked',
+    'disabled',
+    'contenteditable',
+    'allow',
+    'allowfullscreen',
+    'loading',
+    'referrerpolicy',
+    'frameborder',
 ])
+
+const YOUTUBE_EMBED_HOST =
+    /^(https?:)?\/\/(www\.)?(youtube\.com|youtube-nocookie\.com)\/embed\/[\w-]{11}(\?.*)?$/i
 
 export function isProbablyHtml(text: string): boolean {
     return /<\/?[a-z][\s\S]*>/i.test(text.trim())
@@ -75,20 +93,36 @@ export function detailBodyToEditorHtml(raw: string): string {
     return plainTextToHtml(raw)
 }
 
+function cleanInlineStyle(css: string): string {
+    return css
+        .replace(/(?:min-|max-)?width\s*:\s*[^;]+;?/gi, '')
+        .replace(/white-space\s*:\s*nowrap;?/gi, '')
+        .trim()
+        .replace(/^;+|;+$/g, '')
+}
+
+function isSafeYoutubeEmbed(src: string): boolean {
+    const v = src.trim()
+    return YOUTUBE_EMBED_HOST.test(v)
+}
+
 export function sanitizeDetailHtml(dirty: string): string {
-    // SSR: 스크립트·고정폭 스타일 제거
-    const ssrClean = dirty
+    // SSR: 스크립트·이벤트 제거 + 유튜브 외 iframe 제거
+    let ssrClean = dirty
         .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
         .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-        .replace(/\s(?:width|height)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(
+            /<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi,
+            (block) => {
+                const srcMatch = block.match(/\ssrc\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)
+                const src = (srcMatch?.[2] || srcMatch?.[3] || srcMatch?.[4] || '').trim()
+                return isSafeYoutubeEmbed(src) ? block : ''
+            }
+        )
         .replace(
             /(style\s*=\s*")([^"]*)(")/gi,
             (_m, open: string, css: string, close: string) => {
-                const cleaned = css
-                    .replace(/(?:min-|max-)?width\s*:\s*[^;]+;?/gi, '')
-                    .replace(/white-space\s*:\s*nowrap;?/gi, '')
-                    .trim()
-                    .replace(/^;+|;+$/g, '')
+                const cleaned = cleanInlineStyle(css)
                 return cleaned ? `${open}${cleaned}${close}` : ''
             }
         )
@@ -108,7 +142,6 @@ export function sanitizeDetailHtml(dirty: string): string {
                 const el = child as HTMLElement
                 const tag = el.tagName.toLowerCase()
                 if (!ALLOWED_TAGS.has(tag)) {
-                    // unwrap: keep children
                     while (el.firstChild) el.parentNode?.insertBefore(el.firstChild, el)
                     el.remove()
                     continue
@@ -126,17 +159,11 @@ export function sanitizeDetailHtml(dirty: string): string {
                         }
                     }
                     if (name === 'style') {
-                        // drop expression/url javascript
                         if (/expression|javascript:/i.test(attr.value)) {
                             el.removeAttribute('style')
                             continue
                         }
-                        // 모바일 오버플로우 유발 고정 폭 제거
-                        const cleaned = attr.value
-                            .replace(/(?:min-|max-)?width\s*:\s*[^;]+;?/gi, '')
-                            .replace(/white-space\s*:\s*nowrap;?/gi, '')
-                            .trim()
-                            .replace(/^;+|;+$/g, '')
+                        const cleaned = cleanInlineStyle(attr.value)
                         if (cleaned) el.setAttribute('style', cleaned)
                         else el.removeAttribute('style')
                     }
@@ -150,6 +177,31 @@ export function sanitizeDetailHtml(dirty: string): string {
                 if (tag === 'a') {
                     el.setAttribute('rel', 'noopener noreferrer')
                     if (!el.getAttribute('target')) el.setAttribute('target', '_blank')
+                }
+                if (tag === 'iframe') {
+                    const src = el.getAttribute('src') || ''
+                    if (!isSafeYoutubeEmbed(src)) {
+                        el.remove()
+                        continue
+                    }
+                    el.setAttribute('loading', 'lazy')
+                    el.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin')
+                    el.setAttribute(
+                        'allow',
+                        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+                    )
+                    el.setAttribute('allowfullscreen', '')
+                    el.removeAttribute('width')
+                    el.removeAttribute('height')
+                }
+                if (tag === 'input') {
+                    const type = (el.getAttribute('type') || '').toLowerCase()
+                    if (type !== 'checkbox') {
+                        el.remove()
+                        continue
+                    }
+                    el.setAttribute('disabled', '')
+                    el.setAttribute('type', 'checkbox')
                 }
                 walk(el)
             }
