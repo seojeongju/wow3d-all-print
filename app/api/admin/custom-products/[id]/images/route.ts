@@ -55,16 +55,36 @@ export async function POST(request: NextRequest, { params }: Ctx) {
             httpMetadata: { contentType: file.type || 'image/jpeg' },
         })
 
-        // 에디터 본문용(content): R2만 저장하고 상품 갤러리(main/sub/detail)에는 올리지 않음
+        // 에디터 본문용(content): 갤러리(main/sub/detail) UI에는 안 보이지만 R2·DB에 남겨 유실 방지
         if (roleRaw === 'content') {
+            const maxSort = await env.DB.prepare(
+                `SELECT COALESCE(MAX(sort_order), -1) AS m FROM custom_product_images WHERE product_id = ? AND role = ?`
+            )
+                .bind(productId, roleRaw)
+                .first<{ m: number }>()
+            const sortOrder = Number(maxSort?.m ?? -1) + 1
+            const inserted = await env.DB.prepare(
+                `INSERT INTO custom_product_images (product_id, role, r2_key, mime_type, sort_order)
+                 VALUES (?, ?, ?, ?, ?)`
+            )
+                .bind(productId, roleRaw, r2Key, file.type || 'image/jpeg', sortOrder)
+                .run()
+            const imageId = Number((inserted.meta as { last_row_id?: number })?.last_row_id || 0)
+
+            await env.DB.prepare(
+                `UPDATE custom_products SET updated_at = datetime('now') WHERE id = ?`
+            )
+                .bind(productId)
+                .run()
+
             return NextResponse.json({
                 success: true,
                 data: {
-                    id: null,
+                    id: imageId,
                     role: roleRaw,
                     r2Key,
                     url: customProductMediaUrlFromKey(r2Key),
-                    sortOrder: 0,
+                    sortOrder,
                 },
             })
         }
