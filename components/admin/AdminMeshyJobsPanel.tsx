@@ -64,6 +64,10 @@ export type AdminMeshyJob = {
     quoteScalePercent: number | null
     /** 견적까지 진행된 경우 최종 금액(원). 미견적·0원이면 null */
     quoteTotalPrice: number | null
+    /** 출력 방식 (FDM / SLA / DLP) */
+    quotePrintMethod: string | null
+    /** 소재·채움·레이어 등 설정 한 줄 요약 */
+    quotePrintSettings: string | null
     /** 해당 견적이 현재 장바구니에 있는지 */
     inCart: boolean
     orderId: number | null
@@ -602,12 +606,29 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                                 </p>
                                             )
                                         })()}
+                                        {(j.quotePrintMethod || j.quotePrintSettings) && (
+                                            <p
+                                                className="text-[10px] text-teal-200/90 leading-snug line-clamp-2"
+                                                title={
+                                                    [j.quotePrintMethod, j.quotePrintSettings]
+                                                        .filter(Boolean)
+                                                        .join(' · ') || undefined
+                                                }
+                                            >
+                                                {j.quotePrintMethod && (
+                                                    <span className="font-black tracking-wide">
+                                                        {j.quotePrintMethod}
+                                                    </span>
+                                                )}
+                                                {j.quotePrintMethod && j.quotePrintSettings ? ' · ' : ''}
+                                                {j.quotePrintSettings}
+                                            </p>
+                                        )}
                                         {j.errorMessage && (
                                             <p className="text-[10px] text-red-300/80 line-clamp-1">
                                                 {j.errorMessage}
                                             </p>
                                         )}
-
                                         {j.quoteTotalPrice != null && (
                                             <p className="text-[11px] font-black text-emerald-300 tabular-nums">
                                                 ₩{j.quoteTotalPrice.toLocaleString()}

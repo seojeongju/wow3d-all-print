@@ -35,6 +35,7 @@ type StandaloneQuote = {
     dimensionsZ: number | null;
     scalePercent: number | null;
     printMethod: string | null;
+    printSettings: string | null;
     totalPrice: number;
     createdAt: string;
     userName: string | null;
@@ -352,7 +353,7 @@ export default function QuoteEditPage() {
                                 <Badge className="bg-white/10 text-white/50 border-white/15">장바구니 없음</Badge>
                             )}
                             {standaloneQuote.printMethod && (
-                                <Badge className="bg-white/10 text-white/70 border-white/15">
+                                <Badge className="bg-teal-500/20 text-teal-200 border-teal-500/30">
                                     {standaloneQuote.printMethod}
                                 </Badge>
                             )}
@@ -374,6 +375,14 @@ export default function QuoteEditPage() {
                                     )}
                                 </span>
                             </div>
+                            {standaloneQuote.printSettings && (
+                                <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                    <span className="text-white/40 shrink-0">출력 설정</span>
+                                    <span className="text-teal-200/90 text-right leading-snug">
+                                        {standaloneQuote.printSettings}
+                                    </span>
+                                </div>
+                            )}
                             {sizeLine && (
                                 <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
                                     <span className="text-white/40">적용 사이즈</span>

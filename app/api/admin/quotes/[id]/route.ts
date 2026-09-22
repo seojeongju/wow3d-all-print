@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
+import { formatQuotePrintSettings } from '@/lib/quote-print-settings'
 
 /**
  * GET /api/admin/quotes/[id]
@@ -23,38 +24,88 @@ export async function GET(
     if (auth instanceof Response) return auth
 
     try {
-        const row = await env.DB.prepare(
-            `SELECT
-                q.id,
-                q.user_id,
-                q.session_id,
-                q.file_name,
-                q.file_size,
-                q.file_url,
-                q.volume_cm3,
-                q.surface_area_cm2,
-                q.dimensions_x,
-                q.dimensions_y,
-                q.dimensions_z,
-                q.model_transform,
-                q.print_method,
-                q.total_price,
-                q.estimated_time_hours,
-                q.created_at,
-                q.updated_at,
-                u.name AS user_name,
-                u.email AS user_email,
-                (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = q.id LIMIT 1) AS order_id,
-                (SELECT o.order_number FROM order_items oi
-                    JOIN orders o ON o.id = oi.order_id
-                    WHERE oi.quote_id = q.id LIMIT 1) AS order_number,
-                (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) AS cart_count
-             FROM quotes q
-             LEFT JOIN users u ON u.id = q.user_id
-             WHERE q.id = ?`
-        )
-            .bind(quoteId)
-            .first<Record<string, unknown>>()
+        let row: Record<string, unknown> | null = null
+        try {
+            row = await env.DB.prepare(
+                `SELECT
+                    q.id,
+                    q.user_id,
+                    q.session_id,
+                    q.file_name,
+                    q.file_size,
+                    q.file_url,
+                    q.volume_cm3,
+                    q.surface_area_cm2,
+                    q.dimensions_x,
+                    q.dimensions_y,
+                    q.dimensions_z,
+                    q.model_transform,
+                    q.print_method,
+                    COALESCE(q.fdm_material_name, q.fdm_material) AS fdm_material,
+                    q.fdm_infill,
+                    q.fdm_layer_height,
+                    q.fdm_support,
+                    COALESCE(q.resin_type_name, q.resin_type) AS resin_type,
+                    q.layer_thickness,
+                    q.post_processing,
+                    q.total_price,
+                    q.estimated_time_hours,
+                    q.created_at,
+                    q.updated_at,
+                    u.name AS user_name,
+                    u.email AS user_email,
+                    (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = q.id LIMIT 1) AS order_id,
+                    (SELECT o.order_number FROM order_items oi
+                        JOIN orders o ON o.id = oi.order_id
+                        WHERE oi.quote_id = q.id LIMIT 1) AS order_number,
+                    (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) AS cart_count
+                 FROM quotes q
+                 LEFT JOIN users u ON u.id = q.user_id
+                 WHERE q.id = ?`
+            )
+                .bind(quoteId)
+                .first<Record<string, unknown>>()
+        } catch {
+            row = await env.DB.prepare(
+                `SELECT
+                    q.id,
+                    q.user_id,
+                    q.session_id,
+                    q.file_name,
+                    q.file_size,
+                    q.file_url,
+                    q.volume_cm3,
+                    q.surface_area_cm2,
+                    q.dimensions_x,
+                    q.dimensions_y,
+                    q.dimensions_z,
+                    q.model_transform,
+                    q.print_method,
+                    q.fdm_material,
+                    q.fdm_infill,
+                    q.fdm_layer_height,
+                    q.fdm_support,
+                    q.resin_type,
+                    q.layer_thickness,
+                    q.post_processing,
+                    q.total_price,
+                    q.estimated_time_hours,
+                    q.created_at,
+                    q.updated_at,
+                    u.name AS user_name,
+                    u.email AS user_email,
+                    (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = q.id LIMIT 1) AS order_id,
+                    (SELECT o.order_number FROM order_items oi
+                        JOIN orders o ON o.id = oi.order_id
+                        WHERE oi.quote_id = q.id LIMIT 1) AS order_number,
+                    (SELECT COUNT(*) FROM cart c WHERE c.quote_id = q.id) AS cart_count
+                 FROM quotes q
+                 LEFT JOIN users u ON u.id = q.user_id
+                 WHERE q.id = ?`
+            )
+                .bind(quoteId)
+                .first<Record<string, unknown>>()
+        }
 
         if (!row) {
             return NextResponse.json({ error: '견적을 찾을 수 없습니다' }, { status: 404 })
@@ -72,6 +123,19 @@ export async function GET(
             /* ignore */
         }
 
+        const printMethod = (row.print_method as string) || null
+        const printSettings =
+            formatQuotePrintSettings({
+                print_method: printMethod,
+                fdm_material: row.fdm_material as string | null,
+                fdm_infill: row.fdm_infill as number | null,
+                fdm_layer_height: row.fdm_layer_height as number | null,
+                fdm_support: row.fdm_support as number | boolean | null,
+                resin_type: row.resin_type as string | null,
+                layer_thickness: row.layer_thickness as number | null,
+                post_processing: row.post_processing as number | boolean | null,
+            }) || null
+
         const totalPrice = Number(row.total_price)
         return NextResponse.json({
             success: true,
@@ -88,7 +152,8 @@ export async function GET(
                 dimensionsY: row.dimensions_y != null ? Number(row.dimensions_y) : null,
                 dimensionsZ: row.dimensions_z != null ? Number(row.dimensions_z) : null,
                 scalePercent,
-                printMethod: (row.print_method as string) || null,
+                printMethod: printMethod ? printMethod.toUpperCase() : null,
+                printSettings,
                 totalPrice: Number.isFinite(totalPrice) ? Math.round(totalPrice) : 0,
                 estimatedTimeHours:
                     row.estimated_time_hours != null ? Number(row.estimated_time_hours) : null,

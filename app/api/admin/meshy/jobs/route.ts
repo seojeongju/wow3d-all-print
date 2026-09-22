@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
+import { formatQuotePrintSettings } from '@/lib/quote-print-settings'
 
 /**
  * GET /api/admin/meshy/jobs
@@ -65,44 +66,78 @@ export async function GET(req: NextRequest) {
 
         const total = Number(countRow?.c) || 0
 
-        const list = await env.DB.prepare(
-            `SELECT
-                j.id,
-                j.user_id,
-                j.session_id,
-                j.status,
-                j.progress,
-                j.credits_used,
-                j.error_message,
-                j.source_file_name,
-                j.result_file_name,
-                j.source_image_key,
-                j.result_file_key,
-                j.thumbnail_url,
-                j.quote_id,
-                j.created_at,
-                j.updated_at,
-                u.email AS user_email,
-                u.name AS user_name,
-                q.dimensions_x AS quote_dimensions_x,
-                q.dimensions_y AS quote_dimensions_y,
-                q.dimensions_z AS quote_dimensions_z,
-                q.model_transform AS quote_model_transform,
-                q.total_price AS quote_total_price,
-                (SELECT COUNT(*) FROM cart c WHERE c.quote_id = j.quote_id) AS cart_count,
-                (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_id,
-                (SELECT o.order_number FROM order_items oi
-                    JOIN orders o ON o.id = oi.order_id
-                    WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_number
-             FROM meshy_jobs j
-             LEFT JOIN users u ON u.id = j.user_id
-             LEFT JOIN quotes q ON q.id = j.quote_id
-             ${whereSql}
-             ORDER BY j.id DESC
-             LIMIT ? OFFSET ?`
-        )
-            .bind(...binds, limit, offset)
-            .all()
+        let list: Awaited<ReturnType<D1PreparedStatement['all']>>
+        try {
+            list = await env.DB.prepare(
+                `SELECT
+                    j.id, j.user_id, j.session_id, j.status, j.progress, j.credits_used,
+                    j.error_message, j.source_file_name, j.result_file_name,
+                    j.source_image_key, j.result_file_key, j.thumbnail_url, j.quote_id,
+                    j.created_at, j.updated_at,
+                    u.email AS user_email, u.name AS user_name,
+                    q.dimensions_x AS quote_dimensions_x,
+                    q.dimensions_y AS quote_dimensions_y,
+                    q.dimensions_z AS quote_dimensions_z,
+                    q.model_transform AS quote_model_transform,
+                    q.total_price AS quote_total_price,
+                    q.print_method AS quote_print_method,
+                    COALESCE(q.fdm_material_name, q.fdm_material) AS quote_fdm_material,
+                    q.fdm_infill AS quote_fdm_infill,
+                    q.fdm_layer_height AS quote_fdm_layer_height,
+                    q.fdm_support AS quote_fdm_support,
+                    COALESCE(q.resin_type_name, q.resin_type) AS quote_resin_type,
+                    q.layer_thickness AS quote_layer_thickness,
+                    q.post_processing AS quote_post_processing,
+                    (SELECT COUNT(*) FROM cart c WHERE c.quote_id = j.quote_id) AS cart_count,
+                    (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_id,
+                    (SELECT o.order_number FROM order_items oi
+                        JOIN orders o ON o.id = oi.order_id
+                        WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_number
+                 FROM meshy_jobs j
+                 LEFT JOIN users u ON u.id = j.user_id
+                 LEFT JOIN quotes q ON q.id = j.quote_id
+                 ${whereSql}
+                 ORDER BY j.id DESC
+                 LIMIT ? OFFSET ?`
+            )
+                .bind(...binds, limit, offset)
+                .all()
+        } catch {
+            list = await env.DB.prepare(
+                `SELECT
+                    j.id, j.user_id, j.session_id, j.status, j.progress, j.credits_used,
+                    j.error_message, j.source_file_name, j.result_file_name,
+                    j.source_image_key, j.result_file_key, j.thumbnail_url, j.quote_id,
+                    j.created_at, j.updated_at,
+                    u.email AS user_email, u.name AS user_name,
+                    q.dimensions_x AS quote_dimensions_x,
+                    q.dimensions_y AS quote_dimensions_y,
+                    q.dimensions_z AS quote_dimensions_z,
+                    q.model_transform AS quote_model_transform,
+                    q.total_price AS quote_total_price,
+                    q.print_method AS quote_print_method,
+                    q.fdm_material AS quote_fdm_material,
+                    q.fdm_infill AS quote_fdm_infill,
+                    q.fdm_layer_height AS quote_fdm_layer_height,
+                    q.fdm_support AS quote_fdm_support,
+                    q.resin_type AS quote_resin_type,
+                    q.layer_thickness AS quote_layer_thickness,
+                    q.post_processing AS quote_post_processing,
+                    (SELECT COUNT(*) FROM cart c WHERE c.quote_id = j.quote_id) AS cart_count,
+                    (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_id,
+                    (SELECT o.order_number FROM order_items oi
+                        JOIN orders o ON o.id = oi.order_id
+                        WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_number
+                 FROM meshy_jobs j
+                 LEFT JOIN users u ON u.id = j.user_id
+                 LEFT JOIN quotes q ON q.id = j.quote_id
+                 ${whereSql}
+                 ORDER BY j.id DESC
+                 LIMIT ? OFFSET ?`
+            )
+                .bind(...binds, limit, offset)
+                .all()
+        }
 
         const jobs = ((list.results || []) as Record<string, unknown>[]).map((r) => {
             return {
@@ -138,6 +173,19 @@ export async function GET(req: NextRequest) {
                     const n = Number(r.quote_total_price)
                     return Number.isFinite(n) && n > 0 ? Math.round(n) : null
                 })(),
+                quotePrintMethod: r.quote_print_method
+                    ? String(r.quote_print_method).toUpperCase()
+                    : null,
+                quotePrintSettings: formatQuotePrintSettings({
+                    print_method: r.quote_print_method as string | null,
+                    fdm_material: r.quote_fdm_material as string | null,
+                    fdm_infill: r.quote_fdm_infill as number | null,
+                    fdm_layer_height: r.quote_fdm_layer_height as number | null,
+                    fdm_support: r.quote_fdm_support as number | boolean | null,
+                    resin_type: r.quote_resin_type as string | null,
+                    layer_thickness: r.quote_layer_thickness as number | null,
+                    post_processing: r.quote_post_processing as number | boolean | null,
+                }) || null,
                 inCart: r.quote_id != null && Number(r.cart_count) > 0,
                 orderId: r.order_id != null ? Number(r.order_id) : null,
                 orderNumber: (r.order_number as string) || null,
