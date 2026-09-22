@@ -5,6 +5,8 @@ import {
   popupImageUrlFromKey,
   uploadPopupImage,
   validatePopupImage,
+  normalizePopupSizePreset,
+  normalizePopupPositionPreset,
   type PopupRow,
 } from '@/lib/popup'
 
@@ -136,6 +138,8 @@ export async function POST(request: NextRequest) {
     const isVisible = parseBool(formData.get('is_visible'), false)
     const sortOrder = parseIntOr(formData.get('sort_order'), 0)
     const dismissDays = Math.max(0, Math.min(365, parseIntOr(formData.get('dismiss_days'), 1)))
+    const sizePreset = normalizePopupSizePreset(formData.get('size_preset'))
+    const positionPreset = normalizePopupPositionPreset(formData.get('position_preset'))
     const imageFile = formData.get('image') as File | null
 
     if (!title) {
@@ -156,8 +160,9 @@ export async function POST(request: NextRequest) {
       `INSERT INTO popups (
         store_id, title, body, image_key, link_url,
         start_at, end_at, is_visible, sort_order, dismiss_days,
+        size_preset, position_preset,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
     )
       .bind(
         admin.storeId,
@@ -169,7 +174,9 @@ export async function POST(request: NextRequest) {
         endAt,
         isVisible ? 1 : 0,
         sortOrder,
-        dismissDays
+        dismissDays,
+        sizePreset,
+        positionPreset
       )
       .run()
 

@@ -1,3 +1,38 @@
+export type PopupSizePreset = 'sm' | 'md' | 'lg' | 'xl'
+export type PopupPositionPreset =
+  | 'center'
+  | 'top-center'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'bottom-center'
+
+export const POPUP_SIZE_PRESETS: {
+  value: PopupSizePreset
+  label: string
+  maxWidthPx: number
+  imageMaxHPx: number
+}[] = [
+  { value: 'sm', label: '작음 (320px)', maxWidthPx: 320, imageMaxHPx: 260 },
+  { value: 'md', label: '보통 (400px)', maxWidthPx: 400, imageMaxHPx: 360 },
+  { value: 'lg', label: '큼 (520px)', maxWidthPx: 520, imageMaxHPx: 440 },
+  { value: 'xl', label: '더 큼 (640px)', maxWidthPx: 640, imageMaxHPx: 520 },
+]
+
+export const POPUP_POSITION_PRESETS: {
+  value: PopupPositionPreset
+  label: string
+}[] = [
+  { value: 'center', label: '화면 중앙' },
+  { value: 'top-center', label: '상단 중앙' },
+  { value: 'top-left', label: '좌측 상단' },
+  { value: 'top-right', label: '우측 상단' },
+  { value: 'bottom-left', label: '좌측 하단' },
+  { value: 'bottom-right', label: '우측 하단' },
+  { value: 'bottom-center', label: '하단 중앙' },
+]
+
 export type PopupRow = {
   id: number
   store_id: number
@@ -10,6 +45,8 @@ export type PopupRow = {
   is_visible: number | boolean
   sort_order: number
   dismiss_days: number
+  size_preset?: string | null
+  position_preset?: string | null
   created_at: string
   updated_at: string
 }
@@ -22,6 +59,8 @@ export type PublicPopup = {
   linkUrl: string | null
   dismissDays: number
   sortOrder: number
+  sizePreset: PopupSizePreset
+  positionPreset: PopupPositionPreset
 }
 
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -31,6 +70,80 @@ const ALLOWED_IMAGE_TYPES = new Set([
   'image/webp',
   'image/gif',
 ])
+
+const SIZE_SET = new Set<string>(POPUP_SIZE_PRESETS.map((p) => p.value))
+const POSITION_SET = new Set<string>(POPUP_POSITION_PRESETS.map((p) => p.value))
+
+export function normalizePopupSizePreset(v: unknown): PopupSizePreset {
+  const s = String(v ?? '').trim().toLowerCase()
+  return SIZE_SET.has(s) ? (s as PopupSizePreset) : 'md'
+}
+
+export function normalizePopupPositionPreset(v: unknown): PopupPositionPreset {
+  const s = String(v ?? '').trim().toLowerCase()
+  return POSITION_SET.has(s) ? (s as PopupPositionPreset) : 'center'
+}
+
+export function getPopupSizeConfig(preset: PopupSizePreset) {
+  return POPUP_SIZE_PRESETS.find((p) => p.value === preset) || POPUP_SIZE_PRESETS[1]
+}
+
+/** 뷰포트 기준 초기 좌표 (드래그 전) */
+export function resolvePopupPosition(
+  position: PopupPositionPreset,
+  boxW: number,
+  boxH: number,
+  viewportW: number,
+  viewportH: number
+): { x: number; y: number } {
+  const margin = 16
+  const topSafe = Math.max(80, margin) // 헤더 여유
+  const maxX = Math.max(margin, viewportW - boxW - margin)
+  const maxY = Math.max(margin, viewportH - Math.min(boxH, viewportH - margin * 2) - margin)
+
+  const centerX = Math.round((viewportW - boxW) / 2)
+  const centerY = Math.round((viewportH - boxH) / 2)
+
+  let x = centerX
+  let y = Math.max(topSafe, centerY)
+
+  switch (position) {
+    case 'top-left':
+      x = margin
+      y = topSafe
+      break
+    case 'top-right':
+      x = maxX
+      y = topSafe
+      break
+    case 'top-center':
+      x = centerX
+      y = topSafe
+      break
+    case 'bottom-left':
+      x = margin
+      y = maxY
+      break
+    case 'bottom-right':
+      x = maxX
+      y = maxY
+      break
+    case 'bottom-center':
+      x = centerX
+      y = maxY
+      break
+    case 'center':
+    default:
+      x = centerX
+      y = Math.max(topSafe, Math.min(maxY, centerY))
+      break
+  }
+
+  return {
+    x: Math.min(maxX, Math.max(margin, x)),
+    y: Math.min(maxY, Math.max(margin, y)),
+  }
+}
 
 export function popupImageUrlFromKey(imageKey: string | null | undefined): string | null {
   if (!imageKey) return null
@@ -47,6 +160,8 @@ export function toPublicPopup(row: PopupRow): PublicPopup {
     linkUrl: row.link_url,
     dismissDays: Number(row.dismiss_days ?? 1),
     sortOrder: Number(row.sort_order ?? 0),
+    sizePreset: normalizePopupSizePreset(row.size_preset),
+    positionPreset: normalizePopupPositionPreset(row.position_preset),
   }
 }
 

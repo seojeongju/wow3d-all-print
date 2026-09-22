@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS popups (
   is_visible INTEGER NOT NULL DEFAULT 0,
   sort_order INTEGER NOT NULL DEFAULT 0,
   dismiss_days INTEGER NOT NULL DEFAULT 1,
+  size_preset TEXT NOT NULL DEFAULT 'md',
+  position_preset TEXT NOT NULL DEFAULT 'center',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

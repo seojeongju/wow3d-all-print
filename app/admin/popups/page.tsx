@@ -35,6 +35,14 @@ import {
 import AdminListPagination from '@/components/admin/AdminListPagination'
 import { showToast } from '@/lib/toast-helper'
 import { useAuthStore } from '@/store/useAuthStore'
+import {
+  POPUP_POSITION_PRESETS,
+  POPUP_SIZE_PRESETS,
+  normalizePopupPositionPreset,
+  normalizePopupSizePreset,
+  type PopupPositionPreset,
+  type PopupSizePreset,
+} from '@/lib/popup'
 
 const PAGE_SIZE = 20
 
@@ -50,6 +58,8 @@ type PopupItem = {
   is_visible: number | boolean
   sort_order: number
   dismiss_days: number
+  size_preset?: string | null
+  position_preset?: string | null
   created_at: string
 }
 
@@ -62,6 +72,8 @@ type FormState = {
   is_visible: boolean
   sort_order: number
   dismiss_days: number
+  size_preset: PopupSizePreset
+  position_preset: PopupPositionPreset
   image: File | null
   clear_image: boolean
 }
@@ -75,6 +87,8 @@ const emptyForm = (): FormState => ({
   is_visible: true,
   sort_order: 0,
   dismiss_days: 1,
+  size_preset: 'md',
+  position_preset: 'center',
   image: null,
   clear_image: false,
 })
@@ -245,6 +259,8 @@ export default function AdminPopupsPage() {
       is_visible: Boolean(Number(item.is_visible)),
       sort_order: Number(item.sort_order || 0),
       dismiss_days: Number(item.dismiss_days ?? 1),
+      size_preset: normalizePopupSizePreset(item.size_preset),
+      position_preset: normalizePopupPositionPreset(item.position_preset),
       image: null,
       clear_image: false,
     })
@@ -274,6 +290,8 @@ export default function AdminPopupsPage() {
     data.append('is_visible', form.is_visible ? '1' : '0')
     data.append('sort_order', String(form.sort_order))
     data.append('dismiss_days', String(form.dismiss_days))
+    data.append('size_preset', form.size_preset)
+    data.append('position_preset', form.position_preset)
     if (form.image) data.append('image', form.image)
     if (form.clear_image) data.append('clear_image', '1')
     return data
@@ -324,6 +342,8 @@ export default function AdminPopupsPage() {
       data.append('is_visible', next ? '1' : '0')
       data.append('sort_order', String(item.sort_order ?? 0))
       data.append('dismiss_days', String(item.dismiss_days ?? 1))
+      data.append('size_preset', normalizePopupSizePreset(item.size_preset))
+      data.append('position_preset', normalizePopupPositionPreset(item.position_preset))
       const res = await fetch(`/api/admin/popups/${item.id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
@@ -369,7 +389,7 @@ export default function AdminPopupsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white uppercase">팝업 관리</h1>
           <p className="mt-1 text-sm text-white/40">
-            사이트 전역 팝업을 생성·수정·삭제합니다. 이미지와 안내 문구, 링크를 설정할 수 있습니다.
+            사이트 전역 팝업을 생성·수정·삭제합니다. 이미지·문구·링크와 함께 크기·표시 위치를 설정할 수 있습니다.
           </p>
         </div>
         <Button
@@ -457,6 +477,12 @@ export default function AdminPopupsPage() {
                 <p className="text-[11px] text-white/30">
                   {item.start_at || '시작 제한 없음'} ~ {item.end_at || '종료 제한 없음'}
                   {item.link_url ? ` · 링크: ${item.link_url}` : ''}
+                  {` · 크기 ${normalizePopupSizePreset(item.size_preset).toUpperCase()}`}
+                  {` · 위치 ${
+                    POPUP_POSITION_PRESETS.find(
+                      (p) => p.value === normalizePopupPositionPreset(item.position_preset)
+                    )?.label || '중앙'
+                  }`}
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
@@ -604,6 +630,55 @@ export default function AdminPopupsPage() {
                 onChange={(v) => setForm((f) => ({ ...f, end_at: v }))}
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>팝업 크기</Label>
+                <Select
+                  value={form.size_preset}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, size_preset: normalizePopupSizePreset(v) }))
+                  }
+                >
+                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="크기 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POPUP_SIZE_PRESETS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>표시 위치</Label>
+                <Select
+                  value={form.position_preset}
+                  onValueChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      position_preset: normalizePopupPositionPreset(v),
+                    }))
+                  }
+                >
+                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="위치 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {POPUP_POSITION_PRESETS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-[11px] text-white/35 -mt-2">
+              초기 표시 위치입니다. 방문자가 드래그로 옮길 수 있습니다.
+            </p>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

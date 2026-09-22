@@ -5,6 +5,8 @@ import {
   popupImageUrlFromKey,
   uploadPopupImage,
   validatePopupImage,
+  normalizePopupSizePreset,
+  normalizePopupPositionPreset,
   type PopupRow,
 } from '@/lib/popup'
 
@@ -71,6 +73,16 @@ export async function PUT(
     const isVisible = parseBool(formData.get('is_visible'))
     const sortOrder = parseIntOrUndef(formData.get('sort_order'))
     const dismissDaysRaw = parseIntOrUndef(formData.get('dismiss_days'))
+    const sizePresetRaw = formData.get('size_preset')
+    const positionPresetRaw = formData.get('position_preset')
+    const sizePreset =
+      sizePresetRaw == null || String(sizePresetRaw).trim() === ''
+        ? undefined
+        : normalizePopupSizePreset(sizePresetRaw)
+    const positionPreset =
+      positionPresetRaw == null || String(positionPresetRaw).trim() === ''
+        ? undefined
+        : normalizePopupPositionPreset(positionPresetRaw)
     const clearImage = String(formData.get('clear_image') || '') === '1'
     const imageFile = formData.get('image') as File | null
 
@@ -100,6 +112,8 @@ export async function PUT(
         is_visible = ?,
         sort_order = ?,
         dismiss_days = ?,
+        size_preset = ?,
+        position_preset = ?,
         image_key = ?,
         updated_at = datetime('now')
       WHERE id = ? AND store_id = ?`
@@ -115,6 +129,12 @@ export async function PUT(
         dismissDaysRaw === undefined
           ? existing.dismiss_days
           : Math.max(0, Math.min(365, dismissDaysRaw)),
+        sizePreset === undefined
+          ? normalizePopupSizePreset(existing.size_preset)
+          : sizePreset,
+        positionPreset === undefined
+          ? normalizePopupPositionPreset(existing.position_preset)
+          : positionPreset,
         imageKey,
         id,
         admin.storeId

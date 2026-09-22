@@ -13,7 +13,13 @@ import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ExternalLink, GripVertical, X } from 'lucide-react'
-import { dismissPopup, isPopupDismissed, type PublicPopup } from '@/lib/popup'
+import {
+  dismissPopup,
+  getPopupSizeConfig,
+  isPopupDismissed,
+  resolvePopupPosition,
+  type PublicPopup,
+} from '@/lib/popup'
 
 function isExcludedPath(pathname: string | null): boolean {
   if (!pathname) return true
@@ -89,15 +95,6 @@ function PopupLink({
 
 type Pos = { x: number; y: number }
 
-function defaultPosition(): Pos {
-  if (typeof window === 'undefined') return { x: 24, y: 100 }
-  const width = Math.min(400, window.innerWidth - 32)
-  return {
-    x: Math.max(16, Math.round((window.innerWidth - width) / 2)),
-    y: Math.max(80, Math.round(window.innerHeight * 0.12)),
-  }
-}
-
 function clampPosition(pos: Pos, boxW: number, boxH: number): Pos {
   if (typeof window === 'undefined') return pos
   const maxX = Math.max(8, window.innerWidth - boxW - 8)
@@ -106,6 +103,20 @@ function clampPosition(pos: Pos, boxW: number, boxH: number): Pos {
     x: Math.min(maxX, Math.max(8, pos.x)),
     y: Math.min(maxY, Math.max(8, pos.y)),
   }
+}
+
+function initialPositionForPopup(popup: PublicPopup): Pos {
+  if (typeof window === 'undefined') return { x: 24, y: 100 }
+  const size = getPopupSizeConfig(popup.sizePreset)
+  const boxW = Math.min(size.maxWidthPx, window.innerWidth - 24)
+  const boxH = Math.min(520, window.innerHeight * 0.7)
+  return resolvePopupPosition(
+    popup.positionPreset,
+    boxW,
+    boxH,
+    window.innerWidth,
+    window.innerHeight
+  )
 }
 
 export default function SitePopup() {
@@ -148,7 +159,7 @@ export default function SitePopup() {
         if (cancelled) return
         setPopup(next)
         setOpen(Boolean(next))
-        if (next) setPos(defaultPosition())
+        if (next) setPos(initialPositionForPopup(next))
       } catch {
         if (!cancelled) {
           setPopup(null)
@@ -161,6 +172,22 @@ export default function SitePopup() {
       cancelled = true
     }
   }, [pathname])
+
+  useEffect(() => {
+    if (!open || !popup) return
+    const el = panelRef.current
+    if (!el) return
+    // 실제 렌더 크기 기준으로 위치 재정렬
+    const rect = el.getBoundingClientRect()
+    const next = resolvePopupPosition(
+      popup.positionPreset,
+      rect.width,
+      rect.height,
+      window.innerWidth,
+      window.innerHeight
+    )
+    setPos(next)
+  }, [open, popup?.id, popup?.positionPreset, popup?.sizePreset])
 
   useEffect(() => {
     if (!open) return
@@ -227,6 +254,8 @@ export default function SitePopup() {
 
   if (isExcludedPath(pathname)) return null
 
+  const sizeConfig = popup ? getPopupSizeConfig(popup.sizePreset) : getPopupSizeConfig('md')
+
   return (
     <AnimatePresence>
       {open && popup && (
@@ -239,10 +268,14 @@ export default function SitePopup() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 8 }}
           transition={{ duration: 0.2 }}
-          className={`fixed z-[200] flex max-h-[min(85vh,720px)] w-[min(calc(100vw-1.5rem),400px)] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#0d1117]/95 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md ${
+          className={`fixed z-[200] flex max-h-[min(85vh,720px)] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#0d1117]/95 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md ${
             dragging ? 'cursor-grabbing select-none' : ''
           }`}
-          style={{ left: pos.x, top: pos.y }}
+          style={{
+            left: pos.x,
+            top: pos.y,
+            width: `min(calc(100vw - 1.5rem), ${sizeConfig.maxWidthPx}px)`,
+          }}
         >
           <div
             onPointerDown={onDragStart}
@@ -277,7 +310,8 @@ export default function SitePopup() {
                     <img
                       src={popup.imageUrl}
                       alt={popup.title}
-                      className="max-h-[360px] w-full object-contain"
+                      className="w-full object-contain"
+                      style={{ maxHeight: sizeConfig.imageMaxHPx }}
                       draggable={false}
                     />
                   </PopupLink>
@@ -286,7 +320,8 @@ export default function SitePopup() {
                   <img
                     src={popup.imageUrl}
                     alt={popup.title}
-                    className="max-h-[360px] w-full object-contain"
+                    className="w-full object-contain"
+                    style={{ maxHeight: sizeConfig.imageMaxHPx }}
                     draggable={false}
                   />
                 )}
