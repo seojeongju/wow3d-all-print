@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -13,6 +13,7 @@ import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
+import { NodeSelection } from '@tiptap/pm/state'
 import {
     AlignCenter,
     AlignJustify,
@@ -60,6 +61,66 @@ const FONT_FAMILIES: { label: string; value: string }[] = [
 
 const FONT_SIZES = ['12px', '14px', '15px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px']
 const SIZE_DEFAULT = '__default__'
+
+/** 표 전체 가운데/오른쪽 정렬(data-align) + 노드 선택 가능 */
+const EditorTable = Table.extend({
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            align: {
+                default: 'left',
+                parseHTML: (element: HTMLElement) => {
+                    const data = element.getAttribute('data-align')
+                    if (data === 'center' || data === 'right' || data === 'left') return data
+                    const style = element.getAttribute('style') || ''
+                    if (/margin-left:\s*auto/i.test(style) && /margin-right:\s*auto/i.test(style)) {
+                        return 'center'
+                    }
+                    if (/margin-left:\s*auto/i.test(style)) return 'right'
+                    return 'left'
+                },
+                renderHTML: (attributes: { align?: string | null }) => {
+                    if (!attributes.align || attributes.align === 'left') {
+                        return { 'data-align': 'left' }
+                    }
+                    if (attributes.align === 'center') {
+                        return {
+                            'data-align': 'center',
+                            style: 'margin-left: auto; margin-right: auto; width: auto; max-width: 100%;',
+                        }
+                    }
+                    return {
+                        'data-align': 'right',
+                        style: 'margin-left: auto; margin-right: 0; width: auto; max-width: 100%;',
+                    }
+                },
+            },
+        }
+    },
+}).configure({
+    resizable: false,
+    allowTableNodeSelection: true,
+})
+
+function isTableNodeSelected(editor: Editor | null): boolean {
+    if (!editor || editor.isDestroyed) return false
+    const { selection } = editor.state
+    return selection instanceof NodeSelection && selection.node.type.name === 'table'
+}
+
+function selectCurrentTable(editor: Editor): boolean {
+    const { selection } = editor.state
+    if (selection instanceof NodeSelection && selection.node.type.name === 'table') {
+        return true
+    }
+    const $from = selection.$from
+    for (let depth = $from.depth; depth > 0; depth -= 1) {
+        if ($from.node(depth).type.name === 'table') {
+            return editor.chain().focus().setNodeSelection($from.before(depth)).run()
+        }
+    }
+    return false
+}
 
 function normalizeFontFamily(raw: string | null | undefined): string {
     if (!raw) return FONT_DEFAULT
@@ -201,7 +262,7 @@ export default function DetailSmartEditor({
                 showOnlyCurrent: true,
             }),
             // resizable은 추가 CSS/플러그인 의존이 있어 크롬 일부 환경에서 오류를 유발할 수 있음
-            Table.configure({ resizable: false }),
+            EditorTable,
             TableRow,
             TableHeader,
             TableCell,
@@ -466,6 +527,36 @@ export default function DetailSmartEditor({
         withEditor((ed) => {
             ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
         })
+    }
+
+    const applyAlign = (align: 'left' | 'center' | 'right' | 'justify') => {
+        withEditor((ed) => {
+            if (isTableNodeSelected(ed)) {
+                if (align === 'justify') return
+                ed.chain().focus().updateAttributes('table', { align }).run()
+                return
+            }
+            // 표 안: 셀(td/th) align + 단락 textAlign 동시 적용 → 공개 페이지에서도 유지
+            if (ed.isActive('table')) {
+                const cellAlign = align === 'justify' ? null : align
+                ed.chain().focus().setCellAttribute('align', cellAlign).setTextAlign(align).run()
+                return
+            }
+            ed.chain().focus().setTextAlign(align).run()
+        })
+    }
+
+    const tableNodeSelected = isTableNodeSelected(editor)
+    const tableAlign = (editor?.getAttributes('table').align as string | undefined) || 'left'
+    const alignActive = (align: 'left' | 'center' | 'right' | 'justify') => {
+        if (tableNodeSelected) return align !== 'justify' && tableAlign === align
+        if (editor?.isActive('table')) {
+            const cellAlign =
+                (editor.getAttributes('tableCell').align as string | undefined) ||
+                (editor.getAttributes('tableHeader').align as string | undefined)
+            if (cellAlign) return cellAlign === align
+        }
+        return !!editor?.isActive({ textAlign: align })
     }
 
     const CONTENT_BLOCKS: { id: string; label: string; html: string }[] = [
@@ -748,32 +839,53 @@ export default function DetailSmartEditor({
 
                     <ToolBtn
                         title="왼쪽"
-                        active={editor?.isActive({ textAlign: 'left' })}
-                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('left').run())}
+                        active={alignActive('left')}
+                        onClick={() => applyAlign('left')}
                     >
                         <AlignLeft className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="가운데"
-                        active={editor?.isActive({ textAlign: 'center' })}
-                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('center').run())}
+                        active={alignActive('center')}
+                        onClick={() => applyAlign('center')}
                     >
                         <AlignCenter className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="오른쪽"
-                        active={editor?.isActive({ textAlign: 'right' })}
-                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('right').run())}
+                        active={alignActive('right')}
+                        onClick={() => applyAlign('right')}
                     >
                         <AlignRight className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="양쪽"
-                        active={editor?.isActive({ textAlign: 'justify' })}
-                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('justify').run())}
+                        active={alignActive('justify')}
+                        onClick={() => applyAlign('justify')}
                     >
                         <AlignJustify className="w-4 h-4" />
                     </ToolBtn>
+
+                    {editor?.isActive('table') ? (
+                        <>
+                            <span className="w-px h-5 bg-[#e5e8eb] mx-1" />
+                            <ToolBtn
+                                title="표 전체 선택"
+                                active={tableNodeSelected}
+                                onClick={() => withEditor((ed) => selectCurrentTable(ed))}
+                            >
+                                <Table2 className="w-4 h-4" />
+                            </ToolBtn>
+                            <ToolBtn
+                                title="표 삭제"
+                                onClick={() =>
+                                    withEditor((ed) => ed.chain().focus().deleteTable().run())
+                                }
+                            >
+                                <X className="w-4 h-4" />
+                            </ToolBtn>
+                        </>
+                    ) : null}
 
                     <span className="w-px h-5 bg-[#e5e8eb] mx-1" />
 
@@ -1073,11 +1185,29 @@ export default function DetailSmartEditor({
                     border-collapse: collapse;
                     width: 100%;
                     margin: 12px 0;
+                    cursor: pointer;
+                }
+                .detail-smart-editor table[data-align='center'] {
+                    width: auto;
+                    max-width: 100%;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                .detail-smart-editor table[data-align='right'] {
+                    width: auto;
+                    max-width: 100%;
+                    margin-left: auto;
+                    margin-right: 0;
+                }
+                .detail-smart-editor table.ProseMirror-selectednode {
+                    outline: 2px solid #03c75a;
+                    outline-offset: 3px;
                 }
                 .detail-smart-editor th,
                 .detail-smart-editor td {
                     border: 1px solid #e5e8eb;
                     padding: 8px 10px;
+                    vertical-align: middle;
                 }
                 .detail-smart-editor blockquote {
                     border-left: 3px solid #03c75a;

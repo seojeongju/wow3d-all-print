@@ -210,3 +210,29 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* 커스텀 상품 상세 HTML: 표 레이아웃·정렬 (display:block 금지) */
+.detail-body-html table {
+  display: table !important;
+  border-collapse: collapse;
+  max-width: 100%;
+  width: 100%;
+  margin: 0.75rem 0;
+  table-layout: auto;
+}
+.detail-body-html table[data-align='center'] {
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+.detail-body-html table[data-align='right'] {
+  width: auto;
+  margin-left: auto;
+  margin-right: 0;
+}
+.detail-body-html th,
+.detail-body-html td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.375rem 0.5rem;
+  vertical-align: middle;
+}

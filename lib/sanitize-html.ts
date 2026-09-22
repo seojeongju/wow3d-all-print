@@ -45,6 +45,8 @@ const ALLOWED_ATTRS = new Set([
     'height',
     'colspan',
     'rowspan',
+    'data-align',
+    'align',
 ])
 
 export function isProbablyHtml(text: string): boolean {
