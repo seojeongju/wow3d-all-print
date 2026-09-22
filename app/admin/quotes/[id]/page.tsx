@@ -10,10 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft, RotateCcw, Pencil, Mail } from 'lucide-react';
+import { Loader2, Printer, Save, Plus, Trash2, ArrowLeft, RotateCcw, Pencil, Mail, ShoppingCart, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatKoreanDate } from '@/lib/date-utils';
+import { formatQuotePrintSizeMm } from '@/lib/quote-print-settings';
 import {
     DEFAULT_SHIPPING_SETTINGS,
     formatFreeShippingHint,
@@ -22,6 +24,25 @@ import {
     type ShippingSettings,
 } from '@/lib/shipping-settings';
 import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
+
+type StandaloneQuote = {
+    id: number;
+    userId: number | null;
+    fileName: string | null;
+    volumeCm3: number | null;
+    dimensionsX: number | null;
+    dimensionsY: number | null;
+    dimensionsZ: number | null;
+    scalePercent: number | null;
+    printMethod: string | null;
+    totalPrice: number;
+    createdAt: string;
+    userName: string | null;
+    userEmail: string | null;
+    orderId: number | null;
+    orderNumber: string | null;
+    inCart: boolean;
+};
 
 export default function QuoteEditPage() {
     const { toast } = useToast();
@@ -33,6 +54,7 @@ export default function QuoteEditPage() {
 
     const [loading, setLoading] = useState(true);
     const [orderInfo, setOrderInfo] = useState<any>(null);
+    const [standaloneQuote, setStandaloneQuote] = useState<StandaloneQuote | null>(null);
 
     const [recipient, setRecipient] = useState({ name: '', phone: '', email: '', address: '' });
     const [items, setItems] = useState<any[]>([]);
@@ -47,74 +69,117 @@ export default function QuoteEditPage() {
 
     useEffect(() => {
         if (!id) return;
-        fetch('/api/settings')
-            .then(res => res.json())
-            .then(json => {
-                if (json.success && Array.isArray(json.data)) {
-                    setShippingSettings(parseShippingSettings(json.data));
-                }
-            })
-            .catch(() => {});
+        let cancelled = false;
 
-        fetch(`/api/admin/orders/${id}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-        })
-            .then(res => res.json())
-            .then(json => {
-                if (json.success && json.data) {
-                    const { order, items } = json.data;
-                    setOrderInfo(order);
+        const applyOrderPayload = (data: { order: any; items: any[] }) => {
+            const { order, items } = data;
+            setStandaloneQuote(null);
+            setOrderInfo(order);
 
-                    const baseRecipient = {
-                        name: order.recipient_name || '',
-                        phone: order.recipient_phone || '',
-                        email: order.user_email || order.guest_email || '',
-                        address: order.shipping_address || ''
-                    };
-                    setAutoRecipient(baseRecipient);
+            const baseRecipient = {
+                name: order.recipient_name || '',
+                phone: order.recipient_phone || '',
+                email: order.user_email || order.guest_email || '',
+                address: order.shipping_address || '',
+            };
+            setAutoRecipient(baseRecipient);
 
-                    const autoItemsMapped = items.map((it: any) => {
-                        const unitPriceBase = Number(it.unit_price) || 0;
-                        const unitPriceKr = Math.round(unitPriceBase);
-                        return {
-                            id: it.id || Math.random(),
-                            name: it.file_name,
-                            spec: `${it.print_method || ''} ${it.material_name ? '/ ' + it.material_name : ''}`.trim(),
+            const autoItemsMapped = items.map((it: any) => {
+                const unitPriceBase = Number(it.unit_price) || 0;
+                const unitPriceKr = Math.round(unitPriceBase);
+                return {
+                    id: it.id || Math.random(),
+                    name: it.file_name,
+                    spec: `${it.print_method || ''} ${it.material_name ? '/ ' + it.material_name : ''}`.trim(),
+                    quantity: Number(it.quantity) || 1,
+                    unit_price: unitPriceKr,
+                };
+            });
+            setAutoItems(autoItemsMapped);
+
+            if (order.has_expert_quote && order.expert_quote_data) {
+                try {
+                    const expertData = JSON.parse(order.expert_quote_data);
+                    setItems(
+                        expertData.items?.map((it: any) => ({
+                            ...it,
+                            unit_price: Math.round(Number(it.unit_price) || 0),
                             quantity: Number(it.quantity) || 1,
-                            unit_price: unitPriceKr,
-                        };
-                    });
-                    setAutoItems(autoItemsMapped);
-
-                    if (order.has_expert_quote && order.expert_quote_data) {
-                        try {
-                            const expertData = JSON.parse(order.expert_quote_data);
-                            setItems(expertData.items?.map((it: any) => ({
-                                ...it,
-                                unit_price: Math.round(Number(it.unit_price) || 0),
-                                quantity: Number(it.quantity) || 1,
-                            })) || []);
-                            setRecipient(expertData.recipient || baseRecipient);
-                            if (expertData.shipping_fee != null && Number.isFinite(Number(expertData.shipping_fee))) {
-                                setShippingFeeOverride(Number(expertData.shipping_fee));
-                                setShippingFeeManual(true);
-                            }
-                            setHasExpertQuote(true);
-                        } catch (e) {
-                            setItems(autoItemsMapped);
-                            setRecipient(baseRecipient);
-                        }
-                    } else {
-                        setItems(autoItemsMapped);
-                        setRecipient(baseRecipient);
+                        })) || []
+                    );
+                    setRecipient(expertData.recipient || baseRecipient);
+                    if (expertData.shipping_fee != null && Number.isFinite(Number(expertData.shipping_fee))) {
+                        setShippingFeeOverride(Number(expertData.shipping_fee));
+                        setShippingFeeManual(true);
                     }
-                } else {
-                    toast({ title: '데이터 로드 실패', variant: 'destructive' });
+                    setHasExpertQuote(true);
+                } catch {
+                    setItems(autoItemsMapped);
+                    setRecipient(baseRecipient);
                 }
-            })
-            .catch(() => toast({ title: '오류 발생', variant: 'destructive' }))
-            .finally(() => setLoading(false));
-    }, [id, toast, token]);
+            } else {
+                setItems(autoItemsMapped);
+                setRecipient(baseRecipient);
+            }
+        };
+
+        const load = async () => {
+            setLoading(true);
+            setOrderInfo(null);
+            setStandaloneQuote(null);
+
+            try {
+                const settingsRes = await fetch('/api/settings');
+                const settingsJson = await settingsRes.json();
+                if (!cancelled && settingsJson.success && Array.isArray(settingsJson.data)) {
+                    setShippingSettings(parseShippingSettings(settingsJson.data));
+                }
+            } catch {
+                /* ignore */
+            }
+
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+            try {
+                // 1) 주문 ID로 조회 (기존 견적서 수정 화면)
+                const orderRes = await fetch(`/api/admin/orders/${id}`, { headers, cache: 'no-store' });
+                const orderJson = await orderRes.json();
+                if (cancelled) return;
+
+                if (orderRes.ok && orderJson.success && orderJson.data) {
+                    applyOrderPayload(orderJson.data);
+                    return;
+                }
+
+                // 2) 견적(quotes) ID로 조회 — Meshy 카드 등에서 견적번호로 진입할 때
+                const quoteRes = await fetch(`/api/admin/quotes/${id}`, { headers, cache: 'no-store' });
+                const quoteJson = await quoteRes.json();
+                if (cancelled) return;
+
+                if (quoteRes.ok && quoteJson.success && quoteJson.data) {
+                    const q = quoteJson.data as StandaloneQuote;
+                    // 주문에 연결된 견적이면 주문 견적서 수정 화면으로 이동
+                    if (q.orderId != null && Number(q.orderId) > 0) {
+                        router.replace(`/admin/quotes/${q.orderId}`);
+                        return;
+                    }
+                    setStandaloneQuote(q);
+                    return;
+                }
+
+                toast({ title: '데이터 로드 실패', description: '주문 또는 견적을 찾을 수 없습니다.', variant: 'destructive' });
+            } catch {
+                if (!cancelled) toast({ title: '오류 발생', variant: 'destructive' });
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+
+        void load();
+        return () => {
+            cancelled = true;
+        };
+    }, [id, toast, token, router]);
 
     const handleItemChange = (idx: number, field: string, value: string) => {
         const newItems = [...items];
@@ -248,6 +313,114 @@ export default function QuoteEditPage() {
 
     if (loading) {
         return <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
+    }
+
+    // 주문 없이 견적만 있는 경우 (이미지→3D 후 견적·장바구니 단계)
+    if (!orderInfo && standaloneQuote) {
+        const sizeLine = formatQuotePrintSizeMm(
+            standaloneQuote.dimensionsX,
+            standaloneQuote.dimensionsY,
+            standaloneQuote.dimensionsZ,
+            standaloneQuote.scalePercent
+        );
+        return (
+            <div className="space-y-6 max-w-2xl mx-auto">
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.back()}
+                        className="text-white/50 hover:text-white"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">견적 #{standaloneQuote.id}</h1>
+                        <p className="text-white/40 text-sm">주문 전 자동견적 상세</p>
+                    </div>
+                </div>
+
+                <Card className="bg-white/5 border-white/10">
+                    <CardContent className="p-6 space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                            {standaloneQuote.inCart ? (
+                                <Badge className="bg-sky-500/20 text-sky-200 border-sky-500/30">
+                                    <ShoppingCart className="w-3 h-3 mr-1" />
+                                    장바구니 보관중
+                                </Badge>
+                            ) : (
+                                <Badge className="bg-white/10 text-white/50 border-white/15">장바구니 없음</Badge>
+                            )}
+                            {standaloneQuote.printMethod && (
+                                <Badge className="bg-white/10 text-white/70 border-white/15">
+                                    {standaloneQuote.printMethod}
+                                </Badge>
+                            )}
+                        </div>
+
+                        <div className="grid gap-3 text-sm">
+                            <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                <span className="text-white/40">파일</span>
+                                <span className="text-white font-medium text-right break-all">
+                                    {standaloneQuote.fileName || '—'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                <span className="text-white/40">회원</span>
+                                <span className="text-white text-right">
+                                    {standaloneQuote.userName || standaloneQuote.userEmail || '게스트'}
+                                    {standaloneQuote.userId != null && (
+                                        <span className="text-white/35 ml-1">#{standaloneQuote.userId}</span>
+                                    )}
+                                </span>
+                            </div>
+                            {sizeLine && (
+                                <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                    <span className="text-white/40">적용 사이즈</span>
+                                    <span className="text-amber-200/90 text-right">{sizeLine}</span>
+                                </div>
+                            )}
+                            {standaloneQuote.volumeCm3 != null && standaloneQuote.volumeCm3 > 0 && (
+                                <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                    <span className="text-white/40">부피</span>
+                                    <span className="text-white">{standaloneQuote.volumeCm3.toFixed(1)} cm³</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                <span className="text-white/40">최종 견적 금액</span>
+                                <span className="text-emerald-300 font-black text-lg tabular-nums">
+                                    {standaloneQuote.totalPrice > 0
+                                        ? `₩${standaloneQuote.totalPrice.toLocaleString()}`
+                                        : '미산정'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <span className="text-white/40">생성일</span>
+                                <span className="text-white/70">
+                                    {standaloneQuote.createdAt
+                                        ? formatKoreanDate(standaloneQuote.createdAt)
+                                        : '—'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-2">
+                            <Button asChild variant="outline" className="border-white/20 text-white/80">
+                                <Link href="/admin/meshy">
+                                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                                    사진→AI 3D 목록
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline" className="border-white/20 text-white/80">
+                                <Link href={`/admin/quotes/analytics?q=${standaloneQuote.id}`}>
+                                    전환 분석에서 보기
+                                </Link>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     if (!orderInfo) return <div className="p-8 text-white">데이터를 찾을 수 없습니다.</div>;
