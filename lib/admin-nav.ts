@@ -7,16 +7,18 @@ import {
     MessageSquare,
     User,
     Users,
-    FileText,
     Store,
     Building2,
     Image as ImageIcon,
     HelpCircle,
-    Sparkles,
     BarChart3,
     Mail,
     Megaphone,
     Package,
+    ImagePlus,
+    BotMessageSquare,
+    LayoutGrid,
+    ClipboardPen,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -51,7 +53,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             {
                 title: '견적 관리',
                 href: '/admin/quotes',
-                icon: FileText,
+                icon: ClipboardPen,
                 match: (p) =>
                     p === '/admin/quotes' ||
                     (p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics')),
@@ -65,7 +67,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             {
                 title: '사진(이미지)→AI 3D',
                 href: '/admin/meshy',
-                icon: Sparkles,
+                icon: ImagePlus,
                 match: (p) => p.startsWith('/admin/meshy'),
             },
             {
@@ -78,7 +80,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             {
                 title: 'AI FAQ 작성',
                 href: '/admin/inquiries/faq-draft',
-                icon: Sparkles,
+                icon: BotMessageSquare,
                 match: (p) => p.startsWith('/admin/inquiries/faq-draft'),
                 nested: true,
             },
@@ -96,7 +98,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             {
                 title: '쇼케이스',
                 href: '/admin/showcase',
-                icon: Sparkles,
+                icon: LayoutGrid,
                 match: (p) => p.startsWith('/admin/showcase'),
             },
             {

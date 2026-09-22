@@ -5,15 +5,52 @@ import NextLink from "next/link";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Zap, LogOut, Boxes, Menu, X, Search, MessageSquare, ChevronRight, Printer, Sparkles, Handshake, ChevronDown, MapPin, Gift } from "lucide-react";
+import {
+    ShoppingCart,
+    User,
+    Zap,
+    LogOut,
+    Boxes,
+    Menu,
+    X,
+    MessageSquare,
+    ChevronRight,
+    Printer,
+    Sparkles,
+    Handshake,
+    ChevronDown,
+    MapPin,
+    Package,
+    Layers,
+    BookOpen,
+    ClipboardList,
+    CircleHelp,
+    Mail,
+    Navigation,
+    Building2,
+    Store,
+    type LucideIcon,
+} from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
 import { motion, AnimatePresence } from "framer-motion";
 import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 
-type NavChild = { label: string; href: string; desc?: string; external?: boolean }
-type NavItem = { label: string; href: string; external?: boolean; children?: NavChild[] }
+type NavChild = {
+    label: string
+    href: string
+    desc?: string
+    external?: boolean
+    icon: LucideIcon
+}
+type NavItem = {
+    label: string
+    href: string
+    external?: boolean
+    icon: LucideIcon
+    children?: NavChild[]
+}
 
 /** 관리자 등 locale 밖 경로는 next/link 사용 (/en/admin 방지) */
 function isLocaleExemptHref(href: string, external?: boolean) {
@@ -138,41 +175,45 @@ export default function Header() {
             {
                 label: t('servicesGuides'),
                 href: '/services',
+                icon: Layers,
                 children: [
-                    { label: t('coreServices'), href: '/services', desc: t('coreServicesDesc') },
-                    { label: t('printMethods'), href: '/print-methods', desc: t('printMethodsDesc') },
-                    { label: t('guides'), href: '/guides', desc: t('guidesDesc') },
+                    { label: t('coreServices'), href: '/services', desc: t('coreServicesDesc'), icon: Boxes },
+                    { label: t('printMethods'), href: '/print-methods', desc: t('printMethodsDesc'), icon: Printer },
+                    { label: t('guides'), href: '/guides', desc: t('guidesDesc'), icon: BookOpen },
                 ],
             },
-            { label: t('quote'), href: '/quote' },
-            { label: t('customProducts'), href: '/custom' },
-            { label: t('products'), href: '/hardware/3d-printer' },
-            { label: t('expert'), href: '/expert' },
-            { label: t('orders'), href: '/my-account' },
+            { label: t('quote'), href: '/quote', icon: Zap },
+            { label: t('customProducts'), href: '/custom', icon: Package },
+            { label: t('products'), href: '/hardware/3d-printer', icon: Printer },
+            { label: t('expert'), href: '/expert', icon: Sparkles },
+            { label: t('orders'), href: '/my-account', icon: ClipboardList },
             {
                 label: t('support'),
                 href: '/contact',
+                icon: MessageSquare,
                 children: [
-                    { label: t('faq'), href: '/qna', desc: t('faqDesc') },
-                    { label: t('contact'), href: '/contact', desc: t('contactDesc') },
+                    { label: t('faq'), href: '/qna', desc: t('faqDesc'), icon: CircleHelp },
+                    { label: t('contact'), href: '/contact', desc: t('contactDesc'), icon: Mail },
                 ],
             },
             {
                 label: t('makerspace'),
                 href: '/makerspace',
+                icon: MapPin,
                 children: [
-                    { label: t('directions'), href: '/makerspace', desc: t('directionsDesc') },
-                    { label: t('hongdae'), href: '/makerspace#hongdae', desc: t('hongdaeDesc') },
-                    { label: t('gumi'), href: '/makerspace#gumi', desc: t('gumiDesc') },
-                    { label: t('jeonju'), href: '/makerspace#jeonju', desc: t('jeonjuDesc') },
+                    { label: t('directions'), href: '/makerspace', desc: t('directionsDesc'), icon: Navigation },
+                    { label: t('hongdae'), href: '/makerspace#hongdae', desc: t('hongdaeDesc'), icon: Building2 },
+                    { label: t('gumi'), href: '/makerspace#gumi', desc: t('gumiDesc'), icon: Building2 },
+                    { label: t('jeonju'), href: '/makerspace#jeonju', desc: t('jeonjuDesc'), icon: Building2 },
                 ],
             },
             {
                 label: t('partnership'),
                 href: '/partnership',
+                icon: Handshake,
                 children: [
-                    { label: t('partnershipItem'), href: '/partnership', desc: t('partnershipDesc') },
-                    { label: t('smartStore'), href: '/partnership/smart-store', desc: t('smartStoreDesc') },
+                    { label: t('partnershipItem'), href: '/partnership', desc: t('partnershipDesc'), icon: Handshake },
+                    { label: t('smartStore'), href: '/partnership/smart-store', desc: t('smartStoreDesc'), icon: Store },
                 ],
             },
         ],
@@ -276,8 +317,9 @@ export default function Header() {
                         fontSize: 'clamp(0.68rem, calc(0.72rem + 0.12vw), 0.8125rem)',
                     }}
                 >
-                    {navItems.map((item) =>
-                        item.children?.length ? (
+                    {navItems.map((item) => {
+                        const ItemIcon = item.icon
+                        return item.children?.length ? (
                             <div
                                 key={item.label}
                                 className="relative shrink min-w-0"
@@ -287,7 +329,7 @@ export default function Header() {
                                 <HeaderNavLink
                                     href={item.href}
                                     external={item.external}
-                                    className={`inline-flex items-center gap-0.5 rounded-xl font-semibold transition-colors duration-200 whitespace-nowrap break-keep [font-size:calc(1em*var(--nav-fit,1))] px-[calc(0.55rem*var(--nav-fit,1))] xl:px-[calc(0.85rem*var(--nav-fit,1))] 2xl:px-[calc(1.1rem*var(--nav-fit,1))] py-2 ${
+                                    className={`inline-flex items-center gap-1 rounded-xl font-semibold transition-colors duration-200 whitespace-nowrap break-keep [font-size:calc(1em*var(--nav-fit,1))] px-[calc(0.55rem*var(--nav-fit,1))] xl:px-[calc(0.85rem*var(--nav-fit,1))] 2xl:px-[calc(1.1rem*var(--nav-fit,1))] py-2 ${
                                         isPastHero
                                             ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
                                             : 'text-white/90 hover:text-white hover:bg-white/15'
@@ -295,6 +337,7 @@ export default function Header() {
                                     aria-expanded={openDropdown === item.label}
                                     aria-haspopup="true"
                                 >
+                                    <ItemIcon className="shrink-0 opacity-70 w-[1.05em] h-[1.05em]" aria-hidden />
                                     <span className="break-keep">{item.label}</span>
                                     <ChevronDown
                                         className={`shrink-0 transition-transform w-[1em] h-[1em] ${
@@ -305,7 +348,7 @@ export default function Header() {
                                 </HeaderNavLink>
                                 {openDropdown === item.label && (
                                     <div
-                                        className={`absolute top-full z-[200] min-w-[min(280px,70vw)] pt-2 ${
+                                        className={`absolute top-full z-[200] min-w-[min(300px,70vw)] pt-2 ${
                                             item.label === t('partnership') ||
                                             item.label === t('makerspace')
                                                 ? 'right-0'
@@ -319,38 +362,52 @@ export default function Header() {
                                                     : 'border-white/10 bg-[#0d1117]/95 backdrop-blur-xl shadow-black/40'
                                             }`}
                                         >
-                                            {item.children.map((child) => (
-                                                <Link
-                                                    key={`${item.label}-${child.href}-${child.label}`}
-                                                    href={child.href}
-                                                    className={`block rounded-xl px-4 py-3 transition-colors ${
-                                                        isPastHero
-                                                            ? 'hover:bg-teal-50'
-                                                            : 'hover:bg-white/10'
-                                                    }`}
-                                                    onClick={() => {
-                                                        clearDropdownCloseTimer()
-                                                        setOpenDropdown(null)
-                                                    }}
-                                                >
-                                                    <span
-                                                        className={`block text-[13px] font-bold break-keep ${
-                                                            isPastHero ? 'text-slate-800' : 'text-white'
+                                            {item.children.map((child) => {
+                                                const ChildIcon = child.icon
+                                                return (
+                                                    <Link
+                                                        key={`${item.label}-${child.href}-${child.label}`}
+                                                        href={child.href}
+                                                        className={`flex items-start gap-3 rounded-xl px-3 py-3 transition-colors ${
+                                                            isPastHero
+                                                                ? 'hover:bg-teal-50'
+                                                                : 'hover:bg-white/10'
                                                         }`}
+                                                        onClick={() => {
+                                                            clearDropdownCloseTimer()
+                                                            setOpenDropdown(null)
+                                                        }}
                                                     >
-                                                        {child.label}
-                                                    </span>
-                                                    {child.desc && (
                                                         <span
-                                                            className={`mt-0.5 block text-[11px] font-medium break-keep ${
-                                                                isPastHero ? 'text-slate-500' : 'text-white/45'
+                                                            className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                                                isPastHero
+                                                                    ? 'bg-teal-50 text-teal-600'
+                                                                    : 'bg-white/10 text-teal-300'
                                                             }`}
                                                         >
-                                                            {child.desc}
+                                                            <ChildIcon className="h-4 w-4" aria-hidden />
                                                         </span>
-                                                    )}
-                                                </Link>
-                                            ))}
+                                                        <span className="min-w-0">
+                                                            <span
+                                                                className={`block text-[13px] font-bold break-keep ${
+                                                                    isPastHero ? 'text-slate-800' : 'text-white'
+                                                                }`}
+                                                            >
+                                                                {child.label}
+                                                            </span>
+                                                            {child.desc && (
+                                                                <span
+                                                                    className={`mt-0.5 block text-[11px] font-medium break-keep ${
+                                                                        isPastHero ? 'text-slate-500' : 'text-white/45'
+                                                                    }`}
+                                                                >
+                                                                    {child.desc}
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </Link>
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -360,16 +417,17 @@ export default function Header() {
                                 key={item.label}
                                 href={item.href}
                                 external={item.external}
-                                className={`rounded-xl font-semibold transition-colors duration-200 whitespace-nowrap break-keep shrink min-w-0 [font-size:calc(1em*var(--nav-fit,1))] px-[calc(0.55rem*var(--nav-fit,1))] xl:px-[calc(0.85rem*var(--nav-fit,1))] 2xl:px-[calc(1.1rem*var(--nav-fit,1))] py-2 ${
+                                className={`inline-flex items-center gap-1 rounded-xl font-semibold transition-colors duration-200 whitespace-nowrap break-keep shrink min-w-0 [font-size:calc(1em*var(--nav-fit,1))] px-[calc(0.55rem*var(--nav-fit,1))] xl:px-[calc(0.85rem*var(--nav-fit,1))] 2xl:px-[calc(1.1rem*var(--nav-fit,1))] py-2 ${
                                     isPastHero
                                         ? 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
                                         : 'text-white/90 hover:text-white hover:bg-white/15'
                                 }`}
                             >
-                                {item.label}
+                                <ItemIcon className="shrink-0 opacity-70 w-[1.05em] h-[1.05em]" aria-hidden />
+                                <span className="break-keep">{item.label}</span>
                             </HeaderNavLink>
                         )
-                    )}
+                    })}
                 </nav>
 
                 {/* Actions — 모바일에서 아이콘 영역 축소 */}
@@ -521,7 +579,9 @@ export default function Header() {
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] ml-1 opacity-80">Menu Navigation</span>
                             </div>
 
-                            {navItems.map((item) => (
+                            {navItems.map((item) => {
+                                const ItemIcon = item.icon
+                                return (
                                 <motion.div key={item.label} variants={{ hidden: { x: -20, opacity: 0 }, show: { x: 0, opacity: 1 } }}>
                                     {item.children?.length ? (
                                         <div className="mb-2 space-y-2">
@@ -532,15 +592,7 @@ export default function Header() {
                                                     className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group flex-1 shadow-lg shadow-black/20"
                                                 >
                                                     <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
-                                                        {item.label === t('servicesGuides') ? (
-                                                            <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
-                                                        ) : item.label === t('support') ? (
-                                                            <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
-                                                        ) : item.label === t('makerspace') ? (
-                                                            <MapPin className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
-                                                        ) : (
-                                                            <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
-                                                        )}
+                                                        <ItemIcon className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
                                                     </div>
                                                     <span className="tracking-tight">{item.label}</span>
                                                     <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
@@ -565,23 +617,31 @@ export default function Header() {
                                             </div>
                                             {mobileExpanded === item.label && (
                                                 <div className="ml-4 space-y-1.5 border-l border-white/10 pl-3">
-                                                    {item.children.map((child) => (
+                                                    {item.children.map((child) => {
+                                                        const ChildIcon = child.icon
+                                                        return (
                                                         <Link
                                                             key={`${item.label}-${child.href}-${child.label}`}
                                                             href={child.href}
                                                             onClick={() => setMobileOpen(false)}
-                                                            className="block rounded-xl bg-white/[0.04] border border-white/10 px-4 py-3.5 hover:bg-teal-500/15 hover:border-teal-500/25"
+                                                            className="flex items-start gap-3 rounded-xl bg-white/[0.04] border border-white/10 px-3 py-3.5 hover:bg-teal-500/15 hover:border-teal-500/25"
                                                         >
-                                                            <span className="block text-[15px] font-bold text-white/90">
-                                                                {child.label}
+                                                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-teal-300/90">
+                                                                <ChildIcon className="h-4 w-4" aria-hidden />
                                                             </span>
-                                                            {child.desc && (
-                                                                <span className="mt-0.5 block text-[11px] text-white/40">
-                                                                    {child.desc}
+                                                            <span className="min-w-0">
+                                                                <span className="block text-[15px] font-bold text-white/90">
+                                                                    {child.label}
                                                                 </span>
-                                                            )}
+                                                                {child.desc && (
+                                                                    <span className="mt-0.5 block text-[11px] text-white/40">
+                                                                        {child.desc}
+                                                                    </span>
+                                                                )}
+                                                            </span>
                                                         </Link>
-                                                    ))}
+                                                        )
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
@@ -593,22 +653,15 @@ export default function Header() {
                                             className="px-6 py-4.5 min-h-[64px] rounded-2xl text-[18px] font-black text-white/90 bg-white/5 border border-white/10 hover:bg-teal-500/20 hover:border-teal-500/30 hover:text-teal-400 active:scale-[0.98] transition-all flex items-center group mb-2 shadow-lg shadow-black/20"
                                         >
                                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mr-4 group-hover:bg-teal-500/20 transition-colors">
-                                                {item.label === t('servicesGuides') && <Boxes className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('quote') && <Zap className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('customProducts') && <Gift className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('products') && <Printer className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('expert') && <Sparkles className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('orders') && <Search className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('support') && <MessageSquare className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('makerspace') && <MapPin className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
-                                                {item.label === t('partnership') && <Handshake className="w-5 h-5 text-white/40 group-hover:text-teal-400" />}
+                                                <ItemIcon className="w-5 h-5 text-white/40 group-hover:text-teal-400" />
                                             </div>
                                             <span className="group-hover:translate-x-1 transition-transform tracking-tight">{item.label}</span>
                                             <ChevronRight className="w-5 h-5 ml-auto text-white/20 group-hover:text-teal-400 transition-colors" />
                                         </HeaderNavLink>
                                     )}
                                 </motion.div>
-                            ))}
+                                )
+                            })}
 
                             <div className="h-px bg-slate-200 my-2" />
 
