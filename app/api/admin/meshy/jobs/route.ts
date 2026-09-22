@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
         const total = Number(countRow?.c) || 0
 
-        let list: Awaited<ReturnType<D1PreparedStatement['all']>>
+        let list: { results?: Record<string, unknown>[] }
         try {
             list = await env.DB.prepare(
                 `SELECT
