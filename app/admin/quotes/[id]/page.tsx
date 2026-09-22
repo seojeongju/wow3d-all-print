@@ -140,9 +140,38 @@ export default function QuoteEditPage() {
             }
 
             const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+            // Meshy 카드 등: ?kind=quote → 견적 ID만 조회 (주문 API 404 콘솔 노이즈 방지)
+            // 견적 관리 목록: 파라미터 없음 → 주문 ID로 견적서 수정
+            const kind =
+                typeof window !== 'undefined'
+                    ? new URLSearchParams(window.location.search).get('kind')
+                    : null;
 
             try {
-                // 1) 주문 ID로 조회 (기존 견적서 수정 화면)
+                if (kind === 'quote') {
+                    const quoteRes = await fetch(`/api/admin/quotes/${id}`, { headers, cache: 'no-store' });
+                    const quoteJson = await quoteRes.json();
+                    if (cancelled) return;
+
+                    if (quoteRes.ok && quoteJson.success && quoteJson.data) {
+                        const q = quoteJson.data as StandaloneQuote;
+                        if (q.orderId != null && Number(q.orderId) > 0) {
+                            router.replace(`/admin/quotes/${q.orderId}`);
+                            return;
+                        }
+                        setStandaloneQuote(q);
+                        return;
+                    }
+
+                    toast({
+                        title: '데이터 로드 실패',
+                        description: '견적을 찾을 수 없습니다.',
+                        variant: 'destructive',
+                    });
+                    return;
+                }
+
+                // 주문 ID로 조회 (기존 견적서 수정 화면)
                 const orderRes = await fetch(`/api/admin/orders/${id}`, { headers, cache: 'no-store' });
                 const orderJson = await orderRes.json();
                 if (cancelled) return;
@@ -152,14 +181,13 @@ export default function QuoteEditPage() {
                     return;
                 }
 
-                // 2) 견적(quotes) ID로 조회 — Meshy 카드 등에서 견적번호로 진입할 때
+                // 구 링크 호환: 주문 없으면 견적으로 한 번 더 시도
                 const quoteRes = await fetch(`/api/admin/quotes/${id}`, { headers, cache: 'no-store' });
                 const quoteJson = await quoteRes.json();
                 if (cancelled) return;
 
                 if (quoteRes.ok && quoteJson.success && quoteJson.data) {
                     const q = quoteJson.data as StandaloneQuote;
-                    // 주문에 연결된 견적이면 주문 견적서 수정 화면으로 이동
                     if (q.orderId != null && Number(q.orderId) > 0) {
                         router.replace(`/admin/quotes/${q.orderId}`);
                         return;

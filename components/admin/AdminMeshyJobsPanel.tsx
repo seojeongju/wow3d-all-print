@@ -638,7 +638,7 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                         <div className="flex flex-wrap gap-1 text-[9px] font-bold">
                                             {j.quoteId != null ? (
                                                 <Link
-                                                    href={`/admin/quotes/${j.quoteId}`}
+                                                    href={`/admin/quotes/${j.quoteId}?kind=quote`}
                                                     className="rounded bg-white/8 px-1.5 py-0.5 text-white/60 hover:bg-white/12 inline-flex items-center gap-0.5"
                                                 >
                                                     견적 #{j.quoteId}
