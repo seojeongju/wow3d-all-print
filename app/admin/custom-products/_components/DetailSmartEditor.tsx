@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -36,8 +36,8 @@ import {
     Underline as UnderlineIcon,
     Undo2,
     X,
-    Type,
     Library,
+    Table2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { detailBodyToEditorHtml, sanitizeDetailHtml } from '@/lib/sanitize-html'
@@ -79,6 +79,11 @@ function readFileAsDataUrl(file: File): Promise<string> {
     })
 }
 
+function keepEditorSelection(e: ReactMouseEvent) {
+    // 버튼 클릭으로 에디터 포커스/선택이 풀리면 bold·링크·글꼴 등이 무반응처럼 보임
+    e.preventDefault()
+}
+
 function ToolBtn({
     active,
     disabled,
@@ -97,6 +102,7 @@ function ToolBtn({
             type="button"
             title={title}
             disabled={disabled}
+            onMouseDown={keepEditorSelection}
             onClick={onClick}
             className={cn(
                 'h-8 min-w-8 px-1.5 rounded inline-flex items-center justify-center text-[#333] hover:bg-[#f0f1f3] disabled:opacity-30',
@@ -112,16 +118,22 @@ function InsertBtn({
     icon: Icon,
     label,
     onClick,
+    active,
 }: {
     icon: React.ComponentType<{ className?: string }>
     label: string
     onClick: () => void
+    active?: boolean
 }) {
     return (
         <button
             type="button"
+            onMouseDown={keepEditorSelection}
             onClick={onClick}
-            className="flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-md hover:bg-[#f0f1f3] text-[#333] min-w-[52px]"
+            className={cn(
+                'flex flex-col items-center gap-1 px-2.5 py-1.5 rounded-md hover:bg-[#f0f1f3] text-[#333] min-w-[52px]',
+                active && 'bg-[#e8f8ef] text-[#03c75a]'
+            )}
         >
             <Icon className="w-5 h-5" />
             <span className="text-[11px] font-bold">{label}</span>
@@ -149,10 +161,28 @@ export default function DetailSmartEditor({
     const [showHtml, setShowHtml] = useState(false)
     const [htmlDraft, setHtmlDraft] = useState('')
     const [uploading, setUploading] = useState(false)
-    const [sidebar, setSidebar] = useState<'none' | 'library' | 'template'>('none')
+    const [sidebar, setSidebar] = useState<'none' | 'library' | 'template' | 'blocks'>('none')
     const [registering, setRegistering] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
     const initialContent = detailBodyToEditorHtml(initialHtml)
+
+    const exitHtmlMode = useCallback(() => {
+        if (!showHtml || !editor || editor.isDestroyed) return
+        editor.commands.setContent(htmlDraft || '<p></p>', { emitUpdate: false })
+        setShowHtml(false)
+    }, [editor, htmlDraft, showHtml])
+
+    const withEditor = useCallback(
+        (fn: (ed: NonNullable<typeof editor>) => void) => {
+            if (!editor || editor.isDestroyed) return
+            if (showHtml) {
+                editor.commands.setContent(htmlDraft || '<p></p>', { emitUpdate: false })
+                setShowHtml(false)
+            }
+            fn(editor)
+        },
+        [editor, htmlDraft, showHtml]
+    )
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -341,45 +371,102 @@ export default function DetailSmartEditor({
     }
 
     const applyBlockType = (v: 'p' | 'h1' | 'h2' | 'h3') => {
-        if (!editor || editor.isDestroyed) return
-        // clearNodes로 목록·제목·인용 등 블록을 정리한 뒤 목표 단락/제목으로 설정
-        // (toggleHeading은 이미 제목일 때 다시 누르면 해제되어 셀렉트와 맞지 않음)
-        if (v === 'p') {
-            editor.chain().focus().clearNodes().setParagraph().run()
-            return
-        }
-        const level = v === 'h1' ? 1 : v === 'h2' ? 2 : 3
-        editor.chain().focus().clearNodes().setHeading({ level }).run()
+        withEditor((ed) => {
+            if (v === 'p') {
+                ed.chain().focus().clearNodes().setParagraph().run()
+                return
+            }
+            const level = v === 'h1' ? 1 : v === 'h2' ? 2 : 3
+            ed.chain().focus().clearNodes().setHeading({ level }).run()
+        })
     }
 
     const applyFontFamily = (v: string) => {
-        if (!editor || editor.isDestroyed) return
-        if (v === FONT_DEFAULT || !v) {
-            editor.chain().focus().extendMarkRange('textStyle').unsetFontFamily().run()
-            return
-        }
-        editor.chain().focus().setFontFamily(v).run()
+        withEditor((ed) => {
+            if (v === FONT_DEFAULT || !v) {
+                ed.chain().focus().extendMarkRange('textStyle').unsetFontFamily().run()
+                return
+            }
+            ed.chain().focus().setFontFamily(v).run()
+        })
     }
 
     const applyFontSize = (v: string) => {
-        if (!editor || editor.isDestroyed) return
-        if (v === SIZE_DEFAULT || !v) {
-            editor.chain().focus().extendMarkRange('textStyle').unsetFontSize().run()
-            return
-        }
-        editor.chain().focus().setFontSize(v).run()
+        withEditor((ed) => {
+            if (v === SIZE_DEFAULT || !v) {
+                ed.chain().focus().extendMarkRange('textStyle').unsetFontSize().run()
+                return
+            }
+            ed.chain().focus().setFontSize(v).run()
+        })
     }
 
     const setLink = () => {
-        if (!editor) return
-        const prev = editor.getAttributes('link').href as string | undefined
-        const url = window.prompt('링크 URL', prev || 'https://')
-        if (url === null) return
-        if (!url.trim()) {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run()
-            return
-        }
-        editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
+        withEditor((ed) => {
+            const prev = ed.getAttributes('link').href as string | undefined
+            const url = window.prompt('링크 URL', prev || 'https://')
+            if (url === null) return
+            if (!url.trim()) {
+                ed.chain().focus().extendMarkRange('link').unsetLink().run()
+                return
+            }
+            const href = url.trim()
+            const { empty } = ed.state.selection
+            if (empty) {
+                const label = href.replace(/^https?:\/\//i, '')
+                ed.chain()
+                    .focus()
+                    .insertContent({
+                        type: 'text',
+                        text: label,
+                        marks: [{ type: 'link', attrs: { href } }],
+                    })
+                    .run()
+                return
+            }
+            ed.chain().focus().extendMarkRange('link').setLink({ href }).run()
+        })
+    }
+
+    const insertTable = () => {
+        withEditor((ed) => {
+            ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+        })
+    }
+
+    const CONTENT_BLOCKS: { id: string; label: string; html: string }[] = [
+        {
+            id: 'title-body',
+            label: '제목 + 본문',
+            html: '<h2>섹션 제목</h2><p>여기에 설명을 입력하세요.</p>',
+        },
+        {
+            id: 'quote',
+            label: '강조 인용',
+            html: '<blockquote><p>고객에게 전달할 핵심 메시지를 적어 주세요.</p></blockquote><p></p>',
+        },
+        {
+            id: 'checklist',
+            label: '체크 리스트',
+            html: '<h3>확인 사항</h3><ul><li>항목 1</li><li>항목 2</li><li>항목 3</li></ul><p></p>',
+        },
+        {
+            id: 'steps',
+            label: '진행 단계',
+            html: '<h3>이용 순서</h3><ol><li>옵션을 선택합니다.</li><li>견적·문의를 진행합니다.</li><li>제작·배송을 안내드립니다.</li></ol><p></p>',
+        },
+        {
+            id: 'divider',
+            label: '구분선 + 여백',
+            html: '<hr><p></p>',
+        },
+    ]
+
+    const insertContentBlock = (html: string) => {
+        withEditor((ed) => {
+            ed.chain().focus().insertContent(html).run()
+            setSidebar('none')
+        })
     }
 
     return (
@@ -429,33 +516,31 @@ export default function DetailSmartEditor({
                         <InsertBtn
                             icon={ImageIcon}
                             label="사진"
-                            onClick={() => fileRef.current?.click()}
+                            onClick={() => {
+                                exitHtmlMode()
+                                fileRef.current?.click()
+                            }}
                         />
                         <InsertBtn
                             icon={Quote}
                             label="인용구"
-                            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                            onClick={() =>
+                                withEditor((ed) => ed.chain().focus().toggleBlockquote().run())
+                            }
                         />
                         <InsertBtn
                             icon={Minus}
                             label="구분선"
-                            onClick={() => editor?.chain().focus().setHorizontalRule().run()}
-                        />
-                        <InsertBtn icon={Link2} label="링크" onClick={setLink} />
-                        <InsertBtn
-                            icon={Type}
-                            label="표"
                             onClick={() =>
-                                editor
-                                    ?.chain()
-                                    .focus()
-                                    .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-                                    .run()
+                                withEditor((ed) => ed.chain().focus().setHorizontalRule().run())
                             }
                         />
+                        <InsertBtn icon={Link2} label="링크" onClick={setLink} />
+                        <InsertBtn icon={Table2} label="표" onClick={insertTable} />
                         <InsertBtn
                             icon={Code2}
                             label="HTML"
+                            active={showHtml}
                             onClick={() => {
                                 if (!editor) return
                                 if (!showHtml) {
@@ -470,12 +555,16 @@ export default function DetailSmartEditor({
                         <InsertBtn
                             icon={Plus}
                             label="블록"
-                            onClick={() => editor?.chain().focus().insertContent('<p></p>').run()}
+                            active={sidebar === 'blocks'}
+                            onClick={() =>
+                                setSidebar((s) => (s === 'blocks' ? 'none' : 'blocks'))
+                            }
                         />
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                         <button
                             type="button"
+                            onMouseDown={keepEditorSelection}
                             onClick={() =>
                                 setSidebar((s) => (s === 'library' ? 'none' : 'library'))
                             }
@@ -491,6 +580,7 @@ export default function DetailSmartEditor({
                         </button>
                         <button
                             type="button"
+                            onMouseDown={keepEditorSelection}
                             onClick={() =>
                                 setSidebar((s) => (s === 'template' ? 'none' : 'template'))
                             }
@@ -511,6 +601,7 @@ export default function DetailSmartEditor({
                     <select
                         className="h-8 rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
                         title="단락 스타일"
+                        onMouseDown={keepEditorSelection}
                         value={
                             editor?.isActive('heading', { level: 1 })
                                 ? 'h1'
@@ -533,6 +624,7 @@ export default function DetailSmartEditor({
                     <select
                         className="h-8 max-w-[130px] rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
                         title="글꼴"
+                        onMouseDown={keepEditorSelection}
                         value={normalizeFontFamily(
                             (editor?.getAttributes('textStyle').fontFamily as string | undefined) ||
                                 ''
@@ -549,6 +641,7 @@ export default function DetailSmartEditor({
                     <select
                         className="h-8 rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
                         title="글자 크기"
+                        onMouseDown={keepEditorSelection}
                         value={
                             (editor?.getAttributes('textStyle').fontSize as string | undefined) ||
                             SIZE_DEFAULT
@@ -566,39 +659,39 @@ export default function DetailSmartEditor({
                     <ToolBtn
                         title="굵게"
                         active={editor?.isActive('bold')}
-                        onClick={() => editor?.chain().focus().toggleBold().run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleBold().run())}
                     >
                         <Bold className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="기울임"
                         active={editor?.isActive('italic')}
-                        onClick={() => editor?.chain().focus().toggleItalic().run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleItalic().run())}
                     >
                         <Italic className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="밑줄"
                         active={editor?.isActive('underline')}
-                        onClick={() => editor?.chain().focus().toggleUnderline().run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleUnderline().run())}
                     >
                         <UnderlineIcon className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="취소선"
                         active={editor?.isActive('strike')}
-                        onClick={() => editor?.chain().focus().toggleStrike().run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleStrike().run())}
                     >
                         <Strikethrough className="w-4 h-4" />
                     </ToolBtn>
 
-                    <label className="h-8 w-8 rounded inline-flex items-center justify-center hover:bg-[#f0f1f3] cursor-pointer" title="글자색">
+                    <label className="h-8 w-8 rounded inline-flex items-center justify-center hover:bg-[#f0f1f3] cursor-pointer" title="글자색" onMouseDown={keepEditorSelection}>
                         <span className="text-[12px] font-black border-b-2 border-[#ff5252]">A</span>
                         <input
                             type="color"
                             className="sr-only"
                             onChange={(e) =>
-                                editor?.chain().focus().setColor(e.target.value).run()
+                                withEditor((ed) => ed.chain().focus().setColor(e.target.value).run())
                             }
                         />
                     </label>
@@ -606,7 +699,9 @@ export default function DetailSmartEditor({
                         title="형광펜"
                         active={editor?.isActive('highlight')}
                         onClick={() =>
-                            editor?.chain().focus().toggleHighlight({ color: '#fff59d' }).run()
+                            withEditor((ed) =>
+                                ed.chain().focus().toggleHighlight({ color: '#fff59d' }).run()
+                            )
                         }
                     >
                         <Highlighter className="w-4 h-4" />
@@ -617,28 +712,28 @@ export default function DetailSmartEditor({
                     <ToolBtn
                         title="왼쪽"
                         active={editor?.isActive({ textAlign: 'left' })}
-                        onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('left').run())}
                     >
                         <AlignLeft className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="가운데"
                         active={editor?.isActive({ textAlign: 'center' })}
-                        onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('center').run())}
                     >
                         <AlignCenter className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="오른쪽"
                         active={editor?.isActive({ textAlign: 'right' })}
-                        onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('right').run())}
                     >
                         <AlignRight className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="양쪽"
                         active={editor?.isActive({ textAlign: 'justify' })}
-                        onClick={() => editor?.chain().focus().setTextAlign('justify').run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().setTextAlign('justify').run())}
                     >
                         <AlignJustify className="w-4 h-4" />
                     </ToolBtn>
@@ -648,31 +743,31 @@ export default function DetailSmartEditor({
                     <ToolBtn
                         title="글머리"
                         active={editor?.isActive('bulletList')}
-                        onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleBulletList().run())}
                     >
                         <List className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="번호"
                         active={editor?.isActive('orderedList')}
-                        onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleOrderedList().run())}
                     >
                         <ListOrdered className="w-4 h-4" />
                     </ToolBtn>
                     <ToolBtn
                         title="제목"
                         active={editor?.isActive('heading', { level: 2 })}
-                        onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                        onClick={() => withEditor((ed) => ed.chain().focus().toggleHeading({ level: 2 }).run())}
                     >
                         <Heading2 className="w-4 h-4" />
                     </ToolBtn>
 
                     <span className="w-px h-5 bg-[#e5e8eb] mx-1" />
 
-                    <ToolBtn title="실행취소" onClick={() => editor?.chain().focus().undo().run()}>
+                    <ToolBtn title="실행취소" onClick={() => withEditor((ed) => ed.chain().focus().undo().run())}>
                         <Undo2 className="w-4 h-4" />
                     </ToolBtn>
-                    <ToolBtn title="다시실행" onClick={() => editor?.chain().focus().redo().run()}>
+                    <ToolBtn title="다시실행" onClick={() => withEditor((ed) => ed.chain().focus().redo().run())}>
                         <Redo2 className="w-4 h-4" />
                     </ToolBtn>
                 </div>
@@ -721,7 +816,11 @@ export default function DetailSmartEditor({
                     <aside className="w-[280px] shrink-0 border-l border-[#e5e8eb] bg-white overflow-y-auto hidden md:block">
                         <div className="p-4 space-y-3">
                             <h3 className="text-[14px] font-bold">
-                                {sidebar === 'library' ? '라이브러리' : '템플릿'}
+                                {sidebar === 'library'
+                                    ? '라이브러리'
+                                    : sidebar === 'blocks'
+                                      ? '블록 삽입'
+                                      : '템플릿'}
                             </h3>
                             {sidebar === 'library' ? (
                                 <div className="space-y-2">
@@ -733,10 +832,34 @@ export default function DetailSmartEditor({
                                     <button
                                         type="button"
                                         className="w-full h-10 rounded-md border border-dashed border-[#c9cdd2] text-[13px] font-bold text-[#555] hover:border-[#03c75a] hover:text-[#03c75a]"
-                                        onClick={() => fileRef.current?.click()}
+                                        onMouseDown={keepEditorSelection}
+                                        onClick={() => {
+                                            exitHtmlMode()
+                                            fileRef.current?.click()
+                                        }}
                                     >
                                         + 사진 추가
                                     </button>
+                                </div>
+                            ) : sidebar === 'blocks' ? (
+                                <div className="space-y-2">
+                                    <p className="text-[12px] text-[#868b94] leading-relaxed">
+                                        자주 쓰는 상세 구성 블록을 커서 위치에 삽입합니다.
+                                    </p>
+                                    {CONTENT_BLOCKS.map((block) => (
+                                        <button
+                                            key={block.id}
+                                            type="button"
+                                            className="w-full text-left rounded-md border border-[#e5e8eb] px-3 py-3 hover:border-[#03c75a] hover:bg-[#f3fff7]"
+                                            onMouseDown={keepEditorSelection}
+                                            onClick={() => insertContentBlock(block.html)}
+                                        >
+                                            <div className="text-[13px] font-bold">{block.label}</div>
+                                            <div className="text-[11px] text-[#868b94] mt-0.5">
+                                                클릭하여 삽입
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             ) : (
                                 <div className="space-y-2">
@@ -761,9 +884,11 @@ export default function DetailSmartEditor({
                                             key={tpl.id}
                                             type="button"
                                             className="w-full text-left rounded-md border border-[#e5e8eb] px-3 py-3 hover:border-[#03c75a] hover:bg-[#f3fff7]"
+                                            onMouseDown={keepEditorSelection}
                                             onClick={() => {
-                                                editor?.commands.setContent(tpl.html)
-                                                setShowHtml(false)
+                                                withEditor((ed) => {
+                                                    ed.commands.setContent(tpl.html)
+                                                })
                                                 setSidebar('none')
                                             }}
                                         >
@@ -787,7 +912,11 @@ export default function DetailSmartEditor({
                         type="button"
                         className="h-9 w-9 rounded-full text-white/90 hover:bg-white/10 inline-flex items-center justify-center"
                         title="사진"
-                        onClick={() => fileRef.current?.click()}
+                        onMouseDown={keepEditorSelection}
+                        onClick={() => {
+                            exitHtmlMode()
+                            fileRef.current?.click()
+                        }}
                     >
                         <ImageIcon className="w-4 h-4" />
                     </button>
@@ -795,7 +924,10 @@ export default function DetailSmartEditor({
                         type="button"
                         className="h-9 w-9 rounded-full text-white/90 hover:bg-white/10 inline-flex items-center justify-center"
                         title="구분선"
-                        onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+                        onMouseDown={keepEditorSelection}
+                        onClick={() =>
+                            withEditor((ed) => ed.chain().focus().setHorizontalRule().run())
+                        }
                     >
                         <Minus className="w-4 h-4" />
                     </button>
@@ -803,7 +935,10 @@ export default function DetailSmartEditor({
                         type="button"
                         className="h-9 w-9 rounded-full text-white/90 hover:bg-white/10 inline-flex items-center justify-center"
                         title="인용"
-                        onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                        onMouseDown={keepEditorSelection}
+                        onClick={() =>
+                            withEditor((ed) => ed.chain().focus().toggleBlockquote().run())
+                        }
                     >
                         <Quote className="w-4 h-4" />
                     </button>
@@ -811,6 +946,7 @@ export default function DetailSmartEditor({
                         type="button"
                         className="h-9 w-9 rounded-full text-white/90 hover:bg-white/10 inline-flex items-center justify-center"
                         title="링크"
+                        onMouseDown={keepEditorSelection}
                         onClick={setLink}
                     >
                         <Link2 className="w-4 h-4" />
