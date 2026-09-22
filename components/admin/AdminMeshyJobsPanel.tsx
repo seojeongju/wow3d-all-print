@@ -62,6 +62,10 @@ export type AdminMeshyJob = {
     quoteSizeY: number | null
     quoteSizeZ: number | null
     quoteScalePercent: number | null
+    /** 견적까지 진행된 경우 최종 금액(원). 미견적·0원이면 null */
+    quoteTotalPrice: number | null
+    /** 해당 견적이 현재 장바구니에 있는지 */
+    inCart: boolean
     orderId: number | null
     orderNumber: string | null
     createdAt: string
@@ -604,16 +608,39 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                             </p>
                                         )}
 
+                                        {j.quoteTotalPrice != null && (
+                                            <p className="text-[11px] font-black text-emerald-300 tabular-nums">
+                                                ₩{j.quoteTotalPrice.toLocaleString()}
+                                            </p>
+                                        )}
+
                                         <div className="flex flex-wrap gap-1 text-[9px] font-bold">
                                             {j.quoteId != null ? (
-                                                <span className="rounded bg-white/8 px-1.5 py-0.5 text-white/60">
+                                                <Link
+                                                    href={`/admin/quotes/${j.quoteId}`}
+                                                    className="rounded bg-white/8 px-1.5 py-0.5 text-white/60 hover:bg-white/12 inline-flex items-center gap-0.5"
+                                                >
                                                     견적 #{j.quoteId}
-                                                </span>
+                                                    <ExternalLink className="w-3 h-3" />
+                                                </Link>
                                             ) : (
                                                 <span className="rounded bg-white/5 px-1.5 py-0.5 text-white/35">
                                                     견적 미연결
                                                 </span>
                                             )}
+                                            {j.inCart && (
+                                                <span className="rounded bg-sky-500/20 px-1.5 py-0.5 text-sky-200">
+                                                    장바구니 보관중
+                                                </span>
+                                            )}
+                                            {j.quoteId != null &&
+                                                j.quoteTotalPrice != null &&
+                                                !j.inCart &&
+                                                j.orderId == null && (
+                                                    <span className="rounded bg-white/5 px-1.5 py-0.5 text-white/40">
+                                                        장바구니 없음
+                                                    </span>
+                                                )}
                                             {j.orderId != null && (
                                                 <Link
                                                     href={`/admin/orders?detail=${j.orderId}`}

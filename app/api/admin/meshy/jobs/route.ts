@@ -88,6 +88,8 @@ export async function GET(req: NextRequest) {
                 q.dimensions_y AS quote_dimensions_y,
                 q.dimensions_z AS quote_dimensions_z,
                 q.model_transform AS quote_model_transform,
+                q.total_price AS quote_total_price,
+                (SELECT COUNT(*) FROM cart c WHERE c.quote_id = j.quote_id) AS cart_count,
                 (SELECT oi.order_id FROM order_items oi WHERE oi.quote_id = j.quote_id LIMIT 1) AS order_id,
                 (SELECT o.order_number FROM order_items oi
                     JOIN orders o ON o.id = oi.order_id
@@ -131,6 +133,12 @@ export async function GET(req: NextRequest) {
                         return null
                     }
                 })(),
+                quoteTotalPrice: (() => {
+                    if (r.quote_id == null) return null
+                    const n = Number(r.quote_total_price)
+                    return Number.isFinite(n) && n > 0 ? Math.round(n) : null
+                })(),
+                inCart: r.quote_id != null && Number(r.cart_count) > 0,
                 orderId: r.order_id != null ? Number(r.order_id) : null,
                 orderNumber: (r.order_number as string) || null,
                 createdAt: String(r.created_at || ''),
