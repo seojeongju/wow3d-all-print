@@ -138,7 +138,7 @@ export default function QuoteEditPage() {
                 /* ignore */
             }
 
-            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
             try {
                 // 1) 주문 ID로 조회 (기존 견적서 수정 화면)
