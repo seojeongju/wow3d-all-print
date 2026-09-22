@@ -166,24 +166,6 @@ export default function DetailSmartEditor({
     const [uploadError, setUploadError] = useState<string | null>(null)
     const initialContent = detailBodyToEditorHtml(initialHtml)
 
-    const exitHtmlMode = useCallback(() => {
-        if (!showHtml || !editor || editor.isDestroyed) return
-        editor.commands.setContent(htmlDraft || '<p></p>', { emitUpdate: false })
-        setShowHtml(false)
-    }, [editor, htmlDraft, showHtml])
-
-    const withEditor = useCallback(
-        (fn: (ed: NonNullable<typeof editor>) => void) => {
-            if (!editor || editor.isDestroyed) return
-            if (showHtml) {
-                editor.commands.setContent(htmlDraft || '<p></p>', { emitUpdate: false })
-                setShowHtml(false)
-            }
-            fn(editor)
-        },
-        [editor, htmlDraft, showHtml]
-    )
-
     const editor = useEditor({
         immediatelyRender: false,
         shouldRerenderOnTransaction: true,
@@ -251,6 +233,24 @@ export default function DetailSmartEditor({
             },
         },
     })
+
+    const exitHtmlMode = useCallback(() => {
+        if (!showHtml || !editor || editor.isDestroyed) return
+        editor.commands.setContent(htmlDraft || '<p></p>', { emitUpdate: false })
+        setShowHtml(false)
+    }, [editor, htmlDraft, showHtml])
+
+    const withEditor = useCallback(
+        (fn: (ed: NonNullable<typeof editor>) => void) => {
+            if (!editor || editor.isDestroyed) return
+            if (showHtml) {
+                editor.commands.setContent(htmlDraft || '<p></p>', { emitUpdate: false })
+                setShowHtml(false)
+            }
+            fn(editor)
+        },
+        [editor, htmlDraft, showHtml]
+    )
 
     // 열릴 때 1회만 본문 주입 (업로드/저장으로 initialHtml이 바뀌어도 편집 중 내용 유지)
     useEffect(() => {
