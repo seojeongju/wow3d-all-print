@@ -81,6 +81,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 function keepEditorSelection(e: ReactMouseEvent) {
     // 버튼 클릭으로 에디터 포커스/선택이 풀리면 bold·링크·글꼴 등이 무반응처럼 보임
+    // ※ native <select>에는 쓰면 안 됨 — preventDefault가 드롭다운 자체를 막음
     e.preventDefault()
 }
 
@@ -102,8 +103,11 @@ function ToolBtn({
             type="button"
             title={title}
             disabled={disabled}
-            onMouseDown={keepEditorSelection}
-            onClick={onClick}
+            onMouseDown={(e) => {
+                keepEditorSelection(e)
+                // click 전에 blur되면 선택이 날아가므로 mousedown에서 바로 실행
+                if (!disabled) onClick()
+            }}
             className={cn(
                 'h-8 min-w-8 px-1.5 rounded inline-flex items-center justify-center text-[#333] hover:bg-[#f0f1f3] disabled:opacity-30',
                 active && 'bg-[#e8f8ef] text-[#03c75a]'
@@ -157,6 +161,8 @@ export default function DetailSmartEditor({
     const fileRef = useRef<HTMLInputElement>(null)
     const hydratedRef = useRef(false)
     const insertImageRef = useRef<((file: File) => Promise<void>) | null>(null)
+    /** <select> 열 때 에디터 blur로 사라지는 선택 영역 복원용 */
+    const savedSelectionRef = useRef<{ from: number; to: number } | null>(null)
     const [saveCount, setSaveCount] = useState(0)
     const [showHtml, setShowHtml] = useState(false)
     const [htmlDraft, setHtmlDraft] = useState('')
@@ -250,6 +256,34 @@ export default function DetailSmartEditor({
             fn(editor)
         },
         [editor, htmlDraft, showHtml]
+    )
+
+    const captureEditorSelection = useCallback(() => {
+        if (!editor || editor.isDestroyed) return
+        const { from, to } = editor.state.selection
+        savedSelectionRef.current = { from, to }
+    }, [editor])
+
+    const withCapturedSelection = useCallback(
+        (fn: (ed: NonNullable<typeof editor>) => void) => {
+            withEditor((ed) => {
+                const sel = savedSelectionRef.current
+                if (sel) {
+                    const docSize = ed.state.doc.content.size
+                    const from = Math.max(0, Math.min(sel.from, docSize))
+                    const to = Math.max(0, Math.min(sel.to, docSize))
+                    try {
+                        ed.chain().focus().setTextSelection({ from, to }).run()
+                    } catch {
+                        ed.chain().focus().run()
+                    }
+                } else {
+                    ed.chain().focus().run()
+                }
+                fn(ed)
+            })
+        },
+        [withEditor]
     )
 
     // 열릴 때 1회만 본문 주입 (업로드/저장으로 initialHtml이 바뀌어도 편집 중 내용 유지)
@@ -371,18 +405,18 @@ export default function DetailSmartEditor({
     }
 
     const applyBlockType = (v: 'p' | 'h1' | 'h2' | 'h3') => {
-        withEditor((ed) => {
+        withCapturedSelection((ed) => {
             if (v === 'p') {
-                ed.chain().focus().clearNodes().setParagraph().run()
+                ed.chain().focus().setParagraph().run()
                 return
             }
-            const level = v === 'h1' ? 1 : v === 'h2' ? 2 : 3
-            ed.chain().focus().clearNodes().setHeading({ level }).run()
+            const level = (v === 'h1' ? 1 : v === 'h2' ? 2 : 3) as 1 | 2 | 3
+            ed.chain().focus().setHeading({ level }).run()
         })
     }
 
     const applyFontFamily = (v: string) => {
-        withEditor((ed) => {
+        withCapturedSelection((ed) => {
             if (v === FONT_DEFAULT || !v) {
                 ed.chain().focus().extendMarkRange('textStyle').unsetFontFamily().run()
                 return
@@ -392,7 +426,7 @@ export default function DetailSmartEditor({
     }
 
     const applyFontSize = (v: string) => {
-        withEditor((ed) => {
+        withCapturedSelection((ed) => {
             if (v === SIZE_DEFAULT || !v) {
                 ed.chain().focus().extendMarkRange('textStyle').unsetFontSize().run()
                 return
@@ -601,7 +635,8 @@ export default function DetailSmartEditor({
                     <select
                         className="h-8 rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
                         title="단락 스타일"
-                        onMouseDown={keepEditorSelection}
+                        onMouseDown={captureEditorSelection}
+                        onFocus={captureEditorSelection}
                         value={
                             editor?.isActive('heading', { level: 1 })
                                 ? 'h1'
@@ -624,7 +659,8 @@ export default function DetailSmartEditor({
                     <select
                         className="h-8 max-w-[130px] rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
                         title="글꼴"
-                        onMouseDown={keepEditorSelection}
+                        onMouseDown={captureEditorSelection}
+                        onFocus={captureEditorSelection}
                         value={normalizeFontFamily(
                             (editor?.getAttributes('textStyle').fontFamily as string | undefined) ||
                                 ''
@@ -641,7 +677,8 @@ export default function DetailSmartEditor({
                     <select
                         className="h-8 rounded border border-[#e5e8eb] text-[12px] font-bold px-2 mr-1 bg-white"
                         title="글자 크기"
-                        onMouseDown={keepEditorSelection}
+                        onMouseDown={captureEditorSelection}
+                        onFocus={captureEditorSelection}
                         value={
                             (editor?.getAttributes('textStyle').fontSize as string | undefined) ||
                             SIZE_DEFAULT
@@ -757,17 +794,27 @@ export default function DetailSmartEditor({
                     <ToolBtn
                         title="제목"
                         active={editor?.isActive('heading', { level: 2 })}
-                        onClick={() => withEditor((ed) => ed.chain().focus().toggleHeading({ level: 2 }).run())}
+                        onClick={() =>
+                            withEditor((ed) => ed.chain().focus().toggleHeading({ level: 2 }).run())
+                        }
                     >
                         <Heading2 className="w-4 h-4" />
                     </ToolBtn>
 
                     <span className="w-px h-5 bg-[#e5e8eb] mx-1" />
 
-                    <ToolBtn title="실행취소" onClick={() => withEditor((ed) => ed.chain().focus().undo().run())}>
+                    <ToolBtn
+                        title="실행취소"
+                        disabled={!editor?.can().undo()}
+                        onClick={() => withEditor((ed) => ed.commands.undo())}
+                    >
                         <Undo2 className="w-4 h-4" />
                     </ToolBtn>
-                    <ToolBtn title="다시실행" onClick={() => withEditor((ed) => ed.chain().focus().redo().run())}>
+                    <ToolBtn
+                        title="다시실행"
+                        disabled={!editor?.can().redo()}
+                        onClick={() => withEditor((ed) => ed.commands.redo())}
+                    >
                         <Redo2 className="w-4 h-4" />
                     </ToolBtn>
                 </div>
@@ -996,6 +1043,23 @@ export default function DetailSmartEditor({
                     font-weight: 700;
                     line-height: 1.4;
                     margin: 0.5em 0 0.3em;
+                }
+                /* Tailwind preflight가 list-style을 제거하므로 명시 복원 */
+                .detail-smart-editor ul {
+                    list-style-type: disc;
+                    padding-left: 1.5em;
+                    margin: 0.5em 0 0.75em;
+                }
+                .detail-smart-editor ol {
+                    list-style-type: decimal;
+                    padding-left: 1.5em;
+                    margin: 0.5em 0 0.75em;
+                }
+                .detail-smart-editor li {
+                    margin: 0.2em 0;
+                }
+                .detail-smart-editor li p {
+                    margin: 0;
                 }
                 .detail-smart-editor img,
                 .detail-smart-editor .detail-editor-img {
