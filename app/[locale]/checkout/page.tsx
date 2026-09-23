@@ -24,6 +24,7 @@ import {
 } from '@/lib/shipping-settings'
 import { MESHY_AI_DISCLAIMER_CHECKOUT, MESHY_AI_DISCLAIMER_CHECKOUT_EN } from '@/lib/meshy-disclaimer'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
+import { lineTotalFromStoredQuote } from '@/lib/quote-batch-price'
 import {
     CHECKOUT_CONVERSION_EVENTS,
     CONVERSION_EVENT_CATEGORY,
@@ -307,7 +308,23 @@ function CheckoutContent() {
 
     if (items.length === 0 || orderItems.length === 0) return null
 
-    const totalPriceKWR = Math.round(orderItems.reduce((s, i) => s + (i.quote?.totalPrice || 0) * i.quantity, 0))
+    const totalPriceKWR = Math.round(
+        orderItems.reduce((s, i) => {
+            const q = i.quote
+            if (!q) return s
+            return (
+                s +
+                lineTotalFromStoredQuote({
+                    totalPriceKrw: q.totalPrice || 0,
+                    quantity: i.quantity,
+                    variableCostKrw: q.variableCostKrw,
+                    setupCostKrw: q.setupCostKrw,
+                    minPriceKrw: q.minPriceKrw,
+                    applyVat: true,
+                }).lineTotalKrw
+            )
+        }, 0)
+    )
     const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0)
     
     // 배송비 로직: 관리자 설정에 따른 동적 계산
@@ -549,7 +566,16 @@ function CheckoutContent() {
                                                     </div>
                                                 </div>
                                                 <div className="text-xs font-mono font-bold">
-                                                    ₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}
+                                                    ₩{Math.round(
+                                                        lineTotalFromStoredQuote({
+                                                            totalPriceKrw: item.quote?.totalPrice || 0,
+                                                            quantity: item.quantity,
+                                                            variableCostKrw: item.quote?.variableCostKrw,
+                                                            setupCostKrw: item.quote?.setupCostKrw,
+                                                            minPriceKrw: item.quote?.minPriceKrw,
+                                                            applyVat: true,
+                                                        }).lineTotalKrw
+                                                    ).toLocaleString()}
                                                 </div>
                                             </div>
                                         ))}

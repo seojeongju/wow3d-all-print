@@ -31,6 +31,12 @@ export interface QuoteData {
     // 가격 정보
     totalPrice: number;
     estimatedTimeHours: number;
+    /** 1개당 변동비(공급가) — 수량 배치 견적용 */
+    variableCostKrw?: number;
+    /** 건당 셋업(공급가) */
+    setupCostKrw?: number;
+    /** 견적 시점 최소(기본) 금액 */
+    minPriceKrw?: number;
 
     // 가이드 유입 정보
     guideSource?: string;

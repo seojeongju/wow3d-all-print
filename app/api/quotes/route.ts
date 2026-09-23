@@ -160,6 +160,18 @@ export async function POST(request: NextRequest) {
         let totalPrice = normalizeAmountBeforeSave(Number(body.totalPrice) || 0);
         let estimatedTimeHours = Number(body.estimatedTimeHours) || 0;
         let quotePricingSource: 'server' | 'client' = 'client';
+        let variableCostKrw =
+            body.variableCostKrw != null && Number.isFinite(Number(body.variableCostKrw))
+                ? Math.max(0, Number(body.variableCostKrw))
+                : null;
+        let setupCostKrw =
+            body.setupCostKrw != null && Number.isFinite(Number(body.setupCostKrw))
+                ? Math.max(0, Number(body.setupCostKrw))
+                : null;
+        let minPriceKrw =
+            body.minPriceKrw != null && Number.isFinite(Number(body.minPriceKrw)) && Number(body.minPriceKrw) > 0
+                ? Number(body.minPriceKrw)
+                : null;
 
         // D1 Database가 있는 경우에만 실행
         if (env && env.DB) {
@@ -179,6 +191,11 @@ export async function POST(request: NextRequest) {
                 totalPrice = normalizeAmountBeforeSave(serverQuote.totalPrice);
                 estimatedTimeHours = serverQuote.estimatedTimeHours;
                 quotePricingSource = serverQuote.source;
+                if (serverQuote.source === 'server') {
+                    if (serverQuote.variableCostKrw != null) variableCostKrw = serverQuote.variableCostKrw;
+                    if (serverQuote.setupCostKrw != null) setupCostKrw = serverQuote.setupCostKrw;
+                    if (serverQuote.minPriceKrw !== undefined) minPriceKrw = serverQuote.minPriceKrw ?? null;
+                }
             } else if (body.printMethod === 'sla' || body.printMethod === 'dlp') {
                 const serverQuote = await resolveServerResinQuote(env.DB, {
                     method: body.printMethod,
@@ -193,6 +210,11 @@ export async function POST(request: NextRequest) {
                 totalPrice = normalizeAmountBeforeSave(serverQuote.totalPrice);
                 estimatedTimeHours = serverQuote.estimatedTimeHours;
                 quotePricingSource = serverQuote.source;
+                if (serverQuote.source === 'server') {
+                    if (serverQuote.variableCostKrw != null) variableCostKrw = serverQuote.variableCostKrw;
+                    if (serverQuote.setupCostKrw != null) setupCostKrw = serverQuote.setupCostKrw;
+                    if (serverQuote.minPriceKrw !== undefined) minPriceKrw = serverQuote.minPriceKrw ?? null;
+                }
             }
 
             let runResult: QuoteRunResult;
@@ -312,12 +334,28 @@ export async function POST(request: NextRequest) {
                 }
             }
 
+            // 수량 배치 견적 컬럼 (구 DB면 무시)
+            if (quoteId > 0 && (variableCostKrw != null || setupCostKrw != null || minPriceKrw != null)) {
+                try {
+                    await env.DB.prepare(
+                        `UPDATE quotes SET variable_cost_krw = ?, setup_cost_krw = ?, min_price_krw = ? WHERE id = ?`
+                    )
+                        .bind(variableCostKrw, setupCostKrw, minPriceKrw, quoteId)
+                        .run()
+                } catch {
+                    /* schema_quotes_batch_pricing 미적용 */
+                }
+            }
+
             return successResponse(
                 {
                     id: quoteId,
                     sessionId: sessionId || undefined,
                     totalPrice,
                     estimatedTimeHours,
+                    variableCostKrw: variableCostKrw ?? undefined,
+                    setupCostKrw: setupCostKrw ?? undefined,
+                    minPriceKrw: minPriceKrw ?? undefined,
                     pricingSource: quotePricingSource,
                 },
                 '견적이 저장되었습니다'

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem, Quote } from '@/lib/types';
+import { lineTotalFromStoredQuote } from '@/lib/quote-batch-price';
 
 interface CartState {
     items: CartItem[];
@@ -17,6 +18,19 @@ interface CartState {
     getTotalPrice: () => number;
     getTotalPriceForItems: (itemList: CartItem[]) => number;
     getTotalItems: () => number;
+}
+
+function cartItemLineTotal(item: CartItem): number {
+    const q = item.quote
+    if (!q) return 0
+    return lineTotalFromStoredQuote({
+        totalPriceKrw: q.totalPrice || 0,
+        quantity: item.quantity,
+        variableCostKrw: q.variableCostKrw,
+        setupCostKrw: q.setupCostKrw,
+        minPriceKrw: q.minPriceKrw,
+        applyVat: true,
+    }).lineTotalKrw
 }
 
 export const useCartStore = create<CartState>()(
@@ -48,9 +62,8 @@ export const useCartStore = create<CartState>()(
                     return { items: newItems };
                 }
 
-                // 새로 추가
                 const newItem: CartItem = {
-                    id: Date.now(), // 임시 ID (서버에서 실제 ID 받아와야 함)
+                    id: Date.now(),
                     quoteId: quote.id,
                     quantity,
                     createdAt: new Date().toISOString(),
@@ -111,17 +124,11 @@ export const useCartStore = create<CartState>()(
 
             getTotalPrice: () => {
                 const state = get();
-                return state.items.reduce(
-                    (total, item) => total + (item.quote?.totalPrice || 0) * item.quantity,
-                    0
-                );
+                return state.items.reduce((total, item) => total + cartItemLineTotal(item), 0);
             },
 
             getTotalPriceForItems: (itemList) => {
-                return itemList.reduce(
-                    (total, item) => total + (item.quote?.totalPrice || 0) * item.quantity,
-                    0
-                );
+                return itemList.reduce((total, item) => total + cartItemLineTotal(item), 0);
             },
 
             getTotalItems: () => {
@@ -135,3 +142,5 @@ export const useCartStore = create<CartState>()(
         }
     )
 );
+
+export { cartItemLineTotal };

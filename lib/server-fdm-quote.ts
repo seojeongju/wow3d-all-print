@@ -42,6 +42,9 @@ export type ServerFdmQuoteResult = {
     weightGrams: number
     effectiveInfill: number
     source: 'server' | 'client'
+    variableCostKrw?: number
+    setupCostKrw?: number
+    minPriceKrw?: number | null
     /** 클라이언트와 서버 차이(원). 서버 산출일 때만 */
     deltaKr?: number
 }
@@ -190,6 +193,9 @@ export async function resolveServerFdmQuote(
             weightGrams: q.weightGrams,
             effectiveInfill: q.effectiveInfill,
             source: 'server',
+            variableCostKrw: q.variableCostKrw,
+            setupCostKrw: q.setupCostKrw,
+            minPriceKrw: equipment.minPriceKr ?? null,
             deltaKr,
         }
     } catch (e) {

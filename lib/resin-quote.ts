@@ -88,13 +88,19 @@ export type CalculateResinQuoteInput = {
     /** true면 VAT 10% + 최소견적 + 100원 반올림까지 적용 */
     applyVat?: boolean
     minPriceKr?: number | null
+    /** 수량 — 레진·후가공 ×N, 인건·소모품·장비시간(동일 높이 배치) 1회, 최소 1회 */
+    quantity?: number
 }
 
 export type CalculateResinQuoteResult = {
-    /** 공급가 (레진+기타+장비+인건) */
+    /** 공급가 (레진+기타+장비+인건) — 수량 반영 후 */
     subtotal: number
     /** 표시용 최종 금액 */
     total: number
+    quantity: number
+    effectiveUnitKrw: number
+    variableCostKrw: number
+    setupCostKrw: number
     timeHours: number
     numLayers: number
     volumeMl: number
@@ -109,18 +115,19 @@ export type CalculateResinQuoteResult = {
 
 /** SLA / DLP 견적 일괄 산출 */
 export function calculateResinQuote(input: CalculateResinQuoteInput): CalculateResinQuoteResult {
+    const quantity = Math.max(1, Math.floor(Number(input.quantity) || 1))
     const defaults = resinDefaults(input.method)
-    const volumeMl = Math.max(0, Number(input.volumeCm3) || 0)
-    const materialCost = Math.max(0, Number(input.pricePerMlKr) || 0) * volumeMl
+    const volumeMlUnit = Math.max(0, Number(input.volumeCm3) || 0)
+    const materialCostUnit = Math.max(0, Number(input.pricePerMlKr) || 0) * volumeMlUnit
 
     const consumablesKrw = input.consumablesKrw ?? defaults.consumablesKrw
     const postProcessKrw = input.postProcessKrw ?? defaults.postProcessKrw
-    const postProcessCost = input.postProcessing ? postProcessKrw : 0
-    const otherCost = consumablesKrw + postProcessCost
+    const postProcessCostUnit = input.postProcessing ? postProcessKrw : 0
 
     const laborCost = input.laborCostKrw ?? defaults.laborCostKrw
 
     const layerExposureSec = input.layerExposureSec ?? defaults.layerExposureSec
+    // 동일 높이로 한 판에 배치한다고 가정 → 노출 시간은 수량과 무관
     const timeDetail = estimateResinPrintTimeHours({
         heightMm: input.heightMm,
         layerHeightMm: input.layerHeightMm,
@@ -130,6 +137,12 @@ export function calculateResinQuote(input: CalculateResinQuoteInput): CalculateR
     const rate = Math.max(0, Number(input.hourlyRateKr) || defaults.hourlyRateKr)
     const machineCost = timeDetail.hours * machineRateAfterVolumeDiscount(timeDetail.hours, rate)
 
+    const materialCost = materialCostUnit * quantity
+    const postProcessCost = postProcessCostUnit * quantity
+    // 소모품·인건·장비 = 셋업성 / 레진·후가공 = 변동
+    const otherCost = consumablesKrw + postProcessCost
+    const variableCostKrw = materialCostUnit + postProcessCostUnit
+    const setupCostKrw = laborCost + consumablesKrw + machineCost
     const subtotal = materialCost + otherCost + machineCost + laborCost
 
     let total = subtotal
@@ -141,14 +154,20 @@ export function calculateResinQuote(input: CalculateResinQuoteInput): CalculateR
         total = roundTo100(base * 1.1, 'round')
     } else if (input.minPriceKr != null && input.minPriceKr > 0) {
         total = Math.max(roundTo100(subtotal, 'round'), input.minPriceKr)
+    } else {
+        total = roundTo100(subtotal, 'round')
     }
 
     return {
         subtotal,
         total,
+        quantity,
+        effectiveUnitKrw: total / quantity,
+        variableCostKrw,
+        setupCostKrw,
         timeHours: timeDetail.hours,
         numLayers: timeDetail.numLayers,
-        volumeMl,
+        volumeMl: volumeMlUnit * quantity,
         costBreakdown: {
             material: materialCost,
             other: otherCost,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCartStore } from '@/store/useCartStore'
+import { useCartStore, cartItemLineTotal } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -49,6 +49,9 @@ type QuoteRow = {
     post_processing?: number | boolean
     total_price: number
     estimated_time_hours: number
+    variable_cost_krw?: number | null
+    setup_cost_krw?: number | null
+    min_price_krw?: number | null
     created_at: string
     updated_at: string
 }
@@ -84,6 +87,9 @@ function toQuote(r: QuoteRow): Quote {
         resinType: r.resin_type as Quote['resinType'],
         totalPrice: r.total_price,
         estimatedTimeHours: r.estimated_time_hours,
+        variableCostKrw: r.variable_cost_krw ?? undefined,
+        setupCostKrw: r.setup_cost_krw ?? undefined,
+        minPriceKrw: r.min_price_krw ?? undefined,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
     }
@@ -569,7 +575,7 @@ function CartPageContent() {
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">{t('subtotalVat')}</p>
-                                                                    <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round((item.quote?.totalPrice || 0) * item.quantity).toLocaleString()}</span>
+                                                                    <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round(cartItemLineTotal(item)).toLocaleString()}</span>
                                                                 </div>
                                                             </div>
                                                         </div>

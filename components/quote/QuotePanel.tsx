@@ -127,6 +127,8 @@ const defaultQuoteDetail = {
     materialUnit: 'g' as const,
     materialName: '-',
     costBreakdown: { material: 0, other: 0, machine: 0, labor: 0 },
+    variableCostKrw: 0,
+    setupCostKrw: 0,
 }
 
 export default function QuotePanel({ embedded = false, initialQuote, reloadQuoteId, guideSource, guideTopic }: QuotePanelProps) {
@@ -324,6 +326,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     machine: q.costBreakdown.machine,
                     labor: q.costBreakdown.labor,
                 },
+                variableCostKrw: q.variableCostKrw,
+                setupCostKrw: q.setupCostKrw,
             }
         }
 
@@ -359,6 +363,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             materialUnit: 'mL' as const,
             materialName: (mat?.name ?? resinType) || '-',
             costBreakdown: q.costBreakdown,
+            variableCostKrw: q.variableCostKrw,
+            setupCostKrw: q.setupCostKrw,
         }
     }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, surfaceAreaCm2, volumeCm3])
 
@@ -369,6 +375,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const baseAmount = minPriceKr != null && minPriceKr > 0 ? Math.max(quoteDetail.total, minPriceKr) : quoteDetail.total
     const totalPrice = roundTo100(baseAmount * 1.1, priceRoundMode)
     const estimatedTimeHours = quoteDetail.time
+    const variableCostKrw = quoteDetail.variableCostKrw
+    const setupCostKrw = quoteDetail.setupCostKrw
 
     // 저장 견적 재로드 시 lastSavedConfig 시드 — 동일 설정이면 UPDATE 유지
     useEffect(() => {
@@ -430,6 +438,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                   }),
             totalPrice: price,
             estimatedTimeHours: hours,
+            variableCostKrw,
+            setupCostKrw,
+            minPriceKrw: minPriceKr ?? undefined,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             thumbnailDataUrl: thumbnailDataUrl || undefined,
@@ -440,13 +451,16 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             fdmMaterial,
             infill,
             layerHeight,
+            minPriceKr,
             postProcessing,
             printMethod,
             resinType,
             savedFileR2Url,
+            setupCostKrw,
             slaLayerHeight,
             supportEnabled,
             surfaceAreaCm2,
+            variableCostKrw,
             volumeCm3,
         ]
     )
@@ -642,6 +656,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 }),
                 totalPrice,
                 estimatedTimeHours,
+                variableCostKrw,
+                setupCostKrw,
+                minPriceKrw: minPriceKr ?? undefined,
                 guideSource: guideSource || undefined,
                 guideTopic: guideTopic || undefined,
                 modelTransform,

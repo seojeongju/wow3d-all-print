@@ -38,6 +38,9 @@ export type ServerResinQuoteResult = {
     estimatedTimeHours: number
     volumeMl: number
     source: 'server' | 'client'
+    variableCostKrw?: number
+    setupCostKrw?: number
+    minPriceKrw?: number | null
     deltaKr?: number
 }
 
@@ -198,7 +201,10 @@ export async function resolveServerResinQuote(
             totalPrice: Math.round(q.total),
             estimatedTimeHours: q.timeHours,
             volumeMl: q.volumeMl,
-            source: 'server',
+            source: 'server' as const,
+            variableCostKrw: q.variableCostKrw,
+            setupCostKrw: q.setupCostKrw,
+            minPriceKrw: equipment.minPriceKr ?? null,
             deltaKr,
         }
     } catch (e) {

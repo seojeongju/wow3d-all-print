@@ -1,7 +1,10 @@
 /**
- * 주문 생성 시 견적 단가를 DB(quotes.total_price) 기준으로 확정
- * 클라이언트 cartItems.totalPrice는 참고만 하고 저장·합산에는 사용하지 않음
+ * 주문 생성 시 견적 단가를 DB(quotes) 기준으로 확정
+ * - 배치 컬럼(variable/setup/min)이 있으면: 최소금액 1회 + 변동×수량
+ * - 없으면: 구버전 total_price × 수량
  */
+
+import { lineTotalFromStoredQuote } from '@/lib/quote-batch-price'
 
 type D1Like = {
     prepare: (sql: string) => {
@@ -30,6 +33,9 @@ type QuoteCartRow = {
     total_price: number
     volume_cm3: number
     cart_quantity: number
+    variable_cost_krw?: number | null
+    setup_cost_krw?: number | null
+    min_price_krw?: number | null
 }
 
 export type ResolveOrderLinesResult =
@@ -47,14 +53,13 @@ function quoteOwnershipClause(auth: {
     const userId = Number(auth.userId)
     const sessionId = auth.sessionId?.trim()
     if (sessionId) {
-        // 회원 cart + 로그인 전 세션 cart 모두 허용
         return { sql: '(c.user_id = ? OR c.session_id = ?)', binds: [userId, sessionId] }
     }
     return { sql: 'c.user_id = ?', binds: [userId] }
 }
 
 /**
- * 장바구니에 담긴 견적만 주문 가능. 단가는 quotes.total_price 사용.
+ * 장바구니에 담긴 견적만 주문 가능.
  */
 export async function resolveOrderLinesFromDb(
     db: D1Like,
@@ -76,47 +81,42 @@ export async function resolveOrderLinesFromDb(
     const placeholders = quoteIds.map(() => '?').join(',')
     const owner = quoteOwnershipClause(auth)
 
-    const { results } = await db
-        .prepare(
-            `SELECT q.id, q.total_price, q.volume_cm3, c.quantity AS cart_quantity
-             FROM quotes q
-             INNER JOIN cart c ON c.quote_id = q.id
-             WHERE q.id IN (${placeholders}) AND ${owner.sql}`
-        )
-        .bind(...quoteIds, ...owner.binds)
-        .all<QuoteCartRow>()
+    let results: QuoteCartRow[] = []
+    try {
+        const q = await db
+            .prepare(
+                `SELECT q.id, q.total_price, q.volume_cm3, c.quantity AS cart_quantity,
+                        q.variable_cost_krw, q.setup_cost_krw, q.min_price_krw
+                 FROM quotes q
+                 INNER JOIN cart c ON c.quote_id = q.id
+                 WHERE q.id IN (${placeholders}) AND ${owner.sql}`
+            )
+            .bind(...quoteIds, ...owner.binds)
+            .all<QuoteCartRow>()
+        results = q.results || []
+    } catch {
+        const q = await db
+            .prepare(
+                `SELECT q.id, q.total_price, q.volume_cm3, c.quantity AS cart_quantity
+                 FROM quotes q
+                 INNER JOIN cart c ON c.quote_id = q.id
+                 WHERE q.id IN (${placeholders}) AND ${owner.sql}`
+            )
+            .bind(...quoteIds, ...owner.binds)
+            .all<QuoteCartRow>()
+        results = q.results || []
+    }
 
-    const rowMap = new Map((results ?? []).map((r) => [r.id, r]))
-
+    const byId = new Map(results.map((r) => [Number(r.id), r]))
     const lines: ResolvedOrderLine[] = []
 
     for (const item of items) {
         const quoteId = Number(item.quoteId)
-        if (!Number.isInteger(quoteId) || quoteId <= 0) continue
-
-        const row = rowMap.get(quoteId)
+        const row = byId.get(quoteId)
         if (!row) {
             return {
                 ok: false,
-                error:
-                    '이 견적은 아직 장바구니에 없습니다. 저장된 견적에서 ‘장바구니에 담기’ 후 주문해 주세요.',
-                status: 403,
-            }
-        }
-
-        if (!Number(row.volume_cm3) || row.volume_cm3 <= 0) {
-            return {
-                ok: false,
-                error: `견적(${quoteId}) 파일 분석이 완료되지 않았습니다. 다시 견적을 내주세요.`,
-                status: 400,
-            }
-        }
-
-        const unitPrice = Math.max(0, Math.round(Number(row.total_price) || 0))
-        if (unitPrice <= 0) {
-            return {
-                ok: false,
-                error: `견적(${quoteId}) 금액이 유효하지 않습니다. 옵션을 확인한 뒤 다시 저장해 주세요.`,
+                error: `장바구니에 없는 견적(ID ${quoteId})이 포함되어 있습니다.`,
                 status: 400,
             }
         }
@@ -125,6 +125,18 @@ export async function resolveOrderLinesFromDb(
         const cartQty = Math.max(1, Math.floor(Number(row.cart_quantity) || 1))
         const quantity = Math.min(requestedQty, cartQty)
 
+        const priced = lineTotalFromStoredQuote({
+            totalPriceKrw: Number(row.total_price) || 0,
+            quantity,
+            variableCostKrw: row.variable_cost_krw,
+            setupCostKrw: row.setup_cost_krw,
+            minPriceKrw: row.min_price_krw,
+            applyVat: true,
+        })
+
+        const subtotal = priced.lineTotalKrw
+        const unitPrice = Math.round(priced.effectiveUnitKrw)
+
         const clientPrice =
             item.totalPrice != null && Number.isFinite(Number(item.totalPrice))
                 ? Math.round(Number(item.totalPrice))
@@ -132,7 +144,7 @@ export async function resolveOrderLinesFromDb(
 
         if (clientPrice != null && Math.abs(clientPrice - unitPrice) > 500) {
             console.info(
-                `[order] quote ${quoteId} price from DB (client=${clientPrice} db=${unitPrice})`
+                `[order] quote ${quoteId} price from DB batch (clientUnit=${clientPrice} dbUnit=${unitPrice} qty=${quantity} batch=${priced.usedBatchFormula})`
             )
         }
 
@@ -140,7 +152,7 @@ export async function resolveOrderLinesFromDb(
             quoteId,
             quantity,
             unitPrice,
-            subtotal: unitPrice * quantity,
+            subtotal,
             ...(clientPrice != null ? { clientPrice } : {}),
         })
     }

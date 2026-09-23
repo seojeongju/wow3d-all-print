@@ -135,18 +135,27 @@ export type CalculateFdmQuoteInput = {
     /** true면 VAT 10% + 최소견적 + 100원 반올림까지 적용 */
     applyVat?: boolean
     minPriceKr?: number | null
+    /** 수량 — 변동비×N, 인건 1회, 최소금액 1회 (기본 1) */
+    quantity?: number
 }
 
 export type CalculateFdmQuoteResult = {
-    /** 공급가 (재료+지지+장비+인건) */
+    /** 공급가 (재료+지지+장비+인건) — 수량 반영 후, 최소·VAT 전 */
     subtotal: number
-    /** 표시용 최종 금액 (applyVat 시 VAT·최소·반올림 반영, 아니면 subtotal) */
+    /** 표시용 최종 금액 (applyVat 시 VAT·최소·반올림 반영, 아니면 subtotal에 최소만) */
     total: number
+    /** 라인 총액과 동일(total). 수량>1일 때 유효 단가는 total/quantity */
+    quantity: number
+    effectiveUnitKrw: number
+    /** 1개당 변동비(재료+서포트+장비) — 수량 저장용 */
+    variableCostKrw: number
+    /** 건당 셋업(인건) */
+    setupCostKrw: number
     timeHours: number
     numLayers: number
-    /** 모델(쉘+인필) 무게 — 재료비 기준 */
+    /** 모델(쉘+인필) 무게 — 1개 기준 */
     weightGrams: number
-    /** 서포트 추정 무게(g). 재료비에는 면적 단가 사용, 시간에는 반영 */
+    /** 서포트 추정 무게(g) — 1개 기준 */
     supportGrams: number
     shellVolCm3: number
     infillVolCm3: number
@@ -169,6 +178,7 @@ function machineRateAfterVolumeDiscount(hours: number, rateKr: number): number {
 
 /** FDM 견적 일괄 산출 */
 export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQuoteResult {
+    const quantity = Math.max(1, Math.floor(Number(input.quantity) || 1))
     const volumeCm3 = Math.max(0, Number(input.volumeCm3) || 0)
     const rawSurface = Math.max(0, Number(input.surfaceAreaCm2) || 0)
     const rCm = volumeCm3 > 0 ? Math.cbrt((3 * volumeCm3) / (4 * Math.PI)) : 0
@@ -183,7 +193,7 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         shellThicknessMm: input.shellThicknessMm,
     })
 
-    const materialCost = Math.max(0, Number(input.pricePerGramKr) || 0) * weight.weightGrams
+    const materialCostUnit = Math.max(0, Number(input.pricePerGramKr) || 0) * weight.weightGrams
 
     const supportPerCm2 = input.fdmSupportPerCm2Krw ?? FDM_DEFAULT_SUPPORT_PER_CM2_KRW
     const rawOverhang =
@@ -191,14 +201,14 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
             ? Math.max(0, Number(input.overhangAreaCm2))
             : surfaceAreaCm2 * FDM_DEFAULT_OVERHANG_SURFACE_RATIO
     const overhang = Math.min(rawOverhang, surfaceAreaCm2 * 0.55)
-    const rawSupportCost = input.supportEnabled ? supportPerCm2 * overhang : 0
+    const rawSupportCostUnit = input.supportEnabled ? supportPerCm2 * overhang : 0
     const supportCostCap = Math.max(
-        materialCost * FDM_SUPPORT_COST_TO_MATERIAL_MAX,
+        materialCostUnit * FDM_SUPPORT_COST_TO_MATERIAL_MAX,
         FDM_SUPPORT_COST_FLOOR_KRW
     )
-    const supportCost = input.supportEnabled ? Math.min(rawSupportCost, supportCostCap) : 0
+    const supportCostUnit = input.supportEnabled ? Math.min(rawSupportCostUnit, supportCostCap) : 0
 
-    const supportGrams = estimateFdmSupportGrams({
+    const supportGramsUnit = estimateFdmSupportGrams({
         supportEnabled: input.supportEnabled,
         overhangAreaCm2: overhang,
         heightMm: input.heightMm,
@@ -208,7 +218,8 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
 
     const laborCost = input.fdmLaborCostKrw ?? FDM_DEFAULT_LABOR_KRW
 
-    const timeDetail = estimateFdmPrintTimeHours({
+    // 1개 기준 장비비 (저장용 변동비 산정)
+    const timeDetailUnit = estimateFdmPrintTimeHours({
         weightGrams: weight.weightGrams,
         heightMm: input.heightMm,
         surfaceAreaCm2,
@@ -216,33 +227,63 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         fdmLayerHoursFactor: input.fdmLayerHoursFactor,
         infillPercent: weight.effectiveInfill,
         density: input.density,
-        supportGrams,
+        supportGrams: supportGramsUnit,
         overhangAreaCm2: input.supportEnabled ? overhang : 0,
     })
-
     const rate = Math.max(0, Number(input.hourlyRateKr) || FDM_DEFAULT_HOURLY_RATE_KRW)
-    const machineCost = timeDetail.hours * machineRateAfterVolumeDiscount(timeDetail.hours, rate)
+    const machineCostUnit =
+        timeDetailUnit.hours * machineRateAfterVolumeDiscount(timeDetailUnit.hours, rate)
 
+    // 배치: 부피·무게·서포트 ×N, 높이(Z)는 유지 → 압출량·시간에 반영. 인건은 1회.
+    const timeDetail =
+        quantity === 1
+            ? timeDetailUnit
+            : estimateFdmPrintTimeHours({
+                  weightGrams: weight.weightGrams * quantity,
+                  heightMm: input.heightMm,
+                  surfaceAreaCm2: surfaceAreaCm2 * quantity,
+                  layerHeightMm: input.layerHeightMm,
+                  fdmLayerHoursFactor: input.fdmLayerHoursFactor,
+                  infillPercent: weight.effectiveInfill,
+                  density: input.density,
+                  supportGrams: supportGramsUnit * quantity,
+                  overhangAreaCm2: input.supportEnabled ? overhang * quantity : 0,
+              })
+    const machineCost =
+        quantity === 1
+            ? machineCostUnit
+            : timeDetail.hours * machineRateAfterVolumeDiscount(timeDetail.hours, rate)
+
+    const materialCost = materialCostUnit * quantity
+    const supportCost = supportCostUnit * quantity
+    const variableCostKrw = materialCostUnit + supportCostUnit + machineCostUnit
+    const setupCostKrw = laborCost
     const subtotal = materialCost + supportCost + machineCost + laborCost
 
     let total = subtotal
     if (input.applyVat) {
-        // QuotePanel과 동일: 공급가에 최소견적 적용 → VAT 10% → 100원 반올림
-        const base = input.minPriceKr != null && input.minPriceKr > 0
-            ? Math.max(subtotal, input.minPriceKr)
-            : subtotal
+        const base =
+            input.minPriceKr != null && input.minPriceKr > 0
+                ? Math.max(subtotal, input.minPriceKr)
+                : subtotal
         total = roundTo100(base * 1.1, 'round')
     } else if (input.minPriceKr != null && input.minPriceKr > 0) {
         total = Math.max(roundTo100(subtotal, 'round'), input.minPriceKr)
+    } else {
+        total = roundTo100(subtotal, 'round')
     }
 
     return {
         subtotal,
         total,
+        quantity,
+        effectiveUnitKrw: total / quantity,
+        variableCostKrw,
+        setupCostKrw,
         timeHours: timeDetail.hours,
         numLayers: timeDetail.numLayers,
         weightGrams: weight.weightGrams,
-        supportGrams,
+        supportGrams: supportGramsUnit,
         shellVolCm3: weight.shellVolCm3,
         infillVolCm3: weight.infillVolCm3,
         effectiveInfill: weight.effectiveInfill,
