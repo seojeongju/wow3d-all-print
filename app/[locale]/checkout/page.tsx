@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useCartStore } from '@/store/useCartStore'
+import { useCartStore, cartItemsLineTotals, cartItemLineTotal } from '@/store/useCartStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,7 +24,6 @@ import {
 } from '@/lib/shipping-settings'
 import { MESHY_AI_DISCLAIMER_CHECKOUT, MESHY_AI_DISCLAIMER_CHECKOUT_EN } from '@/lib/meshy-disclaimer'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
-import { lineTotalFromStoredQuote } from '@/lib/quote-batch-price'
 import {
     CHECKOUT_CONVERSION_EVENTS,
     CONVERSION_EVENT_CATEGORY,
@@ -308,24 +307,15 @@ function CheckoutContent() {
 
     if (items.length === 0 || orderItems.length === 0) return null
 
-    const totalPriceKWR = Math.round(
-        orderItems.reduce((s, i) => {
-            const q = i.quote
-            if (!q) return s
-            return (
-                s +
-                lineTotalFromStoredQuote({
-                    totalPriceKrw: q.totalPrice || 0,
-                    quantity: i.quantity,
-                    variableCostKrw: q.variableCostKrw,
-                    setupCostKrw: q.setupCostKrw,
-                    minPriceKrw: q.minPriceKrw,
-                    applyVat: true,
-                }).lineTotalKrw
-            )
-        }, 0)
+    const checkoutStandaloneSum = Math.round(
+        orderItems.reduce((s, item) => s + cartItemLineTotal(item), 0)
     )
-    const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0)
+    const totalPriceKWR = Math.round(
+        [...cartItemsLineTotals(orderItems).values()].reduce((s, v) => s + v, 0)
+    )
+    const bundleDiscount = Math.max(0, checkoutStandaloneSum - totalPriceKWR)
+    const totalLineCount = orderItems.length
+    const totalQty = orderItems.reduce((sum, item) => sum + item.quantity, 0)
     
     // 배송비 로직: 관리자 설정에 따른 동적 계산
     const shippingFee = calculateShippingFee(totalPriceKWR, storeSettings);
@@ -551,7 +541,9 @@ function CheckoutContent() {
                                     <h2 className="text-xl font-black uppercase tracking-wide">{t('reviewTitle')}</h2>
 
                                     <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                                        {orderItems.map((item) => (
+                                        {orderItems.map((item) => {
+                                            const baseQuoteKrw = Math.round(cartItemLineTotal(item))
+                                            return (
                                             <div key={item.id} className="flex gap-4 group">
                                                 <div className="w-12 h-12 rounded-xl bg-black border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-primary/30 transition-all">
                                                     <Package className="w-5 h-5 text-white/20" />
@@ -565,27 +557,32 @@ function CheckoutContent() {
                                                         })}
                                                     </div>
                                                 </div>
-                                                <div className="text-xs font-mono font-bold">
-                                                    ₩{Math.round(
-                                                        lineTotalFromStoredQuote({
-                                                            totalPriceKrw: item.quote?.totalPrice || 0,
-                                                            quantity: item.quantity,
-                                                            variableCostKrw: item.quote?.variableCostKrw,
-                                                            setupCostKrw: item.quote?.setupCostKrw,
-                                                            minPriceKrw: item.quote?.minPriceKrw,
-                                                            applyVat: true,
-                                                        }).lineTotalKrw
-                                                    ).toLocaleString()}
+                                                <div className="text-xs font-mono font-bold text-right">
+                                                    ₩{baseQuoteKrw.toLocaleString()}
                                                 </div>
                                             </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
 
                                     <Separator className="bg-white/5" />
 
                                     <div className="space-y-3">
+                                        <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest gap-3">
+                                            <span>{t('itemsAloneSubtotal')}</span>
+                                            <span className="text-white shrink-0">₩{checkoutStandaloneSum.toLocaleString()}</span>
+                                        </div>
+                                        {bundleDiscount > 0 ? (
+                                            <div className="space-y-1.5">
+                                                <div className="flex justify-between text-[10px] font-black uppercase text-emerald-400/90 tracking-widest gap-3">
+                                                    <span>{t('methodBundleDiscount')}</span>
+                                                    <span className="shrink-0">-₩{bundleDiscount.toLocaleString()}</span>
+                                                </div>
+                                                <p className="text-[9px] text-white/35 font-medium leading-relaxed">{t('methodBundleHint')}</p>
+                                            </div>
+                                        ) : null}
                                         <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">
-                                            <span>{t('orderAmount', { count: totalItems })}</span>
+                                            <span>{t('orderAmount', { count: totalLineCount })}</span>
                                             <span className="text-white">₩{totalPriceKWR.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between text-[10px] font-black uppercase text-white/30 tracking-widest">

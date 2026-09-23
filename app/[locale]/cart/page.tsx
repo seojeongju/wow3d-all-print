@@ -249,11 +249,18 @@ function CartPageContent() {
     }, [])
 
     const selectedItems = items.filter((i) => selectedIds.has(i.id))
+    /** 실제 결제 기준(같은 출력방식 최소 1회) */
     const selectedTotal = getTotalPriceForItems(selectedItems)
-    const selectedCount = selectedItems.reduce((s, i) => s + i.quantity, 0)
+    const selectedLineCount = selectedItems.length
+    const selectedQty = selectedItems.reduce((s, i) => s + i.quantity, 0)
+    /** 파일별 단독 견적 합 — 라인 표시용. 수량 변경 시 해당 파일만 변동 */
+    const selectedStandaloneSum = Math.round(
+        selectedItems.reduce((s, item) => s + cartItemLineTotal(item), 0)
+    )
+    const bundleDiscount = Math.max(0, selectedStandaloneSum - Math.round(selectedTotal))
     
     // 배송비 계산
-    const shippingFee = selectedCount > 0 ? calculateShippingFee(selectedTotal, storeSettings) : 0;
+    const shippingFee = selectedLineCount > 0 ? calculateShippingFee(selectedTotal, storeSettings) : 0;
     const finalTotal = selectedTotal + shippingFee;
 
     const handleQuantityChange = (itemId: number, newQuantity: number) => {
@@ -480,23 +487,27 @@ function CartPageContent() {
                                     </div>
                                     <AnimatePresence mode="popLayout">
                                         {items.length > 0 ? (
-                                            items.map((item) => (
+                                            items.map((item) => {
+                                                const isSelected = selectedIds.has(item.id)
+                                                const lineTotalKrw = Math.round(cartItemLineTotal(item))
+
+                                                return (
                                                 <motion.div
                                                     key={item.id}
                                                     layout
                                                     initial={{ opacity: 0, y: 30 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, scale: 0.95 }}
-                                                    className={`p-8 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 group relative overflow-hidden ${selectedIds.has(item.id) ? 'bg-white/[0.05] border-teal-400/30' : 'bg-white/[0.02] border-white/5 opacity-60'}`}
+                                                    className={`p-8 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 group relative overflow-hidden ${isSelected ? 'bg-white/[0.05] border-teal-400/30' : 'bg-white/[0.02] border-white/5 opacity-60'}`}
                                                 >
-                                                    {selectedIds.has(item.id) && (
+                                                    {isSelected && (
                                                         <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/5 blur-3xl rounded-full -mr-16 -mt-16" />
                                                     )}
                                                     <div className="flex flex-col sm:flex-row gap-8 relative z-10">
                                                         <label className="flex items-start pt-4 cursor-pointer shrink-0">
                                                             <input
                                                                 type="checkbox"
-                                                                checked={selectedIds.has(item.id)}
+                                                                checked={isSelected}
                                                                 onChange={() => toggleSelect(item.id)}
                                                                 className="w-6 h-6 rounded-lg border-white/10 bg-white/5 text-teal-400 focus:ring-teal-400/50 transition-all checked:bg-teal-400"
                                                             />
@@ -545,11 +556,12 @@ function CartPageContent() {
                                                                         <dd className="text-sm font-bold text-white/80 mt-1">{item.quote?.volumeCm3?.toFixed(1)} cm³</dd>
                                                                     </div>
                                                                     <div>
-                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{t('unitPrice')}</dt>
+                                                                        <dt className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{t('baseQuote')}</dt>
                                                                         <dd className="text-sm font-black text-teal-400 mt-1">
-                                                                            ₩{Math.round((item.quote?.totalPrice || 0)).toLocaleString()}
+                                                                            ₩{lineTotalKrw.toLocaleString()}
                                                                             <span className="text-[8px] ml-1 opacity-60 font-bold">{t('vatIncluded')}</span>
                                                                         </dd>
+                                                                        <p className="text-[9px] text-white/25 mt-1 font-medium leading-snug">{t('baseQuoteAloneHint')}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -575,13 +587,14 @@ function CartPageContent() {
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">{t('subtotalVat')}</p>
-                                                                    <span className="text-3xl font-black tracking-tighter text-white">₩{Math.round(cartItemLineTotal(item)).toLocaleString()}</span>
+                                                                    <span className="text-3xl font-black tracking-tighter text-white">₩{lineTotalKrw.toLocaleString()}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </motion.div>
-                                            ))
+                                                )
+                                            })
                                         ) : (
                                             <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
                                                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -758,15 +771,36 @@ function CartPageContent() {
                             <div className="space-y-6 relative z-10">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-white/30 font-black uppercase tracking-widest">{t('totalItems')}</span>
-                                    <span className="font-black text-white text-lg">{selectedCount}</span>
+                                    <span className="font-black text-white text-lg">{selectedLineCount}</span>
                                 </div>
+                                {selectedLineCount > 0 && selectedQty !== selectedLineCount ? (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-white/30 font-black uppercase tracking-widest">{t('totalQty')}</span>
+                                        <span className="font-black text-white text-lg">{selectedQty}</span>
+                                    </div>
+                                ) : null}
+                                {selectedLineCount > 0 ? (
+                                    <div className="flex justify-between items-start text-sm gap-4">
+                                        <span className="text-white/30 font-black uppercase tracking-widest leading-snug">{t('itemsAloneSubtotal')}</span>
+                                        <span className="font-black text-white text-lg shrink-0">₩{selectedStandaloneSum.toLocaleString()}</span>
+                                    </div>
+                                ) : null}
+                                {bundleDiscount > 0 ? (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-start text-sm gap-4">
+                                            <span className="text-teal-400/90 font-black uppercase tracking-widest leading-snug">{t('methodBundleDiscount')}</span>
+                                            <span className="font-black text-teal-400 text-lg shrink-0">-₩{bundleDiscount.toLocaleString()}</span>
+                                        </div>
+                                        <p className="text-[10px] text-white/35 font-medium leading-relaxed break-keep">{t('methodBundleHint')}</p>
+                                    </div>
+                                ) : null}
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-white/30 font-black uppercase tracking-widest">{t('shipping')}</span>
                                     <div className="text-right">
-                                        <span className={`font-black uppercase tracking-widest ${shippingFee === 0 && selectedCount > 0 ? 'text-teal-400' : 'text-white'}`}>
-                                            {selectedCount === 0 ? t('dash') : shippingFee === 0 ? t('free') : `₩${shippingFee.toLocaleString()}`}
+                                        <span className={`font-black uppercase tracking-widest ${shippingFee === 0 && selectedLineCount > 0 ? 'text-teal-400' : 'text-white'}`}>
+                                            {selectedLineCount === 0 ? t('dash') : shippingFee === 0 ? t('free') : `₩${shippingFee.toLocaleString()}`}
                                         </span>
-                                        {selectedCount > 0 && shippingFee > 0 && (
+                                        {selectedLineCount > 0 && shippingFee > 0 && (
                                             <span className="block text-[9px] text-white/20 mt-0.5">
                                                 {formatShippingChargeHint(storeSettings.freeThreshold, locale)}
                                             </span>
@@ -782,7 +816,7 @@ function CartPageContent() {
 
                             <div className="space-y-4 pt-4 relative z-10">
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">{t('step02')}</span>
-                                {selectedCount === 0 && (
+                                {selectedLineCount === 0 && (
                                     <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-200/95 text-[12px] font-bold leading-relaxed text-center break-keep">
                                         {activeTab === 'saved' || (items.length === 0 && savedQuotes.length > 0)
                                             ? t('selectFromSavedHint')
@@ -791,10 +825,10 @@ function CartPageContent() {
                                 )}
                                 
                                 {isAuthenticated ? (
-                                    <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className={selectedCount === 0 ? 'pointer-events-none' : ''}>
+                                    <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className={selectedLineCount === 0 ? 'pointer-events-none' : ''}>
                                         <Button 
                                             size="lg" 
-                                            disabled={selectedCount === 0}
+                                            disabled={selectedLineCount === 0}
                                             className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-2 shadow-xl shadow-teal-400/20 transition-all active:scale-95 disabled:opacity-20"
                                         >
                                             {t('checkoutCta')} <ChevronRight className="w-5 h-5" />
@@ -804,15 +838,15 @@ function CartPageContent() {
                                     <div className="space-y-3">
                                         <Link
                                             href={
-                                                selectedCount > 0
+                                                selectedLineCount > 0
                                                     ? `/auth?return=${encodeURIComponent(`/checkout?ids=${Array.from(selectedIds).join(',')}`)}`
                                                     : '/auth?return=/cart'
                                             }
-                                            className={selectedCount === 0 ? 'pointer-events-none' : 'block'}
+                                            className={selectedLineCount === 0 ? 'pointer-events-none' : 'block'}
                                         >
                                             <Button
                                                 size="lg"
-                                                disabled={selectedCount === 0}
+                                                disabled={selectedLineCount === 0}
                                                 className="w-full h-16 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black uppercase tracking-widest gap-3 shadow-xl shadow-teal-400/20 transition-all active:scale-95 disabled:opacity-20"
                                             >
                                                 <LogIn className="w-6 h-6" /> {t('loginAndOrder')}
@@ -820,12 +854,12 @@ function CartPageContent() {
                                         </Link>
                                         <div className="flex justify-center pt-1">
                                             <Link
-                                                href={selectedCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'}
-                                                className={selectedCount === 0 ? 'pointer-events-none' : undefined}
+                                                href={selectedLineCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'}
+                                                className={selectedLineCount === 0 ? 'pointer-events-none' : undefined}
                                             >
                                                 <button
                                                     type="button"
-                                                    disabled={selectedCount === 0}
+                                                    disabled={selectedLineCount === 0}
                                                     className="inline-flex h-5 items-center gap-1 text-[10px] font-bold text-white/35 underline-offset-2 transition-colors hover:text-white/55 hover:underline disabled:opacity-20 disabled:no-underline"
                                                 >
                                                     {t('guestCheckout')}

@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem, Quote } from '@/lib/types';
-import { lineTotalFromStoredQuote } from '@/lib/quote-batch-price';
+import {
+    cartLineTotalsByKey,
+    lineTotalFromStoredQuote,
+    type CartBatchLineInput,
+} from '@/lib/quote-batch-price';
 
 interface CartState {
     items: CartItem[];
@@ -17,9 +21,43 @@ interface CartState {
     clearCart: () => void;
     getTotalPrice: () => number;
     getTotalPriceForItems: (itemList: CartItem[]) => number;
+    /** 장바구니 품목(파일) 수 */
     getTotalItems: () => number;
+    /** 총 출력 수량 합 */
+    getTotalQuantity: () => number;
 }
 
+export function cartItemToBatchInput(item: CartItem): CartBatchLineInput | null {
+    const q = item.quote
+    if (!q) return null
+    return {
+        key: item.id,
+        printMethod: q.printMethod || 'unknown',
+        quantity: item.quantity,
+        totalPriceKrw: q.totalPrice || 0,
+        variableCostKrw: q.variableCostKrw,
+        setupCostKrw: q.setupCostKrw,
+        minPriceKrw: q.minPriceKrw,
+    }
+}
+
+/** 목록 기준 출력방식 그룹 배치 후 라인 합계 맵 */
+export function cartItemsLineTotals(itemList: CartItem[]): Map<number, number> {
+    const inputs = itemList
+        .map(cartItemToBatchInput)
+        .filter((x): x is CartBatchLineInput => x != null)
+    const byKey = cartLineTotalsByKey(inputs, { applyVat: true })
+    const out = new Map<number, number>()
+    for (const [k, v] of byKey) {
+        out.set(Number(k), v)
+    }
+    return out
+}
+
+/**
+ * 단독 라인 금액(구버전·미리보기용).
+ * 장바구니 UI에서는 cartItemsLineTotals로 그룹 합산을 쓰세요.
+ */
 function cartItemLineTotal(item: CartItem): number {
     const q = item.quote
     if (!q) return 0
@@ -124,16 +162,21 @@ export const useCartStore = create<CartState>()(
 
             getTotalPrice: () => {
                 const state = get();
-                return state.items.reduce((total, item) => total + cartItemLineTotal(item), 0);
+                return [...cartItemsLineTotals(state.items).values()].reduce((a, b) => a + b, 0);
             },
 
             getTotalPriceForItems: (itemList) => {
-                return itemList.reduce((total, item) => total + cartItemLineTotal(item), 0);
+                return [...cartItemsLineTotals(itemList).values()].reduce((a, b) => a + b, 0);
             },
 
+            /** 장바구니 품목(파일/라인) 수 — 헤더 뱃지·품목 수 표시용 (수량 합이 아님) */
             getTotalItems: () => {
-                const state = get();
-                return state.items.reduce((total, item) => total + item.quantity, 0);
+                return get().items.length;
+            },
+
+            /** 담긴 총 출력 수량 합 */
+            getTotalQuantity: () => {
+                return get().items.reduce((total, item) => total + item.quantity, 0);
             },
         }),
         {
