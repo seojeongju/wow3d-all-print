@@ -39,7 +39,9 @@ const SERIES: {
 ];
 
 const CHART_H = 220;
-const PAD = { top: 16, right: 44, bottom: 28, left: 52 };
+const PAD = { top: 30, right: 44, bottom: 28, left: 52 };
+/** 축 단위 표기는 최상단 눈금과 겹치지 않도록 플롯 영역 위에 둠 */
+const AXIS_CAPTION_Y = 12;
 
 type Props = {
     data: SalesTrendPoint[];
@@ -318,13 +320,18 @@ export default function SalesTrendPanel({
                                 )}
 
                                 {/* Axis captions */}
-                                <text x={8} y={PAD.top + 4} className="fill-white/25 text-[8px] font-bold">
+                                <text
+                                    x={PAD.left - 8}
+                                    y={AXIS_CAPTION_Y}
+                                    textAnchor="end"
+                                    className="fill-white/25 text-[8px] font-bold"
+                                >
                                     ₩
                                 </text>
                                 {visible.orderCount && (
                                     <text
                                         x={PAD.left + innerW + 8}
-                                        y={PAD.top + 4}
+                                        y={AXIS_CAPTION_Y}
                                         className="fill-[#B07D31]/55 text-[8px] font-bold"
                                     >
                                         건
