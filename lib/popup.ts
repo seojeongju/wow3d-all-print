@@ -188,13 +188,46 @@ export async function uploadPopupImage(
   return r2Key
 }
 
+/** 관리자가 입력한 노출 기간(start_at/end_at)은 한국 시간 기준 문자열로 저장됨 */
+const POPUP_NOW_KST_SQL = `datetime('now','+9 hours')`
+
+export const POPUP_STARTED_SQL = `(start_at IS NULL OR start_at = '' OR datetime(start_at) <= ${POPUP_NOW_KST_SQL})`
+export const POPUP_NOT_ENDED_SQL = `(end_at IS NULL OR end_at = '' OR datetime(end_at) >= ${POPUP_NOW_KST_SQL})`
+export const POPUP_ENDED_SQL = `(end_at IS NOT NULL AND end_at <> '' AND datetime(end_at) < ${POPUP_NOW_KST_SQL})`
+export const POPUP_SCHEDULED_SQL = `(start_at IS NOT NULL AND start_at <> '' AND datetime(start_at) > ${POPUP_NOW_KST_SQL})`
+
 /** 기간·공개 여부 기준 활성 팝업 SQL WHERE (store_id 바인딩 1개) */
 export const ACTIVE_POPUPS_WHERE = `
   store_id = ?
   AND is_visible = 1
-  AND (start_at IS NULL OR start_at = '' OR datetime(start_at) <= datetime('now'))
-  AND (end_at IS NULL OR end_at = '' OR datetime(end_at) >= datetime('now'))
+  AND ${POPUP_STARTED_SQL}
+  AND ${POPUP_NOT_ENDED_SQL}
 `
+
+export type PopupScheduleStatus = 'hidden' | 'scheduled' | 'active' | 'ended'
+
+function parseKstDateTime(value: string | null | undefined): number | null {
+  const raw = value?.trim()
+  if (!raw) return null
+  const m = /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?/.exec(raw)
+  if (!m) return null
+  const time = m[2] ? (m[2].length === 5 ? `${m[2]}:00` : m[2]) : '00:00:00'
+  const ms = Date.parse(`${m[1]}T${time}+09:00`)
+  return Number.isNaN(ms) ? null : ms
+}
+
+/** 공개 여부 + 노출 기간(한국 시간)으로 현재 상태 판정 — ACTIVE_POPUPS_WHERE와 동일 기준 */
+export function getPopupScheduleStatus(
+  popup: Pick<PopupRow, 'is_visible' | 'start_at' | 'end_at'>,
+  now: number = Date.now()
+): PopupScheduleStatus {
+  if (!popup.is_visible) return 'hidden'
+  const end = parseKstDateTime(popup.end_at)
+  if (end !== null && end < now) return 'ended'
+  const start = parseKstDateTime(popup.start_at)
+  if (start !== null && start > now) return 'scheduled'
+  return 'active'
+}
 
 export function dismissStorageKey(popupId: number): string {
   return `wow3d_popup_dismiss_${popupId}`

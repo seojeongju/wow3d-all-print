@@ -40,11 +40,22 @@ import {
   POPUP_SIZE_PRESETS,
   normalizePopupPositionPreset,
   normalizePopupSizePreset,
+  getPopupScheduleStatus,
+  type PopupScheduleStatus,
   type PopupPositionPreset,
   type PopupSizePreset,
 } from '@/lib/popup'
 
 const PAGE_SIZE = 20
+
+type VisibleFilter = 'all' | 'visible' | 'scheduled' | 'ended' | 'hidden'
+
+const STATUS_BADGE: Record<PopupScheduleStatus, { label: string; className: string }> = {
+  active: { label: '노출 중', className: 'bg-teal-500/20 text-teal-300 hover:bg-teal-500/20' },
+  scheduled: { label: '노출 예정', className: 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/20' },
+  ended: { label: '노출기간 완료', className: 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/15' },
+  hidden: { label: '숨김', className: 'bg-white/10 text-white/50 hover:bg-white/10' },
+}
 
 type PopupItem = {
   id: number
@@ -170,7 +181,7 @@ export default function AdminPopupsPage() {
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [visibleFilter, setVisibleFilter] = useState<'all' | 'visible' | 'hidden'>('all')
+  const [visibleFilter, setVisibleFilter] = useState<VisibleFilter>('all')
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -413,7 +424,7 @@ export default function AdminPopupsPage() {
         <Select
           value={visibleFilter}
           onValueChange={(v) => {
-            setVisibleFilter(v as 'all' | 'visible' | 'hidden')
+            setVisibleFilter(v as VisibleFilter)
             setPage(1)
           }}
         >
@@ -423,6 +434,8 @@ export default function AdminPopupsPage() {
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
             <SelectItem value="visible">노출 중</SelectItem>
+            <SelectItem value="scheduled">노출 예정</SelectItem>
+            <SelectItem value="ended">노출기간 완료</SelectItem>
             <SelectItem value="hidden">숨김</SelectItem>
           </SelectContent>
         </Select>
@@ -438,10 +451,15 @@ export default function AdminPopupsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {items.map((item) => {
+            const status = getPopupScheduleStatus(item)
+            const badge = STATUS_BADGE[status]
+            return (
             <div
               key={item.id}
-              className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-center"
+              className={`flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-center ${
+                status === 'ended' ? 'opacity-70' : ''
+              }`}
             >
               <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/30 sm:h-20 sm:w-28">
                 {item.image_url ? (
@@ -460,22 +478,26 @@ export default function AdminPopupsPage() {
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="truncate text-base font-bold text-white">{item.title}</h2>
-                  {item.is_visible ? (
-                    <Badge className="bg-teal-500/20 text-teal-300 hover:bg-teal-500/20">
-                      <Eye className="mr-1 h-3 w-3" /> 노출
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-white/10 text-white/50 hover:bg-white/10">
-                      <EyeOff className="mr-1 h-3 w-3" /> 숨김
-                    </Badge>
-                  )}
+                  <Badge className={badge.className}>
+                    {status === 'active' ? (
+                      <Eye className="mr-1 h-3 w-3" />
+                    ) : status === 'hidden' ? (
+                      <EyeOff className="mr-1 h-3 w-3" />
+                    ) : (
+                      <CalendarDays className="mr-1 h-3 w-3" />
+                    )}
+                    {badge.label}
+                  </Badge>
                   <span className="text-xs text-white/30">순서 {item.sort_order}</span>
                 </div>
                 {item.body && (
                   <p className="line-clamp-2 text-sm text-white/45">{item.body}</p>
                 )}
                 <p className="text-[11px] text-white/30">
-                  {item.start_at || '시작 제한 없음'} ~ {item.end_at || '종료 제한 없음'}
+                  {item.start_at || '시작 제한 없음'} ~{' '}
+                  <span className={status === 'ended' ? 'text-amber-300/80' : undefined}>
+                    {item.end_at || '종료 제한 없음'}
+                  </span>
                   {item.link_url ? ` · 링크: ${item.link_url}` : ''}
                   {` · 크기 ${normalizePopupSizePreset(item.size_preset).toUpperCase()}`}
                   {` · 위치 ${
@@ -490,15 +512,24 @@ export default function AdminPopupsPage() {
                   variant="ghost"
                   size="sm"
                   className={`h-10 rounded-xl border ${
-                    item.is_visible
+                    status === 'active'
                       ? 'border-teal-400/30 text-teal-300 hover:bg-teal-500/10'
-                      : 'border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                      : status === 'hidden'
+                        ? 'border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                        : 'border-white/15 text-white/60 hover:bg-white/10 hover:text-white'
                   }`}
+                  title={
+                    status === 'ended'
+                      ? '노출 설정은 켜져 있지만 기간이 지나 사이트에 표시되지 않습니다. 누르면 숨김으로 전환됩니다.'
+                      : status === 'scheduled'
+                        ? '시작일이 되면 사이트에 표시됩니다. 누르면 숨김으로 전환됩니다.'
+                        : undefined
+                  }
                   onClick={() => handleToggleVisible(item)}
                 >
                   {item.is_visible ? (
                     <>
-                      <Eye className="mr-1.5 h-4 w-4" /> 노출중
+                      <Eye className="mr-1.5 h-4 w-4" /> {status === 'active' ? '노출중' : '노출 설정'}
                     </>
                   ) : (
                     <>
@@ -524,7 +555,8 @@ export default function AdminPopupsPage() {
                 </Button>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

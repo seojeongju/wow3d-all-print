@@ -7,6 +7,10 @@ import {
   validatePopupImage,
   normalizePopupSizePreset,
   normalizePopupPositionPreset,
+  POPUP_ENDED_SQL,
+  POPUP_NOT_ENDED_SQL,
+  POPUP_SCHEDULED_SQL,
+  POPUP_STARTED_SQL,
   type PopupRow,
 } from '@/lib/popup'
 
@@ -52,7 +56,11 @@ export async function GET(request: NextRequest) {
     const binds: (string | number)[] = [admin.storeId]
 
     if (visibleParam === '1' || visibleParam === 'visible') {
-      where += ' AND is_visible = 1'
+      where += ` AND is_visible = 1 AND ${POPUP_STARTED_SQL} AND ${POPUP_NOT_ENDED_SQL}`
+    } else if (visibleParam === 'scheduled') {
+      where += ` AND is_visible = 1 AND ${POPUP_SCHEDULED_SQL}`
+    } else if (visibleParam === 'ended') {
+      where += ` AND is_visible = 1 AND ${POPUP_ENDED_SQL}`
     } else if (visibleParam === '0' || visibleParam === 'hidden') {
       where += ' AND (is_visible = 0 OR is_visible IS NULL)'
     }
