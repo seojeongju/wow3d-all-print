@@ -175,6 +175,21 @@ export function aggregateVisitorTrend(
     return bucketDates(g).map((date) => acc.get(date) ?? emptyVisitor(date))
 }
 
+export type CountTrendPoint = { date: string; count: number }
+
+/** 일별 건수(가입자 등)를 일/주/월 버킷으로 집계 — 빈 구간은 0 */
+export function aggregateCountTrend(
+    daily: CountTrendPoint[],
+    g: StatsGranularity
+): CountTrendPoint[] {
+    const acc = new Map<string, number>()
+    for (const p of daily) {
+        const key = bucketKey(p.date, g)
+        acc.set(key, (acc.get(key) ?? 0) + p.count)
+    }
+    return bucketDates(g).map((date) => ({ date, count: acc.get(date) ?? 0 }))
+}
+
 export function aggregateConversionFunnelTrend(
     daily: ConversionFunnelTrendPoint[],
     g: StatsGranularity

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, Users, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { showToast } from '@/lib/toast-helper';
 import { useAuthStore } from '@/store/useAuthStore';
+import MemberStatsPanel from '@/components/admin/MemberStatsPanel';
 import {
     Select,
     SelectContent,
@@ -258,6 +259,8 @@ export default function AdminUsersPage() {
                     가입된 사용자 목록을 확인하고 역할(일반회원/관리자)을 변경할 수 있습니다.
                 </p>
             </div>
+
+            <MemberStatsPanel token={token} />
 
             <div className="flex flex-col sm:flex-row gap-4 flex-wrap items-stretch sm:items-center">
                 <div className="relative flex-1 min-w-[200px] max-w-md">

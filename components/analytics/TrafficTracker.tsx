@@ -8,6 +8,12 @@ import { getOrCreateSessionId } from '@/lib/session-id';
 const FIRST_SOURCE_KEY = 'wow3d_traffic_source';
 const FIRST_MEDIUM_KEY = 'wow3d_traffic_medium';
 const FIRST_CAMPAIGN_KEY = 'wow3d_traffic_campaign';
+/** 관리자 현재 접속자 판정 창(5분)보다 짧아야 함 */
+const PRESENCE_INTERVAL_MS = 60_000;
+
+function isAdminPath(pathname: string): boolean {
+    return /^\/(en\/|ko\/)?admin(\/|$)/.test(pathname);
+}
 
 /** next-intl as-needed: /en/quote → /quote */
 function normalizePath(pathname: string): string {
@@ -76,11 +82,7 @@ export default function TrafficTracker() {
 
     useEffect(() => {
         const rawPath = pathname;
-        if (
-            rawPath.startsWith('/admin') ||
-            rawPath.startsWith('/en/admin') ||
-            rawPath.startsWith('/ko/admin')
-        ) {
+        if (isAdminPath(rawPath)) {
             return;
         }
 
@@ -121,6 +123,36 @@ export default function TrafficTracker() {
 
         void logTraffic();
     }, [pathname, searchParams, userId]);
+
+    useEffect(() => {
+        if (isAdminPath(pathname)) return;
+        const path = normalizePath(pathname);
+
+        const ping = () => {
+            if (document.visibilityState !== 'visible') return;
+            const sessionId = getOrCreateSessionId();
+            if (!sessionId) return;
+            void fetch('/api/presence', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(userId ? { 'X-User-ID': String(userId) } : {}),
+                },
+                body: JSON.stringify({ sessionId, path }),
+                keepalive: true,
+            }).catch(() => {
+                /* 접속 신호 실패는 무시 */
+            });
+        };
+
+        ping();
+        const timer = window.setInterval(ping, PRESENCE_INTERVAL_MS);
+        document.addEventListener('visibilitychange', ping);
+        return () => {
+            window.clearInterval(timer);
+            document.removeEventListener('visibilitychange', ping);
+        };
+    }, [pathname, userId]);
 
     return null;
 }
