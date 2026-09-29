@@ -6,6 +6,8 @@ import { ArrowRight } from 'lucide-react'
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import type { GuideLandingConfig } from '@/lib/seo-guide-pages'
 import type { QnAItem } from '@/lib/qna'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import { pickGuideWorkPhotos } from '@/lib/seo-work-photos'
 import { Link, getPathname } from '@/i18n/navigation'
 import type { AppLocale } from '@/i18n/routing'
 
@@ -78,6 +80,12 @@ export default async function GuideLandingPage({ config, locale }: Props) {
                             </article>
                         ))}
                     </div>
+
+                    <WorkPhotosSection
+                        photos={pickGuideWorkPhotos(config.slug, locale)}
+                        locale={locale}
+                        layout="block"
+                    />
 
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black mb-6">{t('faqHeading')}</h2>

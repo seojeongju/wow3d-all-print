@@ -7,6 +7,8 @@ import { ArrowRight } from 'lucide-react'
 import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
 
 type Props = {
     params: Promise<{ locale: string }>
@@ -54,6 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'article',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(pickGuideWorkPhotos('3d-printing-turnaround-time', locale)),
         },
     }
 }
@@ -127,6 +130,8 @@ export default async function TurnaroundGuidePage({ params }: Props) {
                     </div>
                 </div>
             </section>
+            <WorkPhotosSection photos={pickGuideWorkPhotos('3d-printing-turnaround-time', locale)} locale={locale} />
+
             <Footer />
         </main>
     )

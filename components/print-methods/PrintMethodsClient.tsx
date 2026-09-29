@@ -311,7 +311,7 @@ function MethodDetailCard({
     )
 }
 
-export default function PrintMethodsClient() {
+export default function PrintMethodsClient({ workPhotos }: { workPhotos?: React.ReactNode }) {
     const t = useTranslations('PrintMethods')
     const methodsMap = t.raw('methods') as Record<string, MethodMsg>
     const compareRows = t.raw('compareRows') as CompareRow[]
@@ -742,6 +742,8 @@ export default function PrintMethodsClient() {
                     </div>
                 </div>
             </section>
+
+            {workPhotos}
 
             {/* CTA */}
             <section className="relative z-10 pb-20">

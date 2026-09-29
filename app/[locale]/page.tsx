@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { buildFaqPageSchema, buildWebPageSchema } from '@/lib/aeo-schema';
 import { getPublishedQnas, localizeQnas, pickVisibleFaqItems } from '@/lib/qna';
 import HomePageClient from '@/components/home/HomePageClient';
-import { absoluteUrl } from '@/lib/site-url';
+import { absoluteUrl, buildOgImages } from '@/lib/site-url';
 import { getPathname } from '@/i18n/navigation';
 import { routing, type AppLocale } from '@/i18n/routing';
 
@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
+      images: buildOgImages(),
       url: canonical,
       title,
       description,

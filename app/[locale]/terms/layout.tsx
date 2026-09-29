@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
-import { SITE_URL } from '@/lib/site-url'
+import { SITE_URL, buildOgImages } from '@/lib/site-url'
 
 type Props = {
   children: React.ReactNode
@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
+      images: buildOgImages(),
       title,
       description,
       url: canonical,

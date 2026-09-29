@@ -4,6 +4,7 @@ import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-sche
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import { buildWorkPhotoOgImages, pickWorkPhotos } from '@/lib/seo-work-photos'
 
 type Props = {
     children: React.ReactNode
@@ -39,6 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description,
             url: canonical,
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(pickWorkPhotos({ seed: 'print-methods', locale, count: 8 })),
         },
         alternates: {
             canonical,

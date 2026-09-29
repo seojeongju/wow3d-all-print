@@ -10,10 +10,7 @@ import { ZustandPersistGate } from "@/components/ZustandPersistGate";
 import {
   absoluteUrl,
   buildOgImages,
-  OG_IMAGE_ALT,
-  OG_IMAGE_HEIGHT,
   OG_IMAGE_PATH,
-  OG_IMAGE_WIDTH,
   SITE_DESCRIPTION,
   SITE_TITLE,
   SITE_URL,
@@ -106,14 +103,7 @@ export default async function RootLayout({
     <html lang={locale} className="dark" suppressHydrationWarning>
       <head>
         <meta name="naver-site-verification" content={NAVER_SITE_VERIFICATION} />
-        {/* 네이버·구형 크롤러용 대표 이미지 힌트 (절대 URL 명시) */}
-        <link rel="image_src" href={primaryImage} />
-        <meta property="og:image" content={primaryImage} />
-        <meta property="og:image:secure_url" content={primaryImage} />
-        <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
-        <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
-        <meta property="og:image:alt" content={OG_IMAGE_ALT} />
+        {/* og:image는 페이지별 metadata에서만 출력 — 여기서 고정하면 모든 페이지의 첫 og:image가 같아져 네이버가 공통 배너로 보고 썸네일에서 제외함 */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

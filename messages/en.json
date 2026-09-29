@@ -2365,6 +2365,12 @@
       "trackingTopic": "Best materials for miniatures and figurines"
     }
   },
+  "WorkPhotos": {
+    "eyebrow": "Real Output",
+    "heading": "Real 3D printing work by WOW3D",
+    "description": "Parts we printed in-house on FDM, SLA and DLP machines. See more in the print gallery.",
+    "more": "View more work"
+  },
   "GuideChrome": {
     "breadcrumbHome": "Home",
     "breadcrumbGuides": "Guides",

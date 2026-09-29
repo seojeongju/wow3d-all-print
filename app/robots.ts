@@ -15,18 +15,26 @@ const DISALLOW_PATHS = [
   "/print/estimate/",
 ];
 
+/** /api/ 차단 중 공개 이미지 스트림만 허용 — 더 긴(구체적) Allow 규칙이 Disallow보다 우선 */
+const ALLOW_PATHS = [
+  "/",
+  "/api/gallery/image/",
+  "/api/custom-products/media/",
+  "/api/showcase/media/",
+];
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow: ALLOW_PATHS,
         disallow: DISALLOW_PATHS,
       },
       // Yeti 전용 Allow:/ 만 두면 * 의 Disallow가 무시됨 → 동일 규칙 명시
       {
         userAgent: "Yeti",
-        allow: "/",
+        allow: ALLOW_PATHS,
         disallow: DISALLOW_PATHS,
       },
     ],

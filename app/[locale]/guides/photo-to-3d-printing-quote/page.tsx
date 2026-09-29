@@ -16,6 +16,7 @@ import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import { buildPhotoTo3DOgImages } from '@/lib/seo-work-photos'
 import { Check, X } from 'lucide-react'
 
 type Props = {
@@ -62,6 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         },
         openGraph: {
+            images: buildPhotoTo3DOgImages(locale),
             title,
             description,
             url: canonical,

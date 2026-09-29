@@ -5,7 +5,7 @@ import { getPublishedQnas, localizeQnas, pickVisibleFaqItems } from '@/lib/qna'
 import QnAPageClient from './QnAPageClient'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
-import { SITE_URL } from '@/lib/site-url'
+import { SITE_URL, buildOgImages } from '@/lib/site-url'
 
 /** 화면 1페이지(기본)에 보이는 개수와 FAQ JSON-LD를 맞춤. 사진(이미지)→3D 항목은 상단에 고정 */
 const FAQ_SCHEMA_VISIBLE_COUNT = 8
@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
+      images: buildOgImages(),
       url: canonical,
       title: t('ogTitle'),
       description: t('ogDescription'),

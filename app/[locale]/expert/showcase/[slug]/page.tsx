@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
-import { SITE_URL } from '@/lib/site-url'
+import { SITE_URL, buildOgImages } from '@/lib/site-url'
 import { isShowcaseSlug } from '@/lib/showcase'
 import { getShowcaseDetail } from '@/lib/showcase-public'
 import ShowcaseDetailClient from './ShowcaseDetailClient'
@@ -51,6 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         },
         openGraph: {
+            images: buildOgImages(),
             title: t('showcaseOgTitle', { title: categoryTitle }),
             description,
             url: canonical,

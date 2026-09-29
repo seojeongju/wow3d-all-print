@@ -6,6 +6,11 @@ import { getServiceBySlug, SERVICE_LANDINGS } from '@/lib/seo-service-pages'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import {
+    buildPhotoTo3DOgImages,
+    buildWorkPhotoOgImages,
+    pickServiceWorkPhotos,
+} from '@/lib/seo-work-photos'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -47,6 +52,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'website',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images:
+                slug === 'photo-to-3d'
+                    ? buildPhotoTo3DOgImages(locale)
+                    : buildWorkPhotoOgImages(pickServiceWorkPhotos(slug, locale)),
         },
     }
 }

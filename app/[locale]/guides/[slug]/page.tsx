@@ -6,6 +6,7 @@ import { getGuideBySlug, NEW_SEO_GUIDES } from '@/lib/seo-guide-pages'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -46,6 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'article',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(pickGuideWorkPhotos(slug, locale)),
         },
     }
 }

@@ -4,7 +4,7 @@ import MakerspaceVisitClient from '@/components/makerspace/MakerspaceVisitClient
 import { MAKERSPACES } from '@/lib/makerspaces'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
-import { SITE_URL } from '@/lib/site-url'
+import { SITE_URL, buildOgImages } from '@/lib/site-url'
 
 type Props = {
     params: Promise<{ locale: string }>
@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         },
         openGraph: {
+            images: buildOgImages(),
             title: t('metaOgTitle'),
             description: t('metaOgDescription'),
             url: canonical,

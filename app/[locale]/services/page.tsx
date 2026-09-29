@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import ServicesHubClient from '@/components/services/ServicesHubClient'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema'
+import { buildWorkPhotoOgImages, pickWorkPhotos } from '@/lib/seo-work-photos'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
@@ -18,6 +20,10 @@ function resolveLocale(localeParam: string): AppLocale {
 
 function servicesPath(locale: AppLocale) {
     return getPathname({ locale, href: '/services' })
+}
+
+function servicesPhotos(locale: AppLocale) {
+    return pickWorkPhotos({ seed: 'services', locale, count: 8 })
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -48,6 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'website',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(servicesPhotos(locale)),
         },
     }
 }
@@ -79,7 +86,9 @@ export default async function ServicesHubPage({ params }: Props) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
             />
-            <ServicesHubClient />
+            <ServicesHubClient
+                workPhotos={<WorkPhotosSection photos={servicesPhotos(locale)} locale={locale} />}
+            />
         </>
     )
 }

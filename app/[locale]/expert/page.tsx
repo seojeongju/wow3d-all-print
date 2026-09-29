@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getShowcaseCategories } from '@/lib/showcase-public'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
-import { SITE_URL } from '@/lib/site-url'
+import { SITE_URL, buildOgImages } from '@/lib/site-url'
 import ExpertPageClient from './ExpertPageClient'
 
 type Props = {
@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         },
         openGraph: {
+            images: buildOgImages(),
             title: t('ogTitle'),
             description: t('ogDescription'),
             url: canonical,

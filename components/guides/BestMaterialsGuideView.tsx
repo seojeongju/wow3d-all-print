@@ -7,6 +7,8 @@ import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
 import {
     BEST_MATERIALS_GUIDE_META,
     type BestMaterialsGuideSlug,
@@ -63,6 +65,7 @@ export async function generateBestMaterialsMetadata({
             url: canonical,
             type: 'article',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(pickGuideWorkPhotos(slug, locale)),
         },
     }
 }
@@ -186,6 +189,8 @@ export async function BestMaterialsGuidePage({ params, slug }: Props) {
                     />
                 </div>
             </section>
+
+            <WorkPhotosSection photos={pickGuideWorkPhotos(slug, locale)} locale={locale} />
 
             <Footer />
         </main>

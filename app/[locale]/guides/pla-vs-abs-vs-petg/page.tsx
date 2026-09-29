@@ -8,6 +8,8 @@ import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema'
 import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
 
 type Props = {
     params: Promise<{ locale: string }>
@@ -57,6 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'article',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(pickGuideWorkPhotos('pla-vs-abs-vs-petg', locale)),
         },
     }
 }
@@ -185,6 +188,8 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
                     </div>
                 </div>
             </section>
+
+            <WorkPhotosSection photos={pickGuideWorkPhotos('pla-vs-abs-vs-petg', locale)} locale={locale} />
 
             <Footer />
         </main>

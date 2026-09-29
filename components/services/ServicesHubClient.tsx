@@ -95,7 +95,7 @@ const fadeUp = {
     animate: { opacity: 1, y: 0 },
 }
 
-export default function ServicesHubClient() {
+export default function ServicesHubClient({ workPhotos }: { workPhotos?: React.ReactNode }) {
     const t = useTranslations('Services')
     const tCommon = useTranslations('Common')
     const locale = useLocale() === 'en' ? 'en' : 'ko'
@@ -287,6 +287,8 @@ export default function ServicesHubClient() {
                         </div>
                     </div>
                 </section>
+
+                {workPhotos}
 
                 <section className="border-t border-white/10 bg-white/[0.02] py-16 sm:py-20">
                     <div className="container mx-auto px-6">

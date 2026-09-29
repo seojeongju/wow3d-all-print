@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { buildArticleSchema, buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-schema'
 import GuidesHubClient from '@/components/guides/GuidesHubClient'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import { buildWorkPhotoOgImages, pickWorkPhotos } from '@/lib/seo-work-photos'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
@@ -48,6 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: canonical,
             type: 'website',
             locale: locale === 'en' ? 'en_US' : 'ko_KR',
+            images: buildWorkPhotoOgImages(pickWorkPhotos({ seed: 'guides', locale })),
         },
         twitter: {
             card: 'summary_large_image',
@@ -93,7 +96,11 @@ export default async function GuidesIndexPage({ params }: Props) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
             />
-            <GuidesHubClient />
+            <GuidesHubClient
+                workPhotos={
+                    <WorkPhotosSection photos={pickWorkPhotos({ seed: 'guides', locale })} locale={locale} />
+                }
+            />
         </>
     )
 }

@@ -2366,6 +2366,12 @@
       "trackingTopic": "정밀 모형·피규어용 소재 추천"
     }
   },
+  "WorkPhotos": {
+    "eyebrow": "Real Output",
+    "heading": "와우쓰리디 실제 3D프린팅 출력 사례",
+    "description": "FDM·SLA·DLP 장비로 직접 출력한 결과물입니다. 더 많은 사례는 출력 갤러리에서 확인하세요.",
+    "more": "출력 사례 더 보기"
+  },
   "GuideChrome": {
     "breadcrumbHome": "홈",
     "breadcrumbGuides": "가이드",

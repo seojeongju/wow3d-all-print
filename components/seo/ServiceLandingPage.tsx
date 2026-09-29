@@ -8,6 +8,8 @@ import { buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import type { ServiceLandingConfig } from '@/lib/seo-service-pages'
 import type { QnAItem } from '@/lib/qna'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
+import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import { pickServiceWorkPhotos } from '@/lib/seo-work-photos'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
 import { Link, getPathname } from '@/i18n/navigation'
@@ -124,6 +126,12 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                             afterLabel={t('photoAfterLabel')}
                         />
                     )}
+
+                    <WorkPhotosSection
+                        photos={pickServiceWorkPhotos(config.slug, locale)}
+                        locale={locale}
+                        layout="block"
+                    />
 
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black mb-6">{t('faqHeading')}</h2>

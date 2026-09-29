@@ -85,7 +85,7 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
     )
 }
 
-export default function GuidesHubClient() {
+export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.ReactNode }) {
     const t = useTranslations('GuidesHub')
     const totalGuides = GUIDE_HUB_SECTIONS.reduce((n, s) => n + s.items.length, 0)
 
@@ -396,6 +396,8 @@ export default function GuidesHubClient() {
                     </motion.div>
                 </div>
             </section>
+
+            {workPhotos}
 
             <Footer />
         </main>
