@@ -907,8 +907,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
                         { id: 'fdm', icon: Printer, label: 'FDM' },
-                        { id: 'sla', icon: Droplets, label: 'SLA' },
                         { id: 'dlp', icon: Zap, label: 'DLP' },
+                        { id: 'sla', icon: Droplets, label: 'SLA' },
                     ].map((method) => (
                         <button
                             key={method.id}
