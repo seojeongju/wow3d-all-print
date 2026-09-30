@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Box, ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,6 +56,7 @@ const FILTERS: { id: FilterKey; label: string }[] = [
 ];
 
 const PAGE_SIZE = 12;
+const MAX_PAGE_BUTTONS = 5;
 const SEARCH_DEBOUNCE_MS = 400;
 
 /** DB 저장값은 UTC(datetime('now')) */
@@ -85,6 +86,7 @@ export default function QuoteEstimateLogsPanel() {
     const [filter, setFilter] = useState<FilterKey>('unsaved');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [filteredTotal, setFilteredTotal] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -111,7 +113,10 @@ export default function QuoteEstimateLogsPanel() {
             if (!json.success) throw new Error(json.error || '조회 실패');
             setItems(json.data.items || []);
             setStats(json.data.stats || null);
-            setTotalPages(json.data.pagination?.totalPages || 1);
+            const nextTotalPages = json.data.pagination?.totalPages || 1;
+            setTotalPages(nextTotalPages);
+            setFilteredTotal(json.data.pagination?.total || 0);
+            if (page > nextTotalPages) setPage(nextTotalPages);
             setError(null);
         } catch (e) {
             setError(e instanceof Error ? e.message : String(e));
@@ -133,6 +138,38 @@ export default function QuoteEstimateLogsPanel() {
               { label: '주문 완료', value: stats.ordered.toLocaleString(), color: 'text-emerald-400' },
           ]
         : [];
+
+    const showPagination = totalPages > 1;
+
+    const renderPageButtons = () => {
+        if (!showPagination) return null;
+        let startPage = Math.max(1, page - Math.floor(MAX_PAGE_BUTTONS / 2));
+        let endPage = startPage + MAX_PAGE_BUTTONS - 1;
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - MAX_PAGE_BUTTONS + 1);
+        }
+        const buttons: ReactNode[] = [];
+        for (let i = startPage; i <= endPage; i++) {
+            buttons.push(
+                <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPage(i)}
+                    disabled={loading}
+                    aria-current={page === i ? 'page' : undefined}
+                    className={`min-w-[2.25rem] h-9 px-2 rounded-lg text-sm font-bold transition-colors ${
+                        page === i
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                >
+                    {i}
+                </button>
+            );
+        }
+        return buttons;
+    };
 
     return (
         <Card className="bg-white/[0.03] border-white/10">
@@ -243,33 +280,38 @@ export default function QuoteEstimateLogsPanel() {
                     </div>
                 )}
 
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="bg-white/5 border-white/10 h-9 w-9 p-0"
-                            disabled={page <= 1 || loading}
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            aria-label="이전 페이지"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <span className="text-xs text-white/50">
-                            {page} / {totalPages}
-                        </span>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="bg-white/5 border-white/10 h-9 w-9 p-0"
-                            disabled={page >= totalPages || loading}
-                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                            aria-label="다음 페이지"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
+                {filteredTotal > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/10">
+                        <p className="text-xs text-white/40 font-medium order-2 sm:order-1">
+                            총 <span className="text-white/70 font-bold">{filteredTotal.toLocaleString()}</span>건 · {page}/{totalPages} 페이지
+                        </p>
+                        {showPagination && (
+                            <div className="flex items-center gap-2 order-1 sm:order-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-white/5 border-white/10 h-9 w-9 p-0"
+                                    disabled={page <= 1 || loading}
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    aria-label="이전 페이지"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <div className="flex items-center gap-1">{renderPageButtons()}</div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-white/5 border-white/10 h-9 w-9 p-0"
+                                    disabled={page >= totalPages || loading}
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    aria-label="다음 페이지"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
             </CardContent>
