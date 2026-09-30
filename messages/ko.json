@@ -3060,6 +3060,12 @@
             "견적 상담·후속 안내, 가격·서비스 개선(통계)"
           ],
           [
+            "사이트 검색",
+            "입력한 검색어, 선택한 검색 결과, 무작위 방문자 식별값(브라우저 저장)",
+            "사이트 검색 이용 시 자동",
+            "검색 품질 개선, 콘텐츠 보강(통계)"
+          ],
+          [
             "문의",
             "이름, 이메일, 연락처(선택), 문의 내용",
             "문의하기 폼",
@@ -3099,6 +3105,10 @@
           {
             "label": "자동 견적 기록",
             "text": "마지막 이용일로부터 1년 후 자동 파기. 견적을 저장했거나 주문한 경우 해당 견적·주문 정보는 위 기준에 따릅니다."
+          },
+          {
+            "label": "사이트 검색 기록",
+            "text": "검색일로부터 1년 후 자동 파기."
           },
           {
             "label": "세금 관련",
@@ -4383,5 +4393,66 @@
     "subImageLabel": "상품 이미지 {n}",
     "detailImageAlt": "상세 이미지 {n}",
     "share": "공유하기"
+  },
+  "Search": {
+    "eyebrow": "통합 검색",
+    "metaTitle": "사이트 검색",
+    "metaDescription": "3D 프린팅 가이드·소재·출력 방식·FAQ를 한 번에 검색하세요.",
+    "title": "무엇을 찾고 계신가요?",
+    "subtitle": "가이드·소재·출력 방식·FAQ·제작 사례를 한 번에 검색합니다.",
+    "placeholder": "예: PLA PETG 차이, 서포트 비용, 투명 레진",
+    "openLabel": "검색",
+    "shortcutHint": "Ctrl K",
+    "close": "닫기",
+    "searching": "검색 중…",
+    "resultCount": "검색 결과 {count}건",
+    "noResults": "“{query}”에 대한 결과가 없습니다.",
+    "noResultsHint": "다른 단어로 검색하거나 아래 추천 검색어를 이용해 보세요. 찾는 정보가 없다면 1:1 문의를 남겨 주세요.",
+    "corrected": "“{corrected}”(으)로 교정한 결과를 함께 보여드려요.",
+    "popular": "인기 검색어",
+    "recommended": "추천 검색어",
+    "recommendedTerms": [
+      "PLA PETG 차이",
+      "서포트 비용",
+      "인필",
+      "STL 오류",
+      "투명 레진",
+      "제작 기간",
+      "캡스톤",
+      "사진으로 3D"
+    ],
+    "viewAll": "전체 결과 보기",
+    "enterHint": "Enter로 전체 결과 보기",
+    "contactCta": "1:1 문의하기",
+    "quoteCta": "자동견적 바로가기",
+    "faqCta": "FAQ 보기",
+    "all": "전체",
+    "types": {
+      "guide": "가이드",
+      "service": "서비스",
+      "faq": "FAQ",
+      "material": "소재",
+      "method": "출력 방식",
+      "showcase": "제작 사례",
+      "product": "맞춤 상품",
+      "gallery": "갤러리",
+      "page": "안내"
+    }
+  },
+  "GuideRobot": {
+    "bubble": "궁금한 것은 저에게 물어보세요!",
+    "open": "안내로봇에게 물어보기",
+    "close": "닫기",
+    "dismissBubble": "말풍선 닫기",
+    "greeting": "안녕하세요! 와우3D 안내로봇이에요",
+    "intro": "궁금한 내용을 검색하거나, 상담원과 바로 이야기해 보세요.",
+    "searchPlaceholder": "무엇이 궁금하세요? 예: 서포트 비용",
+    "moreResults": "검색 결과 {count}건 모두 보기",
+    "talkTitle": "네이버 톡톡 실시간 상담",
+    "talkDesc": "상담원과 바로 대화하기 · 새 창으로 열려요",
+    "quickLinks": "바로가기",
+    "quote": "자동 견적",
+    "faq": "자주 묻는 질문",
+    "contact": "1:1 문의"
   }
 }

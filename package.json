@@ -16,6 +16,7 @@
     "test:fdm": "npx --yes tsx scripts/test-fdm-quote.ts",
     "test:resin": "npx --yes tsx scripts/test-resin-quote.ts",
     "test:order-prices": "npx --yes tsx scripts/test-order-quote-prices.ts",
+    "test:search": "npx --yes tsx scripts/test-site-search.ts",
     "calibrate:quotes": "npx --yes tsx scripts/calibrate-quotes.ts",
     "calibrate:extract": "npx --yes tsx scripts/extract-stl-metrics.ts",
     "calibrate:suggest": "npx --yes tsx scripts/suggest-calibration.ts"

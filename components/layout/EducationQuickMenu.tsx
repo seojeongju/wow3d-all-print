@@ -5,8 +5,6 @@ import { GraduationCap, ExternalLink, Globe2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon';
-import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk';
 
 type QuickLinkAccent = 'teal' | 'naver';
 type DockMode = 'left' | 'right' | 'corner';
@@ -135,13 +133,11 @@ function QuickLinkButton({
  * 플로팅 퀵액션
  * - 와우3D홍대교육센터(3D쿠키) 링크
  * - (주)와우쓰리디 홈페이지 바로가기
- * - 네이버 톡톡 실시간 상담
  * - 견적/체험 3D 뷰어: 오른쪽 하단, 뷰 화살표·팔레트·푸터 문구와 겹치지 않게 안쪽으로
  */
 export default function EducationQuickMenu() {
     const pathname = usePathname();
     const t = useTranslations('Common');
-    const talkUrl = getNaverTalkTalkChatUrl();
     const isAdmin = pathname?.startsWith('/admin');
     const isQuotePage =
         pathname === '/quote' ||
@@ -184,19 +180,6 @@ export default function EducationQuickMenu() {
             accent: 'teal',
             icon: <Globe2 className="w-5 h-5" strokeWidth={2.1} />,
         },
-        ...(talkUrl
-            ? [
-                  {
-                      href: talkUrl,
-                      eyebrow: 'Live Chat',
-                      title: t('talkConsultTitle'),
-                      ariaLabel: t('talkConsultAria'),
-                      accent: 'naver' as const,
-                      iconShape: 'circle' as const,
-                      icon: <NaverTalkTalkIcon className="w-5 h-5" />,
-                  },
-              ]
-            : []),
     ];
 
     const positionClass = isViewerPage

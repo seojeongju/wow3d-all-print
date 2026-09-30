@@ -38,5 +38,16 @@ export async function POST(req: NextRequest) {
         console.warn('quote_estimate_logs purge skipped', e);
     }
 
-    return NextResponse.json({ success: true, ...result, purgedEstimateLogs });
+    // 개인정보처리방침 제3조: 사이트 검색 기록 보유 기간 1년
+    let purgedSearchLogs = 0;
+    try {
+        const purge = await env.DB.prepare(
+            `DELETE FROM search_logs WHERE created_at < datetime('now', '-1 year')`
+        ).run();
+        purgedSearchLogs = Number((purge.meta as { changes?: number })?.changes ?? 0);
+    } catch (e) {
+        console.warn('search_logs purge skipped', e);
+    }
+
+    return NextResponse.json({ success: true, ...result, purgedEstimateLogs, purgedSearchLogs });
 }

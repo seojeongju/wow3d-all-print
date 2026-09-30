@@ -19,6 +19,7 @@ import {
     BotMessageSquare,
     LayoutGrid,
     ClipboardPen,
+    TextSearch,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -118,6 +119,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 href: '/admin/qna',
                 icon: HelpCircle,
                 match: (p) => p.startsWith('/admin/qna'),
+            },
+            {
+                title: '검색어 분석',
+                href: '/admin/search-logs',
+                icon: TextSearch,
+                match: (p) => p.startsWith('/admin/search-logs'),
             },
         ],
     },

@@ -30,8 +30,10 @@ import {
     Building2,
     Store,
     GraduationCap,
+    Search,
     type LucideIcon,
 } from "lucide-react";
+import SiteSearchDialog from "@/components/search/SiteSearchDialog";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFileStore } from "@/store/useFileStore";
@@ -148,7 +150,25 @@ export default function Header() {
     const [mounted, setMounted] = useState(false)
     const [openDropdown, setOpenDropdown] = useState<string | null>(null)
     const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
+    const [searchOpen, setSearchOpen] = useState(false)
+    const tSearch = useTranslations('Search')
     const desktopNavRef = useRef<HTMLElement | null>(null)
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement | null
+            const typing = !!target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault()
+                setSearchOpen(true)
+            } else if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault()
+                setSearchOpen(true)
+            }
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [])
     const dropdownCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const clearDropdownCloseTimer = () => {
@@ -439,6 +459,20 @@ export default function Header() {
                         light={isPastHero}
                         className="hidden md:inline-flex mr-1"
                     />
+                    <button
+                        type="button"
+                        onClick={() => setSearchOpen(true)}
+                        className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                            isPastHero
+                                ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-teal-600 hover:bg-teal-50 hover:border-teal-200'
+                                : 'bg-white/10 border border-white/15 text-white/80 hover:text-white hover:bg-white/20'
+                        }`}
+                        title={`${tSearch('openLabel')} (${tSearch('shortcutHint')})`}
+                        aria-label={tSearch('openLabel')}
+                    >
+                        <Search className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                    </button>
+                    <SiteSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
                     <Link href="/cart">
                         <button className={`relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
                             isPastHero

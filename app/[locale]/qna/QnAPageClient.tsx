@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Minus, Search, MessageSquare, HelpCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -27,6 +27,16 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
 
   const categoryKeys = ['all', 'general', 'quote', 'tech', 'partnership', 'other'] as const
 
+  /** 사이트 검색에서 ?q=질문 으로 들어오면 해당 질문을 걸러서 펼친다 */
+  const pendingOpenQueryRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q')?.trim().slice(0, 200)
+    if (!q) return
+    pendingOpenQueryRef.current = q
+    setSearchQuery(q)
+  }, [])
+
   useEffect(() => {
     setCurrentPage(1)
     setOpenId(null)
@@ -41,6 +51,12 @@ export default function QnAPageClient({ initialQnas }: QnAPageClientProps) {
       return matchesSearch && matchesCategory
     })
   }, [qnas, searchQuery, selectedCategory])
+
+  useEffect(() => {
+    if (!pendingOpenQueryRef.current || pendingOpenQueryRef.current !== searchQuery) return
+    pendingOpenQueryRef.current = null
+    if (filteredQnas.length > 0) setOpenId(filteredQnas[0].id)
+  }, [filteredQnas, searchQuery])
 
   const totalPages = Math.ceil(filteredQnas.length / ITEMS_PER_PAGE)
   const currentItems = useMemo(() => {

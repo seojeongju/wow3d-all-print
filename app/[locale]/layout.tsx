@@ -6,6 +6,7 @@ import { routing } from '@/i18n/routing'
 import SessionValidator from '@/components/auth/SessionValidator'
 import EducationQuickMenu from '@/components/layout/EducationQuickMenu'
 import SitePopup from '@/components/popup/SitePopup'
+import GuideRobot from '@/components/assistant/GuideRobot'
 
 type Props = {
     children: React.ReactNode
@@ -30,6 +31,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <SessionValidator />
             {children}
             <EducationQuickMenu />
+            <GuideRobot />
             <SitePopup />
         </NextIntlClientProvider>
     )

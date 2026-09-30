@@ -3059,6 +3059,12 @@
             "Quote consultation and follow-up, pricing and service improvement (stats)"
           ],
           [
+            "Site search",
+            "Search terms entered, search results selected, random visitor identifier (stored in the browser)",
+            "Automatic when using site search",
+            "Search quality and content improvement (stats)"
+          ],
+          [
             "Inquiry",
             "Name, email, phone (optional), message",
             "Contact form",
@@ -3098,6 +3104,10 @@
           {
             "label": "Instant quote records",
             "text": "Automatically destroyed 1 year after last use. If you saved the quote or placed an order, that quote/order data follows the rules above."
+          },
+          {
+            "label": "Site search records",
+            "text": "Automatically destroyed 1 year after the search."
           },
           {
             "label": "Tax-related",
@@ -4382,5 +4392,66 @@
     "subImageLabel": "Product image {n}",
     "detailImageAlt": "Detail image {n}",
     "share": "Share"
+  },
+  "Search": {
+    "eyebrow": "Site search",
+    "metaTitle": "Search",
+    "metaDescription": "Search 3D printing guides, materials, print methods and FAQs in one place.",
+    "title": "What are you looking for?",
+    "subtitle": "Search guides, materials, print methods, FAQs and project examples at once.",
+    "placeholder": "e.g. PLA vs PETG, support cost, clear resin",
+    "openLabel": "Search",
+    "shortcutHint": "Ctrl K",
+    "close": "Close",
+    "searching": "Searching…",
+    "resultCount": "{count} results",
+    "noResults": "No results for “{query}”.",
+    "noResultsHint": "Try different words or one of the suggestions below. If you cannot find what you need, send us a message.",
+    "corrected": "Also showing results for “{corrected}”.",
+    "popular": "Popular searches",
+    "recommended": "Suggested searches",
+    "recommendedTerms": [
+      "PLA vs PETG",
+      "support cost",
+      "infill",
+      "STL errors",
+      "clear resin",
+      "turnaround",
+      "capstone",
+      "photo to 3D"
+    ],
+    "viewAll": "See all results",
+    "enterHint": "Press Enter to see all results",
+    "contactCta": "Contact us",
+    "quoteCta": "Get an instant quote",
+    "faqCta": "Browse FAQ",
+    "all": "All",
+    "types": {
+      "guide": "Guide",
+      "service": "Service",
+      "faq": "FAQ",
+      "material": "Material",
+      "method": "Print method",
+      "showcase": "Project",
+      "product": "Custom product",
+      "gallery": "Gallery",
+      "page": "Info"
+    }
+  },
+  "GuideRobot": {
+    "bubble": "Got a question? Ask me!",
+    "open": "Ask the guide robot",
+    "close": "Close",
+    "dismissBubble": "Dismiss message",
+    "greeting": "Hi! I'm the WOW3D guide robot",
+    "intro": "Search for what you need, or chat with our team right away.",
+    "searchPlaceholder": "What do you need? e.g. support cost",
+    "moreResults": "See all {count} results",
+    "talkTitle": "Live chat on Naver TalkTalk",
+    "talkDesc": "Talk to our team now · opens in a new window",
+    "quickLinks": "Shortcuts",
+    "quote": "Instant quote",
+    "faq": "FAQ",
+    "contact": "Contact us"
   }
 }
