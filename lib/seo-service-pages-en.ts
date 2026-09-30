@@ -194,7 +194,75 @@ export const SERVICE_LANDINGS_EN: ServiceLandingConfig[] = [
             href: '/guides/graduation-project-checklist',
         },
         relatedGuides: [
+            { href: '/services/capstone', title: 'Capstone design prototyping' },
             { href: '/guides/graduation-project-checklist', title: 'Graduation checklist' },
+            { href: '/guides/3d-printing-turnaround-time', title: 'Turnaround time' },
+        ],
+    },
+    {
+        slug: 'capstone',
+        path: '/services/capstone',
+        title: 'Capstone Design Prototyping · University Capstone 3D Printing',
+        h1: 'Capstone Design',
+        h1Accent: 'Prototyping',
+        description:
+            'Capstone design prototypes from idea consulting and 3D modeling to 3D printing and finishing in one place. Quotes, transaction statements, and tax invoices available for university research-foundation payments.',
+        keywords: [
+            'capstone design prototype',
+            'capstone prototyping service',
+            'capstone 3D printing',
+            'student prototype',
+            'idea consulting',
+            'prototype modeling service',
+        ],
+        eyebrow: 'Capstone Design',
+        bullets: [
+            'Idea consulting from the concept stage — structure, size, material, and process advice',
+            'Sketches, drawings, or reference images are enough — we model print-ready files for you',
+            'FDM, SLA, and DLP for presentation models through working functional prototypes',
+            'Quotes, transaction statements, and tax invoices for research-foundation payments',
+            'Schedule planning around mid-term and final presentations',
+        ],
+        faqs: [
+            {
+                q: 'How does capstone prototyping work?',
+                a: 'Idea consulting → 3D modeling (we can model for you) → quote & order → printing & finishing → inspection & delivery. If you already have a 3D file, get a price instantly in auto-quote.',
+            },
+            {
+                q: 'Can you build a capstone prototype from just an idea?',
+                a: 'Yes. Through idea consulting we define structure, size, material, and process together, then model from your sketches or reference images and print.',
+            },
+            {
+                q: 'Do you issue documents for university research-foundation payments?',
+                a: 'Yes. We can issue quotes, transaction statements, and tax invoices. Tell us which documents you need and the billing details when you contact us.',
+            },
+            {
+                q: 'How much does a capstone prototype cost?',
+                a: 'It depends on size, material, print method, quantity, and finishing. With a 3D file you can check instantly in auto-quote; when consulting or modeling is included, we send a quote after consultation.',
+            },
+            {
+                q: 'How much lead time should I leave before the presentation?',
+                a: 'Printing alone typically arrives in about 3–7 days. Including modeling and a first-round revision, start 3–4 weeks before the final presentation. If the schedule is tight, contact us first to check feasibility.',
+            },
+            {
+                q: 'Which materials suit a moving functional prototype?',
+                a: 'FDM PETG or ABS for parts that need assembly, fastening, or durability; SLA/DLP resin for presentation surfaces and fine detail. Processes and materials can be mixed per part.',
+            },
+            {
+                q: 'Can you make enclosures for Arduino or other electronics?',
+                a: 'Yes. Share board, sensor, and battery dimensions and we model the fastening and fit clearances before printing. If you design it yourself, see the tolerance guide for fit allowances.',
+            },
+            {
+                q: 'Our team has many files — can we order them together?',
+                a: 'Yes. Add all files to the cart and order at once; files using the same print method share a single minimum order charge.',
+            },
+        ],
+        primaryCta: { label: 'Consult on a capstone prototype', href: '/contact' },
+        secondaryCta: { label: 'Quote with a 3D file', href: '/quote' },
+        relatedGuides: [
+            { href: '/guides/capstone-design-prototype-guide', title: 'Capstone prototyping guide' },
+            { href: '/services/graduation', title: 'Graduation 3D printing' },
+            { href: '/guides/3d-printing-tolerances', title: '3D printing tolerances' },
             { href: '/guides/3d-printing-turnaround-time', title: 'Turnaround time' },
         ],
     },

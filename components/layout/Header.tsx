@@ -29,6 +29,7 @@ import {
     Navigation,
     Building2,
     Store,
+    GraduationCap,
     type LucideIcon,
 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
@@ -180,6 +181,7 @@ export default function Header() {
                     { label: t('coreServices'), href: '/services', desc: t('coreServicesDesc'), icon: Boxes },
                     { label: t('printMethods'), href: '/print-methods', desc: t('printMethodsDesc'), icon: Printer },
                     { label: t('guides'), href: '/guides', desc: t('guidesDesc'), icon: BookOpen },
+                    { label: t('capstone'), href: '/services/capstone', desc: t('capstoneDesc'), icon: GraduationCap },
                 ],
             },
             { label: t('quote'), href: '/quote', icon: Zap },

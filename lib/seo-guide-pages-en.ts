@@ -298,4 +298,56 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
         ctaHref: '/services/graduation',
         ctaLabel: 'Graduation 3D printing service',
     },
+    {
+        slug: 'capstone-design-prototype-guide',
+        path: '/guides/capstone-design-prototype-guide',
+        title: 'Capstone design prototyping guide — schedule, modeling & print checklist',
+        h1: 'Capstone design prototype',
+        h1Accent: 'guide',
+        description:
+            'A semester-based guide to capstone design prototyping: shaping the idea, 3D modeling, first-round print and test, final build, and presentation prep.',
+        eyebrow: 'Capstone Guide',
+        sections: [
+            {
+                title: 'Step 1 · Shape the idea',
+                body: 'Write down the problem, core functions, size, and use environment. If you are stuck, idea consulting can suggest structure, materials, and a suitable process.',
+            },
+            {
+                title: 'Step 2 · 3D modeling',
+                body: 'Export STL or STEP from CAD such as Fusion 360, SolidWorks, or Inventor. If modeling is hard for your team, we can model from sketches or drawings.',
+            },
+            {
+                title: 'Step 3 · First print & test',
+                body: 'Print a low-cost FDM PLA version to check size, assembly, and motion, then fix problem areas before the final build.',
+            },
+            {
+                title: 'Step 4 · Final prototype',
+                body: 'Use SLA/DLP resin plus finishing for presentation looks, and PETG or ABS for functional parts. Leave fit allowances on mating parts (see the tolerance guide).',
+            },
+            {
+                title: 'Step 5 · Budget & documents',
+                body: 'Check the amount in auto-quote, then request a quote, transaction statement, or tax invoice for research-foundation payment.',
+            },
+            {
+                title: 'Tip · Plan backwards from the deadline',
+                body: 'Start the first print 3–4 weeks before the final presentation and place the final order at least 2 weeks before. Typical receipt is about 3–7 days.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'When should we order a capstone prototype?',
+                a: 'Place the final order at least 2 weeks before the presentation, and start 3–4 weeks ahead if you want a first-round test print.',
+            },
+            {
+                q: 'Can we make a capstone prototype without CAD skills?',
+                a: 'Yes. Send sketches, drawings, or reference images and we can model a print-ready file for you, then print it.',
+            },
+            {
+                q: 'How can we cut cost on a small capstone budget?',
+                a: 'Test with FDM PLA first, lower infill for non-structural parts, and order all files together — files with the same print method share one minimum charge.',
+            },
+        ],
+        ctaHref: '/services/capstone',
+        ctaLabel: 'Capstone prototyping service',
+    },
 ]

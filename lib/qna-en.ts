@@ -1,5 +1,20 @@
 /** Korean question (exact DB/curated text) → English Q&A */
 export const QNA_EN_BY_QUESTION: Record<string, { question: string; answer: string }> = {
+    '캡스톤디자인 시제품 제작도 가능한가요?': {
+        question: 'Do you make capstone design prototypes?',
+        answer:
+            'Yes. WOW3D supports the whole capstone prototyping process — idea consulting, 3D modeling, 3D printing, and finishing. With a 3D file you can check the price instantly in auto-quote; if you only have an idea or sketch, contact us for a consultation.',
+    },
+    '아이디어만 있어도 시제품 제작을 의뢰할 수 있나요?': {
+        question: 'Can I request a prototype with only an idea?',
+        answer:
+            'Yes. Through idea consulting we define structure, size, material, and process together, then model from your sketches or reference images and print.',
+    },
+    '산학협력단 결제용 견적서·세금계산서를 발행해 주나요?': {
+        question: 'Do you issue quotes and tax invoices for university research-foundation payments?',
+        answer:
+            'Yes. We can issue quotes, transaction statements, and tax invoices. Tell us which documents you need and the billing details when you contact us.',
+    },
     '사진(이미지) 파일을 3D 모델링으로 변환할 수 있나요?': {
         question: 'Can I turn a photo (image) into a 3D model?',
         answer:

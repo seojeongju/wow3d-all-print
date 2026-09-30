@@ -9,6 +9,7 @@ import {
     GraduationCap,
     ImageIcon,
     Layers,
+    Lightbulb,
     Package,
     PenTool,
     Printer,
@@ -73,6 +74,13 @@ const SERVICE_VISUALS: Record<string, ServiceVisual> = {
         icon: GraduationCap,
         accent: 'text-emerald-300',
         ring: 'group-hover:border-emerald-400/45 group-hover:bg-emerald-400/[0.08]',
+    },
+    capstone: {
+        title: { ko: '캡스톤디자인', en: 'Capstone Design' },
+        blurb: { ko: '아이디어 컨설팅·모델링 대행·시제품 제작', en: 'Idea consulting, modeling & prototypes' },
+        icon: Lightbulb,
+        accent: 'text-yellow-300',
+        ring: 'group-hover:border-yellow-400/45 group-hover:bg-yellow-400/[0.08]',
     },
     'small-batch': {
         title: { ko: '소량생산', en: 'Small Batch' },

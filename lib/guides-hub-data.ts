@@ -25,6 +25,7 @@ import {
     Sparkles,
     Wrench,
     Scale,
+    Lightbulb,
 } from 'lucide-react'
 import { NEW_SEO_GUIDES } from '@/lib/seo-guide-pages'
 
@@ -56,6 +57,7 @@ const iconBySlug: Record<string, { icon: LucideIcon; accent: string }> = {
     '3d-printing-tolerances': { icon: Crosshair, accent: 'text-violet-400' },
     'splitting-large-3d-prints': { icon: Scissors, accent: 'text-indigo-400' },
     'graduation-project-checklist': { icon: GraduationCap, accent: 'text-emerald-400' },
+    'capstone-design-prototype-guide': { icon: Lightbulb, accent: 'text-yellow-400' },
 }
 
 export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
@@ -94,6 +96,7 @@ export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
                 '3d-printing-tolerances',
                 'splitting-large-3d-prints',
                 'graduation-project-checklist',
+                'capstone-design-prototype-guide',
             ].includes(g.slug)
         ).map((g) => {
             const meta = iconBySlug[g.slug] ?? { icon: Wrench, accent: 'text-white/60' }
