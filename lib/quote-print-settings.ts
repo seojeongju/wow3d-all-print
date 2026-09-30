@@ -47,14 +47,14 @@ export function formatQuotePrintSettings(q: QuotePrintSettings | null | undefine
         if (q.layer_thickness != null && Number.isFinite(Number(q.layer_thickness))) {
             parts.push(`레이어 ${Number(q.layer_thickness)}mm`)
         }
-        parts.push(asBool(q.post_processing) ? '후가공 적용' : '후가공 없음')
+        parts.push(asBool(q.post_processing) ? '기본 후처리 포함' : '기본 후처리 없음')
         return parts.join(' · ')
     }
 
     return ''
 }
 
-/** 저장 견적함·장바구니 등 칩 UI용 라벨 목록 */
+/** 저장 견적함·장바구니 등 고객 칩 UI용 라벨 목록 (서포트·기본 후처리는 항상 포함이라 표시하지 않음) */
 export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefined): string[] {
     if (!q) return []
     const method = String(q.print_method || '').toLowerCase()
@@ -69,7 +69,6 @@ export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefin
         if (q.fdm_layer_height != null && Number.isFinite(Number(q.fdm_layer_height))) {
             chips.push(`레이어 ${Number(q.fdm_layer_height)}mm`)
         }
-        chips.push(asBool(q.fdm_support) ? '서포트' : '서포트 없음')
         return chips
     }
 
@@ -80,7 +79,6 @@ export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefin
         if (q.layer_thickness != null && Number.isFinite(Number(q.layer_thickness))) {
             chips.push(`레이어 ${Number(q.layer_thickness)}mm`)
         }
-        chips.push(asBool(q.post_processing) ? '후가공' : '후가공 없음')
         return chips
     }
 

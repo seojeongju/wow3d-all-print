@@ -156,10 +156,12 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const [fdmMaterial, setFdmMaterial] = useState('')
     const [infill, setInfill] = useState(FDM_INFILL_DEFAULT)
     const [layerHeight, setLayerHeight] = useState(0.2) // mm
-    const [supportEnabled, setSupportEnabled] = useState(true)
+    /** FDM 출력은 서포트 없이 불가 → 견적에 항상 포함 (고객 선택 없음) */
+    const supportEnabled = true
     const [resinType, setResinType] = useState('')
     const [slaLayerHeight, setSlaLayerHeight] = useState(0.05) // mm
-    const [postProcessing, setPostProcessing] = useState(false)
+    /** 레진 출력은 세척·2차 경화·서포트 제거 없이 완성 불가 → 기본 후처리 항상 포함 */
+    const postProcessing = true
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
     /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
@@ -188,11 +190,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             if (initialQuote.fdm_material) setFdmMaterial(initialQuote.fdm_material)
             if (initialQuote.fdm_infill) setInfill(initialQuote.fdm_infill)
             if (initialQuote.fdm_layer_height) setLayerHeight(initialQuote.fdm_layer_height)
-            if (initialQuote.fdm_support !== undefined) setSupportEnabled(!!initialQuote.fdm_support)
         } else {
             if (initialQuote.resin_type) setResinType(initialQuote.resin_type)
             if (initialQuote.layer_thickness) setSlaLayerHeight(initialQuote.layer_thickness)
-            if (initialQuote.post_processing !== undefined) setPostProcessing(!!initialQuote.post_processing)
         }
 
         const storedTransform = parseStoredModelTransform(initialQuote.model_transform)
@@ -263,7 +263,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const volumeCm3 = analysis?.volume || 0
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
     const overhangAreaRaw = analysis?.overhangArea // 오버행 정보 존재 여부 확인용
-    const needsSupport = overhangAreaRaw !== undefined && overhangAreaRaw > (surfaceAreaCm2 * 0.05) // 5% 이상 오버행 시 지지대 권장
     const heightMm = analysis?.boundingBox.z || 0
     const bx = analysis?.boundingBox?.x ?? 0
     const by = analysis?.boundingBox?.y ?? 0
@@ -1054,25 +1053,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between px-1">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">{t('support')}</label>
-                                        {needsSupport && <span className="text-[9px] sm:text-[10px] text-amber-500 font-black flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> {t('overhangDetected')}</span>}
-                                    </div>
-                                    <button type="button" role="switch" aria-checked={supportEnabled} onClick={() => setSupportEnabled((s) => !s)}
-                                        className={`relative w-11 sm:w-12 h-6 sm:h-6.5 rounded-full border-2 transition-all ${supportEnabled ? 'bg-teal-400 border-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.3)]' : 'bg-white/5 border-white/20'}`}>
-                                        <span className={`absolute top-0.5 h-4 sm:h-4.5 w-4 sm:w-4.5 rounded-full transition-all ${supportEnabled ? 'left-5.5 sm:left-6 bg-slate-950' : 'left-0.5 bg-white/40'}`} />
-                                    </button>
-                                </div>
-                                {needsSupport && !supportEnabled && (
-                                    <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                                        <p className="text-[10.5px] sm:text-[11px] text-amber-200/90 leading-relaxed font-bold break-keep">
-                                            {t('supportRecommend')}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     ) : (
                         <div className="space-y-7 sm:space-y-8 pt-1">
@@ -1092,13 +1072,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-                            <div className="flex items-center justify-between px-1">
-                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">{t('postProcessing')}</label>
-                                <button type="button" role="switch" aria-checked={postProcessing} onClick={() => setPostProcessing((p) => !p)}
-                                    className={`relative w-11 sm:w-12 h-6 sm:h-6.5 rounded-full border-2 transition-all ${postProcessing ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/20'}`}>
-                                    <span className={`absolute top-0.5 h-4 sm:h-4.5 w-4 sm:w-4.5 rounded-full transition-all ${postProcessing ? 'left-5.5 sm:left-6 bg-slate-950' : 'left-0.5 bg-white/40'}`} />
-                                </button>
                             </div>
                         </div>
                     )}
@@ -1123,17 +1096,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 <div className="font-medium text-slate-100">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
                                 <div className="text-slate-400">{t('layerThickness')}</div>
                                 <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
-                                {printMethod === 'fdm' ? (
+                                {printMethod === 'fdm' && (
                                     <>
                                         <div className="text-slate-400">{t('infill')}</div>
                                         <div className="font-medium text-slate-100">{infill}%</div>
-                                        <div className="text-slate-400">{t('supportShort')}</div>
-                                        <div className="font-medium text-slate-100">{supportEnabled ? t('used') : t('unused')}</div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="text-slate-400">{t('postProcessShort')}</div>
-                                        <div className="font-medium text-slate-100">{postProcessing ? t('applied') : t('notApplied')}</div>
                                     </>
                                 )}
                             </div>
@@ -1154,7 +1120,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                 <div className="text-slate-400">{t('timeRequired')}</div>
                                 <div className="font-bold text-emerald-400">
-                                    {formatEstimatedPrintTime(quoteDetail.time)}
+                                    {formatEstimatedPrintTime(quoteDetail.time, locale)}
                                     <span className="ml-1.5 text-xs font-medium text-emerald-400/60">({quoteDetail.time.toFixed(2)} h)</span>
                                 </div>
                                 <div className="text-slate-400">{t('materialAmount')}</div>
@@ -1206,7 +1172,11 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         <div className="flex items-center justify-end gap-2 text-[9.5px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5 sm:mb-2">
                             <Clock className="w-3.5 h-3.5" /> {t('leadTime')}
                         </div>
-                        <span className="text-[15px] sm:text-[17px] font-black text-teal-400 tracking-tight">~{formatEstimatedPrintTime(estimatedTimeHours)}</span>
+                        <span className="text-[15px] sm:text-[17px] font-black text-teal-400 tracking-tight">~{formatEstimatedPrintTime(estimatedTimeHours, locale)}</span>
+                        <div className="mt-1.5 text-[10.5px] sm:text-[12px] font-bold text-white/60 whitespace-nowrap">
+                            {t('deliveryEstimate')}{' '}
+                            <span className="text-white/90">{t(`deliveryDays.${printMethod}`)}</span>
+                        </div>
                     </div>
                 </div>
 

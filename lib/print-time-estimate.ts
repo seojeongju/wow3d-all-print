@@ -172,21 +172,26 @@ export function estimateResinPrintTimeHours(input: ResinTimeEstimateInput): Resi
 }
 
 /** 견적 UI용 읽기 쉬운 시간 표기 (ceil로 뭉개지 않음) */
-export function formatEstimatedPrintTime(hours: number): string {
+export function formatEstimatedPrintTime(hours: number, locale: string = 'ko'): string {
+    const en = locale === 'en'
+    const fmtH = (n: number) => (en ? `${n}h` : `${n}시간`)
+    const fmtM = (n: number) => (en ? `${n}m` : `${n}분`)
+    const fmtD = (s: string) => (en ? `${s} ${s === '1' || s === '1.0' ? 'day' : 'days'}` : `${s}일`)
+
     const h = Math.max(0, Number(hours) || 0)
     if (h < 1) {
         const mins = Math.max(1, Math.round(h * 60))
-        if (mins >= 60) return '1시간'
-        return `${mins}분`
+        if (mins >= 60) return fmtH(1)
+        return fmtM(mins)
     }
     if (h < 24) {
         const whole = Math.floor(h)
         const mins = Math.round((h - whole) * 60)
-        if (mins === 0) return `${whole}시간`
-        if (mins === 60) return `${whole + 1}시간`
-        return `${whole}시간 ${mins}분`
+        if (mins === 0) return fmtH(whole)
+        if (mins === 60) return fmtH(whole + 1)
+        return `${fmtH(whole)} ${fmtM(mins)}`
     }
     const days = h / 24
-    if (days < 10) return `${days.toFixed(1)}일`
-    return `${Math.round(days)}일`
+    if (days < 10) return fmtD(days.toFixed(1))
+    return fmtD(String(Math.round(days)))
 }
