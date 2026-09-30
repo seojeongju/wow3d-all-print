@@ -438,7 +438,7 @@ export default function Scene({ compact = false }: SceneProps) {
         <div className="w-full h-full min-h-[400px] bg-slate-950/20 rounded-xl overflow-hidden border border-slate-800 relative z-0">
             <ViewPresetContext.Provider value={{ viewPreset, setViewPreset }}>
                 {/* 파일 업로드마다 Canvas를 재생성하지 않음 — WebGL Context Lost + Trackball connect(null) 방지 */}
-                <div ref={canvasRef} className="absolute inset-0 z-0 h-full min-h-[400px]">
+                <div ref={canvasRef} data-quote-viewer className="absolute inset-0 z-0 h-full min-h-[400px]">
                     <ViewerErrorBoundary
                         onRetry={remountViewer}
                         labels={{

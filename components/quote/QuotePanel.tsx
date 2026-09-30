@@ -34,6 +34,7 @@ import {
     QUOTE_CONVERSION_EVENTS,
 } from '@/lib/conversion-events'
 import { trackConversionEvent } from '@/lib/track-conversion-event'
+import { useQuoteEstimateLog, type QuoteEstimateSnapshot } from '@/hooks/useQuoteEstimateLog'
 import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -378,6 +379,27 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const variableCostKrw = quoteDetail.variableCostKrw
     const setupCostKrw = quoteDetail.setupCostKrw
 
+    const estimateSnapshot = useMemo<QuoteEstimateSnapshot | null>(() => {
+        if (!file || !analysis || !(materials.length > 0) || !(totalPrice > 0)) return null
+        return {
+            fileName: file.name,
+            fileSize: file.size,
+            dimensionsX: Math.round(bx * 10) / 10,
+            dimensionsY: Math.round(by * 10) / 10,
+            dimensionsZ: Math.round(bz * 10) / 10,
+            volumeCm3: Math.round(volumeCm3 * 100) / 100,
+            surfaceAreaCm2: Math.round(surfaceAreaCm2 * 100) / 100,
+            printMethod,
+            materialName: printMethod === 'fdm' ? fdmMaterial : resinType,
+            layerHeight: printMethod === 'fdm' ? layerHeight : slaLayerHeight,
+            fdmInfill: printMethod === 'fdm' ? infill : null,
+            totalPrice,
+            estimatedTimeHours: Math.round(estimatedTimeHours * 100) / 100,
+            guideSource: guideSource || undefined,
+        }
+    }, [file, analysis, materials.length, totalPrice, bx, by, bz, volumeCm3, surfaceAreaCm2, printMethod, fdmMaterial, resinType, layerHeight, slaLayerHeight, infill, estimatedTimeHours, guideSource])
+    const { linkSavedQuote } = useQuoteEstimateLog(file, estimateSnapshot)
+
     // 저장 견적 재로드 시 lastSavedConfig 시드 — 동일 설정이면 UPDATE 유지
     useEffect(() => {
         if (!initialQuote || !analysis || initialConfigSeeded.current) return
@@ -686,7 +708,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             const data = result.data as SaveQuoteResult
 
             const finalQuoteId = data.id || quoteIdForPost;
-            if (finalQuoteId) setSavedQuoteId(finalQuoteId);
+            if (finalQuoteId) {
+                setSavedQuoteId(finalQuoteId);
+                linkSavedQuote(finalQuoteId);
+            }
             setLastSavedConfig(configKey);
 
             const resolvedTotalPrice =
@@ -1238,6 +1263,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         {t('saveHint')}
                     </p>
                 )}
+                <p className="text-[10px] text-white/30 text-center leading-relaxed break-keep">
+                    {t('estimateLogNotice')}
+                </p>
                 {!embedded && (
                     <div className="flex items-center justify-center gap-2 text-[9px] text-white/20 font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] pt-2">
                         <ShieldCheck className="w-3 h-3 sm:w-3.5 h-3.5 text-teal-400/50 shadow-[0_0_10px_rgba(20,184,166,0.2)]" /> WOW3D Security

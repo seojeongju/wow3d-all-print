@@ -9,6 +9,7 @@ import { Search, Loader2, Users, ChevronLeft, ChevronRight, Download } from 'luc
 import { showToast } from '@/lib/toast-helper';
 import { useAuthStore } from '@/store/useAuthStore';
 import MemberStatsPanel from '@/components/admin/MemberStatsPanel';
+import { MEMBER_STAGES, MEMBER_STAGE_LABELS, type MemberStage } from '@/lib/member-stage';
 import {
     Select,
     SelectContent,
@@ -24,7 +25,36 @@ type UserRow = {
     phone: string | null;
     role: string;
     created_at: string;
+    member_stage?: MemberStage;
+    estimate_count?: number;
 };
+
+const STAGE_FILTER_OPTIONS = [
+    { value: 'all', label: '전체 단계' },
+    ...MEMBER_STAGES.map((s) => ({ value: s, label: MEMBER_STAGE_LABELS[s] })),
+];
+
+const STAGE_BADGE_CLASS: Record<MemberStage, string> = {
+    joined: 'bg-white/5 text-white/50 border-white/15',
+    estimated: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+    saved: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+    cart: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    ordered: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+};
+
+function getStageBadge(u: UserRow) {
+    const stage = u.member_stage ?? 'joined';
+    return (
+        <div className="flex flex-col gap-0.5">
+            <Badge variant="outline" className={STAGE_BADGE_CLASS[stage]}>
+                {MEMBER_STAGE_LABELS[stage]}
+            </Badge>
+            {(u.estimate_count ?? 0) > 0 && (
+                <span className="text-[10px] text-white/40">견적 확인 {u.estimate_count}회</span>
+            )}
+        </div>
+    );
+}
 
 type UsersPagination = { page: number; limit: number; total: number; totalPages: number };
 
@@ -64,6 +94,7 @@ export default function AdminUsersPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const prevDebouncedRef = useRef('');
     const [roleFilter, setRoleFilter] = useState('all');
+    const [stageFilter, setStageFilter] = useState('all');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [exporting, setExporting] = useState(false);
 
@@ -76,6 +107,7 @@ export default function AdminUsersPage() {
             });
             if (debouncedSearch) params.set('q', debouncedSearch);
             if (roleFilter && roleFilter !== 'all') params.set('role', roleFilter);
+            if (stageFilter && stageFilter !== 'all') params.set('stage', stageFilter);
 
             const res = await fetch(`/api/admin/users?${params}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -109,7 +141,7 @@ export default function AdminUsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [token, page, debouncedSearch, roleFilter]);
+    }, [token, page, debouncedSearch, roleFilter, stageFilter]);
 
     useEffect(() => {
         fetchUsers();
@@ -238,7 +270,9 @@ export default function AdminUsersPage() {
         return buttons;
     };
 
-    const hasActiveFilter = Boolean(debouncedSearch || (roleFilter && roleFilter !== 'all'));
+    const hasActiveFilter = Boolean(
+        debouncedSearch || (roleFilter && roleFilter !== 'all') || (stageFilter && stageFilter !== 'all')
+    );
 
     if (loading && users.length === 0) {
         return (
@@ -256,7 +290,7 @@ export default function AdminUsersPage() {
                     사용자 관리
                 </h1>
                 <p className="text-white/50 text-sm mt-1">
-                    가입된 사용자 목록을 확인하고 역할(일반회원/관리자)을 변경할 수 있습니다.
+                    가입된 사용자 목록을 확인하고 역할(일반회원/관리자)을 변경할 수 있습니다. 활동 단계는 견적 확인·저장·장바구니·주문 기록으로 자동 계산됩니다.
                 </p>
             </div>
 
@@ -287,6 +321,24 @@ export default function AdminUsersPage() {
                         {ROLE_FILTER_OPTIONS.map((r) => (
                             <SelectItem key={r.value} value={r.value}>
                                 {r.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select
+                    value={stageFilter}
+                    onValueChange={(v) => {
+                        setStageFilter(v);
+                        setPage(1);
+                    }}
+                >
+                    <SelectTrigger className="w-full sm:w-[160px] bg-white/5 border-white/10 text-white">
+                        <SelectValue placeholder="활동 단계" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {STAGE_FILTER_OPTIONS.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                                {s.label}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -323,6 +375,7 @@ export default function AdminUsersPage() {
                                     <th className="p-4 font-medium text-white/70">이름</th>
                                     <th className="p-4 font-medium text-white/70">연락처</th>
                                     <th className="p-4 font-medium text-white/70">역할</th>
+                                    <th className="p-4 font-medium text-white/70">활동 단계</th>
                                     <th className="p-4 font-medium text-white/70">가입일</th>
                                     <th className="p-4 font-medium text-right text-white/70">역할 변경</th>
                                 </tr>
@@ -335,6 +388,7 @@ export default function AdminUsersPage() {
                                         <td className="p-4 text-white/90">{u.name}</td>
                                         <td className="p-4 text-white/70">{u.phone || '-'}</td>
                                         <td className="p-4">{getRoleBadge(u.role || 'user')}</td>
+                                        <td className="p-4">{getStageBadge(u)}</td>
                                         <td className="p-4 text-white/50">
                                             {u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '-'}
                                         </td>
@@ -366,7 +420,7 @@ export default function AdminUsersPage() {
                                 ))}
                                 {users.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={7} className="p-12 text-center text-white/40">
+                                        <td colSpan={8} className="p-12 text-center text-white/40">
                                             {hasActiveFilter ? '검색·필터 결과가 없습니다.' : '등록된 사용자가 없습니다.'}
                                         </td>
                                     </tr>

@@ -26,5 +26,17 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await processAutoOrderStatusTransitions(env.DB);
-    return NextResponse.json({ success: true, ...result });
+
+    // 개인정보처리방침 제3조: 자동 견적 기록 보유 기간 1년
+    let purgedEstimateLogs = 0;
+    try {
+        const purge = await env.DB.prepare(
+            `DELETE FROM quote_estimate_logs WHERE updated_at < datetime('now', '-1 year')`
+        ).run();
+        purgedEstimateLogs = Number((purge.meta as { changes?: number })?.changes ?? 0);
+    } catch (e) {
+        console.warn('quote_estimate_logs purge skipped', e);
+    }
+
+    return NextResponse.json({ success: true, ...result, purgedEstimateLogs });
 }

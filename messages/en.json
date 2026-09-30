@@ -608,6 +608,7 @@
     "quoteBox": "Saved quotes",
     "goCart": "Go to cart",
     "saveHint": "Saving alone does not place an order. Add to cart, then checkout.",
+    "estimateLogNotice": "For consultation and service improvement, the file name, dimensions, selected options, quoted price and a preview image are recorded. The original file is kept only when you save or add to cart.",
     "toastCartUpdated": "Cart updated",
     "toastCartUpdatedDesc": "Updated quote price and options were applied to your cart.",
     "toastUploadTooLarge": "The model file is too large to save. Refresh and try again.",
@@ -3057,6 +3058,12 @@
             "Order intake, production, shipping, contact"
           ],
           [
+            "Instant quote",
+            "Name, size, dimensions and volume of the uploaded 3D file, selected print options, calculated price, viewer preview image (the original file is kept only when you save the quote or add it to the cart)",
+            "Automatic when using the instant quote",
+            "Quote consultation and follow-up, pricing and service improvement (stats)"
+          ],
+          [
             "Inquiry",
             "Name, email, phone (optional), message",
             "Contact form",
@@ -3092,6 +3099,10 @@
           {
             "label": "Logs / access records",
             "text": "12 months under the Protection of Communications Secrets Act."
+          },
+          {
+            "label": "Instant quote records",
+            "text": "Automatically destroyed 1 year after last use. If you saved the quote or placed an order, that quote/order data follows the rules above."
           },
           {
             "label": "Tax-related",

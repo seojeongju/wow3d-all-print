@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse, requireAdminAuth } from '@/lib/api-utils';
+import { estimateCountSql, isMemberStage, memberStageSql } from '@/lib/member-stage';
 
 function likePattern(raw: string): string {
     const t = raw.trim().replace(/[%_\\]/g, '');
@@ -12,7 +13,7 @@ const ROLE_FILTER_SET = new Set(['user', 'admin']);
 
 /**
  * GET /api/admin/users - 사용자 목록 (관리자 전용)
- * Query: page, limit, q (이메일·이름·연락처), role (all|user|admin)
+ * Query: page, limit, q (이메일·이름·연락처), role (all|user|admin), stage (lib/member-stage)
  */
 export async function GET(req: NextRequest) {
     try {
@@ -49,18 +50,26 @@ export async function GET(req: NextRequest) {
             binds.push(roleFilter);
         }
 
-        const countRow = await env.DB.prepare(`SELECT COUNT(*) as cnt FROM users ${where}`)
-            .bind(...binds)
+        const stageParam = req.nextUrl.searchParams.get('stage');
+        const stageFilter = isMemberStage(stageParam) ? stageParam : null;
+        const inner = `SELECT id, email, name, phone, role, created_at,
+                ${memberStageSql()} AS member_stage,
+                ${estimateCountSql()} AS estimate_count
+             FROM users ${where}`;
+        const stageWhere = stageFilter ? 'WHERE member_stage = ?' : '';
+        const stageBinds = stageFilter ? [stageFilter] : [];
+
+        const countRow = await env.DB.prepare(`SELECT COUNT(*) as cnt FROM (${inner}) ${stageWhere}`)
+            .bind(...binds, ...stageBinds)
             .first() as { cnt?: number } | null;
         const total = Number(countRow?.cnt ?? 0);
         const totalPages = Math.max(1, Math.ceil(total / limit));
 
         const { results } = await env.DB.prepare(
-            `SELECT id, email, name, phone, role, created_at
-             FROM users ${where}
+            `SELECT * FROM (${inner}) ${stageWhere}
              ORDER BY created_at DESC
              LIMIT ? OFFSET ?`
-        ).bind(...binds, limit, offset).all();
+        ).bind(...binds, ...stageBinds, limit, offset).all();
 
         return successResponse({
             items: results || [],

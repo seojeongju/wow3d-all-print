@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { format } from 'date-fns';
+import QuoteEstimateLogsPanel from '@/components/admin/QuoteEstimateLogsPanel';
 
 type QuoteAnalytics = {
     id: number;
@@ -516,6 +517,8 @@ export default function QuoteAnalyticsPage() {
                     </Card>
                 ))}
             </div>
+
+            <QuoteEstimateLogsPanel />
 
             <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-6">
