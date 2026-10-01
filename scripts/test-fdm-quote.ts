@@ -52,7 +52,12 @@ const qSupport = calculateFdmQuote({
     overhangAreaCm2: 25,
 })
 assert.ok(qSupport.supportGrams > 0, 'support should estimate grams')
-assert.ok(qSupport.timeHours > q20.timeHours, 'support should increase print time')
+// 작은 모델은 최소 레이어 시간에 묶여 서포트가 늘어도 총 시간이 같을 수 있음 (Bambu도 동일)
+assert.ok(qSupport.timeHours >= q20.timeHours, 'support should not decrease print time')
+assert.ok(
+    qSupport.timeDetail.breakdownSec.support > 0,
+    'support extrusion time should be counted'
+)
 assert.ok(qSupport.costBreakdown.support > 0)
 
 const withVat = calculateFdmQuote({ ...base, infillPercent: FDM_INFILL_DEFAULT, applyVat: true, minPriceKr: 0 })
@@ -75,6 +80,7 @@ const mask = calculateFdmQuote({
     layerHeightMm: 0.2,
     supportEnabled: true,
     overhangAreaCm2: 220,
+    materialName: 'PLA',
     hourlyRateKr: 5000,
     fdmLaborCostKrw: 6500,
     applyVat: false,

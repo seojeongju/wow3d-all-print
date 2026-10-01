@@ -1,12 +1,10 @@
 /**
  * FDM / SLA / DLP 출력 시간 산출 (견적·히어로·관리자 시뮬 공통)
  *
- * FDM: Bambu Studio급 슬라이서에 맞춘 물리 근사
- * - 압출 시간: (모델+서포트) 필라멘트 체적 / 평균 유량
- * - 레이어 오버헤드: Z 이동·레이어 전환
- * - 표면/이동: 외벽·트래블
- * - 서포트 트래블 패널티: 오버행 면적 기반
- * 레이어 높이 속도 보정(speedModifier): 기준 0.2mm
+ * FDM 견적: estimateFdmPrintTimeP2S — Bambu Lab P2S "0.20mm Standard" 기본 공정 기준
+ * - 벽·윗면/바닥·인필·서포트별 경로 길이와 속도(재질 최대 유량 상한), 가감속
+ * - 레이어 전환·이동, 최소 레이어 시간 감속
+ * estimateFdmPrintTimeHours는 이전 평균 유량식(스크립트 호환용)
  */
 
 export const FDM_REF_LAYER_MM = 0.2
@@ -142,6 +140,288 @@ export function estimateFdmPrintTimeHours(input: FdmTimeEstimateInput): FdmTimeE
         surfaceTime,
         speedModifier,
         effectiveExtrudeGrams,
+    }
+}
+
+/**
+ * Bambu Lab P2S · 0.4mm 표준 핫엔드 · "0.20mm Standard @BBL P2S" 기본 공정값
+ * (BambuStudio resources/profiles/BBL/process — 속도 mm/s, 가속 mm/s², 선폭 mm)
+ */
+export const P2S_PROFILE = {
+    outerWall: { speed: 200, accel: 6000, width: 0.42 },
+    innerWall: { speed: 300, accel: 10000, width: 0.45 },
+    sparseInfill: { speed: 270, accel: 10000, width: 0.45 },
+    solidInfill: { speed: 250, accel: 10000, width: 0.42 },
+    topSurface: { speed: 200, accel: 2000, width: 0.42 },
+    bridge: { speed: 50, accel: 10000, width: 0.42 },
+    support: { speed: 150, accel: 10000, width: 0.42 },
+    initialLayerWall: { speed: 50, accel: 500, width: 0.5 },
+    initialLayerInfill: { speed: 105, accel: 500, width: 0.5 },
+    travel: { speed: 1000, accel: 10000 },
+    wallLoops: 2,
+    topShellLayers: 5,
+    topShellThicknessMm: 1.0,
+    bottomShellLayers: 3,
+    /** 레이어 전환(Z 이동·와이프) 고정 시간(초) */
+    layerChangeSec: 0.5,
+    /** 레이어당 이동 횟수(벽 시작·인필 진입 등) */
+    travelsPerLayer: 4,
+    /** 리트랙션 0.8mm 왕복 시간(초) */
+    retractSec: 0.06,
+    /** 트리 서포트 가지 평균 경로 길이(mm) — 짧은 구간 가감속 반영 */
+    supportSegmentMm: 5,
+    /** 서포트 경로 이 길이(mm)마다 이동·리트랙션 1회 — Bambu 실측(마스크형 7h12m)으로 보정 */
+    supportPathPerTravelMm: 40,
+} as const
+
+export type FdmMaterialSpeedProfile = {
+    key: string
+    /** 필라멘트 최대 체적 유량 (mm³/s, P2S 표준 핫엔드) */
+    maxVolumetricSpeed: number
+    /** 최소 레이어 시간(초) — 작은 레이어는 이 시간까지 감속 */
+    minLayerTimeSec: number
+}
+
+/** Bambu 필라멘트 P2S 프로파일 기준 (filament_max_volumetric_speed / slow_down_layer_time) */
+export const P2S_MATERIAL_PROFILES: Record<string, FdmMaterialSpeedProfile> = {
+    PLA: { key: 'PLA', maxVolumetricSpeed: 21, minLayerTimeSec: 4 },
+    PETG: { key: 'PETG', maxVolumetricSpeed: 21, minLayerTimeSec: 10 },
+    ABS: { key: 'ABS', maxVolumetricSpeed: 16, minLayerTimeSec: 12 },
+    ASA: { key: 'ASA', maxVolumetricSpeed: 18, minLayerTimeSec: 12 },
+    TPU: { key: 'TPU', maxVolumetricSpeed: 12, minLayerTimeSec: 8 },
+}
+const P2S_DEFAULT_MATERIAL: FdmMaterialSpeedProfile = { key: 'DEFAULT', maxVolumetricSpeed: 15, minLayerTimeSec: 8 }
+
+export function resolveP2SMaterialProfile(name: string | null | undefined): FdmMaterialSpeedProfile {
+    const n = (name || '').toUpperCase()
+    for (const key of ['TPU', 'PETG', 'ASA', 'ABS', 'PLA']) {
+        if (n.includes(key)) return P2S_MATERIAL_PROFILES[key]
+    }
+    return P2S_DEFAULT_MATERIAL
+}
+
+/** 압출 단면적(mm²) — 슬라이서식 둥근 사각형 */
+export function extrusionSectionMm2(widthMm: number, layerHeightMm: number): number {
+    const w = Math.max(layerHeightMm, widthMm)
+    return (w - layerHeightMm) * layerHeightMm + (Math.PI * layerHeightMm * layerHeightMm) / 4
+}
+
+/** 가감속을 반영한 한 구간 이동 시간(초) */
+function moveTimeSec(lengthMm: number, speed: number, accel: number): number {
+    if (!(lengthMm > 0) || !(speed > 0) || !(accel > 0)) return 0
+    const accelDist = (speed * speed) / accel
+    return lengthMm >= accelDist ? lengthMm / speed + speed / accel : 2 * Math.sqrt(lengthMm / accel)
+}
+
+/** 총 경로 길이를 평균 구간 길이로 나눠 가감속 포함 시간(초) */
+function featureTimeSec(totalMm: number, segmentMm: number, speed: number, accel: number): number {
+    if (!(totalMm > 0)) return 0
+    const seg = Math.max(0.5, Math.min(segmentMm, totalMm))
+    return (totalMm / seg) * moveTimeSec(seg, speed, accel)
+}
+
+export type FdmGeometryForPrint = {
+    volumeCm3: number
+    surfaceAreaCm2: number
+    heightMm: number
+    /** 측면(벽) 면적 Σ A·sinθ (cm²) */
+    lateralAreaCm2?: number | null
+    /** 위를 향한 면 투영 면적 (cm²) */
+    topAreaCm2?: number | null
+    /** 아래를 향한 면 투영 면적, 바닥 접촉 포함 (cm²) */
+    bottomAreaCm2?: number | null
+    /** 바닥 접촉 면적 (cm²) */
+    bedAreaCm2?: number | null
+}
+
+export type FdmStructureEstimate = {
+    layerHeightMm: number
+    numLayers: number
+    /** 벽(외벽+내벽) 압출 부피 mm³ */
+    wallVolMm3: number
+    /** 윗면·바닥 솔리드 압출 부피 mm³ */
+    solidVolMm3: number
+    /** 내부(성긴 인필 영역) 부피 mm³ — 채움률 적용 전 */
+    sparseRegionMm3: number
+    /** 성긴 인필 압출 부피 mm³ */
+    sparseVolMm3: number
+    lateralMm2: number
+    topMm2: number
+    bottomMm2: number
+    bedMm2: number
+    /** 단면 대표 길이(mm) — 인필·벽 구간 길이 근사 */
+    characteristicMm: number
+    nTop: number
+    nBottom: number
+    /** 솔리드 층이 모델 부피를 넘을 때 줄인 비율 */
+    solidScale: number
+}
+
+/** P2S 기본 공정(벽 2겹, 윗면 5층·1.0mm, 바닥 3층) 기준 압출 구조 */
+export function estimateFdmStructureP2S(
+    geom: FdmGeometryForPrint,
+    layerHeightMm: number,
+    infillPercent: number
+): FdmStructureEstimate {
+    const h = Math.max(0.05, Number(layerHeightMm) || FDM_REF_LAYER_MM)
+    const heightMm = Math.max(h, Number(geom.heightMm) || 0)
+    const volMm3 = Math.max(0, Number(geom.volumeCm3) || 0) * 1000
+    const surfMm2 = Math.max(0, Number(geom.surfaceAreaCm2) || 0) * 100
+    const numLayers = Math.max(1, Math.ceil(heightMm / h))
+
+    // 방향 지표가 없으면 평균 단면으로 근사
+    const xsMm2 = volMm3 / heightMm
+    const fallbackFlat = Math.min(xsMm2, surfMm2 * 0.25)
+    const cm2 = (v: number | null | undefined, fb: number) =>
+        v != null && Number.isFinite(Number(v)) ? Math.min(Math.max(0, Number(v)) * 100, surfMm2) : fb
+    const topMm2 = cm2(geom.topAreaCm2, fallbackFlat)
+    const bottomMm2 = cm2(geom.bottomAreaCm2, fallbackFlat)
+    const bedMm2 = Math.min(cm2(geom.bedAreaCm2, bottomMm2 * 0.6), bottomMm2)
+    const lateralMm2 = cm2(geom.lateralAreaCm2, Math.max(surfMm2 - topMm2 - bottomMm2, surfMm2 * 0.4))
+
+    const P = P2S_PROFILE
+    const wallSection =
+        extrusionSectionMm2(P.outerWall.width, h) +
+        extrusionSectionMm2(P.innerWall.width, h) * (P.wallLoops - 1)
+    const wallVolMm3 = Math.min(volMm3, (lateralMm2 / h) * wallSection)
+
+    const nTop = Math.max(P.topShellLayers, Math.ceil(P.topShellThicknessMm / h - 1e-9))
+    const nBottom = P.bottomShellLayers
+    const rawSolidMm3 = (topMm2 * nTop + bottomMm2 * nBottom) * h
+    const solidRoom = Math.max(0, volMm3 - wallVolMm3)
+    const solidScale = rawSolidMm3 > solidRoom && rawSolidMm3 > 0 ? solidRoom / rawSolidMm3 : 1
+    const solidVolMm3 = rawSolidMm3 * solidScale
+
+    const sparseRegionMm3 = Math.max(0, volMm3 - wallVolMm3 - solidVolMm3)
+    const infill = Math.min(100, Math.max(0, Number(infillPercent) || 0)) / 100
+    const sparseVolMm3 = sparseRegionMm3 * infill
+
+    return {
+        layerHeightMm: h,
+        numLayers,
+        wallVolMm3,
+        solidVolMm3,
+        sparseRegionMm3,
+        sparseVolMm3,
+        lateralMm2,
+        topMm2,
+        bottomMm2,
+        bedMm2,
+        characteristicMm: Math.min(300, Math.max(5, Math.sqrt(xsMm2))),
+        nTop,
+        nBottom,
+        solidScale,
+    }
+}
+
+export type FdmP2STimeInput = FdmGeometryForPrint & {
+    layerHeightMm: number
+    infillPercent: number
+    /** 서포트 압출 부피(cm³, 채움률 적용 후) */
+    supportExtrudeCm3?: number
+    materialName?: string | null
+    /** 관리자 레이어 계수 — 기본 0.02 대비 비율로 레이어 오버헤드 스케일 */
+    fdmLayerHoursFactor?: number
+    /** 동시 출력 수량 — 경로는 ×N, 레이어 수는 동일 */
+    quantity?: number
+}
+
+export type FdmP2STimeResult = FdmTimeEstimateResult & {
+    structure: FdmStructureEstimate
+    material: FdmMaterialSpeedProfile
+    breakdownSec: {
+        walls: number
+        solid: number
+        sparseInfill: number
+        firstLayer: number
+        support: number
+        layerOverhead: number
+        minLayerSlowdown: number
+    }
+}
+
+/**
+ * Bambu Studio(P2S) 슬라이스 시간 근사.
+ * 기능별 경로 길이 = 압출 부피 / 단면적, 속도 = min(프로파일 속도, 재질 최대 유량 / 단면적),
+ * 구간마다 가감속을 반영하고 최소 레이어 시간 감속을 적용.
+ */
+export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResult {
+    const P = P2S_PROFILE
+    const quantity = Math.max(1, Math.floor(Number(input.quantity) || 1))
+    const material = resolveP2SMaterialProfile(input.materialName)
+    const s = estimateFdmStructureP2S(input, input.layerHeightMm, input.infillPercent)
+    const h = s.layerHeightMm
+    const flow = material.maxVolumetricSpeed
+    const speedFor = (f: { speed: number; width: number }) =>
+        Math.min(f.speed, flow / extrusionSectionMm2(f.width, h))
+    const D = s.characteristicMm
+
+    const wallPathMm = (s.lateralMm2 / h) * quantity
+    const walls =
+        featureTimeSec(wallPathMm, D, speedFor(P.outerWall), P.outerWall.accel) +
+        featureTimeSec(wallPathMm * (P.wallLoops - 1), D, speedFor(P.innerWall), P.innerWall.accel)
+
+    // 바닥 1층(베드)은 첫 레이어 속도, 공중 아랫면 1층은 브리지 속도, 나머지는 솔리드
+    const sc = s.solidScale * quantity
+    const solidLen = (area: number, layers: number) => (area * layers * sc) / P.solidInfill.width
+    const solid =
+        featureTimeSec(solidLen(s.topMm2, 1), D, speedFor(P.topSurface), P.topSurface.accel) +
+        featureTimeSec(
+            solidLen(s.topMm2, s.nTop - 1) + solidLen(s.bottomMm2, s.nBottom - 1),
+            D,
+            speedFor(P.solidInfill),
+            P.solidInfill.accel
+        ) +
+        featureTimeSec(solidLen(Math.max(0, s.bottomMm2 - s.bedMm2), 1), D, speedFor(P.bridge), P.bridge.accel)
+
+    const firstLayer =
+        featureTimeSec(
+            (s.bedMm2 * quantity * s.solidScale) / P.initialLayerInfill.width,
+            D,
+            speedFor(P.initialLayerInfill),
+            P.initialLayerInfill.accel
+        ) +
+        featureTimeSec(
+            4 * Math.sqrt(s.bedMm2) * P.wallLoops * quantity,
+            D,
+            speedFor(P.initialLayerWall),
+            P.initialLayerWall.accel
+        )
+
+    const sparsePathMm =
+        (s.sparseVolMm3 * quantity) / extrusionSectionMm2(P.sparseInfill.width, h)
+    const sparseInfill = featureTimeSec(sparsePathMm, D, speedFor(P.sparseInfill), P.sparseInfill.accel)
+
+    const supportMm3 = Math.max(0, Number(input.supportExtrudeCm3) || 0) * 1000 * quantity
+    const supportPathMm = supportMm3 / extrusionSectionMm2(P.support.width, h)
+    const travelSec = (len: number) => moveTimeSec(len, P.travel.speed, P.travel.accel) + P.retractSec
+    // 가지마다 이동·리트랙션이 붙음
+    const support =
+        featureTimeSec(supportPathMm, P.supportSegmentMm, speedFor(P.support), P.support.accel) +
+        (supportPathMm / P.supportPathPerTravelMm) * travelSec(D / 2)
+
+    const layerScale =
+        (input.fdmLayerHoursFactor ?? FDM_DEFAULT_LAYER_HOURS_FACTOR) / FDM_DEFAULT_LAYER_HOURS_FACTOR
+    const perLayerOverhead =
+        (P.layerChangeSec + P.travelsPerLayer * quantity * travelSec(D / 2)) * layerScale
+    const layerOverhead = s.numLayers * perLayerOverhead
+
+    const printSec = walls + solid + firstLayer + sparseInfill + support + layerOverhead
+    const minLayerTotal = s.numLayers * material.minLayerTimeSec
+    const minLayerSlowdown = Math.max(0, minLayerTotal - printSec)
+    const totalSec = printSec + minLayerSlowdown
+
+    const hours = Math.max(FDM_MIN_TIME_HOURS, totalSec / 3600)
+    return {
+        hours,
+        numLayers: s.numLayers,
+        volumeTime: (solid + firstLayer + sparseInfill + support) / 3600,
+        movementTime: (layerOverhead + minLayerSlowdown) / 3600,
+        surfaceTime: walls / 3600,
+        speedModifier: 1,
+        structure: s,
+        material,
+        breakdownSec: { walls, solid, sparseInfill, firstLayer, support, layerOverhead, minLayerSlowdown },
     }
 }
 

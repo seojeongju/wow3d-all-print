@@ -32,6 +32,11 @@ export type ServerFdmQuoteInput = {
     overhangAreaCm2?: number | null
     /** 클라이언트가 배치 기준으로 산출한 서포트 그림자 부피 */
     supportVolumeCm3?: number | null
+    /** 클라이언트가 배치 기준으로 산출한 측면·윗면·바닥·베드 면적 */
+    lateralAreaCm2?: number | null
+    topAreaCm2?: number | null
+    bottomAreaCm2?: number | null
+    bedAreaCm2?: number | null
     fdmMaterialName: string | null
     infillPercent: number | null
     layerHeightMm: number | null
@@ -177,6 +182,11 @@ export async function resolveServerFdmQuote(
             supportEnabled: input.supportEnabled,
             overhangAreaCm2: input.overhangAreaCm2 ?? null,
             supportVolumeCm3: input.supportVolumeCm3 ?? null,
+            lateralAreaCm2: input.lateralAreaCm2 ?? null,
+            topAreaCm2: input.topAreaCm2 ?? null,
+            bottomAreaCm2: input.bottomAreaCm2 ?? null,
+            bedAreaCm2: input.bedAreaCm2 ?? null,
+            materialName: material.name,
             hourlyRateKr: hourlyRate,
             fdmLaborCostKrw: equipment.fdmLaborCostKrw,
             fdmSupportPerCm2Krw: equipment.fdmSupportPerCm2Krw,

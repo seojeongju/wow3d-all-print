@@ -17,6 +17,11 @@ export interface QuoteData {
     overhangAreaCm2?: number;
     /** 현재 배치 기준 서포트 그림자 부피 — 서버 재계산용 */
     supportVolumeCm3?: number;
+    /** 현재 배치 기준 측면·윗면·바닥·베드 접촉 면적 — 서버 출력 시간 재계산용 */
+    lateralAreaCm2?: number;
+    topAreaCm2?: number;
+    bottomAreaCm2?: number;
+    bedAreaCm2?: number;
 
     // 출력 방식
     printMethod: 'fdm' | 'sla' | 'dlp';

@@ -102,6 +102,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
             layerHeightMm: params.fdm_layer_height,
             supportEnabled: true,
             overhangAreaCm2: null,
+            materialName: 'PLA',
             hourlyRateKr: machineRate,
             fdmLaborCostKrw: ep.fdm_labor_cost_krw,
             fdmSupportPerCm2Krw: ep.fdm_support_per_cm2_krw,

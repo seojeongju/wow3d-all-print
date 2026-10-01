@@ -9,7 +9,17 @@ export type OrientationSupport = {
     overhangArea: number;
     /** 오버행 아래 그림자 부피 — 서포트가 채울 공간 (cm³, 채움률 적용 전) */
     supportVolume: number;
+    /** 측면 면적 Σ A·sinθ (cm²) — 레이어별 벽 경로 길이 × 레이어 높이의 합 */
+    lateralArea?: number;
+    /** 위를 향한 면의 수평 투영 면적 (cm²) — 윗면 솔리드 */
+    topArea?: number;
+    /** 아래를 향한 면의 수평 투영 면적 (cm², 바닥 접촉 포함) — 바닥 솔리드 */
+    bottomArea?: number;
+    /** 베드에 닿는 면적 (cm²) — 첫 레이어 */
+    bedArea?: number;
 };
+
+const ORIENTATION_AREA_KEYS = ['lateralArea', 'topArea', 'bottomArea', 'bedArea'] as const;
 
 export interface GeometryAnalysis {
     volume: number; // cm³
@@ -19,6 +29,11 @@ export interface GeometryAnalysis {
     orientations?: Partial<Record<UpAxisKey, OrientationSupport>>;
     /** 현재 배치의 서포트 그림자 부피 (cm³) — applyTransformToAnalysis가 채움 */
     supportVolume?: number;
+    /** 현재 배치의 측면·윗면·바닥·베드 접촉 면적 (cm²) — 출력 시간 산출용 */
+    lateralArea?: number;
+    topArea?: number;
+    bottomArea?: number;
+    bedArea?: number;
     boundingBox: {
         x: number; // mm
         y: number; // mm
@@ -28,7 +43,6 @@ export interface GeometryAnalysis {
 
 /** 전체 삼각형 루프 없이 즉시 치수만 산출 (대용량·AI 메쉬 1차 통과용) */
 export const LARGE_MESH_TRIANGLE_THRESHOLD = 120_000;
-export const ANALYSIS_SAMPLE_TARGET = 48_000;
 /** 유기적 형상의 AABB 표면 대비 최대 배수 (내부면·샘플링 폭주 방지) */
 export const MAX_SURFACE_TO_AABB_RATIO = 3;
 export const MAX_OVERHANG_TO_SURFACE_RATIO = 0.55;
@@ -76,6 +90,15 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
         return maxVol > 0 ? Math.min(n, maxSupportVolume) : n;
     };
 
+    const clampArea = (v: number) => Math.min(Math.max(0, Number(v) || 0), surfaceArea);
+    const pickAreas = (src: Partial<Record<(typeof ORIENTATION_AREA_KEYS)[number], number>>) => {
+        const out: Partial<Record<(typeof ORIENTATION_AREA_KEYS)[number], number>> = {};
+        for (const k of ORIENTATION_AREA_KEYS) {
+            if (src[k] != null) out[k] = clampArea(src[k]!);
+        }
+        return out;
+    };
+
     const overhangArea =
         analysis.overhangArea == null ? undefined : clampOverhang(analysis.overhangArea);
     const supportVolume =
@@ -90,6 +113,7 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
             orientations[key] = {
                 overhangArea: clampOverhang(o.overhangArea),
                 supportVolume: clampSupportVolume(o.supportVolume),
+                ...pickAreas(o),
             };
         }
     }
@@ -100,6 +124,7 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
         surfaceArea,
         overhangArea,
         ...(supportVolume !== undefined ? { supportVolume } : {}),
+        ...pickAreas(analysis),
         ...(orientations ? { orientations } : {}),
     };
 }
@@ -181,6 +206,11 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     // 감김 방향이 뒤집힌 메쉬는 법선 부호가 반대이므로, 둘 다 누적 후 부피 부호로 선택
     const ovArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
     const ovVol = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
+    const bedArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
+    // 축 k 기준 측면(Σ A·sinθ), 법선 +k / -k 쪽 수평 투영
+    const lateral = [0, 0, 0];
+    const projPos = [0, 0, 0];
+    const projNeg = [0, 0, 0];
     const centroid = [0, 0, 0];
     const normal = [0, 0, 0];
 
@@ -208,19 +238,27 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
 
         for (let k = 0; k < 3; k++) {
             const nk = normal[k];
+            const projected = area * Math.abs(nk);
+            lateral[k] += area * Math.sqrt(Math.max(0, 1 - nk * nk));
+            if (nk > 0) projPos[k] += projected;
+            else projNeg[k] += projected;
+
             const face = nk < -SUPPORT_NORMAL_THRESHOLD ? 0 : nk > SUPPORT_NORMAL_THRESHOLD ? 1 : -1;
             if (face < 0) continue;
-            const projected = area * Math.abs(nk);
             const hFromMin = centroid[k] - bboxMin[k];
             const hFromMax = bboxMax[k] - centroid[k];
-            // 바닥에 닿는 면은 서포트 대상 아님
+            // 바닥에 닿는 면은 서포트 대상 아님 (첫 레이어 면적으로 집계)
             if (hFromMin > bedTol[k]) {
                 ovArea[k][face][0] += area;
                 ovVol[k][face][0] += projected * hFromMin;
+            } else {
+                bedArea[k][face][0] += projected;
             }
             if (hFromMax > bedTol[k]) {
                 ovArea[k][face][1] += area;
                 ovVol[k][face][1] += projected * hFromMax;
+            } else {
+                bedArea[k][face][1] += projected;
             }
         }
     };
@@ -249,24 +287,44 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         const down = outward ? 0 : 1;
         const up = outward ? 1 : 0;
         const axes = ['x', 'y', 'z'] as const;
+        const cm2 = (mm2: number) => (mm2 * scale) / 100;
         orientations = {};
         for (let k = 0; k < 3; k++) {
+            const facingPos = outward ? projPos[k] : projNeg[k];
+            const facingNeg = outward ? projNeg[k] : projPos[k];
             orientations[`+${axes[k]}`] = {
-                overhangArea: (ovArea[k][down][0] * scale) / 100,
+                overhangArea: cm2(ovArea[k][down][0]),
                 supportVolume: (ovVol[k][down][0] * scale) / 1000,
+                lateralArea: cm2(lateral[k]),
+                topArea: cm2(facingPos),
+                bottomArea: cm2(facingNeg),
+                bedArea: cm2(bedArea[k][down][0]),
             };
             orientations[`-${axes[k]}`] = {
-                overhangArea: (ovArea[k][up][1] * scale) / 100,
+                overhangArea: cm2(ovArea[k][up][1]),
                 supportVolume: (ovVol[k][up][1] * scale) / 1000,
+                lateralArea: cm2(lateral[k]),
+                topArea: cm2(facingNeg),
+                bottomArea: cm2(facingPos),
+                bedArea: cm2(bedArea[k][up][1]),
             };
         }
     }
 
+    const placed = orientations?.['+z'];
     return sanitizeGeometryAnalysis({
         volume: (Math.abs(volume) * scale) / 1000,
         surfaceArea: (surfaceArea * scale) / 100,
-        overhangArea: orientations?.['+z']?.overhangArea,
-        supportVolume: orientations?.['+z']?.supportVolume,
+        overhangArea: placed?.overhangArea,
+        supportVolume: placed?.supportVolume,
+        ...(placed
+            ? {
+                  lateralArea: placed.lateralArea,
+                  topArea: placed.topArea,
+                  bottomArea: placed.bottomArea,
+                  bedArea: placed.bedArea,
+              }
+            : {}),
         ...(orientations ? { orientations } : {}),
         boundingBox: {
             x: size.x,
@@ -276,19 +334,8 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     });
 }
 
+// 부피는 원점 기준 부호 있는 사면체 합이라 상쇄가 커서 삼각형 샘플링 시 오차가 수십~수백 %에 달함 → 항상 전체 순회
 export const analyzeGeometry = (geometry: THREE.BufferGeometry): GeometryAnalysis => {
-    const triCount = getTriangleCount(geometry);
-    if (triCount > LARGE_MESH_TRIANGLE_THRESHOLD) {
-        const stride = Math.max(1, Math.ceil(triCount / ANALYSIS_SAMPLE_TARGET));
-        if (!geometry.attributes.normal) {
-            geometry.computeVertexNormals();
-        }
-        return analyzeGeometryInternal(geometry, {
-            sampleStride: stride,
-            includeOverhang: true,
-        });
-    }
-
     if (!geometry.attributes.normal) {
         geometry.computeVertexNormals();
     }
@@ -305,7 +352,7 @@ const yieldToMain = () =>
     });
 
 /**
- * 대용량 메쉬: 1) 바운딩 박스 근사로 즉시 콜백 → 2) 샘플링 정밀 분석으로 갱신
+ * 대용량 메쉬: 1) 바운딩 박스 근사로 즉시 콜백 → 2) 전체 정밀 분석으로 갱신
  */
 export async function analyzeGeometryProgressive(
     geometry: THREE.BufferGeometry,
@@ -324,15 +371,5 @@ export async function analyzeGeometryProgressive(
 
     await yieldToMain();
 
-    if (!geometry.attributes.normal) {
-        geometry.computeVertexNormals();
-    }
-
-    const stride = Math.max(1, Math.ceil(triCount / ANALYSIS_SAMPLE_TARGET));
-    const refined = analyzeGeometryInternal(geometry, {
-        sampleStride: stride,
-        includeOverhang: true,
-    });
-
-    return refined;
+    return analyzeGeometry(geometry);
 }

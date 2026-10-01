@@ -9,8 +9,11 @@
 
 import { roundTo100 } from '@/lib/amount-display'
 import {
-    estimateFdmPrintTimeHours,
-    type FdmTimeEstimateResult,
+    estimateFdmPrintTimeP2S,
+    estimateFdmStructureP2S,
+    FDM_REF_LAYER_MM,
+    type FdmGeometryForPrint,
+    type FdmP2STimeResult,
 } from '@/lib/print-time-estimate'
 
 export const FDM_INFILL_MIN = 10
@@ -58,14 +61,21 @@ export type FdmWeightEstimate = {
     shellThicknessMm: number
 }
 
-/** 쉘 + 인필 분리 무게 추정 */
-export function estimateFdmWeightGrams(input: {
-    volumeCm3: number
-    surfaceAreaCm2: number
-    density: number
-    infillPercent: number
-    shellThicknessMm?: number
-}): FdmWeightEstimate {
+/**
+ * 쉘 + 인필 분리 무게 추정.
+ * 높이(heightMm)가 있으면 Bambu P2S 기본 공정 구조(벽 2겹, 윗면 5층, 바닥 3층 + 인필)로,
+ * 없으면 표면적×외벽 두께 근사로 계산.
+ */
+export function estimateFdmWeightGrams(
+    input: Partial<FdmGeometryForPrint> & {
+        volumeCm3: number
+        surfaceAreaCm2: number
+        density: number
+        infillPercent: number
+        shellThicknessMm?: number
+        layerHeightMm?: number
+    }
+): FdmWeightEstimate {
     const effectiveInfill = clampFdmInfillPercent(input.infillPercent)
     const density = Math.max(0, Number(input.density) || 0)
     const volumeCm3 = Math.max(0, Number(input.volumeCm3) || 0)
@@ -75,6 +85,24 @@ export function estimateFdmWeightGrams(input: {
     const maxSurfaceCm2 = Math.max(50, 4 * Math.PI * rCm * rCm * 12)
     const surfaceAreaCm2 = Math.min(rawSurface, maxSurfaceCm2)
     const shellThicknessMm = Math.max(0.2, Number(input.shellThicknessMm) || FDM_SHELL_THICKNESS_MM)
+
+    if (Number(input.heightMm) > 0) {
+        const s = estimateFdmStructureP2S(
+            { ...input, volumeCm3, surfaceAreaCm2, heightMm: Number(input.heightMm) },
+            input.layerHeightMm ?? FDM_REF_LAYER_MM,
+            effectiveInfill
+        )
+        const shellVolCm3 = (s.wallVolMm3 + s.solidVolMm3) / 1000
+        const infillVolCm3 = s.sparseRegionMm3 / 1000
+        return {
+            weightGrams: (shellVolCm3 + s.sparseVolMm3 / 1000) * density,
+            shellVolCm3,
+            infillVolCm3,
+            effectiveInfill,
+            shellThicknessMm,
+        }
+    }
+
     const shellCm = shellThicknessMm / 10
 
     // 표면적×두께로 외벽 부피 근사 (전체 부피를 넘지 않음)
@@ -134,6 +162,13 @@ export type CalculateFdmQuoteInput = {
     overhangAreaCm2?: number | null
     /** 배치 기준 서포트 그림자 부피(cm³). 없으면 높이 비율 근사 */
     supportVolumeCm3?: number | null
+    /** 배치 기준 측면·윗면·바닥·베드 접촉 면적(cm²). 없으면 평균 단면으로 근사 */
+    lateralAreaCm2?: number | null
+    topAreaCm2?: number | null
+    bottomAreaCm2?: number | null
+    bedAreaCm2?: number | null
+    /** 재질명 — P2S 재질별 최대 유량·최소 레이어 시간 선택 */
+    materialName?: string | null
     hourlyRateKr: number
     fdmLaborCostKrw?: number
     fdmSupportPerCm2Krw?: number
@@ -174,7 +209,7 @@ export type CalculateFdmQuoteResult = {
         machine: number
         labor: number
     }
-    timeDetail: FdmTimeEstimateResult
+    timeDetail: FdmP2STimeResult
 }
 
 function machineRateAfterVolumeDiscount(hours: number, rateKr: number): number {
@@ -192,12 +227,21 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
     const maxSurfaceCm2 = Math.max(50, 4 * Math.PI * rCm * rCm * 12)
     const surfaceAreaCm2 = Math.min(rawSurface, maxSurfaceCm2)
 
-    const weight = estimateFdmWeightGrams({
+    const geom: FdmGeometryForPrint = {
         volumeCm3,
         surfaceAreaCm2,
+        heightMm: Math.max(0, Number(input.heightMm) || 0),
+        lateralAreaCm2: input.lateralAreaCm2,
+        topAreaCm2: input.topAreaCm2,
+        bottomAreaCm2: input.bottomAreaCm2,
+        bedAreaCm2: input.bedAreaCm2,
+    }
+    const weight = estimateFdmWeightGrams({
+        ...geom,
         density: input.density,
         infillPercent: input.infillPercent,
         shellThicknessMm: input.shellThicknessMm,
+        layerHeightMm: input.layerHeightMm,
     })
 
     const materialCostUnit = Math.max(0, Number(input.pricePerGramKr) || 0) * weight.weightGrams
@@ -226,37 +270,24 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
 
     const laborCost = input.fdmLaborCostKrw ?? FDM_DEFAULT_LABOR_KRW
 
-    // 1개 기준 장비비 (저장용 변동비 산정)
-    const timeDetailUnit = estimateFdmPrintTimeHours({
-        weightGrams: weight.weightGrams,
-        heightMm: input.heightMm,
-        surfaceAreaCm2,
+    // 1개 기준 장비비 (저장용 변동비 산정) — Bambu P2S 슬라이스 시간 근사
+    const density = Math.max(0.5, Number(input.density) || FDM_DEFAULT_DENSITY)
+    const timeInput = {
+        ...geom,
         layerHeightMm: input.layerHeightMm,
-        fdmLayerHoursFactor: input.fdmLayerHoursFactor,
         infillPercent: weight.effectiveInfill,
-        density: input.density,
-        supportGrams: supportGramsUnit,
-        overhangAreaCm2: input.supportEnabled ? overhang : 0,
-    })
+        supportExtrudeCm3: supportGramsUnit / density,
+        materialName: input.materialName,
+        fdmLayerHoursFactor: input.fdmLayerHoursFactor,
+    }
+    const timeDetailUnit = estimateFdmPrintTimeP2S(timeInput)
     const rate = Math.max(0, Number(input.hourlyRateKr) || FDM_DEFAULT_HOURLY_RATE_KRW)
     const machineCostUnit =
         timeDetailUnit.hours * machineRateAfterVolumeDiscount(timeDetailUnit.hours, rate)
 
-    // 배치: 부피·무게·서포트 ×N, 높이(Z)는 유지 → 압출량·시간에 반영. 인건은 1회.
+    // 배치: 경로·서포트 ×N, 높이(Z)·레이어 수는 유지. 인건은 1회.
     const timeDetail =
-        quantity === 1
-            ? timeDetailUnit
-            : estimateFdmPrintTimeHours({
-                  weightGrams: weight.weightGrams * quantity,
-                  heightMm: input.heightMm,
-                  surfaceAreaCm2: surfaceAreaCm2 * quantity,
-                  layerHeightMm: input.layerHeightMm,
-                  fdmLayerHoursFactor: input.fdmLayerHoursFactor,
-                  infillPercent: weight.effectiveInfill,
-                  density: input.density,
-                  supportGrams: supportGramsUnit * quantity,
-                  overhangAreaCm2: input.supportEnabled ? overhang * quantity : 0,
-              })
+        quantity === 1 ? timeDetailUnit : estimateFdmPrintTimeP2S({ ...timeInput, quantity })
     const machineCost =
         quantity === 1
             ? machineCostUnit

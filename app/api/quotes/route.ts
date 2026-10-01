@@ -160,6 +160,13 @@ export async function POST(request: NextRequest) {
                       Math.max(0, (dimensionsX * dimensionsY * dimensionsZ) / 1000 - volumeCm3)
                   )
                 : null;
+        // 배치 기준 면적 — 표면적을 넘을 수 없음
+        const areaWithinSurface = (v: unknown) =>
+            v != null && Number.isFinite(Number(v)) ? Math.min(Math.max(0, Number(v)), surfaceAreaCm2) : null;
+        const lateralAreaCm2 = areaWithinSurface(body.lateralAreaCm2);
+        const topAreaCm2 = areaWithinSurface(body.topAreaCm2);
+        const bottomAreaCm2 = areaWithinSurface(body.bottomAreaCm2);
+        const bedAreaCm2 = areaWithinSurface(body.bedAreaCm2);
         const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
         const layerThickness = snapSlaLayer(body.layerThickness);
         const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
@@ -196,6 +203,10 @@ export async function POST(request: NextRequest) {
                     heightMm: dimensionsZ,
                     overhangAreaCm2,
                     supportVolumeCm3,
+                    lateralAreaCm2,
+                    topAreaCm2,
+                    bottomAreaCm2,
+                    bedAreaCm2,
                     fdmMaterialName: fdmMaterialName,
                     infillPercent: fdmInfill,
                     layerHeightMm: fdmLayerHeight,

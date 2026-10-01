@@ -265,6 +265,11 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
     const overhangAreaRaw = analysis?.overhangArea // 오버행 정보 존재 여부 확인용
     const supportVolumeRaw = analysis?.supportVolume // 현재 배치 기준 서포트 그림자 부피
+    // 현재 배치 기준 측면·윗면·바닥·베드 면적 — P2S 출력 시간 산출
+    const lateralAreaRaw = analysis?.lateralArea
+    const topAreaRaw = analysis?.topArea
+    const bottomAreaRaw = analysis?.bottomArea
+    const bedAreaRaw = analysis?.bedArea
     const heightMm = analysis?.boundingBox.z || 0
     const bx = analysis?.boundingBox?.x ?? 0
     const by = analysis?.boundingBox?.y ?? 0
@@ -309,6 +314,11 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 supportEnabled,
                 overhangAreaCm2: overhangAreaRaw,
                 supportVolumeCm3: supportVolumeRaw,
+                lateralAreaCm2: lateralAreaRaw,
+                topAreaCm2: topAreaRaw,
+                bottomAreaCm2: bottomAreaRaw,
+                bedAreaCm2: bedAreaRaw,
+                materialName: mat?.name ?? fdmMaterial,
                 hourlyRateKr: rateKRW,
                 fdmLaborCostKrw: fdmSpec?.fdm_labor_cost_krw,
                 fdmSupportPerCm2Krw: fdmSpec?.fdm_support_per_cm2_krw,
@@ -378,7 +388,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, surfaceAreaCm2, volumeCm3])
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, surfaceAreaCm2, volumeCm3])
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
@@ -678,6 +688,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 dimensionsZ: analysis.boundingBox.z,
                 ...(overhangAreaRaw != null ? { overhangAreaCm2: overhangAreaRaw } : {}),
                 ...(supportVolumeRaw != null ? { supportVolumeCm3: supportVolumeRaw } : {}),
+                ...(lateralAreaRaw != null ? { lateralAreaCm2: lateralAreaRaw } : {}),
+                ...(topAreaRaw != null ? { topAreaCm2: topAreaRaw } : {}),
+                ...(bottomAreaRaw != null ? { bottomAreaCm2: bottomAreaRaw } : {}),
+                ...(bedAreaRaw != null ? { bedAreaCm2: bedAreaRaw } : {}),
                 printMethod,
                 ...(printMethod === 'fdm' ? {
                     fdmMaterial: (fdmMaterial || '').toUpperCase() as QuoteData['fdmMaterial'],

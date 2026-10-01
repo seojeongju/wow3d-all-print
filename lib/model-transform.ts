@@ -5,13 +5,7 @@ import {
     type UpAxisKey,
 } from '@/lib/geometry'
 import { FDM_SUPPORT_FILL_RATIO } from '@/lib/fdm-quote'
-import {
-    FDM_AVG_FLOW_MM3_S,
-    FDM_LAYER_OVERHEAD_SEC,
-    FDM_REF_LAYER_MM,
-    FDM_SUPPORT_TIME_WEIGHT,
-    FDM_SUPPORT_TRAVEL_HOURS_PER_CM2,
-} from '@/lib/print-time-estimate'
+import { estimateFdmPrintTimeP2S, FDM_REF_LAYER_MM } from '@/lib/print-time-estimate'
 import { rotatePointEulerXyz } from '@/lib/stl-bake'
 
 /** 90° 단위 모델 변환 — 자동견적 뷰어용 */
@@ -240,14 +234,19 @@ export function applyTransformToAnalysis(
     )
 
     const placed = base.orientations?.[getUpAxisKey(transform)]
-    const overhangArea = placed ? placed.overhangArea : base.overhangArea
-    const supportVolume = placed ? placed.supportVolume : base.supportVolume
+    const src = placed ?? base
+    const area = (v: number | undefined) => (v !== undefined ? v * s2 : undefined)
+    const supportVolume = src.supportVolume
 
     return sanitizeGeometryAnalysis({
         volume: base.volume * s3,
         surfaceArea: base.surfaceArea * s2,
-        overhangArea: overhangArea !== undefined ? overhangArea * s2 : undefined,
+        overhangArea: area(src.overhangArea),
         ...(supportVolume !== undefined ? { supportVolume: supportVolume * s3 } : {}),
+        ...(src.lateralArea !== undefined ? { lateralArea: area(src.lateralArea) } : {}),
+        ...(src.topArea !== undefined ? { topArea: area(src.topArea) } : {}),
+        ...(src.bottomArea !== undefined ? { bottomArea: area(src.bottomArea) } : {}),
+        ...(src.bedArea !== undefined ? { bedArea: area(src.bedArea) } : {}),
         boundingBox,
     })
 }
@@ -262,14 +261,23 @@ export type AutoOrientResult = {
     fitsBed: boolean
 }
 
-/** 배치 비교용 시간 점수 — 서포트 압출·트래블 + 레이어 전환 (모델 본체는 배치와 무관) */
+/** 배치 비교용 P2S 출력 시간 (PLA·인필 15% 기준) */
 function placementScoreHours(analysis: GeometryAnalysis, layerHeightMm: number): number {
-    const supportMm3 = (analysis.supportVolume ?? 0) * FDM_SUPPORT_FILL_RATIO * 1000
-    const supportHours = (supportMm3 * FDM_SUPPORT_TIME_WEIGHT) / FDM_AVG_FLOW_MM3_S / 3600
-    const travelHours = (analysis.overhangArea ?? 0) * FDM_SUPPORT_TRAVEL_HOURS_PER_CM2
-    const layers = Math.ceil(analysis.boundingBox.z / Math.max(0.05, layerHeightMm))
-    const layerHours = (layers * FDM_LAYER_OVERHEAD_SEC) / 3600
-    return supportHours + travelHours + layerHours
+    // 최소 0.5시간 바닥값 없이 비교해야 작은 모델도 자세 차이가 드러남
+    const { breakdownSec } = estimateFdmPrintTimeP2S({
+        volumeCm3: analysis.volume,
+        surfaceAreaCm2: analysis.surfaceArea,
+        heightMm: analysis.boundingBox.z,
+        lateralAreaCm2: analysis.lateralArea,
+        topAreaCm2: analysis.topArea,
+        bottomAreaCm2: analysis.bottomArea,
+        bedAreaCm2: analysis.bedArea,
+        layerHeightMm,
+        infillPercent: 15,
+        supportExtrudeCm3: (analysis.supportVolume ?? 0) * FDM_SUPPORT_FILL_RATIO,
+        materialName: 'PLA',
+    })
+    return Object.values(breakdownSec).reduce((a, b) => a + b, 0) / 3600
 }
 
 function fitsBedBox(box: { x: number; y: number; z: number }, bed: BedMaxMm | null | undefined): boolean {
