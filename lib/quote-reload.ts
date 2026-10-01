@@ -1,5 +1,6 @@
 import { parseMeshyJobIdFromFileName, buildAiPhotoResultFileName } from '@/lib/meshy-r2'
 import {
+    AI_PHOTO_SCALE_PERCENT_MAX,
     clampScalePercent,
     DEFAULT_MODEL_TRANSFORM,
     type Axis90,
@@ -22,7 +23,8 @@ export function parseStoredModelTransform(raw: unknown): ModelTransform | null {
         if (!o || typeof o !== 'object') return null
         const r = o as Record<string, unknown>
         return {
-            scalePercent: clampScalePercent(Number(r.scalePercent) || 100),
+            // 출처별 상한은 store(setTransformFull)에서 적용 — 여기서 400%로 자르면 인치 변환·AI 모델 스케일이 사라짐
+            scalePercent: clampScalePercent(Number(r.scalePercent) || 100, AI_PHOTO_SCALE_PERCENT_MAX),
             rotX: normalizeAxis90(r.rotX),
             rotY: normalizeAxis90(r.rotY),
             rotZ: normalizeAxis90(r.rotZ),

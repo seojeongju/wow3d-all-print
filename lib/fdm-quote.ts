@@ -95,6 +95,8 @@ export function estimateFdmSupportGrams(input: {
     overhangAreaCm2: number
     heightMm: number
     density: number
+    /** 배치 기준 오버행 그림자 부피(cm³). 있으면 높이 비율 근사 대신 사용 */
+    supportVolumeCm3?: number | null
     /** 클램프용 모델 무게(g) */
     modelWeightGrams?: number
 }): number {
@@ -103,8 +105,11 @@ export function estimateFdmSupportGrams(input: {
     if (overhang <= 0) return 0
     const heightCm = Math.max(0, Number(input.heightMm) || 0) / 10
     const density = Math.max(0, Number(input.density) || FDM_DEFAULT_DENSITY)
-    const volCm3 =
-        overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC * FDM_SUPPORT_FILL_RATIO
+    const shadowCm3 =
+        input.supportVolumeCm3 != null && Number.isFinite(Number(input.supportVolumeCm3))
+            ? Math.max(0, Number(input.supportVolumeCm3))
+            : overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC
+    const volCm3 = shadowCm3 * FDM_SUPPORT_FILL_RATIO
     let grams = volCm3 * density
     const modelW = Math.max(0, Number(input.modelWeightGrams) || 0)
     if (modelW > 0) {
@@ -127,6 +132,8 @@ export type CalculateFdmQuoteInput = {
     supportEnabled: boolean
     /** 있으면 지지면적에 사용, 없으면 surfaceArea×0.3 */
     overhangAreaCm2?: number | null
+    /** 배치 기준 서포트 그림자 부피(cm³). 없으면 높이 비율 근사 */
+    supportVolumeCm3?: number | null
     hourlyRateKr: number
     fdmLaborCostKrw?: number
     fdmSupportPerCm2Krw?: number
@@ -213,6 +220,7 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         overhangAreaCm2: overhang,
         heightMm: input.heightMm,
         density: input.density,
+        supportVolumeCm3: input.supportVolumeCm3,
         modelWeightGrams: weight.weightGrams,
     })
 

@@ -1,9 +1,24 @@
 import * as THREE from 'three';
 
+/** 원본 좌표에서 출력 시 위(+Z)를 향하게 되는 축 */
+export type UpAxisKey = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
+export const UP_AXIS_KEYS: readonly UpAxisKey[] = ['+x', '-x', '+y', '-y', '+z', '-z'];
+
+export type OrientationSupport = {
+    /** 서포트가 필요한 오버행 면적 (cm², 바닥 접촉면 제외) */
+    overhangArea: number;
+    /** 오버행 아래 그림자 부피 — 서포트가 채울 공간 (cm³, 채움률 적용 전) */
+    supportVolume: number;
+};
+
 export interface GeometryAnalysis {
     volume: number; // cm³
     surfaceArea: number; // cm²
     overhangArea?: number; // cm² (Optional for backward compatibility)
+    /** 출력 시 그 축을 위로 세웠을 때의 서포트 지표 (슬라이서식 바닥 배치 기준) */
+    orientations?: Partial<Record<UpAxisKey, OrientationSupport>>;
+    /** 현재 배치의 서포트 그림자 부피 (cm³) — applyTransformToAnalysis가 채움 */
+    supportVolume?: number;
     boundingBox: {
         x: number; // mm
         y: number; // mm
@@ -18,7 +33,12 @@ export const ANALYSIS_SAMPLE_TARGET = 48_000;
 export const MAX_SURFACE_TO_AABB_RATIO = 3;
 export const MAX_OVERHANG_TO_SURFACE_RATIO = 0.55;
 
-const OVERHANG_THRESHOLD = -0.7071;
+/** Bambu Studio 기본 서포트 임계각 30° — 수평면 기준 30° 미만으로 눕은 아랫면만 지지 */
+export const SUPPORT_THRESHOLD_ANGLE_DEG = 30;
+const SUPPORT_NORMAL_THRESHOLD = Math.cos((SUPPORT_THRESHOLD_ANGLE_DEG * Math.PI) / 180);
+/** 바닥 접촉면 판정 허용 오차 (mm, 최소값) */
+const BED_CONTACT_TOLERANCE_MM = 0.3;
+const BED_CONTACT_TOLERANCE_RATIO = 0.002;
 
 export function aabbVolumeCm3(box: { x: number; y: number; z: number }): number {
     const x = Math.max(0, Number(box.x) || 0);
@@ -48,12 +68,40 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
     const surfaceArea =
         maxSurf > 0 ? Math.min(Math.max(0, analysis.surfaceArea), maxSurf) : Math.max(0, analysis.surfaceArea);
     const maxOverhang = surfaceArea * MAX_OVERHANG_TO_SURFACE_RATIO;
-    const overhangArea =
-        analysis.overhangArea == null
-            ? undefined
-            : Math.min(Math.max(0, analysis.overhangArea), maxOverhang);
+    const clampOverhang = (v: number) => Math.min(Math.max(0, Number(v) || 0), maxOverhang);
+    // 서포트는 모델 AABB 안의 빈 공간만 채움
+    const maxSupportVolume = Math.max(0, maxVol - volume);
+    const clampSupportVolume = (v: number) => {
+        const n = Math.max(0, Number(v) || 0);
+        return maxVol > 0 ? Math.min(n, maxSupportVolume) : n;
+    };
 
-    return { ...analysis, volume, surfaceArea, overhangArea };
+    const overhangArea =
+        analysis.overhangArea == null ? undefined : clampOverhang(analysis.overhangArea);
+    const supportVolume =
+        analysis.supportVolume == null ? undefined : clampSupportVolume(analysis.supportVolume);
+
+    let orientations: GeometryAnalysis['orientations'];
+    if (analysis.orientations) {
+        orientations = {};
+        for (const key of UP_AXIS_KEYS) {
+            const o = analysis.orientations[key];
+            if (!o) continue;
+            orientations[key] = {
+                overhangArea: clampOverhang(o.overhangArea),
+                supportVolume: clampSupportVolume(o.supportVolume),
+            };
+        }
+    }
+
+    return {
+        ...analysis,
+        volume,
+        surfaceArea,
+        overhangArea,
+        ...(supportVolume !== undefined ? { supportVolume } : {}),
+        ...(orientations ? { orientations } : {}),
+    };
 }
 
 export function getTriangleCount(geometry: THREE.BufferGeometry): number {
@@ -100,55 +148,79 @@ type AnalyzeOptions = {
     includeOverhang?: boolean;
 };
 
-function signedVolumeOfTriangle(p1: THREE.Vector3, p2: THREE.Vector3, p3: THREE.Vector3): number {
-    return p1.dot(p2.cross(p3)) / 6.0;
-}
-
-function triangleArea(p1: THREE.Vector3, p2: THREE.Vector3, p3: THREE.Vector3): number {
-    const v1 = new THREE.Vector3().subVectors(p2, p1);
-    const v2 = new THREE.Vector3().subVectors(p3, p1);
-    return v1.cross(v2).length() * 0.5;
-}
-
 function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: AnalyzeOptions = {}): GeometryAnalysis {
     if (!geometry.attributes.position) {
         throw new Error('Invalid geometry');
     }
 
     const sampleStride = Math.max(1, options.sampleStride ?? 1);
-    const includeOverhang = options.includeOverhang ?? sampleStride === 1;
+    const includeOverhang = options.includeOverhang ?? true;
 
     const pos = geometry.attributes.position;
     const index = geometry.index;
 
+    if (!geometry.boundingBox) geometry.computeBoundingBox();
+    const bbox = geometry.boundingBox!;
+    const bboxMin = [bbox.min.x, bbox.min.y, bbox.min.z];
+    const bboxMax = [bbox.max.x, bbox.max.y, bbox.max.z];
+    const bedTol = [0, 1, 2].map((k) =>
+        Math.max(BED_CONTACT_TOLERANCE_MM, (bboxMax[k] - bboxMin[k]) * BED_CONTACT_TOLERANCE_RATIO)
+    );
+
     const p1 = new THREE.Vector3();
     const p2 = new THREE.Vector3();
     const p3 = new THREE.Vector3();
-    const n1 = new THREE.Vector3();
-    const n2 = new THREE.Vector3();
-    const n3 = new THREE.Vector3();
-    const faceNormal = new THREE.Vector3();
+    const e1 = new THREE.Vector3();
+    const e2 = new THREE.Vector3();
+    const cross = new THREE.Vector3();
 
     let volume = 0;
     let surfaceArea = 0;
-    let overhangArea = 0;
+
+    // [축 k][면 방향: 0=법선 -k, 1=법선 +k][기준 바닥: 0=min_k(+k 위), 1=max_k(-k 위)]
+    // 감김 방향이 뒤집힌 메쉬는 법선 부호가 반대이므로, 둘 다 누적 후 부피 부호로 선택
+    const ovArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
+    const ovVol = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
+    const centroid = [0, 0, 0];
+    const normal = [0, 0, 0];
 
     const processTriangle = (i0: number, i1: number, i2: number) => {
         p1.fromBufferAttribute(pos, i0);
         p2.fromBufferAttribute(pos, i1);
         p3.fromBufferAttribute(pos, i2);
-        volume += signedVolumeOfTriangle(p1, p2, p3);
+        volume += p1.dot(cross.copy(p2).cross(p3)) / 6.0;
 
-        const area = triangleArea(p1, p2, p3);
+        e1.subVectors(p2, p1);
+        e2.subVectors(p3, p1);
+        cross.crossVectors(e1, e2);
+        const len = cross.length();
+        const area = len * 0.5;
         surfaceArea += area;
 
-        if (includeOverhang && geometry.attributes.normal) {
-            n1.fromBufferAttribute(geometry.attributes.normal, i0);
-            n2.fromBufferAttribute(geometry.attributes.normal, i1);
-            n3.fromBufferAttribute(geometry.attributes.normal, i2);
-            faceNormal.copy(n1).add(n2).add(n3).normalize();
-            if (faceNormal.z < OVERHANG_THRESHOLD) {
-                overhangArea += area;
+        if (!includeOverhang || !(len > 0)) return;
+
+        normal[0] = cross.x / len;
+        normal[1] = cross.y / len;
+        normal[2] = cross.z / len;
+        centroid[0] = (p1.x + p2.x + p3.x) / 3;
+        centroid[1] = (p1.y + p2.y + p3.y) / 3;
+        centroid[2] = (p1.z + p2.z + p3.z) / 3;
+
+        for (let k = 0; k < 3; k++) {
+            const nk = normal[k];
+            const face = nk < -SUPPORT_NORMAL_THRESHOLD ? 0 : nk > SUPPORT_NORMAL_THRESHOLD ? 1 : -1;
+            if (face < 0) continue;
+            const projected = area * Math.abs(nk);
+            const hFromMin = centroid[k] - bboxMin[k];
+            const hFromMax = bboxMax[k] - centroid[k];
+            // 바닥에 닿는 면은 서포트 대상 아님
+            if (hFromMin > bedTol[k]) {
+                ovArea[k][face][0] += area;
+                ovVol[k][face][0] += projected * hFromMin;
+            }
+            if (hFromMax > bedTol[k]) {
+                ovArea[k][face][1] += area;
+                ovVol[k][face][1] += projected * hFromMax;
             }
         }
     };
@@ -170,10 +242,32 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     const scale = sampleStride;
     const size = getBoundingBoxSize(geometry);
 
+    let orientations: GeometryAnalysis['orientations'];
+    if (includeOverhang) {
+        // 바깥 법선(정상 감김): +k가 위면 법선 -k 면이 오버행
+        const outward = volume >= 0;
+        const down = outward ? 0 : 1;
+        const up = outward ? 1 : 0;
+        const axes = ['x', 'y', 'z'] as const;
+        orientations = {};
+        for (let k = 0; k < 3; k++) {
+            orientations[`+${axes[k]}`] = {
+                overhangArea: (ovArea[k][down][0] * scale) / 100,
+                supportVolume: (ovVol[k][down][0] * scale) / 1000,
+            };
+            orientations[`-${axes[k]}`] = {
+                overhangArea: (ovArea[k][up][1] * scale) / 100,
+                supportVolume: (ovVol[k][up][1] * scale) / 1000,
+            };
+        }
+    }
+
     return sanitizeGeometryAnalysis({
         volume: (Math.abs(volume) * scale) / 1000,
         surfaceArea: (surfaceArea * scale) / 100,
-        overhangArea: includeOverhang ? overhangArea * scale / 100 : undefined,
+        overhangArea: orientations?.['+z']?.overhangArea,
+        supportVolume: orientations?.['+z']?.supportVolume,
+        ...(orientations ? { orientations } : {}),
         boundingBox: {
             x: size.x,
             y: size.y,
@@ -191,7 +285,7 @@ export const analyzeGeometry = (geometry: THREE.BufferGeometry): GeometryAnalysi
         }
         return analyzeGeometryInternal(geometry, {
             sampleStride: stride,
-            includeOverhang: false,
+            includeOverhang: true,
         });
     }
 
@@ -237,7 +331,7 @@ export async function analyzeGeometryProgressive(
     const stride = Math.max(1, Math.ceil(triCount / ANALYSIS_SAMPLE_TARGET));
     const refined = analyzeGeometryInternal(geometry, {
         sampleStride: stride,
-        includeOverhang: false,
+        includeOverhang: true,
     });
 
     return refined;

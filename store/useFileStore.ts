@@ -8,8 +8,14 @@ import {
     applyTransformToAnalysis,
     clampScalePercent,
     DEFAULT_MODEL_TRANSFORM,
+    findAutoOrientTransform,
     getScalePercentMax,
+    resolveBedMaxForMethod,
+    type AutoOrientResult,
+    INCH_SCALE_PERCENT,
+    INCH_TO_MM,
     nextAxis90,
+    SCALE_PERCENT_MAX,
     type Axis90,
     type BedMaxMm,
     type ModelTransform,
@@ -48,6 +54,8 @@ interface FileState {
     /** 분석 실패·근사 견적 안내 (null = 정상) */
     analysisError: string | null
     transform: ModelTransform
+    /** 단위 없는 파일(STL 등)을 인치로 보고 ×25.4 변환 중 */
+    unitInch: boolean
     setFile: (file: File, source?: FileSourceMeta) => void
     setSavedQuoteId: (id: number | null) => void
     setSavedFileR2Url: (url: string | null) => void
@@ -58,9 +66,13 @@ interface FileState {
     setAnalysisError: (message: string | null) => void
     /** fromUser: 사용자가 직접 조절한 경우 재자동맞춤 억제 */
     setScalePercent: (percent: number, opts?: { fromUser?: boolean }) => void
+    /** 인치 → mm 변환 켜기/끄기 (현재 스케일에 ×25.4 또는 ÷25.4) */
+    setUnitInch: (on: boolean) => void
     rotateAxis90: (axis: 'x' | 'y' | 'z', delta?: number) => void
     setSnapToBed: (snap: boolean) => void
     alignAxes: () => void
+    /** 서포트·출력 시간이 가장 적은 바닥 방향으로 회전 (슬라이서 자동 배치) */
+    autoOrient: () => AutoOrientResult | null
     resetTransform: () => void
     /** 저장 견적 재로드 시 스케일·회전 복원 */
     setTransformFull: (transform: ModelTransform, opts?: { userOverride?: boolean }) => void
@@ -69,7 +81,7 @@ interface FileState {
 
 const EMPTY_SOURCE: FileSourceMeta = { kind: null, meshyJobId: null }
 
-export const useFileStore = create<FileState>((set) => ({
+export const useFileStore = create<FileState>((set, get) => ({
     file: null,
     fileUrl: null,
     savedQuoteId: null,
@@ -84,6 +96,7 @@ export const useFileStore = create<FileState>((set) => ({
     baseAnalysis: null,
     analysisError: null,
     transform: { ...DEFAULT_MODEL_TRANSFORM },
+    unitInch: false,
     setFile: (file, source) => {
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
@@ -102,6 +115,7 @@ export const useFileStore = create<FileState>((set) => ({
                 baseAnalysis: null,
                 analysisError: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
+                unitInch: false,
             }
         })
     },
@@ -122,10 +136,28 @@ export const useFileStore = create<FileState>((set) => ({
         set((state) => ({
             transform: {
                 ...state.transform,
-                scalePercent: clampScalePercent(percent, getScalePercentMax(state.fileSource.kind)),
+                scalePercent: clampScalePercent(
+                    percent,
+                    getScalePercentMax(state.fileSource.kind, state.unitInch)
+                ),
             },
             ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
         })),
+    setUnitInch: (on) =>
+        set((state) => {
+            if (state.unitInch === on || state.fileSource.kind === 'meshy-photo') return {}
+            const factor = on ? INCH_TO_MM : 1 / INCH_TO_MM
+            return {
+                unitInch: on,
+                transform: {
+                    ...state.transform,
+                    scalePercent: clampScalePercent(
+                        state.transform.scalePercent * factor,
+                        getScalePercentMax(state.fileSource.kind, on)
+                    ),
+                },
+            }
+        }),
     rotateAxis90: (axis, delta = 90) =>
         set((state) => {
             const key = axis === 'x' ? 'rotX' : axis === 'y' ? 'rotY' : 'rotZ'
@@ -150,21 +182,36 @@ export const useFileStore = create<FileState>((set) => ({
                 rotZ: 0,
             },
         })),
+    autoOrient: () => {
+        const state = get()
+        if (!state.baseAnalysis) return null
+        const result = findAutoOrientTransform(state.baseAnalysis, state.transform, {
+            bed: resolveBedMaxForMethod(state.printMethodForFit, state.bedMaxForFit),
+        })
+        if (result) set({ transform: { ...result.transform, snapToBed: true } })
+        return result
+    },
     resetTransform: () =>
         set((state) => ({
             transform: {
                 ...DEFAULT_MODEL_TRANSFORM,
-                scalePercent: state.meshyFitScalePercent ?? 100,
+                scalePercent:
+                    state.meshyFitScalePercent ?? (state.unitInch ? INCH_SCALE_PERCENT : 100),
             },
             meshyScaleUserOverride: false,
         })),
     setTransformFull: (transform, opts) =>
         set((state) => {
+            // 인치 변환 후 저장한 견적(400% 초과)을 다시 열면 변환 상태도 복원
+            const unitInch =
+                state.unitInch ||
+                (state.fileSource.kind !== 'meshy-photo' && transform.scalePercent > SCALE_PERCENT_MAX)
             const scalePercent = clampScalePercent(
                 transform.scalePercent,
-                getScalePercentMax(state.fileSource.kind)
+                getScalePercentMax(state.fileSource.kind, unitInch)
             )
             return {
+                unitInch,
                 transform: {
                     scalePercent,
                     rotX: transform.rotX,
@@ -204,6 +251,7 @@ export const useFileStore = create<FileState>((set) => ({
                 baseAnalysis: null,
                 analysisError: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
+                unitInch: false,
             }
         }),
 }))

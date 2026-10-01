@@ -36,6 +36,7 @@ import {
 import { trackConversionEvent } from '@/lib/track-conversion-event'
 import { useQuoteEstimateLog, type QuoteEstimateSnapshot } from '@/hooks/useQuoteEstimateLog'
 import { parseStoredModelTransform } from '@/lib/quote-reload'
+import InchUnitNotice from '@/components/quote/InchUnitNotice'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -263,6 +264,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const volumeCm3 = analysis?.volume || 0
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
     const overhangAreaRaw = analysis?.overhangArea // 오버행 정보 존재 여부 확인용
+    const supportVolumeRaw = analysis?.supportVolume // 현재 배치 기준 서포트 그림자 부피
     const heightMm = analysis?.boundingBox.z || 0
     const bx = analysis?.boundingBox?.x ?? 0
     const by = analysis?.boundingBox?.y ?? 0
@@ -306,6 +308,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 layerHeightMm: layerHeight,
                 supportEnabled,
                 overhangAreaCm2: overhangAreaRaw,
+                supportVolumeCm3: supportVolumeRaw,
                 hourlyRateKr: rateKRW,
                 fdmLaborCostKrw: fdmSpec?.fdm_labor_cost_krw,
                 fdmSupportPerCm2Krw: fdmSpec?.fdm_support_per_cm2_krw,
@@ -375,7 +378,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, surfaceAreaCm2, volumeCm3])
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, surfaceAreaCm2, volumeCm3])
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
@@ -673,6 +676,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 dimensionsX: analysis.boundingBox.x,
                 dimensionsY: analysis.boundingBox.y,
                 dimensionsZ: analysis.boundingBox.z,
+                ...(overhangAreaRaw != null ? { overhangAreaCm2: overhangAreaRaw } : {}),
+                ...(supportVolumeRaw != null ? { supportVolumeCm3: supportVolumeRaw } : {}),
                 printMethod,
                 ...(printMethod === 'fdm' ? {
                     fdmMaterial: (fdmMaterial || '').toUpperCase() as QuoteData['fdmMaterial'],
@@ -891,6 +896,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
 
     return (
         <div className={`space-y-6 ${embedded ? 'pb-6' : 'pb-4'}`}>
+            <InchUnitNotice />
+
             {/* Quick Stats Grid - 프리미엄 카드 디자인 */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-1.5 sm:gap-2 group hover:bg-white/10 transition-all shadow-xl">

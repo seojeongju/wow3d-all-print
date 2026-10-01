@@ -147,6 +147,19 @@ export async function POST(request: NextRequest) {
         const dimensionsX = Number(body.dimensionsX) || 0;
         const dimensionsY = Number(body.dimensionsY) || 0;
         const dimensionsZ = Number(body.dimensionsZ) || 0;
+        // 배치 기준 서포트 지표 (오버행 상한은 calculateFdmQuote가 표면적 비율로 제한)
+        const overhangAreaCm2 =
+            body.overhangAreaCm2 != null && Number.isFinite(Number(body.overhangAreaCm2))
+                ? Math.max(0, Number(body.overhangAreaCm2))
+                : null;
+        // 서포트는 AABB 안의 빈 공간을 넘을 수 없음
+        const supportVolumeCm3 =
+            body.supportVolumeCm3 != null && Number.isFinite(Number(body.supportVolumeCm3))
+                ? Math.min(
+                      Math.max(0, Number(body.supportVolumeCm3)),
+                      Math.max(0, (dimensionsX * dimensionsY * dimensionsZ) / 1000 - volumeCm3)
+                  )
+                : null;
         const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
         const layerThickness = snapSlaLayer(body.layerThickness);
         const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
@@ -181,6 +194,8 @@ export async function POST(request: NextRequest) {
                     volumeCm3,
                     surfaceAreaCm2,
                     heightMm: dimensionsZ,
+                    overhangAreaCm2,
+                    supportVolumeCm3,
                     fdmMaterialName: fdmMaterialName,
                     infillPercent: fdmInfill,
                     layerHeightMm: fdmLayerHeight,

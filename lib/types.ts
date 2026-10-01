@@ -13,6 +13,10 @@ export interface QuoteData {
     dimensionsX: number;
     dimensionsY: number;
     dimensionsZ: number;
+    /** 현재 배치(바닥 방향) 기준 서포트 오버행 면적 — 서버 재계산용 */
+    overhangAreaCm2?: number;
+    /** 현재 배치 기준 서포트 그림자 부피 — 서버 재계산용 */
+    supportVolumeCm3?: number;
 
     // 출력 방식
     printMethod: 'fdm' | 'sla' | 'dlp';

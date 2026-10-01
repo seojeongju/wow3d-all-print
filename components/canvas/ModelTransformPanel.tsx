@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
+    applyTransformToAnalysis,
     getScalePercentMax,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
     scalePercentFromTargetMm,
 } from '@/lib/model-transform'
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
-import { RotateCcw, MoveDown, Maximize2 } from 'lucide-react'
+import { RotateCcw, MoveDown, Maximize2, Wand2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
 import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_EN } from '@/lib/meshy-disclaimer'
 import { cn } from '@/lib/utils'
@@ -32,17 +33,22 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const rotateAxis90 = useFileStore((s) => s.rotateAxis90)
     const setSnapToBed = useFileStore((s) => s.setSnapToBed)
     const alignAxes = useFileStore((s) => s.alignAxes)
+    const autoOrient = useFileStore((s) => s.autoOrient)
     const resetTransform = useFileStore((s) => s.resetTransform)
     const meshyFitScalePercent = useFileStore((s) => s.meshyFitScalePercent)
     const meshyFitTargetMm = useFileStore((s) => s.meshyFitTargetMm)
     const printMethodForFit = useFileStore((s) => s.printMethodForFit)
     const bedMaxForFit = useFileStore((s) => s.bedMaxForFit)
+    const unitInch = useFileStore((s) => s.unitInch)
     const effective = useEffectiveAnalysis()
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
+    // 자동 배치 직후 회전값에서만 안내 표시 (수동 회전하면 숨김)
+    const [autoOrientNote, setAutoOrientNote] = useState<{ text: string; rotKey: string } | null>(null)
+    const rotKey = `${transform.rotX},${transform.rotY},${transform.rotZ}`
     const isAiPhoto = fileSource.kind === 'meshy-photo'
-    const scaleMax = getScalePercentMax(fileSource.kind)
+    const scaleMax = getScalePercentMax(fileSource.kind, unitInch)
 
     useEffect(() => {
         if (!isAiPhoto || !baseAnalysis) return
@@ -62,9 +68,27 @@ export default function ModelTransformPanel({ className }: { className?: string 
         })
     }, [effective?.boundingBox.x, effective?.boundingBox.y, effective?.boundingBox.z])
 
+    useEffect(() => {
+        setAutoOrientNote(null)
+    }, [file])
+
     if (!file || !baseAnalysis || !effective) return null
 
     const box = effective.boundingBox
+    const canAutoOrient = !!baseAnalysis.orientations
+
+    const handleAutoOrient = () => {
+        const result = autoOrient()
+        if (!result) return
+        const placed = useFileStore.getState()
+        const after = placed.baseAnalysis
+            ? applyTransformToAnalysis(placed.baseAnalysis, placed.transform)
+            : null
+        setAutoOrientNote({
+            text: t('transformAutoOrientDone', { area: (after?.overhangArea ?? 0).toFixed(1) }),
+            rotKey: `${placed.transform.rotX},${placed.transform.rotY},${placed.transform.rotZ}`,
+        })
+    }
 
     const commitScalePercent = (raw: string) => {
         const n = Number(raw)
@@ -240,6 +264,25 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         </button>
                     ))}
                 </div>
+                <button
+                    type="button"
+                    onClick={handleAutoOrient}
+                    disabled={!canAutoOrient}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-teal-400/40 bg-teal-400/10 hover:bg-teal-400/20 px-2 py-2 text-[10px] font-black text-teal-200 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                    title={canAutoOrient ? t('transformAutoOrientTitle') : t('transformAutoOrientPending')}
+                >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    {t('transformAutoOrient')}
+                </button>
+                {autoOrientNote && autoOrientNote.rotKey === rotKey ? (
+                    <p className="text-[9px] text-teal-200/90 font-bold leading-relaxed break-keep">
+                        {autoOrientNote.text}
+                    </p>
+                ) : (
+                    <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
+                        {t('transformAutoOrientHint')}
+                    </p>
+                )}
             </div>
 
             {/* 바닥 붙이기 + 축 정렬 */}

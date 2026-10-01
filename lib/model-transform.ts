@@ -1,4 +1,18 @@
-import { sanitizeGeometryAnalysis, type GeometryAnalysis } from '@/lib/geometry'
+import {
+    sanitizeGeometryAnalysis,
+    UP_AXIS_KEYS,
+    type GeometryAnalysis,
+    type UpAxisKey,
+} from '@/lib/geometry'
+import { FDM_SUPPORT_FILL_RATIO } from '@/lib/fdm-quote'
+import {
+    FDM_AVG_FLOW_MM3_S,
+    FDM_LAYER_OVERHEAD_SEC,
+    FDM_REF_LAYER_MM,
+    FDM_SUPPORT_TIME_WEIGHT,
+    FDM_SUPPORT_TRAVEL_HOURS_PER_CM2,
+} from '@/lib/print-time-estimate'
+import { rotatePointEulerXyz } from '@/lib/stl-bake'
 
 /** 90° 단위 모델 변환 — 자동견적 뷰어용 */
 export type Axis90 = 0 | 90 | 180 | 270
@@ -47,8 +61,38 @@ export const MESHY_AUTOFIT_TARGET_MM = 110
 /** @deprecated 항상 맞춤으로 변경됨 */
 export const MESHY_AUTOFIT_TRIGGER_MM = 0
 
-export function getScalePercentMax(sourceKind: 'upload' | 'meshy-photo' | null): number {
-    return sourceKind === 'meshy-photo' ? AI_PHOTO_SCALE_PERCENT_MAX : SCALE_PERCENT_MAX
+export const INCH_TO_MM = 25.4
+/** 인치 → mm 변환 시 스케일 (100% × 25.4) */
+export const INCH_SCALE_PERCENT = Math.round(100 * INCH_TO_MM)
+/** 인치 변환 후에도 사용자가 400%까지 추가 조절할 수 있도록 */
+export const UPLOAD_INCH_SCALE_PERCENT_MAX = Math.round(SCALE_PERCENT_MAX * INCH_TO_MM)
+/** 최장축이 이 값(mm) 이하이면 인치 단위 파일로 의심 */
+export const INCH_SUSPECT_MAX_LONGEST_MM = 10
+
+/** 단위 정보가 없어 mm로 가정하는 형식 (STEP·3MF는 파일에 단위가 있음) */
+const UNITLESS_MODEL_EXTENSIONS = ['stl', 'obj', 'ply']
+
+export function isUnitlessModelFile(fileName: string | null | undefined): boolean {
+    const ext = fileName?.split('.').pop()?.toLowerCase()
+    return !!ext && UNITLESS_MODEL_EXTENSIONS.includes(ext)
+}
+
+/** 단위 없는 파일인데 최장축이 비정상적으로 작으면 인치로 만든 파일일 가능성이 높음 */
+export function isLikelyInchModel(
+    fileName: string | null | undefined,
+    base: GeometryAnalysis | null | undefined
+): boolean {
+    if (!base || !isUnitlessModelFile(fileName)) return false
+    const longest = Math.max(base.boundingBox.x, base.boundingBox.y, base.boundingBox.z)
+    return longest > 0 && longest <= INCH_SUSPECT_MAX_LONGEST_MM
+}
+
+export function getScalePercentMax(
+    sourceKind: 'upload' | 'meshy-photo' | null,
+    unitInch = false
+): number {
+    if (sourceKind === 'meshy-photo') return AI_PHOTO_SCALE_PERCENT_MAX
+    return unitInch ? UPLOAD_INCH_SCALE_PERCENT_MAX : SCALE_PERCENT_MAX
 }
 
 export function clampScalePercent(value: number, maxPercent = SCALE_PERCENT_MAX): number {
@@ -150,11 +194,30 @@ function applyAxisRotations(
     return out
 }
 
+const UP_AXIS_VECTORS: Record<UpAxisKey, [number, number, number]> = {
+    '+x': [1, 0, 0],
+    '-x': [-1, 0, 0],
+    '+y': [0, 1, 0],
+    '-y': [0, -1, 0],
+    '+z': [0, 0, 1],
+    '-z': [0, 0, -1],
+}
+
+/** 회전(X→Y→Z 순) 후 출력 베드 위쪽(+Z)을 향하는 원본 축 */
+export function getUpAxisKey(transform: Pick<ModelTransform, 'rotX' | 'rotY' | 'rotZ'>): UpAxisKey {
+    for (const key of UP_AXIS_KEYS) {
+        const [x, y, z] = UP_AXIS_VECTORS[key]
+        const p = rotatePointEulerXyz(x, y, z, transform.rotX, transform.rotY, transform.rotZ)
+        if (p[2] > 0.5) return key
+    }
+    return '+z'
+}
+
 /**
  * 원본 분석값에 균일 스케일·90° 회전을 반영.
- * - 부피 ∝ s³, 면적·오버행 ∝ s²
+ * - 부피 ∝ s³, 면적·오버행 ∝ s², 서포트 부피 ∝ s³
  * - 바운딩 박스는 스케일 후 축 순열
- * - 오버행은 회전 후 재계산하지 않음(근사). 높이는 회전된 Z로 견적 시간에 반영
+ * - 오버행·서포트는 슬라이서처럼 회전 후 바닥(최저점)에 놓인 상태 기준
  */
 export function applyTransformToAnalysis(
     base: GeometryAnalysis,
@@ -176,13 +239,79 @@ export function applyTransformToAnalysis(
         transform.rotZ
     )
 
+    const placed = base.orientations?.[getUpAxisKey(transform)]
+    const overhangArea = placed ? placed.overhangArea : base.overhangArea
+    const supportVolume = placed ? placed.supportVolume : base.supportVolume
+
     return sanitizeGeometryAnalysis({
         volume: base.volume * s3,
         surfaceArea: base.surfaceArea * s2,
-        overhangArea:
-            base.overhangArea !== undefined ? base.overhangArea * s2 : undefined,
+        overhangArea: overhangArea !== undefined ? overhangArea * s2 : undefined,
+        ...(supportVolume !== undefined ? { supportVolume: supportVolume * s3 } : {}),
         boundingBox,
     })
+}
+
+const AXIS90_VALUES: readonly Axis90[] = [0, 90, 180, 270]
+
+export type AutoOrientResult = {
+    transform: ModelTransform
+    upAxis: UpAxisKey
+    /** 배치에 따라 달라지는 시간(서포트+레이어) 추정, 시간 단위 */
+    scoreHours: number
+    fitsBed: boolean
+}
+
+/** 배치 비교용 시간 점수 — 서포트 압출·트래블 + 레이어 전환 (모델 본체는 배치와 무관) */
+function placementScoreHours(analysis: GeometryAnalysis, layerHeightMm: number): number {
+    const supportMm3 = (analysis.supportVolume ?? 0) * FDM_SUPPORT_FILL_RATIO * 1000
+    const supportHours = (supportMm3 * FDM_SUPPORT_TIME_WEIGHT) / FDM_AVG_FLOW_MM3_S / 3600
+    const travelHours = (analysis.overhangArea ?? 0) * FDM_SUPPORT_TRAVEL_HOURS_PER_CM2
+    const layers = Math.ceil(analysis.boundingBox.z / Math.max(0.05, layerHeightMm))
+    const layerHours = (layers * FDM_LAYER_OVERHEAD_SEC) / 3600
+    return supportHours + travelHours + layerHours
+}
+
+function fitsBedBox(box: { x: number; y: number; z: number }, bed: BedMaxMm | null | undefined): boolean {
+    if (!bed) return true
+    return box.x <= bed.x && box.y <= bed.y && box.z <= bed.z
+}
+
+/**
+ * 슬라이서 자동 배치와 같은 목적: 6개 바닥 방향 중 서포트·출력 시간이 가장 적은 자세.
+ * 같은 바닥 방향이면 베드에 들어가는 Z 회전, 그다음 현재 회전에 가까운 것을 우선.
+ */
+export function findAutoOrientTransform(
+    base: GeometryAnalysis,
+    current: ModelTransform,
+    opts?: { bed?: BedMaxMm | null; layerHeightMm?: number }
+): AutoOrientResult | null {
+    if (!base.orientations) return null
+    const layerHeightMm = opts?.layerHeightMm ?? FDM_REF_LAYER_MM
+    let best: AutoOrientResult | null = null
+    let bestRank = Infinity
+
+    for (const rotX of AXIS90_VALUES) {
+        for (const rotY of AXIS90_VALUES) {
+            for (const rotZ of [0, 90] as const) {
+                const transform: ModelTransform = { ...current, rotX, rotY, rotZ }
+                const analysis = applyTransformToAnalysis(base, transform)
+                const scoreHours = placementScoreHours(analysis, layerHeightMm)
+                const fitsBed = fitsBedBox(analysis.boundingBox, opts?.bed)
+                const changed =
+                    Number(rotX !== current.rotX) +
+                    Number(rotY !== current.rotY) +
+                    Number(rotZ !== current.rotZ)
+                // 베드 초과는 큰 패널티, 동점이면 회전 변화가 적은 쪽
+                const rank = scoreHours + (fitsBed ? 0 : 1e6) + changed * 1e-6
+                if (rank < bestRank) {
+                    bestRank = rank
+                    best = { transform, upAxis: getUpAxisKey(transform), scoreHours, fitsBed }
+                }
+            }
+        }
+    }
+    return best
 }
 
 export function degreesToRadians(deg: number): number {

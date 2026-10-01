@@ -48,7 +48,7 @@ function rotZPoint(x: number, y: number, z: number, steps: number): [number, num
     return [xx, yy, z]
 }
 
-/** Three.js Euler XYZ 와 동일: Rx → Ry → Rz, 90° 단위 */
+/** X → Y → Z 순서로 회전 (Three.js Euler order 'ZYX'와 동일), 90° 단위 */
 export function rotatePointEulerXyz(
     x: number,
     y: number,

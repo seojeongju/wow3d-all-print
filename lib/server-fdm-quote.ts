@@ -28,6 +28,10 @@ export type ServerFdmQuoteInput = {
     volumeCm3: number
     surfaceAreaCm2: number
     heightMm: number
+    /** 클라이언트가 배치 기준으로 산출한 오버행 면적. 없으면 표면적 비율 근사 */
+    overhangAreaCm2?: number | null
+    /** 클라이언트가 배치 기준으로 산출한 서포트 그림자 부피 */
+    supportVolumeCm3?: number | null
     fdmMaterialName: string | null
     infillPercent: number | null
     layerHeightMm: number | null
@@ -171,7 +175,8 @@ export async function resolveServerFdmQuote(
             infillPercent: input.infillPercent ?? FDM_INFILL_DEFAULT,
             layerHeightMm: layer,
             supportEnabled: input.supportEnabled,
-            overhangAreaCm2: null,
+            overhangAreaCm2: input.overhangAreaCm2 ?? null,
+            supportVolumeCm3: input.supportVolumeCm3 ?? null,
             hourlyRateKr: hourlyRate,
             fdmLaborCostKrw: equipment.fdmLaborCostKrw,
             fdmSupportPerCm2Krw: equipment.fdmSupportPerCm2Krw,

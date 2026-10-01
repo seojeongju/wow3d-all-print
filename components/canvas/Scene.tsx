@@ -93,7 +93,7 @@ function Model({
     const boundsRef = useRef(bounds)
     boundsRef.current = bounds
     const mountedRef = useRef(true)
-    const groupRef = useRef<THREE.Group>(null)
+    const bedRef = useRef<THREE.Group>(null)
     const geometryRef = useRef<THREE.BufferGeometry | null>(null)
     const transform = useFileStore((s) => s.transform)
     const scale = transform.scalePercent / 100
@@ -107,17 +107,17 @@ function Model({
 
     // 스케일·회전·바닥 붙이기 후 Bounds 다시 fit
     useLayoutEffect(() => {
-        const group = groupRef.current
-        if (!group || !geometry) return
+        const bed = bedRef.current
+        if (!bed || !geometry) return
 
-        group.position.set(0, 0, 0)
-        group.updateMatrixWorld(true)
+        bed.position.set(0, 0, 0)
+        bed.updateMatrixWorld(true)
 
         if (transform.snapToBed) {
-            const box = new THREE.Box3().setFromObject(group)
+            const box = new THREE.Box3().setFromObject(bed)
             if (Number.isFinite(box.min.y)) {
-                group.position.y = -box.min.y
-                group.updateMatrixWorld(true)
+                bed.position.y = -box.min.y
+                bed.updateMatrixWorld(true)
             }
         }
 
@@ -219,13 +219,16 @@ function Model({
     }
 
     return (
+        // 슬라이서와 같은 Z-up 베드 좌표 (그리드는 three.js XZ 평면)
+        <group ref={bedRef} rotation={[-Math.PI / 2, 0, 0]}>
         <group
-            ref={groupRef}
             scale={[scale, scale, scale]}
+            // 견적·STL 베이크와 같은 X → Y → Z 회전 순서
             rotation={[
                 degreesToRadians(transform.rotX),
                 degreesToRadians(transform.rotY),
                 degreesToRadians(transform.rotZ),
+                'ZYX',
             ]}
         >
             <mesh geometry={geometry}>
@@ -251,6 +254,7 @@ function Model({
                     <MeasurementTool />
                 </>
             )}
+        </group>
         </group>
     )
 }
