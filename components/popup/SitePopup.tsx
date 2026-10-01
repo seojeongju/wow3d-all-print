@@ -20,14 +20,11 @@ import {
   resolvePopupPosition,
   type PublicPopup,
 } from '@/lib/popup'
+import { matchesPathPrefix } from '@/lib/locale-path'
 
 function isExcludedPath(pathname: string | null): boolean {
   if (!pathname) return true
-  return (
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/api')
-  )
+  return matchesPathPrefix(pathname, ['/admin', '/auth', '/api', '/print'])
 }
 
 function isSameOriginUrl(url: string): boolean {

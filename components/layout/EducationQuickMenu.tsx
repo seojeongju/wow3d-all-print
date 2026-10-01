@@ -5,6 +5,7 @@ import { GraduationCap, ExternalLink, Globe2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { matchesPathPrefix } from '@/lib/locale-path';
 
 type QuickLinkAccent = 'teal' | 'naver';
 type DockMode = 'left' | 'right' | 'corner';
@@ -138,28 +139,11 @@ function QuickLinkButton({
 export default function EducationQuickMenu() {
     const pathname = usePathname();
     const t = useTranslations('Common');
-    const isAdmin = pathname?.startsWith('/admin');
-    const isQuotePage =
-        pathname === '/quote' ||
-        pathname?.startsWith('/quote/') ||
-        pathname === '/en/quote' ||
-        pathname?.startsWith('/en/quote/');
-
     /** 3D 뷰어 우측 메뉴(스크린샷·치수·뷰 프리셋·팔레트)와 겹치는 페이지 */
-    const isViewerPage =
-        pathname === '/experience' ||
-        pathname?.startsWith('/experience/') ||
-        pathname === '/en/experience' ||
-        pathname?.startsWith('/en/experience/');
+    const isViewerPage = matchesPathPrefix(pathname, ['/experience']);
 
-    const isAuthPage =
-        pathname === '/auth' ||
-        pathname?.startsWith('/auth/') ||
-        pathname === '/en/auth' ||
-        pathname?.startsWith('/en/auth/');
-
-    // 견적·인증 페이지에서는 사이트 연결 아이콘 비표시
-    if (isAdmin || isQuotePage || isAuthPage) return null;
+    // 관리자·견적·인증·견적서 인쇄 페이지에서는 사이트 연결 아이콘 비표시
+    if (matchesPathPrefix(pathname, ['/admin', '/quote', '/auth', '/print'])) return null;
 
     const dock: DockMode = isViewerPage ? 'corner' : 'right';
 

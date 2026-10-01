@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, type CSSProperties } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
@@ -54,6 +54,18 @@ type CompanyInfo = {
   bank_holder?: string
   seal_url?: string
 }
+
+/** A4(297mm) - 위아래 @page 여백 12mm×2 = 273mm를 CSS px(96dpi)로 환산 */
+const PRINT_PAGE_HEIGHT_PX = (273 / 25.4) * 96
+/** 브라우저별 인쇄 렌더링 오차 대비 여유 */
+const PRINT_PAGE_SAFETY_PX = 24
+/** 품목+빈 줄 합계 최대 행 수 (내용이 적을 때 표 모양 유지용) */
+const MAX_TABLE_ROWS = 10
+const EMPTY_ROW_FALLBACK_PX = 33
+/** 빈 줄을 모두 지워도 넘칠 때 이 비율까지는 축소해서 1페이지에 맞춤 */
+const MIN_PRINT_ZOOM = 0.8
+
+type PrintLayout = { emptyRows: number; zoom: number }
 
 const DEFAULT_COMPANY: CompanyInfo = {
   company_name: '와우쓰리디(Wow3D)',
@@ -292,6 +304,48 @@ export default function EstimatePrintPage() {
       : t('footerShippingFree', { hint: shippingHint }),
   ]
 
+  const docRef = useRef<HTMLDivElement>(null)
+  const [printLayout, setPrintLayout] = useState<PrintLayout>({ emptyRows: 0, zoom: 1 })
+  const itemCount = displayItems.length
+
+  useEffect(() => {
+    const doc = docRef.current
+    if (!doc) return
+
+    const measure = () => {
+      const emptyRowEls = doc.querySelectorAll<HTMLElement>('[data-empty-row]')
+      let emptyRowsHeight = 0
+      emptyRowEls.forEach((el) => {
+        emptyRowsHeight += el.offsetHeight
+      })
+      const rowHeight = emptyRowEls[0]?.offsetHeight || EMPTY_ROW_FALLBACK_PX
+      // 빈 줄을 뺀 실제 내용 높이 — 빈 줄 수가 바뀌어도 값이 달라지지 않아 재측정이 수렴함
+      const contentHeight = doc.offsetHeight - emptyRowsHeight
+      const available = PRINT_PAGE_HEIGHT_PX - PRINT_PAGE_SAFETY_PX
+      const maxEmptyRows = Math.max(0, MAX_TABLE_ROWS - itemCount)
+
+      let next: PrintLayout
+      if (contentHeight <= available) {
+        next = {
+          emptyRows: Math.min(maxEmptyRows, Math.floor((available - contentHeight) / rowHeight)),
+          zoom: 1,
+        }
+      } else {
+        const ratio = available / contentHeight
+        next = { emptyRows: 0, zoom: ratio >= MIN_PRINT_ZOOM ? ratio : 1 }
+      }
+
+      setPrintLayout((prev) =>
+        prev.emptyRows === next.emptyRows && Math.abs(prev.zoom - next.zoom) < 0.005 ? prev : next
+      )
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(doc)
+    return () => observer.disconnect()
+  }, [loading, data, itemCount])
+
   if (loading)
     return (
       <div className="flex h-screen items-center justify-center">
@@ -340,6 +394,9 @@ export default function EstimatePrintPage() {
             break-inside: avoid;
             page-break-inside: avoid;
           }
+          .estimate-doc {
+            zoom: var(--estimate-print-zoom, 1);
+          }
         }
       `}</style>
 
@@ -366,9 +423,14 @@ export default function EstimatePrintPage() {
         </div>
       </div>
 
-      <div className="p-8 md:p-12 print:p-6">
-        <div className="max-w-[210mm] mx-auto bg-white print:max-w-none">
-          <div className="flex justify-between items-start mb-10 border-b-2 border-black pb-4">
+      {/* 화면 폭을 인쇄 폭(210mm - 좌우 여백 24mm)과 맞춰야 화면에서 잰 높이가 인쇄 높이와 같음 */}
+      <div className="p-4 md:p-12 print:p-0 overflow-x-auto print:overflow-visible">
+        <div
+          ref={docRef}
+          className="estimate-doc w-[186mm] mx-auto bg-white"
+          style={{ '--estimate-print-zoom': printLayout.zoom } as CSSProperties}
+        >
+          <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4">
             <div className="flex items-center gap-4">
               {company.logo_url && (
                 <img src={company.logo_url} alt="company logo" className="h-14 object-contain" />
@@ -419,14 +481,15 @@ export default function EstimatePrintPage() {
                 {company.business_number && (
                   <InfoRow label={t('labelBizNumber')} value={company.business_number} compact />
                 )}
-                <div className="flex min-w-0 gap-2">
-                  <div className="flex items-center shrink-0">
+                {/* 공간이 모자라면 대표자 줄을 아래로 넘겨 도장이 칸 밖으로 밀려나지 않게 함 */}
+                <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+                  <div className="flex min-w-0 items-center">
                     <span className="w-[4.5rem] flex-shrink-0 font-bold text-slate-500 whitespace-nowrap">
                       {t('labelCompany')}
                     </span>
-                    <span className="font-bold text-sm whitespace-nowrap">{company.company_name}</span>
+                    <span className="min-w-0 font-bold text-sm break-keep">{company.company_name}</span>
                   </div>
-                  <div className="flex items-center ml-4">
+                  <div className="flex shrink-0 items-center">
                     <span className="w-11 flex-shrink-0 font-bold text-slate-500 whitespace-nowrap">
                       {t('labelCeo')}
                     </span>
@@ -434,7 +497,8 @@ export default function EstimatePrintPage() {
                       <span className="font-bold text-sm whitespace-nowrap">
                         {company.representative}
                       </span>
-                      <div className="relative flex items-center justify-center ml-1">
+                      {/* 도장(48px)이 '인' 표시(약 16px) 중심에서 좌우로 16px씩 넘치므로 오른쪽 여백 확보 */}
+                      <div className="relative flex items-center justify-center ml-1 mr-3">
                         <span className="border border-red-500 text-red-500 rounded-sm px-1 text-[10px] select-none flex-shrink-0 opacity-40 font-bold">
                           {t('sealMark')}
                         </span>
@@ -497,7 +561,7 @@ export default function EstimatePrintPage() {
             </div>
           </div>
 
-          <table className="w-full text-sm border-collapse mb-8 border border-black">
+          <table className="w-full text-sm border-collapse mb-6 border border-black">
             <thead>
               <tr className="bg-slate-100 text-center">
                 <th className="border border-black p-2 font-bold w-10">{t('colNo')}</th>
@@ -518,29 +582,29 @@ export default function EstimatePrintPage() {
                 const numLocale = locale === 'en' ? 'en-US' : 'ko-KR'
                 return (
                   <tr key={item.id ?? idx} className="text-center">
-                    <td className="border border-black p-2">{idx + 1}</td>
-                    <td className="border border-black p-2 text-left">
+                    <td className="border border-black px-2 py-1">{idx + 1}</td>
+                    <td className="border border-black px-2 py-1 text-left">
                       <div className="font-bold">{item.file_name}</div>
                       <div className="text-xs text-slate-500">
                         {item.print_method ? String(item.print_method).toUpperCase() : ''}
                         {item.material_name ? ` / ${item.material_name}` : ''}
                       </div>
                     </td>
-                    <td className="border border-black p-2">{item.quantity}</td>
-                    <td className="border border-black p-2 text-right">
+                    <td className="border border-black px-2 py-1">{item.quantity}</td>
+                    <td className="border border-black px-2 py-1 text-right">
                       {Number(item.unit_price || 0).toLocaleString(numLocale)}
                     </td>
-                    <td className="border border-black p-2 text-right">
+                    <td className="border border-black px-2 py-1 text-right">
                       {itemSupply.toLocaleString(numLocale)}
                     </td>
-                    <td className="border border-black p-2 text-right">
+                    <td className="border border-black px-2 py-1 text-right">
                       {itemVat.toLocaleString(numLocale)}
                     </td>
                   </tr>
                 )
               })}
-              {Array.from({ length: Math.max(0, 10 - displayItems.length) }).map((_, i) => (
-                <tr key={`empty-${i}`} className="text-center h-8">
+              {Array.from({ length: printLayout.emptyRows }).map((_, i) => (
+                <tr key={`empty-${i}`} data-empty-row className="text-center h-8">
                   {[...Array(6)].map((_, j) => (
                     <td key={j} className="border border-black p-2"></td>
                   ))}
@@ -615,9 +679,9 @@ export default function EstimatePrintPage() {
             </ul>
           </div>
 
-          <div className="mt-16 text-center">
+          <div className="mt-8 text-center">
             <p className="text-lg font-serif">{t('signLine')}</p>
-            <p className="mt-4 font-bold">{estimateDate}</p>
+            <p className="mt-2 font-bold">{estimateDate}</p>
             <p className="mt-2 font-bold text-xl">
               {company.company_name || t('defaultCompany')}
             </p>

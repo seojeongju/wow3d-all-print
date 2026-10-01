@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
+import { matchesPathPrefix } from '@/lib/locale-path'
 import { GUIDE_ROBOT_HEIGHT, GUIDE_ROBOT_IMAGE, GUIDE_ROBOT_WIDTH } from './guide-robot-image'
 
 const loadPanel = () => import('./GuideRobotPanel')
@@ -17,13 +18,12 @@ const BUBBLE_SESSION_KEY = 'wow3d_robot_bubble_shown'
 const BUBBLE_DELAY_MS = 1500
 const BUBBLE_DURATION_MS = 7000
 
-/** 로봇을 숨기는 화면: 관리자, 견적(자체 상담 버튼 있음), 로그인, 3D 체험 뷰어(우측 하단 도구와 겹침) */
-const HIDDEN_PREFIXES = ['/admin', '/quote', '/auth', '/experience']
+/** 로봇을 숨기는 화면: 관리자, 견적(자체 상담 버튼 있음), 로그인, 3D 체험 뷰어(우측 하단 도구와 겹침), 견적서 인쇄 */
+const HIDDEN_PREFIXES = ['/admin', '/quote', '/auth', '/experience', '/print']
 
 function isHiddenPath(pathname: string | null): boolean {
     if (!pathname) return false
-    const path = pathname.replace(/^\/en(?=\/|$)/, '') || '/'
-    return HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))
+    return matchesPathPrefix(pathname, HIDDEN_PREFIXES)
 }
 
 /**
