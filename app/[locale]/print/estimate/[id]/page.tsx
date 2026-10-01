@@ -534,25 +534,8 @@ export default function EstimatePrintPage() {
             </div>
           </div>
 
-          <div className="print-avoid-break border-b-2 border-black pb-2 mb-6 space-y-2">
-            <div className="flex justify-between items-end text-sm">
-              <span className="text-slate-600">{t('itemsSubtotalVat')}</span>
-              <span>₩ {totalAmount.toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR')}</span>
-            </div>
-            <div className="flex justify-between items-end text-sm">
-              <span className="text-slate-600">
-                {t('shipping')}
-                {shippingFee > 0 ? (
-                  <span className="text-xs text-slate-400 ml-2">({shippingHint})</span>
-                ) : null}
-              </span>
-              <span>
-                {shippingFee === 0
-                  ? t('shippingFree')
-                  : `₩ ${shippingFee.toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR')}`}
-              </span>
-            </div>
-            <div className="flex justify-between items-end pt-1">
+          <div className="print-avoid-break border-b-2 border-black pb-2 mb-6">
+            <div className="flex justify-between items-end">
               <span className="font-bold text-lg">{t('grandTotal')}</span>
               <span className="text-2xl font-bold">
                 ₩ {grandTotal.toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR')}
