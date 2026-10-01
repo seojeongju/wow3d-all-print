@@ -4,6 +4,11 @@ import { correctDisplayAmount } from '@/lib/amount-display';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { UNREVIEWED_QUOTE_SQL } from '@/lib/admin-quote-review';
 import {
+    FIRST_TOUCH_TRAFFIC_SQL,
+    QUOTE_ATTRIBUTION_SESSION_SQL,
+    UNKNOWN_TRAFFIC_SOURCE,
+} from '@/lib/quote-attribution';
+import {
     ALL_FUNNEL_EVENT_LABELS,
     buildConversionFunnelTrend,
     buildHeroFunnelSummary,
@@ -509,25 +514,20 @@ export async function GET(req: NextRequest) {
 
         let quoteTrafficSources: { source: string; count: number }[] = [];
         try {
+            // 비율 분모가 전체 견적이 되도록 LIMIT 없이 전 채널 집계 (패널에서 상위만 표시)
             const { results: qSourceRows } = await env.DB.prepare(`
-                SELECT COALESCE(NULLIF(TRIM(t.source), ''), 'direct') as source, COUNT(*) as cnt
-                FROM quotes q
-                LEFT JOIN (
-                    SELECT tl.session_id, tl.source
-                    FROM traffic_logs tl
-                    INNER JOIN (
-                        SELECT session_id, MIN(created_at) as first_at
-                        FROM traffic_logs
-                        GROUP BY session_id
-                    ) first ON first.session_id = tl.session_id AND first.first_at = tl.created_at
-                ) t ON q.session_id = t.session_id
-                WHERE q.created_at >= ${sinceExpr}
-                GROUP BY source
+                SELECT COALESCE(NULLIF(TRIM(t.source), ''), '${UNKNOWN_TRAFFIC_SOURCE}') AS src, COUNT(*) AS cnt
+                FROM (
+                    SELECT q.id, ${QUOTE_ATTRIBUTION_SESSION_SQL} AS attr_session
+                    FROM quotes q
+                    WHERE q.created_at >= ${sinceExpr}
+                ) qa
+                LEFT JOIN ${FIRST_TOUCH_TRAFFIC_SQL} t ON t.session_id = qa.attr_session
+                GROUP BY src
                 ORDER BY cnt DESC
-                LIMIT 6
-            `).all() as { results: { source: string; cnt: number }[] };
+            `).all() as { results: { src: string; cnt: number }[] };
             quoteTrafficSources = (qSourceRows || []).map((r) => ({
-                source: r.source || 'direct',
+                source: r.src || UNKNOWN_TRAFFIC_SOURCE,
                 count: Number(r.cnt ?? 0),
             }));
         } catch {

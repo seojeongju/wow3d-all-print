@@ -35,6 +35,7 @@ import {
     type QuoteFunnelSummary as QuoteDbSummary,
     type QuoteTrafficSource,
 } from '@/lib/quote-funnel-trend';
+import { formatTrafficSourceLabel } from '@/lib/quote-attribution';
 import {
     type StatsGranularity,
     formatStatsPeriodLabel,
@@ -473,7 +474,7 @@ export default function AdminFunnelOverviewPanel({
                                 견적 전환 유입
                             </p>
                             <p className="mb-3 text-[10px] leading-relaxed text-white/30 break-keep">
-                                견적을 저장한 세션의 첫 유입 채널입니다 (전체 방문과 별개)
+                                견적을 저장한 세션의 첫 유입 채널입니다 (회원은 견적 직전 방문 세션 기준)
                             </p>
                             {quoteTrafficSources.length > 0 ? (
                                 <div className="space-y-2.5">
@@ -485,7 +486,7 @@ export default function AdminFunnelOverviewPanel({
                                         return (
                                             <div key={src.source} className="space-y-1">
                                                 <div className="flex justify-between text-[10px] font-bold">
-                                                    <span className="flex min-w-0 items-center gap-1.5 truncate text-white/60 capitalize">
+                                                    <span className="flex min-w-0 items-center gap-1.5 truncate text-white/60">
                                                         <span
                                                             className="h-2 w-2 shrink-0 rounded-sm"
                                                             style={{
@@ -493,7 +494,7 @@ export default function AdminFunnelOverviewPanel({
                                                                     SOURCE_COLORS[idx % SOURCE_COLORS.length],
                                                             }}
                                                         />
-                                                        {src.source}
+                                                        {formatTrafficSourceLabel(src.source)}
                                                     </span>
                                                     <span className="shrink-0 text-white">
                                                         {pct}%

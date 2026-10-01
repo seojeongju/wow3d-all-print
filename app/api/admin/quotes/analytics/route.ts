@@ -1,6 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { FIRST_TOUCH_TRAFFIC_SQL, QUOTE_ATTRIBUTION_SESSION_SQL } from '@/lib/quote-attribution';
 
 const FILTER_WHITELIST = ['all', 'ordered', 'incart', 'abandoned', 'draft'] as const;
 type FilterKey = (typeof FILTER_WHITELIST)[number];
@@ -16,15 +17,7 @@ const FILTER_SQL: Record<FilterKey, string> = {
 };
 
 const TRAFFIC_JOIN = `
-            LEFT JOIN (
-                SELECT tl.session_id, tl.source, tl.medium
-                FROM traffic_logs tl
-                INNER JOIN (
-                    SELECT session_id, MIN(created_at) as first_at
-                    FROM traffic_logs
-                    GROUP BY session_id
-                ) first ON first.session_id = tl.session_id AND first.first_at = tl.created_at
-            ) t ON q.session_id = t.session_id`;
+            LEFT JOIN ${FIRST_TOUCH_TRAFFIC_SQL} t ON t.session_id = ${QUOTE_ATTRIBUTION_SESSION_SQL}`;
 
 const SELECT_LIST = `
             SELECT 

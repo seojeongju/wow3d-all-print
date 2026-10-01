@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { format } from 'date-fns';
 import QuoteEstimateLogsPanel from '@/components/admin/QuoteEstimateLogsPanel';
+import { formatTrafficSourceLabel } from '@/lib/quote-attribution';
 
 type QuoteAnalytics = {
     id: number;
@@ -276,7 +277,7 @@ export default function QuoteAnalyticsPage() {
             <div className="flex items-center gap-1.5">
                 <MousePointer2 className="w-3 h-3 text-primary/60" />
                 <span className="text-[10px] font-black text-white/30 uppercase tracking-wider">
-                    {item.traffic_source || '직접 유입'} / {item.traffic_medium || '없음'}
+                    {formatTrafficSourceLabel(item.traffic_source)} / {item.traffic_medium || '없음'}
                 </span>
             </div>
             {item.guide_topic && (
