@@ -14,9 +14,7 @@ import {
     type AutoOrientResult,
     INCH_SCALE_PERCENT,
     INCH_TO_MM,
-    nextAxis90,
     SCALE_PERCENT_MAX,
-    type Axis90,
     type BedMaxMm,
     type ModelTransform,
     type PrintMethodKey,
@@ -54,6 +52,8 @@ interface FileState {
     /** 분석 실패·근사 견적 안내 (null = 정상) */
     analysisError: string | null
     transform: ModelTransform
+    /** 저장 견적의 배치를 복원함 → 자동 배치로 덮어쓰지 않음 (초기화 시 해제) */
+    orientationLocked: boolean
     /** 단위 없는 파일(STL 등)을 인치로 보고 ×25.4 변환 중 */
     unitInch: boolean
     setFile: (file: File, source?: FileSourceMeta) => void
@@ -68,11 +68,9 @@ interface FileState {
     setScalePercent: (percent: number, opts?: { fromUser?: boolean }) => void
     /** 인치 → mm 변환 켜기/끄기 (현재 스케일에 ×25.4 또는 ÷25.4) */
     setUnitInch: (on: boolean) => void
-    rotateAxis90: (axis: 'x' | 'y' | 'z', delta?: number) => void
-    setSnapToBed: (snap: boolean) => void
-    alignAxes: () => void
-    /** 서포트·출력 시간이 가장 적은 바닥 방향으로 회전 (슬라이서 자동 배치) */
-    autoOrient: () => AutoOrientResult | null
+    /** 서포트·출력 시간이 가장 적은 자세로 배치 (슬라이서 자동 배치) — 잠금 상태면 무시 */
+    applyAutoPlacement: () => AutoOrientResult | null
+    /** 스케일 초기화 + 배치 잠금 해제 후 자동 배치 */
     resetTransform: () => void
     /** 저장 견적 재로드 시 스케일·회전 복원 */
     setTransformFull: (transform: ModelTransform, opts?: { userOverride?: boolean }) => void
@@ -96,6 +94,7 @@ export const useFileStore = create<FileState>((set, get) => ({
     baseAnalysis: null,
     analysisError: null,
     transform: { ...DEFAULT_MODEL_TRANSFORM },
+    orientationLocked: false,
     unitInch: false,
     setFile: (file, source) => {
         set((state) => {
@@ -115,14 +114,24 @@ export const useFileStore = create<FileState>((set, get) => ({
                 baseAnalysis: null,
                 analysisError: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
+                orientationLocked: false,
                 unitInch: false,
             }
         })
     },
     setSavedQuoteId: (id) => set({ savedQuoteId: id }),
     setSavedFileR2Url: (url) => set({ savedFileR2Url: url }),
-    setPrintContextForFit: (method, bedMax) =>
-        set({ printMethodForFit: method, bedMaxForFit: bedMax }),
+    setPrintContextForFit: (method, bedMax) => {
+        const prev = get()
+        const same =
+            prev.printMethodForFit === method &&
+            prev.bedMaxForFit?.x === bedMax?.x &&
+            prev.bedMaxForFit?.y === bedMax?.y &&
+            prev.bedMaxForFit?.z === bedMax?.z
+        set({ printMethodForFit: method, bedMaxForFit: bedMax })
+        // 베드 크기가 바뀌면 들어가는 자세가 달라질 수 있음
+        if (!same) get().applyAutoPlacement()
+    },
     markMeshyFitted: (method, scalePercent, targetMm) =>
         set({
             meshyFittedForMethod: method,
@@ -158,48 +167,35 @@ export const useFileStore = create<FileState>((set, get) => ({
                 },
             }
         }),
-    rotateAxis90: (axis, delta = 90) =>
-        set((state) => {
-            const key = axis === 'x' ? 'rotX' : axis === 'y' ? 'rotY' : 'rotZ'
-            const current = state.transform[key] as Axis90
-            return {
-                transform: {
-                    ...state.transform,
-                    [key]: nextAxis90(current, delta),
-                },
-            }
-        }),
-    setSnapToBed: (snap) =>
-        set((state) => ({
-            transform: { ...state.transform, snapToBed: snap },
-        })),
-    alignAxes: () =>
-        set((state) => ({
-            transform: {
-                ...state.transform,
-                rotX: 0,
-                rotY: 0,
-                rotZ: 0,
-            },
-        })),
-    autoOrient: () => {
+    applyAutoPlacement: () => {
         const state = get()
-        if (!state.baseAnalysis) return null
+        if (state.orientationLocked || !state.baseAnalysis?.orientations) return null
         const result = findAutoOrientTransform(state.baseAnalysis, state.transform, {
             bed: resolveBedMaxForMethod(state.printMethodForFit, state.bedMaxForFit),
         })
-        if (result) set({ transform: { ...result.transform, snapToBed: true } })
+        if (!result) return null
+        const t = state.transform
+        const next = result.transform
+        const sameLayFlat =
+            (!t.layFlat && !next.layFlat) ||
+            (!!t.layFlat && !!next.layFlat && t.layFlat.every((v, i) => v === next.layFlat![i]))
+        if (t.rotX !== next.rotX || t.rotY !== next.rotY || t.rotZ !== next.rotZ || !sameLayFlat || !t.snapToBed) {
+            set({ transform: { ...next, snapToBed: true } })
+        }
         return result
     },
-    resetTransform: () =>
+    resetTransform: () => {
         set((state) => ({
             transform: {
                 ...DEFAULT_MODEL_TRANSFORM,
                 scalePercent:
                     state.meshyFitScalePercent ?? (state.unitInch ? INCH_SCALE_PERCENT : 100),
             },
+            orientationLocked: false,
             meshyScaleUserOverride: false,
-        })),
+        }))
+        get().applyAutoPlacement()
+    },
     setTransformFull: (transform, opts) =>
         set((state) => {
             // 인치 변환 후 저장한 견적(400% 초과)을 다시 열면 변환 상태도 복원
@@ -218,7 +214,9 @@ export const useFileStore = create<FileState>((set, get) => ({
                     rotY: transform.rotY,
                     rotZ: transform.rotZ,
                     snapToBed: transform.snapToBed !== false,
+                    layFlat: transform.layFlat ?? null,
                 },
+                orientationLocked: true,
                 ...(opts?.userOverride
                     ? {
                           meshyScaleUserOverride: true,
@@ -251,6 +249,7 @@ export const useFileStore = create<FileState>((set, get) => ({
                 baseAnalysis: null,
                 analysisError: null,
                 transform: { ...DEFAULT_MODEL_TRANSFORM },
+                orientationLocked: false,
                 unitInch: false,
             }
         }),

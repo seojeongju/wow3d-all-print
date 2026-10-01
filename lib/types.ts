@@ -53,13 +53,15 @@ export interface QuoteData {
     guideSource?: string;
     guideTopic?: string;
 
-    /** 뷰어에서 적용한 스케일·90° 회전 — 관리자 STL 다운로드 시 베이크 */
+    /** 뷰어에서 적용한 스케일·평면 배치·90° 회전 — 관리자 STL 다운로드 시 베이크 */
     modelTransform?: {
         scalePercent: number;
         rotX: number;
         rotY: number;
         rotZ: number;
         snapToBed?: boolean;
+        /** 바닥에 놓은 평면의 바깥 법선 (원본 좌표) */
+        layFlat?: [number, number, number] | null;
     };
 }
 

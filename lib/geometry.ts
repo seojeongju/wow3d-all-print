@@ -5,6 +5,7 @@ import {
     p2sOverhangWallExtra,
     p2sShellSolidFraction,
 } from '@/lib/print-time-estimate';
+import { layFlatMatrix, type Vec3Tuple } from '@/lib/stl-bake';
 
 /** 원본 좌표에서 출력 시 위(+Z)를 향하게 되는 축 */
 export type UpAxisKey = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
@@ -29,12 +30,22 @@ export type OrientationSupport = {
 
 const ORIENTATION_AREA_KEYS = ['lateralArea', 'topArea', 'bottomArea', 'bedArea'] as const;
 
+/** 축에 맞지 않은 평면을 바닥에 놓는 배치 (슬라이서 '면에 놓기') */
+export type FaceOrientation = OrientationSupport & {
+    /** 바닥에 놓을 평면의 바깥 법선 (원본 좌표, 단위 벡터) */
+    down: Vec3Tuple;
+    /** 이 면을 바닥에 놓았을 때 AABB (mm, layFlatMatrix 기준 축) */
+    box: { x: number; y: number; z: number };
+};
+
 export interface GeometryAnalysis {
     volume: number; // cm³
     surfaceArea: number; // cm²
     overhangArea?: number; // cm² (Optional for backward compatibility)
     /** 출력 시 그 축을 위로 세웠을 때의 서포트 지표 (슬라이서식 바닥 배치 기준) */
     orientations?: Partial<Record<UpAxisKey, OrientationSupport>>;
+    /** 축에 맞지 않은 큰 평면을 바닥에 놓는 배치 후보 */
+    faceOrientations?: FaceOrientation[];
     /** 현재 배치의 서포트 그림자 부피 (cm³) — applyTransformToAnalysis가 채움 */
     supportVolume?: number;
     /** 현재 배치의 측면·윗면·바닥·베드 접촉 면적 (cm²) — 출력 시간 산출용 */
@@ -133,6 +144,16 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
             };
         }
     }
+    const faceOrientations = analysis.faceOrientations?.map((f) => ({
+        down: f.down,
+        box: f.box,
+        overhangArea: clampOverhang(f.overhangArea),
+        supportVolume: Math.min(
+            Math.max(0, Number(f.supportVolume) || 0),
+            Math.max(0, aabbVolumeCm3(f.box) - volume)
+        ),
+        ...pickAreas(f),
+    }));
 
     return {
         ...analysis,
@@ -142,6 +163,7 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
         ...(supportVolume !== undefined ? { supportVolume } : {}),
         ...pickAreas(analysis),
         ...(orientations ? { orientations } : {}),
+        ...(faceOrientations ? { faceOrientations } : {}),
     };
 }
 
@@ -230,6 +252,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     const slowWall = [[0, 0], [0, 0], [0, 0]];
     const centroid = [0, 0, 0];
     const normal = [0, 0, 0];
+    const clusters = new Map<number, NormalCluster>();
 
     const processTriangle = (i0: number, i1: number, i2: number) => {
         p1.fromBufferAttribute(pos, i0);
@@ -252,6 +275,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         centroid[0] = (p1.x + p2.x + p3.x) / 3;
         centroid[1] = (p1.y + p2.y + p3.y) / 3;
         centroid[2] = (p1.z + p2.z + p3.z) / 3;
+        addToNormalCluster(clusters, normal, area);
 
         for (let k = 0; k < 3; k++) {
             const nk = normal[k];
@@ -335,6 +359,10 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         }
     }
 
+    const faceOrientations = includeOverhang
+        ? buildFaceOrientations(pos, index, clusters, volume >= 0 ? 1 : -1, surfaceArea)
+        : [];
+
     const placed = orientations?.['+z'];
     return sanitizeGeometryAnalysis({
         volume: (Math.abs(volume) * scale) / 1000,
@@ -351,11 +379,183 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
               }
             : {}),
         ...(orientations ? { orientations } : {}),
+        ...(faceOrientations.length ? { faceOrientations } : {}),
         boundingBox: {
             x: size.x,
             y: size.y,
             z: size.z,
         },
+    });
+}
+
+type NormalCluster = { area: number; nx: number; ny: number; nz: number };
+
+const NORMAL_CLUSTER_BINS = 50;
+/** 평면 후보 최소 면적 — max(1cm², 표면적의 1%) */
+const FACE_MIN_AREA_MM2 = 100;
+const FACE_MIN_AREA_RATIO = 0.01;
+/** 이보다 축에 가까운 법선은 6방향 배치가 이미 다룸 */
+const FACE_AXIS_ALIGNED_COS = 0.995;
+/** 격자 경계에 걸쳐 나뉜 같은 평면을 합치는 법선 유사도 */
+const FACE_MERGE_COS = 0.998;
+const FACE_MERGE_SCAN_MAX = 4000;
+const FACE_PRESELECT = 8;
+const FACE_CANDIDATES_MAX = 3;
+/** 평면 면적 중 이 비율 이상이 베드에 닿아야 '면에 놓기' 후보 */
+const FACE_MIN_BED_FRACTION = 0.5;
+
+/** 법선 방향 격자(약 1.1°)로 면적·가중 법선 누적 */
+function addToNormalCluster(clusters: Map<number, NormalCluster>, n: number[], area: number): void {
+    const B = NORMAL_CLUSTER_BINS;
+    const key =
+        (Math.round(n[0] * B) + B) * (2 * B + 1) * (2 * B + 1) +
+        (Math.round(n[1] * B) + B) * (2 * B + 1) +
+        (Math.round(n[2] * B) + B);
+    let c = clusters.get(key);
+    if (!c) clusters.set(key, (c = { area: 0, nx: 0, ny: 0, nz: 0 }));
+    c.area += area;
+    c.nx += n[0] * area;
+    c.ny += n[1] * area;
+    c.nz += n[2] * area;
+}
+
+/**
+ * 축에 맞지 않은 큰 평면 중 모델의 바깥 끝에 있는 면(바닥에 놓을 수 있는 면)을 골라
+ * 그 면을 바닥에 놓았을 때의 서포트·면적·AABB를 계산.
+ * sign: 감김이 정상이면 1, 뒤집혔으면 -1 (바깥 법선 = sign × 삼각형 법선)
+ */
+function buildFaceOrientations(
+    pos: THREE.BufferAttribute | THREE.InterleavedBufferAttribute,
+    index: THREE.BufferAttribute | null,
+    clusters: Map<number, NormalCluster>,
+    sign: number,
+    surfaceMm2: number
+): FaceOrientation[] {
+    const minArea = Math.max(FACE_MIN_AREA_MM2, surfaceMm2 * FACE_MIN_AREA_RATIO);
+    // 이웃 격자로 나뉜 같은 방향 면을 합침
+    const groups: NormalCluster[] = [];
+    let scanned = 0;
+    for (const c of [...clusters.values()].sort((a, b) => b.area - a.area)) {
+        if (c.area < minArea * 0.1 || ++scanned > FACE_MERGE_SCAN_MAX) break;
+        const cl = Math.hypot(c.nx, c.ny, c.nz);
+        if (!(cl > 0)) continue;
+        const g = groups.find((g) => {
+            const gl = Math.hypot(g.nx, g.ny, g.nz);
+            return (g.nx * c.nx + g.ny * c.ny + g.nz * c.nz) / (gl * cl) > FACE_MERGE_COS;
+        });
+        if (g) {
+            g.area += c.area;
+            g.nx += c.nx;
+            g.ny += c.ny;
+            g.nz += c.nz;
+        } else {
+            groups.push({ ...c });
+        }
+    }
+
+    type Cand = { n: Vec3Tuple; area: number; rows: number[] };
+    const pre: Cand[] = [];
+    for (const c of groups.sort((a, b) => b.area - a.area)) {
+        if (c.area < minArea || pre.length >= FACE_PRESELECT) break;
+        const len = Math.hypot(c.nx, c.ny, c.nz);
+        const n: Vec3Tuple = [(sign * c.nx) / len, (sign * c.ny) / len, (sign * c.nz) / len];
+        if (Math.max(Math.abs(n[0]), Math.abs(n[1]), Math.abs(n[2])) >= FACE_AXIS_ALIGNED_COS) continue;
+        pre.push({ n, area: c.area, rows: layFlatMatrix(n) });
+    }
+    if (!pre.length) return [];
+
+    // 정점 범위: 법선 방향(높이)과 배치 후 X·Y
+    const ext = pre.map(() => [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity]);
+    for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
+        for (let j = 0; j < pre.length; j++) {
+            const { n, rows } = pre[j];
+            const e = ext[j];
+            const d = x * n[0] + y * n[1] + z * n[2];
+            const px = rows[0] * x + rows[1] * y + rows[2] * z;
+            const py = rows[3] * x + rows[4] * y + rows[5] * z;
+            if (d < e[0]) e[0] = d;
+            if (d > e[1]) e[1] = d;
+            if (px < e[2]) e[2] = px;
+            if (px > e[3]) e[3] = px;
+            if (py < e[4]) e[4] = py;
+            if (py > e[5]) e[5] = py;
+        }
+    }
+
+    const chosen = pre.map((c, j) => {
+        const e = ext[j];
+        const height = e[1] - e[0];
+        const tol = Math.max(BED_CONTACT_TOLERANCE_MM, height * BED_CONTACT_TOLERANCE_RATIO);
+        return { ...c, maxD: e[1], tol, box: { x: e[3] - e[2], y: e[5] - e[4], z: height } };
+    });
+
+    const acc = chosen.map(() => ({
+        overhang: 0, supportVol: 0, bed: 0, lateral: 0, top: 0, bottom: 0, slow: 0,
+    }));
+    const triCount = index ? Math.floor(index.count / 3) : Math.floor(pos.count / 3);
+    const v = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (let t = 0; t < triCount; t++) {
+        for (let j = 0; j < 3; j++) {
+            const vi = index ? index.getX(t * 3 + j) : t * 3 + j;
+            v[j * 3] = pos.getX(vi);
+            v[j * 3 + 1] = pos.getY(vi);
+            v[j * 3 + 2] = pos.getZ(vi);
+        }
+        const ux = v[3] - v[0], uy = v[4] - v[1], uz = v[5] - v[2];
+        const wx = v[6] - v[0], wy = v[7] - v[1], wz = v[8] - v[2];
+        const cx = uy * wz - uz * wy, cy = uz * wx - ux * wz, cz = ux * wy - uy * wx;
+        const len = Math.hypot(cx, cy, cz);
+        if (!(len > 0)) continue;
+        const area = len / 2;
+        const gx = (v[0] + v[3] + v[6]) / 3, gy = (v[1] + v[4] + v[7]) / 3, gz = (v[2] + v[5] + v[8]) / 3;
+        for (let j = 0; j < chosen.length; j++) {
+            const { n, maxD, tol } = chosen[j];
+            const a = acc[j];
+            // 위 방향 = -n
+            const nu = (-sign * (cx * n[0] + cy * n[1] + cz * n[2])) / len;
+            const absNu = Math.abs(nu);
+            const projected = area * absNu;
+            const sin = Math.sqrt(Math.max(0, 1 - nu * nu));
+            a.lateral += area * sin;
+            if (nu > 0) {
+                a.top += projected * p2sShellSolidFraction(absNu, sin, P2S_PROFILE.topShellLayers);
+                continue;
+            }
+            a.bottom += projected * p2sShellSolidFraction(absNu, sin, P2S_PROFILE.bottomShellLayers);
+            a.slow += area * sin * p2sOverhangWallExtra(absNu, sin);
+            if (nu >= -SUPPORT_NORMAL_THRESHOLD) continue;
+            const h = maxD - (gx * n[0] + gy * n[1] + gz * n[2]);
+            if (h > tol) {
+                a.overhang += area;
+                a.supportVol += projected * h;
+            } else {
+                a.bed += projected;
+            }
+        }
+    }
+
+    // 평면이 법선 방향 끝(=놓았을 때 바닥)에 있어 실제로 베드에 닿는 후보만
+    const placeable = chosen
+        .map((c, j) => ({ c, a: acc[j] }))
+        .filter(({ c, a }) => a.bed >= c.area * FACE_MIN_BED_FRACTION)
+        .sort((p, q) => q.a.bed - p.a.bed)
+        .slice(0, FACE_CANDIDATES_MAX);
+
+    return placeable.map(({ c, a }) => {
+        return {
+            down: c.n,
+            box: c.box,
+            overhangArea: a.overhang / 100,
+            supportVolume: a.supportVol / 1000,
+            lateralArea: a.lateral / 100,
+            topArea: a.top / 100,
+            bottomArea: a.bottom / 100,
+            bedArea: a.bed / 100,
+            slowWallArea: a.slow / 100,
+        };
     });
 }
 

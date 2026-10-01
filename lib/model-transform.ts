@@ -1,12 +1,14 @@
 import {
     sanitizeGeometryAnalysis,
     UP_AXIS_KEYS,
+    type FaceOrientation,
     type GeometryAnalysis,
+    type OrientationSupport,
     type UpAxisKey,
 } from '@/lib/geometry'
 import { FDM_SUPPORT_FILL_RATIO } from '@/lib/fdm-quote'
 import { estimateFdmPrintTimeP2S, FDM_REF_LAYER_MM } from '@/lib/print-time-estimate'
-import { rotatePointEulerXyz } from '@/lib/stl-bake'
+import { rotatePointEulerXyz, type Vec3Tuple } from '@/lib/stl-bake'
 
 /** 90° 단위 모델 변환 — 자동견적 뷰어용 */
 export type Axis90 = 0 | 90 | 180 | 270
@@ -19,6 +21,8 @@ export type ModelTransform = {
     rotZ: Axis90
     /** 뷰어에서 모델을 바닥(그리드)에 붙임 */
     snapToBed: boolean
+    /** 이 바깥 법선(원본 좌표)의 평면을 바닥에 놓음 — 90° 회전보다 먼저 적용 */
+    layFlat?: Vec3Tuple | null
 }
 
 export type PrintMethodKey = 'fdm' | 'sla' | 'dlp'
@@ -130,12 +134,25 @@ export function meshyAutoFitScalePercent(
     return clampScalePercent((target / longestMm) * 100, maxPercent)
 }
 
+/** 평면 배치 법선과 일치하는 분석 후보 */
+export function findFaceOrientation(
+    base: GeometryAnalysis,
+    layFlat: Vec3Tuple | null | undefined
+): FaceOrientation | null {
+    if (!layFlat || !base.faceOrientations) return null
+    for (const f of base.faceOrientations) {
+        if (f.down[0] * layFlat[0] + f.down[1] * layFlat[1] + f.down[2] * layFlat[2] > 0.999) return f
+    }
+    return null
+}
+
 /** 스케일 100% 기준, 회전만 반영한 AABB (mm) */
 export function getRotatedBaseBox(
     base: GeometryAnalysis,
-    transform: Pick<ModelTransform, 'rotX' | 'rotY' | 'rotZ'>
+    transform: Pick<ModelTransform, 'rotX' | 'rotY' | 'rotZ' | 'layFlat'>
 ): { x: number; y: number; z: number } {
-    return applyAxisRotations(base.boundingBox, transform.rotX, transform.rotY, transform.rotZ)
+    const face = findFaceOrientation(base, transform.layFlat)
+    return applyAxisRotations(face?.box ?? base.boundingBox, transform.rotX, transform.rotY, transform.rotZ)
 }
 
 /**
@@ -221,11 +238,10 @@ export function applyTransformToAnalysis(
     const s2 = s * s
     const s3 = s2 * s
 
-    const scaledBox = {
-        x: base.boundingBox.x * s,
-        y: base.boundingBox.y * s,
-        z: base.boundingBox.z * s,
-    }
+    // 평면 배치는 바닥 고정 상태에서 Z 회전만 쓰므로 그 면의 지표를 그대로 사용
+    const face = findFaceOrientation(base, transform.layFlat)
+    const box = face?.box ?? base.boundingBox
+    const scaledBox = { x: box.x * s, y: box.y * s, z: box.z * s }
     const boundingBox = applyAxisRotations(
         scaledBox,
         transform.rotX,
@@ -233,7 +249,7 @@ export function applyTransformToAnalysis(
         transform.rotZ
     )
 
-    const placed = base.orientations?.[getUpAxisKey(transform)]
+    const placed: OrientationSupport | undefined = face ?? base.orientations?.[getUpAxisKey(transform)]
     const src = placed ?? base
     const area = (v: number | undefined) => (v !== undefined ? v * s2 : undefined)
     const supportVolume = src.supportVolume
@@ -254,9 +270,13 @@ export function applyTransformToAnalysis(
 
 const AXIS90_VALUES: readonly Axis90[] = [0, 90, 180, 270]
 
+/** 축 정렬 자세와 거의 같은 시간이면 평면 배치보다 축 정렬을 택함 (시간) */
+const FACE_PLACEMENT_TIE_HOURS = 0.02
+
 export type AutoOrientResult = {
     transform: ModelTransform
-    upAxis: UpAxisKey
+    /** 축 정렬 배치에서 위를 향한 원본 축 (평면 배치면 null) */
+    upAxis: UpAxisKey | null
     /** 배치에 따라 달라지는 시간(서포트+레이어) 추정, 시간 단위 */
     scoreHours: number
     fitsBed: boolean
@@ -288,8 +308,8 @@ function fitsBedBox(box: { x: number; y: number; z: number }, bed: BedMaxMm | nu
 }
 
 /**
- * 슬라이서 자동 배치와 같은 목적: 6개 바닥 방향 중 서포트·출력 시간이 가장 적은 자세.
- * 같은 바닥 방향이면 베드에 들어가는 Z 회전, 그다음 현재 회전에 가까운 것을 우선.
+ * 슬라이서 자동 배치와 같은 목적: 6개 축 방향과 큰 평면 바닥 배치 중 서포트·출력 시간이 가장 적은 자세.
+ * 같은 바닥이면 베드에 들어가는 Z 회전, 그다음 원본 회전에 가까운 것을 우선.
  */
 export function findAutoOrientTransform(
     base: GeometryAnalysis,
@@ -301,24 +321,34 @@ export function findAutoOrientTransform(
     let best: AutoOrientResult | null = null
     let bestRank = Infinity
 
+    const consider = (transform: ModelTransform, penaltyHours: number) => {
+        const analysis = applyTransformToAnalysis(base, transform)
+        const scoreHours = placementScoreHours(analysis, layerHeightMm)
+        const fitsBed = fitsBedBox(analysis.boundingBox, opts?.bed)
+        const changed = Number(transform.rotX !== 0) + Number(transform.rotY !== 0) + Number(transform.rotZ !== 0)
+        // 베드 초과는 큰 패널티, 동점이면 회전 변화가 적은 쪽
+        const rank = scoreHours + penaltyHours + (fitsBed ? 0 : 1e6) + changed * 1e-6
+        if (rank < bestRank) {
+            bestRank = rank
+            best = {
+                transform,
+                upAxis: transform.layFlat ? null : getUpAxisKey(transform),
+                scoreHours,
+                fitsBed,
+            }
+        }
+    }
+
     for (const rotX of AXIS90_VALUES) {
         for (const rotY of AXIS90_VALUES) {
             for (const rotZ of [0, 90] as const) {
-                const transform: ModelTransform = { ...current, rotX, rotY, rotZ }
-                const analysis = applyTransformToAnalysis(base, transform)
-                const scoreHours = placementScoreHours(analysis, layerHeightMm)
-                const fitsBed = fitsBedBox(analysis.boundingBox, opts?.bed)
-                const changed =
-                    Number(rotX !== current.rotX) +
-                    Number(rotY !== current.rotY) +
-                    Number(rotZ !== current.rotZ)
-                // 베드 초과는 큰 패널티, 동점이면 회전 변화가 적은 쪽
-                const rank = scoreHours + (fitsBed ? 0 : 1e6) + changed * 1e-6
-                if (rank < bestRank) {
-                    bestRank = rank
-                    best = { transform, upAxis: getUpAxisKey(transform), scoreHours, fitsBed }
-                }
+                consider({ ...current, rotX, rotY, rotZ, layFlat: null }, 0)
             }
+        }
+    }
+    for (const face of base.faceOrientations ?? []) {
+        for (const rotZ of [0, 90] as const) {
+            consider({ ...current, rotX: 0, rotY: 0, rotZ, layFlat: face.down }, FACE_PLACEMENT_TIE_HOURS)
         }
     }
     return best

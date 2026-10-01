@@ -4,14 +4,13 @@ import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
-    applyTransformToAnalysis,
     getScalePercentMax,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
     scalePercentFromTargetMm,
 } from '@/lib/model-transform'
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
-import { RotateCcw, MoveDown, Maximize2, Wand2 } from 'lucide-react'
+import { RotateCcw, Maximize2, Wand2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
 import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_EN } from '@/lib/meshy-disclaimer'
 import { cn } from '@/lib/utils'
@@ -19,8 +18,7 @@ import { cn } from '@/lib/utils'
 /**
  * 자동견적 뷰어용 모델 컨트롤
  * - 균일 스케일(%) 직접 입력 + 치수(mm) 직접 입력
- * - 90° 축 회전 / 축 정렬(리셋)
- * - 바닥에 붙이기
+ * - 배치는 자동(서포트·출력 시간 최소) — 회전에 따라 견적이 달라지므로 수동 회전은 제공하지 않음
  */
 export default function ModelTransformPanel({ className }: { className?: string }) {
     const t = useTranslations('Quote')
@@ -30,10 +28,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const baseAnalysis = useFileStore((s) => s.baseAnalysis)
     const transform = useFileStore((s) => s.transform)
     const setScalePercent = useFileStore((s) => s.setScalePercent)
-    const rotateAxis90 = useFileStore((s) => s.rotateAxis90)
-    const setSnapToBed = useFileStore((s) => s.setSnapToBed)
-    const alignAxes = useFileStore((s) => s.alignAxes)
-    const autoOrient = useFileStore((s) => s.autoOrient)
+    const orientationLocked = useFileStore((s) => s.orientationLocked)
     const resetTransform = useFileStore((s) => s.resetTransform)
     const meshyFitScalePercent = useFileStore((s) => s.meshyFitScalePercent)
     const meshyFitTargetMm = useFileStore((s) => s.meshyFitTargetMm)
@@ -44,9 +39,6 @@ export default function ModelTransformPanel({ className }: { className?: string 
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
-    // 자동 배치 직후 회전값에서만 안내 표시 (수동 회전하면 숨김)
-    const [autoOrientNote, setAutoOrientNote] = useState<{ text: string; rotKey: string } | null>(null)
-    const rotKey = `${transform.rotX},${transform.rotY},${transform.rotZ}`
     const isAiPhoto = fileSource.kind === 'meshy-photo'
     const scaleMax = getScalePercentMax(fileSource.kind, unitInch)
 
@@ -68,27 +60,14 @@ export default function ModelTransformPanel({ className }: { className?: string 
         })
     }, [effective?.boundingBox.x, effective?.boundingBox.y, effective?.boundingBox.z])
 
-    useEffect(() => {
-        setAutoOrientNote(null)
-    }, [file])
-
     if (!file || !baseAnalysis || !effective) return null
 
     const box = effective.boundingBox
-    const canAutoOrient = !!baseAnalysis.orientations
-
-    const handleAutoOrient = () => {
-        const result = autoOrient()
-        if (!result) return
-        const placed = useFileStore.getState()
-        const after = placed.baseAnalysis
-            ? applyTransformToAnalysis(placed.baseAnalysis, placed.transform)
-            : null
-        setAutoOrientNote({
-            text: t('transformAutoOrientDone', { area: (after?.overhangArea ?? 0).toFixed(1) }),
-            rotKey: `${placed.transform.rotX},${placed.transform.rotY},${placed.transform.rotZ}`,
-        })
-    }
+    const placementNote = orientationLocked
+        ? t('transformPlacementLocked')
+        : baseAnalysis.orientations
+          ? t('transformAutoPlacedNote', { area: (effective.overhangArea ?? 0).toFixed(1) })
+          : t('transformAutoPlacedPending')
 
     const commitScalePercent = (raw: string) => {
         const n = Number(raw)
@@ -239,75 +218,13 @@ export default function ModelTransformPanel({ className }: { className?: string 
                 </p>
             </div>
 
-            {/* 90° 회전 */}
-            <div className="space-y-1.5">
-                <span className="text-[11px] font-bold text-white/55">{t('transformRotate90')}</span>
-                <div className="grid grid-cols-3 gap-1.5">
-                    {(
-                        [
-                            { axis: 'x' as const, label: 'X', value: transform.rotX },
-                            { axis: 'y' as const, label: 'Y', value: transform.rotY },
-                            { axis: 'z' as const, label: 'Z', value: transform.rotZ },
-                        ] as const
-                    ).map((item) => (
-                        <button
-                            key={item.axis}
-                            type="button"
-                            onClick={() => rotateAxis90(item.axis, 90)}
-                            className="rounded-xl border border-white/10 bg-white/5 hover:border-teal-400/40 hover:bg-teal-400/10 px-2 py-2 text-center transition-all active:scale-95"
-                            title={t('transformRotateAxisTitle', { axis: item.label })}
-                        >
-                            <div className="text-[10px] font-black text-teal-300/90">{item.label}</div>
-                            <div className="text-[11px] font-mono font-bold text-white/80 mt-0.5">
-                                {item.value}°
-                            </div>
-                        </button>
-                    ))}
-                </div>
-                <button
-                    type="button"
-                    onClick={handleAutoOrient}
-                    disabled={!canAutoOrient}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-teal-400/40 bg-teal-400/10 hover:bg-teal-400/20 px-2 py-2 text-[10px] font-black text-teal-200 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-                    title={canAutoOrient ? t('transformAutoOrientTitle') : t('transformAutoOrientPending')}
-                >
+            {/* 자동 배치 안내 */}
+            <div className="rounded-xl border border-teal-400/25 bg-teal-400/5 px-2.5 py-2 space-y-1">
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-teal-200">
                     <Wand2 className="w-3.5 h-3.5" />
-                    {t('transformAutoOrient')}
-                </button>
-                {autoOrientNote && autoOrientNote.rotKey === rotKey ? (
-                    <p className="text-[9px] text-teal-200/90 font-bold leading-relaxed break-keep">
-                        {autoOrientNote.text}
-                    </p>
-                ) : (
-                    <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
-                        {t('transformAutoOrientHint')}
-                    </p>
-                )}
-            </div>
-
-            {/* 바닥 붙이기 + 축 정렬 */}
-            <div className="flex items-center gap-2">
-                <button
-                    type="button"
-                    onClick={() => setSnapToBed(!transform.snapToBed)}
-                    className={cn(
-                        'flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-[10px] font-black transition-all active:scale-95',
-                        transform.snapToBed
-                            ? 'border-teal-400/50 bg-teal-400/15 text-teal-300'
-                            : 'border-white/10 bg-white/5 text-white/50 hover:bg-white/10'
-                    )}
-                >
-                    <MoveDown className="w-3.5 h-3.5" />
-                    {t('transformSnapFloor')}
-                </button>
-                <button
-                    type="button"
-                    onClick={alignAxes}
-                    className="shrink-0 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-2 text-[10px] font-black text-white/55 hover:text-white transition-all active:scale-95"
-                    title={t('transformAlignAxesTitle')}
-                >
-                    {t('transformAlignAxes')}
-                </button>
+                    {t('transformPlacementLabel')}
+                </div>
+                <p className="text-[9px] text-white/55 font-bold leading-relaxed break-keep">{placementNote}</p>
             </div>
 
             <div className="rounded-xl bg-white/5 border border-white/10 px-2.5 py-2 text-[10px] font-bold text-white/45 space-y-1">

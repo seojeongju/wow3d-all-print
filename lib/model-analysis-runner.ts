@@ -90,6 +90,8 @@ export function runAnalysisFromGeometry(
                 useFileStore.getState().setAnalysis(refined)
                 useFileStore.getState().setAnalysisError(null)
                 maybeAutoFitMeshyScale()
+                // 견적이 배치에 따라 달라지므로 업로드 직후 항상 최적 자세로 배치
+                useFileStore.getState().applyAutoPlacement()
             }
         } catch (e) {
             console.error('refined analysis:', e)

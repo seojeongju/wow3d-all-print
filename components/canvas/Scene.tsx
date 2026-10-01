@@ -2,7 +2,7 @@
 
 import { Canvas, useThree } from '@react-three/fiber'
 import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
-import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect, useCallback } from 'react'
+import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import * as THREE from 'three'
@@ -16,6 +16,28 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ModelTransformPanel from '@/components/canvas/ModelTransformPanel'
 import { ViewerErrorBoundary } from '@/components/canvas/ViewerErrorBoundary'
 import { degreesToRadians } from '@/lib/model-transform'
+import { layFlatMatrix, type Vec3Tuple } from '@/lib/stl-bake'
+
+const IDENTITY_QUATERNION = new THREE.Quaternion()
+
+/** 견적·STL 베이크와 같은 평면 배치 회전 */
+function layFlatQuaternion(n: Vec3Tuple | null | undefined): THREE.Quaternion | null {
+    if (!n) return null
+    const m = layFlatMatrix(n)
+    const m4 = new THREE.Matrix4().set(m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, 0, 0, 0, 1)
+    return new THREE.Quaternion().setFromRotationMatrix(m4)
+}
+
+/** 평면 배치 후 AABB (치수 박스 표시용) */
+function rotatedBox(geometry: THREE.BufferGeometry, q: THREE.Quaternion | null): THREE.Box3 | null {
+    geometry.computeBoundingBox()
+    if (!q) return geometry.boundingBox?.clone() ?? null
+    const pos = geometry.attributes.position
+    const box = new THREE.Box3()
+    const v = new THREE.Vector3()
+    for (let i = 0; i < pos.count; i++) box.expandByPoint(v.fromBufferAttribute(pos, i).applyQuaternion(q))
+    return box
+}
 
 // 뷰 프리셋(전/후/좌/우/홈)용 컨텍스트
 const ViewPresetContext = createContext<{ viewPreset: string | null; setViewPreset: (v: string | null) => void }>({ viewPreset: null, setViewPreset: () => { } })
@@ -88,7 +110,6 @@ function Model({
     const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null)
     const bounds = useBounds()
     const boundsRef = useRef(bounds)
     boundsRef.current = bounds
@@ -97,6 +118,13 @@ function Model({
     const geometryRef = useRef<THREE.BufferGeometry | null>(null)
     const transform = useFileStore((s) => s.transform)
     const scale = transform.scalePercent / 100
+    const layFlatKey = transform.layFlat ? transform.layFlat.join(',') : ''
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 법선 값이 같으면 같은 회전
+    const layFlatQuat = useMemo(() => layFlatQuaternion(transform.layFlat), [layFlatKey])
+    const boundingBox = useMemo(
+        () => (geometry && showMeasurements ? rotatedBox(geometry, layFlatQuat) : null),
+        [geometry, layFlatQuat, showMeasurements]
+    )
 
     useEffect(() => {
         mountedRef.current = true
@@ -129,7 +157,7 @@ function Model({
             }
         }, 50)
         return () => clearTimeout(t)
-    }, [geometry, scale, transform.rotX, transform.rotY, transform.rotZ, transform.snapToBed])
+    }, [geometry, scale, transform.rotX, transform.rotY, transform.rotZ, transform.snapToBed, layFlatQuat])
 
     useEffect(() => {
         if (!url) return
@@ -161,10 +189,6 @@ function Model({
                     setIsLoading(false)
                     return
                 }
-
-                geo.computeBoundingBox()
-                const bbox = geo.boundingBox
-                if (bbox) setBoundingBox(bbox)
 
                 const prev = geometryRef.current
                 geometryRef.current = geo
@@ -231,17 +255,19 @@ function Model({
                 'ZYX',
             ]}
         >
-            <mesh geometry={geometry}>
-                <meshStandardMaterial
-                    color={color}
-                    roughness={0.55}
-                    metalness={0.05}
-                    side={THREE.DoubleSide}
-                />
-            </mesh>
+            <group quaternion={layFlatQuat ?? IDENTITY_QUATERNION}>
+                <mesh geometry={geometry}>
+                    <meshStandardMaterial
+                        color={color}
+                        roughness={0.55}
+                        metalness={0.05}
+                        side={THREE.DoubleSide}
+                    />
+                </mesh>
+            </group>
             {showMeasurements && boundingBox && (
                 <>
-                    <mesh>
+                    <mesh position={boundingBox.getCenter(new THREE.Vector3())}>
                         <boxGeometry
                             args={[
                                 boundingBox.max.x - boundingBox.min.x,

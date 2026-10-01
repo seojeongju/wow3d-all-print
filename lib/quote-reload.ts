@@ -6,6 +6,7 @@ import {
     type Axis90,
     type ModelTransform,
 } from '@/lib/model-transform'
+import { normalizeLayFlat } from '@/lib/stl-bake'
 import type { FileSourceMeta } from '@/store/useFileStore'
 
 function normalizeAxis90(value: unknown): Axis90 {
@@ -29,6 +30,7 @@ export function parseStoredModelTransform(raw: unknown): ModelTransform | null {
             rotY: normalizeAxis90(r.rotY),
             rotZ: normalizeAxis90(r.rotZ),
             snapToBed: r.snapToBed !== false,
+            layFlat: normalizeLayFlat(r.layFlat),
         }
     } catch {
         return null

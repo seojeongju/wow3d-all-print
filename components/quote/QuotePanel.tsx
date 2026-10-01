@@ -98,7 +98,13 @@ function buildQuoteConfigKey(input: {
     slaLayerHeight: number
     postProcessing: boolean
     totalPrice: number
-    modelTransform: { scalePercent: number; rotX: number; rotY: number; rotZ: number }
+    modelTransform: {
+        scalePercent: number
+        rotX: number
+        rotY: number
+        rotZ: number
+        layFlat?: [number, number, number] | null
+    }
     dimensions: { x: number; y: number; z: number }
 }) {
     return JSON.stringify({
@@ -115,6 +121,7 @@ function buildQuoteConfigKey(input: {
         rotX: input.modelTransform.rotX,
         rotY: input.modelTransform.rotY,
         rotZ: input.modelTransform.rotZ,
+        layFlat: input.modelTransform.layFlat ?? null,
         dx: input.dimensions.x,
         dy: input.dimensions.y,
         dz: input.dimensions.z,
@@ -909,35 +916,59 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         }
     }
 
+    const priceBoardRef = useRef<HTMLDivElement>(null)
+    const priceRowRef = useRef<HTMLDivElement>(null)
+    const [priceBoardVisible, setPriceBoardVisible] = useState(true)
+    useEffect(() => {
+        const el = priceRowRef.current
+        if (!el || embedded) return
+        let root: HTMLElement | null = el.parentElement
+        while (root && !/(auto|scroll)/.test(getComputedStyle(root).overflowY)) root = root.parentElement
+        // 보드의 금액 줄이 하단 고정 막대(약 80px) 위로 완전히 올라와야 막대를 숨김
+        // 소재 로딩 등으로 레이아웃이 바뀌어도 맞도록 스크롤·크기 변화마다 직접 계산
+        const check = () => {
+            const bottom = root ? root.getBoundingClientRect().bottom : window.innerHeight
+            const rect = el.getBoundingClientRect()
+            setPriceBoardVisible(rect.bottom <= bottom - 80 && rect.top >= 0)
+        }
+        check()
+        const scroller: HTMLElement | Window = root ?? window
+        scroller.addEventListener('scroll', check, { passive: true })
+        window.addEventListener('resize', check)
+        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null
+        if (ro && root?.firstElementChild) ro.observe(root.firstElementChild)
+        return () => {
+            scroller.removeEventListener('scroll', check)
+            window.removeEventListener('resize', check)
+            ro?.disconnect()
+        }
+    }, [file, embedded])
+
     if (!file) return null
 
     return (
-        <div className={`space-y-6 ${embedded ? 'pb-6' : 'pb-4'}`}>
+        <div className={`space-y-4 ${embedded ? 'pb-6' : 'pb-4'}`}>
             <InchUnitNotice />
 
-            {/* Quick Stats Grid - 프리미엄 카드 디자인 */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-1.5 sm:gap-2 group hover:bg-white/10 transition-all shadow-xl">
-                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black tracking-[0.15em] sm:tracking-[0.2em] text-white/40 uppercase">
-                        <Box className="w-3.5 h-3.5 text-teal-400/60" /> {t('volume')}
-                    </div>
-                    <span className="text-xl sm:text-2xl font-black font-mono tracking-tighter text-white">{volumeCm3.toFixed(1)} <span className="text-[10px] sm:text-xs font-bold text-white/30 ml-0.5">cm³</span></span>
+            {/* 모델 지표 — 한 줄 요약 */}
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/40">
+                    <Box className="w-3.5 h-3.5 text-teal-400/60" /> {t('volume')}
+                    <span className="ml-1 font-mono text-sm normal-case tracking-tight text-white">{volumeCm3.toFixed(1)}<span className="ml-0.5 text-[10px] text-white/30">cm³</span></span>
                 </div>
-                <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 flex flex-col gap-1.5 sm:gap-2 group hover:bg-white/10 transition-all shadow-xl">
-                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black tracking-[0.15em] sm:tracking-[0.2em] text-white/40 uppercase">
-                        <Layers className="w-3.5 h-3.5 text-indigo-400/60" /> {t('surface')}
-                    </div>
-                    <span className="text-xl sm:text-2xl font-black font-mono tracking-tighter text-white">{surfaceAreaCm2.toFixed(1)} <span className="text-[10px] sm:text-xs font-bold text-white/30 ml-0.5">cm²</span></span>
+                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/40">
+                    <Layers className="w-3.5 h-3.5 text-indigo-400/60" /> {t('surface')}
+                    <span className="ml-1 font-mono text-sm normal-case tracking-tight text-white">{surfaceAreaCm2.toFixed(1)}<span className="ml-0.5 text-[10px] text-white/30">cm²</span></span>
                 </div>
             </div>
 
             {/* Print Method Selection */}
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                    <Printer className="w-3.5 h-3.5 sm:w-4 h-4 text-teal-400" />
-                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/40">{t('printMethod')}</span>
+                    <Printer className="w-3.5 h-3.5 text-teal-400" />
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('printMethod')}</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="grid grid-cols-3 gap-2">
                     {[
                         { id: 'fdm', icon: Printer, label: 'FDM' },
                         { id: 'dlp', icon: Zap, label: 'DLP' },
@@ -946,18 +977,15 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         <button
                             key={method.id}
                             onClick={() => setPrintMethod(method.id as PrintMethod)}
-                            className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] border transition-all relative group overflow-hidden ${printMethod === method.id
-                                ? 'bg-white text-slate-950 border-white shadow-2xl shadow-white/5 scale-[1.02]'
+                            className={`flex items-center justify-center gap-1.5 h-10 rounded-xl border transition-all ${printMethod === method.id
+                                ? 'bg-white text-slate-950 border-white shadow-lg shadow-white/5'
                                 : 'bg-white/5 border-white/10 hover:bg-white/10 text-white/60 hover:text-white'
                                 }`}
                         >
-                            <method.icon className={`w-5 h-5 sm:w-7 h-7 relative z-10 transition-transform group-hover:scale-110 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`} />
-                            <span className={`text-[11px] sm:text-[12px] font-black tracking-tight relative z-10 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`}>
+                            <method.icon className={`w-4 h-4 ${printMethod === method.id ? 'text-slate-950' : 'text-white/40'}`} />
+                            <span className={`text-[12px] font-black tracking-tight ${printMethod === method.id ? 'text-slate-950' : 'text-white/50'}`}>
                                 {method.label}
                             </span>
-                            {printMethod === method.id && (
-                                <div className="absolute inset-0 bg-white/10 blur-xl animate-pulse pointer-events-none" />
-                            )}
                         </button>
                     ))}
                 </div>
@@ -983,73 +1011,75 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="space-y-6"
+                    className="space-y-4"
                 >
-                    {/* Dynamic Material Section */}
-                    <div className="space-y-3 sm:space-y-4">
+                    {/* Dynamic Material Section — 2열 칩 */}
+                    <div className="space-y-2">
                         <div className="flex items-center gap-2 px-1">
-                            <Box className="w-3.5 h-3.5 sm:w-4 h-4 text-teal-400" />
-                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-white/40">{t('materialSettings')}</span>
+                            <Box className="w-3.5 h-3.5 text-teal-400" />
+                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('materialSettings')}</span>
                         </div>
 
-                        <div className="grid gap-2 sm:gap-3">
+                        <div className="grid grid-cols-2 gap-2">
                             {(printMethod === 'fdm' ? fdmMaterials : resinMaterials).length === 0 ? (
-                                <p className="text-[13px] text-white/40 py-4 font-bold italic">{t('noMaterials')}</p>
+                                <p className="col-span-2 text-[13px] text-white/40 py-3 font-bold italic">{t('noMaterials')}</p>
                             ) : (
-                                (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => (
-                                    <button
-                                        key={m.id}
-                                        onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
-                                        className={`flex items-start gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border text-left transition-all group relative overflow-hidden ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
-                                            ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                                            }`}
-                                    >
-                                        <div className="flex-1 relative z-10">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className={`text-sm sm:text-[15px] font-black tracking-tight ${(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name ? 'text-teal-400' : 'text-white/80'} ${MAT_COLORS[m.name] || ''}`}>{m.name}</span>
-                                                {(printMethod === 'fdm' ? fdmMaterial : resinType) === m.name && (
-                                                    <div className="w-4.5 h-4.5 sm:w-5 h-5 rounded-full bg-teal-400 flex items-center justify-center">
-                                                        <ChevronRight className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-950 stroke-[3]" />
-                                                    </div>
-                                                )}
+                                (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => {
+                                    const selected = (printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
+                                    return (
+                                        <button
+                                            key={m.id}
+                                            onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
+                                            title={printMethod === 'fdm' ? t('pricePerGram', { price: (m.price_per_gram || 0).toLocaleString(), density: m.density }) : undefined}
+                                            className={`flex items-center gap-2 min-h-11 px-3 py-2 rounded-xl border text-left transition-all ${selected
+                                                ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'
+                                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                                }`}
+                                        >
+                                            <div className="flex-1 min-w-0">
+                                                <div className={`text-[13px] font-black tracking-tight truncate ${selected ? 'text-teal-400' : 'text-white/80'} ${MAT_COLORS[m.name] || ''}`}>{m.name}</div>
+                                                <div className="text-[10px] text-white/40 font-bold truncate">
+                                                    {printMethod === 'fdm'
+                                                        ? t('pricePerGramShort', { price: (m.price_per_gram || 0).toLocaleString() })
+                                                        : (m.price_per_ml != null && m.price_per_ml > 0)
+                                                            ? t('pricePerMl', { price: m.price_per_ml.toLocaleString() })
+                                                            : t('pricePerMlUnset')}
+                                                </div>
                                             </div>
-                                            <p className="text-[11px] sm:text-[12px] text-white/40 font-bold leading-relaxed">
-                                                {printMethod === 'fdm'
-                                                    ? t('pricePerGram', { price: (m.price_per_gram || 0).toLocaleString(), density: m.density })
-                                                    : (m.price_per_ml != null && m.price_per_ml > 0)
-                                                        ? t('pricePerMl', { price: m.price_per_ml.toLocaleString() })
-                                                        : t('pricePerMlUnset')}
-                                            </p>
-                                        </div>
-                                    </button>
-                                ))
+                                            {selected && (
+                                                <div className="w-4 h-4 shrink-0 rounded-full bg-teal-400 flex items-center justify-center">
+                                                    <ChevronRight className="w-3 h-3 text-slate-950 stroke-[3]" />
+                                                </div>
+                                            )}
+                                        </button>
+                                    )
+                                })
                             )}
                         </div>
                     </div>
 
                     {/* Sliders & Switches */}
                     {printMethod === 'fdm' ? (
-                        <div className="space-y-7 sm:space-y-8 pt-1">
-                            <div className="space-y-4">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em]">{t('infillLabel')}</label>
-                                    <span className="font-mono text-sm sm:text-[15px] text-teal-400 font-black">{infill}%</span>
+                                    <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em]" title={t('infillHint')}>{t('infillLabel')}</label>
+                                    <span className="font-mono text-sm text-teal-400 font-black">{infill}%</span>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 px-1">
+                                <div className="grid grid-cols-3 gap-2">
                                     {FDM_INFILL_PRESETS.map((p) => (
                                         <button
                                             key={p.id}
                                             type="button"
                                             onClick={() => setInfill(p.percent)}
-                                            className={`py-2.5 rounded-xl border text-left px-3 transition-all ${
+                                            title={t(`infillPresets.${p.id}.hint`)}
+                                            className={`h-9 rounded-xl border px-2 text-[11px] sm:text-xs font-black transition-all ${
                                                 infill === p.percent
                                                     ? 'bg-teal-400/15 border-teal-400/40 text-teal-300'
                                                     : 'bg-white/5 border-white/10 text-white/50 hover:border-white/25 hover:text-white/80'
                                             }`}
                                         >
-                                            <div className="text-[11px] sm:text-xs font-black">{t(`infillPresets.${p.id}.label`)} {p.percent}%</div>
-                                            <div className="text-[9px] sm:text-[10px] font-medium opacity-70 mt-0.5 break-keep">{t(`infillPresets.${p.id}.hint`)}</div>
+                                            {t(`infillPresets.${p.id}.label`)} {p.percent}%
                                         </button>
                                     ))}
                                 </div>
@@ -1062,22 +1092,28 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                         value={infill}
                                         onChange={(e) => setInfill(Number(e.target.value))}
                                         className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-teal-400"
+                                        aria-label={t('infillLabel')}
                                     />
                                 </div>
-                                <p className="px-1 text-[11px] text-white/45 font-medium leading-relaxed break-keep">
-                                    {t('infillHint')}
-                                </p>
+                                {(() => {
+                                    const preset = FDM_INFILL_PRESETS.find((p) => p.percent === infill)
+                                    return (
+                                        <p className="px-1 text-[10px] text-white/40 font-medium leading-snug break-keep">
+                                            {preset ? t(`infillPresets.${preset.id}.hint`) : t('infillHint')}
+                                        </p>
+                                    )
+                                })()}
                             </div>
 
-                            <div className="space-y-4">
-                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em] block px-1">{t('layerHeight')}</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] block px-1">{t('layerHeight')}</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.1, 0.2, 0.3].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setLayerHeight(h)}
-                                            className={`py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border text-xs sm:text-[13px] font-black transition-all ${layerHeight === h
-                                                ? 'bg-white text-slate-950 border-white shadow-xl shadow-white/5'
+                                            className={`h-9 rounded-xl border text-xs font-black transition-all ${layerHeight === h
+                                                ? 'bg-white text-slate-950 border-white shadow-lg shadow-white/5'
                                                 : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
                                                 }`}
                                         >
@@ -1088,15 +1124,15 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-7 sm:space-y-8 pt-1">
-                            <div className="space-y-4">
-                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] sm:tracking-[0.2em] block px-1">{t('layerHeight')}</label>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.15em] block px-1">{t('layerHeight')}</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {[0.025, 0.05, 0.1].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setSlaLayerHeight(h)}
-                                            className={`py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border text-xs sm:text-[13px] font-black transition-all ${slaLayerHeight === h
+                                            className={`h-9 rounded-xl border text-xs font-black transition-all ${slaLayerHeight === h
                                                 ? 'bg-white text-slate-950 border-white shadow-xl shadow-white/5'
                                                 : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white/70'
                                                 }`}
@@ -1185,10 +1221,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             </Dialog>
 
             {/* Price & Actions - 프리미엄 액션 보드 */}
-            <div className={`${embedded ? 'p-5 sm:p-6' : 'p-6 sm:p-8'} rounded-[2rem] sm:rounded-[2.5rem] bg-white/5 border border-white/10 space-y-6 sm:space-y-8 relative overflow-hidden shadow-2xl mt-4`}>
+            <div ref={priceBoardRef} className={`${embedded ? 'p-5 sm:p-6' : 'p-6 sm:p-8'} rounded-[2rem] sm:rounded-[2.5rem] bg-white/5 border border-white/10 space-y-6 sm:space-y-8 relative overflow-hidden shadow-2xl mt-4 scroll-mt-4`}>
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 
-                <div className="flex items-center justify-between gap-4 sm:gap-6">
+                <div ref={priceRowRef} className="flex items-center justify-between gap-4 sm:gap-6">
                     <div>
                         <div className="flex items-center gap-2 text-[9.5px] sm:text-[11px] font-black text-white/40 uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-1.5 sm:mb-2">
                             <Wallet className="w-3.5 h-3.5" /> {t('liveEstimate')}
@@ -1275,6 +1311,34 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     </div>
                 )}
             </div>
+
+            {/* 조건을 바꾸는 동안 금액이 항상 보이도록 하단 고정 — 견적 보드가 보이면 숨김 (체험 페이지 임베드는 영역이 낮아 제외) */}
+            {!embedded && (
+            <div className="sticky bottom-0 z-20 h-0 !mt-0" aria-hidden={priceBoardVisible}>
+                <button
+                    type="button"
+                    tabIndex={priceBoardVisible ? -1 : 0}
+                    onClick={() => priceBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className={`absolute inset-x-0 bottom-2 flex items-center justify-between gap-3 rounded-2xl border border-teal-400/30 bg-slate-950 px-4 py-2.5 shadow-[0_-8px_30px_rgba(0,0,0,0.45)] transition-all duration-200 ${priceBoardVisible ? 'pointer-events-none translate-y-2 opacity-0' : 'opacity-100'}`}
+                >
+                    <div className="text-left min-w-0">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] text-white/40">
+                            <Wallet className="w-3 h-3" /> {t('liveEstimate')}
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="font-mono text-lg font-black tracking-tight text-white">₩{Math.round(totalPrice).toLocaleString()}</span>
+                            <span className="text-[10px] font-bold text-teal-400/90">{t('vatIncluded')}</span>
+                        </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                        <div className="flex items-center justify-end gap-1 text-[9px] font-black uppercase tracking-[0.15em] text-white/40">
+                            <Clock className="w-3 h-3" /> {t('leadTime')}
+                        </div>
+                        <div className="text-[13px] font-black text-teal-400">~{formatEstimatedPrintTime(estimatedTimeHours, locale)}</div>
+                    </div>
+                </button>
+            </div>
+            )}
             <KakaoChannelFab visible={!!analysis} />
         </div>
     )

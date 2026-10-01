@@ -1,8 +1,67 @@
-/** STL 좌표를 견적 치수(mm)에 맞춰 스케일·90° 회전·바닥 정렬 */
+/** STL 좌표를 견적 치수(mm)에 맞춰 스케일·평면 배치·90° 회전·바닥 정렬 */
 
 export type BakeTargetMm = { x: number; y: number; z: number }
 
-export type BakeRotation = { rotX: number; rotY: number; rotZ: number }
+export type Vec3Tuple = [number, number, number]
+
+export type BakeRotation = {
+    rotX: number
+    rotY: number
+    rotZ: number
+    /** 이 바깥 법선(원본 좌표)의 평면을 바닥(-Z)으로 — 90° 회전보다 먼저 적용 */
+    layFlat?: Vec3Tuple | null
+}
+
+/** 단위 벡터 n을 (0,0,-1)로 보내는 최소 회전 행렬 (행 우선 3×3) */
+export function layFlatMatrix(n: Vec3Tuple): number[] {
+    const len = Math.hypot(n[0], n[1], n[2]) || 1
+    const ax = n[0] / len
+    const ay = n[1] / len
+    const az = n[2] / len
+    // a × b, a · b (b = -Z)
+    const vx = -ay
+    const vy = ax
+    const c = -az
+    if (c < -1 + 1e-9) {
+        // n = +Z: X축 180° 회전
+        return [1, 0, 0, 0, -1, 0, 0, 0, -1]
+    }
+    const k = 1 / (1 + c)
+    // R = I + [v]× + [v]×² / (1 + c), v = (vx, vy, 0)
+    return [
+        1 - vy * vy * k, vx * vy * k, vy,
+        vx * vy * k, 1 - vx * vx * k, -vx,
+        -vy, vx, 1 - (vx * vx + vy * vy) * k,
+    ]
+}
+
+export function normalizeLayFlat(raw: unknown): Vec3Tuple | null {
+    if (!Array.isArray(raw) || raw.length !== 3) return null
+    const v = raw.map(Number)
+    if (!v.every(Number.isFinite)) return null
+    const len = Math.hypot(v[0], v[1], v[2])
+    if (!(len > 1e-6)) return null
+    return [v[0] / len, v[1] / len, v[2] / len]
+}
+
+/** 평면 배치(있으면) → X → Y → Z 90° 회전 */
+export function rotatePointPrintFrame(
+    x: number,
+    y: number,
+    z: number,
+    rot: BakeRotation
+): [number, number, number] {
+    if (rot.layFlat) {
+        const m = layFlatMatrix(rot.layFlat)
+        const px = m[0] * x + m[1] * y + m[2] * z
+        const py = m[3] * x + m[4] * y + m[5] * z
+        const pz = m[6] * x + m[7] * y + m[8] * z
+        x = px
+        y = py
+        z = pz
+    }
+    return rotatePointEulerXyz(x, y, z, rot.rotX, rot.rotY, rot.rotZ)
+}
 
 export type StlBBox = {
     min: { x: number; y: number; z: number }
@@ -187,7 +246,7 @@ function mapVertex(
     oy: number,
     oz: number
 ): [number, number, number] {
-    const r = rotatePointEulerXyz(x, y, z, rot.rotX, rot.rotY, rot.rotZ)
+    const r = rotatePointPrintFrame(x, y, z, rot)
     return [r[0] * sx + ox, r[1] * sy + oy, r[2] * sz + oz]
 }
 
@@ -207,9 +266,9 @@ function setNormalFromTri(view: DataView, base: number): void {
     const vx = cx - ax
     const vy = cy - ay
     const vz = cz - az
-    let nx = uy * vz - uz * vy
-    let ny = uz * vx - ux * vz
-    let nz = ux * vy - uy * vx
+    const nx = uy * vz - uz * vy
+    const ny = uz * vx - ux * vz
+    const nz = ux * vy - uy * vx
     const len = Math.hypot(nx, ny, nz) || 1
     view.setFloat32(base, nx / len, true)
     view.setFloat32(base + 4, ny / len, true)
@@ -218,11 +277,27 @@ function setNormalFromTri(view: DataView, base: number): void {
 
 function parseStoredRotation(transform?: BakeRotation | null): BakeRotation | null {
     if (!transform) return null
-    const rotX = Number(transform.rotX) || 0
-    const rotY = Number(transform.rotY) || 0
-    const rotZ = Number(transform.rotZ) || 0
-    if (rotX === 0 && rotY === 0 && rotZ === 0) return { rotX: 0, rotY: 0, rotZ: 0 }
-    return { rotX, rotY, rotZ }
+    return {
+        rotX: Number(transform.rotX) || 0,
+        rotY: Number(transform.rotY) || 0,
+        rotZ: Number(transform.rotZ) || 0,
+        layFlat: normalizeLayFlat(transform.layFlat),
+    }
+}
+
+/** 회전 후 AABB 크기 — 평면 배치는 축 순열이 아니므로 정점으로 측정 */
+function rotatedSizeOf(
+    bboxSize: { x: number; y: number; z: number },
+    rot: BakeRotation,
+    forEachVertex: (cb: (x: number, y: number, z: number) => void) => void
+): { x: number; y: number; z: number } {
+    if (!rot.layFlat) return rotatedSize(bboxSize, rot.rotX, rot.rotY, rot.rotZ)
+    const b = emptyBBox()
+    forEachVertex((x, y, z) => {
+        const p = rotatePointPrintFrame(x, y, z, rot)
+        expand(b, p[0], p[1], p[2])
+    })
+    return finishBBox(b).size
 }
 
 /**
@@ -247,21 +322,17 @@ export function bakeStlToTargetMm(
         const bbox = measureBinary(view, triCount)
         if (!(bbox.size.x > 0.01 && bbox.size.y > 0.01 && bbox.size.z > 0.01)) return input
 
+        const forEachVertex = (cb: (x: number, y: number, z: number) => void) => {
+            for (let t = 0; t < triCount; t++) {
+                for (let v = 0; v < 3; v++) {
+                    const o = 84 + t * 50 + 12 + v * 12
+                    cb(view.getFloat32(o, true), view.getFloat32(o + 4, true), view.getFloat32(o + 8, true))
+                }
+            }
+        }
         const stored = parseStoredRotation(storedRotation)
-        const fit = stored
-            ? (() => {
-                  const sz = rotatedSize(bbox.size, stored.rotX, stored.rotY, stored.rotZ)
-                  const ratios: number[] = []
-                  if (sz.x > 0.01) ratios.push(tx / sz.x)
-                  if (sz.y > 0.01) ratios.push(ty / sz.y)
-                  if (sz.z > 0.01) ratios.push(tz / sz.z)
-                  const scale = ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1
-                  return { ...stored, scale, error: axisError(sz, { x: tx, y: ty, z: tz }, scale) }
-              })()
-            : findBestBakeRotation(bbox.size, { x: tx, y: ty, z: tz })
-
-        const rot = { rotX: fit.rotX, rotY: fit.rotY, rotZ: fit.rotZ }
-        const sz = rotatedSize(bbox.size, rot.rotX, rot.rotY, rot.rotZ)
+        const rot: BakeRotation = stored ?? findBestBakeRotation(bbox.size, { x: tx, y: ty, z: tz })
+        const sz = rotatedSizeOf(bbox.size, rot, forEachVertex)
         const sx = sz.x > 0.01 ? tx / sz.x : 1
         const sy = sz.y > 0.01 ? ty / sz.y : 1
         const szs = sz.z > 0.01 ? tz / sz.z : 1
@@ -270,6 +341,7 @@ export function bakeStlToTargetMm(
             Math.abs(sx - 1) < 0.002 &&
             Math.abs(sy - 1) < 0.002 &&
             Math.abs(szs - 1) < 0.002 &&
+            !rot.layFlat &&
             rot.rotX === 0 &&
             rot.rotY === 0 &&
             rot.rotZ === 0
@@ -344,11 +416,11 @@ export function bakeStlToTargetMm(
     const bbox = measureAscii(verts)
     if (!(bbox.size.x > 0.01 && bbox.size.y > 0.01 && bbox.size.z > 0.01)) return input
 
-    const fit = parseStoredRotation(storedRotation)
-        ? { rotX: storedRotation!.rotX, rotY: storedRotation!.rotY, rotZ: storedRotation!.rotZ }
-        : findBestBakeRotation(bbox.size, { x: tx, y: ty, z: tz })
-    const rot = { rotX: fit.rotX, rotY: fit.rotY, rotZ: fit.rotZ }
-    const sz = rotatedSize(bbox.size, rot.rotX, rot.rotY, rot.rotZ)
+    const rot: BakeRotation =
+        parseStoredRotation(storedRotation) ?? findBestBakeRotation(bbox.size, { x: tx, y: ty, z: tz })
+    const sz = rotatedSizeOf(bbox.size, rot, (cb) => {
+        for (let i = 0; i < verts.length; i += 3) cb(verts[i], verts[i + 1], verts[i + 2])
+    })
     const sx = sz.x > 0.01 ? tx / sz.x : 1
     const sy = sz.y > 0.01 ? ty / sz.y : 1
     const szs = sz.z > 0.01 ? tz / sz.z : 1
@@ -406,6 +478,7 @@ export function parseModelTransformJson(raw: unknown): BakeRotation | null {
             rotX: Number(r.rotX) || 0,
             rotY: Number(r.rotY) || 0,
             rotZ: Number(r.rotZ) || 0,
+            layFlat: normalizeLayFlat(r.layFlat),
         }
     } catch {
         return null

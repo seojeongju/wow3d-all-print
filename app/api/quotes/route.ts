@@ -8,6 +8,7 @@ import { clampFdmInfillPercent } from '@/lib/fdm-quote';
 import { P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO } from '@/lib/print-time-estimate';
 import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
 import { resolveServerResinQuote } from '@/lib/server-resin-quote';
+import { normalizeLayFlat } from '@/lib/stl-bake';
 
 /**
  * GET /api/quotes - 견적 목록 조회
@@ -356,6 +357,7 @@ export async function POST(request: NextRequest) {
                         rotY: Number(body.modelTransform.rotY) || 0,
                         rotZ: Number(body.modelTransform.rotZ) || 0,
                         snapToBed: body.modelTransform.snapToBed !== false,
+                        layFlat: normalizeLayFlat(body.modelTransform.layFlat),
                         /** 사용자가 사이즈 조정 후 견적에 적용한 최종 출력 치수(mm) */
                         printSizeMm: {
                             x: Number(dimensionsX) || 0,

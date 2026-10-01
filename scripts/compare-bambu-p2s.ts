@@ -6,7 +6,14 @@ import { readFileSync } from 'node:fs'
 import * as THREE from 'three'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 import { analyzeGeometry } from '../lib/geometry'
-import { applyTransformToAnalysis, DEFAULT_MODEL_TRANSFORM, getUpAxisKey, type Axis90 } from '../lib/model-transform'
+import {
+    applyTransformToAnalysis,
+    DEFAULT_MODEL_TRANSFORM,
+    findAutoOrientTransform,
+    getUpAxisKey,
+    type Axis90,
+    type ModelTransform,
+} from '../lib/model-transform'
 import { calculateFdmQuote } from '../lib/fdm-quote'
 
 const path = process.argv[2]
@@ -31,9 +38,28 @@ console.log(
 const fmt = (h: number) => `${Math.floor(h)}h ${Math.round((h % 1) * 60)}m`
 const m = (s: number) => `${(s / 60).toFixed(1)}`
 const rots: [Axis90, Axis90][] = [[0, 0], [180, 0], [90, 0], [270, 0], [0, 90], [0, 270]]
+const v3 = (n: number[]) => `(${n.map((v) => v.toFixed(3)).join(', ')})`
 
-for (const [rotX, rotY] of rots) {
+for (const f of base.faceOrientations ?? []) {
+    console.log(`면 후보 ${v3(f.down)} 박스 ${f.box.x.toFixed(1)}×${f.box.y.toFixed(1)}×${f.box.z.toFixed(1)}mm`)
+}
+const auto = findAutoOrientTransform(base, DEFAULT_MODEL_TRANSFORM)
+const transforms: { label: string; t: ModelTransform }[] = rots.map(([rotX, rotY]) => {
     const t = { ...DEFAULT_MODEL_TRANSFORM, rotX, rotY }
+    return { label: getUpAxisKey(t), t }
+})
+for (const f of base.faceOrientations ?? []) {
+    transforms.push({ label: `면 ${v3(f.down)}`, t: { ...DEFAULT_MODEL_TRANSFORM, layFlat: f.down } })
+}
+if (auto) {
+    const at = auto.transform
+    transforms.push({
+        label: `자동 배치 → ${at.layFlat ? `면 ${v3(at.layFlat)}` : auto.upAxis} rotZ ${at.rotZ}`,
+        t: at,
+    })
+}
+
+for (const { label, t } of transforms) {
     const a = applyTransformToAnalysis(base, t)
     const q = calculateFdmQuote({
         volumeCm3: a.volume,
@@ -57,7 +83,7 @@ for (const [rotX, rotY] of rots) {
     const b = q.timeDetail.breakdownSec
     const s = q.timeDetail.structure
     console.log(
-        `[${getUpAxisKey(t)}] H ${a.boundingBox.z.toFixed(1)}mm · ${fmt(q.timeHours)} · 모델 ${q.weightGrams.toFixed(1)}g + 서포트 ${q.supportGrams.toFixed(1)}g` +
+        `[${label}] H ${a.boundingBox.z.toFixed(1)}mm · ${fmt(q.timeHours)} · 모델 ${q.weightGrams.toFixed(1)}g + 서포트 ${q.supportGrams.toFixed(1)}g` +
             `\n    분: 벽 ${m(b.walls)} 솔리드 ${m(b.solid)} 인필 ${m(b.sparseInfill)} 첫층 ${m(b.firstLayer)} 서포트 ${m(b.support)} 이동 ${m(b.travel)} 레이어 ${m(b.layerOverhead)} 최소층 ${m(b.minLayerSlowdown)} 준비 ${m(b.prep)}` +
             `\n    면적 cm²: 측면 ${a.lateralArea?.toFixed(1)} 감속벽 ${a.slowWallArea?.toFixed(1)} 윗면 ${a.topArea?.toFixed(1)} 바닥 ${a.bottomArea?.toFixed(1)} 베드 ${a.bedArea?.toFixed(1)} 오버행 ${a.overhangArea?.toFixed(1)} 서포트부피 ${a.supportVolume?.toFixed(1)}cm³` +
             `\n    압출 cm³: 벽 ${(s.wallVolMm3 / 1000).toFixed(1)} 솔리드 ${(s.solidVolMm3 / 1000).toFixed(1)} 인필 ${(s.sparseVolMm3 / 1000).toFixed(1)} (인필영역 ${(s.sparseRegionMm3 / 1000).toFixed(1)})`
