@@ -22,6 +22,8 @@ export interface QuoteData {
     topAreaCm2?: number;
     bottomAreaCm2?: number;
     bedAreaCm2?: number;
+    /** 현재 배치 기준 외벽 오버행 감속 추가분 (등가 측면 cm²) */
+    slowWallAreaCm2?: number;
 
     // 출력 방식
     printMethod: 'fdm' | 'sla' | 'dlp';

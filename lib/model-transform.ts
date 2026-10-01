@@ -247,6 +247,7 @@ export function applyTransformToAnalysis(
         ...(src.topArea !== undefined ? { topArea: area(src.topArea) } : {}),
         ...(src.bottomArea !== undefined ? { bottomArea: area(src.bottomArea) } : {}),
         ...(src.bedArea !== undefined ? { bedArea: area(src.bedArea) } : {}),
+        ...(src.slowWallArea !== undefined ? { slowWallArea: area(src.slowWallArea) } : {}),
         boundingBox,
     })
 }
@@ -272,6 +273,7 @@ function placementScoreHours(analysis: GeometryAnalysis, layerHeightMm: number):
         topAreaCm2: analysis.topArea,
         bottomAreaCm2: analysis.bottomArea,
         bedAreaCm2: analysis.bedArea,
+        slowWallAreaCm2: analysis.slowWallArea,
         layerHeightMm,
         infillPercent: 15,
         supportExtrudeCm3: (analysis.supportVolume ?? 0) * FDM_SUPPORT_FILL_RATIO,

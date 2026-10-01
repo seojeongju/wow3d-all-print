@@ -1,4 +1,10 @@
 import * as THREE from 'three';
+import {
+    P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO,
+    P2S_PROFILE,
+    p2sOverhangWallExtra,
+    p2sShellSolidFraction,
+} from '@/lib/print-time-estimate';
 
 /** 원본 좌표에서 출력 시 위(+Z)를 향하게 되는 축 */
 export type UpAxisKey = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
@@ -11,12 +17,14 @@ export type OrientationSupport = {
     supportVolume: number;
     /** 측면 면적 Σ A·sinθ (cm²) — 레이어별 벽 경로 길이 × 레이어 높이의 합 */
     lateralArea?: number;
-    /** 위를 향한 면의 수평 투영 면적 (cm²) — 윗면 솔리드 */
+    /** 위를 향한 면의 수평 투영 면적 (cm²) — 윗면 솔리드, 벽이 덮는 경사면 제외 */
     topArea?: number;
-    /** 아래를 향한 면의 수평 투영 면적 (cm², 바닥 접촉 포함) — 바닥 솔리드 */
+    /** 아래를 향한 면의 수평 투영 면적 (cm², 바닥 접촉 포함) — 바닥 솔리드, 벽이 덮는 경사면 제외 */
     bottomArea?: number;
     /** 베드에 닿는 면적 (cm²) — 첫 레이어 */
     bedArea?: number;
+    /** 외벽 오버행 감속으로 늘어나는 시간을 외벽 속도 기준 측면 면적으로 환산한 추가분 (cm²) */
+    slowWallArea?: number;
 };
 
 const ORIENTATION_AREA_KEYS = ['lateralArea', 'topArea', 'bottomArea', 'bedArea'] as const;
@@ -34,6 +42,7 @@ export interface GeometryAnalysis {
     topArea?: number;
     bottomArea?: number;
     bedArea?: number;
+    slowWallArea?: number;
     boundingBox: {
         x: number; // mm
         y: number; // mm
@@ -91,10 +100,17 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
     };
 
     const clampArea = (v: number) => Math.min(Math.max(0, Number(v) || 0), surfaceArea);
-    const pickAreas = (src: Partial<Record<(typeof ORIENTATION_AREA_KEYS)[number], number>>) => {
-        const out: Partial<Record<(typeof ORIENTATION_AREA_KEYS)[number], number>> = {};
+    type AreaKey = (typeof ORIENTATION_AREA_KEYS)[number] | 'slowWallArea';
+    const pickAreas = (src: Partial<Record<AreaKey, number>>) => {
+        const out: Partial<Record<AreaKey, number>> = {};
         for (const k of ORIENTATION_AREA_KEYS) {
             if (src[k] != null) out[k] = clampArea(src[k]!);
+        }
+        if (src.slowWallArea != null) {
+            out.slowWallArea = Math.min(
+                Math.max(0, Number(src.slowWallArea) || 0),
+                surfaceArea * P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO
+            );
         }
         return out;
     };
@@ -207,10 +223,11 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     const ovArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
     const ovVol = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
     const bedArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
-    // 축 k 기준 측면(Σ A·sinθ), 법선 +k / -k 쪽 수평 투영
+    // 축 k 기준 측면(Σ A·sinθ), 법선 +k / -k 쪽 면의 윗면·아랫면 솔리드 투영과 오버행 감속 외벽
     const lateral = [0, 0, 0];
-    const projPos = [0, 0, 0];
-    const projNeg = [0, 0, 0];
+    const topSolid = [[0, 0], [0, 0], [0, 0]];
+    const bottomSolid = [[0, 0], [0, 0], [0, 0]];
+    const slowWall = [[0, 0], [0, 0], [0, 0]];
     const centroid = [0, 0, 0];
     const normal = [0, 0, 0];
 
@@ -238,10 +255,14 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
 
         for (let k = 0; k < 3; k++) {
             const nk = normal[k];
-            const projected = area * Math.abs(nk);
-            lateral[k] += area * Math.sqrt(Math.max(0, 1 - nk * nk));
-            if (nk > 0) projPos[k] += projected;
-            else projNeg[k] += projected;
+            const absNk = Math.abs(nk);
+            const projected = area * absNk;
+            const sin = Math.sqrt(Math.max(0, 1 - nk * nk));
+            lateral[k] += area * sin;
+            const side = nk > 0 ? 1 : 0;
+            topSolid[k][side] += projected * p2sShellSolidFraction(absNk, sin, P2S_PROFILE.topShellLayers);
+            bottomSolid[k][side] += projected * p2sShellSolidFraction(absNk, sin, P2S_PROFILE.bottomShellLayers);
+            slowWall[k][side] += area * sin * p2sOverhangWallExtra(absNk, sin);
 
             const face = nk < -SUPPORT_NORMAL_THRESHOLD ? 0 : nk > SUPPORT_NORMAL_THRESHOLD ? 1 : -1;
             if (face < 0) continue;
@@ -289,24 +310,27 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         const axes = ['x', 'y', 'z'] as const;
         const cm2 = (mm2: number) => (mm2 * scale) / 100;
         orientations = {};
+        // 실제로 +k / -k를 향하는 면 (감김이 뒤집힌 메쉬는 법선 부호 반대)
+        const plus = outward ? 1 : 0;
+        const minus = 1 - plus;
         for (let k = 0; k < 3; k++) {
-            const facingPos = outward ? projPos[k] : projNeg[k];
-            const facingNeg = outward ? projNeg[k] : projPos[k];
             orientations[`+${axes[k]}`] = {
                 overhangArea: cm2(ovArea[k][down][0]),
                 supportVolume: (ovVol[k][down][0] * scale) / 1000,
                 lateralArea: cm2(lateral[k]),
-                topArea: cm2(facingPos),
-                bottomArea: cm2(facingNeg),
+                topArea: cm2(topSolid[k][plus]),
+                bottomArea: cm2(bottomSolid[k][minus]),
                 bedArea: cm2(bedArea[k][down][0]),
+                slowWallArea: cm2(slowWall[k][minus]),
             };
             orientations[`-${axes[k]}`] = {
                 overhangArea: cm2(ovArea[k][up][1]),
                 supportVolume: (ovVol[k][up][1] * scale) / 1000,
                 lateralArea: cm2(lateral[k]),
-                topArea: cm2(facingNeg),
-                bottomArea: cm2(facingPos),
+                topArea: cm2(topSolid[k][minus]),
+                bottomArea: cm2(bottomSolid[k][plus]),
                 bedArea: cm2(bedArea[k][up][1]),
+                slowWallArea: cm2(slowWall[k][plus]),
             };
         }
     }
@@ -323,6 +347,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
                   topArea: placed.topArea,
                   bottomArea: placed.bottomArea,
                   bedArea: placed.bedArea,
+                  slowWallArea: placed.slowWallArea,
               }
             : {}),
         ...(orientations ? { orientations } : {}),

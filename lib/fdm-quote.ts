@@ -38,10 +38,12 @@ export const FDM_SUPPORT_COST_TO_MATERIAL_MAX = 3
 export const FDM_SUPPORT_COST_FLOOR_KRW = 5_000
 
 /**
- * 트리/오가닉 서포트 채움 밀도 근사 (Bambu tree ~희소).
- * supportVol ≈ overhangArea × (height×frac) × fill
+ * 배치 기준 오버행 그림자 부피 대비 서포트 압출 부피 — Bambu P2S 일반(자동) 서포트 실측
+ * (같은 모델 두 자세: 그림자 22cm³→8.8cm³, 56cm³→16.7cm³)
  */
-export const FDM_SUPPORT_FILL_RATIO = 0.125
+export const FDM_SUPPORT_FILL_RATIO = 0.33
+/** 그림자 부피가 없을 때(overhangArea × 높이 × frac 근사) 채움 비율 */
+export const FDM_SUPPORT_FALLBACK_FILL_RATIO = 0.125
 /** 오버행 아래 평균 기둥 높이 = 모델 높이 × 이 비율 */
 export const FDM_SUPPORT_AVG_HEIGHT_FRAC = 0.42
 /** 서포트 무게 상한: 모델 무게 대비 배수 (극단 오버행 클램프) */
@@ -133,11 +135,11 @@ export function estimateFdmSupportGrams(input: {
     if (overhang <= 0) return 0
     const heightCm = Math.max(0, Number(input.heightMm) || 0) / 10
     const density = Math.max(0, Number(input.density) || FDM_DEFAULT_DENSITY)
-    const shadowCm3 =
+    const hasShadow =
         input.supportVolumeCm3 != null && Number.isFinite(Number(input.supportVolumeCm3))
-            ? Math.max(0, Number(input.supportVolumeCm3))
-            : overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC
-    const volCm3 = shadowCm3 * FDM_SUPPORT_FILL_RATIO
+    const volCm3 = hasShadow
+        ? Math.max(0, Number(input.supportVolumeCm3)) * FDM_SUPPORT_FILL_RATIO
+        : overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC * FDM_SUPPORT_FALLBACK_FILL_RATIO
     let grams = volCm3 * density
     const modelW = Math.max(0, Number(input.modelWeightGrams) || 0)
     if (modelW > 0) {
@@ -167,6 +169,8 @@ export type CalculateFdmQuoteInput = {
     topAreaCm2?: number | null
     bottomAreaCm2?: number | null
     bedAreaCm2?: number | null
+    /** 외벽 오버행 감속 추가분 (cm², 외벽 속도 기준 등가 측면) */
+    slowWallAreaCm2?: number | null
     /** 재질명 — P2S 재질별 최대 유량·최소 레이어 시간 선택 */
     materialName?: string | null
     hourlyRateKr: number
@@ -235,6 +239,7 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         topAreaCm2: input.topAreaCm2,
         bottomAreaCm2: input.bottomAreaCm2,
         bedAreaCm2: input.bedAreaCm2,
+        slowWallAreaCm2: input.slowWallAreaCm2,
     }
     const weight = estimateFdmWeightGrams({
         ...geom,

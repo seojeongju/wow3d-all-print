@@ -50,6 +50,7 @@ for (const [rotX, rotY] of rots) {
         topAreaCm2: a.topArea,
         bottomAreaCm2: a.bottomArea,
         bedAreaCm2: a.bedArea,
+        slowWallAreaCm2: a.slowWallArea,
         materialName: 'PLA Basic',
         hourlyRateKr: 5000,
     })
@@ -57,8 +58,8 @@ for (const [rotX, rotY] of rots) {
     const s = q.timeDetail.structure
     console.log(
         `[${getUpAxisKey(t)}] H ${a.boundingBox.z.toFixed(1)}mm · ${fmt(q.timeHours)} · 모델 ${q.weightGrams.toFixed(1)}g + 서포트 ${q.supportGrams.toFixed(1)}g` +
-            `\n    분: 벽 ${m(b.walls)} 솔리드 ${m(b.solid)} 인필 ${m(b.sparseInfill)} 첫층 ${m(b.firstLayer)} 서포트 ${m(b.support)} 레이어 ${m(b.layerOverhead)} 최소층 ${m(b.minLayerSlowdown)}` +
-            `\n    면적 cm²: 측면 ${a.lateralArea?.toFixed(1)} 윗면 ${a.topArea?.toFixed(1)} 바닥 ${a.bottomArea?.toFixed(1)} 베드 ${a.bedArea?.toFixed(1)} 오버행 ${a.overhangArea?.toFixed(1)} 서포트부피 ${a.supportVolume?.toFixed(1)}cm³` +
+            `\n    분: 벽 ${m(b.walls)} 솔리드 ${m(b.solid)} 인필 ${m(b.sparseInfill)} 첫층 ${m(b.firstLayer)} 서포트 ${m(b.support)} 이동 ${m(b.travel)} 레이어 ${m(b.layerOverhead)} 최소층 ${m(b.minLayerSlowdown)} 준비 ${m(b.prep)}` +
+            `\n    면적 cm²: 측면 ${a.lateralArea?.toFixed(1)} 감속벽 ${a.slowWallArea?.toFixed(1)} 윗면 ${a.topArea?.toFixed(1)} 바닥 ${a.bottomArea?.toFixed(1)} 베드 ${a.bedArea?.toFixed(1)} 오버행 ${a.overhangArea?.toFixed(1)} 서포트부피 ${a.supportVolume?.toFixed(1)}cm³` +
             `\n    압출 cm³: 벽 ${(s.wallVolMm3 / 1000).toFixed(1)} 솔리드 ${(s.solidVolMm3 / 1000).toFixed(1)} 인필 ${(s.sparseVolMm3 / 1000).toFixed(1)} (인필영역 ${(s.sparseRegionMm3 / 1000).toFixed(1)})`
     )
 }

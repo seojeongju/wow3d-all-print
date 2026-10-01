@@ -5,6 +5,7 @@ import { errorResponse, successResponse, generateSessionId } from '@/lib/api-uti
 import type { QuoteData } from '@/lib/types';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { clampFdmInfillPercent } from '@/lib/fdm-quote';
+import { P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO } from '@/lib/print-time-estimate';
 import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
 import { resolveServerResinQuote } from '@/lib/server-resin-quote';
 
@@ -167,6 +168,14 @@ export async function POST(request: NextRequest) {
         const topAreaCm2 = areaWithinSurface(body.topAreaCm2);
         const bottomAreaCm2 = areaWithinSurface(body.bottomAreaCm2);
         const bedAreaCm2 = areaWithinSurface(body.bedAreaCm2);
+        // 등가 면적이라 표면적을 넘을 수 있음 (최저 오버행 속도 기준 배수까지)
+        const slowWallAreaCm2 =
+            body.slowWallAreaCm2 != null && Number.isFinite(Number(body.slowWallAreaCm2))
+                ? Math.min(
+                      Math.max(0, Number(body.slowWallAreaCm2)),
+                      surfaceAreaCm2 * P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO
+                  )
+                : null;
         const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
         const layerThickness = snapSlaLayer(body.layerThickness);
         const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
@@ -207,6 +216,7 @@ export async function POST(request: NextRequest) {
                     topAreaCm2,
                     bottomAreaCm2,
                     bedAreaCm2,
+                    slowWallAreaCm2,
                     fdmMaterialName: fdmMaterialName,
                     infillPercent: fdmInfill,
                     layerHeightMm: fdmLayerHeight,

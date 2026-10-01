@@ -69,21 +69,39 @@ for (const [name, geo, opts] of cases) {
     const m = (s: number) => `${(s / 60).toFixed(1)}분`
     console.log(
         `${name}: ${fmt(q.timeHours)} · ${q.weightGrams.toFixed(1)}g (${(q.weightGrams / Math.max(q.timeHours, 1e-9)).toFixed(0)}g/h)` +
-            ` | 벽 ${m(b.walls)} 솔리드 ${m(b.solid)} 인필 ${m(b.sparseInfill)} 첫층 ${m(b.firstLayer)} 서포트 ${m(b.support)} 레이어 ${m(b.layerOverhead)} 최소층 ${m(b.minLayerSlowdown)}` +
+            ` | 벽 ${m(b.walls)} 솔리드 ${m(b.solid)} 인필 ${m(b.sparseInfill)} 첫층 ${m(b.firstLayer)} 서포트 ${m(b.support)} 이동 ${m(b.travel)} 레이어 ${m(b.layerOverhead)} 최소층 ${m(b.minLayerSlowdown)} 준비 ${m(b.prep)}` +
             ` | ${a.volume.toFixed(1)}cm³`
     )
 }
 
-// 2) 같은 모델: 인필↑·0.1mm·PETG(최소 레이어 시간↑)는 더 오래, 눕힌 박스는 레이어가 줄어 더 빠름
+// 2) 같은 모델: 인필↑·0.1mm는 더 오래, 가는 막대는 눕히면 레이어·최소 레이어 시간이 줄어 더 빠름
 {
     const cube = () => new THREE.BoxGeometry(50, 50, 50)
     const base = quote(cube()).q.timeHours
     assert.ok(quote(cube(), { infill: 40 }).q.timeHours > base)
     assert.ok(quote(cube(), { layer: 0.1 }).q.timeHours > base * 1.5)
-    const upright = quote(new THREE.BoxGeometry(142, 39.3, 290)).q.timeHours
-    const flat = quote(new THREE.BoxGeometry(142, 290, 39.3)).q.timeHours
-    assert.ok(flat < upright, '눕히면 레이어 수가 줄어 빨라짐')
+    const upright = quote(new THREE.BoxGeometry(10, 10, 150)).q.timeHours
+    const flat = quote(new THREE.BoxGeometry(10, 150, 10)).q.timeHours
+    assert.ok(flat < upright, `가는 막대는 눕히면 빨라짐 (${upright} → ${flat})`)
     console.log('✓ 인필·레이어 높이·배치에 따른 시간 변화 방향')
+}
+
+// 3) 경사면: 45° 쐐기 윗면은 벽이 일부 덮어 솔리드 면적이 수평 투영보다 작고, 뒤집으면 외벽 오버행 감속이 생김
+{
+    const wedge = new THREE.BufferGeometry()
+    // 밑변 40×40, 높이 40, 한쪽이 45° 경사인 삼각기둥
+    const v = [
+        [0, 0, 0], [40, 0, 0], [40, 40, 0], [0, 40, 0], [0, 0, 40], [0, 40, 40],
+    ]
+    const f = [[0, 2, 1], [0, 3, 2], [0, 1, 4], [3, 5, 2], [0, 4, 5], [0, 5, 3], [1, 2, 5], [1, 5, 4]]
+    wedge.setAttribute('position', new THREE.Float32BufferAttribute(f.flatMap((t) => t.flatMap((i) => v[i])), 3))
+    const a = analyzeGeometry(wedge)
+    const up = a.orientations!['+z']!
+    const down = a.orientations!['-z']!
+    assert.ok(up.topArea! < 16 && up.topArea! > 8, `45° 윗면 유효 솔리드 ${up.topArea}`)
+    assert.ok(Math.abs(up.bottomArea! - 16) < 1e-6 && up.slowWallArea === 0, '바닥 평면·감속 없음')
+    assert.ok(down.slowWallArea! > 0, `뒤집으면 오버행 감속 ${down.slowWallArea}`)
+    console.log(`✓ 경사면 솔리드 ${up.topArea!.toFixed(1)}cm² (투영 16), 뒤집은 오버행 감속 ${down.slowWallArea!.toFixed(1)}cm²`)
 }
 
 console.log('P2S 시간 테스트 통과')
