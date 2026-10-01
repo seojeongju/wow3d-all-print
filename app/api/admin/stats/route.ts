@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { UNREVIEWED_QUOTE_SQL } from '@/lib/admin-quote-review';
 import {
     ALL_FUNNEL_EVENT_LABELS,
     buildConversionFunnelTrend,
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
             SELECT 
                 COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month') THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_this_month,
                 COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month','-1 month') AND o.created_at < date('now','start of month') THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_last_month,
-                SUM(CASE WHEN o.created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
                 SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
             FROM orders o
             WHERE ${STORE_ORDERS}
@@ -99,7 +100,7 @@ export async function GET(req: NextRequest) {
                 SELECT 
                     COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_this_month,
                     COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_last_month,
-                    SUM(CASE WHEN created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                    SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
                 FROM orders
             `).first() as Record<string, unknown> | null;
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
                 SELECT 
                     COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_this_month,
                     COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_last_month,
-                    SUM(CASE WHEN created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                    SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
                 FROM orders
             `).first() as Record<string, unknown> | null;
@@ -295,29 +296,23 @@ export async function GET(req: NextRequest) {
             };
         });
 
-        let quotesThisMonth: number | null = null;
+        let unreviewedQuotesCount: number | null = null;
         try {
             const qRow = await env.DB.prepare(`
-                SELECT COUNT(DISTINCT q.id) as c
-                FROM quotes q
-                WHERE q.created_at >= date('now','start of month')
-                  AND EXISTS (
-                    SELECT 1 FROM order_items oi
-                    JOIN orders o ON o.id = oi.order_id
-                    WHERE oi.quote_id = q.id AND ${STORE_ORDERS}
-                  )
+                SELECT COUNT(*) as c FROM orders o
+                WHERE ${STORE_ORDERS} AND ${UNREVIEWED_QUOTE_SQL}
             `)
                 .bind(storeId)
                 .first() as { c: number } | null;
-            quotesThisMonth = Number(qRow?.c ?? 0);
+            unreviewedQuotesCount = Number(qRow?.c ?? 0);
         } catch {
             try {
                 const qRow = await env.DB.prepare(
-                    `SELECT COUNT(*) as c FROM quotes WHERE created_at >= date('now','start of month')`
+                    `SELECT COUNT(*) as c FROM orders o WHERE ${UNREVIEWED_QUOTE_SQL}`
                 ).first() as { c: number } | null;
-                quotesThisMonth = Number(qRow?.c ?? 0);
+                unreviewedQuotesCount = Number(qRow?.c ?? 0);
             } catch {
-                quotesThisMonth = null;
+                unreviewedQuotesCount = null;
             }
         }
 
@@ -735,7 +730,7 @@ export async function GET(req: NextRequest) {
                 pendingOrdersCount,
                 totalUsers,
                 newSignupsCount,
-                quotesThisMonth,
+                unreviewedQuotesCount,
                 inquiriesNew,
                 operatingRate,
                 operatingDetail,

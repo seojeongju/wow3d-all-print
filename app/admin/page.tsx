@@ -38,6 +38,7 @@ import {
     type StatsGranularity,
     STATS_RANGE,
 } from '@/lib/admin-stats-range';
+import { QUOTE_REVIEW_UNREVIEWED } from '@/lib/admin-quote-review';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -78,7 +79,7 @@ type Stats = {
     pendingOrdersCount: number;
     totalUsers: number;
     newSignupsCount: number;
-    quotesThisMonth: number | null;
+    unreviewedQuotesCount: number | null;
     inquiriesNew: number | null;
     operatingRate: number | null;
     operatingDetail: string | null;
@@ -104,7 +105,7 @@ const EMPTY_STATS: Stats = {
     pendingOrdersCount: 0,
     totalUsers: 0,
     newSignupsCount: 0,
-    quotesThisMonth: null,
+    unreviewedQuotesCount: null,
     inquiriesNew: null,
     operatingRate: null,
     operatingDetail: null,
@@ -329,23 +330,27 @@ export default function AdminDashboard() {
                         }
                     />
                     <DashboardStatCard
-                        title="견적 요청"
+                        title="미확인 견적"
                         icon={FileText}
                         iconColor="text-pink-400"
                         iconBg="bg-pink-500/10"
-                        value={s.quotesThisMonth === null ? '없음' : s.quotesThisMonth}
-                        valueClassName={s.quotesThisMonth === null ? 'text-lg text-white/40' : undefined}
+                        value={s.unreviewedQuotesCount === null ? '없음' : s.unreviewedQuotesCount}
+                        valueClassName={s.unreviewedQuotesCount === null ? 'text-lg text-white/40' : undefined}
                         primary={{
                             label: '견적 관리',
                             href: '/admin/quotes',
                             ariaLabel: '견적 관리 목록',
                         }}
-                        secondary={{
-                            label: '유입·전환 분석',
-                            href: '/admin/quotes/analytics',
-                            ariaLabel: '견적 전환 유입 분석',
-                            tone: 'default',
-                        }}
+                        secondary={
+                            s.unreviewedQuotesCount != null && s.unreviewedQuotesCount > 0
+                                ? {
+                                      label: `${s.unreviewedQuotesCount}건 즉시 확인`,
+                                      href: `/admin/quotes?review=${QUOTE_REVIEW_UNREVIEWED}`,
+                                      ariaLabel: '견적서 미발송 요청만 보기',
+                                      tone: 'accent',
+                                  }
+                                : { label: '대기 중인 견적 없음', tone: 'muted' }
+                        }
                     />
                     <DashboardStatCard
                         title="미확인 문의"

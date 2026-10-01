@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 
 /** DB 주문 금액 단위 → 원화 (주문관리·견적서 수정과 동일) */
 // 금액은 DB/API에서 원화(KRW)로 저장·전달됨
 import { correctDisplayAmount } from '@/lib/amount-display';
 import { formatKoreanDate } from '@/lib/date-utils';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { QUOTE_REVIEW_UNREVIEWED } from '@/lib/admin-quote-review';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PenLine, Printer, ChevronDown, ChevronUp, Search, Loader2, Mail, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { PenLine, Printer, ChevronDown, ChevronUp, Search, Loader2, Mail, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
@@ -22,8 +23,18 @@ const SEARCH_DEBOUNCE_MS = 400;
 type OrdersPagination = { page: number; limit: number; total: number; totalPages: number };
 
 export default function QuoteList() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+            <QuoteListInner />
+        </Suspense>
+    );
+}
+
+function QuoteListInner() {
     const { toast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const unreviewedOnly = searchParams.get('review') === QUOTE_REVIEW_UNREVIEWED;
     const { token } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<any[]>([]);
@@ -51,6 +62,7 @@ export default function QuoteList() {
                 limit: String(PAGE_SIZE),
             });
             if (debouncedSearch) params.set('q', debouncedSearch);
+            if (unreviewedOnly) params.set('review', QUOTE_REVIEW_UNREVIEWED);
             const res = await fetch(`/api/admin/orders?${params}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 cache: 'no-store',
@@ -74,7 +86,11 @@ export default function QuoteList() {
         } finally {
             setLoading(false);
         }
-    }, [token, toast, page, debouncedSearch]);
+    }, [token, toast, page, debouncedSearch, unreviewedOnly]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [unreviewedOnly]);
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -301,6 +317,17 @@ export default function QuoteList() {
                         className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45"
                     />
                 </div>
+                {unreviewedOnly && (
+                    <button
+                        type="button"
+                        onClick={() => router.replace('/admin/quotes')}
+                        className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-pink-500/30 bg-pink-500/10 text-pink-300 text-xs font-bold hover:bg-pink-500/20 transition-colors"
+                        aria-label="미확인 견적 필터 해제"
+                    >
+                        미확인 견적만 보기
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                )}
                 <div className="ml-auto flex items-center gap-2">
                     <Button
                         type="button"

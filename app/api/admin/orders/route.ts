@@ -1,6 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { QUOTE_REVIEW_UNREVIEWED, UNREVIEWED_QUOTE_SQL } from '@/lib/admin-quote-review';
 import { processAutoOrderStatusTransitions } from '@/lib/order-auto-status';
 import { ORDER_STATUS_VALUES } from '@/lib/order-status';
 import { QUOTE_PRINT_SETTINGS_JSON_FIELDS } from '@/lib/quote-print-settings';
@@ -171,10 +172,12 @@ export async function GET(req: NextRequest) {
         const statusFilter =
             statusParam && statusParam !== 'all' && ORDER_STATUS_FILTER_SET.has(statusParam) ? statusParam : '';
         const mineOnly = req.nextUrl.searchParams.get('mine') === '1';
+        const unreviewedOnly = req.nextUrl.searchParams.get('review') === QUOTE_REVIEW_UNREVIEWED;
 
         const storeWhere = '(o.store_id = ? OR o.store_id IS NULL)';
         const mineSql = mineOnly ? ' AND o.user_id = ?' : '';
-        const statusSql = statusFilter ? ' AND o.status = ?' : '';
+        const statusSql =
+            (statusFilter ? ' AND o.status = ?' : '') + (unreviewedOnly ? ` AND ${UNREVIEWED_QUOTE_SQL}` : '');
         const searchSql = pattern ? orderSearchSql() : '';
         const baseFrom = `FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE ${storeWhere}${mineSql}${statusSql}${searchSql}`;
 
