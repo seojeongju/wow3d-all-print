@@ -28,10 +28,12 @@ type EquipmentParams = {
     sla_labor_cost_krw: number
     sla_consumables_krw: number
     sla_post_process_krw: number
+    sla_support_per_cm2_krw: number
     dlp_layer_exposure_sec: number
     dlp_labor_cost_krw: number
     dlp_consumables_krw: number
     dlp_post_process_krw: number
+    dlp_support_per_cm2_krw: number
 }
 
 const PRESETS: PricingPreset[] = [
@@ -52,6 +54,7 @@ const PRESETS: PricingPreset[] = [
                 sla_labor_cost_krw: 7000,
                 sla_consumables_krw: 3000,
                 sla_post_process_krw: 8000,
+                sla_support_per_cm2_krw: 45,
                 sla_layer_exposure_sec: 8,
             },
             dlp: {
@@ -59,6 +62,7 @@ const PRESETS: PricingPreset[] = [
                 dlp_labor_cost_krw: 7000,
                 dlp_consumables_krw: 3000,
                 dlp_post_process_krw: 8000,
+                dlp_support_per_cm2_krw: 40,
                 dlp_layer_exposure_sec: 3,
             },
         },
@@ -80,6 +84,7 @@ const PRESETS: PricingPreset[] = [
                 sla_labor_cost_krw: 10700,
                 sla_consumables_krw: 3900,
                 sla_post_process_krw: 10400,
+                sla_support_per_cm2_krw: 60,
                 sla_layer_exposure_sec: 9,
             },
             dlp: {
@@ -87,6 +92,7 @@ const PRESETS: PricingPreset[] = [
                 dlp_labor_cost_krw: 9100,
                 dlp_consumables_krw: 3900,
                 dlp_post_process_krw: 10400,
+                dlp_support_per_cm2_krw: 50,
                 dlp_layer_exposure_sec: 3,
             },
         },
@@ -108,6 +114,7 @@ const PRESETS: PricingPreset[] = [
                 sla_labor_cost_krw: 12000,
                 sla_consumables_krw: 5000,
                 sla_post_process_krw: 15000,
+                sla_support_per_cm2_krw: 80,
                 sla_layer_exposure_sec: 6,
             },
             dlp: {
@@ -115,6 +122,7 @@ const PRESETS: PricingPreset[] = [
                 dlp_labor_cost_krw: 12000,
                 dlp_consumables_krw: 5000,
                 dlp_post_process_krw: 15000,
+                dlp_support_per_cm2_krw: 70,
                 dlp_layer_exposure_sec: 2,
             },
         },
@@ -221,7 +229,7 @@ export default function PricingPresets({ onApplyPreset }: Props) {
                                         <DialogHeader>
                                             <DialogTitle>프리셋 적용 확인</DialogTitle>
                                             <DialogDescription>
-                                                "{preset.name}" 프리셋을 적용하시겠습니까?
+                                                &ldquo;{preset.name}&rdquo; 프리셋을 적용하시겠습니까?
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="space-y-4 py-4">

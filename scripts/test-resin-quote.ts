@@ -5,12 +5,15 @@
 import assert from 'node:assert/strict'
 import {
     calculateResinQuote,
+    DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
+    SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
     SLA_LAYER_DEFAULT,
     snapSlaLayerHeight,
 } from '../lib/resin-quote'
 
 const base = {
     volumeCm3: 8,
+    surfaceAreaCm2: 40,
     heightMm: 35,
     layerHeightMm: SLA_LAYER_DEFAULT,
     pricePerMlKr: 150,
@@ -36,6 +39,15 @@ assert.ok(sla.subtotal > 0, 'sla subtotal > 0')
 assert.ok(dlp.subtotal > 0, 'dlp subtotal > 0')
 assert.ok(dlp.timeHours < sla.timeHours, 'dlp faster than sla for same model')
 assert.ok(sla.costBreakdown.material === 8 * 150, 'material = price × volume')
+// 서포트비 = 표면적 40 × 0.3 × 기본 단가 (SLA 60, DLP 50)
+assert.equal(Math.round(sla.costBreakdown.support), Math.round(40 * 0.3 * SLA_DEFAULT_SUPPORT_PER_CM2_KRW))
+assert.equal(Math.round(dlp.costBreakdown.support), Math.round(40 * 0.3 * DLP_DEFAULT_SUPPORT_PER_CM2_KRW))
+const noSupportBase = sla.costBreakdown.material + sla.costBreakdown.other + sla.costBreakdown.machine + sla.costBreakdown.labor
+assert.ok(Math.abs(sla.subtotal - (noSupportBase + sla.costBreakdown.support)) < 1e-6, 'support included in subtotal')
+const customRate = calculateResinQuote({ ...base, method: 'sla', supportPerCm2Krw: 100 })
+assert.equal(Math.round(customRate.costBreakdown.support), 1200)
+const hugeSurface = calculateResinQuote({ ...base, method: 'sla', surfaceAreaCm2: 1e6 })
+assert.ok(hugeSurface.costBreakdown.support <= Math.max(8 * 150 * 3, 5000), 'support cost capped')
 
 const withPost = calculateResinQuote({ ...base, method: 'sla', postProcessing: true })
 assert.ok(withPost.subtotal > sla.subtotal, 'post-processing increases subtotal')

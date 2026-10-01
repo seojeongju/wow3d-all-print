@@ -43,8 +43,8 @@ import { MESHY_AI_DISCLAIMER_SHORT, MESHY_AI_DISCLAIMER_SHORT_EN } from '@/lib/m
 
 type PrintSpecs = {
     fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
-    sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number }
-    dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number }
+    sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number; sla_support_per_cm2_krw?: number }
+    dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number; dlp_support_per_cm2_krw?: number }
 }
 
 type ApiMaterial = { id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }
@@ -336,6 +336,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         const q = calculateResinQuote({
             method: printMethod === 'dlp' ? 'dlp' : 'sla',
             volumeCm3,
+            surfaceAreaCm2,
             heightMm,
             layerHeightMm: slaLayerHeight,
             pricePerMlKr,
@@ -353,6 +354,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             postProcessKrw: printMethod === 'dlp'
                 ? printSpecs?.dlp?.dlp_post_process_krw
                 : printSpecs?.sla?.sla_post_process_krw,
+            supportPerCm2Krw: printMethod === 'dlp'
+                ? printSpecs?.dlp?.dlp_support_per_cm2_krw
+                : printSpecs?.sla?.sla_support_per_cm2_krw,
             applyVat: false,
         })
         return {
@@ -362,7 +366,12 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             materialAmount: q.volumeMl,
             materialUnit: 'mL' as const,
             materialName: (mat?.name ?? resinType) || '-',
-            costBreakdown: q.costBreakdown,
+            costBreakdown: {
+                material: q.costBreakdown.material,
+                other: q.costBreakdown.other + q.costBreakdown.support,
+                machine: q.costBreakdown.machine,
+                labor: q.costBreakdown.labor,
+            },
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
         }

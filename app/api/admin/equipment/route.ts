@@ -1,6 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/api-utils'
+import { DLP_DEFAULT_SUPPORT_PER_CM2_KRW, SLA_DEFAULT_SUPPORT_PER_CM2_KRW } from '@/lib/resin-quote'
 
 /**
  * GET /api/admin/equipment - 장비 설정 목록 (FDM, SLA, DLP)
@@ -42,27 +43,34 @@ function calcParamValues(type: string, body: Record<string, unknown>) {
     sla_labor_cost_krw: type === 'SLA' ? (Number(body.sla_labor_cost_krw) ?? 9100) : null,
     sla_consumables_krw: type === 'SLA' ? (Number(body.sla_consumables_krw) ?? 3900) : null,
     sla_post_process_krw: type === 'SLA' ? (Number(body.sla_post_process_krw) ?? 10400) : null,
+    sla_support_per_cm2_krw: type === 'SLA' ? nonNegative(body.sla_support_per_cm2_krw, SLA_DEFAULT_SUPPORT_PER_CM2_KRW) : null,
     dlp_layer_exposure_sec: type === 'DLP' ? (Number(body.dlp_layer_exposure_sec) || 3) : null,
     dlp_labor_cost_krw: type === 'DLP' ? (Number(body.dlp_labor_cost_krw) ?? 9100) : null,
     dlp_consumables_krw: type === 'DLP' ? (Number(body.dlp_consumables_krw) ?? 3900) : null,
     dlp_post_process_krw: type === 'DLP' ? (Number(body.dlp_post_process_krw) ?? 10400) : null,
+    dlp_support_per_cm2_krw: type === 'DLP' ? nonNegative(body.dlp_support_per_cm2_krw, DLP_DEFAULT_SUPPORT_PER_CM2_KRW) : null,
   }
 }
 
-const CALC_COLS = 'min_price_krw, fdm_layer_hours_factor, fdm_labor_cost_krw, fdm_support_per_cm2_krw, sla_layer_exposure_sec, sla_labor_cost_krw, sla_consumables_krw, sla_post_process_krw, dlp_layer_exposure_sec, dlp_labor_cost_krw, dlp_consumables_krw, dlp_post_process_krw'
+function nonNegative(v: unknown, fallback: number): number {
+  const n = Number(v)
+  return v != null && v !== '' && Number.isFinite(n) && n >= 0 ? n : fallback
+}
+
+const CALC_COLS = 'min_price_krw, fdm_layer_hours_factor, fdm_labor_cost_krw, fdm_support_per_cm2_krw, sla_layer_exposure_sec, sla_labor_cost_krw, sla_consumables_krw, sla_post_process_krw, sla_support_per_cm2_krw, dlp_layer_exposure_sec, dlp_labor_cost_krw, dlp_consumables_krw, dlp_post_process_krw, dlp_support_per_cm2_krw'
 
 const CALC_SET_BY_TYPE: Record<string, string> = {
   FDM: ', min_price_krw = excluded.min_price_krw, fdm_layer_hours_factor = excluded.fdm_layer_hours_factor, fdm_labor_cost_krw = excluded.fdm_labor_cost_krw, fdm_support_per_cm2_krw = excluded.fdm_support_per_cm2_krw',
-  SLA: ', min_price_krw = excluded.min_price_krw, sla_layer_exposure_sec = excluded.sla_layer_exposure_sec, sla_labor_cost_krw = excluded.sla_labor_cost_krw, sla_consumables_krw = excluded.sla_consumables_krw, sla_post_process_krw = excluded.sla_post_process_krw',
-  DLP: ', min_price_krw = excluded.min_price_krw, dlp_layer_exposure_sec = excluded.dlp_layer_exposure_sec, dlp_labor_cost_krw = excluded.dlp_labor_cost_krw, dlp_consumables_krw = excluded.dlp_consumables_krw, dlp_post_process_krw = excluded.dlp_post_process_krw',
+  SLA: ', min_price_krw = excluded.min_price_krw, sla_layer_exposure_sec = excluded.sla_layer_exposure_sec, sla_labor_cost_krw = excluded.sla_labor_cost_krw, sla_consumables_krw = excluded.sla_consumables_krw, sla_post_process_krw = excluded.sla_post_process_krw, sla_support_per_cm2_krw = excluded.sla_support_per_cm2_krw',
+  DLP: ', min_price_krw = excluded.min_price_krw, dlp_layer_exposure_sec = excluded.dlp_layer_exposure_sec, dlp_labor_cost_krw = excluded.dlp_labor_cost_krw, dlp_consumables_krw = excluded.dlp_consumables_krw, dlp_post_process_krw = excluded.dlp_post_process_krw, dlp_support_per_cm2_krw = excluded.dlp_support_per_cm2_krw',
 }
 
 /**
  * POST /api/admin/equipment - 장비 설정 업데이트 (type 기준 upsert)
  * Body: { type, name?, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json?, layer_costs_json?, is_active?,
  *         fdm_layer_hours_factor?, fdm_labor_cost_krw?, fdm_support_per_cm2_krw?,
- *         sla_layer_exposure_sec?, sla_labor_cost_krw?, sla_consumables_krw?, sla_post_process_krw?,
- *         dlp_layer_exposure_sec?, dlp_labor_cost_krw?, dlp_consumables_krw?, dlp_post_process_krw? }
+ *         sla_layer_exposure_sec?, sla_labor_cost_krw?, sla_consumables_krw?, sla_post_process_krw?, sla_support_per_cm2_krw?,
+ *         dlp_layer_exposure_sec?, dlp_labor_cost_krw?, dlp_consumables_krw?, dlp_post_process_krw?, dlp_support_per_cm2_krw? }
  */
 export async function POST(req: NextRequest) {
   try {
@@ -116,17 +124,18 @@ export async function POST(req: NextRequest) {
     const calc = calcParamValues(type, body)
     const calcSet = CALC_SET_BY_TYPE[type] || ''
     const hasLayerCosts = layer_costs_json != null
-    const calcArr = [calc.min_price_krw, calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw]
+    const calcArr = [calc.min_price_krw, calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.sla_support_per_cm2_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw, calc.dlp_support_per_cm2_krw]
+    const calcPlaceholders = calcArr.map(() => '?').join(', ')
 
     const sql = hasLayerCosts
       ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
          ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
            is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
       : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
          ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
@@ -157,6 +166,12 @@ export async function POST(req: NextRequest) {
     if (msg.includes('no such column') && msg.includes('min_price_krw')) {
       return NextResponse.json(
         { error: '기본금액(최소견적) 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_min_price.sql' },
+        { status: 503 }
+      )
+    }
+    if (msg.includes('no such column') && msg.includes('support_per_cm2_krw')) {
+      return NextResponse.json(
+        { error: '레진 서포트 단가 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_resin_support.sql' },
         { status: 503 }
       )
     }

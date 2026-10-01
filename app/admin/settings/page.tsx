@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import PricingCalculator from '@/components/admin/PricingCalculator'
+import { DLP_DEFAULT_SUPPORT_PER_CM2_KRW, SLA_DEFAULT_SUPPORT_PER_CM2_KRW } from '@/lib/resin-quote'
 import PricingPresets from '@/components/admin/PricingPresets'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getAdminAuthHeaders } from '@/lib/admin-auth-headers'
@@ -35,10 +36,12 @@ type EquipmentRow = {
   sla_labor_cost_krw?: number | null
   sla_consumables_krw?: number | null
   sla_post_process_krw?: number | null
+  sla_support_per_cm2_krw?: number | null
   dlp_layer_exposure_sec?: number | null
   dlp_labor_cost_krw?: number | null
   dlp_consumables_krw?: number | null
   dlp_post_process_krw?: number | null
+  dlp_support_per_cm2_krw?: number | null
 }
 
 type EquipForm = {
@@ -57,10 +60,12 @@ type EquipForm = {
   sla_labor_cost_krw?: number
   sla_consumables_krw?: number
   sla_post_process_krw?: number
+  sla_support_per_cm2_krw?: number
   dlp_layer_exposure_sec?: number
   dlp_labor_cost_krw?: number
   dlp_consumables_krw?: number
   dlp_post_process_krw?: number
+  dlp_support_per_cm2_krw?: number
 }
 
 const EQUIPMENT_DEFAULTS: Record<string, Partial<EquipmentRow>> = {
@@ -206,10 +211,12 @@ export default function AdminSettings() {
         sla_labor_cost_krw: e?.sla_labor_cost_krw ?? 9100,
         sla_consumables_krw: e?.sla_consumables_krw ?? 3900,
         sla_post_process_krw: e?.sla_post_process_krw ?? 10400,
+        sla_support_per_cm2_krw: e?.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
         dlp_layer_exposure_sec: e?.dlp_layer_exposure_sec ?? 3,
         dlp_labor_cost_krw: e?.dlp_labor_cost_krw ?? 9100,
         dlp_consumables_krw: e?.dlp_consumables_krw ?? 3900,
         dlp_post_process_krw: e?.dlp_post_process_krw ?? 10400,
+        dlp_support_per_cm2_krw: e?.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
       }
     }
     setEquipForms(next)
@@ -244,7 +251,7 @@ export default function AdminSettings() {
   const getDefaultForm = (t: string): EquipForm => {
     const d = EQUIPMENT_DEFAULTS[t]
     const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (t === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
-    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, min_price_krw: undefined, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400 }
+    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, min_price_krw: undefined, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, sla_support_per_cm2_krw: SLA_DEFAULT_SUPPORT_PER_CM2_KRW, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400, dlp_support_per_cm2_krw: DLP_DEFAULT_SUPPORT_PER_CM2_KRW }
   }
 
   const setEquipLayerCost = (t: string, thickness: string, value: number) => {
@@ -300,10 +307,12 @@ export default function AdminSettings() {
           sla_labor_cost_krw: form.sla_labor_cost_krw ?? 9100,
           sla_consumables_krw: form.sla_consumables_krw ?? 3900,
           sla_post_process_krw: form.sla_post_process_krw ?? 10400,
+          sla_support_per_cm2_krw: form.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
           dlp_layer_exposure_sec: form.dlp_layer_exposure_sec ?? 3,
           dlp_labor_cost_krw: form.dlp_labor_cost_krw ?? 9100,
           dlp_consumables_krw: form.dlp_consumables_krw ?? 3900,
           dlp_post_process_krw: form.dlp_post_process_krw ?? 10400,
+          dlp_support_per_cm2_krw: form.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
         }),
       })
       if (!res.ok) {
@@ -705,6 +714,10 @@ export default function AdminSettings() {
                             <Label className="text-[10px] text-white/40">후가공 비용 (원)</Label>
                             <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.sla_post_process_krw ?? 10400} onChange={(e) => setEquip(t, 'sla_post_process_krw', parseFloat(e.target.value) || 0)} />
                           </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">서포트 단가 (원/cm²)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW} onChange={(e) => setEquip(t, 'sla_support_per_cm2_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
                         </>
                       )}
                       {t === 'DLP' && (
@@ -724,6 +737,10 @@ export default function AdminSettings() {
                           <div>
                             <Label className="text-[10px] text-white/40">후가공 비용 (원)</Label>
                             <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.dlp_post_process_krw ?? 10400} onChange={(e) => setEquip(t, 'dlp_post_process_krw', parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/40">서포트 단가 (원/cm²)</Label>
+                            <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 text-white h-9" value={f.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW} onChange={(e) => setEquip(t, 'dlp_support_per_cm2_krw', parseFloat(e.target.value) || 0)} />
                           </div>
                         </>
                       )}
@@ -980,6 +997,7 @@ export default function AdminSettings() {
               sla_labor_cost_krw: equipForms.SLA.sla_labor_cost_krw ?? 9100,
               sla_consumables_krw: equipForms.SLA.sla_consumables_krw ?? 3900,
               sla_post_process_krw: equipForms.SLA.sla_post_process_krw ?? 10400,
+              sla_support_per_cm2_krw: equipForms.SLA.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
               dlp_layer_exposure_sec: 0,
               dlp_labor_cost_krw: 0,
               dlp_consumables_krw: 0,
@@ -999,6 +1017,7 @@ export default function AdminSettings() {
               dlp_labor_cost_krw: equipForms.DLP.dlp_labor_cost_krw ?? 9100,
               dlp_consumables_krw: equipForms.DLP.dlp_consumables_krw ?? 3900,
               dlp_post_process_krw: equipForms.DLP.dlp_post_process_krw ?? 10400,
+              dlp_support_per_cm2_krw: equipForms.DLP.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
             } : undefined,
           }} />
 

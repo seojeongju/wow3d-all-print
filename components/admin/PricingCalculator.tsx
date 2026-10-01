@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calculator, TrendingUp, AlertCircle, Info, Target } from 'lucide-react'
+import { Calculator, TrendingUp, Info, Target } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { calculateFdmQuote, FDM_INFILL_DEFAULT, FDM_INFILL_MAX, FDM_INFILL_MIN } from '@/lib/fdm-quote'
 import { calculateResinQuote } from '@/lib/resin-quote'
@@ -18,19 +18,16 @@ type CalcParams = {
     // FDM 설정
     fdm_infill: number
     fdm_layer_height: number
-    fdm_support_enabled: boolean
     fdm_material_price_per_gram: number
     fdm_material_density: number
 
     // SLA 설정
     sla_layer_height: number
     sla_material_price_per_ml: number
-    sla_post_processing: boolean
 
     // DLP 설정
     dlp_layer_height: number
     dlp_material_price_per_ml: number
-    dlp_post_processing: boolean
 }
 
 type EquipmentParams = {
@@ -50,12 +47,14 @@ type EquipmentParams = {
     sla_labor_cost_krw: number
     sla_consumables_krw: number
     sla_post_process_krw: number
+    sla_support_per_cm2_krw?: number
 
     // DLP 파라미터
     dlp_layer_exposure_sec: number
     dlp_labor_cost_krw: number
     dlp_consumables_krw: number
     dlp_post_process_krw: number
+    dlp_support_per_cm2_krw?: number
 }
 
 type Props = {
@@ -77,18 +76,15 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         heightMm: 50,
         fdm_infill: FDM_INFILL_DEFAULT,
         fdm_layer_height: 0.2,
-        fdm_support_enabled: true,
         fdm_material_price_per_gram: 50,
         fdm_material_density: 1.24,
         sla_layer_height: 0.05,
         sla_material_price_per_ml: 150,
-        sla_post_processing: true,
         dlp_layer_height: 0.05,
         dlp_material_price_per_ml: 150,
-        dlp_post_processing: true,
     })
 
-    // FDM 계산 — QuotePanel과 동일 모듈 (쉘+인필, 지지면적 surface×0.3)
+    // FDM 계산 — QuotePanel과 동일 모듈 (쉘+인필, 지지면적 surface×0.3, 서포트 항상 포함)
     const fdmCalc = useMemo(() => {
         const ep = equipmentParams.fdm
         if (!ep) return null
@@ -104,7 +100,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
             pricePerGramKr: params.fdm_material_price_per_gram,
             infillPercent: params.fdm_infill,
             layerHeightMm: params.fdm_layer_height,
-            supportEnabled: params.fdm_support_enabled,
+            supportEnabled: true,
             overhangAreaCm2: null,
             hourlyRateKr: machineRate,
             fdmLaborCostKrw: ep.fdm_labor_cost_krw,
@@ -127,7 +123,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         }
     }, [params, equipmentParams.fdm])
 
-    // SLA 계산
+    // SLA 계산 — 서포트·기본 후처리 항상 포함 (고객 견적과 동일)
     const slaCalc = useMemo(() => {
         const ep = equipmentParams.sla
         if (!ep) return null
@@ -138,20 +134,23 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const q = calculateResinQuote({
             method: 'sla',
             volumeCm3: params.volumeCm3,
+            surfaceAreaCm2: params.surfaceAreaCm2,
             heightMm: params.heightMm,
             layerHeightMm: params.sla_layer_height,
             pricePerMlKr: params.sla_material_price_per_ml,
-            postProcessing: params.sla_post_processing,
+            postProcessing: true,
             hourlyRateKr: machineRate,
             layerExposureSec: ep.sla_layer_exposure_sec,
             laborCostKrw: ep.sla_labor_cost_krw,
             consumablesKrw: ep.sla_consumables_krw,
             postProcessKrw: ep.sla_post_process_krw,
+            supportPerCm2Krw: ep.sla_support_per_cm2_krw,
             applyVat: false,
         })
 
         return {
             materialCost: q.costBreakdown.material,
+            supportCost: q.costBreakdown.support,
             otherCost: q.costBreakdown.other,
             machineCost: q.costBreakdown.machine,
             laborCost: q.costBreakdown.labor,
@@ -162,7 +161,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         }
     }, [equipmentParams.sla, params])
 
-    // DLP 계산
+    // DLP 계산 — 서포트·기본 후처리 항상 포함 (고객 견적과 동일)
     const dlpCalc = useMemo(() => {
         const ep = equipmentParams.dlp
         if (!ep) return null
@@ -173,20 +172,23 @@ export default function PricingCalculator({ equipmentParams }: Props) {
         const q = calculateResinQuote({
             method: 'dlp',
             volumeCm3: params.volumeCm3,
+            surfaceAreaCm2: params.surfaceAreaCm2,
             heightMm: params.heightMm,
             layerHeightMm: params.dlp_layer_height,
             pricePerMlKr: params.dlp_material_price_per_ml,
-            postProcessing: params.dlp_post_processing,
+            postProcessing: true,
             hourlyRateKr: machineRate,
             layerExposureSec: ep.dlp_layer_exposure_sec,
             laborCostKrw: ep.dlp_labor_cost_krw,
             consumablesKrw: ep.dlp_consumables_krw,
             postProcessKrw: ep.dlp_post_process_krw,
+            supportPerCm2Krw: ep.dlp_support_per_cm2_krw,
             applyVat: false,
         })
 
         return {
             materialCost: q.costBreakdown.material,
+            supportCost: q.costBreakdown.support,
             otherCost: q.costBreakdown.other,
             machineCost: q.costBreakdown.machine,
             laborCost: q.costBreakdown.labor,
@@ -353,16 +355,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="fdm-support"
-                                checked={params.fdm_support_enabled}
-                                onChange={(e) => setParams({ ...params, fdm_support_enabled: e.target.checked })}
-                                className="w-4 h-4"
-                            />
-                            <Label htmlFor="fdm-support" className="text-sm text-white/90">지지 구조 사용</Label>
-                        </div>
+                        <p className="text-xs text-white/50">서포트(지지 구조)는 고객 견적과 동일하게 항상 포함됩니다.</p>
                     </TabsContent>
 
                     <TabsContent value="sla" className="space-y-4 mt-4">
@@ -387,16 +380,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="sla-post"
-                                checked={params.sla_post_processing}
-                                onChange={(e) => setParams({ ...params, sla_post_processing: e.target.checked })}
-                                className="w-4 h-4"
-                            />
-                            <Label htmlFor="sla-post" className="text-sm text-white/90">후가공 적용</Label>
-                        </div>
+                        <p className="text-xs text-white/50">서포트와 기본 후처리(세척·2차 경화·서포트 제거)는 고객 견적과 동일하게 항상 포함됩니다.</p>
                     </TabsContent>
 
                     <TabsContent value="dlp" className="space-y-4 mt-4">
@@ -421,16 +405,7 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="dlp-post"
-                                checked={params.dlp_post_processing}
-                                onChange={(e) => setParams({ ...params, dlp_post_processing: e.target.checked })}
-                                className="w-4 h-4"
-                            />
-                            <Label htmlFor="dlp-post" className="text-sm text-white/90">후가공 적용</Label>
-                        </div>
+                        <p className="text-xs text-white/50">서포트와 기본 후처리(세척·2차 경화·서포트 제거)는 고객 견적과 동일하게 항상 포함됩니다.</p>
                     </TabsContent>
                 </Tabs>
 
@@ -449,9 +424,15 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                                 <span className="font-mono text-white">₩{Math.round(currentCalc.materialCost).toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-white/60">{method === 'fdm' ? '지지구조비' : '기타비용'}</span>
-                                <span className="font-mono text-white">₩{Math.round(method === 'fdm' ? (currentCalc as any).supportCost : (currentCalc as any).otherCost).toLocaleString()}</span>
+                                <span className="text-white/60">서포트비</span>
+                                <span className="font-mono text-white">₩{Math.round(currentCalc.supportCost).toLocaleString()}</span>
                             </div>
+                            {'otherCost' in currentCalc && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-white/60">소모품·기본 후처리</span>
+                                    <span className="font-mono text-white">₩{Math.round(currentCalc.otherCost).toLocaleString()}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-sm">
                                 <span className="text-white/60">장비비</span>
                                 <span className="font-mono text-white">₩{Math.round(currentCalc.machineCost).toLocaleString()}</span>
@@ -484,19 +465,19 @@ export default function PricingCalculator({ equipmentParams }: Props) {
                                     {currentCalc.numLayers.toLocaleString()} layers
                                 </div>
                             </div>
-                            {method === 'fdm' && (
+                            {'weightGrams' in currentCalc && (
                                 <div className="p-3 rounded-lg bg-white/5 col-span-2">
                                     <div className="text-[10px] text-white/50 uppercase">소재 사용량</div>
                                     <div className="text-lg font-bold text-white mt-1">
-                                        {(currentCalc as any).weightGrams.toFixed(1)} g
+                                        {currentCalc.weightGrams.toFixed(1)} g
                                     </div>
                                 </div>
                             )}
-                            {(method === 'sla' || method === 'dlp') && (
+                            {'volumeML' in currentCalc && (
                                 <div className="p-3 rounded-lg bg-white/5 col-span-2">
                                     <div className="text-[10px] text-white/50 uppercase">레진 사용량</div>
                                     <div className="text-lg font-bold text-white mt-1">
-                                        {(currentCalc as any).volumeML.toFixed(1)} mL
+                                        {currentCalc.volumeML.toFixed(1)} mL
                                     </div>
                                 </div>
                             )}

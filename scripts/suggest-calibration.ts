@@ -83,6 +83,7 @@ function autoMaterialAndHours(s: Sample, m: RefModel): { material: number; hours
     const q = calculateResinQuote({
         method: s.method,
         volumeCm3: m.volumeCm3,
+        surfaceAreaCm2: m.surfaceAreaCm2,
         heightMm: m.heightMm,
         layerHeightMm: SLA_LAYER_DEFAULT,
         pricePerMlKr: 150,
@@ -181,6 +182,7 @@ const dlpDefs = resinDefaults('dlp')
 const slaQ = calculateResinQuote({
     method: 'sla',
     volumeCm3: mid.volumeCm3,
+    surfaceAreaCm2: mid.surfaceAreaCm2,
     heightMm: mid.heightMm,
     layerHeightMm: SLA_LAYER_DEFAULT,
     pricePerMlKr: 150,
@@ -192,6 +194,7 @@ const slaQ = calculateResinQuote({
 const dlpQ = calculateResinQuote({
     method: 'dlp',
     volumeCm3: mid.volumeCm3,
+    surfaceAreaCm2: mid.surfaceAreaCm2,
     heightMm: mid.heightMm,
     layerHeightMm: SLA_LAYER_DEFAULT,
     pricePerMlKr: 150,

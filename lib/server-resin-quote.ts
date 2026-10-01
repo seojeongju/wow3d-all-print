@@ -25,6 +25,7 @@ type D1Like = {
 export type ServerResinQuoteInput = {
     method: ResinMethod
     volumeCm3: number
+    surfaceAreaCm2: number
     heightMm: number
     layerHeightMm: number | null
     resinTypeName: string | null
@@ -105,10 +106,12 @@ async function loadResinEquipment(db: D1Like, method: ResinMethod) {
             sla_labor_cost_krw: number | null
             sla_consumables_krw: number | null
             sla_post_process_krw: number | null
+            sla_support_per_cm2_krw?: number | null
             dlp_layer_exposure_sec: number | null
             dlp_labor_cost_krw: number | null
             dlp_consumables_krw: number | null
             dlp_post_process_krw: number | null
+            dlp_support_per_cm2_krw?: number | null
         }>()
 
     if (!row) {
@@ -119,6 +122,7 @@ async function loadResinEquipment(db: D1Like, method: ResinMethod) {
             laborCostKrw: defaults.laborCostKrw,
             consumablesKrw: defaults.consumablesKrw,
             postProcessKrw: defaults.postProcessKrw,
+            supportPerCm2Krw: defaults.supportPerCm2Krw,
             minPriceKr: undefined as number | undefined,
         }
     }
@@ -135,6 +139,7 @@ async function loadResinEquipment(db: D1Like, method: ResinMethod) {
             laborCostKrw: row.dlp_labor_cost_krw ?? defaults.laborCostKrw,
             consumablesKrw: row.dlp_consumables_krw ?? defaults.consumablesKrw,
             postProcessKrw: row.dlp_post_process_krw ?? defaults.postProcessKrw,
+            supportPerCm2Krw: row.dlp_support_per_cm2_krw ?? defaults.supportPerCm2Krw,
         }
     }
 
@@ -146,6 +151,7 @@ async function loadResinEquipment(db: D1Like, method: ResinMethod) {
         laborCostKrw: row.sla_labor_cost_krw ?? defaults.laborCostKrw,
         consumablesKrw: row.sla_consumables_krw ?? defaults.consumablesKrw,
         postProcessKrw: row.sla_post_process_krw ?? defaults.postProcessKrw,
+        supportPerCm2Krw: row.sla_support_per_cm2_krw ?? defaults.supportPerCm2Krw,
     }
 }
 
@@ -177,6 +183,7 @@ export async function resolveServerResinQuote(
         const q = calculateResinQuote({
             method: input.method,
             volumeCm3: input.volumeCm3,
+            surfaceAreaCm2: input.surfaceAreaCm2,
             heightMm: input.heightMm,
             layerHeightMm: layer,
             pricePerMlKr: material.pricePerMl,
@@ -186,6 +193,7 @@ export async function resolveServerResinQuote(
             laborCostKrw: equipment.laborCostKrw,
             consumablesKrw: equipment.consumablesKrw,
             postProcessKrw: equipment.postProcessKrw,
+            supportPerCm2Krw: equipment.supportPerCm2Krw,
             applyVat: true,
             minPriceKr: equipment.minPriceKr,
         })

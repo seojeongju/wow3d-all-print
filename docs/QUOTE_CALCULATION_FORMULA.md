@@ -104,7 +104,7 @@
 ### SLA/DLP 방식
 
 ```
-총 견적금액 = 레진비 + 기타비용 + 장비비 + 인건비
+총 견적금액 = 레진비 + 서포트비 + 기타비용 + 장비비 + 인건비
 
 구현 위치: lib/resin-quote.ts (QuotePanel / PricingCalculator / 서버 재계산 공통)
 시간: lib/print-time-estimate.ts → estimateResinPrintTimeHours
@@ -112,8 +112,14 @@
 1. 레진비
    resinCost = pricePerMl × volumeCm3  (1 cm³ ≈ 1 mL)
 
-2. 기타비용
-   consumables + (postProcessing ? postProcess : 0)
+1-1. 서포트비 (항상 포함)
+   supportArea = 표면적(구 표면 ×12 상한) × 0.3
+   supportCost = min(sla/dlp_support_per_cm2_krw × supportArea, max(resinCost × 3, 5,000))
+   ※ 기본 단가 SLA 60원/cm², DLP 50원/cm² (관리자 장비 설정에서 변경)
+   ※ 화면 견적과 서버 재계산이 같도록 오버행 측정값 대신 표면적 비율 사용
+
+2. 기타비용 (기본 후처리 항상 포함)
+   consumables + postProcess
 
 3. 출력 시간
    numLayers = ceil(heightMm / layerHeight)

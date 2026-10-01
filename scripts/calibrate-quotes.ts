@@ -119,6 +119,7 @@ function quoteSla(m: RefModel, post = DEFAULTS.sla.postProcessing) {
     return calculateResinQuote({
         method: 'sla',
         volumeCm3: m.volumeCm3,
+        surfaceAreaCm2: m.surfaceAreaCm2,
         heightMm: m.heightMm,
         layerHeightMm: DEFAULTS.sla.layerHeightMm,
         pricePerMlKr: DEFAULTS.sla.pricePerMlKr,
@@ -136,6 +137,7 @@ function quoteDlp(m: RefModel, post = DEFAULTS.dlp.postProcessing) {
     return calculateResinQuote({
         method: 'dlp',
         volumeCm3: m.volumeCm3,
+        surfaceAreaCm2: m.surfaceAreaCm2,
         heightMm: m.heightMm,
         layerHeightMm: DEFAULTS.dlp.layerHeightMm,
         pricePerMlKr: DEFAULTS.dlp.pricePerMlKr,
@@ -190,6 +192,7 @@ for (const lh of [0.025, 0.05, 0.1]) {
     const q = calculateResinQuote({
         method: 'sla',
         volumeCm3: mid.volumeCm3,
+        surfaceAreaCm2: mid.surfaceAreaCm2,
         heightMm: mid.heightMm,
         layerHeightMm: lh,
         pricePerMlKr: DEFAULTS.sla.pricePerMlKr,

@@ -200,6 +200,7 @@ export async function POST(request: NextRequest) {
                 const serverQuote = await resolveServerResinQuote(env.DB, {
                     method: body.printMethod,
                     volumeCm3,
+                    surfaceAreaCm2,
                     heightMm: dimensionsZ,
                     layerHeightMm: layerThickness,
                     resinTypeName: resinTypeName,
