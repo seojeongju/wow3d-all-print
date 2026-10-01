@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_NAVER_TALKTALK_ID || 'wowi7tu',
     NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL:
       process.env.NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL ||
-      'https://talk.naver.com/profile/wowi7tu',
+      'https://talk.naver.com/ct/wowi7tu',
     NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID:
       process.env.NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID || '',
   },

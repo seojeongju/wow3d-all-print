@@ -4,7 +4,7 @@ import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { Boxes, ArrowUpRight, Facebook, Instagram, BookOpen, Users, ChevronDown, MessageCircle, MapPin, Phone, Mail } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
+import { getNaverTalkTalkChatUrl, openNaverTalkTalkPopup } from '@/lib/naver-talktalk'
 import { MAKERSPACES } from '@/lib/makerspaces'
 
 export default function Footer() {
@@ -66,6 +66,7 @@ export default function Footer() {
                                     href={url}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    onClick={url === talkUrl ? (e) => openNaverTalkTalkPopup(e, url) : undefined}
                                     aria-label={name}
                                     title={name}
                                     className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50 transition-all active:scale-95 shadow-sm"
@@ -145,6 +146,7 @@ export default function Footer() {
                                             href={talkUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
+                                            onClick={(e) => openNaverTalkTalkPopup(e, talkUrl)}
                                             className="inline-flex items-center gap-1.5 text-[15px] text-[#03A05A] font-bold hover:underline"
                                         >
                                             <MessageCircle className="w-4 h-4" />

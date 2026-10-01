@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Send, User, Mail, Phone, MessageSquare, FileText, HelpCircle, Home, Upload, Paperclip, X, ExternalLink } from 'lucide-react'
 import { showToast } from '@/lib/toast-helper'
-import { getNaverTalkTalkChatUrl } from '@/lib/naver-talktalk'
+import { getNaverTalkTalkChatUrl, openNaverTalkTalkPopup } from '@/lib/naver-talktalk'
 import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon'
 import { motion } from 'framer-motion'
 import Header from '@/components/layout/Header'
@@ -250,6 +250,7 @@ export default function ContactPage() {
                             href={talkUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => openNaverTalkTalkPopup(e, talkUrl)}
                             className="flex items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-[#03C75A]/10 border border-[#03C75A]/30 hover:bg-[#03C75A]/15 hover:border-[#03C75A]/50 transition-colors group"
                         >
                             <div className="flex items-center gap-4 min-w-0">

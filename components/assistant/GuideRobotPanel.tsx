@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Calculator, ExternalLink, HelpCircle, Loader2, Mail, Search, TrendingUp, X } from 'lucide-react'
 import { Link, useRouter } from '@/i18n/navigation'
 import { NaverTalkTalkIcon } from '@/components/icons/NaverTalkTalkIcon'
+import { openNaverTalkTalkPopup } from '@/lib/naver-talktalk'
 import { Highlight, SEARCH_TYPE_ICON, fetchPopular, logSearch, useDebouncedSearch } from '@/components/search/search-client'
 import { GUIDE_ROBOT_HEIGHT, GUIDE_ROBOT_IMAGE, GUIDE_ROBOT_WIDTH } from './guide-robot-image'
 
@@ -227,7 +228,10 @@ export default function GuideRobotPanel({ onClose, talkUrl }: Props) {
                             href={talkUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={onClose}
+                            onClick={(e) => {
+                                openNaverTalkTalkPopup(e, talkUrl)
+                                onClose()
+                            }}
                             className="group flex items-center gap-3 rounded-2xl bg-[#03C75A] px-4 py-3 text-white shadow-lg shadow-[#03C75A]/25 hover:brightness-110 transition"
                         >
                             <span className="w-10 h-10 rounded-full bg-white/15 ring-1 ring-white/70 flex items-center justify-center shrink-0">
