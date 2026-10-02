@@ -56,20 +56,26 @@ type RecentOrder = {
     status: string;
 };
 
-const ORDER_STATUS_LABEL: Record<string, string> = {
-    pending: '접수대기',
-    confirmed: '주문확인',
-    quote_sent: '견적발송',
-    payment_confirmed: '결제확인',
-    production: '제작중',
-    shipping: '배송중',
-    delivered: '배송완료',
-    completed: '완료',
-    cancelled: '취소',
+/** 주문관리 목록 배지와 같은 색상 */
+const ORDER_STATUS_BADGE: Record<string, { label: string; className: string }> = {
+    pending: { label: '접수 대기', className: 'border-amber-500/30 bg-amber-500/20 text-amber-400' },
+    confirmed: { label: '주문 확인', className: 'border-blue-500/30 bg-blue-500/20 text-blue-400' },
+    quote_sent: { label: '견적 발송', className: 'border-emerald-500/30 bg-emerald-500/20 text-emerald-400' },
+    payment_confirmed: { label: '결제 확인', className: 'border-teal-500/30 bg-teal-500/20 text-teal-400' },
+    production: { label: '제작 중', className: 'border-purple-500/30 bg-purple-500/20 text-purple-400' },
+    shipping: { label: '배송 중', className: 'border-indigo-500/30 bg-indigo-500/20 text-indigo-400' },
+    delivered: { label: '배송 완료', className: 'border-sky-500/30 bg-sky-500/20 text-sky-400' },
+    completed: { label: '완료됨', className: 'border-emerald-500/30 bg-emerald-500/20 text-emerald-400' },
+    cancelled: { label: '취소', className: 'border-red-500/30 bg-red-500/20 text-red-400' },
 };
 
-function getOrderStatusLabel(status: string) {
-    return ORDER_STATUS_LABEL[status] || status || '-';
+function getOrderStatusBadge(status: string) {
+    return (
+        ORDER_STATUS_BADGE[status] ?? {
+            label: status || '미정',
+            className: 'border-white/10 bg-white/10 text-white/60',
+        }
+    );
 }
 
 type Stats = {
@@ -518,23 +524,15 @@ export default function AdminDashboard() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="shrink-0 text-right">
+                                                <div className="flex shrink-0 flex-col items-end gap-1 text-right">
                                                     <div className="text-xs font-black tabular-nums text-white">
                                                         ₩ {Number(o.totalAmount || 0).toLocaleString()}
                                                     </div>
-                                                    <div
-                                                        className={`text-[9px] font-bold ${
-                                                            o.status === 'completed'
-                                                                ? 'text-emerald-400'
-                                                                : o.status === 'cancelled'
-                                                                  ? 'text-red-400'
-                                                                  : o.status === 'pending'
-                                                                    ? 'text-amber-400'
-                                                                    : 'text-white/60'
-                                                        }`}
+                                                    <span
+                                                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold leading-none ${getOrderStatusBadge(o.status).className}`}
                                                     >
-                                                        {getOrderStatusLabel(o.status)}
-                                                    </div>
+                                                        {getOrderStatusBadge(o.status).label}
+                                                    </span>
                                                 </div>
                                             </Link>
                                         ))
