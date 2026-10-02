@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description = t('metaDescription')
     const path = customPath(locale)
     const canonical = `${SITE_URL}${path}`
-    const ogImages = buildOgImages()
+    const ogImages = buildOgImages(locale)
 
     return {
         title,
@@ -91,7 +91,7 @@ export default async function CustomProductsPage({ params }: Props) {
             hubPath
         ),
         buildBreadcrumbSchema([
-            { name: '홈', path: locale === 'en' ? '/en' : '/' },
+            { name: locale === 'en' ? 'Home' : '홈', path: locale === 'en' ? '/en' : '/' },
             { name: t('backToHub'), path: hubPath },
         ]),
     ]

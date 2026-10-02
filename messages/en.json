@@ -44,7 +44,8 @@
     "menu": "Menu",
     "closeMenu": "Close menu",
     "openMenu": "Open menu",
-    "submenu": "{label} submenu"
+    "submenu": "{label} submenu",
+    "homeLabel": "Go to WOW3D PRO home"
   },
   "Footer": {
     "tagline": "AI-powered instant 3D printing quotes and industrial fabrication for print services, prototypes, and small-batch production.",
@@ -236,7 +237,9 @@
       "similarQuote": "Ask about a similar prototype",
       "photoCounter": "Photo {current} / {total}",
       "prevItem": "Previous item",
-      "nextItem": "Next item"
+      "nextItem": "Next item",
+      "imageCount": "{count} photos",
+      "noImage": "No image"
     },
     "servicesSection": {
       "title": "Our services",
@@ -2774,6 +2777,9 @@
     "tabAiJobs": "AI conversions",
     "tabQuotes": "Saved quotes",
     "tabProfile": "Profile",
+    "tabListLabel": "My account menu",
+    "modelPreviewLabel": "3D model preview",
+    "modelPreviewNamedLabel": "{name} 3D preview",
     "quoteSentTitle": "Your quote has been sent! 📧",
     "quoteSentDesc": "Quotes were sent for {count} order(s). Please review the amount and proceed to payment.",
     "quoteSentButton": "Quote #{tail}",
@@ -3959,6 +3965,29 @@
     "svgUploadTitle": "Use SVG directly (no conversion)",
     "converting": "Converting… tap × to cancel",
     "templateTitle": "Badge · keycap templates",
+    "templates": {
+      "badge-circle": {
+        "name": "Round badge",
+        "description": "Ø40mm disc with rim. Magnet cup (Ø10) on the back."
+      },
+      "badge-rect": {
+        "name": "Square badge",
+        "description": "40×40mm rounded plate with rim. Safety-pin groove on the back."
+      },
+      "keycap-1u": {
+        "name": "Keycap 1U",
+        "description": "18×18mm keycap with a simplified Cherry MX stem (FDM clearance)."
+      }
+    },
+    "swatches": {
+      "white": "White",
+      "ink": "Ink",
+      "slate": "Slate",
+      "teal": "Teal",
+      "indigo": "Indigo",
+      "red": "Red",
+      "gold": "Gold"
+    },
     "templateHint": "After selecting, resize below. Tap the same item again to deselect.",
     "templateToggleOff": "Tap again to deselect",
     "templateApply": "Apply {name}",

@@ -38,7 +38,9 @@ function MethodIcon({ method }: { method?: string | null }) {
 }
 
 // 이미지 없음 플레이스홀더 (실제 파일 요청 없이 사용)
-const PLACEHOLDER_DATA_URI = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%231e1e2e"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%234d4d66" font-size="14" font-family="sans-serif">이미지 없음</text></svg>';
+function placeholderDataUri(label: string): string {
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%231e1e2e"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%234d4d66" font-size="14" font-family="sans-serif">${encodeURIComponent(label)}</text></svg>`;
+}
 
 // 이미지 URL 변환 (R2 key → API 엔드포인트) — 하위 호환 re-export
 export function resolveImageUrl(url: string): string {
@@ -49,6 +51,8 @@ export function resolveImageUrl(url: string): string {
 // 이미지 + 로드 실패 시 1회 재시도 (간헐적 미표시 완화)
 // ─────────────────────────────────────────────────────
 function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
+    const t = useTranslations('Home.gallery');
+    const placeholder = placeholderDataUri(t('noImage'));
     const [src, setSrc] = useState(resolveImageUrl(imageUrl));
     const [retried, setRetried] = useState(false);
 
@@ -60,16 +64,16 @@ function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) 
 
     const handleError = useCallback(() => {
         if (retried) {
-            setSrc(PLACEHOLDER_DATA_URI);
+            setSrc(placeholder);
             return;
         }
         if (src.startsWith('/api/')) {
             setRetried(true);
             setTimeout(() => setSrc((s) => s + (s.includes('?') ? '&' : '?') + 'r=' + Date.now()), 400);
         } else {
-            setSrc(PLACEHOLDER_DATA_URI);
+            setSrc(placeholder);
         }
-    }, [retried, src]);
+    }, [retried, src, placeholder]);
 
     // image_url이 바뀌면 초기화
     useEffect(() => {
@@ -105,6 +109,7 @@ export function GalleryCard({
     /** 지정 시 카드 전체가 이 경로로 이동 (클릭 안정성) */
     href?: string;
 }) {
+    const t = useTranslations('Home.gallery');
     const tags: string[] = (() => {
         try { return JSON.parse(item.tags || '[]'); } catch { return []; }
     })();
@@ -132,7 +137,7 @@ export function GalleryCard({
                     )}
                     {!item.source_image_url && (item.images?.length ?? 0) > 1 && (
                         <div className="pointer-events-none absolute top-3 right-3 px-2 py-1 rounded-lg bg-black/70 text-[9px] font-black tracking-wider text-white">
-                            {item.images!.length}장
+                            {t('imageCount', { count: item.images!.length })}
                         </div>
                     )}
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

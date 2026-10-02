@@ -12,6 +12,9 @@ export type ShowcaseCategoryDefaults = {
     defaultTitle: string;
     defaultDescription: string;
     defaultFeatures: string[];
+    defaultTitleEn: string;
+    defaultDescriptionEn: string;
+    defaultFeaturesEn: string[];
     /** /public 기준 정적 폴백 이미지 */
     fallbackImage: string;
 };
@@ -23,6 +26,10 @@ export const SHOWCASE_DEFAULTS: ShowcaseCategoryDefaults[] = [
         defaultDescription:
             '최종 생산 라인에 즉시 투입 가능한 고강도 엔지니어링 플라스틱 부품 제조',
         defaultFeatures: ['기능성 검증', '생산 공정 최적화', '경량화 설계'],
+        defaultTitleEn: 'Industrial Parts & Jigs',
+        defaultDescriptionEn:
+            'High-strength engineering plastic parts ready to go straight onto the production line',
+        defaultFeaturesEn: ['Functional validation', 'Process optimization', 'Lightweight design'],
         fallbackImage: '/images/expert/industrial.png',
     },
     {
@@ -30,6 +37,10 @@ export const SHOWCASE_DEFAULTS: ShowcaseCategoryDefaults[] = [
         defaultTitle: '의료 & 덴탈 솔루션',
         defaultDescription: 'CT/MRI 데이터를 기반으로 한 안면 모델링 및 맞춤형 수술 가이드 제작',
         defaultFeatures: ['생체 적합 소재', '1:1 맞춤 제작', '고정밀 출력'],
+        defaultTitleEn: 'Medical & Dental Solutions',
+        defaultDescriptionEn:
+            'Facial models and custom surgical guides built from CT/MRI data',
+        defaultFeaturesEn: ['Biocompatible materials', '1:1 custom builds', 'High-precision printing'],
         fallbackImage: '/images/expert/medical.png',
     },
     {
@@ -38,6 +49,10 @@ export const SHOWCASE_DEFAULTS: ShowcaseCategoryDefaults[] = [
         defaultDescription:
             '복잡한 디테일의 예술 작품 및 게임/애니메이션 캐릭터 풀컬러/고해상도 구현',
         defaultFeatures: ['정밀 디테일', '후가공 전문성', '풀컬러 지원'],
+        defaultTitleEn: 'Art & Character Figures',
+        defaultDescriptionEn:
+            'Highly detailed artwork and game/animation characters in full color and high resolution',
+        defaultFeaturesEn: ['Fine detail', 'Expert post-processing', 'Full-color support'],
         fallbackImage: '/images/expert/art.png',
     },
     {
@@ -46,12 +61,27 @@ export const SHOWCASE_DEFAULTS: ShowcaseCategoryDefaults[] = [
         defaultDescription:
             '분양 단지 모형 및 신제품 출시 전 디자인 검토를 위한 화이트 데스크 목업',
         defaultFeatures: ['대형 출력 지원', '정밀 스케일', '재질감 구현'],
+        defaultTitleEn: 'Architecture & Mock-ups',
+        defaultDescriptionEn:
+            'Housing-development scale models and white desk mock-ups for pre-launch design reviews',
+        defaultFeaturesEn: ['Large-format printing', 'Accurate scale', 'Realistic textures'],
         fallbackImage: '/images/expert/architecture.png',
     },
 ];
 
 export function defaultsForSlug(slug: string): ShowcaseCategoryDefaults | undefined {
     return SHOWCASE_DEFAULTS.find((d) => d.slug === slug);
+}
+
+/** 언어별 기본 문구 (영문은 DB 한글 편집값 대신 영문 기본값 사용) */
+export function localizedShowcaseDefaults(
+    def: ShowcaseCategoryDefaults,
+    locale?: string,
+): { title: string; description: string; features: string[] } {
+    if (locale === 'en') {
+        return { title: def.defaultTitleEn, description: def.defaultDescriptionEn, features: def.defaultFeaturesEn };
+    }
+    return { title: def.defaultTitle, description: def.defaultDescription, features: def.defaultFeatures };
 }
 
 /** R2에 저장된 키 → 공개 미디어 API 경로 (키는 showcase/로 시작) */

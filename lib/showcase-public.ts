@@ -3,6 +3,7 @@ import {
     SHOWCASE_DEFAULTS,
     SHOWCASE_SLUGS,
     defaultsForSlug,
+    localizedShowcaseDefaults,
     parseFeaturesJson,
     showcaseMediaUrlFromKey,
     type ShowcaseSlug,
@@ -42,18 +43,17 @@ export type ShowcaseDetail = {
     examples: ShowcaseExample[];
 };
 
-export function buildFallbackShowcaseCards(): ShowcaseCategoryCard[] {
+export function buildFallbackShowcaseCards(locale?: string): ShowcaseCategoryCard[] {
     return SHOWCASE_DEFAULTS.map((d) => ({
         slug: d.slug,
-        title: d.defaultTitle,
-        description: d.defaultDescription,
-        features: d.defaultFeatures,
+        ...localizedShowcaseDefaults(d, locale),
         cardImageUrl: d.fallbackImage,
     }));
 }
 
 /** /expert 카드용 카테고리 목록 */
-export async function getShowcaseCategories(): Promise<ShowcaseCategoryCard[]> {
+export async function getShowcaseCategories(locale?: string): Promise<ShowcaseCategoryCard[]> {
+    const isEn = locale === 'en';
     const storeId = DEFAULT_STORE_ID;
     const rows: Record<string, Record<string, unknown>> = {};
 
@@ -77,11 +77,12 @@ export async function getShowcaseCategories(): Promise<ShowcaseCategoryCard[]> {
     return SHOWCASE_SLUGS.map((slug) => {
         const def = defaultsForSlug(slug)!;
         const row = rows[slug];
-        const title = (row?.title as string)?.trim() || def.defaultTitle;
-        const description = (row?.description as string)?.trim() || def.defaultDescription;
-        const features = row?.features_json
+        const base = localizedShowcaseDefaults(def, locale);
+        const title = isEn ? base.title : (row?.title as string)?.trim() || base.title;
+        const description = isEn ? base.description : (row?.description as string)?.trim() || base.description;
+        const features = !isEn && row?.features_json
             ? parseFeaturesJson(row.features_json as string)
-            : def.defaultFeatures;
+            : base.features;
         const cardKey = (row?.card_image_key as string)?.trim() || '';
         const cardImageUrl = cardKey ? showcaseMediaUrlFromKey(cardKey) : def.fallbackImage;
         return { slug, title, description, features, cardImageUrl };
@@ -89,11 +90,10 @@ export async function getShowcaseCategories(): Promise<ShowcaseCategoryCard[]> {
 }
 
 /** 카테고리 상세 + 제작 예시 (SSR용) */
-export async function getShowcaseDetail(slug: ShowcaseSlug): Promise<ShowcaseDetail> {
+export async function getShowcaseDetail(slug: ShowcaseSlug, locale?: string): Promise<ShowcaseDetail> {
     const def = defaultsForSlug(slug)!;
-    let title = def.defaultTitle;
-    let description = def.defaultDescription;
-    let features = def.defaultFeatures;
+    const isEn = locale === 'en';
+    let { title, description, features } = localizedShowcaseDefaults(def, locale);
     let heroImageUrl = def.fallbackImage;
     const examples: ShowcaseExample[] = [];
     const storeId = DEFAULT_STORE_ID;
@@ -117,9 +117,9 @@ export async function getShowcaseDetail(slug: ShowcaseSlug): Promise<ShowcaseDet
             }>();
 
         if (row) {
-            if (row.title?.trim()) title = row.title.trim();
-            if (row.description?.trim()) description = row.description.trim();
-            if (row.features_json && parseFeaturesJson(row.features_json).length) {
+            if (!isEn && row.title?.trim()) title = row.title.trim();
+            if (!isEn && row.description?.trim()) description = row.description.trim();
+            if (!isEn && row.features_json && parseFeaturesJson(row.features_json).length) {
                 features = parseFeaturesJson(row.features_json);
             }
             if (row.card_image_key?.trim()) {

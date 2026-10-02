@@ -38,7 +38,7 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                             type="button"
                             onClick={() => onApply(tmpl.id)}
                             aria-pressed={active}
-                            title={active ? t('templateToggleOff') : t('templateApply', { name: tmpl.name })}
+                            title={active ? t('templateToggleOff') : t('templateApply', { name: t(`templates.${tmpl.id}.name`) })}
                             className={cn(
                                 'text-left rounded-xl border px-3 py-2.5 transition-all',
                                 active
@@ -55,7 +55,7 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                                 </span>
                                 <span className="min-w-0">
                                     <span className="block text-[12px] font-black text-white">
-                                        {tmpl.name}
+                                        {t(`templates.${tmpl.id}.name`)}
                                         {active && (
                                             <span className="ml-1.5 text-teal-300 font-bold">
                                                 {tmpl.id === 'keycap-1u'
@@ -65,7 +65,7 @@ export function MakerTemplatePicker({ activeId, onApply }: Props) {
                                         )}
                                     </span>
                                     <span className="block text-[11px] text-white/75 font-bold leading-relaxed break-keep mt-0.5">
-                                        {tmpl.description}
+                                        {t(`templates.${tmpl.id}.description`)}
                                     </span>
                                 </span>
                             </div>

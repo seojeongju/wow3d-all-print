@@ -10,12 +10,12 @@ import QuickProcessSteps from "@/components/home/QuickProcessSteps";
 import CTA from "@/components/home/CTA";
 import HomeFAQ from "@/components/home/HomeFAQ";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { QnAItem } from "@/lib/qna";
-import { OG_IMAGE_ALT, OG_IMAGE_PATH } from "@/lib/site-url";
+import { ogImageAlt, OG_IMAGE_PATH } from "@/lib/site-url";
 
 const MakerWorkspace = dynamic(
   () => import("@/components/maker/MakerWorkspace").then((mod) => mod.MakerWorkspace),
@@ -32,6 +32,7 @@ type HomePageClientProps = {
 };
 
 export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
+  const locale = useLocale();
   const tFeatured = useTranslations('Home.featured');
   const tNoFile = useTranslations('Home.noFile');
   const tGuides = useTranslations('Home.moreGuides');
@@ -51,7 +52,7 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
         <div className="container mx-auto px-4 py-8 sm:py-10 flex flex-col sm:flex-row items-center gap-5 sm:gap-8">
           <img
             src={OG_IMAGE_PATH}
-            alt={OG_IMAGE_ALT}
+            alt={ogImageAlt(locale)}
             width={1200}
             height={1200}
             className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover border border-white/10 shadow-xl shrink-0"

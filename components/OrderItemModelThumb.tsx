@@ -1,6 +1,7 @@
 'use client';
 
 import { Box } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import ModelThumbnail from '@/components/ModelThumbnail';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ export default function OrderItemModelThumb({
   size = 256,
   onClick,
 }: OrderItemModelThumbProps) {
+  const t = useTranslations('MyAccount');
   const interactive = Boolean(onClick && fileUrl);
   const content = fileUrl ? (
     <ModelThumbnail
@@ -48,7 +50,7 @@ export default function OrderItemModelThumb({
       <button
         type="button"
         onClick={onClick}
-        aria-label={fileName ? `${fileName} 3D 미리보기` : '3D 모델 미리보기'}
+        aria-label={fileName ? t('modelPreviewNamedLabel', { name: fileName }) : t('modelPreviewLabel')}
         className={shellClass}
       >
         {content}

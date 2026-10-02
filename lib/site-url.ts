@@ -34,6 +34,19 @@ export const OG_IMAGE_ALT = '와우쓰리디 WOW3D 3D프린팅출력·3D프린�
 export const OG_QUOTE_IMAGE_ALT =
     '와우쓰리디 WOW3D 3D프린팅 자동견적 — 파일 업로드 후 즉시 출력 가격 확인';
 
+export const EN_SITE_NAME = 'WOW3D Co., Ltd.';
+export const EN_BRAND_SUFFIX = 'WOW3D Co., Ltd.';
+export const OG_IMAGE_ALT_EN = 'WOW3D 3D printing service — prototypes and industrial parts';
+export const OG_QUOTE_IMAGE_ALT_EN = 'WOW3D instant 3D printing quote — upload a file and see the price';
+
+export function ogImageAlt(locale?: string): string {
+    return locale === 'en' ? OG_IMAGE_ALT_EN : OG_IMAGE_ALT;
+}
+
+export function ogQuoteImageAlt(locale?: string): string {
+    return locale === 'en' ? OG_QUOTE_IMAGE_ALT_EN : OG_QUOTE_IMAGE_ALT;
+}
+
 const LOCALHOST_RE = /^https?:\/\/localhost(:\d+)?(\/|$)/i;
 const APEX_ORIGIN = 'https://wow3dp.co.kr';
 
@@ -72,40 +85,41 @@ export type OgImageDescriptor = {
 };
 
 /** 홈·공통 페이지 OG 이미지 (정사각 우선 → 네이버 썸네일) */
-export function buildOgImages(): OgImageDescriptor[] {
+export function buildOgImages(locale?: string): OgImageDescriptor[] {
+    const alt = ogImageAlt(locale);
     return [
         {
             url: absoluteUrl(OG_IMAGE_PATH),
             width: OG_IMAGE_WIDTH,
             height: OG_IMAGE_HEIGHT,
-            alt: OG_IMAGE_ALT,
+            alt,
             type: 'image/jpeg',
         },
         {
             url: absoluteUrl(OG_IMAGE_WIDE_PATH),
             width: OG_IMAGE_WIDE_WIDTH,
             height: OG_IMAGE_WIDE_HEIGHT,
-            alt: OG_IMAGE_ALT,
+            alt,
             type: 'image/jpeg',
         },
     ];
 }
 
 /** 자동견적 페이지 전용 OG (고유 URL) */
-export function buildQuoteOgImages(): OgImageDescriptor[] {
+export function buildQuoteOgImages(locale?: string): OgImageDescriptor[] {
     return [
         {
             url: absoluteUrl(OG_QUOTE_IMAGE_PATH),
             width: OG_QUOTE_IMAGE_WIDTH,
             height: OG_QUOTE_IMAGE_HEIGHT,
-            alt: OG_QUOTE_IMAGE_ALT,
+            alt: ogQuoteImageAlt(locale),
             type: 'image/jpeg',
         },
         {
             url: absoluteUrl(OG_IMAGE_PATH),
             width: OG_IMAGE_WIDTH,
             height: OG_IMAGE_HEIGHT,
-            alt: OG_IMAGE_ALT,
+            alt: ogImageAlt(locale),
             type: 'image/jpeg',
         },
     ];

@@ -1,5 +1,7 @@
+import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
-import { getMessages, setRequestLocale } from 'next-intl/server'
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
+import { buildOgImages, EN_BRAND_SUFFIX, EN_SITE_NAME } from '@/lib/site-url'
 import { hasLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
@@ -15,6 +17,26 @@ type Props = {
 
 export function generateStaticParams() {
     return routing.locales.map((locale) => ({ locale }))
+}
+
+/** 루트 layout의 한국어 제목 템플릿·사이트명을 언어별로 덮어씀 */
+export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
+    const { locale } = await params
+    if (locale !== 'en') return {}
+    const t = await getTranslations({ locale, namespace: 'Home' })
+    return {
+        title: {
+            default: t('metaTitle'),
+            template: `%s | ${EN_BRAND_SUFFIX}`,
+        },
+        description: t('metaDescription'),
+        openGraph: {
+            type: 'website',
+            locale: 'en_US',
+            siteName: EN_SITE_NAME,
+            images: buildOgImages('en'),
+        },
+    }
 }
 
 export default async function LocaleLayout({ children, params }: Props) {

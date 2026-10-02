@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             },
         },
         openGraph: {
-            images: buildOgImages(),
+            images: buildOgImages(locale),
             title: t('showcaseOgTitle', { title: categoryTitle }),
             description,
             url: canonical,
@@ -68,8 +68,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ExpertShowcasePage({ params }: Props) {
     const { locale: localeParam, slug } = await params
-    setRequestLocale(resolveLocale(localeParam))
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
     if (!isShowcaseSlug(slug)) notFound()
-    const data = await getShowcaseDetail(slug)
+    const data = await getShowcaseDetail(slug, locale)
     return <ShowcaseDetailClient slug={slug} initialData={data} />
 }

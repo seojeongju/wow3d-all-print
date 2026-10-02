@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      images: buildOgImages(),
+      images: buildOgImages(locale),
       title,
       description,
       url: canonical,

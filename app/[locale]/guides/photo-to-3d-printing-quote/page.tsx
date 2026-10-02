@@ -101,7 +101,7 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
     const guidesHubPath = getPathname({ locale, href: '/guides' })
     const quotePath = getPathname({ locale, href: '/quote' })
 
-    const showcaseItems = await getPhotoTo3DShowcaseItems()
+    const showcaseItems = await getPhotoTo3DShowcaseItems(locale)
 
     const articleSchema = buildArticleSchema({
         headline: t('articleHeadline'),

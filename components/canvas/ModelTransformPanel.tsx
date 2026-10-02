@@ -132,7 +132,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                             })}
                         </p>
                     )}
-                    {assessPrintability(effective).map((w) => (
+                    {assessPrintability(effective, locale).map((w) => (
                         <p
                             key={w.message}
                             className={

@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
     getQuotePrintSettingChips,
@@ -15,7 +16,8 @@ type Props = {
 }
 
 export default function QuotePrintSettingsChips({ settings, className, trailing }: Props) {
-    const chips = getQuotePrintSettingChips(settings)
+    const locale = useLocale()
+    const chips = getQuotePrintSettingChips(settings, locale)
     if (chips.length === 0 && !trailing) return null
 
     return (

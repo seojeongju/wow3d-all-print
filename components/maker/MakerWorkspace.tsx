@@ -192,7 +192,7 @@ export function MakerWorkspace() {
             clearTemplate();
             const tmpl = getMakerTemplate(id);
             showToast.success(
-                tmpl ? t('toastTemplateOffTitle', { name: tmpl.name }) : t('toastTemplateOffFallback'),
+                tmpl ? t('toastTemplateOffTitle', { name: t(`templates.${tmpl.id}.name`) }) : t('toastTemplateOffFallback'),
                 t('toastTemplateOffDesc')
             );
             return;
@@ -201,7 +201,7 @@ export function MakerWorkspace() {
         const tmpl = getMakerTemplate(id);
         setActiveTab('3d');
         showToast.success(
-            tmpl ? t('toastTemplateOnTitle', { name: tmpl.name }) : t('toastTemplateOnFallback'),
+            tmpl ? t('toastTemplateOnTitle', { name: t(`templates.${tmpl.id}.name`) }) : t('toastTemplateOnFallback'),
             t('toastTemplateOnDesc')
         );
     };
@@ -895,6 +895,7 @@ function LayerSwatches({
     value: string
     onChange: (c: string) => void
 }) {
+    const t = useTranslations('Maker')
     return (
         <div className="flex items-center justify-between gap-2 mb-2 last:mb-0">
             <span className="text-[12px] font-bold text-white/85">{label}</span>
@@ -903,8 +904,8 @@ function LayerSwatches({
                     <button
                         key={`${label}-${s.id}`}
                         type="button"
-                        title={s.label}
-                        aria-label={`${label} ${s.label}`}
+                        title={t(`swatches.${s.id}`)}
+                        aria-label={`${label} ${t(`swatches.${s.id}`)}`}
                         onClick={() => onChange(s.value)}
                         className={`h-6 w-6 rounded-full border-2 transition-transform ${
                             value.toLowerCase() === s.value.toLowerCase()

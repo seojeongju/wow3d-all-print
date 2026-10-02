@@ -55,19 +55,25 @@ export function formatQuotePrintSettings(q: QuotePrintSettings | null | undefine
 }
 
 /** 저장 견적함·장바구니 등 고객 칩 UI용 라벨 목록 (서포트·기본 후처리는 항상 포함이라 표시하지 않음) */
-export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefined): string[] {
+export function getQuotePrintSettingChips(
+    q: QuotePrintSettings | null | undefined,
+    locale: string = 'ko'
+): string[] {
     if (!q) return []
     const method = String(q.print_method || '').toLowerCase()
+    const en = locale === 'en'
+    const infillLabel = en ? 'Infill' : '채움'
+    const layerLabel = en ? 'Layer' : '레이어'
 
     if (method === 'fdm') {
         const chips: string[] = []
         const mat = q.fdm_material_name || q.fdm_material
         if (mat) chips.push(String(mat))
         if (q.fdm_infill != null && Number.isFinite(Number(q.fdm_infill))) {
-            chips.push(`채움 ${Number(q.fdm_infill)}%`)
+            chips.push(`${infillLabel} ${Number(q.fdm_infill)}%`)
         }
         if (q.fdm_layer_height != null && Number.isFinite(Number(q.fdm_layer_height))) {
-            chips.push(`레이어 ${Number(q.fdm_layer_height)}mm`)
+            chips.push(`${layerLabel} ${Number(q.fdm_layer_height)}mm`)
         }
         return chips
     }
@@ -77,7 +83,7 @@ export function getQuotePrintSettingChips(q: QuotePrintSettings | null | undefin
         const resin = q.resin_type_name || q.resin_type
         if (resin) chips.push(String(resin))
         if (q.layer_thickness != null && Number.isFinite(Number(q.layer_thickness))) {
-            chips.push(`레이어 ${Number(q.layer_thickness)}mm`)
+            chips.push(`${layerLabel} ${Number(q.layer_thickness)}mm`)
         }
         return chips
     }

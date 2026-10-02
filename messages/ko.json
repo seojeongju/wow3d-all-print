@@ -44,7 +44,8 @@
     "menu": "메뉴",
     "closeMenu": "메뉴 닫기",
     "openMenu": "메뉴 열기",
-    "submenu": "{label} 하위 메뉴"
+    "submenu": "{label} 하위 메뉴",
+    "homeLabel": "WOW3D PRO 메인으로 이동"
   },
   "Footer": {
     "tagline": "AI 기반 3D 프린팅 자동견적 시스템과 산업용 제작 인프라를 바탕으로 3D 프린터 출력, 시제품제작 서비스, 소량 양산 서비스를 제공합니다.",
@@ -236,7 +237,9 @@
       "similarQuote": "유사 시제품 견적 문의하기",
       "photoCounter": "사진 {current} / {total}",
       "prevItem": "이전 작품",
-      "nextItem": "다음 작품"
+      "nextItem": "다음 작품",
+      "imageCount": "{count}장",
+      "noImage": "이미지 없음"
     },
     "servicesSection": {
       "title": "서비스 안내",
@@ -2775,6 +2778,9 @@
     "tabAiJobs": "AI 변환 작업",
     "tabQuotes": "저장된 견적",
     "tabProfile": "내 정보",
+    "tabListLabel": "마이페이지 메뉴",
+    "modelPreviewLabel": "3D 모델 미리보기",
+    "modelPreviewNamedLabel": "{name} 3D 미리보기",
     "quoteSentTitle": "견적서가 발송되었습니다! 📧",
     "quoteSentDesc": "{count}개의 주문에 견적서가 발송되었습니다. 금액 확인 후 결제해 주세요.",
     "quoteSentButton": "견적서 #{tail}",
@@ -3960,6 +3966,29 @@
     "svgUploadTitle": "SVG 파일 직접 사용 (변환 없음)",
     "converting": "변환 중… × 로 중단",
     "templateTitle": "배지 · 키캡 템플릿",
+    "templates": {
+      "badge-circle": {
+        "name": "원형 배지",
+        "description": "Ø40mm 원판 + 테두리. 뒷면 마그넷 컵(Ø10)."
+      },
+      "badge-rect": {
+        "name": "사각 배지",
+        "description": "40×40mm 라운드 판 + 테두리. 뒷면 옷핀 홈."
+      },
+      "keycap-1u": {
+        "name": "키캡 1U",
+        "description": "18×18mm 키캡형 + Cherry MX 간이 스템(FDM 여유)."
+      }
+    },
+    "swatches": {
+      "white": "화이트",
+      "ink": "잉크",
+      "slate": "슬레이트",
+      "teal": "틸",
+      "indigo": "인디고",
+      "red": "레드",
+      "gold": "골드"
+    },
     "templateHint": "선택 후 아래에서 크기를 바꿀 수 있습니다. 같은 항목을 다시 누르면 해제됩니다.",
     "templateToggleOff": "다시 눌러 선택 해제",
     "templateApply": "{name} 적용",

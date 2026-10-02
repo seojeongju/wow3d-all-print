@@ -56,6 +56,8 @@ function loadKakaoSdk(appKey: string): Promise<typeof kakao.maps> {
 
 export default function KakaoMapView({ center, className }: Props) {
     const t = useTranslations('Makerspace')
+    const displayName = t(`centers.${center.id}.name`)
+    const displayAddress = t(`centers.${center.id}.address`)
     const mapRef = useRef<HTMLDivElement>(null)
     const mapInstance = useRef<kakao.maps.Map | null>(null)
     const markerInstance = useRef<kakao.maps.Marker | null>(null)
@@ -105,7 +107,7 @@ export default function KakaoMapView({ center, className }: Props) {
                         map: mapInstance.current,
                     })
                     infoInstance.current = new maps.InfoWindow({
-                        content: `<div style="padding:8px 12px;font-size:12px;font-weight:700;color:#0f172a;white-space:nowrap;">${center.name}</div>`,
+                        content: `<div style="padding:8px 12px;font-size:12px;font-weight:700;color:#0f172a;white-space:nowrap;">${displayName}</div>`,
                     })
                     infoInstance.current.open(mapInstance.current, markerInstance.current)
                 } else {
@@ -113,7 +115,7 @@ export default function KakaoMapView({ center, className }: Props) {
                     markerInstance.current?.setPosition(initial)
                     infoInstance.current?.close()
                     infoInstance.current = new maps.InfoWindow({
-                        content: `<div style="padding:8px 12px;font-size:12px;font-weight:700;color:#0f172a;white-space:nowrap;">${center.name}</div>`,
+                        content: `<div style="padding:8px 12px;font-size:12px;font-weight:700;color:#0f172a;white-space:nowrap;">${displayName}</div>`,
                     })
                     if (markerInstance.current) {
                         infoInstance.current.open(mapInstance.current, markerInstance.current)
@@ -141,7 +143,7 @@ export default function KakaoMapView({ center, className }: Props) {
         return () => {
             cancelled = true
         }
-    }, [center])
+    }, [center, displayName])
 
     useEffect(() => {
         const onResize = () => mapInstance.current?.relayout()
@@ -177,14 +179,14 @@ export default function KakaoMapView({ center, className }: Props) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={staticSrc}
-                            alt={t('mapAlt', { name: center.name })}
+                            alt={t('mapAlt', { name: displayName })}
                             className="h-full w-full object-cover"
                             onError={() => setStaticFailed(true)}
                         />
                     ) : (
                         <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-900 to-slate-950 px-6 text-center">
                             <MapPin className="h-8 w-8 text-teal-400" aria-hidden />
-                            <p className="text-sm font-bold text-white/80">{center.address}</p>
+                            <p className="text-sm font-bold text-white/80">{displayAddress}</p>
                             <p className="text-xs text-white/40">{t('mapError')}</p>
                         </div>
                     )}

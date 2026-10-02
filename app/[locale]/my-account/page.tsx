@@ -797,7 +797,7 @@ export default function MyAccountPage() {
                         <div
                             className="w-full min-w-0 flex flex-wrap gap-1 bg-white/5 border border-white/10 p-1.5 rounded-[2rem] backdrop-blur-xl"
                             role="tablist"
-                            aria-label="마이페이지 메뉴"
+                            aria-label={t('tabListLabel')}
                         >
                             {[
                                 { val: 'active-orders', label: t('tabActive') },

@@ -190,6 +190,35 @@ export const PHOTO_TO_3D_SHOWCASE: readonly PhotoTo3DShowcaseItem[] = [
     },
 ] as const
 
+export const PHOTO_TO_3D_SHOWCASE_EN: readonly PhotoTo3DShowcaseItem[] = [
+    {
+        title: 'Figure & character shape check',
+        caption:
+            'Generate a 3D mesh from a character photo on a plain background, then print keycap or figure appearance prototypes in SLA/DLP.',
+        beforeSrc: '/images/photo-to-3d/keycap-golden-retriever.png',
+        beforeAlt: 'Golden retriever keycap photo example — photo input for AI 3D',
+        afterSrc: '/images/photo-to-3d/keycap-golden-retriever-mesh.png',
+        afterAlt: 'AI 3D modeled keycap mesh example',
+        printMethod: 'SLA',
+        material: 'Standard Resin',
+    },
+    {
+        title: 'Prototype & part appearance check',
+        caption:
+            'Quickly confirm a shape from a real object or reference photo, then continue to an FDM/SLA quote and print.',
+        beforeSrc: '/images/photo-to-3d/engine-prototype.jpg',
+        beforeAlt: 'Engine part photo example — photo input for AI 3D',
+        afterSrc: '/images/photo-to-3d/engine-prototype-mesh.png',
+        afterAlt: 'AI 3D modeled engine part mesh example',
+        printMethod: 'FDM',
+        material: 'PLA',
+    },
+] as const
+
+export function getPhotoTo3DShowcaseFallback(locale: string = 'ko'): readonly PhotoTo3DShowcaseItem[] {
+    return locale === 'en' ? PHOTO_TO_3D_SHOWCASE_EN : PHOTO_TO_3D_SHOWCASE
+}
+
 type ShowcaseSchemaOptions = {
     locale?: string
     path?: string

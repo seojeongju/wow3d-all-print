@@ -125,7 +125,7 @@ export const REFERENCE_PRINT_METHODS: PrintMethod[] = [
     {
         id: 'powder-sintering',
         name: 'SLS / SLM / DMLS',
-        fullName: 'Powder Bed Fusion (분말 소결·용융)',
+        fullName: 'Powder Bed Fusion',
         nameKo: '분말 소결 방식',
         category: 'reference',
         icon: Boxes,
@@ -174,7 +174,7 @@ export const REFERENCE_PRINT_METHODS: PrintMethod[] = [
     {
         id: 'material-jetting',
         name: 'PolyJet / MJP',
-        fullName: 'Material Jetting (재료 분사)',
+        fullName: 'Material Jetting',
         nameKo: '재료 분사 방식',
         category: 'reference',
         icon: Paintbrush,

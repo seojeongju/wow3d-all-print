@@ -309,7 +309,7 @@ export default function Header() {
                     href="/"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0 max-w-[calc(100%-11rem)] sm:max-w-[50%] lg:max-w-[220px] xl:max-w-none overflow-hidden"
-                    aria-label="WOW3D PRO 메인으로 이동"
+                    aria-label={t('homeLabel')}
                 >
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/25 shrink-0">
                         <Boxes className="w-5 h-5 sm:w-6 sm:h-6 text-white" />

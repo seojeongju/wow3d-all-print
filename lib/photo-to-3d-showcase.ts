@@ -1,7 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
 import {
-    PHOTO_TO_3D_SHOWCASE,
+    getPhotoTo3DShowcaseFallback,
     type PhotoTo3DShowcaseItem,
 } from '@/lib/seo-photo-to-3d';
 
@@ -14,24 +14,28 @@ type GalleryShowcaseRow = {
     print_method?: string | null;
 };
 
-function mapGalleryRowToShowcase(row: GalleryShowcaseRow): PhotoTo3DShowcaseItem {
+function mapGalleryRowToShowcase(row: GalleryShowcaseRow, locale: string): PhotoTo3DShowcaseItem {
+    const isEn = locale === 'en';
     return {
         title: row.title,
         caption: row.description?.trim() || undefined,
         beforeSrc: resolveGalleryImageUrl(row.source_image_url),
-        beforeAlt: `${row.title} 원본 사진(이미지) — 사진(이미지)→AI 3D 입력`,
+        beforeAlt: isEn
+            ? `${row.title} original photo — input for photo-to-AI 3D`
+            : `${row.title} 원본 사진(이미지) — 사진(이미지)→AI 3D 입력`,
         afterSrc: resolveGalleryImageUrl(row.image_url),
-        afterAlt: `${row.title} AI 3D·3D 프린팅 출력 결과`,
+        afterAlt: isEn ? `${row.title} AI 3D and 3D print result` : `${row.title} AI 3D·3D 프린팅 출력 결과`,
         printMethod: row.print_method?.trim() || undefined,
         material: row.material?.trim() || undefined,
     };
 }
 
 /** DB 갤러리(photo-to-3d 태그 + 원본 사진) → 쇼케이스. 없으면 정적 fallback */
-export async function getPhotoTo3DShowcaseItems(): Promise<readonly PhotoTo3DShowcaseItem[]> {
+export async function getPhotoTo3DShowcaseItems(locale: string = 'ko'): Promise<readonly PhotoTo3DShowcaseItem[]> {
+    const fallback = getPhotoTo3DShowcaseFallback(locale);
     try {
         const { env } = await getCloudflareContext({ async: true });
-        if (!env?.DB) return PHOTO_TO_3D_SHOWCASE;
+        if (!env?.DB) return fallback;
 
         const { results } = await env.DB.prepare(
             `SELECT title, description, image_url, source_image_url, material, print_method
@@ -48,11 +52,11 @@ export async function getPhotoTo3DShowcaseItems(): Promise<readonly PhotoTo3DSho
              LIMIT 6`
         ).all<GalleryShowcaseRow>();
 
-        const mapped = (results ?? []).map(mapGalleryRowToShowcase);
-        return mapped.length > 0 ? mapped : PHOTO_TO_3D_SHOWCASE;
+        const mapped = (results ?? []).map((row: GalleryShowcaseRow) => mapGalleryRowToShowcase(row, locale));
+        return mapped.length > 0 ? mapped : fallback;
     } catch (e) {
         console.warn('getPhotoTo3DShowcaseItems failed, using static fallback', e);
-        return PHOTO_TO_3D_SHOWCASE;
+        return fallback;
     }
 }
 

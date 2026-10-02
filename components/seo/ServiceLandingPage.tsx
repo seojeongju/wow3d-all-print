@@ -23,7 +23,7 @@ type Props = {
 export default async function ServiceLandingPage({ config, locale }: Props) {
     const t = await getTranslations({ locale, namespace: 'ServiceChrome' })
     const showcaseItems =
-        config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems() : null
+        config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems(locale) : null
 
     const faqItems: QnAItem[] = config.faqs.map((f, i) => ({
         id: i + 1,

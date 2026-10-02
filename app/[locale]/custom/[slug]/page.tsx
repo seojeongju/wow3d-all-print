@@ -101,7 +101,7 @@ export default async function CustomProductDetailPage({ params }: Props) {
             sku: product.slug,
         }),
         buildBreadcrumbSchema([
-            { name: '홈', path: locale === 'en' ? '/en' : '/' },
+            { name: locale === 'en' ? 'Home' : '홈', path: locale === 'en' ? '/en' : '/' },
             { name: t('backToHub'), path: hubPath },
             { name: product.title, path: detailPath },
         ]),

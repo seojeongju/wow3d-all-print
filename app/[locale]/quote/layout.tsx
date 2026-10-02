@@ -12,7 +12,8 @@ import { routing, type AppLocale } from "@/i18n/routing";
 import {
   absoluteUrl,
   buildQuoteOgImages,
-  OG_QUOTE_IMAGE_ALT,
+  EN_SITE_NAME,
+  ogQuoteImageAlt,
   OG_QUOTE_IMAGE_HEIGHT,
   OG_QUOTE_IMAGE_PATH,
   OG_QUOTE_IMAGE_WIDTH,
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const quoteDescription = t("metaDescription");
   const path = quotePath(locale);
   const canonical = `${SITE_URL}${path}`;
-  const quoteOgImages = buildQuoteOgImages();
+  const quoteOgImages = buildQuoteOgImages(locale);
   const quotePrimaryImage = absoluteUrl(OG_QUOTE_IMAGE_PATH);
   const keywords = t.raw("metaKeywords") as string[];
 
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       locale: locale === "en" ? "en_US" : "ko_KR",
       url: canonical,
-      siteName: "(주)와우쓰리디",
+      siteName: locale === "en" ? EN_SITE_NAME : "(주)와우쓰리디",
       title: quoteTitle,
       description: quoteDescription,
       images: quoteOgImages,
@@ -97,7 +98,7 @@ export default async function QuoteLayout({ children, params }: Props) {
       imagePath: OG_QUOTE_IMAGE_PATH,
       imageWidth: OG_QUOTE_IMAGE_WIDTH,
       imageHeight: OG_QUOTE_IMAGE_HEIGHT,
-      imageCaption: OG_QUOTE_IMAGE_ALT,
+      imageCaption: ogQuoteImageAlt(locale),
     }),
     buildCollectionPageSchema({
       name: t("collectionName"),
