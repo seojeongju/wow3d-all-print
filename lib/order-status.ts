@@ -13,7 +13,7 @@ export const ORDER_STATUS_VALUES = [
 export type OrderStatus = (typeof ORDER_STATUS_VALUES)[number];
 
 /** 배송중 → 배송완료 자동 전환 (일) */
-export const SHIPPING_TO_DELIVERED_DAYS = 5;
+export const SHIPPING_TO_DELIVERED_DAYS = 2;
 /** 배송완료 → 완료됨 자동 전환 (일) */
 export const DELIVERED_TO_COMPLETED_DAYS = 2;
 

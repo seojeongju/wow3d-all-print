@@ -11,7 +11,7 @@ export type AutoStatusTransitionResult = {
 };
 
 /**
- * 배송중 5일 경과 → 배송완료, 배송완료 2일 경과 → 완료됨
+ * 배송중 2일 경과 → 배송완료, 배송완료 2일 경과 → 완료됨
  * 관리자가 중간에 다른 상태로 변경한 주문은 타임스탬프가 초기화되어 대상에서 제외됨.
  */
 export async function processAutoOrderStatusTransitions(
