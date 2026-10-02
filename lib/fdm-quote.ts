@@ -183,6 +183,10 @@ export type CalculateFdmQuoteInput = {
     bedAreaCm2?: number | null
     /** 외벽 오버행 감속 추가분 (cm², 외벽 속도 기준 등가 측면) */
     slowWallAreaCm2?: number | null
+    /** 측면 중 곡선 윤곽 부분 (cm²) */
+    curvedWallAreaCm2?: number | null
+    /** 단면 윤곽 루프 수 × 높이 (루프·mm) */
+    contourLoopsMm?: number | null
     /** 다중 객체 플레이트(3MF) — 객체 수·객체 높이 합(mm)·이웃 객체 평균 거리(mm) */
     partCount?: number | null
     partHeightSumMm?: number | null
@@ -256,6 +260,8 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         bottomAreaCm2: input.bottomAreaCm2,
         bedAreaCm2: input.bedAreaCm2,
         slowWallAreaCm2: input.slowWallAreaCm2,
+        curvedWallAreaCm2: input.curvedWallAreaCm2,
+        contourLoopsMm: input.contourLoopsMm,
         partCount: input.partCount,
         partHeightSumMm: input.partHeightSumMm,
         partSpacingMm: input.partSpacingMm,

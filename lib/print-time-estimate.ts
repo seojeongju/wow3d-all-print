@@ -165,10 +165,17 @@ export const P2S_PROFILE = {
     bottomShellLayers: 3,
     /** 레이어 전환(Z 이동·와이프) 고정 시간(초) */
     layerChangeSec: 0.5,
-    /** 레이어당 이동 횟수(벽 시작·인필 진입 등) */
+    /** 레이어당 이동 횟수(벽 시작·인필 진입 등) — 단면 루프 수가 없을 때 */
     travelsPerLayer: 4,
     /** 리트랙션 0.8mm 왕복 시간(초) */
     retractSec: 0.06,
+    /** 루프 진입 Z 리프트 0.4mm 왕복 시간(초) — Z 가속 500mm/s² */
+    zHopSec: 0.113,
+    /**
+     * 곡선 벽 평균 구간(mm) — 꼭짓점마다 감속해 직선 벽(단면 대표 길이)보다 훨씬 짧은 구간처럼 움직임.
+     * Bambu P2S 곡면 실측 3건(십자가·조형물·리포좀) 역산 6.7~8.8mm
+     */
+    curvedWallSegmentMm: 7.5,
     /** 출력 준비(예열·베드 레벨링·노즐 청소) 시간(초) — Bambu Studio P2S 표시 7m1s */
     prepSec: 420,
     /**
@@ -289,6 +296,10 @@ export type FdmGeometryForPrint = {
     bedAreaCm2?: number | null
     /** 외벽 오버행 감속 추가분 — 외벽 속도 기준 등가 측면 면적 (cm²) */
     slowWallAreaCm2?: number | null
+    /** 측면 중 곡선 윤곽 부분 (cm²) — 이 비율만큼 벽이 짧은 구간(curvedWallSegmentMm)으로 감속 */
+    curvedWallAreaCm2?: number | null
+    /** 단면 윤곽 루프(섬·구멍) 수 × 높이 (루프·mm) — 루프마다 진입 이동·리트랙션·Z 리프트. 없으면 레이어당 고정 횟수 */
+    contourLoopsMm?: number | null
     /** 한 플레이트에 함께 출력하는 개별 객체 수 (다중 객체 3MF). 없으면 1 */
     partCount?: number | null
     /** 객체별 높이(mm)의 합 — 객체×레이어 수 산출용. 없으면 heightMm */
@@ -468,10 +479,17 @@ export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResul
     const wallPathMm = (s.lateralMm2 / h) * quantity
     // slowWallArea = Σ 측면 × (외벽 속도 / 오버행 속도 − 1) → 외벽 속도로 나누면 추가 시간
     const slowWallPathMm = ((Math.max(0, Number(input.slowWallAreaCm2) || 0) * 100) / h) * quantity
+    const curvedFrac =
+        s.lateralMm2 > 0
+            ? Math.min(1, Math.max(0, (Number(input.curvedWallAreaCm2) || 0) * 100) / s.lateralMm2)
+            : 0
+    const wallTime = (pathMm: number, f: { speed: number; width: number; accel: number }) =>
+        featureTimeSec(pathMm * (1 - curvedFrac), D, speedFor(f), f.accel) +
+        featureTimeSec(pathMm * curvedFrac, Math.min(D, P.curvedWallSegmentMm), speedFor(f), f.accel)
     const walls =
-        featureTimeSec(wallPathMm, D, speedFor(P.outerWall), P.outerWall.accel) +
+        wallTime(wallPathMm, P.outerWall) +
         slowWallPathMm / P.outerWall.speed +
-        featureTimeSec(wallPathMm * (P.wallLoops - 1), D, speedFor(P.innerWall), P.innerWall.accel)
+        wallTime(wallPathMm * (P.wallLoops - 1), P.innerWall)
 
     // 바닥 1층(베드)은 첫 레이어 속도, 공중 아랫면 1층은 브리지 속도, 나머지는 솔리드
     const sc = s.solidScale * quantity
@@ -516,14 +534,17 @@ export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResul
 
     const layerScale =
         (input.fdmLayerHoursFactor ?? FDM_DEFAULT_LAYER_HOURS_FACTOR) / FDM_DEFAULT_LAYER_HOURS_FACTOR
-    // 레이어 전환은 플레이트 단위, 벽 시작·인필 진입 이동은 객체×레이어 단위, 객체 사이 이동은 레이어마다 (객체 수 − 1)회
+    // 레이어 전환은 플레이트 단위, 객체 사이 이동은 레이어마다 (객체 수 − 1)회
+    // 벽 루프(섬·구멍)마다 진입 이동·리트랙션·Z 리프트 — 루프 수가 없으면 객체×레이어마다 고정 횟수
     const interPartMoves = Math.max(0, s.partLayers - s.numLayers)
     const interPartSpacing = s.partSpacingMm > 0 ? s.partSpacingMm : D
+    const contourLoops = Math.max(0, Number(input.contourLoopsMm) || 0) / h
+    const loopEntries =
+        contourLoops > 0
+            ? Math.max(s.partLayers, contourLoops) * quantity * (travelSec(D / 2) + P.zHopSec)
+            : s.partLayers * P.travelsPerLayer * quantity * travelSec(D / 2)
     const layerOverhead =
-        (s.numLayers * P.layerChangeSec +
-            s.partLayers * P.travelsPerLayer * quantity * travelSec(D / 2) +
-            interPartMoves * travelSec(interPartSpacing)) *
-        layerScale
+        (s.numLayers * P.layerChangeSec + loopEntries + interPartMoves * travelSec(interPartSpacing)) * layerScale
 
     const printSec = walls + solid + firstLayer + sparseInfill + support + travel + layerOverhead
     const minLayerTotal = s.numLayers * material.minLayerTimeSec

@@ -26,11 +26,15 @@ export type OrientationSupport = {
     bedArea?: number;
     /** 외벽 오버행 감속으로 늘어나는 시간을 외벽 속도 기준 측면 면적으로 환산한 추가분 (cm²) */
     slowWallArea?: number;
+    /** 측면 중 곡선 윤곽 부분 (cm²) — 곡선 벽은 꼭짓점마다 감속 */
+    curvedWallArea?: number;
+    /** 단면 윤곽 루프(섬·구멍) 수 × 높이 (루프·mm) — 레이어 높이로 나누면 벽 루프 수 */
+    contourLoops?: number;
     /** 다중 객체: 이 축을 위로 세웠을 때 객체별 높이(mm)의 합 */
     partHeightSum?: number;
 };
 
-const ORIENTATION_AREA_KEYS = ['lateralArea', 'topArea', 'bottomArea', 'bedArea'] as const;
+const ORIENTATION_AREA_KEYS = ['lateralArea', 'topArea', 'bottomArea', 'bedArea', 'curvedWallArea'] as const;
 
 /** 축에 맞지 않은 평면을 바닥에 놓는 배치 (슬라이서 '면에 놓기') */
 export type FaceOrientation = OrientationSupport & {
@@ -56,6 +60,8 @@ export interface GeometryAnalysis {
     bottomArea?: number;
     bedArea?: number;
     slowWallArea?: number;
+    curvedWallArea?: number;
+    contourLoops?: number;
     /** 다중 객체 3MF 플레이트의 객체 수 (단일 객체면 없음) */
     partCount?: number;
     /** 현재 배치의 객체별 높이(mm) 합 */
@@ -349,6 +355,276 @@ function axisGridRows(k: number): number[] {
     return r;
 }
 
+/** 단면 루프 수 샘플링 높이 개수 */
+const CONTOUR_SLICES = 64;
+/** 곡선 판정: 윤곽을 이 간격(mm)으로 재표본화했을 때 꺾임각이 CURVE_MIN_TURN_DEG 이상인 길이 비율 */
+const CURVE_RESAMPLE_MM = 2;
+const CURVE_MIN_TURN_DEG = 0.5;
+const CURVE_MIN_TURN_COS = Math.cos((CURVE_MIN_TURN_DEG * Math.PI) / 180);
+
+export type ContourStats = {
+    /** 단면 윤곽 루프(섬·구멍) 수를 높이로 적분 (루프·mm) */
+    loopsMm: number;
+    /** 윤곽 길이 중 곡선(재표본 꺾임각 ≥ CURVE_MIN_TURN_DEG) 비율 0~1 */
+    curvedFraction: number;
+};
+
+/**
+ * 높이(rows 셋째 행) 방향으로 균등 단면을 잘라 윤곽 루프를 따라가며 루프 수와 곡선 비율을 구함.
+ * 루프마다 진입 이동·리트랙션·Z 리프트가 붙고, 곡선 벽은 꼭짓점마다 감속해 벽 속도에 못 미침.
+ * 교차점은 같은 모서리를 공유하는 두 삼각형이 비트 단위로 같은 값을 내도록 낮은 정점 기준으로 보간
+ */
+export function contourStats(
+    tris: ArrayLike<number>,
+    rows: readonly number[],
+    slices: number = CONTOUR_SLICES
+): ContourStats {
+    const empty = { loopsMm: 0, curvedFraction: 0 };
+    const triCount = Math.floor(tris.length / 9);
+    if (!triCount) return empty;
+    const [r0, r1, r2, r3, r4, r5, r6, r7, r8] = rows;
+    let wMin = Infinity;
+    let wMax = -Infinity;
+    for (let i = 0; i < triCount * 3; i++) {
+        const w = r6 * tris[i * 3] + r7 * tris[i * 3 + 1] + r8 * tris[i * 3 + 2];
+        if (w < wMin) wMin = w;
+        if (w > wMax) wMax = w;
+    }
+    const H = wMax - wMin;
+    if (!(H > 0)) return empty;
+    const dz = H / slices;
+
+    let cap = 1 << 16;
+    let segSlice = new Int32Array(cap);
+    let seg = new Float64Array(cap * 4);
+    let n = 0;
+    const push = (s: number, a: number, b: number, c: number, d: number) => {
+        if (n === cap) {
+            cap *= 2;
+            const ns = new Int32Array(cap);
+            ns.set(segSlice);
+            segSlice = ns;
+            const nv = new Float64Array(cap * 4);
+            nv.set(seg);
+            seg = nv;
+        }
+        segSlice[n] = s;
+        seg[n * 4] = a;
+        seg[n * 4 + 1] = b;
+        seg[n * 4 + 2] = c;
+        seg[n * 4 + 3] = d;
+        n++;
+    };
+
+    const u = [0, 0, 0];
+    const v = [0, 0, 0];
+    const w = [0, 0, 0];
+    const cut = [0, 0, 0, 0];
+    const edgePoint = (a: number, b: number, plane: number, out: number[], o: number) => {
+        const lo = w[a] < w[b] ? a : b;
+        const hi = lo === a ? b : a;
+        const t = (plane - w[lo]) / (w[hi] - w[lo]);
+        out[o] = u[lo] + t * (u[hi] - u[lo]);
+        out[o + 1] = v[lo] + t * (v[hi] - v[lo]);
+    };
+    for (let t = 0; t < triCount; t++) {
+        const o = t * 9;
+        const w0 = r6 * tris[o] + r7 * tris[o + 1] + r8 * tris[o + 2];
+        const w1 = r6 * tris[o + 3] + r7 * tris[o + 4] + r8 * tris[o + 5];
+        const w2 = r6 * tris[o + 6] + r7 * tris[o + 7] + r8 * tris[o + 8];
+        const lo = Math.min(w0, w1, w2);
+        const hi = Math.max(w0, w1, w2);
+        const s0 = Math.max(0, Math.ceil((lo - wMin) / dz - 0.5));
+        const s1 = Math.min(slices - 1, Math.floor((hi - wMin) / dz - 0.5));
+        if (s0 > s1) continue;
+        w[0] = w0;
+        w[1] = w1;
+        w[2] = w2;
+        for (let j = 0; j < 3; j++) {
+            const x = tris[o + j * 3], y = tris[o + j * 3 + 1], z = tris[o + j * 3 + 2];
+            u[j] = r0 * x + r1 * y + r2 * z;
+            v[j] = r3 * x + r4 * y + r5 * z;
+        }
+        for (let s = s0; s <= s1; s++) {
+            const plane = wMin + (s + 0.5) * dz;
+            const a0 = w[0] >= plane, a1 = w[1] >= plane, a2 = w[2] >= plane;
+            if (a0 === a1 && a1 === a2) continue;
+            // 혼자 반대편인 정점에서 나가는 두 모서리
+            const solo = a0 === a1 ? 2 : a0 === a2 ? 1 : 0;
+            edgePoint(solo, (solo + 1) % 3, plane, cut, 0);
+            edgePoint(solo, (solo + 2) % 3, plane, cut, 2);
+            push(s, cut[0], cut[1], cut[2], cut[3]);
+        }
+    }
+    if (!n) return empty;
+
+    // 높이별로 모아 같은 좌표의 끝점을 해시로 한 점으로 묶고 점마다 이어진 두 끝을 기록
+    const order = new Int32Array(n);
+    const counts = new Int32Array(slices + 1);
+    for (let i = 0; i < n; i++) counts[segSlice[i] + 1]++;
+    for (let s = 0; s < slices; s++) counts[s + 1] += counts[s];
+    const fill = counts.slice(0, slices);
+    for (let i = 0; i < n; i++) order[fill[segSlice[i]]++] = i;
+
+    let maxM = 0;
+    for (let s = 0; s < slices; s++) maxM = Math.max(maxM, counts[s + 1] - counts[s]);
+    let tableSize = 1;
+    while (tableSize < maxM * 4) tableSize <<= 1;
+    const table = new Int32Array(tableSize);
+    const px = new Float64Array(maxM * 2);
+    const py = new Float64Array(maxM * 2);
+    const id = new Int32Array(maxM * 2);
+    const inc = new Int32Array(maxM * 4);
+    const visited = new Uint8Array(maxM);
+    const bits = new Float64Array(2);
+    const words = new Uint32Array(bits.buffer);
+
+    const curve = new ContourCurveMeter();
+    let loops = 0;
+    for (let s = 0; s < slices; s++) {
+        const a = counts[s];
+        const m = counts[s + 1] - a;
+        if (!m) continue;
+        // 끝 p = 선분 × 2 + (0: 시작, 1: 끝), +0은 -0을 0으로 맞춰 해시 비트를 같게 함
+        for (let i = 0; i < m; i++) {
+            const g = order[a + i] * 4;
+            px[i * 2] = seg[g] + 0;
+            py[i * 2] = seg[g + 1] + 0;
+            px[i * 2 + 1] = seg[g + 2] + 0;
+            py[i * 2 + 1] = seg[g + 3] + 0;
+        }
+        let size = 1;
+        while (size < m * 4) size <<= 1;
+        const mask = size - 1;
+        table.fill(-1, 0, size);
+        let unique = 0;
+        for (let p = 0; p < m * 2; p++) {
+            bits[0] = px[p];
+            bits[1] = py[p];
+            let h = Math.imul(words[0] ^ words[1], 0x9e3779b1) ^ Math.imul(words[2] ^ words[3], 0x85ebca77);
+            h = (h ^ (h >>> 15)) & mask;
+            for (;;) {
+                const q = table[h];
+                if (q < 0) {
+                    table[h] = p;
+                    id[p] = unique++;
+                    break;
+                }
+                if (px[q] === px[p] && py[q] === py[p]) {
+                    id[p] = id[q];
+                    break;
+                }
+                h = (h + 1) & mask;
+            }
+        }
+        inc.fill(-1, 0, unique * 2);
+        for (let p = 0; p < m * 2; p++) {
+            const slot = id[p] * 2;
+            if (inc[slot] < 0) inc[slot] = p;
+            else if (inc[slot + 1] < 0) inc[slot + 1] = p;
+        }
+
+        // 선분을 이어 따라가며 루프마다 곡선 길이 측정 (비다양체 점은 끊긴 열린 경로로)
+        visited.fill(0, 0, m);
+        for (let start = 0; start < m; start++) {
+            if (visited[start]) continue;
+            loops++;
+            curve.begin();
+            let cur = start;
+            let e = 0;
+            let closed = false;
+            for (;;) {
+                visited[cur] = 1;
+                curve.add(px[cur * 2 + e], py[cur * 2 + e]);
+                const out = cur * 2 + (1 - e);
+                const slot = id[out] * 2;
+                const next = inc[slot] === out ? inc[slot + 1] : inc[slot];
+                if (next < 0) {
+                    curve.add(px[out], py[out]);
+                    break;
+                }
+                if (visited[next >> 1]) {
+                    closed = next >> 1 === start;
+                    if (!closed) curve.add(px[out], py[out]);
+                    break;
+                }
+                cur = next >> 1;
+                e = next & 1;
+            }
+            curve.end(closed);
+        }
+    }
+    return { loopsMm: loops * dz, curvedFraction: curve.fraction };
+}
+
+/** 윤곽 점열을 일정 간격으로 재표본화해 꺾임각이 임계 이상인 길이를 누적 */
+class ContourCurveMeter {
+    private xs: number[] = [];
+    private ys: number[] = [];
+    private lens: number[] = [];
+    private total = 0;
+    private curved = 0;
+
+    begin(): void {
+        this.xs.length = 0;
+        this.ys.length = 0;
+    }
+
+    add(x: number, y: number): void {
+        this.xs.push(x);
+        this.ys.push(y);
+    }
+
+    end(closed: boolean): void {
+        const { xs, ys, lens } = this;
+        const np = xs.length;
+        if (np < 2) return;
+        const segs = closed ? np : np - 1;
+        lens.length = segs;
+        let per = 0;
+        for (let i = 0; i < segs; i++) {
+            const j = i + 1 < np ? i + 1 : 0;
+            const dx = xs[j] - xs[i], dy = ys[j] - ys[i];
+            lens[i] = Math.sqrt(dx * dx + dy * dy);
+            per += lens[i];
+        }
+        if (!(per > 0)) return;
+        const count = Math.max(closed ? 3 : 2, Math.round(per / CURVE_RESAMPLE_MM));
+        const ds = per / (closed ? count : count - 1);
+        // 호 길이 k·ds 지점 좌표
+        const rx = new Float64Array(count);
+        const ry = new Float64Array(count);
+        let i = 0;
+        let acc = 0;
+        for (let k = 0; k < count; k++) {
+            const target = k * ds;
+            while (acc + lens[i] < target && i < segs - 1) acc += lens[i++];
+            const j = i + 1 < np ? i + 1 : 0;
+            const f = lens[i] > 0 ? Math.min(1, (target - acc) / lens[i]) : 0;
+            rx[k] = xs[i] + f * (xs[j] - xs[i]);
+            ry[k] = ys[i] + f * (ys[j] - ys[i]);
+        }
+        let curved = 0;
+        const first = closed ? 0 : 1;
+        const last = closed ? count : count - 1;
+        for (let k = first; k < last; k++) {
+            const pk = k > 0 ? k - 1 : count - 1;
+            const nk = k + 1 < count ? k + 1 : 0;
+            const ax = rx[k] - rx[pk], ay = ry[k] - ry[pk];
+            const bx = rx[nk] - rx[k], by = ry[nk] - ry[k];
+            const la2 = ax * ax + ay * ay, lb2 = bx * bx + by * by;
+            if (la2 > 0 && lb2 > 0 && ax * bx + ay * by < CURVE_MIN_TURN_COS * Math.sqrt(la2 * lb2)) curved++;
+        }
+        const samples = last - first;
+        this.total += per;
+        if (samples > 0) this.curved += (per * curved) / samples;
+    }
+
+    get fraction(): number {
+        return this.total > 0 ? Math.min(1, this.curved / this.total) : 0;
+    }
+}
+
 export function aabbVolumeCm3(box: { x: number; y: number; z: number }): number {
     const x = Math.max(0, Number(box.x) || 0);
     const y = Math.max(0, Number(box.y) || 0);
@@ -386,9 +662,10 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
     };
 
     const clampArea = (v: number) => Math.min(Math.max(0, Number(v) || 0), surfaceArea);
-    type AreaKey = (typeof ORIENTATION_AREA_KEYS)[number] | 'slowWallArea';
+    type AreaKey = (typeof ORIENTATION_AREA_KEYS)[number] | 'slowWallArea' | 'contourLoops';
     const pickAreas = (src: Partial<Record<AreaKey, number>>) => {
         const out: Partial<Record<AreaKey, number>> = {};
+        if (src.contourLoops != null) out.contourLoops = Math.max(0, Number(src.contourLoops) || 0);
         for (const k of ORIENTATION_AREA_KEYS) {
             if (src[k] != null) out[k] = clampArea(src[k]!);
         }
@@ -641,6 +918,18 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         }
     }
 
+    if (orientations && tris) {
+        const axes = ['x', 'y', 'z'] as const;
+        for (let k = 0; k < 3; k++) {
+            const c = contourStats(tris, axisGridRows(k));
+            for (const sign of ['+', '-'] as const) {
+                const o = orientations[`${sign}${axes[k]}`]!;
+                o.contourLoops = c.loopsMm;
+                o.curvedWallArea = (o.lateralArea ?? 0) * c.curvedFraction;
+            }
+        }
+    }
+
     const faceOrientations = tris
         ? buildFaceOrientations(pos, index, tris, clusters, volume >= 0 ? 1 : -1, surfaceArea)
         : [];
@@ -658,6 +947,8 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
                   bottomArea: placed.bottomArea,
                   bedArea: placed.bedArea,
                   slowWallArea: placed.slowWallArea,
+                  curvedWallArea: placed.curvedWallArea,
+                  contourLoops: placed.contourLoops,
               }
             : {}),
         ...(orientations ? { orientations } : {}),
@@ -831,6 +1122,7 @@ function buildFaceOrientations(
     }
 
     return placeable.map(({ c, a }) => {
+        const contour = contourStats(tris, c.rows);
         return {
             down: c.n,
             box: c.box,
@@ -841,6 +1133,8 @@ function buildFaceOrientations(
             bottomArea: a.bottom / 100,
             bedArea: a.bed / 100,
             slowWallArea: a.slow / 100,
+            curvedWallArea: (a.lateral / 100) * contour.curvedFraction,
+            contourLoops: contour.loopsMm,
         };
     });
 }
@@ -886,6 +1180,8 @@ const ORIENTATION_SUM_KEYS = [
     'bottomArea',
     'bedArea',
     'slowWallArea',
+    'curvedWallArea',
+    'contourLoops',
 ] as const;
 
 /**

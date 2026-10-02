@@ -113,7 +113,7 @@ const bambuP2S = [
     {
         // 얇은 벽 상자형(220×235×100mm), 인필 15%, 서포트 빌드 플레이트 제한 없음
         name: '하우스',
-        geom: { volumeCm3: 991.25, surfaceAreaCm2: 3508.7, density: 1.26, infill: 15, heightMm: 100.4, lateralAreaCm2: 2661.1, topAreaCm2: 456.8, bottomAreaCm2: 428.9, bedAreaCm2: 338.2, slowWallAreaCm2: 761.3, overhangAreaCm2: 20.6, supportVolumeCm3: 60.0 },
+        geom: { volumeCm3: 991.25, surfaceAreaCm2: 3508.7, density: 1.26, infill: 15, heightMm: 100.4, lateralAreaCm2: 2661.1, topAreaCm2: 456.8, bottomAreaCm2: 428.9, bedAreaCm2: 338.2, slowWallAreaCm2: 761.3, overhangAreaCm2: 20.6, supportVolumeCm3: 60.0, curvedWallAreaCm2: 172.7, contourLoopsMm: 674 },
         hours: 12 + 7 / 60,
         modelG: 515.53,
         supportG: 42.17,
@@ -121,7 +121,7 @@ const bambuP2S = [
     {
         // 높이 200mm 십자가형 곡면, 서포트 137mm/s로 빠르게 출력 → 시간 과대(높은 서포트 속도 미반영)
         name: '십자가',
-        geom: { volumeCm3: 181.07, surfaceAreaCm2: 348.8, density: 1.26, infill: 15, heightMm: 200, lateralAreaCm2: 265.8, topAreaCm2: 52.7, bottomAreaCm2: 49.8, bedAreaCm2: 24.2, slowWallAreaCm2: 315.5, overhangAreaCm2: 15.4, supportVolumeCm3: 149.4 },
+        geom: { volumeCm3: 181.07, surfaceAreaCm2: 348.8, density: 1.26, infill: 15, heightMm: 200, lateralAreaCm2: 265.8, topAreaCm2: 52.7, bottomAreaCm2: 49.8, bedAreaCm2: 24.2, slowWallAreaCm2: 315.5, overhangAreaCm2: 15.4, supportVolumeCm3: 149.4, curvedWallAreaCm2: 218.5, contourLoopsMm: 266 },
         hours: 4 + 14 / 60,
         modelG: 67.45,
         supportG: 76.09,
@@ -130,28 +130,44 @@ const bambuP2S = [
     {
         // 143mm 곡면 조형물, 인필 15%
         name: '곡면 조형',
-        geom: { volumeCm3: 578.62, surfaceAreaCm2: 547.6, density: 1.26, infill: 15, heightMm: 143.1, lateralAreaCm2: 380.5, topAreaCm2: 103.9, bottomAreaCm2: 109.1, bedAreaCm2: 13, slowWallAreaCm2: 677.4, overhangAreaCm2: 72.3, supportVolumeCm3: 84.5 },
+        geom: { volumeCm3: 578.62, surfaceAreaCm2: 547.6, density: 1.26, infill: 15, heightMm: 143.1, lateralAreaCm2: 380.5, topAreaCm2: 103.9, bottomAreaCm2: 109.1, bedAreaCm2: 13, slowWallAreaCm2: 677.4, overhangAreaCm2: 72.3, supportVolumeCm3: 84.5, curvedWallAreaCm2: 352.9, contourLoopsMm: 259 },
         hours: 5 + 39 / 60,
         modelG: 160.37,
         supportG: 47.47,
+    },
+    {
+        // 150mm 구 격자 그릇(리포좀), 서포트 끔 — 층당 루프 약 57개, 얇은 곳은 벽 1겹+틈새 채움이라 모델 g 과대
+        name: '리포좀',
+        geom: { volumeCm3: 282.71, surfaceAreaCm2: 1622.4, density: 1.26, infill: 15, heightMm: 81, lateralAreaCm2: 1305.6, topAreaCm2: 240.1, bottomAreaCm2: 186.3, bedAreaCm2: 0.1, slowWallAreaCm2: 2206.5, overhangAreaCm2: 99.1, supportVolumeCm3: 142.3, curvedWallAreaCm2: 1301.1, contourLoopsMm: 4617 },
+        hours: 9 + 58 / 60,
+        modelG: 191.44,
+        supportG: 0,
+        support: false,
+        modelTol: 0.1,
     },
 ]
 for (const c of bambuP2S) {
     const { infill, ...geom } = c.geom
     const timeTol = ('timeTol' in c ? c.timeTol : undefined) ?? 0.1
+    const modelTol = ('modelTol' in c ? c.modelTol : undefined) ?? 0.05
+    const supportEnabled = ('support' in c ? c.support : undefined) ?? true
     const q = calculateFdmQuote({
         ...geom,
         pricePerGramKr: 50,
         infillPercent: infill,
         layerHeightMm: 0.2,
-        supportEnabled: true,
+        supportEnabled,
         materialName: 'PLA Basic',
         hourlyRateKr: 5000,
     })
     const rel = (a: number, b: number) => Math.abs(a - b) / b
     assert.ok(rel(q.timeHours, c.hours) < timeTol, `${c.name} 시간 ${q.timeHours.toFixed(2)}h vs Bambu ${c.hours.toFixed(2)}h`)
-    assert.ok(rel(q.weightGrams, c.modelG) < 0.05, `${c.name} 모델 ${q.weightGrams.toFixed(1)}g vs ${c.modelG}g`)
-    assert.ok(rel(q.supportGrams, c.supportG) < 0.25, `${c.name} 서포트 ${q.supportGrams.toFixed(1)}g vs ${c.supportG}g`)
+    assert.ok(rel(q.weightGrams, c.modelG) < modelTol, `${c.name} 모델 ${q.weightGrams.toFixed(1)}g vs ${c.modelG}g`)
+    if (supportEnabled) {
+        assert.ok(rel(q.supportGrams, c.supportG) < 0.25, `${c.name} 서포트 ${q.supportGrams.toFixed(1)}g vs ${c.supportG}g`)
+    } else {
+        assert.equal(q.supportGrams, 0)
+    }
     console.log(
         `✓ Bambu P2S ${c.name}: ${formatEstimatedPrintTime(q.timeHours)} (실측 ${formatEstimatedPrintTime(c.hours)}), ` +
             `모델 ${q.weightGrams.toFixed(1)}g (${c.modelG}g), 서포트 ${q.supportGrams.toFixed(1)}g (${c.supportG}g)`

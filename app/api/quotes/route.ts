@@ -177,6 +177,13 @@ export async function POST(request: NextRequest) {
                       surfaceAreaCm2 * P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO
                   )
                 : null;
+        const curvedWallAreaCm2 =
+            lateralAreaCm2 != null ? Math.min(areaWithinSurface(body.curvedWallAreaCm2) ?? 0, lateralAreaCm2) : null;
+        // 루프 둘레는 선폭(약 1mm) 이상이라 루프·mm ≤ 측면 mm²
+        const contourLoopsMm =
+            lateralAreaCm2 != null && Number.isFinite(Number(body.contourLoopsMm)) && Number(body.contourLoopsMm) > 0
+                ? Math.min(Number(body.contourLoopsMm), lateralAreaCm2 * 100)
+                : null;
         // 다중 객체 3MF 플레이트 — 객체 높이 합은 전체 높이×객체 수, 간격은 박스 대각선을 넘을 수 없음
         const rawPartCount = Math.floor(Number(body.partCount));
         const partCount = Number.isFinite(rawPartCount) && rawPartCount > 1 ? Math.min(rawPartCount, 5000) : null;
@@ -229,6 +236,8 @@ export async function POST(request: NextRequest) {
                     bottomAreaCm2,
                     bedAreaCm2,
                     slowWallAreaCm2,
+                    curvedWallAreaCm2,
+                    contourLoopsMm,
                     partCount,
                     partHeightSumMm,
                     partSpacingMm,

@@ -39,6 +39,10 @@ export type ServerFdmQuoteInput = {
     bedAreaCm2?: number | null
     /** 외벽 오버행 감속 추가분 (등가 측면 cm²) */
     slowWallAreaCm2?: number | null
+    /** 곡선 윤곽 측면 (cm²) */
+    curvedWallAreaCm2?: number | null
+    /** 단면 윤곽 루프 수 × 높이 (루프·mm) */
+    contourLoopsMm?: number | null
     /** 다중 객체 3MF 플레이트 지표 */
     partCount?: number | null
     partHeightSumMm?: number | null
@@ -193,6 +197,8 @@ export async function resolveServerFdmQuote(
             bottomAreaCm2: input.bottomAreaCm2 ?? null,
             bedAreaCm2: input.bedAreaCm2 ?? null,
             slowWallAreaCm2: input.slowWallAreaCm2 ?? null,
+            curvedWallAreaCm2: input.curvedWallAreaCm2 ?? null,
+            contourLoopsMm: input.contourLoopsMm ?? null,
             partCount: input.partCount ?? null,
             partHeightSumMm: input.partHeightSumMm ?? null,
             partSpacingMm: input.partSpacingMm ?? null,

@@ -1,6 +1,6 @@
 /**
  * Bambu Studio(P2S) 3MF 플레이트 실측과 자동견적 비교 (다중 객체)
- * 실행: npx --yes tsx scripts/compare-bambu-3mf.ts "<3mf 경로>"
+ * 실행: npx --yes tsx scripts/compare-bambu-3mf.ts "<3mf 또는 stl 경로>"
  * 사전 준비: npm i --no-save linkedom (Node에 DOMParser가 없음)
  * Bambu 값은 BAMBU_MIN(모델 출력 시간, 분)·BAMBU_MODEL_G·BAMBU_SUPPORT_G 환경변수로 지정, 서포트 끔은 SUPPORT=0
  */
@@ -43,6 +43,8 @@ function report(label: string, a: GeometryAnalysis) {
         bottomAreaCm2: a.bottomArea,
         bedAreaCm2: a.bedArea,
         slowWallAreaCm2: a.slowWallArea,
+        curvedWallAreaCm2: a.curvedWallArea,
+        contourLoopsMm: a.contourLoops,
         partCount: a.partCount,
         partHeightSumMm: a.partHeightSum,
         partSpacingMm: a.partSpacing,
@@ -64,6 +66,7 @@ function report(label: string, a: GeometryAnalysis) {
                 lateralAreaCm2: +(a.lateralArea ?? 0).toFixed(1), topAreaCm2: +(a.topArea ?? 0).toFixed(1), bottomAreaCm2: +(a.bottomArea ?? 0).toFixed(1),
                 bedAreaCm2: +(a.bedArea ?? 0).toFixed(1), slowWallAreaCm2: +(a.slowWallArea ?? 0).toFixed(1),
                 overhangAreaCm2: +(a.overhangArea ?? 0).toFixed(1), supportVolumeCm3: +(a.supportVolume ?? 0).toFixed(1),
+                curvedWallAreaCm2: +(a.curvedWallArea ?? 0).toFixed(1), contourLoopsMm: +(a.contourLoops ?? 0).toFixed(0),
             })}` +
             `\n    형상: 두께 ${s.thicknessMm.toFixed(2)}mm · 대표길이 ${s.characteristicMm.toFixed(1)}mm · 층 ${s.numLayers} · 측면 ${a.lateralArea?.toFixed(0)} 윗면 ${a.topArea?.toFixed(0)} 바닥 ${a.bottomArea?.toFixed(0)} 베드 ${a.bedArea?.toFixed(0)} 오버행 ${a.overhangArea?.toFixed(0)}cm²` +
             `\n    Bambu 대비: 출력 시간 ${((printMin / BAMBU_MIN) * 100).toFixed(0)}% · 모델 ${((q.weightGrams / BAMBU_MODEL_G) * 100).toFixed(0)}% · 서포트 ${((q.supportGrams / BAMBU_SUPPORT_G) * 100).toFixed(0)}%`
@@ -93,11 +96,14 @@ function printProjectSettings() {
 
 async function main() {
     // 선택 의존성이라 타입 체크 대상에서 빠지도록 모듈 이름을 변수로 둠
-    const linkedom = 'linkedom'
-    const { DOMParser } = (await import(linkedom)) as { DOMParser: unknown }
-    ;(globalThis as unknown as { DOMParser: unknown }).DOMParser = DOMParser
-    printProjectSettings()
-    const geo = await parseModelArrayBuffer('plate.3mf', ab)
+    const is3mf = path.toLowerCase().endsWith('.3mf')
+    if (is3mf) {
+        const linkedom = 'linkedom'
+        const { DOMParser } = (await import(linkedom)) as { DOMParser: unknown }
+        ;(globalThis as unknown as { DOMParser: unknown }).DOMParser = DOMParser
+        printProjectSettings()
+    }
+    const geo = await parseModelArrayBuffer(is3mf ? 'plate.3mf' : path, ab)
     if (!geo) throw new Error('3MF 파싱 실패')
     geo.computeBoundingBox()
     geo.translate(0, 0, -geo.boundingBox!.min.z)
