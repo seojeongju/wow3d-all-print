@@ -38,21 +38,35 @@ export const FDM_SUPPORT_COST_TO_MATERIAL_MAX = 3
 export const FDM_SUPPORT_COST_FLOOR_KRW = 5_000
 
 /**
- * 서포트 압출 부피 = 오버행 면적 × FDM_SUPPORT_AREA_CM3_PER_CM2 + 그림자 부피 × FDM_SUPPORT_FILL_RATIO
+ * 서포트 압출 부피 = 오버행 면적 × FDM_SUPPORT_AREA_CM3_PER_CM2 + 그림자 부피 × 채움 비율
  * 그림자 = 오버행에서 바로 아래 모델 표면(없으면 베드)까지의 기둥 (Bambu 기본: 모델 위에도 서포트)
- * Bambu P2S 일반(자동) 서포트 실측 3건 상대오차 최소제곱
- * (오버행 20.6cm²·그림자 60cm³→33.5cm³, 15.4·149→60.4, 72.3·84.5→37.7)
+ * 채움 비율 = FDM_SUPPORT_FILL_RATIO × min(1, 기둥 부피 가중 평균 높이 / FDM_SUPPORT_FULL_COLUMN_MM)
+ * Bambu P2S 일반(자동) 서포트 실측 4건 로그 오차 최소제곱
+ * (오버행 20.6cm²·그림자 60cm³·기둥 31mm→33.5cm³, 15.4·149·134→60.4, 72.3·84.5·33→37.7, 43.7·38.4·10→9.0)
  */
-export const FDM_SUPPORT_FILL_RATIO = 0.44
+export const FDM_SUPPORT_FILL_RATIO = 0.45
+/** 이 높이(mm) 미만의 낮은 기둥은 채움 비율을 높이에 비례해 낮춤 */
+export const FDM_SUPPORT_FULL_COLUMN_MM = 24
 /** 오버행 면적당 상단 접촉면 압출 부피 (cm³/cm²) — 접촉 2층 × 0.2mm × 채움 약 0.8 */
 export const FDM_SUPPORT_AREA_CM3_PER_CM2 = 0.033
 
+/** 기둥 높이별 그림자 채움 비율 — 높이를 모르면(구 데이터) 최대 비율 */
+export function fdmSupportFillRatio(supportColumnMm: number | null | undefined): number {
+    const h = Number(supportColumnMm)
+    if (supportColumnMm == null || !Number.isFinite(h)) return FDM_SUPPORT_FILL_RATIO
+    return FDM_SUPPORT_FILL_RATIO * Math.min(1, Math.max(0, h) / FDM_SUPPORT_FULL_COLUMN_MM)
+}
+
 /** 그림자 부피가 있을 때 서포트 압출 부피(cm³) */
-export function fdmSupportExtrudeCm3(overhangAreaCm2: number | null | undefined, supportVolumeCm3: number | null | undefined): number {
+export function fdmSupportExtrudeCm3(
+    overhangAreaCm2: number | null | undefined,
+    supportVolumeCm3: number | null | undefined,
+    supportColumnMm?: number | null
+): number {
     const area = Math.max(0, Number(overhangAreaCm2) || 0)
     const vol = Math.max(0, Number(supportVolumeCm3) || 0)
     if (area <= 0 && vol <= 0) return 0
-    return area * FDM_SUPPORT_AREA_CM3_PER_CM2 + vol * FDM_SUPPORT_FILL_RATIO
+    return area * FDM_SUPPORT_AREA_CM3_PER_CM2 + vol * fdmSupportFillRatio(supportColumnMm)
 }
 /** 그림자 부피가 없을 때(overhangArea × 높이 × frac 근사) 채움 비율 */
 export const FDM_SUPPORT_FALLBACK_FILL_RATIO = 0.125
@@ -139,6 +153,8 @@ export function estimateFdmSupportGrams(input: {
     density: number
     /** 배치 기준 오버행 그림자 부피(cm³). 있으면 높이 비율 근사 대신 사용 */
     supportVolumeCm3?: number | null
+    /** 서포트 기둥 부피 가중 평균 높이(mm) */
+    supportColumnMm?: number | null
     /** 클램프용 모델 무게(g) */
     modelWeightGrams?: number
 }): number {
@@ -150,7 +166,7 @@ export function estimateFdmSupportGrams(input: {
     const hasShadow =
         input.supportVolumeCm3 != null && Number.isFinite(Number(input.supportVolumeCm3))
     const volCm3 = hasShadow
-        ? fdmSupportExtrudeCm3(overhang, input.supportVolumeCm3)
+        ? fdmSupportExtrudeCm3(overhang, input.supportVolumeCm3, input.supportColumnMm)
         : overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC * FDM_SUPPORT_FALLBACK_FILL_RATIO
     let grams = volCm3 * density
     const modelW = Math.max(0, Number(input.modelWeightGrams) || 0)
@@ -176,6 +192,8 @@ export type CalculateFdmQuoteInput = {
     overhangAreaCm2?: number | null
     /** 배치 기준 서포트 그림자 부피(cm³). 없으면 높이 비율 근사 */
     supportVolumeCm3?: number | null
+    /** 배치 기준 서포트 기둥 부피 가중 평균 높이(mm). 없으면 최대 채움 비율 */
+    supportColumnMm?: number | null
     /** 배치 기준 측면·윗면·바닥·베드 접촉 면적(cm²). 없으면 평균 단면으로 근사 */
     lateralAreaCm2?: number | null
     topAreaCm2?: number | null
@@ -295,6 +313,7 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         heightMm: input.heightMm,
         density: input.density,
         supportVolumeCm3: input.supportVolumeCm3,
+        supportColumnMm: input.supportColumnMm,
         modelWeightGrams: weight.weightGrams,
     })
 

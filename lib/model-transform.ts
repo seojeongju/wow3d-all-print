@@ -241,7 +241,7 @@ export function getUpAxisKey(transform: Pick<ModelTransform, 'rotX' | 'rotY' | '
 
 /**
  * 원본 분석값에 균일 스케일·90° 회전을 반영.
- * - 부피 ∝ s³, 면적·오버행 ∝ s², 서포트 부피 ∝ s³
+ * - 부피 ∝ s³, 면적·오버행 ∝ s², 서포트 부피 ∝ s³, 서포트 기둥 높이 ∝ s
  * - 바운딩 박스는 스케일 후 축 순열
  * - 오버행·서포트는 슬라이서처럼 회전 후 바닥(최저점)에 놓인 상태 기준
  */
@@ -274,6 +274,7 @@ export function applyTransformToAnalysis(
         surfaceArea: base.surfaceArea * s2,
         overhangArea: area(src.overhangArea),
         ...(supportVolume !== undefined ? { supportVolume: supportVolume * s3 } : {}),
+        ...(src.supportColumnMm !== undefined ? { supportColumnMm: src.supportColumnMm * s } : {}),
         ...(src.lateralArea !== undefined ? { lateralArea: area(src.lateralArea) } : {}),
         ...(src.topArea !== undefined ? { topArea: area(src.topArea) } : {}),
         ...(src.bottomArea !== undefined ? { bottomArea: area(src.bottomArea) } : {}),
@@ -321,7 +322,7 @@ function placementScoreHours(analysis: GeometryAnalysis, layerHeightMm: number):
         partSpacingMm: analysis.partSpacing,
         layerHeightMm,
         infillPercent: 15,
-        supportExtrudeCm3: fdmSupportExtrudeCm3(analysis.overhangArea, analysis.supportVolume),
+        supportExtrudeCm3: fdmSupportExtrudeCm3(analysis.overhangArea, analysis.supportVolume, analysis.supportColumnMm),
         materialName: 'PLA',
     })
     return Object.values(breakdownSec).reduce((a, b) => a + b, 0) / 3600

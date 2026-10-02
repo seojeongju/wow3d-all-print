@@ -16,6 +16,8 @@ export type OrientationSupport = {
     overhangArea: number;
     /** 오버행 아래 그림자 부피 — 서포트가 채울 공간 (cm³, 채움률 적용 전) */
     supportVolume: number;
+    /** 서포트 기둥의 부피 가중 평균 높이 Σa·h² / Σa·h (mm) — 낮은 기둥은 채움 비율이 낮음 */
+    supportColumnMm?: number;
     /** 측면 면적 Σ A·sinθ (cm²) — 레이어별 벽 경로 길이 × 레이어 높이의 합 */
     lateralArea?: number;
     /** 위를 향한 면의 수평 투영 면적 (cm²) — 윗면 솔리드, 벽이 덮는 경사면 제외 */
@@ -54,6 +56,8 @@ export interface GeometryAnalysis {
     faceOrientations?: FaceOrientation[];
     /** 현재 배치의 서포트 그림자 부피 (cm³) — applyTransformToAnalysis가 채움 */
     supportVolume?: number;
+    /** 현재 배치의 서포트 기둥 부피 가중 평균 높이 (mm) */
+    supportColumnMm?: number;
     /** 현재 배치의 측면·윗면·바닥·베드 접촉 면적 (cm²) — 출력 시간 산출용 */
     lateralArea?: number;
     topArea?: number;
@@ -122,6 +126,9 @@ class SurfaceColumnGrid {
     private list = 0;
     private qDown = true;
     private qSum = 0;
+    private qSumSq = 0;
+    /** 직전 columnHeight 질의의 기둥 높이 제곱 평균(mm²) — 부피 가중 평균 높이 산출용 */
+    lastHeightSq = 0;
 
     /** tris: 삼각형당 정점 좌표 9개 (meshTriangleCoords) */
     constructor(tris: ArrayLike<number>, rows: readonly number[]) {
@@ -214,7 +221,9 @@ class SurfaceColumnGrid {
             }
             col = best - w;
         }
-        this.qSum += Math.max(0, col);
+        const h = Math.max(0, col);
+        this.qSum += h;
+        this.qSumSq += h * h;
     }
 
     /** 삼각형 (u, v, w)×3 안에 중심이 든 셀마다 수집(query=false) 또는 기둥 합산. 방문 셀 수 반환 */
@@ -255,13 +264,18 @@ class SurfaceColumnGrid {
         this.list = land;
         this.qDown = down;
         this.qSum = 0;
+        this.qSumSq = 0;
         const n = this.scan(t, true);
-        if (n > 0) return this.qSum / n;
+        if (n > 0) {
+            this.lastHeightSq = this.qSumSq / n;
+            return this.qSum / n;
+        }
         // 셀 중심을 덮지 못한 작은 삼각형은 무게중심의 셀로
         const gu = (t[0] + t[3] + t[6]) / 3, gv = (t[1] + t[4] + t[7]) / 3, gw = (t[2] + t[5] + t[8]) / 3;
         const i = Math.min(this.nu - 1, Math.max(0, Math.floor((gu - this.u0) / this.cs)));
         const j = Math.min(this.nv - 1, Math.max(0, Math.floor((gv - this.v0) / this.cs)));
         this.addColumn(i * this.nv + j, gw);
+        this.lastHeightSq = this.qSumSq;
         return this.qSum;
     }
 
@@ -324,15 +338,21 @@ function meshTriangleCoords(pos: MeshPositions, index: THREE.BufferAttribute | n
 }
 
 /**
- * 평면 배치(rows 셋째 행 = 위 방향) 서포트 그림자 부피(mm³) — 착지면 격자 기준.
+ * 평면 배치(rows 셋째 행 = 위 방향) 서포트 그림자 부피(mm³)와 Σa·h²(mm⁴) — 착지면 격자 기준.
  * sign: 감김이 정상이면 1 (바깥 법선 = sign × 삼각형 법선)
  */
-function faceSupportVolumeMm3(tris: ArrayLike<number>, rows: readonly number[], sign: number, bedTol: number): number {
+function faceSupportVolumeMm3(
+    tris: ArrayLike<number>,
+    rows: readonly number[],
+    sign: number,
+    bedTol: number
+): { vol: number; sq: number } {
     const grid = new SurfaceColumnGrid(tris, rows);
     const land = sign > 0 ? 0 : 1;
     const t = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     const triCount = Math.floor(tris.length / 9);
     let vol = 0;
+    let sq = 0;
     for (let i = 0; i < triCount; i++) {
         grid.projectAt(tris, i, t);
         const ux = t[3] - t[0], uy = t[4] - t[1], uz = t[5] - t[2];
@@ -341,9 +361,16 @@ function faceSupportVolumeMm3(tris: ArrayLike<number>, rows: readonly number[], 
         const len = Math.hypot(uy * wz - uz * wy, uz * wx - ux * wz, cw);
         if (!(len > 0) || (sign * cw) / len >= -SUPPORT_NORMAL_THRESHOLD) continue;
         if ((t[2] + t[5] + t[8]) / 3 - grid.bedW <= bedTol) continue;
-        vol += (Math.abs(cw) / 2) * grid.columnHeight(t, land, true);
+        const projected = Math.abs(cw) / 2;
+        vol += projected * grid.columnHeight(t, land, true);
+        sq += projected * grid.lastHeightSq;
     }
-    return vol;
+    return { vol, sq };
+}
+
+/** Σa·h(mm³)·Σa·h²(mm⁴) → 부피 가중 평균 기둥 높이(mm) */
+function supportColumnMm(volMm3: number, sqMm4: number): number | undefined {
+    return volMm3 > 0 ? sqMm4 / volMm3 : undefined;
 }
 
 /** 축 k가 높이(w)인 오른손 좌표계 (u = k+1, v = k+2) */
@@ -662,10 +689,13 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
     };
 
     const clampArea = (v: number) => Math.min(Math.max(0, Number(v) || 0), surfaceArea);
-    type AreaKey = (typeof ORIENTATION_AREA_KEYS)[number] | 'slowWallArea' | 'contourLoops';
+    type AreaKey = (typeof ORIENTATION_AREA_KEYS)[number] | 'slowWallArea' | 'contourLoops' | 'supportColumnMm';
     const pickAreas = (src: Partial<Record<AreaKey, number>>) => {
         const out: Partial<Record<AreaKey, number>> = {};
         if (src.contourLoops != null) out.contourLoops = Math.max(0, Number(src.contourLoops) || 0);
+        if (src.supportColumnMm != null && Number.isFinite(Number(src.supportColumnMm))) {
+            out.supportColumnMm = Math.max(0, Number(src.supportColumnMm));
+        }
         for (const k of ORIENTATION_AREA_KEYS) {
             if (src[k] != null) out[k] = clampArea(src[k]!);
         }
@@ -797,6 +827,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     // 감김 방향이 뒤집힌 메쉬는 법선 부호가 반대이므로, 둘 다 누적 후 부피 부호로 선택
     const ovArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
     const ovVol = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
+    const ovSq = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
     const bedArea = [0, 1, 2].map(() => [[0, 0], [0, 0]]);
     // 축 k 기준 측면(Σ A·sinθ), 법선 +k / -k 쪽 면의 윗면·아랫면 솔리드 투영과 오버행 감속 외벽
     const lateral = [0, 0, 0];
@@ -855,12 +886,14 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
             if (hFromMin > bedTol[k]) {
                 ovArea[k][face][0] += area;
                 ovVol[k][face][0] += projected * grids[k].columnHeight(t9, face, true);
+                ovSq[k][face][0] += projected * grids[k].lastHeightSq;
             } else {
                 bedArea[k][face][0] += projected;
             }
             if (hFromMax > bedTol[k]) {
                 ovArea[k][face][1] += area;
                 ovVol[k][face][1] += projected * grids[k].columnHeight(t9, face, false);
+                ovSq[k][face][1] += projected * grids[k].lastHeightSq;
             } else {
                 bedArea[k][face][1] += projected;
             }
@@ -900,6 +933,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
             orientations[`+${axes[k]}`] = {
                 overhangArea: cm2(ovArea[k][down][0]),
                 supportVolume: (ovVol[k][down][0] * scale) / 1000,
+                supportColumnMm: supportColumnMm(ovVol[k][down][0], ovSq[k][down][0]),
                 lateralArea: cm2(lateral[k]),
                 topArea: cm2(topSolid[k][plus]),
                 bottomArea: cm2(bottomSolid[k][minus]),
@@ -909,6 +943,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
             orientations[`-${axes[k]}`] = {
                 overhangArea: cm2(ovArea[k][up][1]),
                 supportVolume: (ovVol[k][up][1] * scale) / 1000,
+                supportColumnMm: supportColumnMm(ovVol[k][up][1], ovSq[k][up][1]),
                 lateralArea: cm2(lateral[k]),
                 topArea: cm2(topSolid[k][minus]),
                 bottomArea: cm2(bottomSolid[k][plus]),
@@ -942,6 +977,7 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         supportVolume: placed?.supportVolume,
         ...(placed
             ? {
+                  supportColumnMm: placed.supportColumnMm,
                   lateralArea: placed.lateralArea,
                   topArea: placed.topArea,
                   bottomArea: placed.bottomArea,
@@ -1067,7 +1103,7 @@ function buildFaceOrientations(
     });
 
     const acc = chosen.map(() => ({
-        overhang: 0, supportVol: 0, bed: 0, lateral: 0, top: 0, bottom: 0, slow: 0,
+        overhang: 0, supportVol: 0, supportSq: 0, bed: 0, lateral: 0, top: 0, bottom: 0, slow: 0,
     }));
     const triCount = index ? Math.floor(index.count / 3) : Math.floor(pos.count / 3);
     const v = [0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -1105,6 +1141,7 @@ function buildFaceOrientations(
             if (h > tol) {
                 a.overhang += area;
                 a.supportVol += projected * h;
+                a.supportSq += projected * h * h;
             } else {
                 a.bed += projected;
             }
@@ -1118,7 +1155,11 @@ function buildFaceOrientations(
         .sort((p, q) => q.a.bed - p.a.bed)
         .slice(0, FACE_CANDIDATES_MAX);
     for (const { c, a } of placeable) {
-        if (a.supportVol > 0) a.supportVol = faceSupportVolumeMm3(tris, c.rows, sign, c.tol);
+        if (a.supportVol > 0) {
+            const s = faceSupportVolumeMm3(tris, c.rows, sign, c.tol);
+            a.supportVol = s.vol;
+            a.supportSq = s.sq;
+        }
     }
 
     return placeable.map(({ c, a }) => {
@@ -1128,6 +1169,7 @@ function buildFaceOrientations(
             box: c.box,
             overhangArea: a.overhang / 100,
             supportVolume: a.supportVol / 1000,
+            supportColumnMm: supportColumnMm(a.supportVol, a.supportSq),
             lateralArea: a.lateral / 100,
             topArea: a.top / 100,
             bottomArea: a.bottom / 100,
@@ -1206,13 +1248,17 @@ function analyzeMultiPartGeometry(geometry: THREE.BufferGeometry, ranges: ModelP
     const orientations: NonNullable<GeometryAnalysis['orientations']> = {};
     for (const key of UP_AXIS_KEYS) {
         const sum: OrientationSupport = { overhangArea: 0, supportVolume: 0, partHeightSum: 0 };
+        let columnSq = 0;
         for (const { a } of parts) {
             const o = a.orientations?.[key];
             for (const k of ORIENTATION_SUM_KEYS) {
                 sum[k] = (sum[k] ?? 0) + (Number(o?.[k]) || 0);
             }
+            columnSq += (Number(o?.supportVolume) || 0) * (Number(o?.supportColumnMm) || 0);
             sum.partHeightSum! += axisSize(a.boundingBox, key);
         }
+        const column = supportColumnMm(sum.supportVolume, columnSq);
+        if (column !== undefined) sum.supportColumnMm = column;
         orientations[key] = sum;
     }
 

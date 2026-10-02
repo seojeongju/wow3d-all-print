@@ -162,6 +162,17 @@ export async function POST(request: NextRequest) {
                       Math.max(0, (dimensionsX * dimensionsY * dimensionsZ) / 1000 - volumeCm3)
                   )
                 : null;
+        // 부피 가중 평균 기둥 높이 ≥ 평균 높이(그림자 부피 / 오버행 면적), ≤ 모델 높이
+        const supportColumnMm =
+            body.supportColumnMm != null && Number.isFinite(Number(body.supportColumnMm))
+                ? Math.min(
+                      Math.max(
+                          Number(body.supportColumnMm),
+                          supportVolumeCm3 && overhangAreaCm2 ? (supportVolumeCm3 / overhangAreaCm2) * 10 : 0
+                      ),
+                      dimensionsZ
+                  )
+                : null;
         // 배치 기준 면적 — 표면적을 넘을 수 없음
         const areaWithinSurface = (v: unknown) =>
             v != null && Number.isFinite(Number(v)) ? Math.min(Math.max(0, Number(v)), surfaceAreaCm2) : null;
@@ -231,6 +242,7 @@ export async function POST(request: NextRequest) {
                     heightMm: dimensionsZ,
                     overhangAreaCm2,
                     supportVolumeCm3,
+                    supportColumnMm,
                     lateralAreaCm2,
                     topAreaCm2,
                     bottomAreaCm2,

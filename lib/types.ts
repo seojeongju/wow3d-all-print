@@ -17,6 +17,8 @@ export interface QuoteData {
     overhangAreaCm2?: number;
     /** 현재 배치 기준 서포트 그림자 부피 — 서버 재계산용 */
     supportVolumeCm3?: number;
+    /** 현재 배치 기준 서포트 기둥 부피 가중 평균 높이(mm) — 서버 재계산용 */
+    supportColumnMm?: number;
     /** 현재 배치 기준 측면·윗면·바닥·베드 접촉 면적 — 서버 출력 시간 재계산용 */
     lateralAreaCm2?: number;
     topAreaCm2?: number;

@@ -6,6 +6,12 @@
  */
 
 import { priceCartLinesByPrintMethod } from '@/lib/quote-batch-price'
+import {
+    evaluateQuoteValidity,
+    loadPricingStamps,
+    quoteValidityErrorMessage,
+    type PricingStamps,
+} from '@/lib/quote-validity'
 
 type D1Like = {
     prepare: (sql: string) => {
@@ -38,6 +44,11 @@ type QuoteCartRow = {
     variable_cost_krw?: number | null
     setup_cost_krw?: number | null
     min_price_krw?: number | null
+    created_at?: string | null
+    updated_at?: string | null
+    fdm_material?: string | null
+    fdm_material_name?: string | null
+    resin_type_name?: string | null
 }
 
 export type ResolveOrderLinesResult =
@@ -88,7 +99,8 @@ export async function resolveOrderLinesFromDb(
         const q = await db
             .prepare(
                 `SELECT q.id, q.total_price, q.volume_cm3, q.print_method, c.quantity AS cart_quantity,
-                        q.variable_cost_krw, q.setup_cost_krw, q.min_price_krw
+                        q.variable_cost_krw, q.setup_cost_krw, q.min_price_krw,
+                        q.created_at, q.updated_at, q.fdm_material, q.fdm_material_name, q.resin_type_name
                  FROM quotes q
                  INNER JOIN cart c ON c.quote_id = q.id
                  WHERE q.id IN (${placeholders}) AND ${owner.sql}`
@@ -124,6 +136,8 @@ export async function resolveOrderLinesFromDb(
 
     const byId = new Map(results.map((r) => [Number(r.id), r]))
 
+    const stamps: PricingStamps = await loadPricingStamps(db as unknown as Parameters<typeof loadPricingStamps>[0])
+
     const batchInputs: {
         key: number
         printMethod: string
@@ -145,6 +159,9 @@ export async function resolveOrderLinesFromDb(
                 status: 400,
             }
         }
+
+        const validityError = quoteValidityErrorMessage(evaluateQuoteValidity(row, stamps).status, quoteId)
+        if (validityError) return { ok: false, error: validityError, status: 409 }
 
         const requestedQty = Math.max(1, Math.floor(Number(item.quantity) || 1))
         const cartQty = Math.max(1, Math.floor(Number(row.cart_quantity) || 1))

@@ -82,6 +82,7 @@ const tBase = analyzeGeometry(buildT())
     // 날개 아랫면 2 × (10×10mm) = 2cm², 높이 20mm → 그림자 4cm³
     assert.ok(near(o['+y']!.overhangArea, 2, 1e-6), `+y 오버행 ${o['+y']!.overhangArea}`)
     assert.ok(near(o['+y']!.supportVolume, 4, 1e-6), `+y 서포트 부피 ${o['+y']!.supportVolume}`)
+    assert.ok(near(o['+y']!.supportColumnMm!, 20, 1e-6), `+y 기둥 높이 ${o['+y']!.supportColumnMm}`)
     assert.equal(o['-y']!.overhangArea, 0, 'T를 뒤집으면 서포트 없음')
     assert.equal(o['+z']!.overhangArea, 0, '눕히면 서포트 없음')
     assert.equal(o['-z']!.overhangArea, 0)
@@ -110,7 +111,8 @@ const tBase = analyzeGeometry(buildT())
     const upright = applyTransformToAnalysis(tBase, { ...DEFAULT_MODEL_TRANSFORM, rotX: 90, scalePercent: 200 })
     assert.ok(near(upright.supportVolume!, 32, 1e-6), `세운 T 200% 서포트 ${upright.supportVolume}`)
     assert.ok(near(upright.overhangArea!, 8, 1e-6))
-    console.log('✓ 회전별 바닥 방향 선택, 스케일 s²·s³ 반영')
+    assert.ok(near(upright.supportColumnMm!, 40, 1e-6), `세운 T 200% 기둥 높이 ${upright.supportColumnMm}`)
+    console.log('✓ 회전별 바닥 방향 선택, 스케일 s·s²·s³ 반영')
 }
 
 // 4) 자동 배치: 세운 T에서 시작해도 서포트 0 + 가장 낮은 높이로 배치

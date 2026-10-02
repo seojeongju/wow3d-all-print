@@ -26,6 +26,7 @@ import {
 } from '@/lib/shipping-settings'
 import { MESHY_AI_DISCLAIMER_SHORT, MESHY_AI_DISCLAIMER_SHORT_EN } from '@/lib/meshy-disclaimer'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
+import { QUOTE_VALID_DAYS, type QuotePriceStatus } from '@/lib/quote-validity'
 
 type QuoteRow = {
     id: number
@@ -54,7 +55,12 @@ type QuoteRow = {
     min_price_krw?: number | null
     created_at: string
     updated_at: string
+    /** GET /api/cart 전용 — 유효기간·단가 변경 판정 */
+    price_status?: QuotePriceStatus
+    expires_at?: string | null
 }
+
+type CartValidity = { status: QuotePriceStatus; expiresAt: string | null }
 
 function quoteRowPrintSettings(row: QuoteRow): QuotePrintSettings {
     return {
@@ -129,6 +135,8 @@ function CartPageContent() {
     const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>(initialTab)
     const [addingId, setAddingId] = useState<number | null>(null)
     const [storeSettings, setStoreSettings] = useState(DEFAULT_SHIPPING_SETTINGS)
+    /** quoteId → 유효기간·단가 변경 상태 (서버 판정) */
+    const [validityByQuoteId, setValidityByQuoteId] = useState<Map<number, CartValidity>>(new Map())
 
     // 주문조회
     const [orders, setOrders] = useState<Order[]>([])
@@ -167,6 +175,14 @@ function CartPageContent() {
                 const rows = Array.isArray(data?.data) ? (data.data as QuoteRow[]) : []
                 if (rows.length === 0) return
                 refreshQuoteSnapshots(rows.map(toQuote))
+                setValidityByQuoteId(
+                    new Map(
+                        rows.map((r) => [
+                            Number(r.id),
+                            { status: r.price_status ?? 'ok', expiresAt: r.expires_at ?? null },
+                        ])
+                    )
+                )
             } catch (err) {
                 console.error('Failed to sync cart quotes:', err)
             }
@@ -248,7 +264,15 @@ function CartPageContent() {
         fetchSettings()
     }, [])
 
-    const selectedItems = items.filter((i) => selectedIds.has(i.id))
+    const itemValidity = (quoteId: number): CartValidity | undefined => validityByQuoteId.get(quoteId)
+    const needsRecalc = (quoteId: number) => {
+        const s = itemValidity(quoteId)?.status
+        return s === 'expired' || s === 'price_changed'
+    }
+    /** 다시 계산이 필요한 견적은 주문(결제)에서 제외 — 서버도 409로 차단 */
+    const selectedItems = items.filter((i) => selectedIds.has(i.id) && !needsRecalc(i.quoteId))
+    const staleSelectedCount = items.filter((i) => selectedIds.has(i.id) && needsRecalc(i.quoteId)).length
+    const checkoutIds = selectedItems.map((i) => i.id).join(',')
     /** 실제 결제 기준(같은 출력방식 최소 1회) */
     const selectedTotal = getTotalPriceForItems(selectedItems)
     const selectedLineCount = selectedItems.length
@@ -488,7 +512,9 @@ function CartPageContent() {
                                     <AnimatePresence mode="popLayout">
                                         {items.length > 0 ? (
                                             items.map((item) => {
-                                                const isSelected = selectedIds.has(item.id)
+                                                const stale = needsRecalc(item.quoteId)
+                                                const validity = itemValidity(item.quoteId)
+                                                const isSelected = selectedIds.has(item.id) && !stale
                                                 const lineTotalKrw = Math.round(cartItemLineTotal(item))
 
                                                 return (
@@ -498,7 +524,7 @@ function CartPageContent() {
                                                     initial={{ opacity: 0, y: 30 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, scale: 0.95 }}
-                                                    className={`p-8 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 group relative overflow-hidden ${isSelected ? 'bg-white/[0.05] border-teal-400/30' : 'bg-white/[0.02] border-white/5 opacity-60'}`}
+                                                    className={`p-8 rounded-[2.5rem] border backdrop-blur-3xl transition-all duration-500 group relative overflow-hidden ${isSelected ? 'bg-white/[0.05] border-teal-400/30' : stale ? 'bg-white/[0.02] border-amber-400/20' : 'bg-white/[0.02] border-white/5 opacity-60'}`}
                                                 >
                                                     {isSelected && (
                                                         <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/5 blur-3xl rounded-full -mr-16 -mt-16" />
@@ -508,6 +534,7 @@ function CartPageContent() {
                                                             <input
                                                                 type="checkbox"
                                                                 checked={isSelected}
+                                                                disabled={stale}
                                                                 onChange={() => toggleSelect(item.id)}
                                                                 className="w-6 h-6 rounded-lg border-white/10 bg-white/5 text-teal-400 focus:ring-teal-400/50 transition-all checked:bg-teal-400"
                                                             />
@@ -562,8 +589,39 @@ function CartPageContent() {
                                                                             <span className="text-[8px] ml-1 opacity-60 font-bold">{t('vatIncluded')}</span>
                                                                         </dd>
                                                                         <p className="text-[9px] text-white/25 mt-1 font-medium leading-snug">{t('baseQuoteAloneHint')}</p>
+                                                                        {!stale && validity?.expiresAt && (
+                                                                            <p className="text-[9px] text-white/35 mt-1 font-bold leading-snug">
+                                                                                {t('validUntil', {
+                                                                                    date: new Date(validity.expiresAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'ko-KR', {
+                                                                                        month: 'short',
+                                                                                        day: 'numeric',
+                                                                                    }),
+                                                                                })}
+                                                                            </p>
+                                                                        )}
                                                                     </div>
                                                                 </div>
+                                                                {stale && (
+                                                                    <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-[13px] font-black text-amber-200">
+                                                                                {validity?.status === 'price_changed'
+                                                                                    ? t('stalePriceChangedTitle')
+                                                                                    : t('staleExpiredTitle', { days: QUOTE_VALID_DAYS })}
+                                                                            </p>
+                                                                            <p className="text-[11px] font-bold text-amber-100/70 mt-0.5 break-keep">{t('staleDesc')}</p>
+                                                                        </div>
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            onClick={() => handleEditQuote(item.quoteId)}
+                                                                            className="h-10 shrink-0 rounded-xl bg-amber-400 text-slate-950 hover:bg-amber-300 font-black text-[12px] gap-1.5"
+                                                                        >
+                                                                            <RotateCcw className="w-3.5 h-3.5" />
+                                                                            {t('recalculate')}
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="flex flex-wrap items-center justify-between pt-6 border-t border-white/5 gap-3">
                                                                 <div className="flex flex-wrap items-center gap-2">
@@ -816,7 +874,12 @@ function CartPageContent() {
 
                             <div className="space-y-4 pt-4 relative z-10">
                                 <span className="text-[11px] font-black text-teal-400 uppercase tracking-[0.3em] block">{t('step02')}</span>
-                                {selectedLineCount === 0 && (
+                                {activeTab === 'cart' && staleSelectedCount > 0 && (
+                                    <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-200/95 text-[12px] font-bold leading-relaxed text-center break-keep">
+                                        {t('staleExcludedHint', { count: staleSelectedCount })}
+                                    </div>
+                                )}
+                                {selectedLineCount === 0 && staleSelectedCount === 0 && (
                                     <div className="p-4 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-200/95 text-[12px] font-bold leading-relaxed text-center break-keep">
                                         {activeTab === 'saved' || (items.length === 0 && savedQuotes.length > 0)
                                             ? t('selectFromSavedHint')
@@ -825,7 +888,7 @@ function CartPageContent() {
                                 )}
                                 
                                 {isAuthenticated ? (
-                                    <Link href={`/checkout?ids=${Array.from(selectedIds).join(',')}`} className={selectedLineCount === 0 ? 'pointer-events-none' : ''}>
+                                    <Link href={`/checkout?ids=${checkoutIds}`} className={selectedLineCount === 0 ? 'pointer-events-none' : ''}>
                                         <Button 
                                             size="lg" 
                                             disabled={selectedLineCount === 0}
@@ -839,7 +902,7 @@ function CartPageContent() {
                                         <Link
                                             href={
                                                 selectedLineCount > 0
-                                                    ? `/auth?return=${encodeURIComponent(`/checkout?ids=${Array.from(selectedIds).join(',')}`)}`
+                                                    ? `/auth?return=${encodeURIComponent(`/checkout?ids=${checkoutIds}`)}`
                                                     : '/auth?return=/cart'
                                             }
                                             className={selectedLineCount === 0 ? 'pointer-events-none' : 'block'}
@@ -854,7 +917,7 @@ function CartPageContent() {
                                         </Link>
                                         <div className="flex justify-center pt-1">
                                             <Link
-                                                href={selectedLineCount > 0 ? `/checkout?ids=${Array.from(selectedIds).join(',')}` : '#'}
+                                                href={selectedLineCount > 0 ? `/checkout?ids=${checkoutIds}` : '#'}
                                                 className={selectedLineCount === 0 ? 'pointer-events-none' : undefined}
                                             >
                                                 <button

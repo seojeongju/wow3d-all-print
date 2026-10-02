@@ -52,6 +52,10 @@ function calcParamValues(type: string, body: Record<string, unknown>) {
   }
 }
 
+function changedColumnsWhere(cols: string[]): string {
+  return `\n         WHERE ${cols.map((c) => `printer_equipment.${c} IS NOT excluded.${c}`).join(' OR ')}`
+}
+
 function nonNegative(v: unknown, fallback: number): number {
   const n = Number(v)
   return v != null && v !== '' && Number.isFinite(n) && n >= 0 ? n : fallback
@@ -126,6 +130,12 @@ export async function POST(req: NextRequest) {
     const hasLayerCosts = layer_costs_json != null
     const calcArr = [calc.min_price_krw, calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.sla_support_per_cm2_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw, calc.dlp_support_per_cm2_krw]
     const calcPlaceholders = calcArr.map(() => '?').join(', ')
+    // 값이 실제로 바뀐 경우에만 갱신 → updated_at = 마지막 단가·사양 변경 시각 (장바구니 '단가 변경' 판정 기준)
+    const changedWhere = changedColumnsWhere([
+      'name', 'max_x_mm', 'max_y_mm', 'max_z_mm', 'hourly_rate', 'layer_heights_json', 'is_active',
+      ...(hasLayerCosts ? ['layer_costs_json'] : []),
+      ...[...calcSet.matchAll(/(\w+) = excluded\./g)].map((m) => m[1]),
+    ])
 
     const sql = hasLayerCosts
       ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
@@ -133,13 +143,13 @@ export async function POST(req: NextRequest) {
          ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
-           is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
+           is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP${changedWhere}`
       : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
          ON CONFLICT(store_id, type) DO UPDATE SET
            name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
            hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
-           is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP`
+           is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP${changedWhere}`
 
     if (hasLayerCosts) {
       await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ...calcArr, storeId).run()

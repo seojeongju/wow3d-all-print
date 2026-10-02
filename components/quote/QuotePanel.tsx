@@ -176,10 +176,13 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const [priceRoundMode] = useState<PriceRoundMode>(QUOTE_PRICE_ROUND_MODE)
     const [detailModalOpen, setDetailModalOpen] = useState(false)
     const initialConfigSeeded = useRef(false)
+    /** 재로드한 저장 견적은 설정이 같아도 첫 담기 때 재저장 — 현재 단가로 금액·산출 시각 갱신 (유효기간·단가 변경 해소) */
+    const resaveLoadedQuote = useRef(false)
 
     // Initial Data Effect
     useEffect(() => {
         if (!initialQuote) return
+        resaveLoadedQuote.current = true
 
         const loadedId = Number((initialQuote as { id?: number }).id)
         if (Number.isInteger(loadedId) && loadedId > 0) {
@@ -272,6 +275,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const surfaceAreaCm2 = analysis?.surfaceArea || 0
     const overhangAreaRaw = analysis?.overhangArea // 오버행 정보 존재 여부 확인용
     const supportVolumeRaw = analysis?.supportVolume // 현재 배치 기준 서포트 그림자 부피
+    const supportColumnMmRaw = analysis?.supportColumnMm // 서포트 기둥 부피 가중 평균 높이
     // 현재 배치 기준 측면·윗면·바닥·베드 면적 — P2S 출력 시간 산출
     const lateralAreaRaw = analysis?.lateralArea
     const topAreaRaw = analysis?.topArea
@@ -327,6 +331,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 supportEnabled,
                 overhangAreaCm2: overhangAreaRaw,
                 supportVolumeCm3: supportVolumeRaw,
+                supportColumnMm: supportColumnMmRaw,
                 lateralAreaCm2: lateralAreaRaw,
                 topAreaCm2: topAreaRaw,
                 bottomAreaCm2: bottomAreaRaw,
@@ -407,7 +412,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, curvedWallAreaRaw, contourLoopsRaw, partCount, partHeightSumMm, partSpacingMm, surfaceAreaCm2, volumeCm3])
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, supportColumnMmRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, curvedWallAreaRaw, contourLoopsRaw, partCount, partHeightSumMm, partSpacingMm, surfaceAreaCm2, volumeCm3])
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
@@ -707,6 +712,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 dimensionsZ: analysis.boundingBox.z,
                 ...(overhangAreaRaw != null ? { overhangAreaCm2: overhangAreaRaw } : {}),
                 ...(supportVolumeRaw != null ? { supportVolumeCm3: supportVolumeRaw } : {}),
+                ...(supportColumnMmRaw != null ? { supportColumnMm: supportColumnMmRaw } : {}),
                 ...(lateralAreaRaw != null ? { lateralAreaCm2: lateralAreaRaw } : {}),
                 ...(topAreaRaw != null ? { topAreaCm2: topAreaRaw } : {}),
                 ...(bottomAreaRaw != null ? { bottomAreaCm2: bottomAreaRaw } : {}),
@@ -765,6 +771,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 linkSavedQuote(finalQuoteId);
             }
             setLastSavedConfig(configKey);
+            resaveLoadedQuote.current = false
 
             const resolvedTotalPrice =
                 typeof data.totalPrice === 'number' && data.totalPrice > 0 ? data.totalPrice : totalPrice
@@ -832,7 +839,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
 
         let savedQuote;
         // 설정이 바뀌지 않았고 이미 저장된 ID가 있으면 재사용
-        if (savedQuoteId && configKey === lastSavedConfig) {
+        if (savedQuoteId && configKey === lastSavedConfig && !resaveLoadedQuote.current) {
             savedQuote = { id: savedQuoteId };
         } else {
             savedQuote = await handleSaveQuote();

@@ -9,6 +9,9 @@ import {
     estimateFdmSupportGrams,
     FDM_INFILL_DEFAULT,
     FDM_INFILL_PRESETS,
+    FDM_SUPPORT_FILL_RATIO,
+    FDM_SUPPORT_FULL_COLUMN_MM,
+    fdmSupportFillRatio,
 } from '../lib/fdm-quote'
 import { formatEstimatedPrintTime } from '../lib/print-time-estimate'
 import { sanitizeGeometryAnalysis } from '../lib/geometry'
@@ -113,7 +116,7 @@ const bambuP2S = [
     {
         // 얇은 벽 상자형(220×235×100mm), 인필 15%, 서포트 빌드 플레이트 제한 없음
         name: '하우스',
-        geom: { volumeCm3: 991.25, surfaceAreaCm2: 3508.7, density: 1.26, infill: 15, heightMm: 100.4, lateralAreaCm2: 2661.1, topAreaCm2: 456.8, bottomAreaCm2: 428.9, bedAreaCm2: 338.2, slowWallAreaCm2: 761.3, overhangAreaCm2: 20.6, supportVolumeCm3: 60.0, curvedWallAreaCm2: 172.7, contourLoopsMm: 674 },
+        geom: { volumeCm3: 991.25, surfaceAreaCm2: 3508.7, density: 1.26, infill: 15, heightMm: 100.4, lateralAreaCm2: 2661.1, topAreaCm2: 456.8, bottomAreaCm2: 428.9, bedAreaCm2: 338.2, slowWallAreaCm2: 761.3, overhangAreaCm2: 20.6, supportVolumeCm3: 60.0, supportColumnMm: 31.3, curvedWallAreaCm2: 172.7, contourLoopsMm: 674 },
         hours: 12 + 7 / 60,
         modelG: 515.53,
         supportG: 42.17,
@@ -121,7 +124,7 @@ const bambuP2S = [
     {
         // 높이 200mm 십자가형 곡면, 서포트 137mm/s로 빠르게 출력 → 시간 과대(높은 서포트 속도 미반영)
         name: '십자가',
-        geom: { volumeCm3: 181.07, surfaceAreaCm2: 348.8, density: 1.26, infill: 15, heightMm: 200, lateralAreaCm2: 265.8, topAreaCm2: 52.7, bottomAreaCm2: 49.8, bedAreaCm2: 24.2, slowWallAreaCm2: 315.5, overhangAreaCm2: 15.4, supportVolumeCm3: 149.4, curvedWallAreaCm2: 218.5, contourLoopsMm: 266 },
+        geom: { volumeCm3: 181.07, surfaceAreaCm2: 348.8, density: 1.26, infill: 15, heightMm: 200, lateralAreaCm2: 265.8, topAreaCm2: 52.7, bottomAreaCm2: 49.8, bedAreaCm2: 24.2, slowWallAreaCm2: 315.5, overhangAreaCm2: 15.4, supportVolumeCm3: 149.4, supportColumnMm: 134.4, curvedWallAreaCm2: 218.5, contourLoopsMm: 266 },
         hours: 4 + 14 / 60,
         modelG: 67.45,
         supportG: 76.09,
@@ -130,10 +133,18 @@ const bambuP2S = [
     {
         // 143mm 곡면 조형물, 인필 15%
         name: '곡면 조형',
-        geom: { volumeCm3: 578.62, surfaceAreaCm2: 547.6, density: 1.26, infill: 15, heightMm: 143.1, lateralAreaCm2: 380.5, topAreaCm2: 103.9, bottomAreaCm2: 109.1, bedAreaCm2: 13, slowWallAreaCm2: 677.4, overhangAreaCm2: 72.3, supportVolumeCm3: 84.5, curvedWallAreaCm2: 352.9, contourLoopsMm: 259 },
+        geom: { volumeCm3: 578.62, surfaceAreaCm2: 547.6, density: 1.26, infill: 15, heightMm: 143.1, lateralAreaCm2: 380.5, topAreaCm2: 103.9, bottomAreaCm2: 109.1, bedAreaCm2: 13, slowWallAreaCm2: 677.4, overhangAreaCm2: 72.3, supportVolumeCm3: 84.5, supportColumnMm: 32.7, curvedWallAreaCm2: 352.9, contourLoopsMm: 259 },
         hours: 5 + 39 / 60,
         modelG: 160.37,
         supportG: 47.47,
+    },
+    {
+        // 높이 14.7mm 얇은 하우징, 인필 30% — 서포트 기둥이 낮아(부피 가중 10mm) 채움 비율이 낮음
+        name: '하우징',
+        geom: { volumeCm3: 62.75, surfaceAreaCm2: 480.7, density: 1.26, infill: 30, heightMm: 14.7, lateralAreaCm2: 229.5, topAreaCm2: 126.8, bottomAreaCm2: 128.5, bedAreaCm2: 83.7, slowWallAreaCm2: 27.1, overhangAreaCm2: 43.7, supportVolumeCm3: 38.4, supportColumnMm: 10.3, curvedWallAreaCm2: 64.9, contourLoopsMm: 274 },
+        hours: 8257 / 3600,
+        modelG: 58.5,
+        supportG: 11.34,
     },
     {
         // 150mm 구 격자 그릇(리포좀), 서포트 끔 — 층당 루프 약 57개, 얇은 곳은 벽 1겹+틈새 채움이라 모델 g 과대
@@ -181,6 +192,13 @@ const sg = estimateFdmSupportGrams({
     density: 1.24,
 })
 assert.equal(sg, 0)
+
+// 서포트 채움 비율: 낮은 기둥은 높이에 비례, 기준 높이 이상·높이 정보 없음(구 데이터)은 최대
+assert.equal(fdmSupportFillRatio(undefined), FDM_SUPPORT_FILL_RATIO)
+assert.equal(fdmSupportFillRatio(FDM_SUPPORT_FULL_COLUMN_MM * 3), FDM_SUPPORT_FILL_RATIO)
+assert.ok(Math.abs(fdmSupportFillRatio(FDM_SUPPORT_FULL_COLUMN_MM / 2) - FDM_SUPPORT_FILL_RATIO / 2) < 1e-12)
+assert.equal(fdmSupportFillRatio(0), 0)
+console.log('✓ 서포트 기둥 높이별 채움 비율')
 
 // 고폴리 내부면으로 표면/오버행이 폭주해도 서포트비가 수억 원이 되면 안 됨
 const inflatedTiny = calculateFdmQuote({

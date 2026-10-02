@@ -36,8 +36,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const is_active = body.is_active !== undefined ? (body.is_active ? 1 : 0) : (existing.is_active as number)
     const description = body.description !== undefined ? (body.description as string | null) : (existing.description as string | null)
 
+    // updated_at = 단가 변경 시각 (장바구니 '단가 변경' 판정 기준) — 색상·설명만 바꾸면 유지
+    const priceChanged =
+      Number(existing.price_per_gram ?? 0) !== Number(pricePerGram ?? 0) ||
+      (existing.price_per_ml == null ? null : Number(existing.price_per_ml)) !== (pricePerMl == null ? null : Number(pricePerMl)) ||
+      Number(existing.density ?? 0) !== Number(density ?? 0)
     await env.DB.prepare(
-      `UPDATE materials SET name=?, type=?, price_per_gram=?, price_per_ml=?, density=?, colors=?, is_active=?, description=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+      `UPDATE materials SET name=?, type=?, price_per_gram=?, price_per_ml=?, density=?, colors=?, is_active=?, description=?${priceChanged ? ', updated_at=CURRENT_TIMESTAMP' : ''} WHERE id=?`
     )
       .bind(name, type, pricePerGram, pricePerMl, density, colors, is_active, description, numId)
       .run()

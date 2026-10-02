@@ -38,6 +38,7 @@ function report(label: string, a: GeometryAnalysis) {
         supportEnabled: SUPPORT,
         overhangAreaCm2: a.overhangArea,
         supportVolumeCm3: a.supportVolume,
+        supportColumnMm: a.supportColumnMm,
         lateralAreaCm2: a.lateralArea,
         topAreaCm2: a.topArea,
         bottomAreaCm2: a.bottomArea,
@@ -60,12 +61,13 @@ function report(label: string, a: GeometryAnalysis) {
             `부피 ${a.volume.toFixed(2)}cm³ · 객체 ${a.partCount ?? 1} (높이합 ${a.partHeightSum?.toFixed(0) ?? '-'}mm, 간격 ${a.partSpacing?.toFixed(1) ?? '-'}mm)` +
             `\n    시간 ${fmt(q.timeHours)} · 모델 ${q.weightGrams.toFixed(1)}g + 서포트 ${q.supportGrams.toFixed(1)}g · 견적 ${q.total.toLocaleString()}원` +
             `\n    분: 벽 ${m(b.walls)} 솔리드 ${m(b.solid)} 인필 ${m(b.sparseInfill)} 첫층 ${m(b.firstLayer)} 서포트 ${m(b.support)} 이동 ${m(b.travel)} 레이어 ${m(b.layerOverhead)} 최소층 ${m(b.minLayerSlowdown)} 준비 ${m(b.prep)}` +
-            `\n    무게 g: 벽 ${g(s.wallVolMm3)} 솔리드 ${g(s.solidVolMm3)} 인필 ${g(s.sparseVolMm3)} · 서포트 그림자 ${a.supportVolume?.toFixed(1)}cm³` +
+            `\n    무게 g: 벽 ${g(s.wallVolMm3)} 솔리드 ${g(s.solidVolMm3)} 인필 ${g(s.sparseVolMm3)} · 서포트 그림자 ${a.supportVolume?.toFixed(1)}cm³ (기둥 ${a.supportColumnMm?.toFixed(1) ?? '-'}mm)` +
             `\n    고정값: ${JSON.stringify({
                 volumeCm3: +a.volume.toFixed(2), surfaceAreaCm2: +a.surfaceArea.toFixed(1), heightMm: +a.boundingBox.z.toFixed(1),
                 lateralAreaCm2: +(a.lateralArea ?? 0).toFixed(1), topAreaCm2: +(a.topArea ?? 0).toFixed(1), bottomAreaCm2: +(a.bottomArea ?? 0).toFixed(1),
                 bedAreaCm2: +(a.bedArea ?? 0).toFixed(1), slowWallAreaCm2: +(a.slowWallArea ?? 0).toFixed(1),
                 overhangAreaCm2: +(a.overhangArea ?? 0).toFixed(1), supportVolumeCm3: +(a.supportVolume ?? 0).toFixed(1),
+                supportColumnMm: +(a.supportColumnMm ?? 0).toFixed(1),
                 curvedWallAreaCm2: +(a.curvedWallArea ?? 0).toFixed(1), contourLoopsMm: +(a.contourLoops ?? 0).toFixed(0),
             })}` +
             `\n    형상: 두께 ${s.thicknessMm.toFixed(2)}mm · 대표길이 ${s.characteristicMm.toFixed(1)}mm · 층 ${s.numLayers} · 측면 ${a.lateralArea?.toFixed(0)} 윗면 ${a.topArea?.toFixed(0)} 바닥 ${a.bottomArea?.toFixed(0)} 베드 ${a.bedArea?.toFixed(0)} 오버행 ${a.overhangArea?.toFixed(0)}cm²` +

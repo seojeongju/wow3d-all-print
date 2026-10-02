@@ -8,6 +8,7 @@ import {
     extractToken,
     verifyToken,
 } from '@/lib/api-utils';
+import { evaluateQuoteValidity, loadPricingStamps, type QuoteValidityRow } from '@/lib/quote-validity';
 
 async function resolveCartOwner(request: NextRequest): Promise<{
     userId: number | null;
@@ -87,7 +88,20 @@ export async function GET(request: NextRequest) {
                 .all();
         }
 
-        return successResponse(result.results || []);
+        const rows = (result.results || []) as Array<Record<string, unknown> & QuoteValidityRow>;
+        const stamps = await loadPricingStamps(env.DB);
+        const nowMs = Date.now();
+        return successResponse(
+            rows.map((row) => {
+                const v = evaluateQuoteValidity(row, stamps, nowMs);
+                return {
+                    ...row,
+                    price_status: v.status,
+                    priced_at: v.pricedAt,
+                    expires_at: v.expiresAt,
+                };
+            })
+        );
     } catch (error: any) {
         console.error('GET /api/cart error:', error);
         return errorResponse(error.message || '장바구니 조회 실패', 500);
