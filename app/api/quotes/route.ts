@@ -381,6 +381,7 @@ export async function POST(request: NextRequest) {
                         rotZ: Number(body.modelTransform.rotZ) || 0,
                         snapToBed: body.modelTransform.snapToBed !== false,
                         layFlat: normalizeLayFlat(body.modelTransform.layFlat),
+                        unitInch: body.modelTransform.unitInch === true,
                         /** 사용자가 사이즈 조정 후 견적에 적용한 최종 출력 치수(mm) */
                         printSizeMm: {
                             x: Number(dimensionsX) || 0,

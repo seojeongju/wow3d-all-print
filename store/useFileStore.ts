@@ -5,7 +5,9 @@ import { invalidateModelParseCache } from '@/lib/model-parse-cache'
 import { cancelModelAnalysisRun } from '@/lib/model-analysis-runner'
 import { clearMeshyActiveJob } from '@/lib/meshy-active-job'
 import {
+    AI_PHOTO_SCALE_PERCENT_MAX,
     applyTransformToAnalysis,
+    baseLongestMm,
     clampScalePercent,
     DEFAULT_MODEL_TRANSFORM,
     findAutoOrientTransform,
@@ -73,7 +75,11 @@ interface FileState {
     /** 스케일 초기화 + 배치 잠금 해제 후 자동 배치 */
     resetTransform: () => void
     /** 저장 견적 재로드 시 스케일·회전 복원 */
-    setTransformFull: (transform: ModelTransform, opts?: { userOverride?: boolean }) => void
+    /** transform.unitInch: 저장 견적에 기록된 인치 변환 여부 (없으면 구 데이터 — 400% 초과면 인치로 간주) */
+    setTransformFull: (
+        transform: ModelTransform & { unitInch?: boolean },
+        opts?: { userOverride?: boolean }
+    ) => void
     reset: () => void
 }
 
@@ -147,7 +153,7 @@ export const useFileStore = create<FileState>((set, get) => ({
                 ...state.transform,
                 scalePercent: clampScalePercent(
                     percent,
-                    getScalePercentMax(state.fileSource.kind, state.unitInch)
+                    getScalePercentMax(state.fileSource.kind, state.unitInch, baseLongestMm(state.baseAnalysis))
                 ),
             },
             ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
@@ -162,7 +168,7 @@ export const useFileStore = create<FileState>((set, get) => ({
                     ...state.transform,
                     scalePercent: clampScalePercent(
                         state.transform.scalePercent * factor,
-                        getScalePercentMax(state.fileSource.kind, on)
+                        getScalePercentMax(state.fileSource.kind, on, baseLongestMm(state.baseAnalysis))
                     ),
                 },
             }
@@ -198,13 +204,18 @@ export const useFileStore = create<FileState>((set, get) => ({
     },
     setTransformFull: (transform, opts) =>
         set((state) => {
-            // 인치 변환 후 저장한 견적(400% 초과)을 다시 열면 변환 상태도 복원
+            const isUpload = state.fileSource.kind !== 'meshy-photo'
+            // 구 견적은 인치 변환 때만 400%를 넘을 수 있었으므로 기록이 없으면 배율로 판단
             const unitInch =
-                state.unitInch ||
-                (state.fileSource.kind !== 'meshy-photo' && transform.scalePercent > SCALE_PERCENT_MAX)
+                isUpload &&
+                (transform.unitInch ?? (state.unitInch || transform.scalePercent > SCALE_PERCENT_MAX))
+            // 견적 재로드 직후에는 원본 분석 전이라 크기 기준 상한을 모름 → 저장값을 자르지 않음
+            const longest = baseLongestMm(state.baseAnalysis)
             const scalePercent = clampScalePercent(
                 transform.scalePercent,
-                getScalePercentMax(state.fileSource.kind, unitInch)
+                isUpload && longest == null
+                    ? AI_PHOTO_SCALE_PERCENT_MAX
+                    : getScalePercentMax(state.fileSource.kind, unitInch, longest)
             )
             return {
                 unitInch,

@@ -70,6 +70,8 @@ export interface QuoteData {
         snapToBed?: boolean;
         /** 바닥에 놓은 평면의 바깥 법선 (원본 좌표) */
         layFlat?: [number, number, number] | null;
+        /** 단위 없는 파일을 인치로 보고 ×25.4 변환했는지 */
+        unitInch?: boolean;
     };
 }
 

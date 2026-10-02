@@ -735,7 +735,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 minPriceKrw: minPriceKr ?? undefined,
                 guideSource: guideSource || undefined,
                 guideTopic: guideTopic || undefined,
-                modelTransform,
+                modelTransform: { ...modelTransform, unitInch: useFileStore.getState().unitInch },
             }
 
             const headers: HeadersInit = { 'Content-Type': 'application/json' }

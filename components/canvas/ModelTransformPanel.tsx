@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
+    baseLongestMm,
+    clampScalePercent,
     getScalePercentMax,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
@@ -40,7 +42,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
     const isAiPhoto = fileSource.kind === 'meshy-photo'
-    const scaleMax = getScalePercentMax(fileSource.kind, unitInch)
+    const scaleMax = getScalePercentMax(fileSource.kind, unitInch, baseLongestMm(baseAnalysis))
 
     useEffect(() => {
         if (!isAiPhoto || !baseAnalysis) return
@@ -75,7 +77,10 @@ export default function ModelTransformPanel({ className }: { className?: string 
             setScaleDraft(String(transform.scalePercent))
             return
         }
-        setScalePercent(n, { fromUser: true })
+        const next = clampScalePercent(n, scaleMax)
+        // 상한·하한에 걸려 값이 그대로면 store 변경이 없어 입력칸이 갱신되지 않음
+        if (next === transform.scalePercent) setScaleDraft(String(next))
+        setScalePercent(next, { fromUser: true })
     }
 
     const commitAxisMm = (axis: 'x' | 'y' | 'z', raw: string) => {
@@ -85,6 +90,9 @@ export default function ModelTransformPanel({ className }: { className?: string 
             return
         }
         const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n, scaleMax)
+        if (next === transform.scalePercent) {
+            setDimDraft({ x: box.x.toFixed(2), y: box.y.toFixed(2), z: box.z.toFixed(2) })
+        }
         setScalePercent(next, { fromUser: true })
     }
 

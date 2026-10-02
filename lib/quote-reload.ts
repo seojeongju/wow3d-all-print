@@ -16,8 +16,13 @@ function normalizeAxis90(value: unknown): Axis90 {
     return 0
 }
 
+export type StoredModelTransform = ModelTransform & {
+    /** 인치 변환 여부 — 구 견적에는 없음 */
+    unitInch?: boolean
+}
+
 /** DB quotes.model_transform JSON → 뷰어 변환 */
-export function parseStoredModelTransform(raw: unknown): ModelTransform | null {
+export function parseStoredModelTransform(raw: unknown): StoredModelTransform | null {
     if (raw == null) return null
     try {
         const o = typeof raw === 'string' ? JSON.parse(raw) : raw
@@ -31,6 +36,7 @@ export function parseStoredModelTransform(raw: unknown): ModelTransform | null {
             rotZ: normalizeAxis90(r.rotZ),
             snapToBed: r.snapToBed !== false,
             layFlat: normalizeLayFlat(r.layFlat),
+            ...(typeof r.unitInch === 'boolean' ? { unitInch: r.unitInch } : {}),
         }
     } catch {
         return null
@@ -45,7 +51,7 @@ export function buildFileSourceFromFileName(fileName?: string | null): FileSourc
     return { kind: 'upload', meshyJobId: null }
 }
 
-export function resolveQuoteReloadTransform(raw: unknown): ModelTransform {
+export function resolveQuoteReloadTransform(raw: unknown): StoredModelTransform {
     return parseStoredModelTransform(raw) ?? { ...DEFAULT_MODEL_TRANSFORM }
 }
 

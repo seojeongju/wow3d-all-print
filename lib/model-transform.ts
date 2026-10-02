@@ -85,12 +85,27 @@ export function isLikelyInchModel(
     return longest > 0 && longest <= INCH_SUSPECT_MAX_LONGEST_MM
 }
 
+/** 업로드 모델은 최장축이 이 길이(mm)에 닿는 배율까지 400%를 넘어 확대 가능 (작은 단위 파일 대응) */
+export const UPLOAD_SCALE_MAX_LONGEST_MM = 1000
+
 export function getScalePercentMax(
     sourceKind: 'upload' | 'meshy-photo' | null,
-    unitInch = false
+    unitInch = false,
+    baseLongestMm?: number | null
 ): number {
     if (sourceKind === 'meshy-photo') return AI_PHOTO_SCALE_PERCENT_MAX
-    return unitInch ? UPLOAD_INCH_SCALE_PERCENT_MAX : SCALE_PERCENT_MAX
+    const fixed = unitInch ? UPLOAD_INCH_SCALE_PERCENT_MAX : SCALE_PERCENT_MAX
+    const longest = Number(baseLongestMm)
+    if (!(longest > 0) || !Number.isFinite(longest)) return fixed
+    const sizeBased = Math.ceil((UPLOAD_SCALE_MAX_LONGEST_MM / longest) * 100)
+    return Math.min(AI_PHOTO_SCALE_PERCENT_MAX, Math.max(fixed, sizeBased))
+}
+
+/** 원본 바운딩 박스 최장축(mm) */
+export function baseLongestMm(base: GeometryAnalysis | null | undefined): number | null {
+    if (!base) return null
+    const longest = Math.max(base.boundingBox.x, base.boundingBox.y, base.boundingBox.z)
+    return longest > 0 ? longest : null
 }
 
 export function clampScalePercent(value: number, maxPercent = SCALE_PERCENT_MAX): number {

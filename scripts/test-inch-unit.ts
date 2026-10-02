@@ -4,8 +4,10 @@
  */
 import assert from 'node:assert/strict'
 import {
+    AI_PHOTO_SCALE_PERCENT_MAX,
     applyTransformToAnalysis,
     getScalePercentMax,
+    scalePercentFromTargetMm,
     INCH_SCALE_PERCENT,
     isLikelyInchModel,
     isUnitlessModelFile,
@@ -30,6 +32,27 @@ assert.equal(isLikelyInchModel('part.step', tiny), false, 'STEP은 단위가 있
 assert.equal(INCH_SCALE_PERCENT, 2540)
 assert.equal(getScalePercentMax('upload'), SCALE_PERCENT_MAX)
 assert.equal(getScalePercentMax('upload', true), UPLOAD_INCH_SCALE_PERCENT_MAX)
+// 크기 기준 상한: 최장축 1000mm까지 (최대 15000%), 큰 모델은 기존 400%
+assert.equal(getScalePercentMax('upload', false, 300), SCALE_PERCENT_MAX)
+assert.equal(getScalePercentMax('upload', false, 50), 2000)
+assert.equal(getScalePercentMax('upload', false, 0.98), AI_PHOTO_SCALE_PERCENT_MAX)
+assert.equal(getScalePercentMax('upload', true, 50), UPLOAD_INCH_SCALE_PERCENT_MAX)
+
+// 1mm 미만 모델도 치수 입력으로 100mm까지 확대 (구: 400%에서 멈춤)
+const micro = { volume: 0.0002, surfaceArea: 0.02, boundingBox: { x: 0.85, y: 0.975, z: 0.545 } }
+useFileStore.setState({ fileSource: { kind: 'upload', meshyJobId: null }, baseAnalysis: micro, unitInch: false })
+const toX100 = scalePercentFromTargetMm(
+    micro,
+    useFileStore.getState().transform,
+    'x',
+    100,
+    getScalePercentMax('upload', false, 0.975)
+)
+useFileStore.getState().setScalePercent(toX100)
+assert.equal(useFileStore.getState().transform.scalePercent, 11765)
+useFileStore.getState().setScalePercent(500)
+assert.equal(useFileStore.getState().transform.scalePercent, 500)
+useFileStore.getState().setScalePercent(100)
 
 // 스토어: 변환 → ×25.4, 되돌리기 → 원래 값
 const store = useFileStore
@@ -63,6 +86,17 @@ store.setState({ unitInch: false })
 store.getState().setTransformFull(restored!)
 assert.equal(store.getState().unitInch, true)
 assert.equal(store.getState().transform.scalePercent, 2540)
+
+// 새 견적은 인치 여부를 기록 — 400% 초과로 확대만 한 견적은 인치로 오인하지 않음
+const scaledOnly = parseStoredModelTransform(
+    JSON.stringify({ scalePercent: 5000, rotX: 0, rotY: 0, rotZ: 0, unitInch: false })
+)
+assert.equal(scaledOnly?.unitInch, false)
+store.setState({ unitInch: false, baseAnalysis: null })
+store.getState().setTransformFull(scaledOnly!)
+assert.equal(store.getState().unitInch, false)
+assert.equal(store.getState().transform.scalePercent, 5000, '원본 분석 전에는 저장 배율을 자르지 않음')
+store.setState({ baseAnalysis: tiny })
 
 // 사진→AI 모델은 대상 아님
 store.setState({ fileSource: { kind: 'meshy-photo', meshyJobId: 1 }, unitInch: false })
