@@ -133,7 +133,6 @@ export default function QuoteEstimateLogsPanel() {
         ? [
               { label: '견적 확인', value: stats.total.toLocaleString(), color: 'text-white' },
               { label: '저장 안 하고 떠남', value: stats.unsaved.toLocaleString(), color: 'text-amber-400' },
-              { label: '놓친 견적 합계', value: `${stats.unsavedAmount.toLocaleString()}원`, color: 'text-amber-300' },
               { label: '저장·장바구니', value: stats.saved.toLocaleString(), color: 'text-blue-400' },
               { label: '주문 완료', value: stats.ordered.toLocaleString(), color: 'text-emerald-400' },
           ]
@@ -196,7 +195,7 @@ export default function QuoteEstimateLogsPanel() {
                 </div>
 
                 {summary.length > 0 && (
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         {summary.map((s) => (
                             <div key={s.label} className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
                                 <p className="text-[10px] text-white/40 mb-1">{s.label}</p>
