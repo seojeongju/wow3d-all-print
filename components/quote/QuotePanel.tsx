@@ -278,6 +278,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const bottomAreaRaw = analysis?.bottomArea
     const bedAreaRaw = analysis?.bedArea
     const slowWallAreaRaw = analysis?.slowWallArea
+    const partCount = analysis?.partCount
+    const partHeightSumMm = analysis?.partHeightSum
+    const partSpacingMm = analysis?.partSpacing
     const heightMm = analysis?.boundingBox.z || 0
     const bx = analysis?.boundingBox?.x ?? 0
     const by = analysis?.boundingBox?.y ?? 0
@@ -327,6 +330,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 bottomAreaCm2: bottomAreaRaw,
                 bedAreaCm2: bedAreaRaw,
                 slowWallAreaCm2: slowWallAreaRaw,
+                partCount,
+                partHeightSumMm,
+                partSpacingMm,
                 materialName: mat?.name ?? fdmMaterial,
                 hourlyRateKr: rateKRW,
                 fdmLaborCostKrw: fdmSpec?.fdm_labor_cost_krw,
@@ -397,7 +403,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, surfaceAreaCm2, volumeCm3])
+    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, partCount, partHeightSumMm, partSpacingMm, surfaceAreaCm2, volumeCm3])
 
     const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
     const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
@@ -702,6 +708,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 ...(bottomAreaRaw != null ? { bottomAreaCm2: bottomAreaRaw } : {}),
                 ...(bedAreaRaw != null ? { bedAreaCm2: bedAreaRaw } : {}),
                 ...(slowWallAreaRaw != null ? { slowWallAreaCm2: slowWallAreaRaw } : {}),
+                ...(partCount != null && partCount > 1
+                    ? { partCount, partHeightSumMm, partSpacingMm }
+                    : {}),
                 printMethod,
                 ...(printMethod === 'fdm' ? {
                     fdmMaterial: (fdmMaterial || '').toUpperCase() as QuoteData['fdmMaterial'],

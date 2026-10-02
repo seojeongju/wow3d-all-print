@@ -13,7 +13,7 @@ import {
     type Axis90,
     type ModelTransform,
 } from '../lib/model-transform'
-import { calculateFdmQuote, FDM_SUPPORT_FILL_RATIO } from '../lib/fdm-quote'
+import { calculateFdmQuote, fdmSupportExtrudeCm3 } from '../lib/fdm-quote'
 import { bakeStlToTargetMm, layFlatMatrix } from '../lib/stl-bake'
 
 const AXES: Axis90[] = [0, 90, 180, 270]
@@ -141,7 +141,7 @@ const tBase = analyzeGeometry(buildT())
     }
     const upright = calculateFdmQuote({ ...common, overhangAreaCm2: 2, supportVolumeCm3: 4 })
     const flat = calculateFdmQuote({ ...common, heightMm: 10, overhangAreaCm2: 0, supportVolumeCm3: 0 })
-    assert.ok(near(upright.supportGrams, 4 * FDM_SUPPORT_FILL_RATIO * 1.24, 1e-9), `세운 T 서포트 ${upright.supportGrams}g`)
+    assert.ok(near(upright.supportGrams, fdmSupportExtrudeCm3(2, 4) * 1.24, 1e-9), `세운 T 서포트 ${upright.supportGrams}g`)
     assert.equal(flat.supportGrams, 0)
     assert.ok(flat.timeHours <= upright.timeHours)
     console.log(`✓ 견적 서포트: 세움 ${upright.supportGrams.toFixed(2)}g / 눕힘 0g`)

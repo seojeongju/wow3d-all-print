@@ -24,6 +24,10 @@ export interface QuoteData {
     bedAreaCm2?: number;
     /** 현재 배치 기준 외벽 오버행 감속 추가분 (등가 측면 cm²) */
     slowWallAreaCm2?: number;
+    /** 다중 객체 3MF 플레이트 — 객체 수·객체 높이 합(mm)·이웃 객체 평균 거리(mm) */
+    partCount?: number;
+    partHeightSumMm?: number;
+    partSpacingMm?: number;
 
     // 출력 방식
     printMethod: 'fdm' | 'sla' | 'dlp';

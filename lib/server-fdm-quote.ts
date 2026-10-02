@@ -39,6 +39,10 @@ export type ServerFdmQuoteInput = {
     bedAreaCm2?: number | null
     /** 외벽 오버행 감속 추가분 (등가 측면 cm²) */
     slowWallAreaCm2?: number | null
+    /** 다중 객체 3MF 플레이트 지표 */
+    partCount?: number | null
+    partHeightSumMm?: number | null
+    partSpacingMm?: number | null
     fdmMaterialName: string | null
     infillPercent: number | null
     layerHeightMm: number | null
@@ -189,6 +193,9 @@ export async function resolveServerFdmQuote(
             bottomAreaCm2: input.bottomAreaCm2 ?? null,
             bedAreaCm2: input.bedAreaCm2 ?? null,
             slowWallAreaCm2: input.slowWallAreaCm2 ?? null,
+            partCount: input.partCount ?? null,
+            partHeightSumMm: input.partHeightSumMm ?? null,
+            partSpacingMm: input.partSpacingMm ?? null,
             materialName: material.name,
             hourlyRateKr: hourlyRate,
             fdmLaborCostKrw: equipment.fdmLaborCostKrw,

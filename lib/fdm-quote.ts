@@ -38,10 +38,22 @@ export const FDM_SUPPORT_COST_TO_MATERIAL_MAX = 3
 export const FDM_SUPPORT_COST_FLOOR_KRW = 5_000
 
 /**
- * 배치 기준 오버행 그림자 부피 대비 서포트 압출 부피 — Bambu P2S 일반(자동) 서포트 실측
- * (같은 모델 두 자세: 그림자 22cm³→8.8cm³, 56cm³→16.7cm³)
+ * 서포트 압출 부피 = 오버행 면적 × FDM_SUPPORT_AREA_CM3_PER_CM2 + 그림자 부피 × FDM_SUPPORT_FILL_RATIO
+ * Bambu P2S 일반(자동) 서포트 실측 3건 상대오차 최소제곱
+ * (오버행 16.7cm²·그림자 22cm³→8.8cm³, 19.6·56→16.7, 21·158→33.5)
+ * 몸체 비율은 기본 패턴 간격 2.5mm × 선폭 0.42mm(0.168)와 일치
  */
-export const FDM_SUPPORT_FILL_RATIO = 0.33
+export const FDM_SUPPORT_FILL_RATIO = 0.175
+/** 오버행 면적당 접촉면·XY 확장분 압출 부피 (cm³/cm²) */
+export const FDM_SUPPORT_AREA_CM3_PER_CM2 = 0.31
+
+/** 그림자 부피가 있을 때 서포트 압출 부피(cm³) */
+export function fdmSupportExtrudeCm3(overhangAreaCm2: number | null | undefined, supportVolumeCm3: number | null | undefined): number {
+    const area = Math.max(0, Number(overhangAreaCm2) || 0)
+    const vol = Math.max(0, Number(supportVolumeCm3) || 0)
+    if (area <= 0 && vol <= 0) return 0
+    return area * FDM_SUPPORT_AREA_CM3_PER_CM2 + vol * FDM_SUPPORT_FILL_RATIO
+}
 /** 그림자 부피가 없을 때(overhangArea × 높이 × frac 근사) 채움 비율 */
 export const FDM_SUPPORT_FALLBACK_FILL_RATIO = 0.125
 /** 오버행 아래 평균 기둥 높이 = 모델 높이 × 이 비율 */
@@ -138,7 +150,7 @@ export function estimateFdmSupportGrams(input: {
     const hasShadow =
         input.supportVolumeCm3 != null && Number.isFinite(Number(input.supportVolumeCm3))
     const volCm3 = hasShadow
-        ? Math.max(0, Number(input.supportVolumeCm3)) * FDM_SUPPORT_FILL_RATIO
+        ? fdmSupportExtrudeCm3(overhang, input.supportVolumeCm3)
         : overhang * heightCm * FDM_SUPPORT_AVG_HEIGHT_FRAC * FDM_SUPPORT_FALLBACK_FILL_RATIO
     let grams = volCm3 * density
     const modelW = Math.max(0, Number(input.modelWeightGrams) || 0)
@@ -171,6 +183,10 @@ export type CalculateFdmQuoteInput = {
     bedAreaCm2?: number | null
     /** 외벽 오버행 감속 추가분 (cm², 외벽 속도 기준 등가 측면) */
     slowWallAreaCm2?: number | null
+    /** 다중 객체 플레이트(3MF) — 객체 수·객체 높이 합(mm)·이웃 객체 평균 거리(mm) */
+    partCount?: number | null
+    partHeightSumMm?: number | null
+    partSpacingMm?: number | null
     /** 재질명 — P2S 재질별 최대 유량·최소 레이어 시간 선택 */
     materialName?: string | null
     hourlyRateKr: number
@@ -240,6 +256,9 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
         bottomAreaCm2: input.bottomAreaCm2,
         bedAreaCm2: input.bedAreaCm2,
         slowWallAreaCm2: input.slowWallAreaCm2,
+        partCount: input.partCount,
+        partHeightSumMm: input.partHeightSumMm,
+        partSpacingMm: input.partSpacingMm,
     }
     const weight = estimateFdmWeightGrams({
         ...geom,

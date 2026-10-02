@@ -5,8 +5,9 @@
  * 브라우저 환경에서만 동작 (document, THREE.WebGLRenderer 사용).
  */
 import * as THREE from 'three'
-import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries } from 'three-stdlib'
+import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader } from 'three-stdlib'
 import { loadStepAsBufferGeometry } from '@/lib/stepLoader'
+import { mergeThreeMFGroup } from '@/lib/parseModelGeometry'
 
 const DEFAULT_SIZE = 256
 
@@ -26,17 +27,6 @@ function inferFileType(fileName?: string, url?: string): ModelFileType | null {
   if (path.endsWith('.ply')) return 'ply'
   if (path.endsWith('.step') || path.endsWith('.stp')) return 'step'
   return null
-}
-
-function collectGeometriesFromGroup(group: THREE.Group): THREE.BufferGeometry[] {
-  const out: THREE.BufferGeometry[] = []
-  group.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      const g = (child as THREE.Mesh).geometry
-      if (g && g.attributes?.position) out.push(g as THREE.BufferGeometry)
-    }
-  })
-  return out
 }
 
 function loadGeometryFromBuffer(
@@ -70,11 +60,7 @@ function loadGeometryFromBuffer(
     }
     if (fileType === '3mf') {
       const loader = new ThreeMFLoader()
-      const group = loader.parse(buffer)
-      const arr = collectGeometriesFromGroup(group)
-      let g: THREE.BufferGeometry | null = null
-      if (arr.length === 1) g = arr[0]
-      else if (arr.length > 1) g = mergeBufferGeometries(arr) ?? arr[0]
+      const g = mergeThreeMFGroup(loader.parse(buffer))
       if (g) {
         g.center()
         g.computeVertexNormals()

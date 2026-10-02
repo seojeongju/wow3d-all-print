@@ -177,6 +177,17 @@ export async function POST(request: NextRequest) {
                       surfaceAreaCm2 * P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO
                   )
                 : null;
+        // 다중 객체 3MF 플레이트 — 객체 높이 합은 전체 높이×객체 수, 간격은 박스 대각선을 넘을 수 없음
+        const rawPartCount = Math.floor(Number(body.partCount));
+        const partCount = Number.isFinite(rawPartCount) && rawPartCount > 1 ? Math.min(rawPartCount, 5000) : null;
+        const partHeightSumMm =
+            partCount && Number(body.partHeightSumMm) > 0
+                ? Math.min(Number(body.partHeightSumMm), dimensionsZ * partCount)
+                : null;
+        const partSpacingMm =
+            partCount && Number(body.partSpacingMm) > 0
+                ? Math.min(Number(body.partSpacingMm), Math.hypot(dimensionsX, dimensionsY, dimensionsZ))
+                : null;
         const fdmLayerHeight = snapFdmLayer(body.fdmLayerHeight);
         const layerThickness = snapSlaLayer(body.layerThickness);
         const fdmMaterial = snapFdmMaterial(body.fdmMaterial);
@@ -218,6 +229,9 @@ export async function POST(request: NextRequest) {
                     bottomAreaCm2,
                     bedAreaCm2,
                     slowWallAreaCm2,
+                    partCount,
+                    partHeightSumMm,
+                    partSpacingMm,
                     fdmMaterialName: fdmMaterialName,
                     infillPercent: fdmInfill,
                     layerHeightMm: fdmLayerHeight,

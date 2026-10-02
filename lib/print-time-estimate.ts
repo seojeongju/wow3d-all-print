@@ -4,7 +4,7 @@
  * FDM 견적: estimateFdmPrintTimeP2S — Bambu Lab P2S "0.20mm Standard" 기본 공정 기준
  * - 벽·윗면/바닥·인필·서포트별 경로 길이와 속도(재질 최대 유량 상한), 가감속
  * - 외벽 오버행 감속, 경사면 솔리드, 레이어 전환·이동, 최소 레이어 시간 감속, 출력 준비
- * - Bambu Studio P2S 실측(같은 부품 두 자세, 항목별 시간)으로 보정
+ * - Bambu Studio P2S 실측(같은 부품 두 자세 + 얇은 벽 상자형 하우스, 항목별 시간)으로 보정
  * estimateFdmPrintTimeHours는 이전 평균 유량식(스크립트 호환용)
  */
 
@@ -158,7 +158,7 @@ export const P2S_PROFILE = {
     support: { speed: 150, accel: 10000, width: 0.42 },
     initialLayerWall: { speed: 50, accel: 500, width: 0.5 },
     initialLayerInfill: { speed: 105, accel: 500, width: 0.5 },
-    travel: { speed: 1000, accel: 10000 },
+    travel: { speed: 600, accel: 10000 },
     wallLoops: 2,
     topShellLayers: 5,
     topShellThicknessMm: 1.0,
@@ -185,9 +185,10 @@ export const P2S_PROFILE = {
     ],
     /** 그리드 인필 실제 압출 / 밀도 — 교차·앵커(400%) 포함 */
     sparseInfillFlowScale: 1.27,
-    /** 인필·솔리드 평균 구간 길이 = 두께(2V/S) × 계수 — 얇은 형상일수록 짧은 선·가감속 손실 */
-    sparseSegmentPerThickness: 0.8,
+    /** 솔리드 평균 구간 길이 = 두께(2V/S) × 계수 — 얇은 형상일수록 짧은 선·가감속 손실 */
     solidSegmentPerThickness: 1.4,
+    /** 인필 구간 하한 = 두께(2V/S) × 계수 — 얇은 쉘에서 인필 영역 폭이 선폭 이하로 퇴화할 때 */
+    sparseSegmentPerThickness: 0.8,
     /** 일반 서포트 평균 경로 구간(mm) — 실측 평균 약 90mm/s */
     supportSegmentMm: 3.2,
     /** 서포트 경로 이 길이(mm)마다 이동·리트랙션 1회 */
@@ -284,6 +285,22 @@ export type FdmGeometryForPrint = {
     bedAreaCm2?: number | null
     /** 외벽 오버행 감속 추가분 — 외벽 속도 기준 등가 측면 면적 (cm²) */
     slowWallAreaCm2?: number | null
+    /** 한 플레이트에 함께 출력하는 개별 객체 수 (다중 객체 3MF). 없으면 1 */
+    partCount?: number | null
+    /** 객체별 높이(mm)의 합 — 객체×레이어 수 산출용. 없으면 heightMm */
+    partHeightSumMm?: number | null
+    /** 이웃 객체 중심 간 평균 거리(mm) — 객체 사이 이동 거리 */
+    partSpacingMm?: number | null
+}
+
+/** 다중 객체 지표 정규화 — 단일 객체면 partCount 1, 높이 합 = 전체 높이 */
+function resolvePartLayout(geom: FdmGeometryForPrint, heightMm: number) {
+    const partCount = Math.max(1, Math.floor(Number(geom.partCount) || 1))
+    const rawSum = Number(geom.partHeightSumMm)
+    const partHeightSumMm =
+        partCount > 1 && rawSum > 0 ? Math.min(heightMm * partCount, Math.max(heightMm, rawSum)) : heightMm
+    const partSpacingMm = Math.max(0, Number(geom.partSpacingMm) || 0)
+    return { partCount, partHeightSumMm, partSpacingMm }
 }
 
 export type FdmStructureEstimate = {
@@ -309,6 +326,10 @@ export type FdmStructureEstimate = {
     nBottom: number
     /** 솔리드 층이 모델 부피를 넘을 때 줄인 비율 */
     solidScale: number
+    partCount: number
+    /** 객체별 레이어 수의 합 (단일 객체면 numLayers) */
+    partLayers: number
+    partSpacingMm: number
 }
 
 /** P2S 기본 공정(벽 2겹, 윗면 5층·1.0mm, 바닥 3층) 기준 압출 구조 */
@@ -322,9 +343,10 @@ export function estimateFdmStructureP2S(
     const volMm3 = Math.max(0, Number(geom.volumeCm3) || 0) * 1000
     const surfMm2 = Math.max(0, Number(geom.surfaceAreaCm2) || 0) * 100
     const numLayers = Math.max(1, Math.ceil(heightMm / h))
+    const parts = resolvePartLayout(geom, heightMm)
 
-    // 방향 지표가 없으면 평균 단면으로 근사
-    const xsMm2 = volMm3 / heightMm
+    // 방향 지표가 없으면 평균 단면으로 근사 (다중 객체는 객체 1개의 평균 단면)
+    const xsMm2 = volMm3 / parts.partHeightSumMm
     const fallbackFlat = Math.min(xsMm2, surfMm2 * 0.25)
     const cm2 = (v: number | null | undefined, fb: number) =>
         v != null && Number.isFinite(Number(v)) ? Math.min(Math.max(0, Number(v)) * 100, surfMm2) : fb
@@ -367,6 +389,9 @@ export function estimateFdmStructureP2S(
         nTop,
         nBottom,
         solidScale,
+        partCount: parts.partCount,
+        partLayers: parts.partCount > 1 ? Math.max(numLayers, Math.ceil(parts.partHeightSumMm / h)) : numLayers,
+        partSpacingMm: parts.partSpacingMm,
     }
 }
 
@@ -415,7 +440,14 @@ export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResul
         Math.min(f.speed, flow / extrusionSectionMm2(f.width, h))
     const D = s.characteristicMm
     const solidSeg = Math.min(D, s.thicknessMm * P.solidSegmentPerThickness)
-    const sparseSeg = Math.min(D, s.thicknessMm * P.sparseSegmentPerThickness)
+    // 인필 구간 = 인필 영역 폭 = 측면 기준 두께(2V/측면) − 양쪽 벽 띠 (Bambu 실측 3건 비율 ≈ 1)
+    const wallBandMm = P.outerWall.width + P.innerWall.width * (P.wallLoops - 1)
+    const volMm3 = Math.max(0, Number(input.volumeCm3) || 0) * 1000
+    const infillWidthMm =
+        s.lateralMm2 > 0 ? (2 * volMm3) / s.lateralMm2 - 2 * wallBandMm : s.thicknessMm
+    const sparseSeg = Math.min(D, Math.max(s.thicknessMm * P.sparseSegmentPerThickness, infillWidthMm))
+    // 첫 레이어는 베드 접촉면 하나를 이어서 채우므로 구간이 접촉면 크기를 따름 (가속 500이라 구간 길이에 민감)
+    const bedSeg = Math.max(solidSeg, Math.min(D, Math.sqrt(s.bedMm2 / s.partCount)))
 
     const wallPathMm = (s.lateralMm2 / h) * quantity
     // slowWallArea = Σ 측면 × (외벽 속도 / 오버행 속도 − 1) → 외벽 속도로 나누면 추가 시간
@@ -441,12 +473,12 @@ export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResul
     const firstLayer =
         featureTimeSec(
             (s.bedMm2 * quantity * s.solidScale) / P.initialLayerInfill.width,
-            solidSeg,
+            bedSeg,
             speedFor(P.initialLayerInfill),
             P.initialLayerInfill.accel
         ) +
         featureTimeSec(
-            4 * Math.sqrt(s.bedMm2) * P.wallLoops * quantity,
+            4 * Math.sqrt(s.bedMm2 * s.partCount) * P.wallLoops * quantity,
             D,
             speedFor(P.initialLayerWall),
             P.initialLayerWall.accel
@@ -468,9 +500,14 @@ export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResul
 
     const layerScale =
         (input.fdmLayerHoursFactor ?? FDM_DEFAULT_LAYER_HOURS_FACTOR) / FDM_DEFAULT_LAYER_HOURS_FACTOR
-    const perLayerOverhead =
-        (P.layerChangeSec + P.travelsPerLayer * quantity * travelSec(D / 2)) * layerScale
-    const layerOverhead = s.numLayers * perLayerOverhead
+    // 레이어 전환은 플레이트 단위, 벽 시작·인필 진입 이동은 객체×레이어 단위, 객체 사이 이동은 레이어마다 (객체 수 − 1)회
+    const interPartMoves = Math.max(0, s.partLayers - s.numLayers)
+    const interPartSpacing = s.partSpacingMm > 0 ? s.partSpacingMm : D
+    const layerOverhead =
+        (s.numLayers * P.layerChangeSec +
+            s.partLayers * P.travelsPerLayer * quantity * travelSec(D / 2) +
+            interPartMoves * travelSec(interPartSpacing)) *
+        layerScale
 
     const printSec = walls + solid + firstLayer + sparseInfill + support + travel + layerOverhead
     const minLayerTotal = s.numLayers * material.minLayerTimeSec

@@ -6,7 +6,7 @@ import {
     type OrientationSupport,
     type UpAxisKey,
 } from '@/lib/geometry'
-import { FDM_SUPPORT_FILL_RATIO } from '@/lib/fdm-quote'
+import { fdmSupportExtrudeCm3 } from '@/lib/fdm-quote'
 import { estimateFdmPrintTimeP2S, FDM_REF_LAYER_MM } from '@/lib/print-time-estimate'
 import { rotatePointEulerXyz, type Vec3Tuple } from '@/lib/stl-bake'
 
@@ -264,6 +264,9 @@ export function applyTransformToAnalysis(
         ...(src.bottomArea !== undefined ? { bottomArea: area(src.bottomArea) } : {}),
         ...(src.bedArea !== undefined ? { bedArea: area(src.bedArea) } : {}),
         ...(src.slowWallArea !== undefined ? { slowWallArea: area(src.slowWallArea) } : {}),
+        ...(base.partCount != null ? { partCount: base.partCount } : {}),
+        ...(src.partHeightSum !== undefined ? { partHeightSum: src.partHeightSum * s } : {}),
+        ...(base.partSpacing !== undefined ? { partSpacing: base.partSpacing * s } : {}),
         boundingBox,
     })
 }
@@ -294,9 +297,12 @@ function placementScoreHours(analysis: GeometryAnalysis, layerHeightMm: number):
         bottomAreaCm2: analysis.bottomArea,
         bedAreaCm2: analysis.bedArea,
         slowWallAreaCm2: analysis.slowWallArea,
+        partCount: analysis.partCount,
+        partHeightSumMm: analysis.partHeightSum,
+        partSpacingMm: analysis.partSpacing,
         layerHeightMm,
         infillPercent: 15,
-        supportExtrudeCm3: (analysis.supportVolume ?? 0) * FDM_SUPPORT_FILL_RATIO,
+        supportExtrudeCm3: fdmSupportExtrudeCm3(analysis.overhangArea, analysis.supportVolume),
         materialName: 'PLA',
     })
     return Object.values(breakdownSec).reduce((a, b) => a + b, 0) / 3600

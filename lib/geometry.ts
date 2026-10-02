@@ -26,6 +26,8 @@ export type OrientationSupport = {
     bedArea?: number;
     /** 외벽 오버행 감속으로 늘어나는 시간을 외벽 속도 기준 측면 면적으로 환산한 추가분 (cm²) */
     slowWallArea?: number;
+    /** 다중 객체: 이 축을 위로 세웠을 때 객체별 높이(mm)의 합 */
+    partHeightSum?: number;
 };
 
 const ORIENTATION_AREA_KEYS = ['lateralArea', 'topArea', 'bottomArea', 'bedArea'] as const;
@@ -54,6 +56,12 @@ export interface GeometryAnalysis {
     bottomArea?: number;
     bedArea?: number;
     slowWallArea?: number;
+    /** 다중 객체 3MF 플레이트의 객체 수 (단일 객체면 없음) */
+    partCount?: number;
+    /** 현재 배치의 객체별 높이(mm) 합 */
+    partHeightSum?: number;
+    /** 이웃 객체 중심 간 평균 거리(mm) */
+    partSpacing?: number;
     boundingBox: {
         x: number; // mm
         y: number; // mm
@@ -141,6 +149,7 @@ export function sanitizeGeometryAnalysis(analysis: GeometryAnalysis): GeometryAn
                 overhangArea: clampOverhang(o.overhangArea),
                 supportVolume: clampSupportVolume(o.supportVolume),
                 ...pickAreas(o),
+                ...(o.partHeightSum != null ? { partHeightSum: o.partHeightSum } : {}),
             };
         }
     }
@@ -559,11 +568,110 @@ function buildFaceOrientations(
     });
 }
 
+/** 병합 지오메트리 안의 개별 객체 범위 (index가 있으면 index 원소 단위, 없으면 정점 단위) */
+export type ModelPartRange = { start: number; count: number };
+export const MODEL_PARTS_USERDATA_KEY = 'modelParts';
+
+export function getModelPartRanges(geometry: THREE.BufferGeometry): ModelPartRange[] | null {
+    const ranges = geometry.userData?.[MODEL_PARTS_USERDATA_KEY] as ModelPartRange[] | undefined;
+    return Array.isArray(ranges) && ranges.length > 1 ? ranges : null;
+}
+
+function extractPartGeometry(geometry: THREE.BufferGeometry, range: ModelPartRange): THREE.BufferGeometry {
+    const pos = geometry.attributes.position;
+    const index = geometry.index;
+    const out = new Float32Array(range.count * 3);
+    for (let i = 0; i < range.count; i++) {
+        const vi = index ? index.getX(range.start + i) : range.start + i;
+        out[i * 3] = pos.getX(vi);
+        out[i * 3 + 1] = pos.getY(vi);
+        out[i * 3 + 2] = pos.getZ(vi);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(out, 3));
+    return g;
+}
+
+/** 비밀폐 메쉬의 부호 있는 부피는 원점 위치에 따라 달라지므로 객체 중심을 원점에 둠 */
+function centerPartGeometry(g: THREE.BufferGeometry): THREE.Vector3 {
+    g.computeBoundingBox();
+    const center = new THREE.Vector3();
+    g.boundingBox!.getCenter(center);
+    g.translate(-center.x, -center.y, -center.z);
+    return center;
+}
+
+const ORIENTATION_SUM_KEYS = [
+    'overhangArea',
+    'supportVolume',
+    'lateralArea',
+    'topArea',
+    'bottomArea',
+    'bedArea',
+    'slowWallArea',
+] as const;
+
+/**
+ * 다중 객체 플레이트: 객체마다 분석해 합산.
+ * 서포트 그림자는 객체 자신의 AABB 안으로 제한되어야 하므로(플레이트 전체 AABB로는 과대) 객체 단위로 산출.
+ * 회전은 플레이트 전체에 같이 적용되므로 축별 지표는 객체 합과 같고, 평면 배치 후보는 두지 않음.
+ */
+function analyzeMultiPartGeometry(geometry: THREE.BufferGeometry, ranges: ModelPartRange[]): GeometryAnalysis {
+    const parts: { a: GeometryAnalysis; center: THREE.Vector3 }[] = [];
+    for (const range of ranges) {
+        const g = extractPartGeometry(geometry, range);
+        const center = centerPartGeometry(g);
+        const a = analyzeGeometryInternal(g, { sampleStride: 1, includeOverhang: true });
+        g.dispose();
+        if (a.volume > 0) parts.push({ a, center });
+    }
+    if (parts.length < 2) {
+        return analyzeGeometryInternal(geometry, { sampleStride: 1, includeOverhang: true });
+    }
+
+    const axisSize = (box: GeometryAnalysis['boundingBox'], key: UpAxisKey) => box[key[1] as 'x' | 'y' | 'z'];
+    const orientations: NonNullable<GeometryAnalysis['orientations']> = {};
+    for (const key of UP_AXIS_KEYS) {
+        const sum: OrientationSupport = { overhangArea: 0, supportVolume: 0, partHeightSum: 0 };
+        for (const { a } of parts) {
+            const o = a.orientations?.[key];
+            for (const k of ORIENTATION_SUM_KEYS) {
+                sum[k] = (sum[k] ?? 0) + (Number(o?.[k]) || 0);
+            }
+            sum.partHeightSum! += axisSize(a.boundingBox, key);
+        }
+        orientations[key] = sum;
+    }
+
+    let spacingSum = 0;
+    for (let i = 0; i < parts.length; i++) {
+        let nearest = Infinity;
+        for (let j = 0; j < parts.length; j++) {
+            if (i !== j) nearest = Math.min(nearest, parts[i].center.distanceTo(parts[j].center));
+        }
+        spacingSum += nearest;
+    }
+
+    const size = getBoundingBoxSize(geometry);
+    const placed = orientations['+z']!;
+    return sanitizeGeometryAnalysis({
+        volume: parts.reduce((s, p) => s + p.a.volume, 0),
+        surfaceArea: parts.reduce((s, p) => s + p.a.surfaceArea, 0),
+        ...placed,
+        orientations,
+        partCount: parts.length,
+        partSpacing: spacingSum / parts.length,
+        boundingBox: { x: size.x, y: size.y, z: size.z },
+    });
+}
+
 // 부피는 원점 기준 부호 있는 사면체 합이라 상쇄가 커서 삼각형 샘플링 시 오차가 수십~수백 %에 달함 → 항상 전체 순회
 export const analyzeGeometry = (geometry: THREE.BufferGeometry): GeometryAnalysis => {
     if (!geometry.attributes.normal) {
         geometry.computeVertexNormals();
     }
+    const ranges = getModelPartRanges(geometry);
+    if (ranges) return analyzeMultiPartGeometry(geometry, ranges);
     return analyzeGeometryInternal(geometry, { sampleStride: 1, includeOverhang: true });
 };
 
