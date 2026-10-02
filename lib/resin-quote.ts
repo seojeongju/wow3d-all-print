@@ -6,7 +6,7 @@
  * 시간 = estimateResinPrintTimeHours (레이어 노출 + 기계 지연)
  */
 
-import { roundTo100 } from '@/lib/amount-display'
+import { QUOTE_PRICE_ROUND_MODE, roundTo100 } from '@/lib/amount-display'
 import {
     estimateResinPrintTimeHours,
     type ResinTimeEstimateResult,
@@ -197,11 +197,11 @@ export function calculateResinQuote(input: CalculateResinQuoteInput): CalculateR
             input.minPriceKr != null && input.minPriceKr > 0
                 ? Math.max(subtotal, input.minPriceKr)
                 : subtotal
-        total = roundTo100(base * 1.1, 'round')
+        total = roundTo100(base * 1.1, QUOTE_PRICE_ROUND_MODE)
     } else if (input.minPriceKr != null && input.minPriceKr > 0) {
-        total = Math.max(roundTo100(subtotal, 'round'), input.minPriceKr)
+        total = Math.max(roundTo100(subtotal, QUOTE_PRICE_ROUND_MODE), input.minPriceKr)
     } else {
-        total = roundTo100(subtotal, 'round')
+        total = roundTo100(subtotal, QUOTE_PRICE_ROUND_MODE)
     }
 
     return {

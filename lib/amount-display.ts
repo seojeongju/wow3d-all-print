@@ -49,6 +49,12 @@ export function normalizeAmountBeforeSave(value: number | null | undefined): num
 /** 100원 단위 반올림/반내림/반올림(올림). 자동견적 금액 산출 시 사용 */
 export type PriceRoundMode = 'none' | 'round' | 'floor' | 'ceil';
 
+/** 견적 금액 단위 처리: 100원 미만(10원 단위 이하) 절삭 — 클라이언트·서버 재계산·장바구니 공통 */
+export const QUOTE_PRICE_ROUND_MODE: PriceRoundMode = 'floor';
+
+/** ×1.1 등 부동소수 오차로 22000이 21999.999…가 되어 한 단위 깎이는 것 방지 */
+const ROUND_EPSILON = 1e-6;
+
 export function roundTo100(value: number | null | undefined, mode: PriceRoundMode): number {
   if (value == null || !Number.isFinite(Number(value))) return 0;
   const n = Number(value);
@@ -56,8 +62,8 @@ export function roundTo100(value: number | null | undefined, mode: PriceRoundMod
   const unit = 100;
   switch (mode) {
     case 'round': return Math.round(n / unit) * unit;
-    case 'floor': return Math.floor(n / unit) * unit;
-    case 'ceil': return Math.ceil(n / unit) * unit;
+    case 'floor': return Math.floor((n + ROUND_EPSILON) / unit) * unit;
+    case 'ceil': return Math.ceil((n - ROUND_EPSILON) / unit) * unit;
     default: return Math.round(n);
   }
 }

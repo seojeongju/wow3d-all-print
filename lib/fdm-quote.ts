@@ -7,7 +7,7 @@
  * - 출력 시간: 모델 무게 + 서포트 추정 무게를 Bambu급 유량식으로 반영
  */
 
-import { roundTo100 } from '@/lib/amount-display'
+import { QUOTE_PRICE_ROUND_MODE, roundTo100 } from '@/lib/amount-display'
 import {
     estimateFdmPrintTimeP2S,
     estimateFdmStructureP2S,
@@ -335,11 +335,11 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
             input.minPriceKr != null && input.minPriceKr > 0
                 ? Math.max(subtotal, input.minPriceKr)
                 : subtotal
-        total = roundTo100(base * 1.1, 'round')
+        total = roundTo100(base * 1.1, QUOTE_PRICE_ROUND_MODE)
     } else if (input.minPriceKr != null && input.minPriceKr > 0) {
-        total = Math.max(roundTo100(subtotal, 'round'), input.minPriceKr)
+        total = Math.max(roundTo100(subtotal, QUOTE_PRICE_ROUND_MODE), input.minPriceKr)
     } else {
-        total = roundTo100(subtotal, 'round')
+        total = roundTo100(subtotal, QUOTE_PRICE_ROUND_MODE)
     }
 
     return {

@@ -14,7 +14,7 @@ import { Link } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { showToast } from '@/lib/toast-helper'
-import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
+import { QUOTE_PRICE_ROUND_MODE, roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
 import type { Quote, QuoteData } from '@/lib/types'
@@ -173,7 +173,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
     /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
-    const [priceRoundMode] = useState<PriceRoundMode>('round')
+    const [priceRoundMode] = useState<PriceRoundMode>(QUOTE_PRICE_ROUND_MODE)
     const [detailModalOpen, setDetailModalOpen] = useState(false)
     const initialConfigSeeded = useRef(false)
 

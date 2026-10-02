@@ -4,7 +4,7 @@
  * - 다른 출력방식: 그룹이 나뉘므로 방식마다 최소금액 적용
  */
 
-import { roundTo100, type PriceRoundMode } from '@/lib/amount-display'
+import { QUOTE_PRICE_ROUND_MODE, roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 
 export type QuoteBatchPriceInput = {
     /** 1개당 변동비(공급가): 재료+서포트+장비 등 */
@@ -54,8 +54,8 @@ export function calculateQuoteBatchPrice(input: QuoteBatchPriceInput): QuoteBatc
 
     const applyVat = input.applyVat !== false
     const lineTotalKrw = applyVat
-        ? roundTo100(supplyKrw * 1.1, input.roundMode ?? 'round')
-        : roundTo100(supplyKrw, input.roundMode ?? 'round')
+        ? roundTo100(supplyKrw * 1.1, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
+        : roundTo100(supplyKrw, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
 
     return {
         quantity,
@@ -102,7 +102,7 @@ export function lineTotalFromStoredQuote(input: {
         }
     }
 
-    const lineTotalKrw = roundTo100(totalPrice * quantity, input.roundMode ?? 'round')
+    const lineTotalKrw = roundTo100(totalPrice * quantity, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
     return {
         lineTotalKrw,
         effectiveUnitKrw: quantity > 0 ? lineTotalKrw / quantity : lineTotalKrw,
@@ -159,7 +159,7 @@ export function priceCartLinesByPrintMethod(
     groups: { groupKey: string; supplyKrw: number; totalKrw: number; minApplied: boolean }[]
 } {
     const applyVat = options?.applyVat !== false
-    const roundMode = options?.roundMode ?? 'round'
+    const roundMode = options?.roundMode ?? QUOTE_PRICE_ROUND_MODE
     const results: CartBatchLineResult[] = []
     const groupsOut: { groupKey: string; supplyKrw: number; totalKrw: number; minApplied: boolean }[] =
         []
