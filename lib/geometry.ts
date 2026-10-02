@@ -82,6 +82,273 @@ const SUPPORT_NORMAL_THRESHOLD = Math.cos((SUPPORT_THRESHOLD_ANGLE_DEG * Math.PI
 const BED_CONTACT_TOLERANCE_MM = 0.3;
 const BED_CONTACT_TOLERANCE_RATIO = 0.002;
 
+/** 서포트 착지면 격자 — 셀 크기 = 투영 최대 치수 / 이 값 (하한 SUPPORT_GRID_MIN_CELL_MM) */
+const SUPPORT_GRID_CELLS = 200;
+const SUPPORT_GRID_MIN_CELL_MM = 0.5;
+/** 오버행 면에서 이 간격 안의 표면은 착지면으로 보지 않음 (수치 오차) */
+const SUPPORT_LANDING_GAP_MM = 0.05;
+
+type MeshPositions = THREE.BufferAttribute | THREE.InterleavedBufferAttribute;
+
+/**
+ * 투영 평면 (u, v) 격자 셀마다 모델 표면 높이 w를 법선 부호별(0: +w, 1: -w)로 모아
+ * 오버행 면에서 내린 서포트 기둥이 바로 아래(위) 모델 표면에서 끝나는 높이를 구함.
+ * Bambu 기본값은 서포트가 모델 위에도 서므로 기둥을 베드까지 잡으면 모델 위 오버행이 과대.
+ * rows: (u, v, w) 축 단위벡터 9개 — 오른손 좌표계여야 2D 부호 면적 = 법선의 w 성분 부호
+ */
+class SurfaceColumnGrid {
+    private readonly rows: readonly number[];
+    private u0 = Infinity;
+    private v0 = Infinity;
+    private wMin = Infinity;
+    private wMax = -Infinity;
+    private cs = 1;
+    private nu = 1;
+    private nv = 1;
+    private readonly start: [Int32Array, Int32Array];
+    private readonly vals: [Float32Array, Float32Array];
+    // 생성 중 수집 버퍼 (셀, 높이, 법선 부호)
+    private eCell = new Int32Array(1 << 16);
+    private eW = new Float32Array(1 << 16);
+    private eList = new Uint8Array(1 << 16);
+    private eLen = 0;
+    // columnHeight 질의 상태
+    private list = 0;
+    private qDown = true;
+    private qSum = 0;
+
+    /** tris: 삼각형당 정점 좌표 9개 (meshTriangleCoords) */
+    constructor(tris: ArrayLike<number>, rows: readonly number[]) {
+        this.rows = rows;
+        const [r0, r1, r2, r3, r4, r5, r6, r7, r8] = rows;
+        let u1 = -Infinity;
+        let v1 = -Infinity;
+        for (let i = 0; i + 2 < tris.length; i += 3) {
+            const x = tris[i], y = tris[i + 1], z = tris[i + 2];
+            const u = r0 * x + r1 * y + r2 * z;
+            const v = r3 * x + r4 * y + r5 * z;
+            const w = r6 * x + r7 * y + r8 * z;
+            if (u < this.u0) this.u0 = u;
+            if (u > u1) u1 = u;
+            if (v < this.v0) this.v0 = v;
+            if (v > v1) v1 = v;
+            if (w < this.wMin) this.wMin = w;
+            if (w > this.wMax) this.wMax = w;
+        }
+        const span = Math.max(u1 - this.u0, v1 - this.v0, 0);
+        this.cs = Math.max(SUPPORT_GRID_MIN_CELL_MM, span / SUPPORT_GRID_CELLS);
+        this.nu = Math.floor(Math.max(0, u1 - this.u0) / this.cs) + 1;
+        this.nv = Math.floor(Math.max(0, v1 - this.v0) / this.cs) + 1;
+        const cells = this.nu * this.nv;
+
+        const t = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (let i = 0; i + 8 < tris.length; i += 9) {
+            for (let j = 0; j < 9; j += 3) {
+                const x = tris[i + j], y = tris[i + j + 1], z = tris[i + j + 2];
+                t[j] = r0 * x + r1 * y + r2 * z;
+                t[j + 1] = r3 * x + r4 * y + r5 * z;
+                t[j + 2] = r6 * x + r7 * y + r8 * z;
+            }
+            const area2 = (t[3] - t[0]) * (t[7] - t[1]) - (t[6] - t[0]) * (t[4] - t[1]);
+            if (Math.abs(area2) < 1e-12) continue;
+            this.list = area2 > 0 ? 0 : 1;
+            this.scan(t, false);
+        }
+
+        // 셀별로 묶기 (계수 정렬)
+        this.start = [new Int32Array(cells + 1), new Int32Array(cells + 1)];
+        for (let e = 0; e < this.eLen; e++) this.start[this.eList[e]][this.eCell[e] + 1]++;
+        for (const s of this.start) {
+            for (let c = 0; c < cells; c++) s[c + 1] += s[c];
+        }
+        this.vals = [new Float32Array(this.start[0][cells]), new Float32Array(this.start[1][cells])];
+        const cursor = [this.start[0].slice(0, cells), this.start[1].slice(0, cells)];
+        for (let e = 0; e < this.eLen; e++) {
+            const l = this.eList[e];
+            this.vals[l][cursor[l][this.eCell[e]]++] = this.eW[e];
+        }
+        this.eCell = new Int32Array(0);
+        this.eW = new Float32Array(0);
+        this.eList = new Uint8Array(0);
+    }
+
+    private push(cell: number, w: number): void {
+        if (this.eLen === this.eCell.length) {
+            const cap = this.eLen * 2;
+            const c = new Int32Array(cap), wv = new Float32Array(cap), l = new Uint8Array(cap);
+            c.set(this.eCell);
+            wv.set(this.eW);
+            l.set(this.eList);
+            this.eCell = c;
+            this.eW = wv;
+            this.eList = l;
+        }
+        this.eCell[this.eLen] = cell;
+        this.eW[this.eLen] = w;
+        this.eList[this.eLen++] = this.list;
+    }
+
+    /** 셀에서 높이 w의 오버행 점으로부터 착지면(없으면 베드)까지 기둥 높이를 qSum에 더함 */
+    private addColumn(cell: number, w: number): void {
+        const vals = this.vals[this.list];
+        const end = this.start[this.list][cell + 1];
+        let col: number;
+        if (this.qDown) {
+            let best = this.wMin;
+            for (let i = this.start[this.list][cell]; i < end; i++) {
+                const v = vals[i];
+                if (v < w - SUPPORT_LANDING_GAP_MM && v > best) best = v;
+            }
+            col = w - best;
+        } else {
+            let best = this.wMax;
+            for (let i = this.start[this.list][cell]; i < end; i++) {
+                const v = vals[i];
+                if (v > w + SUPPORT_LANDING_GAP_MM && v < best) best = v;
+            }
+            col = best - w;
+        }
+        this.qSum += Math.max(0, col);
+    }
+
+    /** 삼각형 (u, v, w)×3 안에 중심이 든 셀마다 수집(query=false) 또는 기둥 합산. 방문 셀 수 반환 */
+    private scan(t: readonly number[], query: boolean): number {
+        const ua = t[0], va = t[1], wa = t[2], ub = t[3], vb = t[4], wb = t[5], uc = t[6], vc = t[7], wc = t[8];
+        const d = (vb - vc) * (ua - uc) + (uc - ub) * (va - vc);
+        if (Math.abs(d) < 1e-12) return 0;
+        const cs = this.cs;
+        const i0 = Math.max(0, Math.ceil((Math.min(ua, ub, uc) - this.u0) / cs - 0.5));
+        const i1 = Math.min(this.nu - 1, Math.floor((Math.max(ua, ub, uc) - this.u0) / cs - 0.5));
+        if (i0 > i1) return 0;
+        const j0 = Math.max(0, Math.ceil((Math.min(va, vb, vc) - this.v0) / cs - 0.5));
+        const j1 = Math.min(this.nv - 1, Math.floor((Math.max(va, vb, vc) - this.v0) / cs - 0.5));
+        if (j0 > j1) return 0;
+        let n = 0;
+        for (let i = i0; i <= i1; i++) {
+            const pu = this.u0 + (i + 0.5) * cs;
+            for (let j = j0; j <= j1; j++) {
+                const pv = this.v0 + (j + 0.5) * cs;
+                const l1 = ((vb - vc) * (pu - uc) + (uc - ub) * (pv - vc)) / d;
+                const l2 = ((vc - va) * (pu - uc) + (ua - uc) * (pv - vc)) / d;
+                const l3 = 1 - l1 - l2;
+                if (l1 < -1e-9 || l2 < -1e-9 || l3 < -1e-9) continue;
+                const w = l1 * wa + l2 * wb + l3 * wc;
+                if (query) this.addColumn(i * this.nv + j, w);
+                else this.push(i * this.nv + j, w);
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * 오버행 삼각형 (u, v, w)×3에서 내린 서포트 기둥의 평균 높이(mm).
+     * land: 착지면 법선 부호(0: +w, 1: -w), down: 중력이 -w 방향이면 true. 착지면이 없으면 베드(w 끝)까지.
+     */
+    columnHeight(t: readonly number[], land: number, down: boolean): number {
+        this.list = land;
+        this.qDown = down;
+        this.qSum = 0;
+        const n = this.scan(t, true);
+        if (n > 0) return this.qSum / n;
+        // 셀 중심을 덮지 못한 작은 삼각형은 무게중심의 셀로
+        const gu = (t[0] + t[3] + t[6]) / 3, gv = (t[1] + t[4] + t[7]) / 3, gw = (t[2] + t[5] + t[8]) / 3;
+        const i = Math.min(this.nu - 1, Math.max(0, Math.floor((gu - this.u0) / this.cs)));
+        const j = Math.min(this.nv - 1, Math.max(0, Math.floor((gv - this.v0) / this.cs)));
+        this.addColumn(i * this.nv + j, gw);
+        return this.qSum;
+    }
+
+    /** 원본 좌표 삼각형을 이 격자의 (u, v, w)로 */
+    projectTriangle(p: readonly THREE.Vector3[], out: number[]): number[] {
+        const r = this.rows;
+        for (let j = 0; j < 3; j++) {
+            const { x, y, z } = p[j];
+            out[j * 3] = r[0] * x + r[1] * y + r[2] * z;
+            out[j * 3 + 1] = r[3] * x + r[4] * y + r[5] * z;
+            out[j * 3 + 2] = r[6] * x + r[7] * y + r[8] * z;
+        }
+        return out;
+    }
+
+    /** 좌표 배열의 삼각형 t를 이 격자의 (u, v, w)로 */
+    projectAt(tris: ArrayLike<number>, t: number, out: number[]): number[] {
+        const r = this.rows;
+        for (let j = 0; j < 9; j += 3) {
+            const x = tris[t * 9 + j], y = tris[t * 9 + j + 1], z = tris[t * 9 + j + 2];
+            out[j] = r[0] * x + r[1] * y + r[2] * z;
+            out[j + 1] = r[3] * x + r[4] * y + r[5] * z;
+            out[j + 2] = r[6] * x + r[7] * y + r[8] * z;
+        }
+        return out;
+    }
+
+    /** 베드 높이 (w 최솟값) */
+    get bedW(): number {
+        return this.wMin;
+    }
+}
+
+/** 삼각형당 정점 좌표 9개 — 비인덱스 Float32 position은 복사 없이 그대로 */
+function meshTriangleCoords(pos: MeshPositions, index: THREE.BufferAttribute | null): ArrayLike<number> {
+    if (!index && pos instanceof THREE.BufferAttribute && pos.itemSize === 3 && pos.array instanceof Float32Array) {
+        return pos.array.subarray(0, Math.floor(pos.count / 3) * 9);
+    }
+    const triCount = index ? Math.floor(index.count / 3) : Math.floor(pos.count / 3);
+    const out = new Float32Array(triCount * 9);
+    const n = triCount * 3;
+    if (index && pos instanceof THREE.BufferAttribute && pos.itemSize === 3 && !pos.normalized && index.itemSize === 1) {
+        const pa = pos.array;
+        const ia = index.array;
+        for (let i = 0; i < n; i++) {
+            const vi = ia[i] * 3;
+            out[i * 3] = pa[vi];
+            out[i * 3 + 1] = pa[vi + 1];
+            out[i * 3 + 2] = pa[vi + 2];
+        }
+        return out;
+    }
+    for (let i = 0; i < n; i++) {
+        const vi = index ? index.getX(i) : i;
+        out[i * 3] = pos.getX(vi);
+        out[i * 3 + 1] = pos.getY(vi);
+        out[i * 3 + 2] = pos.getZ(vi);
+    }
+    return out;
+}
+
+/**
+ * 평면 배치(rows 셋째 행 = 위 방향) 서포트 그림자 부피(mm³) — 착지면 격자 기준.
+ * sign: 감김이 정상이면 1 (바깥 법선 = sign × 삼각형 법선)
+ */
+function faceSupportVolumeMm3(tris: ArrayLike<number>, rows: readonly number[], sign: number, bedTol: number): number {
+    const grid = new SurfaceColumnGrid(tris, rows);
+    const land = sign > 0 ? 0 : 1;
+    const t = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const triCount = Math.floor(tris.length / 9);
+    let vol = 0;
+    for (let i = 0; i < triCount; i++) {
+        grid.projectAt(tris, i, t);
+        const ux = t[3] - t[0], uy = t[4] - t[1], uz = t[5] - t[2];
+        const wx = t[6] - t[0], wy = t[7] - t[1], wz = t[8] - t[2];
+        const cw = ux * wy - uy * wx;
+        const len = Math.hypot(uy * wz - uz * wy, uz * wx - ux * wz, cw);
+        if (!(len > 0) || (sign * cw) / len >= -SUPPORT_NORMAL_THRESHOLD) continue;
+        if ((t[2] + t[5] + t[8]) / 3 - grid.bedW <= bedTol) continue;
+        vol += (Math.abs(cw) / 2) * grid.columnHeight(t, land, true);
+    }
+    return vol;
+}
+
+/** 축 k가 높이(w)인 오른손 좌표계 (u = k+1, v = k+2) */
+function axisGridRows(k: number): number[] {
+    const r = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    r[(k + 1) % 3] = 1;
+    r[3 + ((k + 2) % 3)] = 1;
+    r[6 + k] = 1;
+    return r;
+}
+
 export function aabbVolumeCm3(box: { x: number; y: number; z: number }): number {
     const x = Math.max(0, Number(box.x) || 0);
     const y = Math.max(0, Number(box.y) || 0);
@@ -262,6 +529,10 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
     const centroid = [0, 0, 0];
     const normal = [0, 0, 0];
     const clusters = new Map<number, NormalCluster>();
+    const tris = includeOverhang ? meshTriangleCoords(pos, index) : null;
+    const grids = tris ? [0, 1, 2].map((k) => new SurfaceColumnGrid(tris, axisGridRows(k))) : [];
+    const tri = [p1, p2, p3];
+    const t9 = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     const processTriangle = (i0: number, i1: number, i2: number) => {
         p1.fromBufferAttribute(pos, i0);
@@ -301,16 +572,18 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
             if (face < 0) continue;
             const hFromMin = centroid[k] - bboxMin[k];
             const hFromMax = bboxMax[k] - centroid[k];
+            // 착지면 = 오버행 면과 반대 부호 법선의 표면 → 법선 -k 면(face 0)은 +k 목록(0)
+            if (hFromMin > bedTol[k] || hFromMax > bedTol[k]) grids[k].projectTriangle(tri, t9);
             // 바닥에 닿는 면은 서포트 대상 아님 (첫 레이어 면적으로 집계)
             if (hFromMin > bedTol[k]) {
                 ovArea[k][face][0] += area;
-                ovVol[k][face][0] += projected * hFromMin;
+                ovVol[k][face][0] += projected * grids[k].columnHeight(t9, face, true);
             } else {
                 bedArea[k][face][0] += projected;
             }
             if (hFromMax > bedTol[k]) {
                 ovArea[k][face][1] += area;
-                ovVol[k][face][1] += projected * hFromMax;
+                ovVol[k][face][1] += projected * grids[k].columnHeight(t9, face, false);
             } else {
                 bedArea[k][face][1] += projected;
             }
@@ -368,8 +641,8 @@ function analyzeGeometryInternal(geometry: THREE.BufferGeometry, options: Analyz
         }
     }
 
-    const faceOrientations = includeOverhang
-        ? buildFaceOrientations(pos, index, clusters, volume >= 0 ? 1 : -1, surfaceArea)
+    const faceOrientations = tris
+        ? buildFaceOrientations(pos, index, tris, clusters, volume >= 0 ? 1 : -1, surfaceArea)
         : [];
 
     const placed = orientations?.['+z'];
@@ -436,6 +709,7 @@ function addToNormalCluster(clusters: Map<number, NormalCluster>, n: number[], a
 function buildFaceOrientations(
     pos: THREE.BufferAttribute | THREE.InterleavedBufferAttribute,
     index: THREE.BufferAttribute | null,
+    tris: ArrayLike<number>,
     clusters: Map<number, NormalCluster>,
     sign: number,
     surfaceMm2: number
@@ -552,6 +826,9 @@ function buildFaceOrientations(
         .filter(({ c, a }) => a.bed >= c.area * FACE_MIN_BED_FRACTION)
         .sort((p, q) => q.a.bed - p.a.bed)
         .slice(0, FACE_CANDIDATES_MAX);
+    for (const { c, a } of placeable) {
+        if (a.supportVol > 0) a.supportVol = faceSupportVolumeMm3(tris, c.rows, sign, c.tol);
+    }
 
     return placeable.map(({ c, a }) => {
         return {

@@ -2,7 +2,7 @@
  * Bambu Studio(P2S) 3MF 플레이트 실측과 자동견적 비교 (다중 객체)
  * 실행: npx --yes tsx scripts/compare-bambu-3mf.ts "<3mf 경로>"
  * 사전 준비: npm i --no-save linkedom (Node에 DOMParser가 없음)
- * Bambu 값은 BAMBU_MIN(모델 출력 시간, 분)·BAMBU_MODEL_G·BAMBU_SUPPORT_G 환경변수로 지정
+ * Bambu 값은 BAMBU_MIN(모델 출력 시간, 분)·BAMBU_MODEL_G·BAMBU_SUPPORT_G 환경변수로 지정, 서포트 끔은 SUPPORT=0
  */
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
@@ -21,6 +21,7 @@ const DENSITY = Number(process.env.DENSITY ?? 1.26)
 const BAMBU_MIN = Number(process.env.BAMBU_MIN ?? 170.1)
 const BAMBU_MODEL_G = Number(process.env.BAMBU_MODEL_G ?? 60.69)
 const BAMBU_SUPPORT_G = Number(process.env.BAMBU_SUPPORT_G ?? 11.73)
+const SUPPORT = process.env.SUPPORT !== '0'
 
 const fmt = (h: number) => `${Math.floor(h)}h ${Math.round((h % 1) * 60)}m`
 const m = (s: number) => (s / 60).toFixed(1)
@@ -34,7 +35,7 @@ function report(label: string, a: GeometryAnalysis) {
         pricePerGramKr: 50,
         infillPercent: INFILL,
         layerHeightMm: 0.2,
-        supportEnabled: true,
+        supportEnabled: SUPPORT,
         overhangAreaCm2: a.overhangArea,
         supportVolumeCm3: a.supportVolume,
         lateralAreaCm2: a.lateralArea,

@@ -39,13 +39,13 @@ export const FDM_SUPPORT_COST_FLOOR_KRW = 5_000
 
 /**
  * 서포트 압출 부피 = 오버행 면적 × FDM_SUPPORT_AREA_CM3_PER_CM2 + 그림자 부피 × FDM_SUPPORT_FILL_RATIO
+ * 그림자 = 오버행에서 바로 아래 모델 표면(없으면 베드)까지의 기둥 (Bambu 기본: 모델 위에도 서포트)
  * Bambu P2S 일반(자동) 서포트 실측 3건 상대오차 최소제곱
- * (오버행 16.7cm²·그림자 22cm³→8.8cm³, 19.6·56→16.7, 21·158→33.5)
- * 몸체 비율은 기본 패턴 간격 2.5mm × 선폭 0.42mm(0.168)와 일치
+ * (오버행 20.6cm²·그림자 60cm³→33.5cm³, 15.4·149→60.4, 72.3·84.5→37.7)
  */
-export const FDM_SUPPORT_FILL_RATIO = 0.175
-/** 오버행 면적당 접촉면·XY 확장분 압출 부피 (cm³/cm²) */
-export const FDM_SUPPORT_AREA_CM3_PER_CM2 = 0.31
+export const FDM_SUPPORT_FILL_RATIO = 0.44
+/** 오버행 면적당 상단 접촉면 압출 부피 (cm³/cm²) — 접촉 2층 × 0.2mm × 채움 약 0.8 */
+export const FDM_SUPPORT_AREA_CM3_PER_CM2 = 0.033
 
 /** 그림자 부피가 있을 때 서포트 압출 부피(cm³) */
 export function fdmSupportExtrudeCm3(overhangAreaCm2: number | null | undefined, supportVolumeCm3: number | null | undefined): number {

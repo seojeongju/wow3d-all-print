@@ -183,8 +183,12 @@ export const P2S_PROFILE = {
         { maxRatio: 0.5, speed: 30 },
         { maxRatio: Infinity, speed: 20 },
     ],
-    /** 그리드 인필 실제 압출 / 밀도 — 교차·앵커(400%) 포함 */
-    sparseInfillFlowScale: 1.27,
+    /**
+     * 그리드 인필 실제 압출 / 밀도 = 1 + 이 값 / (1 + (인필 영역 폭 / sparseAnchorWidthMm)²)
+     * 선마다 벽에 붙는 앵커·교차분이라 좁은 영역일수록 큼 (Bambu 실측: 폭 2.7mm 1.27 · 5.7mm 1.23 · 12mm 1.09 · 29mm 1.03)
+     */
+    sparseInfillAnchorExtra: 0.27,
+    sparseAnchorWidthMm: 10,
     /** 솔리드 평균 구간 길이 = 두께(2V/S) × 계수 — 얇은 형상일수록 짧은 선·가감속 손실 */
     solidSegmentPerThickness: 1.4,
     /** 인필 구간 하한 = 두께(2V/S) × 계수 — 얇은 쉘에서 인필 영역 폭이 선폭 이하로 퇴화할 때 */
@@ -320,8 +324,10 @@ export type FdmStructureEstimate = {
     bedMm2: number
     /** 단면 대표 길이(mm) — 벽 구간 길이 근사 */
     characteristicMm: number
-    /** 평균 두께 2V/S (mm) — 인필·솔리드 구간 길이 근사 */
+    /** 평균 두께 2V/S (mm) — 솔리드 구간 길이 근사 */
     thicknessMm: number
+    /** 인필 영역 폭 (mm) — 인필 구간 길이·앵커 비율 */
+    infillWidthMm: number
     nTop: number
     nBottom: number
     /** 솔리드 층이 모델 부피를 넘을 때 줄인 비율 */
@@ -368,10 +374,23 @@ export function estimateFdmStructureP2S(
     const solidScale = rawSolidMm3 > solidRoom && rawSolidMm3 > 0 ? solidRoom / rawSolidMm3 : 1
     const solidVolMm3 = rawSolidMm3 * solidScale
 
+    const characteristicMm = Math.min(300, Math.max(5, Math.sqrt(xsMm2)))
+    const thicknessMm =
+        surfMm2 > 0 ? Math.min(characteristicMm, Math.max(0.8, (2 * volMm3) / surfMm2)) : characteristicMm
+    // 인필 영역 폭 = 측면 기준 두께(2V/측면) − 양쪽 벽 띠, 얇은 쉘에서 선폭 이하로 퇴화하면 두께 근사가 하한
+    const wallBandMm = P.outerWall.width + P.innerWall.width * (P.wallLoops - 1)
+    const infillWidthMm = Math.min(
+        characteristicMm,
+        Math.max(
+            thicknessMm * P.sparseSegmentPerThickness,
+            lateralMm2 > 0 ? (2 * volMm3) / lateralMm2 - 2 * wallBandMm : thicknessMm
+        )
+    )
+
     const sparseRegionMm3 = Math.max(0, volMm3 - wallVolMm3 - solidVolMm3)
     const infill = Math.min(100, Math.max(0, Number(infillPercent) || 0)) / 100
-    const sparseVolMm3 = sparseRegionMm3 * Math.min(1, infill * P.sparseInfillFlowScale)
-    const characteristicMm = Math.min(300, Math.max(5, Math.sqrt(xsMm2)))
+    const flowScale = 1 + P.sparseInfillAnchorExtra / (1 + (infillWidthMm / P.sparseAnchorWidthMm) ** 2)
+    const sparseVolMm3 = sparseRegionMm3 * Math.min(1, infill * flowScale)
 
     return {
         layerHeightMm: h,
@@ -385,7 +404,8 @@ export function estimateFdmStructureP2S(
         bottomMm2,
         bedMm2,
         characteristicMm,
-        thicknessMm: surfMm2 > 0 ? Math.min(characteristicMm, Math.max(0.8, (2 * volMm3) / surfMm2)) : characteristicMm,
+        thicknessMm,
+        infillWidthMm,
         nTop,
         nBottom,
         solidScale,
@@ -440,12 +460,8 @@ export function estimateFdmPrintTimeP2S(input: FdmP2STimeInput): FdmP2STimeResul
         Math.min(f.speed, flow / extrusionSectionMm2(f.width, h))
     const D = s.characteristicMm
     const solidSeg = Math.min(D, s.thicknessMm * P.solidSegmentPerThickness)
-    // 인필 구간 = 인필 영역 폭 = 측면 기준 두께(2V/측면) − 양쪽 벽 띠 (Bambu 실측 3건 비율 ≈ 1)
-    const wallBandMm = P.outerWall.width + P.innerWall.width * (P.wallLoops - 1)
-    const volMm3 = Math.max(0, Number(input.volumeCm3) || 0) * 1000
-    const infillWidthMm =
-        s.lateralMm2 > 0 ? (2 * volMm3) / s.lateralMm2 - 2 * wallBandMm : s.thicknessMm
-    const sparseSeg = Math.min(D, Math.max(s.thicknessMm * P.sparseSegmentPerThickness, infillWidthMm))
+    // 인필 구간 길이 ≈ 인필 영역 폭 (Bambu 실측 3건 비율 ≈ 1)
+    const sparseSeg = s.infillWidthMm
     // 첫 레이어는 베드 접촉면 하나를 이어서 채우므로 구간이 접촉면 크기를 따름 (가속 500이라 구간 길이에 민감)
     const bedSeg = Math.max(solidSeg, Math.min(D, Math.sqrt(s.bedMm2 / s.partCount)))
 
