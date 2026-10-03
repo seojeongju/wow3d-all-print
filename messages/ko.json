@@ -780,6 +780,11 @@
     "journeyTitle": "가이드 활용 3단계",
     "readGuide": "가이드 읽기",
     "readMin": "{min}분",
+    "eyebrowHub": "가이드 허브",
+    "eyebrowPopular": "인기 가이드",
+    "eyebrowHowTo": "활용 방법",
+    "eyebrowFeatured": "추천 가이드",
+    "eyebrowReady": "출력 준비 완료",
     "sections": {
       "basics": {
         "title": "기본 가이드",
@@ -845,7 +850,7 @@
         "desc": "FDM·SLA·DLP·SLS·PolyJet 등 출력 방식 비교"
       },
       "pla-vs-abs-vs-petg": {
-        "title": "PLA와 PETG 차이",
+        "title": "PLA·ABS·PETG·PC 소재 비교",
         "desc": "FDM 주요 필라멘트 비교"
       },
       "3d-printing-file-preparation": {
@@ -884,9 +889,13 @@
         "title": "졸업작품 출력 준비 체크리스트",
         "desc": "일정·파일·소재·납기 준비 목록"
       },
+      "capstone-design-prototype-guide": {
+        "title": "캡스톤디자인 시제품 제작 가이드",
+        "desc": "일정·모델링·출력 체크리스트"
+      },
       "standard-vs-tough-vs-clear-vs-flexible-resin": {
-        "title": "Standard vs Tough vs Clear vs Flexible",
-        "desc": "SLA·DLP 주요 레진 비교"
+        "title": "SLA·DLP 레진 4종 비교",
+        "desc": "스탠다드·터프·클리어·플렉시블 레진 특징 비교"
       },
       "best-materials-for-3d-printing-prototypes": {
         "title": "시제품용 소재 추천",
@@ -2430,7 +2439,7 @@
     }
   },
   "WorkPhotos": {
-    "eyebrow": "Real Output",
+    "eyebrow": "실제 출력 사례",
     "heading": "와우쓰리디 실제 3D프린팅 출력 사례",
     "description": "FDM·SLA·DLP 장비로 직접 출력한 결과물입니다. 더 많은 사례는 출력 갤러리에서 확인하세요.",
     "more": "출력 사례 더 보기"

@@ -74,7 +74,7 @@ export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
             { href: '/guides/3d-printing-quote-guide', title: '3D프린팅 비용 계산 방법', desc: '견적 산출 기준과 가격·시간에 영향을 주는 요소', icon: Calculator, accent: 'text-teal-400', readMin: 4 },
             { href: '/guides/how-to-reduce-3d-printing-cost', title: '3D프린팅 가격을 줄이는 방법', desc: '레이어·인필·서포트·소재로 비용 절감', icon: TrendingDown, accent: 'text-emerald-400', readMin: 5 },
             { href: '/guides/fdm-vs-sla-vs-dlp', title: '3D 프린팅 공정 비교', desc: 'FDM·SLA·DLP·SLS·PolyJet 등 출력 방식 비교', icon: Box, accent: 'text-blue-400', readMin: 8 },
-            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA와 PETG 차이', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
+            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA·ABS·PETG·PC 소재 비교', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
             { href: '/guides/3d-printing-file-preparation', title: '파일 준비 가이드', desc: '업로드 전 형식, 단위, 메쉬 오류 점검', icon: FileCheck, accent: 'text-sky-400', readMin: 4 },
             { href: '/guides/3d-printing-turnaround-time', title: '시제품 제작 기간', desc: '출력·후처리·검수·배송 납기 안내', icon: Clock, accent: 'text-violet-400', readMin: 3 },
         ],
@@ -119,8 +119,8 @@ export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
         iconBg: 'bg-violet-400/15 border-violet-400/25',
         iconColor: 'text-violet-400',
         items: [
-            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA vs ABS vs PETG vs PC', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
-            { href: '/guides/standard-vs-tough-vs-clear-vs-flexible-resin', title: 'Standard vs Tough vs Clear vs Flexible', desc: 'SLA·DLP 주요 레진 비교', icon: Droplets, accent: 'text-cyan-400', readMin: 5 },
+            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA·ABS·PETG·PC 소재 비교', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
+            { href: '/guides/standard-vs-tough-vs-clear-vs-flexible-resin', title: 'SLA·DLP 레진 4종 비교', desc: '스탠다드·터프·클리어·플렉시블 레진 특징 비교', icon: Droplets, accent: 'text-cyan-400', readMin: 5 },
         ],
     },
     {

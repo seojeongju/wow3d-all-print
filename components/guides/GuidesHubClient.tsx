@@ -47,8 +47,8 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
     const t = useTranslations('GuidesHub')
     const Icon = item.icon
     const slug = item.href.split('/guides/').pop() ?? ''
-    const title = t(`items.${slug}.title`)
-    const desc = t(`items.${slug}.desc`)
+    const title = t.has(`items.${slug}.title`) ? t(`items.${slug}.title`) : item.title
+    const desc = t.has(`items.${slug}.desc`) ? t(`items.${slug}.desc`) : item.desc
     return (
         <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -118,7 +118,7 @@ export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.Rea
                         >
                             <div className="inline-flex items-center gap-2 rounded-full border border-teal-400/20 bg-teal-400/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">
                                 <Sparkles className="h-3.5 w-3.5" />
-                                Guide Hub
+                                {t('eyebrowHub')}
                             </div>
                             <h1 className="text-4xl font-black leading-[1.1] tracking-tight md:text-6xl">
                                 {t('titleLine')}
@@ -213,7 +213,7 @@ export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.Rea
                                 transition={{ delay: 0.5 }}
                             >
                                 <p className="text-[10px] font-black uppercase tracking-widest text-teal-400/80">
-                                    Popular
+                                    {t('eyebrowPopular')}
                                 </p>
                                 <p className="mt-1 text-sm font-bold text-white">{t('popularTitle')}</p>
                                 <p className="mt-0.5 text-xs text-white/50">{t('popularDesc')}</p>
@@ -233,7 +233,7 @@ export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.Rea
                         className="mb-8 text-center"
                     >
                         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/35">
-                            How to use
+                            {t('eyebrowHowTo')}
                         </p>
                         <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
                             {t('journeyTitle')}
@@ -289,7 +289,7 @@ export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.Rea
                             <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
                                 <div className="space-y-3">
                                     <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">
-                                        Featured Guide
+                                        {t('eyebrowFeatured')}
                                     </p>
                                     <h2 className="text-2xl font-black md:text-3xl">
                                         {t('featuredTitle')}
@@ -370,7 +370,7 @@ export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.Rea
                         <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
                             <div className="space-y-3">
                                 <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">
-                                    Ready to print?
+                                    {t('eyebrowReady')}
                                 </p>
                                 <h2 className="text-2xl font-black md:text-3xl">{t('bottomTitle')}</h2>
                                 <p className="text-white/65 break-keep leading-relaxed">

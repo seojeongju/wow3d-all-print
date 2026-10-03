@@ -779,6 +779,11 @@
     "journeyTitle": "3 steps to use guides",
     "readGuide": "Read guide",
     "readMin": "{min} min",
+    "eyebrowHub": "Guide Hub",
+    "eyebrowPopular": "Popular",
+    "eyebrowHowTo": "How to use",
+    "eyebrowFeatured": "Featured Guide",
+    "eyebrowReady": "Ready to print?",
     "sections": {
       "basics": {
         "title": "Basics",
@@ -844,7 +849,7 @@
         "desc": "FDM·SLA·DLP·SLS·PolyJet and more"
       },
       "pla-vs-abs-vs-petg": {
-        "title": "PLA vs PETG (and ABS)",
+        "title": "PLA vs ABS vs PETG vs PC",
         "desc": "Compare common FDM filaments"
       },
       "3d-printing-file-preparation": {
@@ -882,6 +887,10 @@
       "graduation-project-checklist": {
         "title": "Graduation project checklist",
         "desc": "Schedule, files, materials, and lead-time prep"
+      },
+      "capstone-design-prototype-guide": {
+        "title": "Capstone design prototyping guide",
+        "desc": "Schedule, modeling, and print checklist"
       },
       "standard-vs-tough-vs-clear-vs-flexible-resin": {
         "title": "Standard vs Tough vs Clear vs Flexible",
