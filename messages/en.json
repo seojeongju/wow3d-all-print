@@ -2236,6 +2236,123 @@
         "body": "Clear for transparent parts; Flexible when you need bend or cushioning."
       }
     ],
+    "detailSectionLabel": "Resin details",
+    "detailHint": "Tap a resin name or cell in the table, or a card below, to see its detailed guide.",
+    "viewDetail": "View details",
+    "resinDetails": {
+      "standard": {
+        "eyebrow": "Visual Prototyping",
+        "title": "A closer look at Standard resin",
+        "intro": "Standard resin is the baseline photopolymer for SLA and DLP printing. Its surface is so smooth that layer lines are barely visible, and it captures fine detail exceptionally well, making it the first choice for appearance prototypes and precision models.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "Smooth surface: thin layers leave far fewer layer lines than FDM, and it makes a good base for painting.",
+          "Fine detail: small text, logos, textures, and thin edges come out crisp.",
+          "High hardness and stiffness: rigid and shape-stable, so it suits dimension and form checks.",
+          "Cost-effective: one of the more affordable resins, so repeated design iterations are less of a burden.",
+          "Brittleness: it can crack under impact or repeated loads, so it is not suited to fastened or snap-fit parts."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Product design appearance prototypes, color and finish review models",
+          "Figures, miniatures, and character masters",
+          "Form checks for jewelry and small precision parts",
+          "Display models that will be painted or post-processed",
+          "Master patterns for silicone mold making"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "Parts need washing (e.g., IPA) and secondary UV curing after printing, and strength and color can vary with the degree of cure.",
+          "Supports leave marks, so parts are oriented to keep supports off surfaces where appearance matters.",
+          "Long exposure to sunlight or UV can cause discoloration and make parts more brittle.",
+          "Walls of about 1 mm or thicker are recommended, and hollow shapes need drain holes so resin can escape."
+        ]
+      },
+      "tough": {
+        "eyebrow": "Functional Resin",
+        "title": "A closer look at Tough resin",
+        "intro": "Tough resin is a functional resin formulated to approach the strength and toughness of ABS. It keeps the precise surface of resin printing while standing up better to impact and load, so it is chosen for prototypes that need assembly, fastening, and functional testing.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "Improved impact resistance: it flexes slightly and resists cracking better than Standard resin.",
+          "Fit for fastening and assembly: usable for repeated assembly tests such as snap-fits, screws, and press-fits.",
+          "Precise dimensions: the high accuracy of resin printing makes it good for checking fit tolerances.",
+          "Smooth surface: a functional prototype that still looks good, so you can check form and function together.",
+          "Heat limits: standard Tough resins can soften at high temperatures, so consider a high-temperature resin for hot environments."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Assembly test parts such as snap-fits, clips, and hinges",
+          "Electronics housings, connector and button prototypes",
+          "Functional parts for validating mechanical designs",
+          "Low-volume jigs, fixtures, and inspection gauges",
+          "Prototypes that need drop or impact testing"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "It costs more than Standard resin, and properties depend on post-curing, so curing matched to the use case is important.",
+          "Thin latches and snap features need generous thickness and flex length to survive repeated testing.",
+          "Under sustained load it can slowly deform (creep), so it has limits as a substitute for long-term durability testing of production parts.",
+          "For higher impact or hotter conditions, consider FDM PETG or PC, or other processes, as well."
+        ]
+      },
+      "clear": {
+        "eyebrow": "Transparent Resin",
+        "title": "A closer look at Clear resin",
+        "intro": "Clear resin makes transparent parts that let light through. Straight off the printer it is closer to translucent, but post-processing such as polishing and coating brings out high clarity where internal features are clearly visible—ideal for covers, windows, and flow-visualization parts.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "High clarity: polishing and clear coating can bring the finish close to glass-like transparency.",
+          "See inside: flow channels, internal assembly structures, and LED light spread can be checked by eye.",
+          "Precise geometry: Standard-level detail lets it form thin windows and lens shapes.",
+          "Can be tinted: transparent color paints or dyes give a tinted see-through finish.",
+          "Possible yellowing: UV curing and time can cause slight yellowing."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Light covers, light guides, and diffuser prototypes",
+          "Transparent models for checking fluid flow and channels",
+          "See-through display models that reveal internal structures",
+          "Case windows, gauge windows, and protective covers",
+          "Lens-shape review prototypes (parts needing optical performance require separate review)"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "Clarity depends heavily on post-processing; lead time and cost vary with the scope of sanding, polishing, and coating.",
+          "Support marks are more visible on clear parts, so parts are oriented to keep supports off visible faces.",
+          "Over-curing can increase yellowing, so curing is adjusted for parts where clarity matters.",
+          "True optical-lens performance is hard to achieve, so for production parts where light transmission matters, consider injection-molded or machined materials as well."
+        ]
+      },
+      "flexible": {
+        "eyebrow": "Flexible Resin",
+        "title": "A closer look at Flexible resin",
+        "intro": "Flexible resin stays elastic after curing, bending and compressing like rubber. Depending on the product it can feel anywhere from soft to firm rubber, so it is chosen to check the shape and feel of parts that must deform, such as grips, gaskets, and cushioning.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "Flexibility and elasticity: it returns to shape after bending or squeezing, reproducing the feel of rubber parts.",
+          "Shock absorption: it absorbs compression and vibration, which suits cushioning and protective designs.",
+          "Choice of hardness: grades range from soft to firm by Shore hardness.",
+          "Precise geometry: thin ribs and fine patterns come out with good accuracy.",
+          "Durability limits: it is weaker against tearing and repeated bending than real rubbers such as silicone or TPU."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Grip, handle, and button feel prototypes",
+          "Gasket, packing, and seal shape reviews",
+          "Cushioning pads, bumpers, and protective covers",
+          "Wearable bands and body-worn part prototypes",
+          "Soft medical and educational models (uses requiring certification need separate review)"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "Surfaces can feel slightly tacky after printing, so thorough washing and post-curing are needed.",
+          "Spots where supports are removed tear easily, so support placement and thickness are planned carefully.",
+          "Hardness varies with temperature and storage conditions, and parts can stiffen or discolor over time.",
+          "For real-use parts that flex repeatedly, consider FDM TPU or silicone molding as well."
+        ]
+      }
+    },
     "faqTitle": "Frequently asked questions",
     "faqs": [
       {

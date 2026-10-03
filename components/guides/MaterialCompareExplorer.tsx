@@ -5,11 +5,13 @@ import { useReducedMotion } from 'framer-motion'
 import { ChevronDown, MousePointerClick } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export const MATERIAL_KEYS = ['pla', 'abs', 'petg', 'pc'] as const
-export type MaterialKey = (typeof MATERIAL_KEYS)[number]
-
-export type TableRow = { label: string } & Record<MaterialKey, string>
-export type CardItem = { title: string; body: string }
+export type CompareTableRow = { label: string } & Record<string, string>
+export type CompareCard = {
+    title: string
+    body: string
+    /** 카드가 소개하는 소재 키(여러 개면 소재별 버튼 표시) */
+    keys: string[]
+}
 export type MaterialDetail = {
     eyebrow: string
     title: string
@@ -23,48 +25,50 @@ export type MaterialDetail = {
 }
 
 type Props = {
+    /** 비교표 열 순서이자 주소 해시(#키)로 쓰는 소재 키 */
+    materialKeys: readonly string[]
     itemLabel: string
-    columnLabels: Record<MaterialKey, string>
-    tableRows: TableRow[]
-    /** MATERIAL_KEYS 순서(PLA·ABS·PETG·PC)와 같은 순서 */
-    cards: CardItem[]
-    details: Record<MaterialKey, MaterialDetail>
+    columnLabels: Record<string, string>
+    tableRows: CompareTableRow[]
+    cards: CompareCard[]
+    cardGridClassName?: string
+    tableClassName?: string
+    details: Record<string, MaterialDetail>
     sectionLabel: string
     hint: string
     viewDetail: string
 }
 
-function isMaterialKey(value: string): value is MaterialKey {
-    return (MATERIAL_KEYS as readonly string[]).includes(value)
-}
-
 /**
  * 소재 비교표 + 소재별 자세히 보기
  * - 비교표의 소재 이름·칸 또는 카드를 누르면 해당 소재 탭을 열고 상세 영역으로 이동
- * - 주소 해시(#pla, #abs, #petg, #pc)로 특정 소재를 바로 열 수 있음
- * - 검색엔진이 모든 소재 설명을 읽도록 네 패널을 모두 렌더링하고 선택되지 않은 패널만 숨김
+ * - 주소 해시(#키)로 특정 소재를 바로 열 수 있음
+ * - 검색엔진이 모든 소재 설명을 읽도록 패널을 모두 렌더링하고 선택되지 않은 패널만 숨김
  */
-export default function FilamentCompareExplorer({
+export default function MaterialCompareExplorer({
+    materialKeys,
     itemLabel,
     columnLabels,
     tableRows,
     cards,
+    cardGridClassName = 'grid md:grid-cols-2 lg:grid-cols-4 gap-6',
+    tableClassName = 'min-w-[900px]',
     details,
     sectionLabel,
     hint,
     viewDetail,
 }: Props) {
     const reduceMotion = useReducedMotion()
-    const [active, setActive] = useState<MaterialKey>('pla')
+    const [active, setActive] = useState<string>(materialKeys[0])
     const sectionRef = useRef<HTMLElement>(null)
-    const tabRefs = useRef<Partial<Record<MaterialKey, HTMLButtonElement | null>>>({})
+    const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
     const scrollToDetail = useCallback(() => {
         sectionRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
     }, [reduceMotion])
 
     const select = useCallback(
-        (key: MaterialKey, scroll = true) => {
+        (key: string, scroll = true) => {
             setActive(key)
             window.history.replaceState(window.history.state, '', `#${key}`)
             if (scroll) scrollToDetail()
@@ -75,20 +79,21 @@ export default function FilamentCompareExplorer({
     useEffect(() => {
         const applyHash = () => {
             const key = window.location.hash.replace('#', '').toLowerCase()
-            if (!isMaterialKey(key)) return
+            if (!materialKeys.includes(key)) return
             setActive(key)
             scrollToDetail()
         }
         applyHash()
         window.addEventListener('hashchange', applyHash)
         return () => window.removeEventListener('hashchange', applyHash)
-    }, [scrollToDetail])
+    }, [materialKeys, scrollToDetail])
 
     const onTabKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
         if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
         e.preventDefault()
-        const idx = MATERIAL_KEYS.indexOf(active)
-        const next = MATERIAL_KEYS[(idx + (e.key === 'ArrowRight' ? 1 : MATERIAL_KEYS.length - 1)) % MATERIAL_KEYS.length]
+        const idx = materialKeys.indexOf(active)
+        const step = e.key === 'ArrowRight' ? 1 : materialKeys.length - 1
+        const next = materialKeys[(idx + step) % materialKeys.length]
         select(next, false)
         tabRefs.current[next]?.focus()
     }
@@ -101,11 +106,11 @@ export default function FilamentCompareExplorer({
                     {hint}
                 </p>
                 <div className="overflow-x-auto rounded-[2rem] border border-white/10 bg-white/[0.03]">
-                    <table className="w-full min-w-[900px] text-sm">
+                    <table className={cn('w-full text-sm', tableClassName)}>
                         <thead className="bg-white/[0.04]">
                             <tr>
                                 <th className="p-4 text-left">{itemLabel}</th>
-                                {MATERIAL_KEYS.map((key) => (
+                                {materialKeys.map((key) => (
                                     <th
                                         key={key}
                                         className={cn('p-2 text-left transition-colors', active === key && 'bg-teal-400/10')}
@@ -132,7 +137,7 @@ export default function FilamentCompareExplorer({
                             {tableRows.map((row) => (
                                 <tr key={row.label} className="border-t border-white/10">
                                     <td className="p-4 font-bold text-white">{row.label}</td>
-                                    {MATERIAL_KEYS.map((key) => (
+                                    {materialKeys.map((key) => (
                                         <td
                                             key={key}
                                             onClick={() => select(key)}
@@ -151,32 +156,32 @@ export default function FilamentCompareExplorer({
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {cards.map((card, i) => {
-                    const key = MATERIAL_KEYS[i]
-                    return (
-                        <article
-                            key={card.title}
-                            className={cn(
-                                'flex flex-col rounded-3xl border bg-white/[0.03] p-6 transition-colors',
-                                key && active === key ? 'border-teal-400/40' : 'border-white/10'
-                            )}
-                        >
-                            <h2 className="text-xl font-black mb-3">{card.title}</h2>
-                            <p className="flex-1 text-white/65 leading-relaxed break-keep">{card.body}</p>
-                            {key ? (
+            <div className={cardGridClassName}>
+                {cards.map((card) => (
+                    <article
+                        key={card.title}
+                        className={cn(
+                            'flex flex-col rounded-3xl border bg-white/[0.03] p-6 transition-colors',
+                            card.keys.includes(active) ? 'border-teal-400/40' : 'border-white/10'
+                        )}
+                    >
+                        <h2 className="text-xl font-black mb-3">{card.title}</h2>
+                        <p className="flex-1 text-white/65 leading-relaxed break-keep">{card.body}</p>
+                        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
+                            {card.keys.map((key) => (
                                 <button
+                                    key={key}
                                     type="button"
                                     onClick={() => select(key)}
-                                    className="mt-5 inline-flex items-center gap-1 self-start rounded-full text-sm font-black text-teal-300 outline-none hover:text-teal-200 focus-visible:ring-2 focus-visible:ring-teal-400"
+                                    className="inline-flex items-center gap-1 rounded-full text-sm font-black text-teal-300 outline-none hover:text-teal-200 focus-visible:ring-2 focus-visible:ring-teal-400"
                                 >
-                                    {viewDetail}
+                                    {card.keys.length > 1 ? `${columnLabels[key]} ${viewDetail}` : viewDetail}
                                     <ChevronDown className="h-4 w-4" aria-hidden />
                                 </button>
-                            ) : null}
-                        </article>
-                    )
-                })}
+                            ))}
+                        </div>
+                    </article>
+                ))}
             </div>
 
             <section
@@ -186,7 +191,7 @@ export default function FilamentCompareExplorer({
                 className="scroll-mt-28 rounded-[2rem] border border-teal-400/15 bg-teal-400/[0.04] p-6 md:p-10 space-y-6"
             >
                 <div role="tablist" aria-label={sectionLabel} className="flex flex-wrap gap-2">
-                    {MATERIAL_KEYS.map((key) => (
+                    {materialKeys.map((key) => (
                         <button
                             key={key}
                             ref={(el) => {
@@ -212,8 +217,9 @@ export default function FilamentCompareExplorer({
                     ))}
                 </div>
 
-                {MATERIAL_KEYS.map((key) => {
+                {materialKeys.map((key) => {
                     const detail = details[key]
+                    if (!detail) return null
                     const groups = [
                         { title: detail.featuresTitle, items: detail.features },
                         { title: detail.applicationsTitle, items: detail.applications },

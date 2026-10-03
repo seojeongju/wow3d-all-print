@@ -10,18 +10,20 @@ import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
-import FilamentCompareExplorer, {
-    type CardItem,
+import MaterialCompareExplorer, {
+    type CompareTableRow,
     type MaterialDetail,
-    type MaterialKey,
-    type TableRow,
-} from './_components/FilamentCompareExplorer'
+} from '@/components/guides/MaterialCompareExplorer'
 
 type Props = {
     params: Promise<{ locale: string }>
 }
 
+type CardItem = { title: string; body: string }
 type FaqItem = { q: string; a: string }
+
+const MATERIAL_KEYS = ['pla', 'abs', 'petg', 'pc'] as const
+type MaterialKey = (typeof MATERIAL_KEYS)[number]
 
 const GUIDE_PATH = '/guides/pla-vs-abs-vs-petg' as const
 
@@ -76,8 +78,9 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
     const t = await getTranslations({ locale, namespace: 'FilamentCompareGuide' })
     const tChrome = await getTranslations({ locale, namespace: 'GuideChrome' })
 
-    const tableRows = t.raw('tableRows') as TableRow[]
-    const cards = t.raw('cards') as CardItem[]
+    const tableRows = t.raw('tableRows') as CompareTableRow[]
+    /** 카드는 PLA·ABS·PETG·PC 순서로 한 장씩 */
+    const cards = (t.raw('cards') as CardItem[]).map((card, i) => ({ ...card, keys: [MATERIAL_KEYS[i]] }))
     const faqs = t.raw('faqs') as FaqItem[]
     const materialDetails = t.raw('materialDetails') as Record<MaterialKey, MaterialDetail>
     const columnLabels: Record<MaterialKey, string> = {
@@ -138,7 +141,8 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
 
             <section className="py-16">
                 <div className="container mx-auto px-6 max-w-5xl space-y-10">
-                    <FilamentCompareExplorer
+                    <MaterialCompareExplorer
+                        materialKeys={MATERIAL_KEYS}
                         itemLabel={t('colItem')}
                         columnLabels={columnLabels}
                         tableRows={tableRows}

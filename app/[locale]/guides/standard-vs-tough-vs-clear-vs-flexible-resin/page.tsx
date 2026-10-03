@@ -10,20 +10,25 @@ import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
+import MaterialCompareExplorer, {
+    type CompareTableRow,
+    type MaterialDetail,
+} from '@/components/guides/MaterialCompareExplorer'
 
 type Props = {
     params: Promise<{ locale: string }>
 }
 
-type TableRow = {
-    label: string
-    standard: string
-    tough: string
-    clear: string
-    flexible: string
-}
 type CardItem = { title: string; body: string }
 type FaqItem = { q: string; a: string }
+
+const RESIN_KEYS = ['standard', 'tough', 'clear', 'flexible'] as const
+type ResinKey = (typeof RESIN_KEYS)[number]
+/** 카드 한 장이 레진 두 종류를 묶어 소개함(Standard·Tough / Clear·Flexible) */
+const CARD_KEYS: ResinKey[][] = [
+    ['standard', 'tough'],
+    ['clear', 'flexible'],
+]
 
 const GUIDE_PATH = '/guides/standard-vs-tough-vs-clear-vs-flexible-resin' as const
 
@@ -78,9 +83,16 @@ export default async function ResinGuidePage({ params }: Props) {
     const t = await getTranslations({ locale, namespace: 'ResinCompareGuide' })
     const tChrome = await getTranslations({ locale, namespace: 'GuideChrome' })
 
-    const tableRows = t.raw('tableRows') as TableRow[]
-    const cards = t.raw('cards') as CardItem[]
+    const tableRows = t.raw('tableRows') as CompareTableRow[]
+    const cards = (t.raw('cards') as CardItem[]).map((card, i) => ({ ...card, keys: CARD_KEYS[i] ?? [] }))
     const faqs = t.raw('faqs') as FaqItem[]
+    const resinDetails = t.raw('resinDetails') as Record<ResinKey, MaterialDetail>
+    const columnLabels: Record<ResinKey, string> = {
+        standard: t('colStandard'),
+        tough: t('colTough'),
+        clear: t('colClear'),
+        flexible: t('colFlexible'),
+    }
 
     const path = guidePath(locale)
     const homePath = getPathname({ locale, href: '/' })
@@ -133,39 +145,19 @@ export default async function ResinGuidePage({ params }: Props) {
 
             <section className="py-16">
                 <div className="container mx-auto px-6 max-w-5xl space-y-10">
-                    <div className="overflow-x-auto rounded-[2rem] border border-white/10 bg-white/[0.03]">
-                        <table className="w-full min-w-[860px] text-sm">
-                            <thead className="bg-white/[0.04]">
-                                <tr>
-                                    <th className="p-4 text-left">{t('colItem')}</th>
-                                    <th className="p-4 text-left">{t('colStandard')}</th>
-                                    <th className="p-4 text-left">{t('colTough')}</th>
-                                    <th className="p-4 text-left">{t('colClear')}</th>
-                                    <th className="p-4 text-left">{t('colFlexible')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-white/75">
-                                {tableRows.map((row) => (
-                                    <tr key={row.label} className="border-t border-white/10">
-                                        <td className="p-4 font-bold text-white">{row.label}</td>
-                                        <td className="p-4">{row.standard}</td>
-                                        <td className="p-4">{row.tough}</td>
-                                        <td className="p-4">{row.clear}</td>
-                                        <td className="p-4">{row.flexible}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                        {cards.map((card) => (
-                            <article key={card.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-                                <h2 className="text-xl font-black mb-3">{card.title}</h2>
-                                <p className="text-white/65 leading-relaxed break-keep">{card.body}</p>
-                            </article>
-                        ))}
-                    </div>
+                    <MaterialCompareExplorer
+                        materialKeys={RESIN_KEYS}
+                        itemLabel={t('colItem')}
+                        columnLabels={columnLabels}
+                        tableRows={tableRows}
+                        cards={cards}
+                        cardGridClassName="grid md:grid-cols-2 gap-6"
+                        tableClassName="min-w-[860px]"
+                        details={resinDetails}
+                        sectionLabel={t('detailSectionLabel')}
+                        hint={t('detailHint')}
+                        viewDetail={t('viewDetail')}
+                    />
 
                     <article className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8 md:p-10 space-y-5">
                         <h2 className="text-2xl font-black">{t('faqTitle')}</h2>
