@@ -910,14 +910,14 @@
     }
   },
   "Materials": {
-    "metaTitle": "3D Printing Materials | PLA·ABS·PETG·Resin",
-    "metaDescription": "WOW3D material guide. Compare FDM (PLA, ABS, PETG, TPU) and SLA·DLP resins—properties, uses, and how to choose.",
+    "metaTitle": "3D Printing Materials | PLA·ABS·PETG·PC·Resin",
+    "metaDescription": "WOW3D material guide. Compare FDM (PLA, ABS, PETG, PC, TPU) and SLA·DLP resins—properties, uses, and how to choose.",
     "metaOgTitle": "3D Printing Materials | WOW3D",
-    "metaOgDescription": "Compare PLA·ABS·PETG·TPU and resins. Pick the right material for prototypes and functional parts.",
+    "metaOgDescription": "Compare PLA·ABS·PETG·PC·TPU and resins. Pick the right material for prototypes and functional parts.",
     "hero": {
       "title": "Browse",
       "titleAccent": "materials",
-      "subtitle": "What differs among PLA, ABS, and PETG? Which materials suit prototypes vs functional parts? How to choose resin vs filament—all in one place."
+      "subtitle": "What differs among PLA, ABS, PETG, and PC? Which materials suit prototypes vs functional parts? How to choose resin vs filament—all in one place."
     },
     "byMethod": {
       "title": "Key materials by process",
@@ -926,8 +926,8 @@
       "dlp": "Complex fine detail"
     },
     "fdmGuide": {
-      "title": "Which is right: PLA, ABS, or PETG?",
-      "desc": "The three FDM filaments compared most often—strength, heat resistance, post-processing, and recommended uses.",
+      "title": "Which is right: PLA, ABS, PETG, or PC?",
+      "desc": "The four FDM filaments compared most often—strength, heat resistance, post-processing, and recommended uses.",
       "compareLink": "Read the comparison guide",
       "housingLink": "Materials for housings & cases",
       "heatLink": "Materials for heat- & impact-resistant parts"
@@ -980,8 +980,23 @@
         "applications": [
           "Functional parts & protective cases",
           "Medical / food-related structures",
-          "Outdoor & weather-resistant uses",
-          "Clear covers & windows"
+        "Outdoor & weather-resistant uses",
+        "Clear covers & windows"
+        ]
+      },
+      "pc": {
+        "nameKo": "Polycarbonate",
+        "features": [
+          "Top-tier impact resistance and stiffness among FDM materials",
+          "Heat deflection around 110–130°C—higher than ABS",
+          "Clear grades available; good dimensional stability",
+          "High print temperature and shrinkage—needs tuned equipment and dry filament"
+        ],
+        "applications": [
+          "Mechanical & functional parts in hot environments",
+          "Electrical / electronic housings",
+          "Clear covers & lighting parts",
+          "Jigs & fixtures"
         ]
       },
       "tpu": {
@@ -1948,46 +1963,51 @@
     "ctaQuote": "Start auto quote"
   },
   "FilamentCompareGuide": {
-    "metaTitle": "PLA vs ABS vs PETG material comparison guide",
-    "metaDescription": "Compare PLA, ABS, and PETG for 3D printing—heat resistance, strength, post-processing, and recommended uses to pick the right filament.",
-    "ogTitle": "PLA vs ABS vs PETG material comparison",
-    "ogDescription": "Compare popular FDM filaments PLA, ABS, and PETG—differences and recommended uses.",
-    "articleHeadline": "PLA vs ABS vs PETG material comparison guide",
-    "articleDescription": "A guide to choosing the right FDM filament by comparing PLA, ABS, and PETG differences and recommended uses.",
+    "metaTitle": "PLA vs ABS vs PETG vs PC material comparison guide",
+    "metaDescription": "Compare PLA, ABS, PETG, and PC for 3D printing—heat resistance, strength, post-processing, and recommended uses to pick the right filament.",
+    "ogTitle": "PLA vs ABS vs PETG vs PC material comparison",
+    "ogDescription": "Compare popular FDM filaments PLA, ABS, PETG, and PC—differences and recommended uses.",
+    "articleHeadline": "PLA vs ABS vs PETG vs PC material comparison guide",
+    "articleDescription": "A guide to choosing the right FDM filament by comparing PLA, ABS, PETG, and PC differences and recommended uses.",
     "breadcrumbMaterials": "Materials",
-    "breadcrumbCurrent": "PLA vs ABS vs PETG comparison",
+    "breadcrumbCurrent": "PLA vs ABS vs PETG vs PC comparison",
     "eyebrow": "Material Guide",
-    "h1Line1": "PLA, ABS, and PETG—",
+    "h1Line1": "PLA, ABS, PETG, and PC—",
     "h1Accent": "what’s the difference?",
-    "intro": "A clear comparison of the FDM filaments people ask about most: PLA, ABS, and PETG. Use strength, heat resistance, print difficulty, post-processing, and recommended uses to decide which fits.",
+    "intro": "A clear comparison of the FDM filaments people ask about most: PLA, ABS, PETG, and PC. Use strength, heat resistance, print difficulty, post-processing, and recommended uses to decide which fits.",
     "colItem": "Item",
     "colPla": "PLA",
     "colAbs": "ABS",
     "colPetg": "PETG",
+    "colPc": "PC",
     "tableRows": [
       {
         "label": "Traits",
         "pla": "Easy to print; good for visual prototypes",
         "abs": "Strong heat & impact resistance",
-        "petg": "Balance of strength and print stability"
+        "petg": "Balance of strength and print stability",
+        "pc": "Top-tier strength and heat resistance among FDM materials"
       },
       {
         "label": "Best for",
         "pla": "Design mockups, education, display",
         "abs": "Housings, functional tests, assembly parts",
-        "petg": "Functional parts, protective cases, outdoor structures"
+        "petg": "Functional parts, protective cases, outdoor structures",
+        "pc": "Parts for hot environments, electrical housings, clear covers"
       },
       {
         "label": "Pros",
         "pla": "Beginner-friendly; clean surface",
         "abs": "Great machinability and durability",
-        "petg": "Impact, moisture resistance; translucent options"
+        "petg": "Impact, moisture resistance; translucent options",
+        "pc": "Impact and stiffness; heat deflection ~110–130°C; clear options"
       },
       {
         "label": "Watch-outs",
         "pla": "Limits on heat and impact",
         "abs": "Shrink and odor; ventilation needed",
-        "petg": "Moisture control and tuned settings"
+        "petg": "Moisture control and tuned settings",
+        "pc": "High print temperature and shrinkage—harder and costlier to print"
       }
     ],
     "cards": [
@@ -2002,13 +2022,45 @@
       {
         "title": "PETG",
         "body": "Stronger than PLA and usually easier than ABS—often chosen as a balanced functional filament."
+      },
+      {
+        "title": "PC",
+        "body": "Polycarbonate offers some of the highest impact and heat resistance among FDM materials—great for parts in hot environments, electrical housings, and clear covers. High print temperatures and shrinkage make equipment and environment control important."
       }
     ],
+    "pcDetail": {
+      "eyebrow": "Engineering Material",
+      "title": "A closer look at PC (polycarbonate)",
+      "intro": "PC is a classic engineering plastic used in bullet-resistant glazing, helmet visors, and electronics enclosures. It offers some of the highest heat and impact resistance among FDM materials, so it is chosen for functional parts that PLA, ABS, or PETG cannot withstand.",
+      "featuresTitle": "Key properties",
+      "features": [
+        "High heat resistance: a heat deflection temperature of about 110–130℃, higher than ABS (about 90–100℃), so parts keep their shape in hot environments.",
+        "Excellent impact resistance: it tends to bend rather than shatter, which suits parts exposed to drops and impacts.",
+        "High stiffness and dimensional stability: good for load-bearing structural parts and assemblies that need tight fits.",
+        "Clear grades: clear PC can make covers and windows that let light through. Due to the FDM process, results are closer to translucent than fully transparent.",
+        "Electrical insulation: widely used for electrical and electronic enclosures, with flame-retardant grades available."
+      ],
+      "applicationsTitle": "Recommended applications",
+      "applications": [
+        "Automotive engine-bay and interior prototypes, brackets exposed to heat",
+        "Electrical and electronic housings, battery and power-supply covers",
+        "Light covers, diffusers, and clear protective windows",
+        "Production-line jigs, fixtures, and tool handles",
+        "Impact-loaded functional parts such as drone and robot structures"
+      ],
+      "tipsTitle": "Printing and design notes",
+      "tips": [
+        "It needs high temperatures—about 260–300℃ at the nozzle and 100–120℃ at the bed—so an enclosed-chamber printer is required.",
+        "High shrinkage can warp wide flat areas or long parts. Rounded corners and uniform wall thickness are recommended.",
+        "It absorbs moisture, so filament must be dried before printing, and lead times can be longer than PLA or PETG.",
+        "Higher material cost and print difficulty make it pricier than PLA or PETG. If you do not strictly need high heat and impact resistance, consider PETG or ABS as well."
+      ]
+    },
     "faqTitle": "Frequently asked questions",
     "faqs": [
       {
-        "q": "For beginners or general prototypes, which is best: PLA, ABS, or PETG?",
-        "a": "PLA is usually the safest choice thanks to print stability and ease of use. For functional tests or more heat resistance, consider PETG or ABS."
+        "q": "For beginners or general prototypes, which is best: PLA, ABS, PETG, or PC?",
+        "a": "PLA is usually the safest choice thanks to print stability and ease of use. For functional tests or more heat resistance, consider PETG or ABS—and PC when you need even higher heat and impact resistance."
       },
       {
         "q": "If heat and impact matter, is ABS better than PLA?",
@@ -2017,6 +2069,10 @@
       {
         "q": "Is PETG a middle ground between PLA and ABS?",
         "a": "In practice, often yes. PETG is stronger and more durable than PLA while usually easier to print than ABS, so it’s a popular balanced pick."
+      },
+      {
+        "q": "When should I choose PC (polycarbonate)?",
+        "a": "Choose PC when ABS isn’t enough for heat or impact resistance. With heat deflection around 110–130°C, it suits mechanical parts in hot environments, electrical and electronic housings, and clear covers. Because it prints hot and shrinks more, cost and lead time can be higher than other materials."
       }
     ],
     "ctaMaterials": "Browse all materials",

@@ -119,7 +119,7 @@ export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
         iconBg: 'bg-violet-400/15 border-violet-400/25',
         iconColor: 'text-violet-400',
         items: [
-            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA vs ABS vs PETG', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
+            { href: '/guides/pla-vs-abs-vs-petg', title: 'PLA vs ABS vs PETG vs PC', desc: 'FDM 주요 필라멘트 비교', icon: Layers, accent: 'text-amber-400', readMin: 5 },
             { href: '/guides/standard-vs-tough-vs-clear-vs-flexible-resin', title: 'Standard vs Tough vs Clear vs Flexible', desc: 'SLA·DLP 주요 레진 비교', icon: Droplets, accent: 'text-cyan-400', readMin: 5 },
         ],
     },

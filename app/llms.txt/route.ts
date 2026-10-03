@@ -77,7 +77,7 @@ export async function GET() {
         `- Large Print Split Guide: ${absoluteUrl('/guides/splitting-large-3d-prints')}`,
         `- Graduation Checklist: ${absoluteUrl('/guides/graduation-project-checklist')}`,
         `- Capstone Design Prototype Guide: ${absoluteUrl('/guides/capstone-design-prototype-guide')}`,
-        `- PLA vs ABS vs PETG Guide: ${absoluteUrl('/guides/pla-vs-abs-vs-petg')}`,
+        `- PLA vs ABS vs PETG vs PC Guide: ${absoluteUrl('/guides/pla-vs-abs-vs-petg')}`,
         `- Resin Type Comparison Guide: ${absoluteUrl('/guides/standard-vs-tough-vs-clear-vs-flexible-resin')}`,
         `- Prototype Material Recommendation Guide: ${absoluteUrl('/guides/best-materials-for-3d-printing-prototypes')}`,
         `- Transparent Parts Material Guide: ${absoluteUrl('/guides/best-materials-for-transparent-3d-printed-parts')}`,

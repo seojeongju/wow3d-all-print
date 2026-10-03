@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 
 type MaterialMeta = {
-    id: 'pla' | 'abs' | 'petg' | 'tpu' | 'standard' | 'tough' | 'clear' | 'flexible';
+    id: 'pla' | 'abs' | 'petg' | 'pc' | 'tpu' | 'standard' | 'tough' | 'clear' | 'flexible';
     name: string;
     methods: string[];
 };
@@ -18,6 +18,7 @@ const FDM_META: MaterialMeta[] = [
     { id: 'pla', name: 'PLA', methods: ['FDM'] },
     { id: 'abs', name: 'ABS', methods: ['FDM'] },
     { id: 'petg', name: 'PETG', methods: ['FDM'] },
+    { id: 'pc', name: 'PC', methods: ['FDM'] },
     { id: 'tpu', name: 'TPU', methods: ['FDM'] },
 ];
 
@@ -51,7 +52,7 @@ export default function MaterialsPage() {
             desc: t('byMethod.fdm'),
             color: 'teal',
             icon: <Printer className="w-5 h-5" />,
-            items: ['PLA', 'ABS', 'PETG', 'TPU'],
+            items: ['PLA', 'ABS', 'PETG', 'PC', 'TPU'],
         },
         {
             title: 'SLA',
@@ -101,7 +102,7 @@ export default function MaterialsPage() {
                         </p>
                         <div className="flex flex-wrap justify-center gap-3 pt-2">
                             <Link href="/guides/pla-vs-abs-vs-petg" className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-teal-400/10 border border-teal-400/20 text-xs font-black text-teal-300 uppercase tracking-widest hover:text-white hover:bg-teal-400/15 transition-all">
-                                PLA / ABS / PETG Guide
+                                PLA / ABS / PETG / PC Guide
                             </Link>
                             <Link href="/guides/best-materials-for-3d-printing-prototypes" className="group flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white/50 uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all">
                                 Prototype Material Guide
