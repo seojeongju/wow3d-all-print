@@ -224,7 +224,10 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
             setForm((cur) => ({ ...cur, slug: j.data.slug, status }))
             if (!id) window.history.replaceState(null, '', `/admin/news/${newId}`)
             if (!opts?.quiet) {
-                toast({ title: status === 'published' ? '발행했습니다' : '임시저장했습니다' })
+                toast({
+                    title: status === 'published' ? '발행했습니다' : '임시저장했습니다',
+                    description: j.data.indexNow ? '네이버·Bing 검색엔진에 변경 사항을 알렸습니다(IndexNow).' : undefined,
+                })
             }
             return newId
         } catch (e) {

@@ -4549,6 +4549,8 @@
   },
   "GuideRobot": {
     "bubble": "Got a question? Ask me!",
+    "bubbleLabel": "WOW3D Guide",
+    "bubbleHint": "Click to search · Live chat",
     "open": "Ask the guide robot",
     "close": "Close",
     "dismissBubble": "Dismiss message",

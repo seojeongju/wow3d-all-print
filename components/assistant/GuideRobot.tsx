@@ -37,6 +37,8 @@ export default function GuideRobot() {
     const reduceMotion = useReducedMotion()
     const [open, setOpen] = useState(false)
     const [bubble, setBubble] = useState(false)
+    const [hovered, setHovered] = useState(false)
+    const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
     const talkUrl = getNaverTalkTalkChatUrl()
     const hidden = isHiddenPath(pathname)
@@ -45,11 +47,18 @@ export default function GuideRobot() {
         if (hidden) return
         try {
             if (sessionStorage.getItem(BUBBLE_SESSION_KEY)) return
-            sessionStorage.setItem(BUBBLE_SESSION_KEY, '1')
         } catch {
             return
         }
-        const showTimer = setTimeout(() => setBubble(true), BUBBLE_DELAY_MS)
+        /** 실제로 보여 준 뒤에 기록 — effect가 두 번 실행돼도(Strict Mode) 말풍선이 사라지지 않음 */
+        const showTimer = setTimeout(() => {
+            try {
+                sessionStorage.setItem(BUBBLE_SESSION_KEY, '1')
+            } catch {
+                /* 저장 불가 환경은 무시 */
+            }
+            setBubble(true)
+        }, BUBBLE_DELAY_MS)
         const hideTimer = setTimeout(() => setBubble(false), BUBBLE_DELAY_MS + BUBBLE_DURATION_MS)
         return () => {
             clearTimeout(showTimer)
@@ -67,37 +76,87 @@ export default function GuideRobot() {
         buttonRef.current?.focus()
     }, [])
 
+    useEffect(
+        () => () => {
+            if (hoverTimer.current) clearTimeout(hoverTimer.current)
+        },
+        []
+    )
+
+    /** 로봇 ↔ 말풍선 사이 빈 공간을 지날 때 깜박이지 않도록 닫기를 잠깐 늦춤 */
+    const hoverIn = (pointerType: string) => {
+        if (pointerType !== 'mouse') return
+        if (hoverTimer.current) clearTimeout(hoverTimer.current)
+        setHovered(true)
+    }
+    const hoverOut = () => {
+        if (hoverTimer.current) clearTimeout(hoverTimer.current)
+        hoverTimer.current = setTimeout(() => setHovered(false), 180)
+    }
+
     const toggle = () => {
+        if (hoverTimer.current) clearTimeout(hoverTimer.current)
         setBubble(false)
+        setHovered(false)
         setOpen((v) => !v)
     }
 
     if (hidden) return null
 
+    /** 첫 방문 자동 말풍선 또는 마우스를 올렸을 때(터치 기기 제외) 로봇 위에 표시 */
+    const showBubble = (bubble || hovered) && !open
+
     return (
         <>
             <div className="fixed z-[90] right-2 sm:right-5 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] sm:bottom-5 flex flex-col items-end pointer-events-none">
                 <AnimatePresence>
-                    {bubble && !open && (
+                    {showBubble && (
                         <motion.div
-                            initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                            key="robot-bubble"
+                            role="status"
+                            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.92 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-                            className="pointer-events-auto relative mb-2 mr-2 max-w-[220px] rounded-2xl rounded-br-md bg-white pl-4 pr-8 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.35)] ring-1 ring-teal-400/40"
+                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.96 }}
+                            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+                            style={{ transformOrigin: 'bottom right' }}
+                            onPointerEnter={(e) => hoverIn(e.pointerType)}
+                            onPointerLeave={hoverOut}
+                            className="pointer-events-auto relative mb-3 w-[min(240px,calc(100vw-2rem))] rounded-2xl bg-gradient-to-br from-teal-300/70 via-teal-400/25 to-sky-400/40 p-px shadow-[0_20px_50px_-12px_rgba(20,184,166,0.55)]"
                         >
-                            <button type="button" onClick={toggle} className="text-left text-[13px] font-black leading-snug text-slate-900 break-keep">
-                                {t('bubble')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setBubble(false)}
-                                aria-label={t('dismissBubble')}
-                                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="absolute -bottom-1.5 right-7 w-3 h-3 rotate-45 bg-white ring-1 ring-teal-400/40 [clip-path:polygon(100%_0,100%_100%,0_100%)]" />
+                            <div className="relative overflow-hidden rounded-[15px] bg-slate-900/95 px-4 py-3 backdrop-blur-md">
+                                <span
+                                    aria-hidden
+                                    className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-teal-400/20 blur-2xl"
+                                />
+                                <button type="button" onClick={toggle} className="relative block w-full pr-5 text-left">
+                                    <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-teal-300">
+                                        <span className="relative flex h-1.5 w-1.5">
+                                            <span className="absolute inline-flex h-full w-full rounded-full bg-teal-300 opacity-70 motion-safe:animate-ping" />
+                                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-300" />
+                                        </span>
+                                        {t('bubbleLabel')}
+                                    </span>
+                                    <span className="mt-1 block text-[14px] font-black leading-snug text-white break-keep">
+                                        {t('bubble')}
+                                    </span>
+                                    <span className="mt-1 block text-[11px] font-semibold text-white/50">{t('bubbleHint')}</span>
+                                </button>
+                                {bubble && !hovered ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setBubble(false)}
+                                        aria-label={t('dismissBubble')}
+                                        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                ) : null}
+                            </div>
+                            {/* 꼬리: 로봇 머리 쪽(가로 중앙)을 가리킴 */}
+                            <span
+                                aria-hidden
+                                className="absolute -bottom-[7px] right-6 h-3.5 w-3.5 rotate-45 rounded-[3px] border-b border-r border-teal-400/40 bg-slate-900 sm:right-8"
+                            />
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -106,12 +165,15 @@ export default function GuideRobot() {
                     ref={buttonRef}
                     type="button"
                     onClick={toggle}
-                    onPointerEnter={() => void loadPanel()}
+                    onPointerEnter={(e) => {
+                        void loadPanel()
+                        hoverIn(e.pointerType)
+                    }}
+                    onPointerLeave={hoverOut}
                     onFocus={() => void loadPanel()}
                     aria-label={t('open')}
                     aria-expanded={open}
                     aria-haspopup="dialog"
-                    title={t('bubble')}
                     className="pointer-events-auto group relative flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-3xl"
                     whileHover={reduceMotion ? undefined : { scale: 1.06, rotate: -3 }}
                     whileTap={{ scale: 0.94 }}

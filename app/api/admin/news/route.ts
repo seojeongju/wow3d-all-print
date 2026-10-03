@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { getAdminNewsList } from '@/lib/news-public'
 import { newsTableMissingResponseBody, parseNewsWriteBody } from '@/lib/news-admin'
+import { isPublishedNow, newsIndexNowUrls, queueIndexNow } from '@/lib/indexnow'
 
 function isMissingTable(e: unknown) {
     return /no such table/i.test(e instanceof Error ? e.message : '')
@@ -68,7 +69,8 @@ export async function POST(request: NextRequest) {
                 )
                 .run()
             const id = Number((inserted.meta as { last_row_id?: number })?.last_row_id || 0)
-            return NextResponse.json({ success: true, data: { id, slug: input.slug } })
+            const indexNow = isPublishedNow(input.status, publishedAt) && queueIndexNow(newsIndexNowUrls(input.slug))
+            return NextResponse.json({ success: true, data: { id, slug: input.slug, indexNow } })
         } catch (e) {
             if (/UNIQUE/i.test(e instanceof Error ? e.message : '')) {
                 return NextResponse.json({ error: '이미 사용 중인 주소(슬러그)입니다' }, { status: 409 })

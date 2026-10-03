@@ -4550,6 +4550,8 @@
   },
   "GuideRobot": {
     "bubble": "궁금한 것은 저에게 물어보세요!",
+    "bubbleLabel": "와우3D 안내로봇",
+    "bubbleHint": "클릭하면 검색 · 실시간 상담",
     "open": "안내로봇에게 물어보기",
     "close": "닫기",
     "dismissBubble": "말풍선 닫기",

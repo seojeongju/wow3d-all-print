@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { getAdminNewsById } from '@/lib/news-public'
 import { newsTableMissingResponseBody, parseNewsWriteBody } from '@/lib/news-admin'
+import { isPublishedNow, newsIndexNowUrls, queueIndexNow } from '@/lib/indexnow'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -45,10 +46,10 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
         if (admin instanceof Response) return admin
 
         const existing = await env.DB.prepare(
-            `SELECT published_at, cover_r2_key FROM news_posts WHERE store_id = ? AND id = ?`
+            `SELECT slug, status, published_at, cover_r2_key FROM news_posts WHERE store_id = ? AND id = ?`
         )
             .bind(admin.storeId, id)
-            .first<{ published_at: string | null; cover_r2_key: string | null }>()
+            .first<{ slug: string; status: string; published_at: string | null; cover_r2_key: string | null }>()
         if (!existing) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
 
         const body = (await request.json()) as Record<string, unknown>
@@ -111,7 +112,16 @@ export async function PUT(request: NextRequest, { params }: Ctx) {
             throw e
         }
 
-        return NextResponse.json({ success: true, data: { id, slug: input.slug } })
+        /** 공개 중이던 글·새로 공개된 글만 알림. 주소가 바뀌었거나 발행 취소면 옛 주소도 알려 재수집(삭제 반영)되게 함 */
+        const wasPublic = isPublishedNow(existing.status, existing.published_at)
+        const nowPublic = isPublishedNow(input.status, publishedAt)
+        const indexNow =
+            (wasPublic || nowPublic) &&
+            queueIndexNow(
+                newsIndexNowUrls(nowPublic ? input.slug : null, wasPublic && (!nowPublic || existing.slug !== input.slug) ? existing.slug : null)
+            )
+
+        return NextResponse.json({ success: true, data: { id, slug: input.slug, indexNow } })
     } catch (e) {
         if (isMissingTable(e)) return NextResponse.json(newsTableMissingResponseBody(), { status: 503 })
         console.error('PUT admin news/[id]', e)
@@ -128,10 +138,15 @@ export async function DELETE(request: NextRequest, { params }: Ctx) {
         const admin = await requireAdminAuth(request, env.DB)
         if (admin instanceof Response) return admin
 
+        const before = await env.DB.prepare(`SELECT slug, status, published_at FROM news_posts WHERE store_id = ? AND id = ?`)
+            .bind(admin.storeId, id)
+            .first<{ slug: string; status: string; published_at: string | null }>()
         const res = await env.DB.prepare(`DELETE FROM news_posts WHERE store_id = ? AND id = ?`)
             .bind(admin.storeId, id)
             .run()
         if (!res.meta?.changes) return NextResponse.json({ error: '게시글을 찾을 수 없습니다' }, { status: 404 })
+        /** 삭제된 공개 글 주소를 알려 검색엔진이 404를 확인하고 색인에서 빼도록 함 */
+        if (before && isPublishedNow(before.status, before.published_at)) queueIndexNow(newsIndexNowUrls(before.slug))
 
         if (env.BUCKET) {
             try {

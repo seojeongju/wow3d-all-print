@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { collectNewsCandidates, resolveNaverKeys } from '@/lib/news-sources'
 import { listCollectPresets, markPresetRun } from '@/lib/news-collect-presets'
+import { newsIndexNowUrls, submitIndexNow } from '@/lib/indexnow'
 
 function isAuthorizedCron(req: NextRequest, envSecret?: string): boolean {
     const headerSecret = req.headers.get('x-cron-secret')
@@ -45,7 +46,24 @@ export async function POST(req: NextRequest) {
                 presets.push({ id: p.id, name: p.name, added: 0, error: e instanceof Error ? e.message : String(e) })
             }
         }
-        return NextResponse.json({ success: true, ...result, presets })
+        /** 예약 발행 글(저장 시각보다 발행 시각이 늦은 글)이 지난 하루 사이 공개됐으면 검색엔진에 알림 */
+        let indexNowCount = 0
+        try {
+            const { results: scheduled } = await env.DB.prepare(
+                `SELECT slug FROM news_posts
+                 WHERE status = 'published' AND published_at > datetime('now', '-1 day')
+                   AND published_at <= datetime('now') AND updated_at < published_at`
+            ).all<{ slug: string }>()
+            const slugs = (scheduled ?? []).map((r: { slug: string }) => r.slug)
+            if (slugs.length) {
+                await submitIndexNow(newsIndexNowUrls(...slugs))
+                indexNowCount = slugs.length
+            }
+        } catch (e) {
+            console.warn('[news-collect] 예약 발행 IndexNow 실패', e)
+        }
+
+        return NextResponse.json({ success: true, ...result, presets, indexNowCount })
     } catch (e) {
         console.error('[news-collect] failed', e)
         return NextResponse.json({ error: e instanceof Error ? e.message : '수집 실패' }, { status: 500 })
