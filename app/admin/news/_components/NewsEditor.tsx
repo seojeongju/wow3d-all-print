@@ -602,7 +602,9 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                 type="button"
                                 disabled={saving}
                                 className="gap-1.5 bg-teal-400 font-bold text-slate-950 hover:bg-teal-300"
-                                onClick={() => save('published')}
+                                onClick={async () => {
+                                    if (await save('published')) router.push('/admin/news')
+                                }}
                             >
                                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 {savedStatus === 'published' ? '수정 내용 발행' : '발행하기'}
