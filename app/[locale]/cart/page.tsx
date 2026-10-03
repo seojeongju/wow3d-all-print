@@ -90,7 +90,7 @@ function toQuote(r: QuoteRow): Quote {
         dimensionsZ: r.dimensions_z,
         printMethod: r.print_method as 'fdm' | 'sla' | 'dlp',
         fdmMaterial: r.fdm_material_name || r.fdm_material,
-        resinType: r.resin_type as Quote['resinType'],
+        resinType: (r.resin_type_name || r.resin_type) as Quote['resinType'],
         totalPrice: r.total_price,
         estimatedTimeHours: r.estimated_time_hours,
         variableCostKrw: r.variable_cost_krw ?? undefined,
@@ -273,7 +273,7 @@ function CartPageContent() {
     const selectedItems = items.filter((i) => selectedIds.has(i.id) && !needsRecalc(i.quoteId))
     const staleSelectedCount = items.filter((i) => selectedIds.has(i.id) && needsRecalc(i.quoteId)).length
     const checkoutIds = selectedItems.map((i) => i.id).join(',')
-    /** 실제 결제 기준(같은 출력방식 최소 1회) */
+    /** 실제 결제 기준(같은 출력방식·소재 최소 1회) */
     const selectedTotal = getTotalPriceForItems(selectedItems)
     const selectedLineCount = selectedItems.length
     const selectedQty = selectedItems.reduce((s, i) => s + i.quantity, 0)

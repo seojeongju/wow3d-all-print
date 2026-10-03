@@ -1,11 +1,11 @@
 /**
  * 주문 생성 시 견적 단가를 DB(quotes) 기준으로 확정
- * - 같은 출력방식: 최소·셋업 1회 + 변동 합산
- * - 다른 출력방식: 방식마다 최소 적용
+ * - 같은 출력방식·같은 소재: 최소·셋업 1회 + 변동 합산
+ * - 출력방식 또는 소재가 다르면: 그룹마다 최소 적용
  * - 배치 컬럼 없으면: 구버전 total_price × 수량
  */
 
-import { priceCartLinesByPrintMethod } from '@/lib/quote-batch-price'
+import { priceCartLinesByMaterialGroup } from '@/lib/quote-batch-price'
 import {
     evaluateQuoteValidity,
     loadPricingStamps,
@@ -48,7 +48,14 @@ type QuoteCartRow = {
     updated_at?: string | null
     fdm_material?: string | null
     fdm_material_name?: string | null
+    resin_type?: string | null
     resin_type_name?: string | null
+}
+
+function quoteMaterialKey(row: QuoteCartRow): string {
+    const method = String(row.print_method || '').trim().toLowerCase()
+    if (method === 'fdm') return String(row.fdm_material_name || row.fdm_material || '')
+    return String(row.resin_type_name || row.resin_type || '')
 }
 
 export type ResolveOrderLinesResult =
@@ -100,7 +107,8 @@ export async function resolveOrderLinesFromDb(
             .prepare(
                 `SELECT q.id, q.total_price, q.volume_cm3, q.print_method, c.quantity AS cart_quantity,
                         q.variable_cost_krw, q.setup_cost_krw, q.min_price_krw,
-                        q.created_at, q.updated_at, q.fdm_material, q.fdm_material_name, q.resin_type_name
+                        q.created_at, q.updated_at, q.fdm_material, q.fdm_material_name,
+                        q.resin_type, q.resin_type_name
                  FROM quotes q
                  INNER JOIN cart c ON c.quote_id = q.id
                  WHERE q.id IN (${placeholders}) AND ${owner.sql}`
@@ -141,6 +149,7 @@ export async function resolveOrderLinesFromDb(
     const batchInputs: {
         key: number
         printMethod: string
+        material: string
         quantity: number
         totalPriceKrw: number
         variableCostKrw?: number | null
@@ -175,6 +184,7 @@ export async function resolveOrderLinesFromDb(
         batchInputs.push({
             key: quoteId,
             printMethod: String(row.print_method || 'unknown'),
+            material: quoteMaterialKey(row),
             quantity,
             totalPriceKrw: Number(row.total_price) || 0,
             variableCostKrw: row.variable_cost_krw,
@@ -188,10 +198,11 @@ export async function resolveOrderLinesFromDb(
         return { ok: false, error: '유효한 주문 항목이 없습니다. 장바구니를 다시 확인해 주세요.', status: 400 }
     }
 
-    const priced = priceCartLinesByPrintMethod(
+    const priced = priceCartLinesByMaterialGroup(
         batchInputs.map((b) => ({
             key: b.key,
             printMethod: b.printMethod,
+            material: b.material,
             quantity: b.quantity,
             totalPriceKrw: b.totalPriceKrw,
             variableCostKrw: b.variableCostKrw,
@@ -212,7 +223,7 @@ export async function resolveOrderLinesFromDb(
 
         if (b.clientPrice != null && Math.abs(b.clientPrice - unitPrice) > 500) {
             console.info(
-                `[order] quote ${b.key} price from DB group-batch (clientUnit=${b.clientPrice} dbUnit=${unitPrice} qty=${b.quantity} method=${b.printMethod} grouped=${line.usedGroupBatch})`
+                `[order] quote ${b.key} price from DB group-batch (clientUnit=${b.clientPrice} dbUnit=${unitPrice} qty=${b.quantity} method=${b.printMethod} material=${b.material} grouped=${line.usedGroupBatch})`
             )
         }
 

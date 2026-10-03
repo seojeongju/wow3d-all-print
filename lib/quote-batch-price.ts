@@ -1,10 +1,16 @@
 /**
  * 수량·다파일 견적 배치 가격
- * - 같은 출력방식 그룹: 최소금액·셋업 1회 + 변동비 합산
- * - 다른 출력방식: 그룹이 나뉘므로 방식마다 최소금액 적용
+ * - 같은 출력방식·같은 소재 그룹: 최소금액(장비 세팅비)·셋업 1회 + 변동비 합산
+ * - 출력방식 또는 소재가 다르면 그룹이 나뉘므로 그룹마다 최소금액 적용
  */
 
-import { QUOTE_PRICE_ROUND_MODE, roundTo100, type PriceRoundMode } from '@/lib/amount-display'
+import {
+    QUOTE_PRICE_ROUND_MODE,
+    alignLineToUnitPrice,
+    allocateByWeights,
+    roundTo100,
+    type PriceRoundMode,
+} from '@/lib/amount-display'
 
 export type QuoteBatchPriceInput = {
     /** 1개당 변동비(공급가): 재료+서포트+장비 등 */
@@ -53,15 +59,15 @@ export function calculateQuoteBatchPrice(input: QuoteBatchPriceInput): QuoteBatc
     const supplyKrw = minApplied ? minPrice : rawSupply
 
     const applyVat = input.applyVat !== false
-    const lineTotalKrw = applyVat
-        ? roundTo100(supplyKrw * 1.1, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
-        : roundTo100(supplyKrw, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
+    const roundMode = input.roundMode ?? QUOTE_PRICE_ROUND_MODE
+    const rawLineTotal = applyVat ? roundTo100(supplyKrw * 1.1, roundMode) : roundTo100(supplyKrw, roundMode)
+    const aligned = alignLineToUnitPrice(rawLineTotal, quantity, roundMode)
 
     return {
         quantity,
         supplyKrw,
-        lineTotalKrw,
-        effectiveUnitKrw: lineTotalKrw / quantity,
+        lineTotalKrw: aligned.lineTotal,
+        effectiveUnitKrw: aligned.unitPrice,
         minApplied,
         variableCostKrw: variable,
         setupCostKrw: setup,
@@ -102,10 +108,10 @@ export function lineTotalFromStoredQuote(input: {
         }
     }
 
-    const lineTotalKrw = roundTo100(totalPrice * quantity, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
+    const aligned = alignLineToUnitPrice(totalPrice * quantity, quantity, input.roundMode ?? QUOTE_PRICE_ROUND_MODE)
     return {
-        lineTotalKrw,
-        effectiveUnitKrw: quantity > 0 ? lineTotalKrw / quantity : lineTotalKrw,
+        lineTotalKrw: aligned.lineTotal,
+        effectiveUnitKrw: aligned.unitPrice,
         usedBatchFormula: false,
     }
 }
@@ -116,6 +122,8 @@ export type CartBatchLineInput = {
     /** 장바구니 행 또는 quote id */
     key: string | number
     printMethod: string
+    /** FDM 소재명 또는 레진 종류 — 같은 출력방식이라도 소재가 다르면 최소금액을 따로 적용 */
+    material?: string | null
     quantity: number
     totalPriceKrw: number
     variableCostKrw?: number | null
@@ -139,6 +147,17 @@ function normalizePrintMethod(raw: string | undefined | null): PrintMethodGroupK
     return m || 'unknown'
 }
 
+function normalizeMaterial(raw: string | undefined | null): string {
+    return String(raw || '').trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+/** 출력방식 + 소재 그룹 키 (소재 정보가 없으면 출력방식만) */
+function materialGroupKey(line: CartBatchLineInput): PrintMethodGroupKey {
+    const method = normalizePrintMethod(line.printMethod)
+    const material = normalizeMaterial(line.material)
+    return material ? `${method}:${material}` : method
+}
+
 function hasBatchCosts(line: CartBatchLineInput): boolean {
     const v = line.variableCostKrw != null ? Number(line.variableCostKrw) : NaN
     const s = line.setupCostKrw != null ? Number(line.setupCostKrw) : NaN
@@ -146,11 +165,11 @@ function hasBatchCosts(line: CartBatchLineInput): boolean {
 }
 
 /**
- * 장바구니/주문 라인들을 출력방식별로 묶어 가격 산정.
- * - 같은 방식: 셋업 max 1회 + 변동 합산 + 최소 1회
- * - 다른 방식: 그룹이 달라 방식마다 최소 적용
+ * 장바구니/주문 라인들을 출력방식·소재별로 묶어 가격 산정.
+ * - 같은 방식·같은 소재: 셋업 max 1회 + 변동 합산 + 최소 1회
+ * - 방식이나 소재가 다르면: 그룹이 달라 그룹마다 최소 적용
  */
-export function priceCartLinesByPrintMethod(
+export function priceCartLinesByMaterialGroup(
     lines: CartBatchLineInput[],
     options?: { applyVat?: boolean; roundMode?: PriceRoundMode }
 ): {
@@ -189,15 +208,15 @@ export function priceCartLinesByPrintMethod(
         })
     }
 
-    const byMethod = new Map<string, CartBatchLineInput[]>()
+    const byGroup = new Map<string, CartBatchLineInput[]>()
     for (const line of batchable) {
-        const gk = normalizePrintMethod(line.printMethod)
-        const arr = byMethod.get(gk) || []
+        const gk = materialGroupKey(line)
+        const arr = byGroup.get(gk) || []
         arr.push(line)
-        byMethod.set(gk, arr)
+        byGroup.set(gk, arr)
     }
 
-    for (const [groupKey, groupLines] of byMethod) {
+    for (const [groupKey, groupLines] of byGroup) {
         let sumVariable = 0
         let setupOnce = 0
         let minOnce = 0
@@ -225,34 +244,25 @@ export function priceCartLinesByPrintMethod(
             ? roundTo100(supplyKrw * 1.1, roundMode)
             : roundTo100(supplyKrw, roundMode)
 
-        groupsOut.push({ groupKey, supplyKrw, totalKrw: groupTotalKrw, minApplied })
-
-        const weightSum = weights.reduce((a, b) => a + b, 0)
-        let allocated = 0
+        /** 그룹 합계가 100원 단위로 절삭돼 있으므로 품목별 몫도 100원 단위로 배분 */
+        const shares = allocateByWeights(groupTotalKrw, weights, roundMode === 'none' ? 1 : 100)
+        let groupLinesTotal = 0
         for (let i = 0; i < groupLines.length; i++) {
             const line = groupLines[i]
             const qty = normalizeQuoteQuantity(line.quantity)
-            const isLast = i === groupLines.length - 1
-            let share: number
-            if (weightSum > 0) {
-                share = isLast
-                    ? groupTotalKrw - allocated
-                    : Math.round((groupTotalKrw * weights[i]) / weightSum)
-            } else {
-                const each = Math.floor(groupTotalKrw / groupLines.length)
-                share = isLast ? groupTotalKrw - allocated : each
-            }
-            if (!isLast) allocated += share
+            const aligned = alignLineToUnitPrice(shares[i] ?? 0, qty, roundMode)
+            groupLinesTotal += aligned.lineTotal
             results.push({
                 key: line.key,
-                printMethod: groupKey,
+                printMethod: normalizePrintMethod(line.printMethod),
                 groupKey,
                 quantity: qty,
-                lineTotalKrw: Math.max(0, share),
-                effectiveUnitKrw: qty > 0 ? Math.max(0, share) / qty : Math.max(0, share),
+                lineTotalKrw: aligned.lineTotal,
+                effectiveUnitKrw: aligned.unitPrice,
                 usedGroupBatch: true,
             })
         }
+        groupsOut.push({ groupKey, supplyKrw, totalKrw: groupLinesTotal, minApplied })
     }
 
     const grandTotalKrw = results.reduce((s, r) => s + r.lineTotalKrw, 0)
@@ -264,6 +274,6 @@ export function cartLineTotalsByKey(
     lines: CartBatchLineInput[],
     options?: { applyVat?: boolean; roundMode?: PriceRoundMode }
 ): Map<string | number, number> {
-    const priced = priceCartLinesByPrintMethod(lines, options)
+    const priced = priceCartLinesByMaterialGroup(lines, options)
     return new Map(priced.lines.map((l) => [l.key, l.lineTotalKrw]))
 }

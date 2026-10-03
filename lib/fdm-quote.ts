@@ -7,7 +7,7 @@
  * - 출력 시간: 모델 무게 + 서포트 추정 무게를 Bambu급 유량식으로 반영
  */
 
-import { QUOTE_PRICE_ROUND_MODE, roundTo100 } from '@/lib/amount-display'
+import { QUOTE_PRICE_ROUND_MODE, alignLineToUnitPrice, roundTo100 } from '@/lib/amount-display'
 import {
     estimateFdmPrintTimeP2S,
     estimateFdmStructureP2S,
@@ -360,12 +360,14 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
     } else {
         total = roundTo100(subtotal, QUOTE_PRICE_ROUND_MODE)
     }
+    const aligned = alignLineToUnitPrice(total, quantity, QUOTE_PRICE_ROUND_MODE)
+    total = aligned.lineTotal
 
     return {
         subtotal,
         total,
         quantity,
-        effectiveUnitKrw: total / quantity,
+        effectiveUnitKrw: aligned.unitPrice,
         variableCostKrw,
         setupCostKrw,
         timeHours: timeDetail.hours,

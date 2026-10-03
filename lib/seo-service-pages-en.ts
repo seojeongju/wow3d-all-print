@@ -254,7 +254,7 @@ export const SERVICE_LANDINGS_EN: ServiceLandingConfig[] = [
             },
             {
                 q: 'Our team has many files — can we order them together?',
-                a: 'Yes. Add all files to the cart and order at once; files using the same print method share a single minimum order charge.',
+                a: 'Yes. Add all files to the cart and order at once; files using the same print method and material share a single minimum order charge (each different material has its own).',
             },
         ],
         primaryCta: { label: 'Consult on a capstone prototype', href: '/contact' },

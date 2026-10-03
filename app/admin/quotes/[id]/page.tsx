@@ -24,6 +24,12 @@ import {
     type ShippingSettings,
 } from '@/lib/shipping-settings';
 import { SendQuotationDialog } from '@/components/admin/SendQuotationDialog';
+import { allocateByWeights, floorQuoteAmount } from '@/lib/amount-display';
+
+/** 품목 금액 = 절삭한 단가 × 수량 (단가가 100원 단위라 금액도 100원 단위) */
+function lineAmount(it: { unit_price?: unknown; quantity?: unknown }): number {
+    return floorQuoteAmount(Number(it.unit_price) || 0) * Math.round(Number(it.quantity) || 0);
+}
 
 type StandaloneQuote = {
     id: number;
@@ -85,15 +91,20 @@ export default function QuoteEditPage() {
             };
             setAutoRecipient(baseRecipient);
 
-            const autoItemsMapped = items.map((it: any) => {
-                const unitPriceBase = Number(it.unit_price) || 0;
-                const unitPriceKr = Math.round(unitPriceBase);
+            /** 예전 주문은 품목 금액이 1원 단위로 나뉘어 있어, 절삭한 합계를 100원 단위로 다시 배분 */
+            const rawLineAmounts: number[] = items.map(
+                (it) => Math.round(Number(it.unit_price) || 0) * (Number(it.quantity) || 1)
+            );
+            const autoTotal = floorQuoteAmount(rawLineAmounts.reduce((a, b) => a + b, 0));
+            const autoShares = allocateByWeights(autoTotal, rawLineAmounts);
+            const autoItemsMapped = items.map((it: any, i: number) => {
+                const quantity = Number(it.quantity) || 1;
                 return {
                     id: it.id || Math.random(),
                     name: it.file_name,
                     spec: `${it.print_method || ''} ${it.material_name ? '/ ' + it.material_name : ''}`.trim(),
-                    quantity: Number(it.quantity) || 1,
-                    unit_price: unitPriceKr,
+                    quantity,
+                    unit_price: floorQuoteAmount((autoShares[i] ?? 0) / quantity),
                 };
             });
             setAutoItems(autoItemsMapped);
@@ -104,13 +115,13 @@ export default function QuoteEditPage() {
                     setItems(
                         expertData.items?.map((it: any) => ({
                             ...it,
-                            unit_price: Math.round(Number(it.unit_price) || 0),
+                            unit_price: floorQuoteAmount(Number(it.unit_price) || 0),
                             quantity: Number(it.quantity) || 1,
                         })) || []
                     );
                     setRecipient(expertData.recipient || baseRecipient);
                     if (expertData.shipping_fee != null && Number.isFinite(Number(expertData.shipping_fee))) {
-                        setShippingFeeOverride(Number(expertData.shipping_fee));
+                        setShippingFeeOverride(floorQuoteAmount(Number(expertData.shipping_fee)));
                         setShippingFeeManual(true);
                     }
                     setHasExpertQuote(true);
@@ -229,16 +240,21 @@ export default function QuoteEditPage() {
         setItems(items.filter((_, i) => i !== idx));
     };
 
-    // 금액 계산 (이미 부가세가 포함된 단가 기준)
-    const itemsSubtotal = items.reduce((acc, it) => {
-        return acc + (Math.round(Number(it.unit_price) || 0) * Math.round(Number(it.quantity) || 0));
-    }, 0);
-    const shippingFee = resolveShippingFee(
-        itemsSubtotal,
-        shippingSettings,
-        shippingFeeManual ? shippingFeeOverride : null
+    /** 입력을 마치면 단가를 100원 미만 절삭한 값으로 정리 */
+    const normalizeUnitPrice = (idx: number) => {
+        setItems((prev) =>
+            prev.map((it, i) => (i === idx ? { ...it, unit_price: floorQuoteAmount(Number(it.unit_price) || 0) } : it))
+        );
+    };
+
+    // 금액 계산 (이미 부가세가 포함된 단가 기준, 100원 미만 절삭)
+    const itemsSubtotal = items.reduce((acc, it) => acc + lineAmount(it), 0);
+    const shippingFee = floorQuoteAmount(
+        resolveShippingFee(itemsSubtotal, shippingSettings, shippingFeeManual ? shippingFeeOverride : null)
     );
     const totalAmount = itemsSubtotal + shippingFee;
+    /** 저장·인쇄·발송에 쓰는 품목(단가 절삭 반영) */
+    const normalizedItems = items.map((it) => ({ ...it, unit_price: floorQuoteAmount(Number(it.unit_price) || 0) }));
     // 합계금액에서 부가세를 역산 (합계 = 공급가 * 1.1)
     const totalSupply = Math.round(totalAmount / 1.1);
     const totalVat = totalAmount - totalSupply;
@@ -255,7 +271,7 @@ export default function QuoteEditPage() {
                 },
                 body: JSON.stringify({
                     expert_quote_data: {
-                        items,
+                        items: normalizedItems,
                         recipient,
                         shipping_fee: shippingFee,
                         total_amount: totalAmount,
@@ -265,6 +281,7 @@ export default function QuoteEditPage() {
             });
             const json = await res.json();
             if (json.success) {
+                setItems(normalizedItems);
                 setHasExpertQuote(true);
                 toast({ title: '전문가 견적이 저장되었습니다.' });
             } else {
@@ -318,20 +335,20 @@ export default function QuoteEditPage() {
                 total_amount: totalAmount,
                 has_expert_quote: true,
                 expert_quote_data: JSON.stringify({
-                    items,
+                    items: normalizedItems,
                     recipient,
                     shipping_fee: shippingFee,
                     total_amount: totalAmount,
                 }),
             },
-            items: items.map(it => ({
+            items: normalizedItems.map(it => ({
                 id: it.id,
                 file_name: it.name,
                 print_method: it.spec,
                 material_name: '',
                 quantity: it.quantity,
-                unit_price: Math.round(Number(it.unit_price) || 0),
-                subtotal: Math.round(Number(it.unit_price) || 0) * Number(it.quantity),
+                unit_price: it.unit_price,
+                subtotal: lineAmount(it),
             })),
             shipping_fee: shippingFee,
         };
@@ -512,15 +529,15 @@ export default function QuoteEditPage() {
                             variant="ghost" size="sm"
                             className="text-white/30 hover:text-white text-xs h-6 px-2"
                             onClick={() => {
-                                const autoItemsTotal = autoItems.reduce((acc, it) => acc + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0);
-                                const autoShipping = resolveShippingFee(autoItemsTotal, shippingSettings, null);
+                                const autoItemsTotal = autoItems.reduce((acc, it) => acc + lineAmount(it), 0);
+                                const autoShipping = floorQuoteAmount(resolveShippingFee(autoItemsTotal, shippingSettings, null));
                                 const printData = {
                                     order: { ...orderInfo, total_amount: autoItemsTotal + autoShipping },
                                     items: autoItems.map(it => ({
                                         file_name: it.name, print_method: it.spec, material_name: '',
                                         quantity: it.quantity,
-                                        unit_price: Math.round(Number(it.unit_price) || 0),
-                                        subtotal: Math.round(Number(it.unit_price) || 0) * Number(it.quantity),
+                                        unit_price: floorQuoteAmount(Number(it.unit_price) || 0),
+                                        subtotal: lineAmount(it),
                                     })),
                                     shipping_fee: autoShipping,
                                 };
@@ -534,7 +551,7 @@ export default function QuoteEditPage() {
                     </div>
                     <div className="space-y-1.5 text-xs">
                         {autoItems.map((it, i) => {
-                            const supply = Math.round(Number(it.unit_price) || 0) * Number(it.quantity);
+                            const supply = lineAmount(it);
                             return (
                                 <div key={i} className="flex justify-between text-white/60">
                                     <span className="truncate max-w-[180px]">{it.name || `품목 ${i + 1}`}</span>
@@ -545,7 +562,7 @@ export default function QuoteEditPage() {
                         <div className="border-t border-white/10 pt-2 mt-2 flex justify-between font-medium">
                             <span className="text-white/50">합계 (VAT 포함)</span>
                             <span className={hasExpertQuote ? 'line-through text-white/25' : 'text-white'}>
-                                ₩ {(() => { const s = autoItems.reduce((a, it) => a + Math.round(Number(it.unit_price) || 0) * Number(it.quantity), 0); return s.toLocaleString(); })()}
+                                ₩ {autoItems.reduce((a, it) => a + lineAmount(it), 0).toLocaleString()}
                             </span>
                         </div>
                     </div>
@@ -579,7 +596,7 @@ export default function QuoteEditPage() {
                     {hasExpertQuote ? (
                         <div className="space-y-1.5 text-xs">
                             {items.map((it, i) => {
-                                const supply = Math.round(Number(it.unit_price) || 0) * Number(it.quantity);
+                                const supply = lineAmount(it);
                                 return (
                                     <div key={i} className="flex justify-between text-white/70">
                                         <span className="truncate max-w-[180px]">{it.name || `품목 ${i + 1}`}</span>
@@ -657,11 +674,16 @@ export default function QuoteEditPage() {
                             <div className="flex items-center gap-2">
                                 <Input
                                     className="w-28 bg-white/5 border-white/20 text-white text-sm text-right"
-                                    value={shippingFee}
+                                    value={shippingFeeManual && shippingFeeOverride != null ? shippingFeeOverride : shippingFee}
                                     onChange={(e) => {
                                         const cleaned = e.target.value.replace(/,/g, '').replace(/[^0-9]/g, '');
                                         setShippingFeeManual(true);
                                         setShippingFeeOverride(cleaned === '' ? 0 : Number(cleaned));
+                                    }}
+                                    onBlur={() => {
+                                        if (shippingFeeManual && shippingFeeOverride != null) {
+                                            setShippingFeeOverride(floorQuoteAmount(shippingFeeOverride));
+                                        }
                                     }}
                                 />
                                 <Button
@@ -690,6 +712,7 @@ export default function QuoteEditPage() {
                             <span className="text-lg font-bold text-white">합계금액 (VAT·배송비 포함)</span>
                             <span className="text-2xl font-bold text-primary">₩ {totalAmount.toLocaleString()}</span>
                         </div>
+                        <p className="text-right text-[11px] text-white/35">단가·배송비는 100원 미만(10원 단위) 절삭 적용</p>
                     </CardContent>
                 </Card>
             </div>
@@ -722,7 +745,7 @@ export default function QuoteEditPage() {
                             </thead>
                             <tbody>
                                 {items.map((item, idx) => {
-                                    const supply = Math.round(Number(item.unit_price) || 0) * Math.round(Number(item.quantity) || 0);
+                                    const supply = lineAmount(item);
                                     return (
                                         <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                             <td className="p-2 text-center text-white/40 text-xs">{idx + 1}</td>
@@ -756,6 +779,7 @@ export default function QuoteEditPage() {
                                                     className="bg-white/5 border border-primary/40 text-primary text-right h-8 text-sm font-medium focus:border-primary focus:bg-primary/5 transition-colors"
                                                     value={Number(item.unit_price).toLocaleString()}
                                                     onChange={e => handleItemChange(idx, 'unit_price', e.target.value)}
+                                                    onBlur={() => normalizeUnitPrice(idx)}
                                                 />
                                             </td>
                                             <td className="p-2 text-right text-white font-medium">

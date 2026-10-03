@@ -67,3 +67,49 @@ export function roundTo100(value: number | null | undefined, mode: PriceRoundMod
     default: return Math.round(n);
   }
 }
+
+/**
+ * 라인 합계를 단가 기준으로 정리: 단가를 100원 단위로 맞추고 합계 = 단가 × 수량.
+ * 수량이 2개 이상이어도 견적서의 단가·합계가 100원 단위로 일치함(절삭 시 최대 99원×수량 감소).
+ */
+export function alignLineToUnitPrice(
+  lineTotal: number,
+  quantity: number,
+  mode: PriceRoundMode = QUOTE_PRICE_ROUND_MODE
+): { unitPrice: number; lineTotal: number } {
+  const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+  const total = Math.max(0, Number(lineTotal) || 0);
+  if (mode === 'none') return { unitPrice: total / qty, lineTotal: Math.round(total) };
+  const unitPrice = roundTo100(total / qty, mode);
+  return { unitPrice, lineTotal: unitPrice * qty };
+}
+
+/** 견적 금액 공통 절삭(100원 미만 버림) */
+export function floorQuoteAmount(value: number | null | undefined): number {
+  return roundTo100(value, QUOTE_PRICE_ROUND_MODE);
+}
+
+/**
+ * 합계를 가중치 비율로 나누되 각 몫을 unit(기본 100원) 단위로 맞춤.
+ * 누적 경계값을 반올림해 몫의 합이 항상 total과 같고 음수가 나오지 않음.
+ */
+export function allocateByWeights(total: number, weights: number[], unit = 100): number[] {
+  const n = weights.length;
+  if (n === 0) return [];
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  const safeWeights = weights.map((w) => Math.max(0, Number(w) || 0));
+  const weightSum = safeWeights.reduce((a, b) => a + b, 0);
+  const step = unit > 0 ? unit : 1;
+
+  const shares: number[] = [];
+  let cumWeight = 0;
+  let prevBoundary = 0;
+  for (let i = 0; i < n; i++) {
+    cumWeight += weightSum > 0 ? safeWeights[i] : 1;
+    const ratio = cumWeight / (weightSum > 0 ? weightSum : n);
+    const boundary = i === n - 1 ? safeTotal : Math.min(safeTotal, Math.round((safeTotal * ratio) / step) * step);
+    shares.push(Math.max(0, boundary - prevBoundary));
+    prevBoundary = Math.max(prevBoundary, boundary);
+  }
+  return shares;
+}

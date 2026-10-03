@@ -344,7 +344,7 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
             },
             {
                 q: 'How can we cut cost on a small capstone budget?',
-                a: 'Test with FDM PLA first, lower infill for non-structural parts, and order all files together — files with the same print method share one minimum charge.',
+                a: 'Test with FDM PLA first, lower infill for non-structural parts, and order all files together — files with the same print method and material share one minimum charge.',
             },
         ],
         ctaHref: '/services/capstone',

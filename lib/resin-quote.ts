@@ -6,7 +6,7 @@
  * 시간 = estimateResinPrintTimeHours (레이어 노출 + 기계 지연)
  */
 
-import { QUOTE_PRICE_ROUND_MODE, roundTo100 } from '@/lib/amount-display'
+import { QUOTE_PRICE_ROUND_MODE, alignLineToUnitPrice, roundTo100 } from '@/lib/amount-display'
 import {
     estimateResinPrintTimeHours,
     type ResinTimeEstimateResult,
@@ -203,12 +203,14 @@ export function calculateResinQuote(input: CalculateResinQuoteInput): CalculateR
     } else {
         total = roundTo100(subtotal, QUOTE_PRICE_ROUND_MODE)
     }
+    const aligned = alignLineToUnitPrice(total, quantity, QUOTE_PRICE_ROUND_MODE)
+    total = aligned.lineTotal
 
     return {
         subtotal,
         total,
         quantity,
-        effectiveUnitKrw: total / quantity,
+        effectiveUnitKrw: aligned.unitPrice,
         variableCostKrw,
         setupCostKrw,
         timeHours: timeDetail.hours,

@@ -33,6 +33,7 @@ export function cartItemToBatchInput(item: CartItem): CartBatchLineInput | null 
     return {
         key: item.id,
         printMethod: q.printMethod || 'unknown',
+        material: q.printMethod === 'fdm' ? q.fdmMaterial : q.resinType,
         quantity: item.quantity,
         totalPriceKrw: q.totalPrice || 0,
         variableCostKrw: q.variableCostKrw,
@@ -41,7 +42,7 @@ export function cartItemToBatchInput(item: CartItem): CartBatchLineInput | null 
     }
 }
 
-/** 목록 기준 출력방식 그룹 배치 후 라인 합계 맵 */
+/** 목록 기준 출력방식·소재 그룹 배치 후 라인 합계 맵 */
 export function cartItemsLineTotals(itemList: CartItem[]): Map<number, number> {
     const inputs = itemList
         .map(cartItemToBatchInput)
