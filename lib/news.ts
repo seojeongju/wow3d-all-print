@@ -44,6 +44,9 @@ export type NewsPost = {
 
 export const NEWS_PAGE_SIZE = 12
 
+/** AI가 쓴 실무 관점 초안 표시 — 이 문구가 남아 있으면 발행이 막힌다 */
+export const AI_INSIGHT_MARKER = '[AI 초안]'
+
 export function isNewsCategory(v: unknown): v is NewsCategory {
     return typeof v === 'string' && (NEWS_CATEGORIES as readonly string[]).includes(v)
 }
@@ -213,8 +216,10 @@ export function evaluateNewsSeo(input: {
         {
             id: 'insight',
             label: '와우3D 실무 관점 80자 이상',
-            ok: input.insight.trim().length >= 80,
-            hint: '직접 경험·관점이 있어야 단순 요약 콘텐츠로 분류되지 않습니다',
+            ok: input.insight.trim().length >= 80 && !input.insight.includes(AI_INSIGHT_MARKER),
+            hint: input.insight.includes(AI_INSIGHT_MARKER)
+                ? 'AI 초안입니다 — 실제 경험으로 다듬고 [AI 초안] 표시를 지워야 발행할 수 있습니다'
+                : '직접 경험·관점이 있어야 단순 요약 콘텐츠로 분류되지 않습니다',
         },
         {
             id: 'meta',

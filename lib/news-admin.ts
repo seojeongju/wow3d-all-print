@@ -1,4 +1,5 @@
 import {
+    AI_INSIGHT_MARKER,
     isNewsCategory,
     isSafeHref,
     kstLocalToUtcSql,
@@ -56,6 +57,9 @@ export function parseNewsWriteBody(body: Record<string, unknown>): NewsWriteInpu
     if (status === 'published') {
         if (summaryLines.length === 0) return { error: '발행하려면 핵심 요약이 필요합니다' }
         if (!bodyHtml && !insight) return { error: '발행하려면 본문 또는 와우3D 실무 관점이 필요합니다' }
+        if (insight?.includes(AI_INSIGHT_MARKER)) {
+            return { error: '와우3D 실무 관점이 AI 초안 상태입니다. 직접 다듬고 [AI 초안] 표시를 지운 뒤 발행하세요' }
+        }
     }
 
     const sourceUrl = textOrNull(body.sourceUrl, 1000)

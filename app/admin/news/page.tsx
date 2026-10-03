@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Eye, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Eye, Loader2, Newspaper, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { evaluateNewsSeo, formatNewsDateKo, NEWS_CATEGORY_LABEL_KO, type NewsPost } from '@/lib/news'
+import NewsAiPanel from './_components/NewsAiPanel'
 
 type Filter = 'all' | 'published' | 'scheduled' | 'draft'
 
@@ -40,6 +41,7 @@ export default function AdminNewsPage() {
     const [items, setItems] = useState<NewsPost[]>([])
     const [filter, setFilter] = useState<Filter>('all')
     const [tableMissing, setTableMissing] = useState(false)
+    const [tab, setTab] = useState<'posts' | 'ai'>('posts')
 
     const authHeader = useMemo(
         () => (token ? { Authorization: `Bearer ${token}` } : ({} as Record<string, string>)),
@@ -123,7 +125,30 @@ export default function AdminNewsPage() {
                 </Link>
             </div>
 
-            {tableMissing ? (
+            <div className="flex gap-1 border-b border-white/10">
+                {(
+                    [
+                        { id: 'posts', label: '게시글', icon: Newspaper },
+                        { id: 'ai', label: 'AI 후보 · 초안', icon: Sparkles },
+                    ] as const
+                ).map((t) => (
+                    <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setTab(t.id)}
+                        className={cn(
+                            '-mb-px inline-flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-bold transition-colors',
+                            tab === t.id ? 'border-teal-400 text-teal-200' : 'border-transparent text-white/50 hover:text-white'
+                        )}
+                    >
+                        <t.icon className="h-4 w-4" /> {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {tab === 'ai' ? <NewsAiPanel /> : null}
+
+            {tab === 'posts' && tableMissing ? (
                 <Card className="border-amber-400/30 bg-amber-400/5">
                     <CardContent className="py-6 text-sm text-amber-200">
                         news_posts 테이블이 없습니다. <code>migrations/schema_news.sql</code> 마이그레이션을 먼저 적용하세요.
@@ -131,6 +156,8 @@ export default function AdminNewsPage() {
                 </Card>
             ) : null}
 
+            {tab === 'posts' ? (
+            <>
             <div className="flex flex-wrap gap-2">
                 {FILTERS.map((f) => (
                     <button
@@ -232,6 +259,8 @@ export default function AdminNewsPage() {
                     })}
                 </div>
             )}
+            </>
+            ) : null}
         </div>
     )
 }

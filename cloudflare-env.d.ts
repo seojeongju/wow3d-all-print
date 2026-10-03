@@ -17,6 +17,9 @@ interface CloudflareEnv {
 	TRIPO_API_KEY?: string;
 	/** 선택: Workers AI 미사용 시 FAQ 초안용 */
 	OPENAI_API_KEY?: string;
+	/** 최신 동향 후보 수집용 NAVER API HUB(네이버 클라우드) 뉴스 검색 Client ID/Secret */
+	NAVER_CLIENT_ID?: string;
+	NAVER_CLIENT_SECRET?: string;
 	/** 카카오 로그인 REST 키 */
 	KAKAO_REST_API_KEY?: string;
 	/** 카카오맵 JavaScript 키 (인터랙티브 지도, 공개용) */

@@ -34,13 +34,15 @@ export default {
         return openNext.fetch(request, env, ctx);
     },
     async scheduled(event, env, ctx) {
-        const req = new Request('https://cron.internal/api/cron/order-auto-status', {
-            method: 'POST',
-            headers: {
-                'x-cron-secret': env.CRON_SECRET || '',
-            },
-        });
-        ctx.waitUntil(openNext.fetch(req, env, ctx));
+        for (const path of ['/api/cron/order-auto-status', '/api/cron/news-collect']) {
+            const req = new Request(`https://cron.internal${path}`, {
+                method: 'POST',
+                headers: {
+                    'x-cron-secret': env.CRON_SECRET || '',
+                },
+            });
+            ctx.waitUntil(openNext.fetch(req, env, ctx));
+        }
     },
     async email(message, env, ctx) {
         ctx.waitUntil(handleInquiryInboundEmail(message, env));
