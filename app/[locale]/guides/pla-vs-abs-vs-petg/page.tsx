@@ -10,25 +10,18 @@ import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
+import FilamentCompareExplorer, {
+    type CardItem,
+    type MaterialDetail,
+    type MaterialKey,
+    type TableRow,
+} from './_components/FilamentCompareExplorer'
 
 type Props = {
     params: Promise<{ locale: string }>
 }
 
-type TableRow = { label: string; pla: string; abs: string; petg: string; pc: string }
-type CardItem = { title: string; body: string }
 type FaqItem = { q: string; a: string }
-type PcDetail = {
-    eyebrow: string
-    title: string
-    intro: string
-    featuresTitle: string
-    features: string[]
-    applicationsTitle: string
-    applications: string[]
-    tipsTitle: string
-    tips: string[]
-}
 
 const GUIDE_PATH = '/guides/pla-vs-abs-vs-petg' as const
 
@@ -86,12 +79,13 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
     const tableRows = t.raw('tableRows') as TableRow[]
     const cards = t.raw('cards') as CardItem[]
     const faqs = t.raw('faqs') as FaqItem[]
-    const pcDetail = t.raw('pcDetail') as PcDetail
-    const pcDetailGroups = [
-        { title: pcDetail.featuresTitle, items: pcDetail.features },
-        { title: pcDetail.applicationsTitle, items: pcDetail.applications },
-        { title: pcDetail.tipsTitle, items: pcDetail.tips },
-    ]
+    const materialDetails = t.raw('materialDetails') as Record<MaterialKey, MaterialDetail>
+    const columnLabels: Record<MaterialKey, string> = {
+        pla: t('colPla'),
+        abs: t('colAbs'),
+        petg: t('colPetg'),
+        pc: t('colPc'),
+    }
 
     const path = guidePath(locale)
     const homePath = getPathname({ locale, href: '/' })
@@ -144,62 +138,16 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
 
             <section className="py-16">
                 <div className="container mx-auto px-6 max-w-5xl space-y-10">
-                    <div className="overflow-x-auto rounded-[2rem] border border-white/10 bg-white/[0.03]">
-                        <table className="w-full min-w-[900px] text-sm">
-                            <thead className="bg-white/[0.04]">
-                                <tr>
-                                    <th className="p-4 text-left">{t('colItem')}</th>
-                                    <th className="p-4 text-left">{t('colPla')}</th>
-                                    <th className="p-4 text-left">{t('colAbs')}</th>
-                                    <th className="p-4 text-left">{t('colPetg')}</th>
-                                    <th className="p-4 text-left">{t('colPc')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-white/75">
-                                {tableRows.map((row) => (
-                                    <tr key={row.label} className="border-t border-white/10">
-                                        <td className="p-4 font-bold text-white">{row.label}</td>
-                                        <td className="p-4">{row.pla}</td>
-                                        <td className="p-4">{row.abs}</td>
-                                        <td className="p-4">{row.petg}</td>
-                                        <td className="p-4">{row.pc}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {cards.map((card) => (
-                            <article key={card.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-                                <h2 className="text-xl font-black mb-3">{card.title}</h2>
-                                <p className="text-white/65 leading-relaxed break-keep">{card.body}</p>
-                            </article>
-                        ))}
-                    </div>
-
-                    <article id="pc" className="rounded-[2rem] border border-teal-400/15 bg-teal-400/[0.04] p-8 md:p-10 space-y-6">
-                        <div className="space-y-3">
-                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">{pcDetail.eyebrow}</p>
-                            <h2 className="text-2xl md:text-3xl font-black">{pcDetail.title}</h2>
-                            <p className="text-white/70 leading-relaxed break-keep">{pcDetail.intro}</p>
-                        </div>
-                        <div className="grid lg:grid-cols-3 gap-5">
-                            {pcDetailGroups.map((group) => (
-                                <div key={group.title} className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-                                    <h3 className="text-lg font-black text-white mb-3">{group.title}</h3>
-                                    <ul className="space-y-2.5">
-                                        {group.items.map((item) => (
-                                            <li key={item} className="flex items-start gap-2.5 text-white/68 leading-relaxed break-keep">
-                                                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400/60" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
-                        </div>
-                    </article>
+                    <FilamentCompareExplorer
+                        itemLabel={t('colItem')}
+                        columnLabels={columnLabels}
+                        tableRows={tableRows}
+                        cards={cards}
+                        details={materialDetails}
+                        sectionLabel={t('detailSectionLabel')}
+                        hint={t('detailHint')}
+                        viewDetail={t('viewDetail')}
+                    />
 
                     <article className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-8 md:p-10 space-y-5">
                         <h2 className="text-2xl font-black">{t('faqTitle')}</h2>

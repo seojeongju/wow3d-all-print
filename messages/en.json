@@ -5,7 +5,7 @@
     "en": "English"
   },
   "Nav": {
-    "servicesGuides": "Services\u00A0·\u00A0Guides",
+    "servicesGuides": "Services · Guides",
     "coreServices": "Core Services",
     "coreServicesDesc": "Print service, prototypes & instant quotes",
     "printMethods": "Print Methods",
@@ -19,7 +19,7 @@
     "quote": "Instant Quote",
     "customProducts": "Custom Products",
     "products": "Hardware",
-    "expert": "Product\u00A0Dev\u00A0&\u00A0Inquiry",
+    "expert": "Product Dev & Inquiry",
     "orders": "My Orders",
     "support": "Support",
     "faq": "FAQ",
@@ -991,8 +991,8 @@
         "applications": [
           "Functional parts & protective cases",
           "Medical / food-related structures",
-        "Outdoor & weather-resistant uses",
-        "Clear covers & windows"
+          "Outdoor & weather-resistant uses",
+          "Clear covers & windows"
         ]
       },
       "pc": {
@@ -2039,33 +2039,122 @@
         "body": "Polycarbonate offers some of the highest impact and heat resistance among FDM materials—great for parts in hot environments, electrical housings, and clear covers. High print temperatures and shrinkage make equipment and environment control important."
       }
     ],
-    "pcDetail": {
-      "eyebrow": "Engineering Material",
-      "title": "A closer look at PC (polycarbonate)",
-      "intro": "PC is a classic engineering plastic used in bullet-resistant glazing, helmet visors, and electronics enclosures. It offers some of the highest heat and impact resistance among FDM materials, so it is chosen for functional parts that PLA, ABS, or PETG cannot withstand.",
-      "featuresTitle": "Key properties",
-      "features": [
-        "High heat resistance: a heat deflection temperature of about 110–130℃, higher than ABS (about 90–100℃), so parts keep their shape in hot environments.",
-        "Excellent impact resistance: it tends to bend rather than shatter, which suits parts exposed to drops and impacts.",
-        "High stiffness and dimensional stability: good for load-bearing structural parts and assemblies that need tight fits.",
-        "Clear grades: clear PC can make covers and windows that let light through. Due to the FDM process, results are closer to translucent than fully transparent.",
-        "Electrical insulation: widely used for electrical and electronic enclosures, with flame-retardant grades available."
-      ],
-      "applicationsTitle": "Recommended applications",
-      "applications": [
-        "Automotive engine-bay and interior prototypes, brackets exposed to heat",
-        "Electrical and electronic housings, battery and power-supply covers",
-        "Light covers, diffusers, and clear protective windows",
-        "Production-line jigs, fixtures, and tool handles",
-        "Impact-loaded functional parts such as drone and robot structures"
-      ],
-      "tipsTitle": "Printing and design notes",
-      "tips": [
-        "It needs high temperatures—about 260–300℃ at the nozzle and 100–120℃ at the bed—so an enclosed-chamber printer is required.",
-        "High shrinkage can warp wide flat areas or long parts. Rounded corners and uniform wall thickness are recommended.",
-        "It absorbs moisture, so filament must be dried before printing, and lead times can be longer than PLA or PETG.",
-        "Higher material cost and print difficulty make it pricier than PLA or PETG. If you do not strictly need high heat and impact resistance, consider PETG or ABS as well."
-      ]
+    "detailSectionLabel": "Material details",
+    "detailHint": "Tap a material name or cell in the table, or a card below, to see its detailed guide.",
+    "viewDetail": "View details",
+    "materialDetails": {
+      "pla": {
+        "eyebrow": "Easy Prototyping",
+        "title": "A closer look at PLA (polylactic acid)",
+        "intro": "PLA is a bioplastic made from plant-based sources such as corn and sugarcane, and it is the most widely used everyday material in FDM 3D printing. Low shrinkage and stable printing make it the first choice for quick, affordable form-check prototypes and design mockups.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "Easy to print: low shrinkage and warping let even large parts print reliably, including on open-frame printers.",
+          "Clean surfaces and fine detail: layer lines are fairly even, and sharp edges and small text come out well.",
+          "Wide range of colors and finishes: beyond standard colors, there are silk, matte, wood, and metallic-look grades for appearance models.",
+          "High stiffness: rigid and dimensionally steady for form and fit checks, but it tends to snap rather than bend under impact.",
+          "Low heat resistance: a heat deflection temperature of about 55–60℃ means parts can deform inside a car in summer or near hot equipment."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Product design mockups and form-check prototypes",
+          "Display models, architectural and figure models",
+          "Educational aids and classroom projects",
+          "First-round prototypes for checking dimensions and interference before assembly",
+          "Indoor props, packaging and display pieces"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "It prints at about 190–220℃ at the nozzle and 50–60℃ at the bed, so almost any FDM printer can handle it.",
+          "It is weak against heat and impact, so for functional parts that see real loads or heat, consider PETG or ABS as well.",
+          "It does not dissolve in acetone, so vapor smoothing like ABS is not practical. Sanding, filler, and painting are used to refine the finish.",
+          "It breaks down under industrial composting conditions, but it does not decompose on its own in everyday environments."
+        ]
+      },
+      "abs": {
+        "eyebrow": "Functional Material",
+        "title": "A closer look at ABS",
+        "intro": "ABS is a general-purpose engineering plastic used in LEGO bricks, appliance housings, and car interiors. It offers better heat and impact resistance than PLA and is easy to post-process, so it is a common pick for functional prototypes tested under near-production conditions.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "Heat resistance: a heat deflection temperature of about 90–100℃, higher than PLA, so parts hold their shape inside devices or in sunlight.",
+          "Impact resistance and toughness: it resists cracking under impact, which suits parts that are fastened and assembled repeatedly.",
+          "Excellent post-processing: easy to sand, drill, and tap, and acetone vapor smoothing can melt away layer lines.",
+          "Easy to bond and paint: pieces can be joined with acetone or dedicated adhesives to build large parts, and it takes paint well.",
+          "Weak against UV: long sun exposure can cause discoloration and embrittlement, so consider ASA for outdoor use."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Appliance and electronics housings, button and case prototypes",
+          "Automotive interior parts and bracket prototypes",
+          "Parts for assembly checks such as snap-fits and screw bosses",
+          "Mechanical parts for functional testing, jigs and fixtures",
+          "Appearance prototypes that will be painted or post-processed"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "It needs about 230–260℃ at the nozzle and 90–110℃ at the bed, and an enclosed-chamber printer helps reduce warping.",
+          "Shrinkage can lift corners or split layers. For wide flat areas, rounded corners, ribs, and uniform wall thickness are recommended.",
+          "Printing releases a distinct odor and fine particles, so ventilation and filtration are needed.",
+          "Acetone vapor smoothing gives a glossy surface but can also soften fine details and dimensions, so take care with precision features."
+        ]
+      },
+      "petg": {
+        "eyebrow": "Balanced Material",
+        "title": "A closer look at PETG",
+        "intro": "PETG adds glycol to PET—the plastic used in water bottles—to make it easier to print. It is tougher than PLA with better heat and impact resistance, yet easier to print than ABS, making it the go-to choice for functional parts that need a balance of strength and print stability.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "Balanced strength and toughness: rigid with a bit of flex, so it resists cracking under impact.",
+          "Excellent layer adhesion: strong bonding between layers means fewer splits along the layer direction than PLA or ABS.",
+          "Chemical and water resistance: it stands up to water, oils, and some detergents, and lasts relatively well in humid or outdoor conditions.",
+          "Moderate heat resistance: a heat deflection temperature of about 70–80℃—higher than PLA, lower than ABS.",
+          "Clear and translucent grades: good for covers that let light through or cases where the contents should be visible."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Functional parts, machine covers and guards",
+          "Protective cases and electronics enclosures",
+          "Outdoor structures, planters and garden parts",
+          "Prototypes of containers and fittings that contact water or liquids",
+          "Translucent light covers and see-through cases"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "It prints at about 230–250℃ at the nozzle and 70–85℃ at the bed, and its low warping keeps it fairly stable even on open-frame printers.",
+          "It tends to string, which can leave fine hairs on the surface. If appearance matters, discuss the post-processing scope with us in advance.",
+          "Moisture causes rough surfaces and bubbles, so drying before printing is important.",
+          "The raw material is used for food containers, but printed parts can trap bacteria in layer gaps, so food-contact uses need separate review."
+        ]
+      },
+      "pc": {
+        "eyebrow": "Engineering Material",
+        "title": "A closer look at PC (polycarbonate)",
+        "intro": "PC is a classic engineering plastic used in bullet-resistant glazing, helmet visors, and electronics enclosures. It offers some of the highest heat and impact resistance among FDM materials, so it is chosen for functional parts that PLA, ABS, or PETG cannot withstand.",
+        "featuresTitle": "Key properties",
+        "features": [
+          "High heat resistance: a heat deflection temperature of about 110–130℃, higher than ABS (about 90–100℃), so parts keep their shape in hot environments.",
+          "Excellent impact resistance: it tends to bend rather than shatter, which suits parts exposed to drops and impacts.",
+          "High stiffness and dimensional stability: good for load-bearing structural parts and assemblies that need tight fits.",
+          "Clear grades: clear PC can make covers and windows that let light through. Due to the FDM process, results are closer to translucent than fully transparent.",
+          "Electrical insulation: widely used for electrical and electronic enclosures, with flame-retardant grades available."
+        ],
+        "applicationsTitle": "Recommended applications",
+        "applications": [
+          "Automotive engine-bay and interior prototypes, brackets exposed to heat",
+          "Electrical and electronic housings, battery and power-supply covers",
+          "Light covers, diffusers, and clear protective windows",
+          "Production-line jigs, fixtures, and tool handles",
+          "Impact-loaded functional parts such as drone and robot structures"
+        ],
+        "tipsTitle": "Printing and design notes",
+        "tips": [
+          "It needs high temperatures—about 260–300℃ at the nozzle and 100–120℃ at the bed—so an enclosed-chamber printer is required.",
+          "High shrinkage can warp wide flat areas or long parts. Rounded corners and uniform wall thickness are recommended.",
+          "It absorbs moisture, so filament must be dried before printing, and lead times can be longer than PLA or PETG.",
+          "Higher material cost and print difficulty make it pricier than PLA or PETG. If you do not strictly need high heat and impact resistance, consider PETG or ABS as well."
+        ]
+      }
     },
     "faqTitle": "Frequently asked questions",
     "faqs": [
