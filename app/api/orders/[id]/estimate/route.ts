@@ -74,7 +74,7 @@ export async function GET(
         const { results: items } = await env.DB.prepare(`
             SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
                    q.file_name, q.print_method,
-                   COALESCE(q.fdm_material, q.resin_type) as material_name
+                   COALESCE(q.fdm_material_name, q.fdm_material, q.resin_type_name, q.resin_type) as material_name
             FROM order_items oi
             LEFT JOIN quotes q ON oi.quote_id = q.id
             WHERE oi.order_id = ?
@@ -147,7 +147,7 @@ export async function GET(
                 const { results: items } = await env.DB.prepare(`
                     SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
                            q.file_name, q.print_method,
-                           COALESCE(q.fdm_material, q.resin_type) as material_name
+                           COALESCE(q.fdm_material_name, q.fdm_material, q.resin_type_name, q.resin_type) as material_name
                     FROM order_items oi
                     LEFT JOIN quotes q ON oi.quote_id = q.id
                     WHERE oi.order_id = ?

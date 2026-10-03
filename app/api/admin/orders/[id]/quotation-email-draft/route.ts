@@ -89,8 +89,8 @@ export async function GET(
         try {
             const itemRes = await env.DB.prepare(`
                 SELECT oi.id, oi.quantity, oi.unit_price, oi.subtotal, q.file_name, q.print_method,
-                       q.fdm_material, q.fdm_infill, q.fdm_layer_height, q.fdm_support,
-                       q.resin_type, q.layer_thickness, q.post_processing
+                       COALESCE(q.fdm_material_name, q.fdm_material) AS fdm_material, q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+                       COALESCE(q.resin_type_name, q.resin_type) AS resin_type, q.layer_thickness, q.post_processing
                 FROM order_items oi
                 LEFT JOIN quotes q ON oi.quote_id = q.id
                 WHERE oi.order_id = ?

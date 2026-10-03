@@ -251,12 +251,13 @@ export const P2S_MATERIAL_PROFILES: Record<string, FdmMaterialSpeedProfile> = {
     ABS: { key: 'ABS', maxVolumetricSpeed: 16, minLayerTimeSec: 12 },
     ASA: { key: 'ASA', maxVolumetricSpeed: 18, minLayerTimeSec: 12 },
     TPU: { key: 'TPU', maxVolumetricSpeed: 12, minLayerTimeSec: 8 },
+    PC: { key: 'PC', maxVolumetricSpeed: 18, minLayerTimeSec: 12 },
 }
 const P2S_DEFAULT_MATERIAL: FdmMaterialSpeedProfile = { key: 'DEFAULT', maxVolumetricSpeed: 15, minLayerTimeSec: 8 }
 
 export function resolveP2SMaterialProfile(name: string | null | undefined): FdmMaterialSpeedProfile {
     const n = (name || '').toUpperCase()
-    for (const key of ['TPU', 'PETG', 'ASA', 'ABS', 'PLA']) {
+    for (const key of ['TPU', 'PETG', 'ASA', 'ABS', 'PLA', 'PC']) {
         if (n.includes(key)) return P2S_MATERIAL_PROFILES[key]
     }
     return P2S_DEFAULT_MATERIAL

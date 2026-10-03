@@ -39,7 +39,8 @@ export interface QuoteData {
     printMethod: 'fdm' | 'sla' | 'dlp';
 
     // FDM 옵션
-    fdmMaterial?: 'PLA' | 'ABS' | 'PETG' | 'TPU';
+    /** 관리자 소재 테이블의 FDM 소재명 (PLA·ABS·PETG·TPU·PC 등) */
+    fdmMaterial?: string;
     fdmInfill?: number;
     fdmLayerHeight?: number;
     fdmSupport?: boolean;

@@ -65,7 +65,7 @@ function mapQuoteFromApi(row: any): Quote {
         dimensionsY: Number(row.dimensionsY ?? row.dimensions_y ?? 0),
         dimensionsZ: Number(row.dimensionsZ ?? row.dimensions_z ?? 0),
         printMethod: (row.printMethod ?? row.print_method ?? 'fdm') as Quote['printMethod'],
-        fdmMaterial: row.fdmMaterial ?? row.fdm_material ?? undefined,
+        fdmMaterial: row.fdmMaterial ?? row.fdm_material_name ?? row.fdm_material ?? undefined,
         fdmInfill: row.fdmInfill ?? row.fdm_infill ?? undefined,
         fdmLayerHeight: row.fdmLayerHeight ?? row.fdm_layer_height ?? undefined,
         fdmSupport: !!(row.fdmSupport ?? row.fdm_support),

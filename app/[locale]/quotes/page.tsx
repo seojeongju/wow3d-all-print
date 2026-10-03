@@ -68,7 +68,7 @@ function toQuote(r: QuoteRow): Quote {
         dimensionsY: r.dimensions_y,
         dimensionsZ: r.dimensions_z,
         printMethod: r.print_method as 'fdm' | 'sla' | 'dlp',
-        fdmMaterial: r.fdm_material as Quote['fdmMaterial'],
+        fdmMaterial: r.fdm_material_name || r.fdm_material,
         resinType: r.resin_type as Quote['resinType'],
         totalPrice: r.total_price,
         estimatedTimeHours: r.estimated_time_hours,
