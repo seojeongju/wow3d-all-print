@@ -14,6 +14,7 @@ import {
     Plus,
     Save,
     Send,
+    Sparkles,
     Trash2,
     X,
 } from 'lucide-react'
@@ -37,6 +38,7 @@ import {
     type NewsStatus,
 } from '@/lib/news'
 import { fitNewsImage } from '@/lib/news-image'
+import { NEWS_IMAGE_STYLE_LABEL_KO, NEWS_IMAGE_STYLES, type NewsImageStyle } from '@/lib/news-image-ai'
 import DetailSmartEditor from '@/app/admin/custom-products/_components/DetailSmartEditor'
 
 type FormState = {
@@ -136,6 +138,11 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
     const [saving, setSaving] = useState(false)
     const [uploading, setUploading] = useState(false)
     const [editorOpen, setEditorOpen] = useState(false)
+    const [aiOpen, setAiOpen] = useState(false)
+    const [aiStyle, setAiStyle] = useState<NewsImageStyle>('photo')
+    const [aiScene, setAiScene] = useState('')
+    const [aiImage, setAiImage] = useState<{ base64: string; alt: string } | null>(null)
+    const [aiGenerating, setAiGenerating] = useState(false)
     const coverInputRef = useRef<HTMLInputElement>(null)
     const postIdRef = useRef<number | null>(postId)
     postIdRef.current = postId
@@ -267,6 +274,52 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
         else toast({ title: '삭제 실패', variant: 'destructive' })
     }
 
+    const generateAiImage = async () => {
+        if (!form.title.trim() && !aiScene.trim()) {
+            toast({ title: '제목을 먼저 입력하세요', variant: 'destructive' })
+            return
+        }
+        setAiGenerating(true)
+        try {
+            const res = await fetch('/api/admin/news/ai-image', {
+                method: 'POST',
+                headers: { ...authHeader, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: form.title,
+                    summary: form.summary,
+                    category: form.category,
+                    tags: form.tags,
+                    style: aiStyle,
+                    scene: aiScene,
+                }),
+            })
+            const j = await res.json()
+            if (!res.ok) throw new Error(j.error || '생성 실패')
+            setAiImage({ base64: j.data.image, alt: j.data.alt || aiImage?.alt || '' })
+            setAiScene(j.data.scene)
+        } catch (e) {
+            toast({
+                title: 'AI 이미지 생성 실패',
+                description: e instanceof Error ? e.message : '이미지를 만들지 못했습니다.',
+                variant: 'destructive',
+            })
+        } finally {
+            setAiGenerating(false)
+        }
+    }
+
+    const applyAiImage = async () => {
+        if (!aiImage) return
+        const bytes = Uint8Array.from(atob(aiImage.base64), (c) => c.charCodeAt(0))
+        const file = new File([bytes], `ai-cover-${Date.now()}.jpg`, { type: 'image/jpeg' })
+        const url = await uploadImage('cover', file)
+        if (!url) return
+        if (!form.coverAlt.trim() && aiImage.alt) set('coverAlt', aiImage.alt)
+        setAiImage(null)
+        setAiOpen(false)
+        toast({ title: 'AI 이미지를 대표 이미지로 지정했습니다', description: '대체 텍스트는 임시저장·발행할 때 함께 저장됩니다.' })
+    }
+
     const deletePost = async () => {
         const id = postIdRef.current
         if (!id || !confirm(`「${form.title}」 글을 삭제할까요? 이미지도 함께 삭제됩니다.`)) return
@@ -384,7 +437,7 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
 
                     <Section
                         title="대표 이미지"
-                        desc="업로드하면 가운데 기준 16:9(1600×900)로 자동 맞춤됩니다. 주요 피사체를 사진 가운데에 두세요. 직접 촬영·제작한 이미지를 사용하고, 기사 사진은 저작권 문제로 사용하면 안 됩니다."
+                        desc="업로드하면 가운데 기준 16:9(1600×900)로 자동 맞춤됩니다. 주요 피사체를 사진 가운데에 두세요. 직접 촬영·제작한 이미지나 AI 생성 이미지를 사용하고, 기사 사진은 저작권 문제로 사용하면 안 됩니다."
                     >
                         <div className="flex flex-col gap-4 md:flex-row">
                             <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/30 md:w-72">
@@ -418,6 +471,14 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                         {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
                                         {coverUrl ? '이미지 교체' : '이미지 업로드'}
                                     </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className={cn('gap-1.5 border-violet-400/40 text-violet-200', aiOpen && 'bg-violet-500/15')}
+                                        onClick={() => setAiOpen((v) => !v)}
+                                    >
+                                        <Sparkles className="h-4 w-4" /> AI 이미지 생성
+                                    </Button>
                                     {coverUrl ? (
                                         <Button type="button" variant="ghost" className="text-rose-300" onClick={removeCover}>
                                             <Trash2 className="h-4 w-4" />
@@ -429,6 +490,87 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                 </Field>
                             </div>
                         </div>
+                        {aiOpen ? (
+                            <div className="space-y-3 rounded-xl border border-violet-400/25 bg-violet-500/[0.06] p-4">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs font-bold text-white/70">스타일</span>
+                                    {NEWS_IMAGE_STYLES.map((s) => (
+                                        <button
+                                            key={s}
+                                            type="button"
+                                            onClick={() => setAiStyle(s)}
+                                            className={cn(
+                                                'rounded-full border px-3 py-1 text-xs font-bold transition-colors',
+                                                aiStyle === s
+                                                    ? 'border-violet-300 bg-violet-400/20 text-violet-100'
+                                                    : 'border-white/15 text-white/55 hover:text-white'
+                                            )}
+                                        >
+                                            {NEWS_IMAGE_STYLE_LABEL_KO[s]}
+                                        </button>
+                                    ))}
+                                </div>
+                                <Field
+                                    label="장면 설명(영어)"
+                                    hint="비워 두면 제목·요약을 바탕으로 AI가 자동 작성합니다. 결과가 마음에 들지 않으면 문장을 고친 뒤 다시 생성하세요. 글자·로고는 자동으로 제외됩니다."
+                                >
+                                    <textarea
+                                        className={cn(inputCls, 'min-h-[70px] text-xs leading-relaxed')}
+                                        value={aiScene}
+                                        maxLength={500}
+                                        onChange={(e) => setAiScene(e.target.value)}
+                                        placeholder="예: a desktop 3D printer printing a black polycarbonate gear, close-up of the hot nozzle"
+                                    />
+                                </Field>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        disabled={aiGenerating || uploading}
+                                        className="gap-1.5 bg-violet-500 text-white hover:bg-violet-400"
+                                        onClick={generateAiImage}
+                                    >
+                                        {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                        {aiImage ? '다시 생성' : '생성하기'}
+                                    </Button>
+                                    {aiScene ? (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            disabled={aiGenerating}
+                                            className="text-white/50"
+                                            onClick={() => setAiScene('')}
+                                        >
+                                            장면 설명 지우기
+                                        </Button>
+                                    ) : null}
+                                </div>
+                                {aiImage ? (
+                                    <div className="space-y-3">
+                                        <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black/30 md:w-96">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={`data:image/jpeg;base64,${aiImage.base64}`}
+                                                alt={aiImage.alt}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                        <p className="text-[11px] text-white/40 break-keep">
+                                            실제 게시 화면과 같은 16:9 비율로 잘린 미리보기입니다. AI 생성 이미지는 실제 제품·현장과 다를 수 있으니 사실과
+                                            혼동되지 않는지 확인하세요.
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            disabled={uploading || aiGenerating}
+                                            className="gap-1.5 bg-teal-400 font-bold text-slate-950 hover:bg-teal-300"
+                                            onClick={applyAiImage}
+                                        >
+                                            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                            대표 이미지로 사용
+                                        </Button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        ) : null}
                     </Section>
 
                     <Section title="본문" desc="배경 설명, 주요 내용, 수치 등을 직접 정리합니다. 이미지·표·유튜브를 넣을 수 있습니다.">
