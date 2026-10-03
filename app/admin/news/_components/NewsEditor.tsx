@@ -14,6 +14,7 @@ import {
     Plus,
     Save,
     Send,
+    Shuffle,
     Sparkles,
     Trash2,
     X,
@@ -28,6 +29,8 @@ import {
     NEWS_CATEGORIES,
     NEWS_CATEGORY_LABEL_KO,
     NEWS_LINK_PRESETS,
+    NEWS_RANDOM_LINK_COUNT,
+    pickRandomNewsLinks,
     slugifyNewsTitle,
     summaryToLines,
     utcSqlToKstLocal,
@@ -183,6 +186,11 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
     useEffect(() => {
         void load()
     }, [load])
+
+    /** 새 글은 관련 링크 3개를 무작위로 미리 채움 — 서버 렌더와 결과가 달라지지 않도록 마운트 후 실행 */
+    useEffect(() => {
+        if (!initialId) setForm((f) => (f.relatedLinks.length ? f : { ...f, relatedLinks: pickRandomNewsLinks() }))
+    }, [initialId])
 
     const buildPayload = (f: FormState, status: NewsStatus) => ({
         ...f,
@@ -701,14 +709,24 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                 </div>
                             ))}
                         </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="gap-1.5 border-white/15"
-                            onClick={() => set('relatedLinks', [...form.relatedLinks, { title: '', href: '' }])}
-                        >
-                            <Plus className="h-4 w-4" /> 직접 추가
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-1.5 border-white/15"
+                                onClick={() => set('relatedLinks', [...form.relatedLinks, { title: '', href: '' }])}
+                            >
+                                <Plus className="h-4 w-4" /> 직접 추가
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="gap-1.5 border-white/15"
+                                onClick={() => set('relatedLinks', pickRandomNewsLinks())}
+                            >
+                                <Shuffle className="h-4 w-4" /> 무작위 {NEWS_RANDOM_LINK_COUNT}개 다시 뽑기
+                            </Button>
+                        </div>
                     </Section>
 
                     <Section title="자주 묻는 질문(FAQ)" desc="고객이 실제로 물어볼 만한 질문 1~3개. 검색 결과와 AI 답변에 질문·답변 형태로 노출될 수 있습니다.">

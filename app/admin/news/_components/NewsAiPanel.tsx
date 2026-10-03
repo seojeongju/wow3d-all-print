@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { EyeOff, ExternalLink, Loader2, RefreshCw, RotateCcw, Sparkles, Wand2 } from 'lucide-react'
+import { EyeOff, ExternalLink, Loader2, RotateCcw, Search, Sparkles, Tag, Wand2 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { formatNewsDateKo } from '@/lib/news'
+import NewsCollectPanel from './NewsCollectPanel'
 
 type Candidate = {
     id: number
@@ -22,6 +23,7 @@ type Candidate = {
     relevance: number
     status: string
     draft_post_id: number | null
+    keyword: string | null
     created_at: string
 }
 
@@ -33,7 +35,10 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
     { id: 'hidden', label: '숨김' },
 ]
 
-const SOURCE_LABEL: Record<string, string> = { rss: '해외 RSS', naver: '네이버 뉴스', manual: '직접 입력' }
+const SOURCE_LABEL: Record<string, string> = { rss: '전문 매체 RSS', naver: '네이버 뉴스', bing: 'Bing 뉴스', manual: '직접 입력' }
+
+const filterSelectCls =
+    'h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-xs text-white focus:border-teal-400/60 focus:outline-none'
 
 export default function NewsAiPanel() {
     const router = useRouter()
@@ -44,7 +49,12 @@ export default function NewsAiPanel() {
     const [counts, setCounts] = useState<Record<string, number>>({})
     const [naverConfigured, setNaverConfigured] = useState(true)
     const [loading, setLoading] = useState(true)
-    const [collecting, setCollecting] = useState(false)
+    const [keywordFilter, setKeywordFilter] = useState('')
+    const [sourceFilter, setSourceFilter] = useState('')
+    const [langFilter, setLangFilter] = useState('')
+    const [searchInput, setSearchInput] = useState('')
+    const [search, setSearch] = useState('')
+    const [keywordOptions, setKeywordOptions] = useState<{ keyword: string; count: number }[]>([])
     const [draftingId, setDraftingId] = useState<number | 'url' | null>(null)
     const [url, setUrl] = useState('')
     const [note, setNote] = useState('')
@@ -59,7 +69,12 @@ export default function NewsAiPanel() {
         if (!token) return
         setLoading(true)
         try {
-            const res = await fetch(`/api/admin/news/candidates?status=${filter}`, { headers })
+            const qs = new URLSearchParams({ status: filter })
+            if (keywordFilter) qs.set('keyword', keywordFilter)
+            if (sourceFilter) qs.set('source', sourceFilter)
+            if (langFilter) qs.set('language', langFilter)
+            if (search) qs.set('q', search)
+            const res = await fetch(`/api/admin/news/candidates?${qs}`, { headers })
             const j = await res.json()
             if (j.code === 'TABLE_MISSING') {
                 setTableMissing(true)
@@ -68,37 +83,25 @@ export default function NewsAiPanel() {
             if (!res.ok) throw new Error(j.error || '조회 실패')
             setItems(j.data.items || [])
             setCounts(j.data.counts || {})
+            setKeywordOptions(j.data.keywords || [])
             setNaverConfigured(Boolean(j.data.naverConfigured))
         } catch (e) {
             toast({ title: '오류', description: e instanceof Error ? e.message : '후보를 불러오지 못했습니다', variant: 'destructive' })
         } finally {
             setLoading(false)
         }
-    }, [token, filter, headers, toast])
+    }, [token, filter, keywordFilter, sourceFilter, langFilter, search, headers, toast])
 
     useEffect(() => {
         void load()
     }, [load])
 
-    const collect = async () => {
-        setCollecting(true)
-        try {
-            const res = await fetch('/api/admin/news/candidates', { method: 'POST', headers })
-            const j = await res.json()
-            if (!res.ok) throw new Error(j.error || '수집 실패')
-            const { scanned, added, errors } = j.data as { scanned: number; added: number; errors: string[] }
-            toast({
-                title: `새 후보 ${added}건 추가`,
-                description: `기사 ${scanned}건 확인${errors.length ? ` · 일부 실패: ${errors.slice(0, 2).join(', ')}` : ''}`,
-            })
-            if (filter !== 'new') setFilter('new')
-            else await load()
-        } catch (e) {
-            toast({ title: '수집 실패', description: e instanceof Error ? e.message : '', variant: 'destructive' })
-        } finally {
-            setCollecting(false)
-        }
+    const afterCollect = async () => {
+        if (filter !== 'new') setFilter('new')
+        else await load()
     }
+
+    const hasListFilter = Boolean(keywordFilter || sourceFilter || langFilter || search)
 
     const makeDraft = async (payload: { candidateId?: number; url?: string; adminNote?: string }, key: number | 'url') => {
         setDraftingId(key)
@@ -161,12 +164,15 @@ export default function NewsAiPanel() {
                     />
                     <p className="text-xs leading-relaxed text-white/45">
                         AI는 원문 내용만으로 요약·본문·FAQ·태그·검색 설명 초안을 임시저장합니다. 실무 관점은 [AI 초안] 표시가 붙으며,
-                        직접 다듬고 표시를 지워야 발행됩니다. 대표 이미지는 직접 촬영한 사진을 올려 주세요. 생성 1건당 약 20~40초 걸립니다.
+                        직접 다듬고 표시를 지워야 발행됩니다. 대표 이미지는 직접 촬영한 사진이나 편집기의 AI 이미지 생성을 이용하세요. 생성 1건당 약
+                        20~40초 걸립니다.
                     </p>
                 </CardContent>
             </Card>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <NewsCollectPanel headers={headers} naverConfigured={naverConfigured} onCollected={afterCollect} />
+
+            <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                     {FILTERS.map((f) => (
                         <button
@@ -184,15 +190,66 @@ export default function NewsAiPanel() {
                         </button>
                     ))}
                 </div>
-                <Button variant="outline" disabled={collecting} onClick={collect} className="gap-2 border-white/15">
-                    {collecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    지금 수집
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <select className={filterSelectCls} value={keywordFilter} onChange={(e) => setKeywordFilter(e.target.value)}>
+                        <option value="" className="bg-slate-900">키워드 전체</option>
+                        {keywordOptions.map((k) => (
+                            <option key={k.keyword} value={k.keyword} className="bg-slate-900">
+                                {k.keyword} ({k.count})
+                            </option>
+                        ))}
+                    </select>
+                    <select className={filterSelectCls} value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+                        <option value="" className="bg-slate-900">소스 전체</option>
+                        {Object.entries(SOURCE_LABEL).map(([v, label]) => (
+                            <option key={v} value={v} className="bg-slate-900">
+                                {label}
+                            </option>
+                        ))}
+                    </select>
+                    <select className={filterSelectCls} value={langFilter} onChange={(e) => setLangFilter(e.target.value)}>
+                        <option value="" className="bg-slate-900">국내·해외</option>
+                        <option value="ko" className="bg-slate-900">국내(한글)</option>
+                        <option value="en" className="bg-slate-900">해외(영문)</option>
+                    </select>
+                    <form
+                        className="flex items-center gap-1"
+                        onSubmit={(e) => {
+                            e.preventDefault()
+                            setSearch(searchInput.trim())
+                        }}
+                    >
+                        <input
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder="제목·요약 검색"
+                            className="h-8 w-44 rounded-lg border border-white/15 bg-black/30 px-2.5 text-xs text-white placeholder:text-white/30"
+                        />
+                        <Button type="submit" size="sm" variant="outline" className="h-8 border-white/15 px-2.5" aria-label="검색">
+                            <Search className="h-3.5 w-3.5" />
+                        </Button>
+                    </form>
+                    {hasListFilter ? (
+                        <button
+                            type="button"
+                            className="text-xs text-white/45 hover:text-white"
+                            onClick={() => {
+                                setKeywordFilter('')
+                                setSourceFilter('')
+                                setLangFilter('')
+                                setSearchInput('')
+                                setSearch('')
+                            }}
+                        >
+                            필터 해제
+                        </button>
+                    ) : null}
+                </div>
             </div>
 
             {!naverConfigured ? (
                 <p className="rounded-lg border border-amber-400/30 bg-amber-400/5 px-4 py-2 text-xs text-amber-200">
-                    NAVER API HUB 뉴스 검색 키(NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)가 없어 해외 RSS만 수집합니다.
+                    NAVER API HUB 뉴스 검색 키(NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)가 없어 네이버를 제외한 소스(Bing 뉴스·전문 매체)로만 수집합니다.
                 </p>
             ) : null}
             {tableMissing ? (
@@ -208,7 +265,11 @@ export default function NewsAiPanel() {
             ) : items.length === 0 ? (
                 <Card className="border-white/10 bg-white/5">
                     <CardContent className="py-14 text-center text-sm text-white/50">
-                        {filter === 'new' ? '새 후보가 없습니다. 매일 자정에 자동 수집되며, [지금 수집]으로 바로 가져올 수 있습니다.' : '항목이 없습니다.'}
+                        {hasListFilter
+                            ? '필터 조건에 맞는 후보가 없습니다.'
+                            : filter === 'new'
+                              ? '새 후보가 없습니다. 매일 자정에 자동 수집되며, 위의 [기본 수집] 또는 [키워드로 수집]으로 바로 가져올 수 있습니다.'
+                              : '항목이 없습니다.'}
                     </CardContent>
                 </Card>
             ) : (
@@ -225,6 +286,17 @@ export default function NewsAiPanel() {
                                     >
                                         관련도 {c.relevance}
                                     </span>
+                                    {c.keyword ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setKeywordFilter(c.keyword ?? '')}
+                                            className="inline-flex items-center gap-1 rounded bg-violet-400/15 px-1.5 py-0.5 font-bold text-violet-200 hover:bg-violet-400/25"
+                                            title="이 키워드로 필터"
+                                        >
+                                            <Tag className="h-3 w-3" />
+                                            {c.keyword}
+                                        </button>
+                                    ) : null}
                                     <span className="text-white/45">{SOURCE_LABEL[c.source_type] ?? c.source_type}</span>
                                     <span className="text-white/45">{c.source_name}</span>
                                     <span className="text-white/35">{formatNewsDateKo(c.published_at ?? c.created_at)}</span>

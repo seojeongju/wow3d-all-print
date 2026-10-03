@@ -1,17 +1,26 @@
 /**
- * 최신 동향 후보 기사 수집 — RSS(해외 3D프린팅 전문 매체) + 네이버 뉴스 검색 API
+ * 최신 동향 후보 기사 수집 — 네이버 뉴스(API HUB) · Bing 뉴스 RSS(국내·해외) · 해외 3D프린팅 전문 매체 RSS
+ * 관리자가 고른 수집 조건(키워드·제외어·소스·기간·매칭·정렬·개수·3D프린팅 필터)으로 거른다.
  * AI 호출 없이 키워드 점수로만 거르므로 매일 크론으로 돌려도 비용이 들지 않는다.
  */
 
+import {
+    DEFAULT_3D_KEYWORDS,
+    DEFAULT_COLLECT_CONFIG,
+    type CollectConfig,
+    type CollectSource,
+} from '@/lib/news-collect-config'
+
+type Stmt = {
+    bind(...values: unknown[]): Stmt
+    run(): Promise<{ meta?: { changes?: number } }>
+}
 type Db = {
-    prepare(query: string): {
-        bind(...values: unknown[]): {
-            run(): Promise<{ meta?: { changes?: number } }>
-        }
-    }
+    prepare(query: string): Stmt
+    batch(statements: Stmt[]): Promise<{ meta?: { changes?: number } }[]>
 }
 
-export type CandidateSourceType = 'rss' | 'naver' | 'manual'
+export type CandidateSourceType = 'rss' | 'naver' | 'bing' | 'manual'
 
 export type CollectedItem = {
     sourceType: CandidateSourceType
@@ -23,17 +32,21 @@ export type CollectedItem = {
     /** UTC SQL */
     publishedAt: string | null
     relevance: number
+    /** 이 기사를 찾은(일치한) 수집 키워드 */
+    keyword?: string | null
 }
 
 export type CollectResult = {
     scanned: number
+    matched: number
     added: number
+    /** 키워드별 새로 추가된 건수 */
+    byKeyword: Record<string, number>
     errors: string[]
 }
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; WOW3D-NewsBot/1.0; +https://www.wow3dp.co.kr)'
-const MAX_AGE_DAYS = 14
-const MIN_RELEVANCE = 25
+const MIN_3D_RELEVANCE = 25
 
 export const NEWS_RSS_FEEDS: { name: string; url: string; language: 'en' | 'ko' }[] = [
     { name: '3DPrint.com', url: 'https://3dprint.com/feed/', language: 'en' },
@@ -42,8 +55,6 @@ export const NEWS_RSS_FEEDS: { name: string; url: string; language: 'en' | 'ko' 
     { name: '3Dnatives', url: 'https://www.3dnatives.com/en/feed/', language: 'en' },
     { name: 'Engineering.com', url: 'https://www.engineering.com/feed/', language: 'en' },
 ]
-
-export const NAVER_NEWS_QUERIES = ['3D프린팅', '3D프린터', '적층제조', '3D프린팅 지원사업']
 
 /** 네이버 개발자센터 검색 API 신규 신청 종료(2026-07-31) — NAVER API HUB(네이버 클라우드) 발급 키 사용 */
 const NAVER_API_HUB_NEWS_URL = 'https://naverapihub.apigw.ntruss.com/search/v1/news'
@@ -66,6 +77,7 @@ const NEGATIVE_TERMS = [
     '부고', '인사]', '[인사', '사설', '오늘의 운세',
 ]
 
+/** 3D프린팅 관련도 0~100 */
 export function scoreRelevance(title: string, summary: string): number {
     const t = title.toLowerCase()
     const s = summary.toLowerCase()
@@ -111,10 +123,10 @@ function toUtcSql(raw: string | null | undefined): string | null {
     return d.toISOString().slice(0, 19).replace('T', ' ')
 }
 
-function isRecent(utcSql: string | null): boolean {
+function isWithinDays(utcSql: string | null, days: number): boolean {
     if (!utcSql) return true
     const t = new Date(`${utcSql.replace(' ', 'T')}Z`).getTime()
-    return Date.now() - t <= MAX_AGE_DAYS * 86400_000
+    return Date.now() - t <= days * 86400_000
 }
 
 function tagValue(block: string, tag: string): string {
@@ -134,6 +146,14 @@ export function normalizeArticleUrl(raw: string): string | null {
         return u.toString()
     } catch {
         return null
+    }
+}
+
+function hostName(url: string, fallback: string): string {
+    try {
+        return new URL(url).hostname.replace(/^www\./, '')
+    } catch {
+        return fallback
     }
 }
 
@@ -163,7 +183,7 @@ export function parseFeed(xml: string, feed: { name: string; language: 'en' | 'k
             summary,
             language: feed.language,
             publishedAt,
-            relevance: scoreRelevance(title, summary),
+            relevance: 0,
         })
     }
     return items
@@ -203,24 +223,21 @@ export type NaverKeys = { clientId: string; clientSecret: string }
 
 type NaverNewsItem = { title: string; originallink?: string; link: string; description: string; pubDate: string }
 
-function naverSourceName(url: string): string {
-    try {
-        return new URL(url).hostname.replace(/^www\./, '')
-    } catch {
-        return '네이버 뉴스'
-    }
-}
-
-async function collectNaver(keys: NaverKeys | null, errors: string[]): Promise<CollectedItem[]> {
+async function collectNaver(
+    keys: NaverKeys | null,
+    keywords: string[],
+    cfg: CollectConfig,
+    errors: string[]
+): Promise<CollectedItem[]> {
     if (!keys) {
         errors.push('네이버: NAVER_CLIENT_ID/NAVER_CLIENT_SECRET 미설정')
         return []
     }
     const results = await Promise.all(
-        NAVER_NEWS_QUERIES.map(async (query) => {
+        keywords.map(async (query) => {
             try {
                 const raw = await fetchText(
-                    `${NAVER_API_HUB_NEWS_URL}?query=${encodeURIComponent(query)}&display=30&sort=date`,
+                    `${NAVER_API_HUB_NEWS_URL}?query=${encodeURIComponent(query)}&display=${cfg.perKeyword}&sort=${cfg.sort}`,
                     { headers: { 'X-NCP-APIGW-API-KEY-ID': keys.clientId, 'X-NCP-APIGW-API-KEY': keys.clientSecret } }
                 )
                 const data = JSON.parse(raw) as { items?: NaverNewsItem[] }
@@ -228,17 +245,17 @@ async function collectNaver(keys: NaverKeys | null, errors: string[]): Promise<C
                     const url = normalizeArticleUrl(it.originallink || it.link)
                     const title = htmlToPlain(it.title)
                     if (!url || !title) return []
-                    const summary = htmlToPlain(it.description).slice(0, 600)
                     return [
                         {
                             sourceType: 'naver',
-                            sourceName: naverSourceName(url),
+                            sourceName: hostName(url, '네이버 뉴스'),
                             title: title.slice(0, 300),
                             url,
-                            summary,
+                            summary: htmlToPlain(it.description).slice(0, 600),
                             language: 'ko',
                             publishedAt: toUtcSql(it.pubDate),
-                            relevance: scoreRelevance(title, summary),
+                            relevance: 0,
+                            keyword: query,
                         },
                     ]
                 })
@@ -249,6 +266,96 @@ async function collectNaver(keys: NaverKeys | null, errors: string[]): Promise<C
         })
     )
     return results.flat()
+}
+
+/** Bing 뉴스 RSS 링크(apiclick.aspx?url=...)에서 실제 기사 주소를 꺼낸다 */
+function bingArticleUrl(link: string): string | null {
+    try {
+        const u = new URL(link)
+        const real = u.searchParams.get('url')
+        return normalizeArticleUrl(real || link)
+    } catch {
+        return null
+    }
+}
+
+async function collectBing(
+    market: 'ko' | 'en',
+    keywords: string[],
+    cfg: CollectConfig,
+    errors: string[]
+): Promise<CollectedItem[]> {
+    const mkt = market === 'ko' ? 'ko-KR' : 'en-US'
+    const results = await Promise.all(
+        keywords.map(async (query) => {
+            try {
+                const sortParam = cfg.sort === 'date' ? `&qft=${encodeURIComponent('sortbydate="1"')}` : ''
+                const xml = await fetchText(
+                    `https://www.bing.com/news/search?q=${encodeURIComponent(query)}&format=rss&mkt=${mkt}&setlang=${mkt}${sortParam}`
+                )
+                const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>/gi) ?? []
+                return blocks.slice(0, cfg.perKeyword).flatMap((block): CollectedItem[] => {
+                    const title = htmlToPlain(tagValue(block, 'title'))
+                    const url = bingArticleUrl(decodeEntities(tagValue(block, 'link')).trim())
+                    if (!title || !url) return []
+                    const publisher = htmlToPlain(tagValue(block, 'News:Source'))
+                    return [
+                        {
+                            sourceType: 'bing',
+                            sourceName: (publisher || hostName(url, 'Bing 뉴스')).slice(0, 120),
+                            title: title.slice(0, 300),
+                            url,
+                            summary: htmlToPlain(tagValue(block, 'description')).slice(0, 600),
+                            language: market,
+                            publishedAt: toUtcSql(tagValue(block, 'pubDate')),
+                            relevance: 0,
+                            keyword: query,
+                        },
+                    ]
+                })
+            } catch (e) {
+                errors.push(`Bing ${market === 'ko' ? '국내' : '해외'}(${query}): ${e instanceof Error ? e.message : String(e)}`)
+                return []
+            }
+        })
+    )
+    return results.flat()
+}
+
+/** 띄어쓰기 차이("3D프린팅"/"3D 프린팅")를 무시하고 비교 */
+const squash = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+
+/** 키워드의 모든 단어가 들어 있으면 일치 */
+function keywordIn(haystack: string, keyword: string): boolean {
+    const h = squash(haystack)
+    return keyword
+        .split(/\s+/)
+        .filter(Boolean)
+        .every((token) => h.includes(squash(token)))
+}
+
+/**
+ * 수집 조건으로 기사 1건을 평가 — 통과하면 관련도·일치 키워드를 채워 돌려준다
+ * - 제외어 포함 시 제외, 기간 밖이면 제외
+ * - 키워드 매칭(제목만/제목·요약), 3D프린팅 필터(관련도 25 이상)
+ */
+function evaluateItem(it: CollectedItem, cfg: CollectConfig, keywords: string[]): CollectedItem | null {
+    const hay = `${it.title} ${it.summary}`
+    if (cfg.excludeKeywords.some((x) => keywordIn(hay, x))) return null
+    if (!isWithinDays(it.publishedAt, cfg.periodDays)) return null
+
+    const target = cfg.match === 'title' ? it.title : hay
+    const ordered = it.keyword ? [it.keyword, ...keywords.filter((k) => k !== it.keyword)] : keywords
+    const matched = ordered.find((k) => keywordIn(target, k)) ?? null
+
+    const r3d = scoreRelevance(it.title, it.summary)
+    if (cfg.require3d && r3d < MIN_3D_RELEVANCE) return null
+    /** 전문 매체 RSS는 3D프린팅 필터가 켜져 있으면 키워드 없이도 통과(영문 매체에 한글 키워드가 안 맞는 문제) */
+    if (!matched && !(cfg.require3d && it.sourceType === 'rss')) return null
+
+    const kwScore = matched ? (keywordIn(it.title, matched) ? 70 : 45) : 0
+    const relevance = Math.max(0, Math.min(100, Math.max(r3d, kwScore) + (kwScore && r3d ? 10 : 0)))
+    return { ...it, keyword: matched, relevance }
 }
 
 /** 제목이 거의 같은 기사(여러 언론 동시 보도)는 관련도 높은 1건만 남김 */
@@ -271,31 +378,60 @@ export function resolveNaverKeys(env: Record<string, unknown>): NaverKeys | null
     return clientId && clientSecret ? { clientId, clientSecret } : null
 }
 
-export async function insertCandidate(db: Db, storeId: number, it: CollectedItem): Promise<boolean> {
-    const res = await db
+function insertStatement(db: Db, storeId: number, it: CollectedItem): Stmt {
+    return db
         .prepare(
             `INSERT OR IGNORE INTO news_candidates
-                (store_id, source_type, source_name, title, url, summary, language, published_at, relevance)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                (store_id, source_type, source_name, title, url, summary, language, published_at, relevance, keyword)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
-        .bind(storeId, it.sourceType, it.sourceName, it.title, it.url, it.summary, it.language, it.publishedAt, it.relevance)
-        .run()
-    return Number(res.meta?.changes ?? 0) > 0
+        .bind(
+            storeId,
+            it.sourceType,
+            it.sourceName,
+            it.title,
+            it.url,
+            it.summary,
+            it.language,
+            it.publishedAt,
+            it.relevance,
+            it.keyword ?? null
+        )
 }
 
 export async function collectNewsCandidates(
     db: Db,
     storeId: number,
-    naverKeys: NaverKeys | null
+    naverKeys: NaverKeys | null,
+    config: CollectConfig = DEFAULT_COLLECT_CONFIG
 ): Promise<CollectResult> {
     const errors: string[] = []
-    const [rss, naver] = await Promise.all([collectRss(errors), collectNaver(naverKeys, errors)])
-    const all = [...rss, ...naver]
-    const picked = dedupeByTitle(all.filter((it) => it.relevance >= MIN_RELEVANCE && isRecent(it.publishedAt)))
+    const keywords = config.keywords.length ? config.keywords : DEFAULT_3D_KEYWORDS
+    const has = (s: CollectSource) => config.sources.includes(s)
+
+    const batches = await Promise.all([
+        has('naver') ? collectNaver(naverKeys, keywords, config, errors) : Promise.resolve([]),
+        has('bing_ko') ? collectBing('ko', keywords, config, errors) : Promise.resolve([]),
+        has('bing_en') ? collectBing('en', keywords, config, errors) : Promise.resolve([]),
+        has('rss') ? collectRss(errors) : Promise.resolve([]),
+    ])
+    const all = batches.flat()
+    const picked = dedupeByTitle(
+        all.map((it) => evaluateItem(it, config, keywords)).filter((it): it is CollectedItem => it !== null)
+    )
 
     let added = 0
-    for (const it of picked) {
-        if (await insertCandidate(db, storeId, it)) added += 1
+    const byKeyword: Record<string, number> = {}
+    for (let i = 0; i < picked.length; i += 50) {
+        const chunk = picked.slice(i, i + 50)
+        const results = await db.batch(chunk.map((it) => insertStatement(db, storeId, it)))
+        results.forEach((r, j) => {
+            if (Number(r.meta?.changes ?? 0) > 0) {
+                added += 1
+                const k = chunk[j].keyword || '전문 매체'
+                byKeyword[k] = (byKeyword[k] ?? 0) + 1
+            }
+        })
     }
 
     /** 오래된 미사용 후보 정리 — 초안으로 쓴 후보는 이력으로 보존 */
@@ -307,5 +443,5 @@ export async function collectNewsCandidates(
         .bind(storeId)
         .run()
 
-    return { scanned: all.length, added, errors }
+    return { scanned: all.length, matched: picked.length, added, byKeyword, errors }
 }

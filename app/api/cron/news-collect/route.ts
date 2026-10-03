@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { collectNewsCandidates, resolveNaverKeys } from '@/lib/news-sources'
+import { listCollectPresets, markPresetRun } from '@/lib/news-collect-presets'
 
 function isAuthorizedCron(req: NextRequest, envSecret?: string): boolean {
     const headerSecret = req.headers.get('x-cron-secret')
@@ -22,9 +23,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     try {
-        const result = await collectNewsCandidates(env.DB, 1, resolveNaverKeys(env as unknown as Record<string, unknown>))
+        const naverKeys = resolveNaverKeys(env as unknown as Record<string, unknown>)
+        const result = await collectNewsCandidates(env.DB, 1, naverKeys)
         if (result.errors.length > 0) console.warn('[news-collect]', result.errors)
-        return NextResponse.json({ success: true, ...result })
+
+        /** 관리자가 "매일 자동 수집"으로 저장한 조건도 차례로 수집 — 한 조건이 실패해도 나머지는 계속 */
+        const presets: { id: number; name: string; added: number; error?: string }[] = []
+        let autoPresets: Awaited<ReturnType<typeof listCollectPresets>> = []
+        try {
+            autoPresets = await listCollectPresets(env.DB, 1, true)
+        } catch (e) {
+            console.warn('[news-collect] 프리셋 조회 실패(마이그레이션 확인)', e)
+        }
+        for (const p of autoPresets) {
+            try {
+                const r = await collectNewsCandidates(env.DB, 1, naverKeys, p.config)
+                await markPresetRun(env.DB, p.id, r.added)
+                presets.push({ id: p.id, name: p.name, added: r.added })
+                if (r.errors.length > 0) console.warn('[news-collect]', p.name, r.errors)
+            } catch (e) {
+                presets.push({ id: p.id, name: p.name, added: 0, error: e instanceof Error ? e.message : String(e) })
+            }
+        }
+        return NextResponse.json({ success: true, ...result, presets })
     } catch (e) {
         console.error('[news-collect] failed', e)
         return NextResponse.json({ error: e instanceof Error ? e.message : '수집 실패' }, { status: 500 })

@@ -273,3 +273,15 @@ export const NEWS_LINK_PRESETS: NewsLink[] = [
     { title: '제품개발 문의', href: '/expert' },
     { title: '출력 갤러리', href: '/gallery' },
 ]
+
+export const NEWS_RANDOM_LINK_COUNT = 3
+
+/** 내부 페이지 링크를 무작위로 골라 글마다 다른 페이지로 연결(내부 링크 고르게 분산) */
+export function pickRandomNewsLinks(count = NEWS_RANDOM_LINK_COUNT): NewsLink[] {
+    const pool = [...NEWS_LINK_PRESETS]
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+    return pool.slice(0, count)
+}

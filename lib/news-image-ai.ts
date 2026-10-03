@@ -141,11 +141,8 @@ export async function generateNewsCoverImage(env: AiEnv, input: NewsImageInput):
         : await buildScene(env, input)
 
     const prompt = `${scene}. ${STYLE_SUFFIX[input.style]}, ${COMMON_SUFFIX}`.slice(0, 2000)
-    const raw = (await env.AI.run(IMAGE_MODEL, {
-        prompt,
-        steps: 8,
-        seed: Math.floor(Math.random() * 2_000_000_000),
-    })) as { image?: unknown } | null
+    /** seed를 넣으면 "Additional properties '/seed' not allowed"(5006)로 실패 — prompt·steps만 허용 */
+    const raw = (await env.AI.run(IMAGE_MODEL, { prompt, steps: 8 })) as { image?: unknown } | null
 
     const image = typeof raw?.image === 'string' ? raw.image : ''
     if (!image) throw new Error('이미지 생성 결과가 비어 있습니다. 잠시 후 다시 시도하세요.')

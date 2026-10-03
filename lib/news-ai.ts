@@ -6,7 +6,7 @@ import { sanitizeDetailHtml } from '@/lib/sanitize-html'
 import {
     AI_INSIGHT_MARKER,
     isNewsCategory,
-    NEWS_LINK_PRESETS,
+    pickRandomNewsLinks,
     type NewsCategory,
     type NewsFaq,
     type NewsLink,
@@ -113,6 +113,7 @@ export async function fetchArticle(rawUrl: string): Promise<ArticleSource> {
 
 const SYSTEM_PROMPT = `당신은 (주)와우쓰리디(WOW3D) 3D프린팅 출력·시제품 제작 서비스의 "3D프린팅 최신 동향" 에디터입니다.
 제공된 원문 기사에 있는 사실만 사용해, 한국 제조·스타트업·학생 독자를 위한 해설 기사 초안을 JSON으로 작성합니다.
+원문 주제는 3D프린팅뿐 아니라 제조혁신·스마트팩토리·시제품·창업 지원사업·소재·로봇·AI·디자인 등 다양할 수 있습니다. 주제가 3D프린팅이 아니면 억지로 3D프린팅 기사로 바꾸지 말고, 제품 개발·제조 관점에서 독자에게 주는 의미를 쓰세요.
 
 와우쓰리디 소개: 서울 홍대·구미·전주 센터에서 FDM(PLA·PETG·ABS·ASA·TPU·PC)과 SLA·DLP(레진) 3D프린팅 출력, 시제품 제작, 소량 양산, 3D 모델링, 캡스톤디자인 지원, 웹 자동견적 서비스를 제공합니다.
 
@@ -120,29 +121,24 @@ const SYSTEM_PROMPT = `당신은 (주)와우쓰리디(WOW3D) 3D프린팅 출력�
 1. 원문 문장을 그대로 옮기지 말고 한국어로 새로 쓰세요. 영어 원문은 자연스러운 한국어로 풀어 쓰세요.
 2. 원문에 없는 수치·회사명·날짜·인용을 지어내지 마세요. 불확실하면 쓰지 마세요.
 3. 과장·광고 문구를 피하고, 독자가 "그래서 내 제품 개발에 무엇이 달라지나"를 알 수 있게 쓰세요.
-4. bodyHtml은 <h2>, <p>, <ul>, <li>, <strong>만 사용합니다. 구성: 무슨 일이 있었나 → 핵심 내용 → 3D프린팅 사용자에게 주는 의미. 600~1200자.
+4. bodyHtml은 <h2>, <p>, <ul>, <li>, <strong>만 사용합니다. 구성: 무슨 일이 있었나 → 핵심 내용 → 제품 개발·제조(3D프린팅 포함) 현장에 주는 의미. 600~1200자.
 5. title은 검색에 잘 걸리는 한국어 제목 20~50자. 핵심 키워드를 앞쪽에 둡니다.
 6. summary는 각 1문장인 핵심 요약 3~5개 배열.
-7. insight는 와우쓰리디 제작 현장 관점의 시사점 초안 2~4문장(소재 선택·공정·비용·납기 관점). 경험을 사실처럼 지어내지 말고 "~를 검토할 만합니다" 같은 제안형으로 씁니다.
+7. insight는 와우쓰리디 제작 현장 관점의 시사점 초안 2~4문장(소재 선택·공정·비용·납기·시제품 검증 관점). 3D프린팅과의 연결은 자연스러울 때만 언급합니다. 경험을 사실처럼 지어내지 말고 "~를 검토할 만합니다" 같은 제안형으로 씁니다.
 8. faqs는 독자가 검색할 만한 질문과 답변 1~3개. 답변은 2~3문장.
 9. tags는 한국어 키워드 3~6개. metaDescription은 70~150자.
 10. category는 material(소재)|equipment(장비)|industry(산업 동향)|support(지원사업)|case(활용 사례) 중 하나.
-11. relatedHrefs는 아래 내부 페이지 목록 중 관련 있는 href 1~3개.
-12. slug는 영문 소문자·숫자·하이픈 3~6단어.
+11. slug는 영문 소문자·숫자·하이픈 3~6단어.
 
 출력은 JSON 객체 하나만:
-{"title":"","slug":"","category":"","summary":[""],"bodyHtml":"","insight":"","faqs":[{"q":"","a":""}],"tags":[""],"metaDescription":"","relatedHrefs":[""]}`
+{"title":"","slug":"","category":"","summary":[""],"bodyHtml":"","insight":"","faqs":[{"q":"","a":""}],"tags":[""],"metaDescription":""}`
 
 function buildUserPrompt(article: ArticleSource, adminNote: string): string {
-    const presets = NEWS_LINK_PRESETS.map((l) => `- ${l.href} : ${l.title}`).join('\n')
     return [
         `원문 매체: ${article.siteName}`,
         `원문 제목: ${article.title}`,
         article.publishedAt ? `원문 게시일: ${article.publishedAt}` : '',
         adminNote ? `관리자 메모(반영할 관점): ${adminNote}` : '',
-        '',
-        '내부 페이지 목록:',
-        presets,
         '',
         '원문 본문:',
         article.text,
@@ -175,11 +171,6 @@ export function parseAiDraft(raw: string): NewsAiDraft | null {
     const bodyHtml = sanitizeDetailHtml(str(data.bodyHtml, 20000))
     if (!title || !bodyHtml) return null
 
-    const presetByHref = new Map(NEWS_LINK_PRESETS.map((l) => [l.href, l]))
-    const relatedLinks = (Array.isArray(data.relatedHrefs) ? data.relatedHrefs : [])
-        .map((h) => presetByHref.get(String(h).trim()))
-        .filter((l): l is NewsLink => Boolean(l))
-        .slice(0, 3)
     const category = isNewsCategory(data.category) && data.category !== 'company' ? data.category : 'industry'
     const insightText = str(data.insight, 2000)
 
@@ -202,7 +193,7 @@ export function parseAiDraft(raw: string): NewsAiDraft | null {
             .filter(Boolean)
             .slice(0, 6),
         metaDescription: str(data.metaDescription, 160),
-        relatedLinks: relatedLinks.length > 0 ? relatedLinks : [NEWS_LINK_PRESETS[0]],
+        relatedLinks: pickRandomNewsLinks(),
     }
 }
 
