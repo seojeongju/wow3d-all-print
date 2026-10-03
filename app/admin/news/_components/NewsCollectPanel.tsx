@@ -11,6 +11,7 @@ import {
     COLLECT_PER_KEYWORD,
     COLLECT_PERIODS,
     COLLECT_SOURCE_LABEL,
+    COLLECT_SOURCE_SHORT,
     COLLECT_SOURCES,
     COLLECT_TOPIC_PRESETS,
     DEFAULT_COLLECT_CONFIG,
@@ -26,7 +27,16 @@ export type CollectResultSummary = {
     matched: number
     added: number
     byKeyword: Record<string, number>
+    dropped?: Record<'excluded' | 'period' | 'keyword' | 'not3d', number>
+    bySource?: Record<CollectSource, number>
     errors: string[]
+}
+
+const DROP_LABEL: Record<'excluded' | 'period' | 'keyword' | 'not3d', string> = {
+    keyword: '키워드 불일치',
+    not3d: '3D프린팅 무관',
+    period: '기간 밖',
+    excluded: '제외 키워드',
 }
 
 const selectCls =
@@ -172,11 +182,28 @@ export default function NewsCollectPanel({
                 .slice(0, 4)
                 .map(([k, n]) => `${k} ${n}`)
                 .join(', ')
+            const sources = r.bySource
+                ? (Object.entries(r.bySource) as [CollectSource, number][])
+                      .filter(([s, n]) => n > 0 || (key === 'config' && config.sources.includes(s)))
+                      .map(([s, n]) => `${COLLECT_SOURCE_SHORT[s]} ${n}`)
+                      .join(' · ')
+                : ''
+            const drops = r.dropped
+                ? (Object.entries(r.dropped) as [keyof typeof DROP_LABEL, number][])
+                      .filter(([, n]) => n > 0)
+                      .map(([k, n]) => `${DROP_LABEL[k]} ${n}`)
+                      .join(', ')
+                : ''
+            const existing = Math.max(0, r.matched - r.added)
             toast({
                 title: `새 후보 ${r.added}건 추가`,
                 description: [
-                    `기사 ${r.scanned}건 확인 · 조건 일치 ${r.matched}건 (이미 있던 기사는 제외)`,
-                    top ? `키워드별: ${top}` : '',
+                    `기사 ${r.scanned}건 확인${sources ? ` (${sources})` : ''} → 조건 일치 ${r.matched}건${existing ? ` · 이미 수집됨 ${existing}건` : ''}`,
+                    drops ? `제외: ${drops}` : '',
+                    top ? `키워드별 추가: ${top}` : '',
+                    r.matched === 0 && r.dropped?.keyword
+                        ? '팁: 키워드를 띄어 쓰거나 짧게(예: "AI 동향"), 일치 기준을 "제목·요약에 포함"으로 바꿔 보세요.'
+                        : '',
                     r.errors.length ? `일부 실패: ${r.errors.slice(0, 2).join(', ')}` : '',
                 ]
                     .filter(Boolean)

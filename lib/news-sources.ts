@@ -42,6 +42,10 @@ export type CollectResult = {
     added: number
     /** 키워드별 새로 추가된 건수 */
     byKeyword: Record<string, number>
+    /** 조건에서 빠진 사유별 건수 */
+    dropped: Record<'excluded' | 'period' | 'keyword' | 'not3d', number>
+    /** 소스별 받아온 기사 수 */
+    bySource: Record<CollectSource, number>
     errors: string[]
 }
 
@@ -325,37 +329,107 @@ async function collectBing(
 /** 띄어쓰기 차이("3D프린팅"/"3D 프린팅")를 무시하고 비교 */
 const squash = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
-/** 키워드의 모든 단어가 들어 있으면 일치 */
-function keywordIn(haystack: string, keyword: string): boolean {
-    const h = squash(haystack)
-    return keyword
-        .split(/\s+/)
-        .filter(Boolean)
-        .every((token) => h.includes(squash(token)))
+/**
+ * 키워드를 비교용 단어로 쪼갠다
+ * - 띄어쓰기 + 영문·숫자/한글 경계: "AI최신동향" → ai, 최신동향
+ * - 붙여 쓴 4자 이상 한글은 2자씩 추가 분해: 최신동향 → 최신, 동향 (기사에는 "최신 AI 동향"처럼 떨어져 나오는 경우가 많음)
+ */
+function keywordTokens(keyword: string): string[] {
+    const out: string[] = []
+    for (const word of keyword.toLowerCase().split(/\s+/).filter(Boolean)) {
+        for (const part of word.match(/[a-z0-9.+#-]+|[가-힣]+|[^\sa-z0-9가-힣]+/g) ?? []) {
+            if (/^[가-힣]{4,}$/.test(part)) {
+                for (let i = 0; i < part.length; i += 2) {
+                    const chunk = part.slice(i, i + 2)
+                    out.push(chunk.length === 1 && out.length ? `${out.pop()}${chunk}` : chunk)
+                }
+            } else if (part.length >= 2 || /[a-z0-9]/.test(part)) {
+                out.push(part)
+            }
+        }
+    }
+    return [...new Set(out)]
 }
+
+/** 'full': 키워드 전체(띄어쓰기 무시)가 그대로 있음 / 'all': 모든 단어 / 'partial': 절반 이상 / 'weak': 1개 이상 / null: 불일치 */
+type MatchLevel = 'full' | 'all' | 'partial' | 'weak' | null
+
+function matchLevel(haystack: string, keyword: string): MatchLevel {
+    const h = squash(haystack)
+    if (h.includes(squash(keyword))) return 'full'
+    const tokens = keywordTokens(keyword)
+    if (!tokens.length) return null
+    const hits = tokens.filter((t) => h.includes(t)).length
+    if (hits === tokens.length) return 'all'
+    if (hits >= Math.ceil(tokens.length / 2) && hits > 0) return 'partial'
+    return hits > 0 ? 'weak' : null
+}
+
+/** 제외어는 단어가 모두 들어 있을 때만 제외(과잉 제외 방지) */
+function excludedBy(haystack: string, word: string): boolean {
+    const level = matchLevel(haystack, word)
+    return level === 'full' || level === 'all'
+}
+
+export type DropReason = 'excluded' | 'period' | 'keyword' | 'not3d'
 
 /**
  * 수집 조건으로 기사 1건을 평가 — 통과하면 관련도·일치 키워드를 채워 돌려준다
  * - 제외어 포함 시 제외, 기간 밖이면 제외
- * - 키워드 매칭(제목만/제목·요약), 3D프린팅 필터(관련도 25 이상)
+ * - 검색(네이버·Bing) 결과는 검색엔진이 이미 키워드로 찾은 기사이므로 단어 절반 이상 일치하면 통과
+ * - 전문 매체 RSS(키워드 검색 아님)는 키워드 단어가 모두 있어야 통과
+ * - 3D프린팅 필터(관련도 25 이상)
  */
-function evaluateItem(it: CollectedItem, cfg: CollectConfig, keywords: string[]): CollectedItem | null {
+function evaluateItem(
+    it: CollectedItem,
+    cfg: CollectConfig,
+    keywords: string[]
+): { item: CollectedItem } | { drop: DropReason } {
     const hay = `${it.title} ${it.summary}`
-    if (cfg.excludeKeywords.some((x) => keywordIn(hay, x))) return null
-    if (!isWithinDays(it.publishedAt, cfg.periodDays)) return null
+    if (cfg.excludeKeywords.some((x) => excludedBy(hay, x))) return { drop: 'excluded' }
+    if (!isWithinDays(it.publishedAt, cfg.periodDays)) return { drop: 'period' }
 
     const target = cfg.match === 'title' ? it.title : hay
     const ordered = it.keyword ? [it.keyword, ...keywords.filter((k) => k !== it.keyword)] : keywords
-    const matched = ordered.find((k) => keywordIn(target, k)) ?? null
+    const fromSearch = Boolean(it.keyword)
+
+    let matched: string | null = null
+    let level: MatchLevel = null
+    for (const k of ordered) {
+        const l = matchLevel(target, k)
+        /** 검색엔진이 이 키워드로 찾아 준 기사: 정확(제목)=단어 절반 이상, 넓게=단어 1개 이상 */
+        const ownSearch = fromSearch && k === it.keyword
+        const enough =
+            l === 'full' ||
+            l === 'all' ||
+            (ownSearch && l === 'partial') ||
+            (ownSearch && l === 'weak' && cfg.match === 'any')
+        if (enough) {
+            matched = k
+            level = l
+            break
+        }
+    }
 
     const r3d = scoreRelevance(it.title, it.summary)
-    if (cfg.require3d && r3d < MIN_3D_RELEVANCE) return null
+    if (cfg.require3d && r3d < MIN_3D_RELEVANCE) return { drop: 'not3d' }
     /** 전문 매체 RSS는 3D프린팅 필터가 켜져 있으면 키워드 없이도 통과(영문 매체에 한글 키워드가 안 맞는 문제) */
-    if (!matched && !(cfg.require3d && it.sourceType === 'rss')) return null
+    if (!matched && !(cfg.require3d && it.sourceType === 'rss')) return { drop: 'keyword' }
 
-    const kwScore = matched ? (keywordIn(it.title, matched) ? 70 : 45) : 0
+    const inTitle = matched ? matchLevel(it.title, matched) : null
+    const kwScore = !matched
+        ? 0
+        : inTitle === 'full' || inTitle === 'all'
+          ? 75
+          : level === 'full' || level === 'all'
+            ? 55
+            : inTitle === 'partial'
+              ? 45
+              : level === 'partial'
+                ? 35
+                : 20
     const relevance = Math.max(0, Math.min(100, Math.max(r3d, kwScore) + (kwScore && r3d ? 10 : 0)))
-    return { ...it, keyword: matched, relevance }
+    return { item: { ...it, keyword: matched, relevance } }
 }
 
 /** 제목이 거의 같은 기사(여러 언론 동시 보도)는 관련도 높은 1건만 남김 */
@@ -416,9 +490,14 @@ export async function collectNewsCandidates(
         has('rss') ? collectRss(errors) : Promise.resolve([]),
     ])
     const all = batches.flat()
-    const picked = dedupeByTitle(
-        all.map((it) => evaluateItem(it, config, keywords)).filter((it): it is CollectedItem => it !== null)
-    )
+    const dropped: Record<DropReason, number> = { excluded: 0, period: 0, keyword: 0, not3d: 0 }
+    const passed: CollectedItem[] = []
+    for (const it of all) {
+        const r = evaluateItem(it, config, keywords)
+        if ('item' in r) passed.push(r.item)
+        else dropped[r.drop] += 1
+    }
+    const picked = dedupeByTitle(passed)
 
     let added = 0
     const byKeyword: Record<string, number> = {}
@@ -443,5 +522,18 @@ export async function collectNewsCandidates(
         .bind(storeId)
         .run()
 
-    return { scanned: all.length, matched: picked.length, added, byKeyword, errors }
+    return {
+        scanned: all.length,
+        matched: picked.length,
+        added,
+        byKeyword,
+        dropped,
+        bySource: {
+            naver: batches[0].length,
+            bing_ko: batches[1].length,
+            bing_en: batches[2].length,
+            rss: batches[3].length,
+        },
+        errors,
+    }
 }
