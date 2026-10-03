@@ -37,7 +37,8 @@ import {
     type NewsPost,
     type NewsStatus,
 } from '@/lib/news'
-import { fitNewsImage } from '@/lib/news-image'
+import { fitNewsImage, type NewsCoverFit } from '@/lib/news-image'
+import { NewsCoverImage } from '@/components/news/NewsCoverImage'
 import { NEWS_IMAGE_STYLE_LABEL_KO, NEWS_IMAGE_STYLES, type NewsImageStyle } from '@/lib/news-image-ai'
 import DetailSmartEditor from '@/app/admin/custom-products/_components/DetailSmartEditor'
 
@@ -138,6 +139,7 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
     const [saving, setSaving] = useState(false)
     const [uploading, setUploading] = useState(false)
     const [editorOpen, setEditorOpen] = useState(false)
+    const [coverFit, setCoverFit] = useState<NewsCoverFit>('contain')
     const [aiOpen, setAiOpen] = useState(false)
     const [aiStyle, setAiStyle] = useState<NewsImageStyle>('photo')
     const [aiScene, setAiScene] = useState('')
@@ -232,12 +234,12 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
     const ensureId = async (): Promise<number | null> =>
         postIdRef.current ?? (await save(savedStatus, { quiet: true }))
 
-    const uploadImage = async (role: 'cover' | 'content', file: File): Promise<string | null> => {
+    const uploadImage = async (role: 'cover' | 'content', file: File, fit: NewsCoverFit = coverFit): Promise<string | null> => {
         const id = await ensureId()
         if (!id) return null
         setUploading(true)
         try {
-            const fitted = await fitNewsImage(file, role)
+            const fitted = await fitNewsImage(file, role, fit)
             const fd = new FormData()
             fd.append('image', fitted)
             fd.append('role', role)
@@ -312,7 +314,7 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
         if (!aiImage) return
         const bytes = Uint8Array.from(atob(aiImage.base64), (c) => c.charCodeAt(0))
         const file = new File([bytes], `ai-cover-${Date.now()}.jpg`, { type: 'image/jpeg' })
-        const url = await uploadImage('cover', file)
+        const url = await uploadImage('cover', file, 'crop')
         if (!url) return
         if (!form.coverAlt.trim() && aiImage.alt) set('coverAlt', aiImage.alt)
         setAiImage(null)
@@ -437,17 +439,20 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
 
                     <Section
                         title="대표 이미지"
-                        desc="업로드하면 가운데 기준 16:9(1600×900)로 자동 맞춤됩니다. 주요 피사체를 사진 가운데에 두세요. 직접 촬영·제작한 이미지나 AI 생성 이미지를 사용하고, 기사 사진은 저작권 문제로 사용하면 안 됩니다."
+                        desc="업로드하면 16:9(1600×900)로 자동 맞춤됩니다. 직접 촬영·제작한 이미지나 AI 생성 이미지를 사용하고, 기사 사진은 저작권 문제로 사용하면 안 됩니다."
                     >
                         <div className="flex flex-col gap-4 md:flex-row">
-                            <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/30 md:w-72">
-                                {coverUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={coverUrl} alt={form.coverAlt} className="h-full w-full object-cover" />
-                                ) : (
+                            {coverUrl ? (
+                                <NewsCoverImage
+                                    src={coverUrl}
+                                    alt={form.coverAlt}
+                                    className="rounded-xl border border-white/10 md:w-72 md:shrink-0"
+                                />
+                            ) : (
+                                <div className="flex aspect-video w-full items-center justify-center rounded-xl border border-white/10 bg-black/30 md:w-72 md:shrink-0">
                                     <span className="text-xs text-white/30">이미지 없음</span>
-                                )}
-                            </div>
+                                </div>
+                            )}
                             <div className="flex-1 space-y-3">
                                 <input
                                     ref={coverInputRef}
@@ -460,7 +465,30 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                         if (file) await uploadImage('cover', file)
                                     }}
                                 />
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs font-bold text-white/70">업로드 맞춤 방식</span>
+                                    {(
+                                        [
+                                            ['contain', '전체 보이기 (배너·글자 이미지)'],
+                                            ['crop', '꽉 채우기 (사진, 가장자리 잘림)'],
+                                        ] as const
+                                    ).map(([value, label]) => (
+                                        <button
+                                            key={value}
+                                            type="button"
+                                            onClick={() => setCoverFit(value)}
+                                            className={cn(
+                                                'rounded-full border px-3 py-1 text-xs font-bold transition-colors',
+                                                coverFit === value
+                                                    ? 'border-teal-300 bg-teal-400/15 text-teal-100'
+                                                    : 'border-white/15 text-white/55 hover:text-white'
+                                            )}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
                                     <Button
                                         type="button"
                                         variant="outline"

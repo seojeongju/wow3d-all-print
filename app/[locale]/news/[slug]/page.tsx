@@ -12,6 +12,7 @@ import { isProbablyHtml, plainTextToHtml, sanitizeDetailHtml } from '@/lib/sanit
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import NewsCard, { NEWS_BODY_CLASS } from '@/components/news/NewsCard'
+import { NewsCoverImage } from '@/components/news/NewsCoverImage'
 import { Button } from '@/components/ui/button'
 
 export const dynamic = 'force-dynamic'
@@ -217,14 +218,7 @@ export default async function NewsDetailPage({ params }: Props) {
 
                     {post.coverUrl ? (
                         <figure className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={post.coverUrl}
-                                alt={post.coverAlt || post.title}
-                                width={1600}
-                                height={900}
-                                className="aspect-video h-auto w-full object-cover"
-                            />
+                            <NewsCoverImage src={post.coverUrl} alt={post.coverAlt || post.title} loading="eager" />
                             {post.coverAlt ? (
                                 <figcaption className="px-4 py-2 text-xs font-medium text-white/40">{post.coverAlt}</figcaption>
                             ) : null}
