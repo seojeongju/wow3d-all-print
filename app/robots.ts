@@ -21,6 +21,7 @@ const ALLOW_PATHS = [
   "/api/gallery/image/",
   "/api/custom-products/media/",
   "/api/showcase/media/",
+  "/api/news/media/",
 ];
 
 export default function robots(): MetadataRoute.Robots {

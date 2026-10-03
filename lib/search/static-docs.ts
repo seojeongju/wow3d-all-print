@@ -28,6 +28,7 @@ const NAMESPACE_PAGES: { path: string; ns: string; type: SearchDocType; boost?: 
     { path: '/quote', ns: 'Quote', type: 'page', boost: 1.05 },
     { path: '/services', ns: 'Services', type: 'service', boost: 0.9 },
     { path: '/guides', ns: 'GuidesHub', type: 'guide', boost: 0.85 },
+    { path: '/news', ns: 'News', type: 'page', boost: 0.85 },
     { path: '/qna', ns: 'QnAPage', type: 'page', boost: 0.8 },
     { path: '/makerspace', ns: 'Makerspace', type: 'page' },
     { path: '/contact', ns: 'Contact', type: 'page', boost: 0.8 },

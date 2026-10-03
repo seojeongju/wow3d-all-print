@@ -7,6 +7,10 @@ import { buildWorkPhotoOgImages, pickWorkPhotos } from '@/lib/seo-work-photos'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import LatestNewsSection from '@/components/news/LatestNewsSection'
+
+/** 최신 동향 섹션이 발행 즉시 반영되도록 런타임 렌더 */
+export const dynamic = 'force-dynamic'
 
 type Props = {
     params: Promise<{ locale: string }>
@@ -100,6 +104,7 @@ export default async function GuidesIndexPage({ params }: Props) {
                 workPhotos={
                     <WorkPhotosSection photos={pickWorkPhotos({ seed: 'guides', locale })} locale={locale} />
                 }
+                latestNews={<LatestNewsSection locale={locale} />}
             />
         </>
     )

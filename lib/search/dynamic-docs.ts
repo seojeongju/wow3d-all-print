@@ -4,6 +4,8 @@ import { QNA_EN_BY_QUESTION } from '@/lib/qna-en'
 import { getShowcaseCategories } from '@/lib/showcase-public'
 import { getCustomProductList } from '@/lib/custom-products-public'
 import { parseFeaturesJson } from '@/lib/showcase'
+import { getAllPublishedNews } from '@/lib/news-public'
+import { NEWS_CATEGORY_LABEL_KO } from '@/lib/news'
 import type { SearchDoc } from './engine'
 import type { SearchLocale } from './static-docs'
 
@@ -110,6 +112,21 @@ async function loadProductDocs(): Promise<SearchDoc[]> {
     }))
 }
 
+async function loadNewsDocs(): Promise<SearchDoc[]> {
+    const posts = await getAllPublishedNews(200)
+    return posts.map((p) => ({
+        id: `news:${p.id}`,
+        type: 'news' as const,
+        title: p.title,
+        url: `/news/${p.slug}`,
+        summary: p.summary.join(' ') || stripHtml(p.bodyHtml).slice(0, 200),
+        keywords: [NEWS_CATEGORY_LABEL_KO[p.category], ...p.tags],
+        body: [stripHtml(p.bodyHtml), p.insight].join(' \n'),
+        image: p.coverUrl,
+        boost: 0.9,
+    }))
+}
+
 async function loadGalleryDocs(db: Db | undefined): Promise<SearchDoc[]> {
     if (!db) return []
     const { results } = await db
@@ -156,16 +173,17 @@ export async function getDynamicSearchDocs(locale: SearchLocale): Promise<Search
         db = undefined
     }
 
-    const [faq, showcase, products, gallery] = await Promise.all([
+    const [faq, showcase, products, gallery, news] = await Promise.all([
         settle(loadFaqDocs(), { ko: [], en: [] }, 'FAQ'),
         settle(loadShowcaseDocs(db), [], '쇼케이스'),
         settle(loadProductDocs(), [], '맞춤 상품'),
         settle(loadGalleryDocs(db), [], '갤러리'),
+        settle(loadNewsDocs(), [], '최신 동향'),
     ])
 
     cache = {
         at: Date.now(),
-        ko: [...faq.ko, ...showcase, ...products, ...gallery],
+        ko: [...faq.ko, ...showcase, ...products, ...news, ...gallery],
         en: faq.en,
     }
     return cache[locale]

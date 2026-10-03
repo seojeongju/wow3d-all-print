@@ -12,6 +12,8 @@
     "printMethodsDesc": "FDM · SLA · DLP 비교",
     "guides": "가이드",
     "guidesDesc": "견적·소재·파일 준비 안내",
+    "news": "최신 동향",
+    "newsDesc": "3D프린팅 업계 소식과 실무 해설",
     "capstone": "캡스톤·졸업작품",
     "capstoneDesc": "캡스톤디자인 시제품 제작·아이디어 컨설팅",
     "quote": "자동견적",
@@ -4542,7 +4544,8 @@
       "showcase": "제작 사례",
       "product": "맞춤 상품",
       "gallery": "갤러리",
-      "page": "안내"
+      "page": "안내",
+      "news": "최신 동향"
     }
   },
   "GuideRobot": {
@@ -4560,5 +4563,50 @@
     "quote": "자동 견적",
     "faq": "자주 묻는 질문",
     "contact": "1:1 문의"
+  },
+  "News": {
+    "metaTitle": "3D프린팅 최신 동향 | 소재·장비·산업 뉴스 해설",
+    "metaDescription": "3D프린팅 소재·장비·산업 동향과 지원사업 소식을 와우쓰리디 실무 관점으로 정리합니다. 핵심 요약과 제작 현장 해설로 빠르게 확인하세요.",
+    "eyebrow": "3D PRINTING NEWS",
+    "hubTitle": "3D프린팅",
+    "hubTitleAccent": "최신 동향",
+    "hubSubtitle": "업계 소식을 핵심만 요약하고, 실제 제작 현장에서 무엇이 달라지는지 와우3D 관점으로 해설합니다.",
+    "koreanOnlyNotice": "",
+    "allCategories": "전체",
+    "categories": {
+      "material": "소재",
+      "equipment": "장비",
+      "industry": "산업 동향",
+      "support": "지원사업",
+      "case": "활용 사례",
+      "company": "와우3D 소식"
+    },
+    "empty": "아직 게시된 소식이 없습니다. 곧 새로운 동향을 전해 드릴게요.",
+    "readMore": "자세히 보기",
+    "prevPage": "이전",
+    "nextPage": "다음",
+    "pageOf": "{page} / {total} 페이지",
+    "pageLabel": "{page}페이지",
+    "breadcrumbHome": "홈",
+    "backToList": "최신 동향 목록",
+    "published": "게시",
+    "updated": "수정",
+    "summaryTitle": "핵심 요약",
+    "insightTitle": "와우3D 실무 관점",
+    "sourceTitle": "원문 출처",
+    "sourceDate": "원문 게시일",
+    "sourceNotice": "이 글은 원문 기사를 바탕으로 와우쓰리디가 요약·해설한 콘텐츠입니다. 자세한 내용은 원문을 확인하세요.",
+    "relatedTitle": "함께 보면 좋은 페이지",
+    "faqTitle": "자주 묻는 질문",
+    "tagsTitle": "태그",
+    "moreNewsTitle": "다른 소식",
+    "ctaTitle": "이 소식, 내 제품에도 적용할 수 있을까요?",
+    "ctaDesc": "3D 파일을 올리면 소재·공정별 가격을 바로 확인할 수 있고, 적용 가능성은 제작 전문가가 직접 상담해 드립니다.",
+    "ctaQuote": "자동견적 받기",
+    "ctaInquiry": "제작 상담하기",
+    "guidesSectionEyebrow": "LATEST NEWS",
+    "guidesSectionTitle": "3D프린팅 최신 동향",
+    "guidesSectionDesc": "소재·장비·산업 소식을 와우3D 실무 관점으로 정리했습니다.",
+    "viewAll": "전체 보기"
   }
 }

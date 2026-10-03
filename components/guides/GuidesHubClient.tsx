@@ -85,7 +85,13 @@ function GuideCard({ item, index }: { item: GuideHubItem; index: number }) {
     )
 }
 
-export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.ReactNode }) {
+export default function GuidesHubClient({
+    workPhotos,
+    latestNews,
+}: {
+    workPhotos?: React.ReactNode
+    latestNews?: React.ReactNode
+}) {
     const t = useTranslations('GuidesHub')
     const totalGuides = GUIDE_HUB_SECTIONS.reduce((n, s) => n + s.items.length, 0)
 
@@ -357,6 +363,8 @@ export default function GuidesHubClient({ workPhotos }: { workPhotos?: React.Rea
                     })}
                 </div>
             </section>
+
+            {latestNews}
 
             {/* CTA */}
             <section className="relative z-10 pb-20">

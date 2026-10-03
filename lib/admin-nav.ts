@@ -20,6 +20,7 @@ import {
     LayoutGrid,
     ClipboardPen,
     TextSearch,
+    Newspaper,
 } from 'lucide-react'
 
 export type AdminNavItem = {
@@ -107,6 +108,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 href: '/admin/custom-products',
                 icon: Package,
                 match: (p) => p.startsWith('/admin/custom-products'),
+            },
+            {
+                title: '최신 동향',
+                href: '/admin/news',
+                icon: Newspaper,
+                match: (p) => p.startsWith('/admin/news'),
             },
             {
                 title: '팝업 관리',

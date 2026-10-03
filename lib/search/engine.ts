@@ -1,6 +1,6 @@
 import { SYNONYM_GROUPS } from './synonyms'
 
-export type SearchDocType = 'guide' | 'service' | 'faq' | 'material' | 'method' | 'showcase' | 'product' | 'gallery' | 'page'
+export type SearchDocType = 'guide' | 'service' | 'faq' | 'material' | 'method' | 'showcase' | 'product' | 'news' | 'gallery' | 'page'
 
 export type SearchDoc = {
     id: string

@@ -12,6 +12,8 @@
     "printMethodsDesc": "FDM · SLA · DLP comparison",
     "guides": "Guides",
     "guidesDesc": "Quotes, materials & file prep",
+    "news": "Industry News",
+    "newsDesc": "3D printing news with expert notes (Korean)",
     "capstone": "Capstone & Graduation",
     "capstoneDesc": "Capstone prototypes & idea consulting",
     "quote": "Instant Quote",
@@ -4541,7 +4543,8 @@
       "showcase": "Project",
       "product": "Custom product",
       "gallery": "Gallery",
-      "page": "Info"
+      "page": "Info",
+      "news": "News"
     }
   },
   "GuideRobot": {
@@ -4559,5 +4562,50 @@
     "quote": "Instant quote",
     "faq": "FAQ",
     "contact": "Contact us"
+  },
+  "News": {
+    "metaTitle": "3D Printing Industry News",
+    "metaDescription": "3D printing material, hardware and industry news summarized with hands-on notes from the WOW3D production team. Articles are written in Korean.",
+    "eyebrow": "3D PRINTING NEWS",
+    "hubTitle": "3D Printing",
+    "hubTitleAccent": "Industry News",
+    "hubSubtitle": "Key takeaways from industry news, plus what actually changes on the production floor — from the WOW3D team.",
+    "koreanOnlyNotice": "Articles are currently published in Korean only.",
+    "allCategories": "All",
+    "categories": {
+      "material": "Materials",
+      "equipment": "Hardware",
+      "industry": "Industry",
+      "support": "Grants",
+      "case": "Use cases",
+      "company": "WOW3D News"
+    },
+    "empty": "No articles yet. New updates are coming soon.",
+    "readMore": "Read more",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} of {total}",
+    "pageLabel": "Page {page}",
+    "breadcrumbHome": "Home",
+    "backToList": "All news",
+    "published": "Published",
+    "updated": "Updated",
+    "summaryTitle": "Key takeaways",
+    "insightTitle": "WOW3D production notes",
+    "sourceTitle": "Original source",
+    "sourceDate": "Source date",
+    "sourceNotice": "This article summarizes and comments on the original source. Please refer to the original for full details.",
+    "relatedTitle": "Related pages",
+    "faqTitle": "FAQ",
+    "tagsTitle": "Tags",
+    "moreNewsTitle": "More news",
+    "ctaTitle": "Could this apply to your product?",
+    "ctaDesc": "Upload a 3D file for instant material and process pricing, or talk to our production team about feasibility.",
+    "ctaQuote": "Get an instant quote",
+    "ctaInquiry": "Talk to us",
+    "guidesSectionEyebrow": "LATEST NEWS",
+    "guidesSectionTitle": "3D Printing Industry News",
+    "guidesSectionDesc": "Material, hardware and industry updates with notes from our production team.",
+    "viewAll": "View all"
   }
 }

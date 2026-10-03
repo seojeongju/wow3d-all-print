@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { absoluteUrl, SITE_URL } from '@/lib/site-url';
 import { getCustomProductList } from '@/lib/custom-products-public';
 import { CUSTOM_PRODUCT_SLUGS } from '@/lib/custom-products';
+import { getAllPublishedNews } from '@/lib/news-public';
+import { formatNewsDateKo } from '@/lib/news';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,11 @@ export async function GET() {
             (slug) => `- Custom product (${slug}): ${absoluteUrl(`/custom/${slug}`)}`
         );
     }
+
+    const news = await getAllPublishedNews(20);
+    const newsLines = news.map(
+        (p) => `- ${p.title} (${formatNewsDateKo(p.publishedAt)}): ${absoluteUrl(`/news/${encodeURIComponent(p.slug)}`)}`
+    );
 
     const body = [
         '# WOW3D',
@@ -64,6 +71,7 @@ export async function GET() {
         `- Partnership: ${SITE_URL}/partnership`,
         `- Smart Store Technology Supply Program (MSLA-DLP official supply): ${SITE_URL}/partnership/smart-store`,
         `- Guide Hub: ${absoluteUrl('/guides')}`,
+        `- 3D Printing News (최신 동향): ${absoluteUrl('/news')}`,
         `- Cost Calculation Guide: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
         `- Reduce Cost Guide: ${absoluteUrl('/guides/how-to-reduce-3d-printing-cost')}`,
         `- Process Comparison Guide: ${absoluteUrl('/guides/fdm-vs-sla-vs-dlp')}`,
@@ -90,6 +98,12 @@ export async function GET() {
         ...customLines,
         '- 맞춤 상품은 색상·사이즈·각인·사진 업로드 등 옵션을 고른 뒤 자동견적(/quote) 또는 제품개발 문의(/expert)로 진행합니다.',
         '- 가격은 고정가가 아니라 옵션·수량·소재에 따른 맞춤 견적가입니다.',
+        '',
+        '## 3D Printing News (최신 동향)',
+        `- Hub: ${absoluteUrl('/news')}`,
+        `- RSS: ${SITE_URL}/rss.xml`,
+        '- 3D프린팅 소재·장비·산업 동향을 핵심 요약과 와우쓰리디 실무 관점 해설로 정리한 한국어 기사입니다. 외부 기사 기반 글은 원문 출처를 표기합니다.',
+        ...newsLines,
         '',
         '## Key Facts',
         '- WOW3D는 STL, OBJ, 3MF, PLY 파일을 즉시 자동견적하며, STEP·STP는 업로드 시 자동 변환 후 견적을 제공합니다.',

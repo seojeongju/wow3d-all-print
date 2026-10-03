@@ -41,6 +41,7 @@ export function middleware(request: NextRequest) {
         pathname.startsWith('/admin') ||
         pathname === '/sitemap.xml' ||
         pathname === '/robots.txt' ||
+        pathname === '/rss.xml' ||
         pathname.startsWith('/llms.txt')
     ) {
         return NextResponse.next()

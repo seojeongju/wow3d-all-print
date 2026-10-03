@@ -5,6 +5,11 @@ import { NEW_SEO_GUIDES } from "@/lib/seo-guide-pages";
 import { SHOWCASE_SLUGS } from "@/lib/showcase";
 import { CUSTOM_PRODUCT_SLUGS } from "@/lib/custom-products";
 import { getCustomProductList } from "@/lib/custom-products-public";
+import { getAllPublishedNews } from "@/lib/news-public";
+import { utcSqlToIso } from "@/lib/news";
+
+/** 관리자가 발행한 맞춤 상품·최신 동향 글이 배포 없이 반영되도록 런타임 생성 */
+export const dynamic = "force-dynamic";
 
 type PublicPage = {
   path: string;
@@ -120,6 +125,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const page of pages) {
     pushLocalizedEntries(entries, page, lastModified);
+  }
+
+  /** 최신 동향은 한국어 전용 콘텐츠 — 영문 경로는 noindex이므로 ko URL만 수록 */
+  const news = await getAllPublishedNews();
+  const newsLatest = news[0] ? utcSqlToIso(news[0].updatedAt) : null;
+  entries.push({
+    url: `${SITE_URL}/news`,
+    lastModified: newsLatest ? new Date(newsLatest) : lastModified,
+    changeFrequency: "daily",
+    priority: 0.88,
+  });
+  for (const post of news) {
+    const modified = utcSqlToIso(post.updatedAt) ?? utcSqlToIso(post.publishedAt);
+    entries.push({
+      url: `${SITE_URL}/news/${encodeURIComponent(post.slug)}`,
+      lastModified: modified ? new Date(modified) : lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    });
   }
 
   return entries;

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { BookOpen, Briefcase, HelpCircle, Layers, Printer, Sparkles, Package, Image as ImageIcon, FileText, type LucideIcon } from 'lucide-react'
+import { BookOpen, Briefcase, HelpCircle, Layers, Printer, Sparkles, Package, Image as ImageIcon, FileText, Newspaper, type LucideIcon } from 'lucide-react'
 
-export type SearchDocType = 'guide' | 'service' | 'faq' | 'material' | 'method' | 'showcase' | 'product' | 'gallery' | 'page'
+export type SearchDocType = 'guide' | 'service' | 'faq' | 'material' | 'method' | 'showcase' | 'product' | 'news' | 'gallery' | 'page'
 
 export type SearchHit = {
     id: string
@@ -22,7 +22,7 @@ export type SearchResponse = {
     corrected: string | null
 }
 
-export const SEARCH_TYPE_ORDER: SearchDocType[] = ['guide', 'faq', 'service', 'material', 'method', 'showcase', 'product', 'gallery', 'page']
+export const SEARCH_TYPE_ORDER: SearchDocType[] = ['guide', 'faq', 'service', 'material', 'method', 'showcase', 'product', 'news', 'gallery', 'page']
 
 export const SEARCH_TYPE_ICON: Record<SearchDocType, LucideIcon> = {
     guide: BookOpen,
@@ -32,6 +32,7 @@ export const SEARCH_TYPE_ICON: Record<SearchDocType, LucideIcon> = {
     method: Printer,
     showcase: Sparkles,
     product: Package,
+    news: Newspaper,
     gallery: ImageIcon,
     page: FileText,
 }
