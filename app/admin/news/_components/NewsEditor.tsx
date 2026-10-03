@@ -36,6 +36,7 @@ import {
     type NewsPost,
     type NewsStatus,
 } from '@/lib/news'
+import { fitNewsImage } from '@/lib/news-image'
 import DetailSmartEditor from '@/app/admin/custom-products/_components/DetailSmartEditor'
 
 type FormState = {
@@ -229,8 +230,9 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
         if (!id) return null
         setUploading(true)
         try {
+            const fitted = await fitNewsImage(file, role)
             const fd = new FormData()
-            fd.append('image', file)
+            fd.append('image', fitted)
             fd.append('role', role)
             const res = await fetch(`/api/admin/news/${id}/images`, {
                 method: 'POST',
@@ -380,9 +382,12 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                         <p className="text-[11px] text-white/40">현재 {summaryLines.length}줄</p>
                     </Section>
 
-                    <Section title="대표 이미지" desc="직접 촬영·제작한 이미지를 사용하세요. 기사 사진은 저작권 문제로 사용하면 안 됩니다.">
+                    <Section
+                        title="대표 이미지"
+                        desc="업로드하면 가운데 기준 16:9(1600×900)로 자동 맞춤됩니다. 주요 피사체를 사진 가운데에 두세요. 직접 촬영·제작한 이미지를 사용하고, 기사 사진은 저작권 문제로 사용하면 안 됩니다."
+                    >
                         <div className="flex flex-col gap-4 md:flex-row">
-                            <div className="flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/30 md:w-64">
+                            <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/30 md:w-72">
                                 {coverUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={coverUrl} alt={form.coverAlt} className="h-full w-full object-cover" />

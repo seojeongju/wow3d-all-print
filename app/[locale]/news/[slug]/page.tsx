@@ -218,7 +218,13 @@ export default async function NewsDetailPage({ params }: Props) {
                     {post.coverUrl ? (
                         <figure className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={post.coverUrl} alt={post.coverAlt || post.title} className="h-auto w-full object-cover" />
+                            <img
+                                src={post.coverUrl}
+                                alt={post.coverAlt || post.title}
+                                width={1600}
+                                height={900}
+                                className="aspect-video h-auto w-full object-cover"
+                            />
                             {post.coverAlt ? (
                                 <figcaption className="px-4 py-2 text-xs font-medium text-white/40">{post.coverAlt}</figcaption>
                             ) : null}

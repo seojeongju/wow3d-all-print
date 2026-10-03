@@ -25,6 +25,8 @@ export default function NewsCard({
                         <img
                             src={post.coverUrl}
                             alt={post.coverAlt || post.title}
+                            width={1600}
+                            height={900}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                             loading="lazy"
                         />
