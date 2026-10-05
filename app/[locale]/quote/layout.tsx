@@ -19,6 +19,7 @@ import {
   OG_QUOTE_IMAGE_WIDTH,
   SITE_URL,
 } from "@/lib/site-url";
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider';
 
 type Props = {
   children: React.ReactNode;
@@ -120,7 +121,7 @@ export default async function QuoteLayout({ children, params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
       />
-      {children}
+      <ScopedIntlProvider scope="quote" locale={locale}>{children}</ScopedIntlProvider>
     </>
   );
 }

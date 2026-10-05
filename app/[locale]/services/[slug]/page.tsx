@@ -12,6 +12,9 @@ import {
     pickServiceWorkPhotos,
 } from '@/lib/seo-work-photos'
 
+/** DB(D1) 내용을 표시 — 빌드 시점 정적 생성 금지 */
+export const dynamic = 'force-dynamic'
+
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
 function resolveLocale(localeParam: string): AppLocale {

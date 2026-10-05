@@ -133,6 +133,65 @@ async function fetchRemoteGalleryItems(): Promise<PublicGalleryItem[]> {
     }
 }
 
+/** 외부(3dcookiehd) 갤러리는 자주 바뀌지 않으므로 10분 캐시 — 요청마다 HTTP 5회 호출 방지 */
+const REMOTE_GALLERY_TTL_MS = 10 * 60 * 1000;
+const REMOTE_GALLERY_EMPTY_TTL_MS = 60 * 1000;
+const REMOTE_GALLERY_CACHE_KEY = 'https://www.wow3dp.co.kr/__cache/remote-gallery-v1';
+let remoteGalleryMemo: { at: number; items: PublicGalleryItem[] } | null = null;
+
+function edgeCache(): Cache | null {
+    try {
+        const c = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+        return c ?? null;
+    } catch {
+        return null;
+    }
+}
+
+async function getRemoteGalleryItemsCached(): Promise<PublicGalleryItem[]> {
+    const now = Date.now();
+    if (remoteGalleryMemo) {
+        const ttl = remoteGalleryMemo.items.length > 0 ? REMOTE_GALLERY_TTL_MS : REMOTE_GALLERY_EMPTY_TTL_MS;
+        if (now - remoteGalleryMemo.at < ttl) return remoteGalleryMemo.items;
+    }
+
+    const cache = edgeCache();
+    if (cache) {
+        try {
+            const hit = await cache.match(REMOTE_GALLERY_CACHE_KEY);
+            if (hit) {
+                const items = (await hit.json()) as PublicGalleryItem[];
+                remoteGalleryMemo = { at: now, items };
+                return items;
+            }
+        } catch (e) {
+            console.warn('remote gallery cache read', e);
+        }
+    }
+
+    const items = await fetchRemoteGalleryItems();
+    remoteGalleryMemo = { at: now, items };
+    if (cache && items.length > 0) {
+        try {
+            await cache.put(
+                REMOTE_GALLERY_CACHE_KEY,
+                new Response(JSON.stringify(items), {
+                    headers: {
+                        'content-type': 'application/json',
+                        'cache-control': `public, max-age=${REMOTE_GALLERY_TTL_MS / 1000}`,
+                    },
+                })
+            );
+        } catch (e) {
+            console.warn('remote gallery cache write', e);
+        }
+    }
+    return items;
+}
+
+const GALLERY_LIST_COLUMNS =
+    'id, title, description, image_url, source_image_url, material, print_method, tags, created_at';
+
 /** 공개 갤러리 목록 (SSR·API 공통) */
 export async function getPublicGallery(options?: {
     page?: number;
@@ -157,20 +216,29 @@ export async function getPublicGallery(options?: {
                 params.push(storeId);
             }
 
-            const rows = await env.DB.prepare(
-                `SELECT * FROM gallery_items
-                 ${whereClause}
-                 ORDER BY created_at DESC, sort_order DESC`
-            )
-                .bind(...params)
-                .all();
+            const selectVisible = async (where: string, binds: (string | number)[]) => {
+                try {
+                    return await env.DB.prepare(
+                        `SELECT ${GALLERY_LIST_COLUMNS} FROM gallery_items ${where}
+                         ORDER BY created_at DESC, sort_order DESC`
+                    )
+                        .bind(...binds)
+                        .all();
+                } catch (colErr) {
+                    if (!String(colErr).includes('no such column')) throw colErr;
+                    return await env.DB.prepare(
+                        `SELECT * FROM gallery_items ${where} ORDER BY created_at DESC, sort_order DESC`
+                    )
+                        .bind(...binds)
+                        .all();
+                }
+            };
 
+            const rows = await selectVisible(whereClause, params);
             localItems = ((rows.results as GalleryDbRow[]) || []);
 
             if (localItems.length === 0 && storeId != null) {
-                const fallbackRows = await env.DB.prepare(
-                    `SELECT * FROM gallery_items WHERE is_visible = 1 ORDER BY created_at DESC`
-                ).all();
+                const fallbackRows = await selectVisible('WHERE is_visible = 1', []);
                 localItems = ((fallbackRows.results as GalleryDbRow[]) || []);
             }
             // 추가 이미지는 페이지 슬라이스 이후에만 조인 (대량 IN 바인딩 실패 방지)
@@ -181,7 +249,7 @@ export async function getPublicGallery(options?: {
 
     const remoteItems = options?.tag === 'photo-to-3d'
         ? []
-        : await fetchRemoteGalleryItems();
+        : await getRemoteGalleryItemsCached();
     const localIds = new Set(localItems.map((it) => String(it.id)));
     let merged = [...localItems, ...remoteItems.filter((r) => !localIds.has(String(r.id)))];
 
@@ -234,7 +302,7 @@ export async function getPublicGalleryItemById(
     }
 
     if (idStr.startsWith('remote_')) {
-        const remoteItems = await fetchRemoteGalleryItems();
+        const remoteItems = await getRemoteGalleryItemsCached();
         return remoteItems.find((r) => String(r.id) === idStr) ?? null;
     }
 

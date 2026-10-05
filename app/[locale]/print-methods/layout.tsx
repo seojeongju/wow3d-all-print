@@ -5,6 +5,7 @@ import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import { buildWorkPhotoOgImages, pickWorkPhotos } from '@/lib/seo-work-photos'
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider'
 
 type Props = {
     children: React.ReactNode
@@ -82,7 +83,7 @@ export default async function PrintMethodsLayout({ children, params }: Props) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
             />
-            {children}
+            <ScopedIntlProvider scope="print-methods" locale={locale}>{children}</ScopedIntlProvider>
         </>
     )
 }

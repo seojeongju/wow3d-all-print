@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider'
 
 type Props = {
   children: React.ReactNode
@@ -50,6 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AuthLayout({ children, params }: Props) {
   const { locale: localeParam } = await params
-  setRequestLocale(resolveLocale(localeParam))
-  return <>{children}</>
+  const locale = resolveLocale(localeParam)
+  setRequestLocale(locale)
+  return <ScopedIntlProvider scope="auth" locale={locale}>{children}</ScopedIntlProvider>
 }

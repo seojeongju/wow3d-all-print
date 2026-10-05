@@ -7,6 +7,9 @@ import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL, buildOgImages } from '@/lib/site-url'
 
+/** DB(D1) 내용을 표시 — 빌드 시점 정적 생성 금지 */
+export const dynamic = 'force-dynamic'
+
 /** 화면 1페이지(기본)에 보이는 개수와 FAQ JSON-LD를 맞춤. 사진(이미지)→3D 항목은 상단에 고정 */
 const FAQ_SCHEMA_VISIBLE_COUNT = 8
 

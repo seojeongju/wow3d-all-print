@@ -1,12 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Suspense } from "react";
-import { getLocale } from "next-intl/server";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
-import TrafficTracker from "@/components/analytics/TrafficTracker";
-import { ZustandPersistGate } from "@/components/ZustandPersistGate";
 import {
   absoluteUrl,
   buildOgImages,
@@ -15,21 +7,6 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site-url";
-import {
-  buildBusinessSchemas,
-  buildWebPageSchema,
-  buildWebSiteSearchActionSchema,
-} from "@/lib/aeo-schema";
-import { routing } from "@/i18n/routing";
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const ogImages = buildOgImages();
 const primaryImage = absoluteUrl(OG_IMAGE_PATH);
@@ -76,9 +53,6 @@ export const metadata: Metadata = {
   },
 };
 
-/** 네이버 www 속성 소유확인 — metadata.other 대신 head에 직접 넣어 크롤러가 확실히 읽게 함 */
-const NAVER_SITE_VERIFICATION = "a5e68284a983861b03b77e7085666c955007de7a";
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -86,47 +60,14 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({
+/**
+ * <html>/<body>는 app/[locale]·app/admin 레이아웃의 DocumentShell이 렌더링한다.
+ * 여기서 getLocale()로 요청 헤더를 읽으면 전 페이지가 동적 렌더링되어 정적 캐시를 쓸 수 없다.
+ */
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const businessSchemas = buildBusinessSchemas();
-  let locale: string = routing.defaultLocale;
-  try {
-    locale = await getLocale();
-  } catch {
-    locale = routing.defaultLocale;
-  }
-
-  return (
-    <html lang={locale} className="dark" suppressHydrationWarning>
-      <head>
-        <meta name="naver-site-verification" content={NAVER_SITE_VERIFICATION} />
-        {/* og:image는 페이지별 metadata에서만 출력 — 여기서 고정하면 모든 페이지의 첫 og:image가 같아져 네이버가 공통 배너로 보고 썸네일에서 제외함 */}
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
-      >
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify([
-              buildWebSiteSearchActionSchema(),
-              buildWebPageSchema(),
-              ...businessSchemas,
-            ]),
-          }}
-        />
-        <ZustandPersistGate />
-        <ClearCartWhenGuest />
-        <Suspense fallback={null}>
-          <TrafficTracker />
-        </Suspense>
-        {children}
-        <Toaster />
-      </body>
-    </html>
-  );
+  return children;
 }

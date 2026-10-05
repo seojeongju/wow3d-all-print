@@ -54,6 +54,11 @@ GOOGLE_REDIRECT_URI = "https://www.wow3dp.co.kr/api/auth/google/callback"
 NEXT_PUBLIC_NAVER_TALKTALK_ID = "wowi7tu"
 NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL = "https://talk.naver.com/ct/wowi7tu"
 
+# D1이 APAC에 있는데 한국 트래픽이 LAX 등 원거리 PoP로 들어오는 경우가 많음
+# → 서버 렌더링·API를 DB 가까운 곳에서 실행해 쿼리 왕복 지연을 줄임 (정적 자산은 영향 없음)
+[placement]
+mode = "smart"
+
 # R2 대용량 Meshy STL 복사·업로드 시 CPU 한도 여유
 [limits]
 cpu_ms = 60000

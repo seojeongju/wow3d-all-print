@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback, useRef, type DragEvent, type ChangeEv
 import { useRouter } from 'next/navigation';
 import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
-import LandingHeroScene from './LandingHeroScene';
+import dynamic from 'next/dynamic';
 import {
     getModelFileFromDataTransfer,
     hasModelFileExtension,
@@ -32,6 +32,28 @@ import { HERO_CONVERSION_EVENTS } from '@/lib/conversion-events';
 import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conversion-event';
 import { usePhotoHandoffStore } from '@/store/usePhotoHandoffStore';
 import { useAuthStore } from '@/store/useAuthStore';
+
+/** three.js(약 850KB)는 첫 JS 번들에서 분리 — 배경 장식이라 화면 표시 후 불러와도 된다 */
+const LandingHeroScene = dynamic(() => import('./LandingHeroScene'), { ssr: false });
+
+function DeferredHeroScene() {
+    const [ready, setReady] = useState(false);
+
+    useEffect(() => {
+        const w = window as Window & {
+            requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+            cancelIdleCallback?: (id: number) => void;
+        };
+        if (w.requestIdleCallback) {
+            const id = w.requestIdleCallback(() => setReady(true), { timeout: 2500 });
+            return () => w.cancelIdleCallback?.(id);
+        }
+        const timer = window.setTimeout(() => setReady(true), 1200);
+        return () => window.clearTimeout(timer);
+    }, []);
+
+    return ready ? <LandingHeroScene /> : null;
+}
 
 type UploadMode = 'file' | 'photo';
 
@@ -513,7 +535,7 @@ export default function Hero() {
                             {/* 3D 배경 — 보이되 텍스트와 충돌하지 않게 */}
                             <div className="pointer-events-none absolute inset-0" aria-hidden>
                                 <div className="absolute inset-0 opacity-55 sm:opacity-60">
-                                    <LandingHeroScene />
+                                    <DeferredHeroScene />
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-b from-[#0b1220]/30 via-transparent to-[#0b1220]/55" />
                                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(11,18,32,0.35)_0%,transparent_58%)]" />

@@ -4,6 +4,7 @@ import { buildBreadcrumbSchema, buildCollectionPageSchema } from '@/lib/aeo-sche
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL, absoluteUrl, buildOgImages } from '@/lib/site-url'
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider'
 
 type Props = {
   children: React.ReactNode
@@ -87,7 +88,7 @@ export default async function ContactLayout({ children, params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
       />
-      {children}
+      <ScopedIntlProvider scope="contact" locale={locale}>{children}</ScopedIntlProvider>
     </>
   )
 }

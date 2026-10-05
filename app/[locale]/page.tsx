@@ -3,9 +3,13 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { buildFaqPageSchema, buildWebPageSchema } from '@/lib/aeo-schema';
 import { getPublishedQnas, localizeQnas, pickVisibleFaqItems } from '@/lib/qna';
 import HomePageClient from '@/components/home/HomePageClient';
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider';
 import { absoluteUrl, buildOgImages } from '@/lib/site-url';
 import { getPathname } from '@/i18n/navigation';
 import { routing, type AppLocale } from '@/i18n/routing';
+
+/** DB(D1) 내용을 표시 — 빌드 시점 정적 생성 금지 */
+export const dynamic = 'force-dynamic';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -71,7 +75,9 @@ export default async function HomePage({ params }: Props) {
           ),
         }}
       />
-      <HomePageClient homeFaqItems={homeFaqItems} />
+      <ScopedIntlProvider scope="home" locale={locale}>
+        <HomePageClient homeFaqItems={homeFaqItems} />
+      </ScopedIntlProvider>
     </>
   );
 }

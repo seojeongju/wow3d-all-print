@@ -1,0 +1,33 @@
+// 자동 생성 파일 — 직접 수정하지 말 것 (scripts/gen-client-i18n-namespaces.mjs)
+export const CLIENT_NAMESPACES = {
+    "root": ["Common","GuideRobot","Search"],
+    "home": ["Common","Footer","Home","LocaleSwitcher","Maker","Makerspace","Nav","Search"],
+    "auth": ["Auth"],
+    "cart": ["Cart","Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "checkout": ["Checkout"],
+    "contact": ["Common","Contact","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "custom": ["Common","CustomProducts","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "experience": ["Common","Experience","LocaleSwitcher","Nav","Quote","QuotePanel","Search"],
+    "expert": ["Common","Expert","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "gallery": ["Common","Gallery","Home","LocaleSwitcher","Nav","Search"],
+    "guides": ["Common","Footer","GuideChrome","GuidesHub","LocaleSwitcher","Makerspace","Nav","Search"],
+    "hardware": ["Common","Footer","Hardware","LocaleSwitcher","Makerspace","Nav","Search"],
+    "maker": ["Maker"],
+    "makerspace": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "materials": ["Common","Footer","LocaleSwitcher","Makerspace","Materials","MaterialsSafety","Nav","Search"],
+    "my-account": ["Common","LocaleSwitcher","MyAccount","Nav","Search"],
+    "news": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "order-complete": ["OrderComplete"],
+    "partnership": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Partnership","PartnershipSmartStore","Search"],
+    "print": ["Print"],
+    "print-methods": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","PrintMethods","Search"],
+    "privacy": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Privacy","Search"],
+    "qna": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","QnAPage","Search"],
+    "quote": ["ImageTo3D","PhotoGuide","Quote","QuotePanel"],
+    "quotes": ["Common","LocaleSwitcher","Nav","SavedQuotes","Search"],
+    "search": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
+    "services": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search","Services"],
+    "terms": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search","Terms"],
+} as const
+
+export type ClientNamespaceScope = keyof typeof CLIENT_NAMESPACES

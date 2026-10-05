@@ -1,5 +1,6 @@
 import { setRequestLocale } from 'next-intl/server'
 import { routing, type AppLocale } from '@/i18n/routing'
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider'
 
 type Props = {
     children: React.ReactNode
@@ -14,6 +15,7 @@ function resolveLocale(localeParam: string): AppLocale {
 
 export default async function ExpertLayout({ children, params }: Props) {
     const { locale: localeParam } = await params
-    setRequestLocale(resolveLocale(localeParam))
-    return children
+    const locale = resolveLocale(localeParam)
+    setRequestLocale(locale)
+    return <ScopedIntlProvider scope="expert" locale={locale}>{children}</ScopedIntlProvider>
 }

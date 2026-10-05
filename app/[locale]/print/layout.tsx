@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { routing, type AppLocale } from '@/i18n/routing'
+import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider'
 
 type Props = {
   children: React.ReactNode
@@ -28,6 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PrintLayout({ children, params }: Props) {
   const { locale: localeParam } = await params
-  setRequestLocale(resolveLocale(localeParam))
-  return children
+  const locale = resolveLocale(localeParam)
+  setRequestLocale(locale)
+  return <ScopedIntlProvider scope="print" locale={locale}>{children}</ScopedIntlProvider>
 }

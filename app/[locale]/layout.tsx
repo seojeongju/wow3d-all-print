@@ -9,6 +9,8 @@ import SessionValidator from '@/components/auth/SessionValidator'
 import EducationQuickMenu from '@/components/layout/EducationQuickMenu'
 import SitePopup from '@/components/popup/SitePopup'
 import GuideRobot from '@/components/assistant/GuideRobot'
+import { pickClientMessages } from '@/i18n/pick-client-messages'
+import DocumentShell from '@/components/layout/DocumentShell'
 
 type Props = {
     children: React.ReactNode
@@ -48,13 +50,16 @@ export default async function LocaleLayout({ children, params }: Props) {
     setRequestLocale(locale)
     const messages = await getMessages()
 
+    /** 공통 위젯용 문구만 — 페이지 문구는 세그먼트 layout의 ScopedIntlProvider가 넘긴다 */
     return (
-        <NextIntlClientProvider messages={messages}>
-            <SessionValidator />
-            {children}
-            <EducationQuickMenu />
-            <GuideRobot />
-            <SitePopup />
-        </NextIntlClientProvider>
+        <DocumentShell lang={locale}>
+            <NextIntlClientProvider messages={pickClientMessages(messages, 'root')}>
+                <SessionValidator />
+                {children}
+                <EducationQuickMenu />
+                <GuideRobot />
+                <SitePopup />
+            </NextIntlClientProvider>
+        </DocumentShell>
     )
 }

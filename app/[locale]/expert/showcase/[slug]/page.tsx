@@ -8,6 +8,9 @@ import { isShowcaseSlug } from '@/lib/showcase'
 import { getShowcaseDetail } from '@/lib/showcase-public'
 import ShowcaseDetailClient from './ShowcaseDetailClient'
 
+/** DB(D1) 내용을 표시 — 빌드 시점 정적 생성 금지 */
+export const dynamic = 'force-dynamic'
+
 type Props = {
     params: Promise<{ locale: string; slug: string }>
 }
