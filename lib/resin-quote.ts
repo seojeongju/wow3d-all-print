@@ -7,6 +7,7 @@
  */
 
 import { QUOTE_PRICE_ROUND_MODE, alignLineToUnitPrice, roundTo100 } from '@/lib/amount-display'
+import { calculateMachineCost } from '@/lib/machine-cost'
 import {
     estimateResinPrintTimeHours,
     type ResinTimeEstimateResult,
@@ -55,12 +56,6 @@ export function clampSlaLayerHeight(v: unknown, fallback = SLA_LAYER_DEFAULT): n
     const n = Number(v)
     if (Number.isFinite(n) && n > 0) return n
     return fallback
-}
-
-function machineRateAfterVolumeDiscount(hours: number, rateKr: number): number {
-    if (hours > 10) return rateKr * 0.7
-    if (hours > 5) return rateKr * 0.8
-    return rateKr
 }
 
 export function resinDefaults(method: ResinMethod) {
@@ -180,7 +175,7 @@ export function calculateResinQuote(input: CalculateResinQuoteInput): CalculateR
     })
 
     const rate = Math.max(0, Number(input.hourlyRateKr) || defaults.hourlyRateKr)
-    const machineCost = timeDetail.hours * machineRateAfterVolumeDiscount(timeDetail.hours, rate)
+    const machineCost = calculateMachineCost(timeDetail.hours, rate)
 
     const materialCost = materialCostUnit * quantity
     const supportCost = supportCostUnit * quantity

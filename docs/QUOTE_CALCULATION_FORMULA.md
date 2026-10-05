@@ -94,8 +94,9 @@
 
 4. 장비비 (Machine Cost)
    machineRate = layerCosts[layerHeight] 또는 hourlyRate
-   effectiveRate = time>10 ? rate×0.7 : time>5 ? rate×0.8 : rate
-   machineCost = estTimeHours × effectiveRate
+   machineCost = calculateMachineCost(estTimeHours, rate)   // lib/machine-cost.ts
+     = min(t,5)×rate + clamp(t−5, 0, 5)×rate×0.9 + max(t−10, 0)×rate×0.8
+   ※ 구간별 누진 할인 — 시간이 늘면 장비비도 항상 증가 (SLA/DLP 동일)
 
 5. 인건비 (Labor Cost)
    fdm_labor_cost_krw (고정)

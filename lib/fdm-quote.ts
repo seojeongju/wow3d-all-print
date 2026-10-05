@@ -8,6 +8,7 @@
  */
 
 import { QUOTE_PRICE_ROUND_MODE, alignLineToUnitPrice, roundTo100 } from '@/lib/amount-display'
+import { calculateMachineCost } from '@/lib/machine-cost'
 import {
     estimateFdmPrintTimeP2S,
     estimateFdmStructureP2S,
@@ -254,12 +255,6 @@ export type CalculateFdmQuoteResult = {
     timeDetail: FdmP2STimeResult
 }
 
-function machineRateAfterVolumeDiscount(hours: number, rateKr: number): number {
-    if (hours > 10) return rateKr * 0.7
-    if (hours > 5) return rateKr * 0.8
-    return rateKr
-}
-
 /** FDM 견적 일괄 산출 */
 export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQuoteResult {
     const quantity = Math.max(1, Math.floor(Number(input.quantity) || 1))
@@ -331,16 +326,13 @@ export function calculateFdmQuote(input: CalculateFdmQuoteInput): CalculateFdmQu
     }
     const timeDetailUnit = estimateFdmPrintTimeP2S(timeInput)
     const rate = Math.max(0, Number(input.hourlyRateKr) || FDM_DEFAULT_HOURLY_RATE_KRW)
-    const machineCostUnit =
-        timeDetailUnit.hours * machineRateAfterVolumeDiscount(timeDetailUnit.hours, rate)
+    const machineCostUnit = calculateMachineCost(timeDetailUnit.hours, rate)
 
     // 배치: 경로·서포트 ×N, 높이(Z)·레이어 수는 유지. 인건은 1회.
     const timeDetail =
         quantity === 1 ? timeDetailUnit : estimateFdmPrintTimeP2S({ ...timeInput, quantity })
     const machineCost =
-        quantity === 1
-            ? machineCostUnit
-            : timeDetail.hours * machineRateAfterVolumeDiscount(timeDetail.hours, rate)
+        quantity === 1 ? machineCostUnit : calculateMachineCost(timeDetail.hours, rate)
 
     const materialCost = materialCostUnit * quantity
     const supportCost = supportCostUnit * quantity
