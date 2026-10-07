@@ -31,4 +31,5 @@ jobs:
           NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL: https://talk.naver.com/profile/wowi7tu
           NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID: ${{ secrets.NEXT_PUBLIC_NAVER_TALKTALK_BANNER_ID }}
           NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID: ${{ secrets.NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID }}
+          OPEN_NEXT_DEPLOY: "true"
         run: npm run deploy
