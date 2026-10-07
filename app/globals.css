@@ -320,3 +320,60 @@
 .detail-body-html ul[data-type='taskList'] input[type='checkbox'] {
   accent-color: #2dd4bf;
 }
+
+/* ==========================================================================
+   News Body Dark Theme Readability (최신동향 본문 다크 테마 가독성 보장)
+   ========================================================================== */
+.news-body-html {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.news-body-html h1,
+.news-body-html h2,
+.news-body-html h3,
+.news-body-html h4 {
+  color: #ffffff !important;
+}
+
+.news-body-html strong,
+.news-body-html b {
+  color: #ffffff !important;
+}
+
+.news-body-html p,
+.news-body-html span,
+.news-body-html li,
+.news-body-html td,
+.news-body-html th {
+  color: inherit;
+}
+
+/* 외부 웹사이트(네이버 등) 복사-붙여넣기 시 유입되는 어두운 인라인 글자색 강제 무력화 */
+.news-body-html [style*="color: rgb(0, 0, 0)"],
+.news-body-html [style*="color: rgb(0,0,0)"],
+.news-body-html [style*="color: #000"],
+.news-body-html [style*="color:#000"],
+.news-body-html [style*="color: black"],
+.news-body-html [style*="color:black"],
+.news-body-html [style*="color: rgb(17, 17, 17)"],
+.news-body-html [style*="color: rgb(33, 37, 41)"],
+.news-body-html [style*="color: rgb(34, 34, 34)"],
+.news-body-html [style*="color: rgb(51, 51, 51)"],
+.news-body-html [style*="color: rgb(68, 68, 68)"],
+.news-body-html [style*="color: #111"],
+.news-body-html [style*="color: #222"],
+.news-body-html [style*="color: #333"],
+.news-body-html [style*="color: #444"],
+.news-body-html [style*="color: #212529"] {
+  color: inherit !important;
+}
+
+/* 외부 복사-붙여넣기 시 유입되는 흰색/밝은 인라인 배경색 강제 무력화 */
+.news-body-html [style*="background-color: rgb(255, 255, 255)"],
+.news-body-html [style*="background-color: #fff"],
+.news-body-html [style*="background-color: white"],
+.news-body-html [style*="background: white"],
+.news-body-html [style*="background: #fff"] {
+  background-color: transparent !important;
+  background: transparent !important;
+}

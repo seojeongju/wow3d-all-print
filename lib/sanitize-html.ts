@@ -93,12 +93,83 @@ export function detailBodyToEditorHtml(raw: string): string {
     return plainTextToHtml(raw)
 }
 
-function cleanInlineStyle(css: string): string {
-    return css
-        .replace(/(?:min-|max-)?width\s*:\s*[^;]+;?/gi, '')
-        .replace(/white-space\s*:\s*nowrap;?/gi, '')
-        .trim()
-        .replace(/^;+|;+$/g, '')
+function isDarkColor(val: string): boolean {
+    const v = val.trim().toLowerCase()
+    if (v === 'black' || v === '#000' || v === '#000000') return true
+    const hexMatch = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+    if (hexMatch) {
+        let hex = hexMatch[1]
+        if (hex.length === 3) {
+            hex = hex.split('').map((c) => c + c).join('')
+        }
+        const r = parseInt(hex.slice(0, 2), 16)
+        const g = parseInt(hex.slice(2, 4), 16)
+        const b = parseInt(hex.slice(4, 6), 16)
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b
+        return lum < 100 // 검정 및 어두운 회색
+    }
+    const rgbMatch = v.match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+    if (rgbMatch) {
+        const r = parseInt(rgbMatch[1], 10)
+        const g = parseInt(rgbMatch[2], 10)
+        const b = parseInt(rgbMatch[3], 10)
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b
+        return lum < 100
+    }
+    return false
+}
+
+function isLightBackground(val: string): boolean {
+    const v = val.trim().toLowerCase()
+    if (v === 'white' || v === '#fff' || v === '#ffffff' || v === 'transparent') return true
+    const hexMatch = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+    if (hexMatch) {
+        let hex = hexMatch[1]
+        if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('')
+        const r = parseInt(hex.slice(0, 2), 16)
+        const g = parseInt(hex.slice(2, 4), 16)
+        const b = parseInt(hex.slice(4, 6), 16)
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b
+        return lum > 220
+    }
+    const rgbMatch = v.match(/^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+    if (rgbMatch) {
+        const r = parseInt(rgbMatch[1], 10)
+        const g = parseInt(rgbMatch[2], 10)
+        const b = parseInt(rgbMatch[3], 10)
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b
+        return lum > 220
+    }
+    return false
+}
+
+function cleanInlineStyle(rawCss: string): string {
+    // 1. &quot; / &#39; 임시 치환 (font-family 내 따옴표 엔티티 세미콜론 분리 방지)
+    const css = rawCss.replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
+
+    // 2. 세미콜론 단위로 속성 선언 분리
+    const declarations = css.split(';').map((d) => d.trim()).filter(Boolean)
+    const cleaned: string[] = []
+
+    for (const decl of declarations) {
+        const colonIdx = decl.indexOf(':')
+        if (colonIdx === -1) continue
+        const prop = decl.slice(0, colonIdx).trim().toLowerCase()
+        const val = decl.slice(colonIdx + 1).trim()
+
+        if (/^(?:min-|max-)?width$/i.test(prop)) continue
+        if (prop === 'white-space' && /^nowrap$/i.test(val)) continue
+        // 외부 웹문서 복사 시 유입되는 시스템 폰트 제거 (-apple-system, 맑은 고딕 등)
+        if (prop === 'font-family') continue
+        // 다크 모드 가독성을 해치는 어두운 글자색 제거 -> 상위 테마 컬러(흰색/밝은 톤) 상속
+        if (prop === 'color' && isDarkColor(val)) continue
+        // 다크 모드에서 배경 얼룩을 만드는 흰색/밝은 인라인 배경 제거
+        if (/^background(?:-color)?$/i.test(prop) && isLightBackground(val)) continue
+
+        cleaned.push(`${prop}: ${val}`)
+    }
+
+    return cleaned.join('; ')
 }
 
 function isSafeYoutubeEmbed(src: string): boolean {
@@ -120,7 +191,7 @@ export function sanitizeDetailHtml(dirty: string): string {
             }
         )
         .replace(
-            /(style\s*=\s*")([^"]*)(")/gi,
+            /(style\s*=\s*["'])([^"']*)(["'])/gi,
             (_m, open: string, css: string, close: string) => {
                 const cleaned = cleanInlineStyle(css)
                 return cleaned ? `${open}${cleaned}${close}` : ''

@@ -44,6 +44,7 @@ import { fitNewsImage, type NewsCoverFit } from '@/lib/news-image'
 import { NewsCoverImage } from '@/components/news/NewsCoverImage'
 import { NEWS_IMAGE_STYLE_LABEL_KO, NEWS_IMAGE_STYLES, type NewsImageStyle } from '@/lib/news-image-ai'
 import DetailSmartEditor from '@/app/admin/custom-products/_components/DetailSmartEditor'
+import { NEWS_BODY_CLASS } from '@/components/news/NewsCard'
 
 type FormState = {
     title: string
@@ -613,15 +614,15 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                     </Section>
 
                     <Section title="본문" desc="배경 설명, 주요 내용, 수치 등을 직접 정리합니다. 이미지·표·유튜브를 넣을 수 있습니다.">
-                        <div className="min-h-[120px] max-h-[360px] overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-4">
+                        <div className="min-h-[120px] max-h-[360px] overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-4">
                             {form.bodyHtml.trim() ? (
                                 isProbablyHtml(form.bodyHtml) ? (
                                     <div
-                                        className="space-y-2 text-sm text-white/70 [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-white [&_img]:max-h-40 [&_img]:rounded-lg [&_ul]:list-disc [&_ul]:pl-5"
+                                        className={`space-y-2 text-sm ${NEWS_BODY_CLASS}`}
                                         dangerouslySetInnerHTML={{ __html: sanitizeDetailHtml(form.bodyHtml) }}
                                     />
                                 ) : (
-                                    <p className="whitespace-pre-line text-sm text-white/70">{form.bodyHtml}</p>
+                                    <p className="whitespace-pre-line text-sm text-white/80">{form.bodyHtml}</p>
                                 )
                             ) : (
                                 <p className="text-sm text-white/30">아직 본문이 없습니다.</p>
@@ -871,7 +872,8 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                     onClose={() => setEditorOpen(false)}
                     onUploadImage={(file) => uploadImage('content', file)}
                     onRegister={async (html) => {
-                        const next = { ...form, bodyHtml: html }
+                        const cleanHtml = sanitizeDetailHtml(html)
+                        const next = { ...form, bodyHtml: cleanHtml }
                         setForm(next)
                         setEditorOpen(false)
                         if (postIdRef.current) await save(savedStatus, { quiet: true, override: next })

@@ -11,6 +11,7 @@ import {
     type NewsLink,
     type NewsStatus,
 } from '@/lib/news'
+import { sanitizeDetailHtml } from '@/lib/sanitize-html'
 
 export type NewsWriteInput = {
     slug: string
@@ -51,7 +52,8 @@ export function parseNewsWriteBody(body: Record<string, unknown>): NewsWriteInpu
 
     const status: NewsStatus = body.status === 'published' ? 'published' : 'draft'
     const summaryLines = summaryToLines(text(body.summary, 2000))
-    const bodyHtml = textOrNull(body.bodyHtml, 200_000)
+    const rawBodyHtml = textOrNull(body.bodyHtml, 200_000)
+    const bodyHtml = rawBodyHtml ? sanitizeDetailHtml(rawBodyHtml) : null
     const insight = textOrNull(body.insight, 5000)
 
     if (status === 'published') {
