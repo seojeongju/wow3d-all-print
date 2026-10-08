@@ -127,6 +127,14 @@ function QuoteContent() {
     const [isViewerDragging, setIsViewerDragging] = useState(false);
     const [handoffPhoto, setHandoffPhoto] = useState<File | null>(null);
     const isPhotoViewer = entryMode === 'photo' && !file;
+    // 작업 공간 색조: 3D 파일(청록) · 사진→AI 3D(남보라) · 선택 전(중립)
+    const workspaceTone: 'model' | 'photo' | 'neutral' = isPhotoViewer
+        ? 'photo'
+        : file || entryMode === 'file'
+          ? 'model'
+          : 'neutral';
+    const mobileTabActiveClass =
+        workspaceTone === 'photo' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-teal-500 text-slate-950 shadow-lg';
     const [showQuoteFaqs, setShowQuoteFaqs] = useState(false);
     const consumePendingPhoto = usePhotoHandoffStore((s) => s.consumePendingPhoto);
     const guideSourceKey = GUIDE_SOURCE_KEYS.find((k) => k === guideSource);
@@ -427,9 +435,31 @@ function QuoteContent() {
     }, [file, step]);
 
     return (
-        <main className="min-h-screen relative text-slate-100 flex flex-col selection:bg-teal-500/30 overflow-hidden bg-slate-950">
+        <main
+            data-workspace-tone={workspaceTone}
+            className={cn(
+                'min-h-screen relative text-slate-100 flex flex-col overflow-hidden bg-slate-950',
+                workspaceTone === 'photo' ? 'selection:bg-indigo-500/30' : 'selection:bg-teal-500/30'
+            )}
+        >
             {/* 프리미엄 배경 시스템 (Hero와 동일) */}
             <div className="fixed inset-0 z-0 bg-gradient-to-r from-[#111827] via-[#1f2937] to-[#111827]" />
+
+            {/* 작업 공간별 배경 색조 — 그라데이션은 전환이 안 되므로 레이어 투명도로 교차 전환 */}
+            <div
+                aria-hidden
+                className={cn(
+                    'fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 bg-gradient-to-br from-[#06231f] via-[#0d2a2c] to-[#0a1a22]',
+                    workspaceTone === 'model' ? 'opacity-100' : 'opacity-0'
+                )}
+            />
+            <div
+                aria-hidden
+                className={cn(
+                    'fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 bg-gradient-to-br from-[#16133a] via-[#1d1847] to-[#120f2a]',
+                    workspaceTone === 'photo' ? 'opacity-100' : 'opacity-0'
+                )}
+            />
             
             {/* 틸/블루 은은한 포인트 오버레이 */}
             <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_20%_30%,rgba(20,184,166,0.06),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(79,70,229,0.06),transparent_50%)]" />
@@ -438,8 +468,18 @@ function QuoteContent() {
             <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px]" />
 
             {/* 배경 글로우 포인트들 */}
-            <div className="fixed left-0 top-1/4 w-[500px] h-[500px] rounded-full bg-teal-500/15 blur-[130px] z-0 pointer-events-none" />
-            <div className="fixed right-0 bottom-0 w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px] z-0 pointer-events-none" />
+            <div
+                className={cn(
+                    'fixed left-0 top-1/4 w-[500px] h-[500px] rounded-full blur-[130px] z-0 pointer-events-none transition-colors duration-700',
+                    workspaceTone === 'photo' ? 'bg-violet-500/15' : 'bg-teal-500/15'
+                )}
+            />
+            <div
+                className={cn(
+                    'fixed right-0 bottom-0 w-[600px] h-[600px] rounded-full blur-[150px] z-0 pointer-events-none transition-colors duration-700',
+                    workspaceTone === 'model' ? 'bg-teal-600/10' : 'bg-indigo-600/10'
+                )}
+            />
             <div className="fixed left-1/2 -translate-x-1/2 top-0 w-[300px] h-[300px] rounded-full bg-purple-800/10 blur-[100px] z-0 pointer-events-none" />
 
             {/* Premium Header - 고대비 텍스트 및 유리 질감 */}
@@ -500,11 +540,16 @@ function QuoteContent() {
                 <div className="flex-1 min-h-0 grid lg:grid-cols-[400px_1fr] xl:grid-cols-[450px_1fr] overflow-hidden min-h-[calc(100dvh-5rem)]">
 
                     {/* Left Sidebar: Settings Panel */}
-                    <div className={`
-                        bg-black/20 backdrop-blur-[20px] border-r border-white/10 flex flex-col overflow-hidden transition-all duration-300
-                        ${activeTab === 'settings' ? 'flex flex-1' : 'hidden lg:flex'}
-                        lg:h-[calc(100vh-5rem)]
-                    `}>
+                    <div className={cn(
+                        'backdrop-blur-[20px] border-r flex flex-col overflow-hidden transition-all duration-300',
+                        workspaceTone === 'photo'
+                            ? 'bg-indigo-950/30 border-indigo-300/15'
+                            : workspaceTone === 'model'
+                              ? 'bg-teal-950/25 border-teal-300/10'
+                              : 'bg-black/20 border-white/10',
+                        activeTab === 'settings' ? 'flex flex-1' : 'hidden lg:flex',
+                        'lg:h-[calc(100vh-5rem)]'
+                    )}>
                         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-8 pb-24 lg:pb-10 space-y-8">
                             <input
                                 ref={modelPickerRef}
@@ -691,7 +736,12 @@ function QuoteContent() {
                         onDragLeave={handleViewerDragLeave}
                         onDrop={handleViewerDrop}
                         className={cn(
-                            'relative flex flex-col bg-slate-950/20 backdrop-blur-[2px] overflow-hidden transition-all duration-300',
+                            'relative flex flex-col backdrop-blur-[2px] overflow-hidden transition-all duration-300',
+                            workspaceTone === 'photo'
+                                ? 'bg-violet-950/20'
+                                : workspaceTone === 'model'
+                                  ? 'bg-slate-950/25'
+                                  : 'bg-slate-950/20',
                             activeTab === 'viewer' ? 'flex flex-1' : 'hidden lg:flex',
                             'lg:h-[calc(100vh-5rem)]',
                             isViewerDragging &&
@@ -830,7 +880,7 @@ function QuoteContent() {
                         type="button"
                         onClick={() => setActiveTab('settings')}
                         className={`flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[11px] font-black transition-colors ${
-                            activeTab === 'settings' ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-white/55 active:bg-white/10'
+                            activeTab === 'settings' ? mobileTabActiveClass : 'text-white/55 active:bg-white/10'
                         }`}
                     >
                         {isPhotoViewer ? <Camera className="h-5 w-5" /> : <FileBox className="h-5 w-5" />}
@@ -840,7 +890,7 @@ function QuoteContent() {
                         type="button"
                         onClick={() => setActiveTab('viewer')}
                         className={`flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[11px] font-black transition-colors ${
-                            activeTab === 'viewer' ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-white/55 active:bg-white/10'
+                            activeTab === 'viewer' ? mobileTabActiveClass : 'text-white/55 active:bg-white/10'
                         }`}
                     >
                         <Boxes className="h-5 w-5" />
