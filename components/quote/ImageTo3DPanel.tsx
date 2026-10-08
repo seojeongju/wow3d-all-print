@@ -485,10 +485,25 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
         [applyPhotoFile, t],
     )
 
+    const photoLocked =
+        status === 'uploading' ||
+        status === 'queued' ||
+        status === 'processing' ||
+        status === 'ready' ||
+        applying
+
+    // 같은 사진을 상태 변화마다 다시 적용하지 않도록 마지막으로 받은 사진을 기억
+    const lastInitialPhotoRef = useRef<File | null>(null)
     useEffect(() => {
-        if (!initialPhoto) return
+        if (!initialPhoto || lastInitialPhotoRef.current === initialPhoto) return
+        lastInitialPhotoRef.current = initialPhoto
+        if (photoLocked) {
+            setError(t('errBusyDrop'))
+            return
+        }
+        setError(null)
         applyPhotoFile(initialPhoto)
-    }, [initialPhoto, applyPhotoFile])
+    }, [initialPhoto, applyPhotoFile, photoLocked, t])
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -496,12 +511,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
         multiple: false,
         maxSize: MESHY_IMAGE_MAX_BYTES,
         accept: { 'image/jpeg': ['.jpg', '.jpeg'], 'image/png': ['.png'] },
-        disabled:
-            status === 'uploading' ||
-            status === 'queued' ||
-            status === 'processing' ||
-            status === 'ready' ||
-            applying,
+        disabled: photoLocked,
         useFsAccessApi: false,
     })
 

@@ -27,6 +27,7 @@ import {
 } from '@/lib/model-file';
 import { useUploadNoticeStore } from '@/store/useUploadNoticeStore';
 import { MESHY_IMAGE_MAX_BYTES } from '@/lib/meshy';
+import { isPhotoFile } from '@/lib/photo-file';
 import { cn } from '@/lib/utils';
 import { HERO_CONVERSION_EVENTS } from '@/lib/conversion-events';
 import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conversion-event';
@@ -56,18 +57,6 @@ function DeferredHeroScene() {
 }
 
 type UploadMode = 'file' | 'photo';
-
-function isPhotoFile(file: File): boolean {
-    const name = file.name.toLowerCase();
-    return (
-        file.type === 'image/jpeg' ||
-        file.type === 'image/jpg' ||
-        file.type === 'image/png' ||
-        name.endsWith('.jpg') ||
-        name.endsWith('.jpeg') ||
-        name.endsWith('.png')
-    );
-}
 
 export default function Hero() {
     const t = useTranslations('Home.hero');

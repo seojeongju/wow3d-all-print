@@ -7,7 +7,7 @@ import QuotePanel from "@/components/quote/QuotePanel";
 import QuoteSourceChooser, { type QuoteEntryMode } from "@/components/quote/QuoteSourceChooser";
 import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
 import { Link } from "@/i18n/navigation";
-import { ArrowLeft, Boxes, FileBox, Loader2, ShoppingCart, RefreshCw, Camera, ChevronDown } from "lucide-react";
+import { ArrowLeft, Boxes, FileBox, Loader2, ShoppingCart, RefreshCw, Camera, ChevronDown, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef, Suspense, useCallback, useId, useMemo, type ChangeEvent, type DragEvent } from "react";
 import { useTranslations } from "next-intl";
@@ -26,6 +26,8 @@ import { takeInterruptedAnalysis } from "@/lib/analysis-inflight-marker";
 import ModelAnalyzingPanel from "@/components/quote/ModelAnalyzingPanel";
 import { useQuoteFunnelTracking } from "@/hooks/useQuoteFunnelTracking";
 import { showToast } from "@/lib/toast-helper";
+import { getPhotoFileFromDataTransfer } from "@/lib/photo-file";
+import { MESHY_IMAGE_MAX_BYTES } from "@/lib/meshy";
 
 type QuoteFaqItem = { q: string; a: string; guideHref?: string; guideLabel?: string };
 
@@ -124,6 +126,7 @@ function QuoteContent() {
     const [reloadQuoteId, setReloadQuoteId] = useState<number | null>(null);
     const [isViewerDragging, setIsViewerDragging] = useState(false);
     const [handoffPhoto, setHandoffPhoto] = useState<File | null>(null);
+    const isPhotoViewer = entryMode === 'photo' && !file;
     const [showQuoteFaqs, setShowQuoteFaqs] = useState(false);
     const consumePendingPhoto = usePhotoHandoffStore((s) => s.consumePendingPhoto);
     const guideSourceKey = GUIDE_SOURCE_KEYS.find((k) => k === guideSource);
@@ -338,7 +341,28 @@ function QuoteContent() {
             e.preventDefault();
             setIsViewerDragging(false);
             const model = getModelFileFromDataTransfer(e.dataTransfer);
-            if (!model) return;
+            if (!model) {
+                // 사진(이미지)은 모델이 없는 동안 사진→AI 3D 패널로 넘김
+                const photo = getPhotoFileFromDataTransfer(e.dataTransfer);
+                if (!photo) {
+                    if (e.dataTransfer?.files?.length) {
+                        showToast.error(t('dropUnsupportedTitle'), t('dropUnsupportedBody'));
+                    }
+                    return;
+                }
+                if (useFileStore.getState().file) {
+                    showToast.error(t('dropPhotoBusyTitle'), t('dropPhotoBusyBody'));
+                    return;
+                }
+                if (photo.size > MESHY_IMAGE_MAX_BYTES) {
+                    showToast.error(t('dropPhotoTooLargeTitle'), t('dropPhotoTooLargeBody'));
+                    return;
+                }
+                setEntryMode('photo');
+                setActiveTab('settings');
+                setHandoffPhoto(photo);
+                return;
+            }
             if (isModelFileTooLarge(model)) {
                 if (useFileStore.getState().file) {
                     showToast.error(t('largeFileTitle'), t('largeFileBody'));
@@ -670,7 +694,8 @@ function QuoteContent() {
                             'relative flex flex-col bg-slate-950/20 backdrop-blur-[2px] overflow-hidden transition-all duration-300',
                             activeTab === 'viewer' ? 'flex flex-1' : 'hidden lg:flex',
                             'lg:h-[calc(100vh-5rem)]',
-                            isViewerDragging && 'ring-2 ring-inset ring-teal-400/70'
+                            isViewerDragging &&
+                                (isPhotoViewer ? 'ring-2 ring-inset ring-indigo-400/70' : 'ring-2 ring-inset ring-teal-400/70')
                         )}
                     >
                         <div className="flex-1 relative group min-h-[min(60dvh,560px)]">
@@ -681,8 +706,19 @@ function QuoteContent() {
                             </div>
                             {isViewerDragging ? (
                                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm pointer-events-none">
-                                    <p className="text-teal-300 font-black text-sm sm:text-base tracking-wide">
-                                        {t('dropHere')}
+                                    <p
+                                        className={cn(
+                                            'font-black text-sm sm:text-base tracking-wide',
+                                            isPhotoViewer ? 'text-indigo-300' : 'text-teal-300'
+                                        )}
+                                    >
+                                        {file
+                                            ? t('dropHere')
+                                            : isPhotoViewer
+                                              ? t('dropHerePhoto')
+                                              : entryMode === 'file'
+                                                ? t('dropHere')
+                                                : t('dropHereAny')}
                                     </p>
                                 </div>
                             ) : null}
@@ -691,13 +727,46 @@ function QuoteContent() {
                             {!file && (
                                 <div className="absolute top-6 left-6 sm:top-10 sm:left-10 flex flex-col gap-4 z-20 pointer-events-none">
                                     <div className="px-4 py-2 sm:px-6 sm:py-3 rounded-[1rem] sm:rounded-[1.25rem] bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[11px] font-black tracking-[0.15em] sm:tracking-[0.25em] uppercase text-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 sm:gap-3">
-                                        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-teal-400" />
-                                        3D Viewer Engine V3.5
+                                        <div className={cn('w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full', isPhotoViewer ? 'bg-indigo-400' : 'bg-teal-400')} />
+                                        {isPhotoViewer ? t('viewerHudPhoto') : '3D Viewer Engine V3.5'}
                                     </div>
                                 </div>
                             )}
 
-                            {!file && (
+                            {!file && isPhotoViewer && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-5">
+                                    <div className="pointer-events-none flex flex-col items-center">
+                                        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border border-indigo-300/10 bg-indigo-500/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
+                                            <ImageIcon className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-200/25" />
+                                            <div className="absolute inset-0 rounded-full border border-indigo-400/20 scale-150 blur-xl" />
+                                        </div>
+                                        <div className="mt-8 sm:mt-10 text-center space-y-2 max-w-md">
+                                            <p className="text-white/45 text-base sm:text-lg font-bold tracking-tight break-keep">
+                                                {t('viewerIdlePhotoTitle')}
+                                            </p>
+                                            <p className="text-white/30 text-[11px] sm:text-sm font-medium break-keep">
+                                                {t('viewerIdlePhoto', { maxMb: Math.round(MESHY_IMAGE_MAX_BYTES / (1024 * 1024)) })}
+                                            </p>
+                                            <p className="text-white/20 text-[10px] sm:text-xs font-medium italic break-keep">
+                                                {t('viewerIdlePhotoNext')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('settings')}
+                                        className="pointer-events-auto mt-8 flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-6 py-3.5 text-sm font-black text-white shadow-[0_8px_30px_rgba(99,102,241,0.35)] active:scale-[0.98] transition-transform lg:hidden"
+                                    >
+                                        <Camera className="h-5 w-5" />
+                                        {t('mobilePhotoUploadCta')}
+                                    </button>
+                                    <p className="pointer-events-none mt-3 text-center text-[10px] text-white/35 lg:hidden break-keep">
+                                        {t('mobilePhotoUploadHint')}
+                                    </p>
+                                </div>
+                            )}
+
+                            {!file && !isPhotoViewer && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-5">
                                     <div className="pointer-events-none flex flex-col items-center">
                                         <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
@@ -707,7 +776,7 @@ function QuoteContent() {
                                         <div className="mt-8 sm:mt-10 text-center space-y-2">
                                             <p className="text-white/30 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
                                             <p className="text-white/20 text-[11px] sm:text-sm font-medium italic break-keep">
-                                                {t('viewerIdle')}
+                                                {entryMode === 'file' ? t('viewerIdle') : t('viewerIdleAny')}
                                             </p>
                                         </div>
                                     </div>
@@ -764,8 +833,8 @@ function QuoteContent() {
                             activeTab === 'settings' ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-white/55 active:bg-white/10'
                         }`}
                     >
-                        <FileBox className="h-5 w-5" />
-                        {t('mobileUploadTab')}
+                        {isPhotoViewer ? <Camera className="h-5 w-5" /> : <FileBox className="h-5 w-5" />}
+                        {isPhotoViewer ? t('mobilePhotoUploadTab') : t('mobileUploadTab')}
                     </button>
                     <button
                         type="button"
