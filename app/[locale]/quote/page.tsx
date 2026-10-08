@@ -9,12 +9,12 @@ import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft, Boxes, FileBox, Loader2, ShoppingCart, RefreshCw, Camera, ChevronDown, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef, Suspense, useCallback, useId, useMemo, type ChangeEvent, type DragEvent } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback, useId, useMemo, type DragEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
-import { getModelFileFromDataTransfer, hasModelFileExtension, isModelFileTooLarge, MODEL_FILE_ACCEPT_STRING } from "@/lib/model-file";
+import { getModelFileFromDataTransfer, isModelFileTooLarge } from "@/lib/model-file";
 import { useUploadNoticeStore } from "@/store/useUploadNoticeStore";
 import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
@@ -386,31 +386,9 @@ function QuoteContent() {
         [setFile, t]
     );
 
-    // 「3D 파일이 있어요」 클릭 시 업로드 화면 전환과 동시에 파일 선택 창을 바로 연다 (취소해도 업로드 화면 유지)
-    const modelPickerRef = useRef<HTMLInputElement>(null);
     const handleSelectEntry = useCallback((mode: QuoteEntryMode) => {
         setEntryMode(mode);
-        if (mode === 'file') modelPickerRef.current?.click();
     }, []);
-
-    const handleModelPicked = useCallback(
-        (e: ChangeEvent<HTMLInputElement>) => {
-            const picked = e.target.files?.[0];
-            e.target.value = '';
-            if (!picked) return;
-            if (!hasModelFileExtension(picked)) {
-                showToast.error(t('dropzoneInvalidType'));
-                return;
-            }
-            if (isModelFileTooLarge(picked)) {
-                useUploadNoticeStore.getState().showTooLarge(picked);
-                return;
-            }
-            useUploadNoticeStore.getState().clear();
-            setFile(picked);
-        },
-        [setFile, t]
-    );
 
     // 샘플 견적 체험 후 실시간 견적 진입 시: 샘플 파일이면 제거 (업로드부터 다시)
     useEffect(() => {
@@ -449,14 +427,14 @@ function QuoteContent() {
             <div
                 aria-hidden
                 className={cn(
-                    'fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 bg-gradient-to-br from-[#06231f] via-[#0d2a2c] to-[#0a1a22]',
+                    'fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 bg-gradient-to-br from-[#08171a] via-[#0c1f22] to-[#0a141a]',
                     workspaceTone === 'model' ? 'opacity-100' : 'opacity-0'
                 )}
             />
             <div
                 aria-hidden
                 className={cn(
-                    'fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 bg-gradient-to-br from-[#16133a] via-[#1d1847] to-[#120f2a]',
+                    'fixed inset-0 z-0 pointer-events-none transition-opacity duration-700 bg-gradient-to-br from-[#0b1222] via-[#0f1a30] to-[#0a1020]',
                     workspaceTone === 'photo' ? 'opacity-100' : 'opacity-0'
                 )}
             />
@@ -471,7 +449,11 @@ function QuoteContent() {
             <div
                 className={cn(
                     'fixed left-0 top-1/4 w-[500px] h-[500px] rounded-full blur-[130px] z-0 pointer-events-none transition-colors duration-700',
-                    workspaceTone === 'photo' ? 'bg-violet-500/15' : 'bg-teal-500/15'
+                    workspaceTone === 'photo'
+                        ? 'bg-indigo-500/10'
+                        : workspaceTone === 'model'
+                          ? 'bg-teal-500/10'
+                          : 'bg-teal-500/15'
                 )}
             />
             <div
@@ -543,23 +525,14 @@ function QuoteContent() {
                     <div className={cn(
                         'backdrop-blur-[20px] border-r flex flex-col overflow-hidden transition-all duration-300',
                         workspaceTone === 'photo'
-                            ? 'bg-indigo-950/30 border-indigo-300/15'
+                            ? 'bg-slate-950/50 border-indigo-300/15'
                             : workspaceTone === 'model'
-                              ? 'bg-teal-950/25 border-teal-300/10'
+                              ? 'bg-slate-950/45 border-teal-300/15'
                               : 'bg-black/20 border-white/10',
                         activeTab === 'settings' ? 'flex flex-1' : 'hidden lg:flex',
                         'lg:h-[calc(100vh-5rem)]'
                     )}>
                         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-8 pb-24 lg:pb-10 space-y-8">
-                            <input
-                                ref={modelPickerRef}
-                                type="file"
-                                accept={MODEL_FILE_ACCEPT_STRING}
-                                hidden
-                                tabIndex={-1}
-                                aria-hidden
-                                onChange={handleModelPicked}
-                            />
                             <AnimatePresence mode="wait">
                                 {showQuotePanel ? (
                                     <motion.div
@@ -737,11 +710,7 @@ function QuoteContent() {
                         onDrop={handleViewerDrop}
                         className={cn(
                             'relative flex flex-col backdrop-blur-[2px] overflow-hidden transition-all duration-300',
-                            workspaceTone === 'photo'
-                                ? 'bg-violet-950/20'
-                                : workspaceTone === 'model'
-                                  ? 'bg-slate-950/25'
-                                  : 'bg-slate-950/20',
+                            workspaceTone === 'neutral' ? 'bg-slate-950/20' : 'bg-slate-950/25',
                             activeTab === 'viewer' ? 'flex flex-1' : 'hidden lg:flex',
                             'lg:h-[calc(100vh-5rem)]',
                             isViewerDragging &&
@@ -787,17 +756,17 @@ function QuoteContent() {
                                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-5">
                                     <div className="pointer-events-none flex flex-col items-center">
                                         <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border border-indigo-300/10 bg-indigo-500/5 backdrop-blur-sm flex items-center justify-center animate-pulse relative">
-                                            <ImageIcon className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-200/25" />
+                                            <ImageIcon className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-200/50" />
                                             <div className="absolute inset-0 rounded-full border border-indigo-400/20 scale-150 blur-xl" />
                                         </div>
                                         <div className="mt-8 sm:mt-10 text-center space-y-2 max-w-md">
-                                            <p className="text-white/45 text-base sm:text-lg font-bold tracking-tight break-keep">
+                                            <p className="text-white/85 text-base sm:text-lg font-bold tracking-tight break-keep">
                                                 {t('viewerIdlePhotoTitle')}
                                             </p>
-                                            <p className="text-white/30 text-[11px] sm:text-sm font-medium break-keep">
+                                            <p className="text-white/60 text-[11px] sm:text-sm font-medium break-keep">
                                                 {t('viewerIdlePhoto', { maxMb: Math.round(MESHY_IMAGE_MAX_BYTES / (1024 * 1024)) })}
                                             </p>
-                                            <p className="text-white/20 text-[10px] sm:text-xs font-medium italic break-keep">
+                                            <p className="text-indigo-200/60 text-[10px] sm:text-xs font-medium break-keep">
                                                 {t('viewerIdlePhotoNext')}
                                             </p>
                                         </div>
@@ -824,8 +793,8 @@ function QuoteContent() {
                                             <div className="absolute inset-0 rounded-full border border-teal-400/20 scale-150 blur-xl" />
                                         </div>
                                         <div className="mt-8 sm:mt-10 text-center space-y-2">
-                                            <p className="text-white/30 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
-                                            <p className="text-white/20 text-[11px] sm:text-sm font-medium italic break-keep">
+                                            <p className="text-white/55 text-base sm:text-lg font-bold tracking-tight">STANDBY FOR INPUT</p>
+                                            <p className="text-white/50 text-[11px] sm:text-sm font-medium italic break-keep">
                                                 {entryMode === 'file' ? t('viewerIdle') : t('viewerIdleAny')}
                                             </p>
                                         </div>

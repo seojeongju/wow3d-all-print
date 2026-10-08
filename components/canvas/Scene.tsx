@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas, useThree } from '@react-three/fiber'
-import { TrackballControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
+import { TrackballControls, Grid, Html, Bounds, useBounds, Edges } from '@react-three/drei'
 import { Suspense, useEffect, useState, useRef, createContext, useContext, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
@@ -388,11 +388,19 @@ function ViewerContent({ color, showMeasurements }: { color: string, showMeasure
         )
     }
 
-    // Default placeholder cube
+    // 대기용 큐브 — 화면을 꽉 채우므로 위에 겹치는 안내 문구를 가리지 않게 반투명 윤곽 위주로 표시
     return (
         <mesh>
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={color} roughness={0.3} metalness={0.7} />
+            <meshStandardMaterial
+                color="#94a3b8"
+                roughness={0.6}
+                metalness={0.2}
+                transparent
+                opacity={0.06}
+                depthWrite={false}
+            />
+            <Edges color="#94a3b8" transparent opacity={0.35} />
         </mesh>
     )
 }
