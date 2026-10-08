@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { useFileStore } from '@/store/useFileStore'
 import { analyzeGeometryBoundingBox, analyzeGeometryProgressive } from '@/lib/geometry'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
+import { useUploadNoticeStore, type AnalysisFailReason } from '@/store/useUploadNoticeStore'
 import {
     getScalePercentMax,
     meshyAutoFitScalePercent,
@@ -56,27 +57,54 @@ function isCurrentRun(gen: number): boolean {
 }
 
 /**
+ * 분석 불가 파일: 파일을 내리고 업로드 화면에 원인·상담 안내 (분석 대기 화면에 멈추지 않게)
+ */
+function failModelAnalysis(file: File, gen: number, reason: AnalysisFailReason, err?: unknown): void {
+    if (!isCurrentRun(gen) || useFileStore.getState().file !== file) return
+    console.error(`[model-analysis] 분석 실패(${reason}):`, file.name, err ?? '')
+    useUploadNoticeStore.getState().showAnalysisFailed(file, reason)
+    useFileStore.getState().reset()
+}
+
+function hasPrintableGeometry(geometry: THREE.BufferGeometry): boolean {
+    const pos = geometry.getAttribute('position')
+    return Boolean(pos && pos.count >= 3)
+}
+
+function hasValidBoundingBox(box: { x: number; y: number; z: number } | undefined): boolean {
+    if (!box) return false
+    const dims = [box.x, box.y, box.z]
+    return dims.every((v) => Number.isFinite(v) && v >= 0) && Math.max(...dims) > 0
+}
+
+/**
  * 파싱된 geometry로 견적 분석 — 1) bbox 즉시 2) 백그라운드 샘플링 정밀화
  */
 export function runAnalysisFromGeometry(
     geometry: THREE.BufferGeometry,
-    _file: File,
+    file: File,
     gen: number
 ): void {
     const { baseAnalysis, setAnalysis, setAnalysisError } = useFileStore.getState()
     if (baseAnalysis) return
 
+    if (!hasPrintableGeometry(geometry)) {
+        failModelAnalysis(file, gen, 'empty_geometry')
+        return
+    }
+
     try {
         const quick = analyzeGeometryBoundingBox(geometry)
         if (!isCurrentRun(gen)) return
+        if (!hasValidBoundingBox(quick?.boundingBox)) {
+            failModelAnalysis(file, gen, 'empty_geometry')
+            return
+        }
         setAnalysis(quick)
         setAnalysisError(null)
         maybeAutoFitMeshyScale({ force: true })
     } catch (e) {
-        console.error('bbox analysis:', e)
-        if (isCurrentRun(gen)) {
-            setAnalysisError('모델 치수를 계산할 수 없습니다.')
-        }
+        failModelAnalysis(file, gen, 'error', e)
         return
     }
 
@@ -116,16 +144,15 @@ export function ensureModelAnalysisForFile(file: File): Promise<void> {
     const task = (async () => {
         try {
             const geo = await getParsedModelGeometry(file)
-            if (!geo || !isCurrentRun(gen)) return
+            if (!isCurrentRun(gen)) return
+            if (!geo) {
+                failModelAnalysis(file, gen, 'parse_failed')
+                return
+            }
             if (useFileStore.getState().baseAnalysis) return
             runAnalysisFromGeometry(geo, file, gen)
         } catch (e) {
-            console.error('ensureModelAnalysisForFile:', e)
-            if (isCurrentRun(gen)) {
-                useFileStore.getState().setAnalysisError(
-                    e instanceof Error ? e.message : '모델 분석 중 오류가 발생했습니다.'
-                )
-            }
+            failModelAnalysis(file, gen, 'error', e)
         } finally {
             ensurePromises.delete(file)
         }

@@ -14,7 +14,8 @@ import { useTranslations } from "next-intl";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
-import { getModelFileFromDataTransfer } from "@/lib/model-file";
+import { getModelFileFromDataTransfer, isModelFileTooLarge } from "@/lib/model-file";
+import { useUploadNoticeStore } from "@/store/useUploadNoticeStore";
 import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
 import { buildFileSourceFromFileName, buildQuoteModelAuthHeaders, fetchQuoteModelFile, resolveQuoteReloadTransform } from "@/lib/quote-reload";
@@ -196,6 +197,17 @@ function QuoteContent() {
         userId: user?.id ?? null,
     });
 
+    // 업로드 실패 안내(용량 초과·분석 실패)는 업로드 화면에 표시되므로 그 화면으로 전환
+    const uploadNotice = useUploadNoticeStore((s) => s.notice);
+    useEffect(() => {
+        if (!uploadNotice) return;
+        setEntryMode('file');
+        setActiveTab('settings');
+        if (uploadNotice.kind === 'analysis_failed') {
+            showToast.error(t('analysisFailTitle'), t(`analysisFailReason.${uploadNotice.reason}`));
+        }
+    }, [uploadNotice, t]);
+
     // 저장된 견적 로드 시에는 선택 화면 건너뛰기
     useEffect(() => {
         if (loadQuoteId) setEntryMode('file');
@@ -292,11 +304,19 @@ function QuoteContent() {
             setIsViewerDragging(false);
             const model = getModelFileFromDataTransfer(e.dataTransfer);
             if (!model) return;
+            if (isModelFileTooLarge(model)) {
+                if (useFileStore.getState().file) {
+                    showToast.error(t('largeFileTitle'), t('largeFileBody'));
+                    return;
+                }
+                useUploadNoticeStore.getState().showTooLarge(model);
+                return;
+            }
             setEntryMode('file');
             setFile(model);
             setActiveTab('settings');
         },
-        [setFile]
+        [setFile, t]
     );
 
     // 샘플 견적 체험 후 실시간 견적 진입 시: 샘플 파일이면 제거 (업로드부터 다시)

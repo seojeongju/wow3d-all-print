@@ -10,10 +10,14 @@ export function hasModelFileExtension(file: File | { name: string }): boolean {
     return MODEL_FILE_EXTENSIONS.some((ext) => name.endsWith(ext))
 }
 
+/** 드롭된 3D 모델 파일 (확장자만 판별 — 용량 초과 안내는 호출 측에서 isModelFileTooLarge로 처리) */
 export function getModelFileFromDataTransfer(dataTransfer: DataTransfer | null): File | null {
     if (!dataTransfer?.files?.length) return null
     const file = dataTransfer.files[0]
     if (!file || !hasModelFileExtension(file)) return null
-    if (file.size > MODEL_FILE_MAX_BYTES) return null
     return file
+}
+
+export function isModelFileTooLarge(file: { size: number }): boolean {
+    return file.size > MODEL_FILE_MAX_BYTES
 }

@@ -172,10 +172,9 @@ function Model({
                 let geo: THREE.BufferGeometry | null = null
 
                 if (fileRecord) {
+                    // 파싱 실패여도 분석기를 호출해야 실패 안내·업로드 화면 복귀가 동작함
+                    void ensureModelAnalysisForFile(fileRecord)
                     geo = await getParsedModelGeometry(fileRecord)
-                    if (!cancelled && geo) {
-                        void ensureModelAnalysisForFile(fileRecord)
-                    }
                 } else {
                     const arrayBuffer = await (await fetch(url)).arrayBuffer()
                     if (cancelled) return

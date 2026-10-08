@@ -24,8 +24,9 @@ import dynamic from 'next/dynamic';
 import {
     getModelFileFromDataTransfer,
     hasModelFileExtension,
-    MODEL_FILE_MAX_BYTES,
+    isModelFileTooLarge,
 } from '@/lib/model-file';
+import { useUploadNoticeStore } from '@/store/useUploadNoticeStore';
 import { MESHY_IMAGE_MAX_BYTES } from '@/lib/meshy';
 import { cn } from '@/lib/utils';
 import { HERO_CONVERSION_EVENTS } from '@/lib/conversion-events';
@@ -126,14 +127,6 @@ export default function Hero() {
 
     const validateAndUploadModel = useCallback(
         (candidate: File) => {
-            if (candidate.size > MODEL_FILE_MAX_BYTES) {
-                toast({
-                    title: t('errSizeTitle'),
-                    description: t('errSizeModel'),
-                    variant: 'destructive',
-                });
-                return;
-            }
             if (!hasModelFileExtension(candidate)) {
                 toast({
                     title: t('errTypeTitle'),
@@ -142,9 +135,17 @@ export default function Hero() {
                 });
                 return;
             }
+            // 용량 초과: 업로드 화면에서 용량 줄이는 방법·상담 바로가기 안내
+            if (isModelFileTooLarge(candidate)) {
+                clearSampleIfPresent();
+                trackHero(HERO_CONVERSION_EVENTS.DROP_FILE, { rejected: 'too_large' });
+                useUploadNoticeStore.getState().showTooLarge(candidate);
+                router.push('/quote?entry=file');
+                return;
+            }
             handleModelUpload(candidate);
         },
-        [handleModelUpload, toast, t],
+        [handleModelUpload, toast, t, router, trackHero],
     );
 
     const validateAndUploadPhoto = useCallback(
@@ -187,12 +188,12 @@ export default function Hero() {
                     });
                     return;
                 }
-                handleModelUpload(model);
+                validateAndUploadModel(model);
             } else {
                 validateAndUploadPhoto(dropped);
             }
         },
-        [uploadMode, handleModelUpload, validateAndUploadPhoto, toast, t],
+        [uploadMode, validateAndUploadModel, validateAndUploadPhoto, toast, t],
     );
 
     const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
