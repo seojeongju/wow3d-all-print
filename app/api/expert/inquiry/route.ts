@@ -3,6 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse } from '@/lib/api-utils';
 import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
 import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
+import { recordAdminNotifyResult } from '@/lib/inquiry-replies';
 const MESSAGE_MAX = 10000; // 전문가 문의는 더 길 수 있음
 
 /**
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     let emailSent = false;
     try {
-      emailSent = await notifyAdminNewInquiry(
+      const notifyResult = await notifyAdminNewInquiry(
         {
           inquiryId: Number(inquiryId),
           name,
@@ -97,11 +98,17 @@ export async function POST(request: NextRequest) {
         env as unknown as Record<string, unknown>,
         env.DB
       );
-      if (!emailSent) {
-        console.warn('전문가 문의 관리자 알림 미발송 (RESEND_API_KEY 확인)');
+      emailSent = notifyResult.ok;
+      await recordAdminNotifyResult(env.DB, Number(inquiryId), notifyResult);
+      if (!notifyResult.ok) {
+        console.warn('전문가 문의 관리자 알림 미발송:', notifyResult.error);
       }
     } catch (emailErr) {
       console.warn('이메일 발송 실패 (문의는 저장됨):', emailErr);
+      await recordAdminNotifyResult(env.DB, Number(inquiryId), {
+        ok: false,
+        error: emailErr instanceof Error ? emailErr.message : '관리자 알림 메일 발송 실패',
+      });
     }
 
     return successResponse(

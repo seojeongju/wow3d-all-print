@@ -1,13 +1,5 @@
 import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
-
-type D1Like = {
-    prepare: (query: string) => {
-        bind: (...args: unknown[]) => {
-            first: () => Promise<Record<string, unknown> | null>;
-            run: () => Promise<unknown>;
-        };
-    };
-};
+import { hasSameReply, isMissingRepliesSchema, sendInquiryReply, type InquiryDb } from '@/lib/inquiry-replies';
 
 export type ProcessInquiryEmailReplyInput = {
     inquiryId: number;
@@ -40,13 +32,13 @@ export function getAllowedAdminEmails(env: Record<string, unknown>): string[] {
 }
 
 export async function processInquiryEmailReply(
-    db: D1Like,
+    db: InquiryDb,
     env: Record<string, unknown>,
     input: ProcessInquiryEmailReplyInput
 ): Promise<ProcessInquiryEmailReplyResult> {
     const replyMessage = input.replyMessage?.trim();
     if (!replyMessage || replyMessage.length < 2) {
-        return { ok: false, error: '답장 본문이 비어 있습니다.', status: 400 };
+        return { ok: false, error: '?듭옣 蹂몃Ц??鍮꾩뼱 ?덉뒿?덈떎.', status: 400 };
     }
 
     const allowedFrom = getAllowedAdminEmails(env);
@@ -56,7 +48,7 @@ export async function processInquiryEmailReply(
         return normalizeEmail(m ? m[1] : fromNormRaw);
     })();
     if (!allowedFrom.includes(fromNorm)) {
-        return { ok: false, error: '허용되지 않은 발신 주소입니다.', status: 403 };
+        return { ok: false, error: '?덉슜?섏? ?딆? 諛쒖떊 二쇱냼?낅땲??', status: 403 };
     }
 
     let row: Record<string, unknown> | null = null;
@@ -70,54 +62,79 @@ export async function processInquiryEmailReply(
             .first();
     } catch (e) {
         console.error('processInquiryEmailReply select failed', e);
-        return { ok: false, error: '문의 조회 실패', status: 500 };
+        return { ok: false, error: '臾몄쓽 議고쉶 ?ㅽ뙣', status: 500 };
     }
 
     if (!row) {
-        return { ok: false, error: '문의를 찾을 수 없습니다.', status: 404 };
+        return { ok: false, error: '臾몄쓽瑜?李얠쓣 ???놁뒿?덈떎.', status: 404 };
     }
 
     const storedToken = String(row.reply_token || '');
     if (!storedToken || storedToken !== input.token) {
-        return { ok: false, error: '유효하지 않은 답장 토큰입니다.', status: 403 };
+        return { ok: false, error: '?좏슚?섏? ?딆? ?듭옣 ?좏겙?낅땲??', status: 403 };
     }
 
-    const prevStatus = String(row.status || '');
-    const prevNote = String(row.admin_note || '');
-    const alreadyReplied = prevStatus === 'replied' && prevNote === replyMessage;
+    const inquiry = {
+        id: input.inquiryId,
+        name: String(row.name || ''),
+        email: String(row.email || ''),
+        subject: (row.subject as string | null) ?? null,
+        message: String(row.message || ''),
+        status: String(row.status || ''),
+    };
 
-    if (!alreadyReplied) {
-        try {
-            await db
-                .prepare(
-                    `UPDATE inquiries SET status = 'replied', admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-                )
-                .bind(replyMessage, input.inquiryId)
-                .run();
-        } catch (e) {
-            console.error('processInquiryEmailReply update failed', e);
-            return { ok: false, error: '문의 상태 업데이트 실패', status: 500 };
+    try {
+        if (await hasSameReply(db, inquiry.id, 'email_reply', replyMessage)) {
+            return { ok: true, userNotified: false, alreadyReplied: true };
         }
+        const { result } = await sendInquiryReply(db, env, inquiry, {
+            body: replyMessage,
+            channel: 'email_reply',
+        });
+        return { ok: true, userNotified: result.ok, alreadyReplied: false };
+    } catch (e) {
+        if (!isMissingRepliesSchema(e)) {
+            console.error('processInquiryEmailReply reply record failed', e);
+            return { ok: false, error: '?듬? 湲곕줉 ?ㅽ뙣', status: 500 };
+        }
+    }
+
+    // inquiry_replies ?뚯씠釉붿씠 ?꾩쭅 ?녿뒗 DB: ?댁쟾 諛⑹떇(愿由ъ옄 硫붾え???듬? ???
+    const prevNote = String(row.admin_note || '');
+    const alreadyReplied = inquiry.status === 'replied' && prevNote === replyMessage;
+    if (alreadyReplied) {
+        return { ok: true, userNotified: false, alreadyReplied: true };
+    }
+
+    try {
+        await db
+            .prepare(
+                `UPDATE inquiries SET status = 'replied', admin_note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+            )
+            .bind(replyMessage, input.inquiryId)
+            .run();
+    } catch (e) {
+        console.error('processInquiryEmailReply update failed', e);
+        return { ok: false, error: '臾몄쓽 ?곹깭 ?낅뜲?댄듃 ?ㅽ뙣', status: 500 };
     }
 
     let userNotified = false;
-    if (!alreadyReplied) {
-        try {
-            userNotified = await notifyUserInquiryReplied(
-                {
-                    inquiryId: input.inquiryId,
-                    name: String(row.name || ''),
-                    email: String(row.email || ''),
-                    subject: row.subject as string | null,
-                    message: String(row.message || ''),
-                    replyMessage,
-                },
-                env
-            );
-        } catch (e) {
-            console.error('processInquiryEmailReply user notify failed', e);
-        }
+    try {
+        const result = await notifyUserInquiryReplied(
+            {
+                inquiryId: inquiry.id,
+                name: inquiry.name,
+                email: inquiry.email,
+                subject: inquiry.subject,
+                message: inquiry.message,
+                replyMessage,
+            },
+            env
+        );
+        userNotified = result.ok;
+    } catch (e) {
+        console.error('processInquiryEmailReply user notify failed', e);
     }
 
-    return { ok: true, userNotified, alreadyReplied };
+    return { ok: true, userNotified, alreadyReplied: false };
 }

@@ -1,4 +1,4 @@
-import { sendEmail, escapeHtml } from '@/lib/mail-utils';
+import { sendEmailWithResult, escapeHtml, type SendEmailResult } from '@/lib/mail-utils';
 import {
     buildInquiryReplyAddress,
     ensureInquiryReplyToken,
@@ -25,6 +25,8 @@ export type InquiryNotifyPayload = {
     company?: string | null;
     source?: 'contact' | 'expert';
     replyToken?: string | null;
+    /** 문의 관리에서 알림을 다시 보낼 때 제목에 「재발송」 표시 */
+    resend?: boolean;
 };
 
 type D1Like = Parameters<typeof ensureInquiryReplyToken>[0];
@@ -60,13 +62,14 @@ export async function notifyAdminNewInquiry(
     payload: InquiryNotifyPayload,
     env: Record<string, unknown>,
     db?: D1Like
-): Promise<boolean> {
+): Promise<SendEmailResult> {
     const adminEmail = getAdminInquiryEmail(env);
     const categoryLabel = getCategoryLabel(payload.category, payload.categoryLabel);
     const sourceLabel = payload.source === 'expert' ? '전문가 문의' : '고객 문의';
-    const subjectLine =
+    const baseSubject =
         payload.subject?.trim() ||
         `[${sourceLabel}] ${payload.company ? `(${payload.company}) ` : ''}${payload.name}`;
+    const subjectLine = payload.resend ? `[재발송] ${baseSubject}` : baseSubject;
 
     let replyToken = payload.replyToken || null;
     if (!replyToken && db) {
@@ -159,7 +162,7 @@ export async function notifyAdminNewInquiry(
         </div>
     `;
 
-    return sendEmail(
+    return sendEmailWithResult(
         {
             to: adminEmail,
             subject: subjectLine,

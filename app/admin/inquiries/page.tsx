@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Search, Loader2, Eye, Paperclip, Sparkles } from 'lucide-react'
+import { Search, Loader2, Eye, Paperclip, Sparkles, MailWarning, Send, RotateCw, Mail, MonitorSmartphone, History } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -48,6 +48,39 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 type ListPagination = { page: number; limit: number; total: number; totalPages: number }
 
+type InquiryReply = {
+  id: number
+  channel: 'admin_web' | 'email_reply' | 'legacy'
+  body: string
+  sent_to: string | null
+  send_status: 'sent' | 'failed' | 'unknown'
+  send_error: string | null
+  created_at: string
+  sent_at: string | null
+}
+
+type AdminNotifyInfo = {
+  status: 'sent' | 'failed' | null
+  error: string | null
+  notifiedAt: string | null
+  attempts: number
+}
+
+const REPLY_CHANNEL_LABELS: Record<InquiryReply['channel'], string> = {
+  admin_web: '문의 관리에서 답변',
+  email_reply: '메일 답장으로 답변',
+  legacy: '이전 방식 기록 (관리자 메모)',
+}
+
+/** D1 CURRENT_TIMESTAMP(UTC, 시간대 표기 없음)를 한국 시간으로 표시 */
+function formatDateTime(raw: string | null | undefined): string {
+  if (!raw) return '-'
+  const iso = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw) ? raw : `${raw.replace(' ', 'T')}Z`
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return raw
+  return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'short', timeStyle: 'short' })
+}
+
 function getStatusBadge(status: string) {
   switch (status) {
     case 'new':
@@ -85,6 +118,16 @@ export default function AdminInquiriesPage() {
   const [detailNote, setDetailNote] = useState('')
   const [detailStatus, setDetailStatus] = useState('')
   const [savingDetail, setSavingDetail] = useState(false)
+  const [notifyFailedOnly, setNotifyFailedOnly] = useState(false)
+  const [notifyFailedCount, setNotifyFailedCount] = useState(0)
+  const [replies, setReplies] = useState<InquiryReply[]>([])
+  const [repliesLoading, setRepliesLoading] = useState(false)
+  const [repliesSchemaReady, setRepliesSchemaReady] = useState(true)
+  const [adminNotify, setAdminNotify] = useState<AdminNotifyInfo | null>(null)
+  const [replyDraft, setReplyDraft] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
+  const [resendingReplyId, setResendingReplyId] = useState<number | null>(null)
+  const [resendingNotify, setResendingNotify] = useState(false)
   const [faqGenerating, setFaqGenerating] = useState(false)
   const [faqSaving, setFaqSaving] = useState(false)
   const [faqDraftOpen, setFaqDraftOpen] = useState(false)
@@ -131,6 +174,7 @@ export default function AdminInquiriesPage() {
       })
       if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
       if (debouncedSearch) params.set('q', debouncedSearch)
+      if (notifyFailedOnly) params.set('notify', 'failed')
 
       const res = await fetch(`/api/admin/inquiries?${params}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -162,11 +206,163 @@ export default function AdminInquiriesPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, toast, page, statusFilter, debouncedSearch])
+  }, [token, toast, page, statusFilter, debouncedSearch, notifyFailedOnly])
+
+  const fetchNotifyFailedCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/inquiries?notify=failed&limit=1', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: 'no-store',
+      })
+      const data = await res.json()
+      setNotifyFailedCount(Number(data?.data?.pagination?.total ?? 0))
+    } catch {
+      setNotifyFailedCount(0)
+    }
+  }, [token])
 
   useEffect(() => {
     fetchInquiries()
   }, [fetchInquiries])
+
+  useEffect(() => {
+    fetchNotifyFailedCount()
+  }, [fetchNotifyFailedCount])
+
+  const authJsonHeaders = useCallback(
+    (): Record<string, string> => ({
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  )
+
+  const loadReplies = useCallback(
+    async (inquiryId: number) => {
+      setRepliesLoading(true)
+      try {
+        const res = await fetch(`/api/admin/inquiries/${inquiryId}/replies`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          cache: 'no-store',
+        })
+        const json = await res.json()
+        if (json.success) {
+          setReplies(Array.isArray(json.data?.replies) ? json.data.replies : [])
+          setRepliesSchemaReady(json.data?.schemaReady !== false)
+          setAdminNotify(json.data?.adminNotify ?? null)
+        } else {
+          toast({ title: json.error || '답변 이력 조회 실패', variant: 'destructive' })
+        }
+      } catch {
+        toast({ title: '답변 이력 조회 실패', variant: 'destructive' })
+      } finally {
+        setRepliesLoading(false)
+      }
+    },
+    [token, toast]
+  )
+
+  const markRepliedLocally = (inquiryId: number) => {
+    setInquiries((prev) =>
+      prev.map((i) =>
+        i.id === inquiryId && i.status !== 'replied' && i.status !== 'closed' ? { ...i, status: 'replied' } : i
+      )
+    )
+    setDetail((d) => (d && d.id === inquiryId && d.status !== 'replied' && d.status !== 'closed' ? { ...d, status: 'replied' } : d))
+    setDetailStatus((s) => (s !== 'replied' && s !== 'closed' ? 'replied' : s))
+  }
+
+  const handleSendReply = async () => {
+    if (!detail?.id) return
+    const message = replyDraft.trim()
+    if (message.length < 2) {
+      toast({ title: '답변 내용을 입력해 주세요.', variant: 'destructive' })
+      return
+    }
+    if (!window.confirm(`${String(detail.email || '고객')}님에게 답변 메일을 발송합니다. 계속할까요?`)) return
+    const inquiryId = Number(detail.id)
+    setSendingReply(true)
+    try {
+      const res = await fetch(`/api/admin/inquiries/${inquiryId}/replies`, {
+        method: 'POST',
+        headers: authJsonHeaders(),
+        body: JSON.stringify({ message }),
+      })
+      const json = await res.json()
+      const reply = json.data?.reply as InquiryReply | undefined
+      if (reply) setReplies((prev) => [...prev, reply])
+      if (json.success) {
+        setReplyDraft('')
+        markRepliedLocally(inquiryId)
+        toast({ title: '답변을 발송했습니다.', description: '고객에게 메일이 전송되고 상태가 답변완료로 바뀌었습니다.' })
+      } else if (reply) {
+        setReplyDraft('')
+        toast({
+          title: '답변은 기록됐지만 메일 발송에 실패했습니다.',
+          description: json.error || '이력에서 재발송해 주세요.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({ title: json.error || '답변 발송 실패', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: '답변 발송 중 오류가 발생했습니다.', variant: 'destructive' })
+    } finally {
+      setSendingReply(false)
+    }
+  }
+
+  const handleResendReply = async (replyId: number) => {
+    if (!detail?.id) return
+    const inquiryId = Number(detail.id)
+    setResendingReplyId(replyId)
+    try {
+      const res = await fetch(`/api/admin/inquiries/${inquiryId}/replies`, {
+        method: 'POST',
+        headers: authJsonHeaders(),
+        body: JSON.stringify({ resendReplyId: replyId }),
+      })
+      const json = await res.json()
+      const reply = json.data?.reply as InquiryReply | undefined
+      if (reply) setReplies((prev) => prev.map((r) => (r.id === reply.id ? reply : r)))
+      if (json.success) {
+        markRepliedLocally(inquiryId)
+        toast({ title: '답변을 재발송했습니다.' })
+      } else {
+        toast({ title: '재발송 실패', description: json.error, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: '재발송 중 오류가 발생했습니다.', variant: 'destructive' })
+    } finally {
+      setResendingReplyId(null)
+    }
+  }
+
+  const handleResendAdminNotify = async () => {
+    if (!detail?.id) return
+    const inquiryId = Number(detail.id)
+    setResendingNotify(true)
+    try {
+      const res = await fetch(`/api/admin/inquiries/${inquiryId}/notify-admin`, {
+        method: 'POST',
+        headers: authJsonHeaders(),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast({ title: '관리자 알림 메일을 다시 보냈습니다.', description: '받은 메일에 「답장」하면 고객에게 답변이 발송됩니다.' })
+      } else {
+        toast({ title: '알림 재발송 실패', description: json.error, variant: 'destructive' })
+      }
+      await loadReplies(inquiryId)
+      const nextStatus = json.success ? 'sent' : 'failed'
+      setInquiries((prev) => prev.map((i) => (i.id === inquiryId ? { ...i, admin_notify_status: nextStatus } : i)))
+      fetchNotifyFailedCount()
+    } catch {
+      toast({ title: '알림 재발송 중 오류가 발생했습니다.', variant: 'destructive' })
+    } finally {
+      setResendingNotify(false)
+    }
+  }
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     setUpdatingId(id)
@@ -198,6 +394,11 @@ export default function AdminInquiriesPage() {
     setDetail(row)
     setDetailNote(String(row.admin_note || ''))
     setDetailStatus(String(row.status || 'new'))
+    setReplies([])
+    setReplyDraft('')
+    setAdminNotify(null)
+    setRepliesSchemaReady(true)
+    void loadReplies(Number(row.id))
   }
 
   const handleSaveDetail = async () => {
@@ -216,7 +417,7 @@ export default function AdminInquiriesPage() {
       if (json.success) {
         setInquiries((prev) => prev.map((i) => (i.id === detail.id ? { ...i, status: detailStatus, admin_note: detailNote } : i)))
         setDetail((d) => (d ? { ...d, status: detailStatus, admin_note: detailNote } : null))
-        toast({ title: '저장되었습니다.' })
+        toast({ title: '메모·상태를 저장했습니다.' })
       } else {
         toast({ title: json.error || '저장 실패', variant: 'destructive' })
       }
@@ -336,7 +537,7 @@ export default function AdminInquiriesPage() {
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">문의 관리</h1>
           <p className="text-white/50 text-sm mt-1">
-            접수된 문의를 확인하고 상태·메모를 관리할 수 있습니다. 네이버 알림 메일에 「답장」하면 고객 발송·답변완료가 자동 반영됩니다.
+            문의 상세에서 고객에게 바로 답변하거나, 네이버 알림 메일에 「답장」해 답변할 수 있습니다. 두 경로의 답변은 모두 상세 화면 이력에 남습니다.
           </p>
         </div>
         <Button asChild variant="outline" className="border-teal-400/30 text-teal-300 hover:bg-teal-400/10 shrink-0">
@@ -377,7 +578,35 @@ export default function AdminInquiriesPage() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setNotifyFailedOnly((v) => !v)
+            setPage(1)
+          }}
+          className={
+            notifyFailedOnly
+              ? 'border-rose-400/50 bg-rose-500/15 text-rose-200 hover:bg-rose-500/20'
+              : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
+          }
+        >
+          <MailWarning className="w-4 h-4 mr-2" />
+          알림 실패만 보기
+          {notifyFailedCount > 0 ? (
+            <span className="ml-2 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">
+              {notifyFailedCount}
+            </span>
+          ) : null}
+        </Button>
       </div>
+
+      {notifyFailedCount > 0 && !notifyFailedOnly ? (
+        <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-100/90 leading-relaxed">
+          관리자 알림 메일이 발송되지 않은 문의가 <strong className="text-rose-200">{notifyFailedCount}건</strong> 있습니다.
+          메일로는 답장할 수 없으니 상세 화면에서 직접 답변하거나 알림을 재발송해 주세요.
+        </div>
+      ) : null}
 
       <Card className="bg-white/[0.03] border-white/10 overflow-hidden">
         <CardContent className="p-0">
@@ -405,7 +634,16 @@ export default function AdminInquiriesPage() {
                       {String(inq.message || '').slice(0, 60)}
                       {(String(inq.message || '').length || 0) > 60 ? '…' : ''}
                     </td>
-                    <td className="p-4">{getStatusBadge(String(inq.status || 'new'))}</td>
+                    <td className="p-4">
+                      <div className="flex flex-col items-start gap-1">
+                        {getStatusBadge(String(inq.status || 'new'))}
+                        {inq.admin_notify_status === 'failed' ? (
+                          <Badge variant="outline" className="bg-rose-500/15 text-rose-300 border-rose-500/30 text-[10px]">
+                            알림 실패
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </td>
                     <td className="p-4 text-white/50">
                       {inq.created_at ? new Date(String(inq.created_at)).toLocaleDateString('ko-KR') : '-'}
                     </td>
@@ -443,7 +681,7 @@ export default function AdminInquiriesPage() {
                 {inquiries.length === 0 && !loading && (
                   <tr>
                     <td colSpan={8} className="p-12 text-center text-white/40">
-                      {pagination.total === 0 && !debouncedSearch && statusFilter === 'all'
+                      {pagination.total === 0 && !debouncedSearch && statusFilter === 'all' && !notifyFailedOnly
                         ? '접수된 문의가 없습니다.'
                         : '검색·필터 결과가 없습니다.'}
                     </td>
@@ -457,7 +695,7 @@ export default function AdminInquiriesPage() {
             totalPages={pagination.totalPages}
             total={pagination.total}
             loading={loading}
-            filterHint={!!debouncedSearch || statusFilter !== 'all'}
+            filterHint={!!debouncedSearch || statusFilter !== 'all' || notifyFailedOnly}
             onPageChange={setPage}
           />
         </CardContent>
@@ -465,14 +703,75 @@ export default function AdminInquiriesPage() {
 
       <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
         <DialogContent
-          className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg max-h-[90dvh] flex flex-col overflow-hidden gap-4"
+          className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden gap-4"
           showCloseButton
         >
           <DialogHeader className="shrink-0 pr-8">
-            <DialogTitle className="text-white">문의 상세</DialogTitle>
+            <DialogTitle className="text-white">문의 상세 #{String(detail?.id ?? '')}</DialogTitle>
           </DialogHeader>
           {detail && (
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 pr-1 -mr-1">
+              <div className="grid gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs sm:grid-cols-3">
+                <div>
+                  <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">이름</span>
+                  <span className="text-white/90">{String(detail.name || '-')}</span>
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">이메일</span>
+                  <span className="block truncate text-white/90" title={String(detail.email || '')}>
+                    {String(detail.email || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">연락처 · 접수</span>
+                  <span className="text-white/90">{String(detail.phone || '-')}</span>
+                  <span className="block text-white/40">{formatDateTime(String(detail.created_at || ''))}</span>
+                </div>
+              </div>
+
+              {adminNotify?.status === 'failed' ? (
+                <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 space-y-2">
+                  <p className="flex items-center gap-2 text-xs font-bold text-rose-200">
+                    <MailWarning className="w-4 h-4 shrink-0" />
+                    관리자 알림 메일이 발송되지 않았습니다
+                  </p>
+                  <p className="text-[11px] text-rose-100/70 leading-relaxed break-keep">
+                    {adminNotify.error ? `사유: ${adminNotify.error} · ` : ''}
+                    아래 「고객에게 답변하기」로 바로 답변하거나, 알림을 다시 받아 메일 답장으로 답변할 수 있습니다.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-rose-400/40 text-rose-200 hover:bg-rose-500/15"
+                    onClick={handleResendAdminNotify}
+                    disabled={resendingNotify}
+                  >
+                    {resendingNotify ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RotateCw className="w-3.5 h-3.5 mr-1.5" />}
+                    관리자 알림 재발송
+                  </Button>
+                </div>
+              ) : adminNotify ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+                  <p className="text-[11px] text-white/50">
+                    {adminNotify.status === 'sent'
+                      ? `관리자 알림 발송됨 · ${formatDateTime(adminNotify.notifiedAt)}`
+                      : '관리자 알림 발송 기록 없음 (이전 접수 건)'}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px] text-white/50 hover:text-white hover:bg-white/10"
+                    onClick={handleResendAdminNotify}
+                    disabled={resendingNotify}
+                  >
+                    {resendingNotify ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RotateCw className="w-3 h-3 mr-1" />}
+                    알림 다시 받기
+                  </Button>
+                </div>
+              ) : null}
+
               <div>
                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">제목</span>
                 <p className="text-sm text-white/90">{String(detail.subject || '-')}</p>
@@ -523,14 +822,127 @@ export default function AdminInquiriesPage() {
                   </div>
                 </div>
               ) : null}
+
+              <div className="space-y-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <History className="w-3.5 h-3.5" />
+                  답변 이력 ({replies.length})
+                </span>
+                {repliesLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-white/40">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    불러오는 중…
+                  </div>
+                ) : replies.length === 0 ? (
+                  <p className="text-xs text-white/35">아직 보낸 답변이 없습니다.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {replies.map((r) => (
+                      <li
+                        key={r.id}
+                        className={`rounded-xl border p-3 ${
+                          r.send_status === 'failed'
+                            ? 'border-rose-400/30 bg-rose-500/[0.07]'
+                            : 'border-white/10 bg-white/[0.03]'
+                        }`}
+                      >
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+                          <span className="inline-flex items-center gap-1 font-bold text-white/70">
+                            {r.channel === 'email_reply' ? (
+                              <Mail className="w-3.5 h-3.5" />
+                            ) : (
+                              <MonitorSmartphone className="w-3.5 h-3.5" />
+                            )}
+                            {REPLY_CHANNEL_LABELS[r.channel] || r.channel}
+                          </span>
+                          <span className="text-white/35">{formatDateTime(r.sent_at || r.created_at)}</span>
+                          {r.send_status === 'sent' ? (
+                            <Badge variant="outline" className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-[10px]">
+                              발송됨
+                            </Badge>
+                          ) : r.send_status === 'failed' ? (
+                            <Badge variant="outline" className="bg-rose-500/15 text-rose-300 border-rose-500/30 text-[10px]">
+                              발송 실패
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-white/10 text-white/50 border-white/20 text-[10px]">
+                              발송 여부 확인 불가
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-white/85 whitespace-pre-wrap break-words">{r.body}</p>
+                        {r.send_status === 'failed' ? (
+                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-[11px] text-rose-200/80">{r.send_error || '메일 발송에 실패했습니다.'}</p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-7 border-rose-400/40 text-rose-200 hover:bg-rose-500/15 text-[11px]"
+                              onClick={() => handleResendReply(r.id)}
+                              disabled={resendingReplyId === r.id}
+                            >
+                              {resendingReplyId === r.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                              ) : (
+                                <RotateCw className="w-3 h-3 mr-1" />
+                              )}
+                              재발송
+                            </Button>
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-teal-400/25 bg-teal-500/[0.06] p-3 space-y-2">
+                <Label className="flex items-center gap-1.5 text-[11px] font-bold text-teal-200">
+                  <Send className="w-3.5 h-3.5" />
+                  고객에게 답변하기
+                </Label>
+                {repliesSchemaReady ? (
+                  <>
+                    <textarea
+                      value={replyDraft}
+                      onChange={(e) => setReplyDraft(e.target.value)}
+                      rows={5}
+                      maxLength={10000}
+                      className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-sm text-white placeholder:text-white/30 resize-y"
+                      placeholder="고객에게 보낼 답변을 입력하세요. 발송하면 고객 이메일로 전송되고 상태가 답변완료로 바뀝니다."
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[11px] text-white/40 break-all">받는 사람: {String(detail.email || '-')}</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSendReply}
+                        disabled={sendingReply || replyDraft.trim().length < 2}
+                        className="bg-teal-500 text-slate-950 hover:bg-teal-400"
+                      >
+                        {sendingReply ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Send className="w-4 h-4 mr-1.5" />}
+                        답변 발송
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-amber-200/80 leading-relaxed">
+                    답변 이력 DB가 아직 준비되지 않았습니다. migrations/schema_inquiry_replies.sql 을 적용하면 이 화면에서 답변할 수 있습니다.
+                  </p>
+                )}
+              </div>
+
               <div>
-                <Label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">관리자 메모</Label>
+                <Label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  내부 메모 <span className="normal-case text-white/30">(고객에게 발송되지 않음)</span>
+                </Label>
                 <textarea
                   value={detailNote}
                   onChange={(e) => setDetailNote(e.target.value)}
                   rows={3}
                   className="mt-1 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/30 resize-y"
-                  placeholder="내부 메모"
+                  placeholder="관리자끼리 공유할 메모"
                 />
               </div>
               <div>
@@ -570,7 +982,7 @@ export default function AdminInquiriesPage() {
                 닫기
               </Button>
               <Button onClick={handleSaveDetail} disabled={savingDetail} className="flex-1 sm:flex-none">
-                {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '저장'}
+                {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '메모·상태 저장'}
               </Button>
             </div>
           </DialogFooter>

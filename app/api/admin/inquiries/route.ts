@@ -35,7 +35,8 @@ async function listInquiriesPaginated(
   pattern: string,
   limit: number,
   offset: number,
-  useStoreFilter: boolean
+  useStoreFilter: boolean,
+  notifyFailed: boolean
 ): Promise<ListResult> {
   const hasStatus = !!(status && STATUS_VALUES.includes(status));
   const whereParts: string[] = [];
@@ -44,6 +45,9 @@ async function listInquiriesPaginated(
   if (useStoreFilter) {
     whereParts.push(STORE_INQUIRIES);
     binds.push(storeId);
+  }
+  if (notifyFailed) {
+    whereParts.push(`admin_notify_status = 'failed'`);
   }
   if (hasStatus) {
     whereParts.push('status = ?');
@@ -94,6 +98,7 @@ export async function GET(req: NextRequest) {
 
     const status = req.nextUrl.searchParams.get('status');
     const pattern = likePattern(req.nextUrl.searchParams.get('q') || '');
+    const notifyFailed = req.nextUrl.searchParams.get('notify') === 'failed';
     const { page, limit, offset } = parsePageLimit(req);
 
     try {
@@ -104,7 +109,8 @@ export async function GET(req: NextRequest) {
         pattern,
         limit,
         offset,
-        true
+        true,
+        notifyFailed
       );
       const totalPages = Math.max(1, Math.ceil(total / limit));
       return Response.json({
@@ -115,6 +121,12 @@ export async function GET(req: NextRequest) {
         },
       });
     } catch (e) {
+      if (notifyFailed && /no such column:\s*admin_notify_status/i.test(e instanceof Error ? e.message : String(e))) {
+        return Response.json({
+          success: true,
+          data: { items: [], pagination: { page: 1, limit, total: 0, totalPages: 1 } },
+        });
+      }
       if (!isMissingStoreIdColumn(e)) throw e;
       const { items, total } = await listInquiriesPaginated(
         env.DB,
@@ -123,7 +135,8 @@ export async function GET(req: NextRequest) {
         pattern,
         limit,
         offset,
-        false
+        false,
+        notifyFailed
       );
       const totalPages = Math.max(1, Math.ceil(total / limit));
       return Response.json({

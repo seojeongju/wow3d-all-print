@@ -4,6 +4,7 @@ import { errorResponse, successResponse } from '@/lib/api-utils';
 import { notifyAdminNewInquiry } from '@/lib/inquiry-admin-notify';
 import { generateInquiryReplyToken } from '@/lib/inquiry-reply-address';
 import { serializeInquiryFileUrls } from '@/lib/inquiry-files';
+import { recordAdminNotifyResult } from '@/lib/inquiry-replies';
 
 const RATE_LIMIT_PER_HOUR = 5;
 const MESSAGE_MAX = 5000;
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     let emailSent = false;
     try {
-      emailSent = await notifyAdminNewInquiry(
+      const notifyResult = await notifyAdminNewInquiry(
         {
           inquiryId: Number(id),
           name,
@@ -221,11 +222,17 @@ export async function POST(request: NextRequest) {
         env as unknown as Record<string, unknown>,
         env.DB
       );
-      if (!emailSent) {
-        console.warn('문의 관리자 알림 메일 미발송 (RESEND_API_KEY 확인 필요, 문의는 DB 저장됨)');
+      emailSent = notifyResult.ok;
+      await recordAdminNotifyResult(env.DB, Number(id), notifyResult);
+      if (!notifyResult.ok) {
+        console.warn('문의 관리자 알림 메일 미발송 (문의는 DB 저장됨):', notifyResult.error);
       }
     } catch (emailErr) {
       console.warn('문의 관리자 알림 메일 발송 실패 (문의는 DB 저장됨):', emailErr);
+      await recordAdminNotifyResult(env.DB, Number(id), {
+        ok: false,
+        error: emailErr instanceof Error ? emailErr.message : '관리자 알림 메일 발송 실패',
+      });
     }
 
     return successResponse(

@@ -1,4 +1,4 @@
-import { sendEmail, escapeHtml } from '@/lib/mail-utils';
+import { sendEmailWithResult, escapeHtml, type SendEmailResult } from '@/lib/mail-utils';
 import { getAdminInquiryEmail } from '@/lib/inquiry-admin-notify';
 
 export type UserReplyNotifyPayload = {
@@ -18,7 +18,7 @@ export type UserReplyNotifyPayload = {
 export async function notifyUserInquiryReplied(
     payload: UserReplyNotifyPayload,
     env: any
-): Promise<boolean> {
+): Promise<SendEmailResult> {
     const subjectLine = `[WOW3D] 문의하신 내용에 대한 답변이 등록되었습니다.`;
     const adminReplyTo = getAdminInquiryEmail(env as Record<string, unknown>);
 
@@ -99,7 +99,7 @@ export async function notifyUserInquiryReplied(
         </div>
     `;
 
-    return sendEmail(
+    return sendEmailWithResult(
         {
             to: payload.email,
             subject: subjectLine,

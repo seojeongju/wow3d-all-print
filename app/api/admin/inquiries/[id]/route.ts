@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
-import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
 
 const ALLOWED_STATUS = ['new', 'read', 'replied', 'closed'];
 const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
@@ -66,7 +65,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       }
     };
 
-    let existingInquiry: any = null;
+    let existingInquiry: unknown = null;
     let useStoreScope = true;
 
     try {
@@ -89,32 +88,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       }
     }
 
+    // 관리자 메모는 내부용 — 고객 답변 발송은 POST /api/admin/inquiries/[id]/replies 에서만
     await runUpdate(useStoreScope);
-
-    // 문의 답변 완료 메일 전송 트리거
-    const finalStatus = status !== null ? status : existingInquiry.status;
-    const finalAdminNote = adminNote !== null ? adminNote : existingInquiry.admin_note;
-    const isRepliedNow = finalStatus === 'replied';
-    const noteChanged = adminNote !== null && adminNote !== existingInquiry.admin_note;
-    const statusChangedToReplied = status !== null && status === 'replied' && existingInquiry.status !== 'replied';
-
-    if (isRepliedNow && finalAdminNote && (statusChangedToReplied || noteChanged)) {
-      try {
-        await notifyUserInquiryReplied(
-          {
-            inquiryId: numId,
-            name: existingInquiry.name,
-            email: existingInquiry.email,
-            subject: existingInquiry.subject,
-            message: existingInquiry.message,
-            replyMessage: finalAdminNote,
-          },
-          env as any
-        );
-      } catch (mailErr) {
-        console.error('Failed to send inquiry reply notification email:', mailErr);
-      }
-    }
 
     return NextResponse.json({ success: true });
   } catch (e) {

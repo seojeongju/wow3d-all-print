@@ -12,19 +12,30 @@ export interface SendEmailOptions {
     reply_to?: string;
 }
 
+export type SendEmailResult = { ok: true } | { ok: false; error: string };
+
 /**
  * Resend API를 통해 이메일을 전송합니다.
  * @param options 전송 옵션
  * @param env Cloudflare Env 객체 (API Key 포함)
  */
 export async function sendEmail(options: SendEmailOptions, env: any): Promise<boolean> {
+    return (await sendEmailWithResult(options, env)).ok;
+}
+
+/** 발송 실패 사유까지 돌려주는 버전 (발송 기록·재발송 화면용) */
+export async function sendEmailWithResult(
+    options: SendEmailOptions,
+    env: Record<string, unknown>
+): Promise<SendEmailResult> {
     try {
-        const apiKey = env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-        const fromDefault = env.RESEND_FROM || process.env.RESEND_FROM || 'WOW3D <onboarding@resend.dev>';
+        const apiKey = (env.RESEND_API_KEY as string | undefined) || process.env.RESEND_API_KEY;
+        const fromDefault =
+            (env.RESEND_FROM as string | undefined) || process.env.RESEND_FROM || 'WOW3D <onboarding@resend.dev>';
         
         if (!apiKey) {
             console.error('RESEND_API_KEY가 설정되지 않았습니다.');
-            return false;
+            return { ok: false, error: '메일 발송 키(RESEND_API_KEY)가 설정되지 않았습니다.' };
         }
 
         const response = await fetch('https://api.resend.com/emails', {
@@ -44,15 +55,16 @@ export async function sendEmail(options: SendEmailOptions, env: any): Promise<bo
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
+            const error = (await response.json().catch(() => ({}))) as { message?: string; name?: string };
             console.error('Resend API 오류:', error);
-            return false;
+            const detail = error?.message || error?.name || '';
+            return { ok: false, error: `메일 서버 오류 (${response.status})${detail ? `: ${detail}` : ''}` };
         }
 
-        return true;
+        return { ok: true };
     } catch (error) {
         console.error('Email 전송 실패:', error);
-        return false;
+        return { ok: false, error: error instanceof Error ? error.message : '메일 전송 중 알 수 없는 오류' };
     }
 }
 
