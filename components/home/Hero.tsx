@@ -110,7 +110,7 @@ export default function Hero() {
             clearSampleIfPresent();
             trackHero(HERO_CONVERSION_EVENTS.DROP_FILE);
             setFile(model);
-            router.push('/quote?entry=file');
+            router.push('/quote?entry=file&handoff=1');
         },
         [router, setFile, trackHero],
     );
@@ -140,7 +140,7 @@ export default function Hero() {
                 clearSampleIfPresent();
                 trackHero(HERO_CONVERSION_EVENTS.DROP_FILE, { rejected: 'too_large' });
                 useUploadNoticeStore.getState().showTooLarge(candidate);
-                router.push('/quote?entry=file');
+                router.push('/quote?entry=file&handoff=1');
                 return;
             }
             handleModelUpload(candidate);

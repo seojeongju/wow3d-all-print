@@ -579,10 +579,6 @@
     "overflowCartBlocked": "Models larger than the max build size can't be added to the cart. Scale it down or ask us about split printing.",
     "materialSettings": "Material",
     "noMaterials": "No materials available. Add them in Admin → Materials.",
-    "pricePerGram": "₩{price}/g · density {density}",
-    "pricePerGramShort": "₩{price}/g",
-    "pricePerMl": "₩{price}/mL",
-    "pricePerMlUnset": "mL price not set",
     "infillLabel": "Infill density",
     "infillHint": "Higher infill increases material use, print time, and price. Use a preset or fine-tune with the slider.",
     "infillPresets": {
@@ -613,7 +609,6 @@
     "materialAmount": "Material use",
     "layerCount": "Layer count",
     "costBreakdown": "Cost breakdown (supply)",
-    "costMaterial": "Material",
     "costMachine": "Machine",
     "costOther": "Other",
     "costLabor": "Labor",

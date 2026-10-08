@@ -1062,7 +1062,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                         <button
                                             key={m.id}
                                             onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
-                                            title={printMethod === 'fdm' ? t('pricePerGram', { price: (m.price_per_gram || 0).toLocaleString(), density: m.density }) : undefined}
                                             className={`flex items-center gap-2 min-h-11 px-3 py-2 rounded-xl border text-left transition-all ${selected
                                                 ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'
                                                 : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
@@ -1070,13 +1069,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                         >
                                             <div className="flex-1 min-w-0">
                                                 <div className={`text-[13px] font-black tracking-tight truncate ${selected ? 'text-teal-400' : 'text-white/80'} ${MAT_COLORS[m.name] || ''}`}>{m.name}</div>
-                                                <div className="text-[10px] text-white/40 font-bold truncate">
-                                                    {printMethod === 'fdm'
-                                                        ? t('pricePerGramShort', { price: (m.price_per_gram || 0).toLocaleString() })
-                                                        : (m.price_per_ml != null && m.price_per_ml > 0)
-                                                            ? t('pricePerMl', { price: m.price_per_ml.toLocaleString() })
-                                                            : t('pricePerMlUnset')}
-                                                </div>
                                             </div>
                                             {selected && (
                                                 <div className="w-4 h-4 shrink-0 rounded-full bg-teal-400 flex items-center justify-center">
@@ -1233,7 +1225,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         <section>
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{t('costBreakdown')}</h4>
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span className="text-slate-400">{t('costMaterial')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.material).toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span className="text-slate-400">{t('costMachine')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine).toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span className="text-slate-400">{t('costOther')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other).toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span className="text-slate-400">{t('costLabor')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor).toLocaleString()}</span></div>

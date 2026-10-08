@@ -21,6 +21,7 @@ import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
 import { buildFileSourceFromFileName, buildQuoteModelAuthHeaders, fetchQuoteModelFile, resolveQuoteReloadTransform } from "@/lib/quote-reload";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePhotoHandoffStore } from "@/store/usePhotoHandoffStore";
+import { readMeshyActiveJobId, saveMeshyActiveJob } from "@/lib/meshy-active-job";
 import { useQuoteFunnelTracking } from "@/hooks/useQuoteFunnelTracking";
 import { showToast } from "@/lib/toast-helper";
 
@@ -197,10 +198,27 @@ function QuoteContent() {
         userId: user?.id ?? null,
     });
 
-    // 업로드 실패 안내(용량 초과·분석 실패)는 업로드 화면에 표시되므로 그 화면으로 전환
-    const uploadNotice = useUploadNoticeStore((s) => s.notice);
+    // 메인 등에서 「3D 파일 / 사진」 진입 시 같은 탭에 남은 이전 파일·안내를 비운다.
+    // (남아 있으면 견적 패널이 우선 표시되어 사진 화면 대신 이전 견적이 뜸)
+    // handoff=1: 직전 화면에서 방금 넘긴 파일·사진이므로 유지
+    const isHandoff = searchParams.get('handoff') === '1';
     useEffect(() => {
-        if (!uploadNotice) return;
+        if (isHandoff || loadQuoteId || loadMeshyJobId) return;
+        if (entryParam !== 'file' && entryParam !== 'photo') return;
+        useUploadNoticeStore.getState().clear();
+        if (!useFileStore.getState().file) return;
+        const activeMeshyJob = readMeshyActiveJobId();
+        useFileStore.getState().reset();
+        if (activeMeshyJob) saveMeshyActiveJob(activeMeshyJob);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 진입 시 1회만
+    }, []);
+
+    // 업로드 실패 안내(용량 초과·분석 실패)는 업로드 화면에 표시되므로 그 화면으로 전환
+    // 진입 시점에 이미 있던 안내(이전 방문 잔여)로는 화면을 바꾸지 않음
+    const uploadNotice = useUploadNoticeStore((s) => s.notice);
+    const mountNoticeRef = useRef(uploadNotice);
+    useEffect(() => {
+        if (!uploadNotice || uploadNotice === mountNoticeRef.current) return;
         setEntryMode('file');
         setActiveTab('settings');
         if (uploadNotice.kind === 'analysis_failed') {

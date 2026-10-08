@@ -221,7 +221,7 @@ export function MakerWorkspace() {
             const file = new File([blob], `wow3d-maker-${Date.now()}.stl`, { type: 'model/stl' });
             setFile(file);
             showToast.success(t('toastQuoteOkTitle'), t('toastQuoteOkDesc'));
-            router.push('/quote?entry=file');
+            router.push('/quote?entry=file&handoff=1');
         } catch (e) {
             console.error(e);
             showToast.error(t('toastQuoteFailTitle'), e instanceof Error ? e.message : t('toastQuoteFailRetry'));
