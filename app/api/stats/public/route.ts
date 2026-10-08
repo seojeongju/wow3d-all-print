@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-/** 메인 화면 공개 지표 — 방문자마다 주기적으로 부르므로 isolate 안에서 잠깐 재사용한다 */
-const CACHE_MS = 15_000;
+/** 메인 화면 공개 지표 — 방문자마다 10초 주기로 부르므로 isolate 안에서 잠깐 재사용한다 */
+const CACHE_MS = 3_000;
 let cached: { at: number; data: PublicStats } | null = null;
 
 type PublicStats = {
@@ -20,7 +20,7 @@ function kstTodayStartUtc(now = new Date()): string {
 }
 
 /**
- * GET /api/stats/public - 사용 회원 수 · 오늘 견적 페이지 조회수(PV)
+ * GET /api/stats/public - 누적 가입 회원 수 · 오늘 견적 페이지 조회수(PV)
  */
 export async function GET() {
     const { env } = getCloudflareContext();
