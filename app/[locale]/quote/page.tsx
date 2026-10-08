@@ -9,12 +9,12 @@ import ImageTo3DPanel from "@/components/quote/ImageTo3DPanel";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft, Boxes, FileBox, Loader2, ShoppingCart, RefreshCw, Camera, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, Suspense, useCallback, useId, useMemo, type DragEvent } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback, useId, useMemo, type ChangeEvent, type DragEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useFileStore } from "@/store/useFileStore";
 import { useSearchParams } from "next/navigation";
 import type { Quote } from "@/lib/types";
-import { getModelFileFromDataTransfer, isModelFileTooLarge } from "@/lib/model-file";
+import { getModelFileFromDataTransfer, hasModelFileExtension, isModelFileTooLarge, MODEL_FILE_ACCEPT_STRING } from "@/lib/model-file";
 import { useUploadNoticeStore } from "@/store/useUploadNoticeStore";
 import { cn } from "@/lib/utils";
 import { useCpuModelAnalysis } from "@/hooks/useCpuModelAnalysis";
@@ -319,6 +319,32 @@ function QuoteContent() {
         [setFile, t]
     );
 
+    // 「3D 파일이 있어요」 클릭 시 업로드 화면 전환과 동시에 파일 선택 창을 바로 연다 (취소해도 업로드 화면 유지)
+    const modelPickerRef = useRef<HTMLInputElement>(null);
+    const handleSelectEntry = useCallback((mode: QuoteEntryMode) => {
+        setEntryMode(mode);
+        if (mode === 'file') modelPickerRef.current?.click();
+    }, []);
+
+    const handleModelPicked = useCallback(
+        (e: ChangeEvent<HTMLInputElement>) => {
+            const picked = e.target.files?.[0];
+            e.target.value = '';
+            if (!picked) return;
+            if (!hasModelFileExtension(picked)) {
+                showToast.error(t('dropzoneInvalidType'));
+                return;
+            }
+            if (isModelFileTooLarge(picked)) {
+                useUploadNoticeStore.getState().showTooLarge(picked);
+                return;
+            }
+            useUploadNoticeStore.getState().clear();
+            setFile(picked);
+        },
+        [setFile, t]
+    );
+
     // 샘플 견적 체험 후 실시간 견적 진입 시: 샘플 파일이면 제거 (업로드부터 다시)
     useEffect(() => {
         const checkAndResetSample = () => {
@@ -421,6 +447,15 @@ function QuoteContent() {
                         lg:h-[calc(100vh-5rem)]
                     `}>
                         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-6 sm:p-8 pb-24 lg:pb-10 space-y-8">
+                            <input
+                                ref={modelPickerRef}
+                                type="file"
+                                accept={MODEL_FILE_ACCEPT_STRING}
+                                hidden
+                                tabIndex={-1}
+                                aria-hidden
+                                onChange={handleModelPicked}
+                            />
                             <AnimatePresence mode="wait">
                                 {showQuotePanel ? (
                                     <motion.div
@@ -508,7 +543,7 @@ function QuoteContent() {
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, x: -30 }}
                                         >
-                                            <QuoteSourceChooser onSelect={setEntryMode} />
+                                            <QuoteSourceChooser onSelect={handleSelectEntry} />
                                             <div className="pt-6">
                                                 <button
                                                     type="button"
