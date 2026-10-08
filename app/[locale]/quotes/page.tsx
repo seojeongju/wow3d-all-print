@@ -145,7 +145,10 @@ export default function SavedQuotesPage() {
                 headers,
                 body: JSON.stringify({ quoteId: row.id, quantity: 1 }),
             })
-            if (!res.ok) throw new Error(t('errAddCart'))
+            if (!res.ok) {
+                const err = (await res.json().catch(() => ({}))) as { error?: string }
+                throw new Error(err?.error || t('errAddCart'))
+            }
             const q = toQuote(row)
             addToCart(q, 1)
             showToast.success(t('toastAddTitle'), t('toastAddDesc', { name: row.file_name }))

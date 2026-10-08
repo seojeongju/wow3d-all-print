@@ -354,7 +354,10 @@ function CartPageContent() {
                 headers,
                 body: JSON.stringify({ quoteId: row.id, quantity: 1 }),
             })
-            if (!res.ok) throw new Error(t('errAddFailed'))
+            if (!res.ok) {
+                const err = (await res.json().catch(() => ({}))) as { error?: string }
+                throw new Error(err?.error || t('errAddFailed'))
+            }
             addToCart(toQuote(row), 1)
             showToast.success(t('toastAddTitle'), t('toastAddDesc', { name: row.file_name }))
             setActiveTab('cart')

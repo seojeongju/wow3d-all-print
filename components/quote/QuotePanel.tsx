@@ -36,6 +36,7 @@ import {
 import { trackConversionEvent } from '@/lib/track-conversion-event'
 import { useQuoteEstimateLog, type QuoteEstimateSnapshot } from '@/hooks/useQuoteEstimateLog'
 import { parseStoredModelTransform } from '@/lib/quote-reload'
+import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
 import InchUnitNotice from '@/components/quote/InchUnitNotice'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -292,16 +293,15 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const by = analysis?.boundingBox?.y ?? 0
     const bz = analysis?.boundingBox?.z ?? 0
 
+    // 회전(90° 단위)해서도 장비에 안 들어가면 초과 — 금액은 표시하되 장바구니·주문 차단
     const overflow = useMemo(() => {
         if (!printSpecs || !analysis) return null
         const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
         const spec = printSpecs[key]?.max
         if (!spec) return null
-        const over: string[] = []
-        if (bx > spec.x) over.push(`X(${bx.toFixed(0)}>${spec.x})`)
-        if (by > spec.y) over.push(`Y(${by.toFixed(0)}>${spec.y})`)
-        if (bz > spec.z) over.push(`Z(${bz.toFixed(0)}>${spec.z})`)
-        return over.length ? over.join(', ') : null
+        const dims = { x: bx, y: by, z: bz }
+        if (fitsBuildVolume(dims, spec)) return null
+        return { size: formatBuildDims(dims), max: formatBuildDims(spec) }
     }, [printSpecs, printMethod, bx, by, bz, analysis])
 
     // 견적 상세: 관리자 산출 기준(printSpecs)·소재(materials) 연동
@@ -822,6 +822,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             showToast.error(t('toastAddFail'), t('toastNoAnalysis'));
             return;
         }
+        if (overflow) {
+            showToast.error(t('overflowTitle'), t('overflowCartBlocked'));
+            return;
+        }
 
         const configKey = buildQuoteConfigKey({
             printMethod,
@@ -1019,8 +1023,14 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     <div>
                         <p className="text-sm font-bold text-amber-100">{t('overflowTitle')}</p>
                         <p className="text-xs text-amber-200/90 mt-0.5 leading-relaxed">
-                            {t('overflowBody', { method: printMethod.toUpperCase(), overflow })}
+                            {t('overflowBody', { method: printMethod.toUpperCase(), size: overflow.size, max: overflow.max })}
                         </p>
+                        <Link
+                            href="/contact"
+                            className="inline-flex items-center gap-1 mt-2 text-xs font-black text-amber-100 underline underline-offset-2 hover:text-white"
+                        >
+                            {t('overflowConsult')} <ArrowRight className="w-3 h-3" />
+                        </Link>
                     </div>
                 </div>
             )}
@@ -1298,7 +1308,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 {t('save')}
                             </Button>
                         )}
-                        <Button disabled={!analysis || isSaving} size={embedded ? 'sm' : 'lg'} className={`rounded-xl sm:rounded-2xl bg-white text-slate-950 hover:bg-white/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.12)] h-12 sm:h-16 ${embedded ? 'text-[13px] font-black' : 'text-sm sm:text-[15px] font-black tracking-tight'}`} onClick={handleAddToCart}>
+                        <Button disabled={!analysis || isSaving || !!overflow} title={overflow ? t('overflowCartBlocked') : undefined} size={embedded ? 'sm' : 'lg'} className={`rounded-xl sm:rounded-2xl bg-white text-slate-950 hover:bg-white/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.12)] h-12 sm:h-16 ${embedded ? 'text-[13px] font-black' : 'text-sm sm:text-[15px] font-black tracking-tight'}`} onClick={handleAddToCart}>
                             <ShoppingCart className="w-4.5 h-4.5 sm:w-5 h-5 text-slate-950" /> {t('addToCart')}
                         </Button>
                     </div>

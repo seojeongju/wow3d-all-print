@@ -3,9 +3,11 @@
  * - 같은 출력방식·같은 소재: 최소·셋업 1회 + 변동 합산
  * - 출력방식 또는 소재가 다르면: 그룹마다 최소 적용
  * - 배치 컬럼 없으면: 구버전 total_price × 수량
+ * - 장비 최대 출력 크기 초과 견적은 주문 거부
  */
 
 import { priceCartLinesByMaterialGroup } from '@/lib/quote-batch-price'
+import { buildVolumeErrorMessage, loadBuildMaxByMethod } from '@/lib/build-volume'
 import {
     evaluateQuoteValidity,
     loadPricingStamps,
@@ -50,6 +52,10 @@ type QuoteCartRow = {
     fdm_material_name?: string | null
     resin_type?: string | null
     resin_type_name?: string | null
+    file_name?: string | null
+    dimensions_x?: number | null
+    dimensions_y?: number | null
+    dimensions_z?: number | null
 }
 
 function quoteMaterialKey(row: QuoteCartRow): string {
@@ -108,7 +114,8 @@ export async function resolveOrderLinesFromDb(
                 `SELECT q.id, q.total_price, q.volume_cm3, q.print_method, c.quantity AS cart_quantity,
                         q.variable_cost_krw, q.setup_cost_krw, q.min_price_krw,
                         q.created_at, q.updated_at, q.fdm_material, q.fdm_material_name,
-                        q.resin_type, q.resin_type_name
+                        q.resin_type, q.resin_type_name,
+                        q.file_name, q.dimensions_x, q.dimensions_y, q.dimensions_z
                  FROM quotes q
                  INNER JOIN cart c ON c.quote_id = q.id
                  WHERE q.id IN (${placeholders}) AND ${owner.sql}`
@@ -145,6 +152,7 @@ export async function resolveOrderLinesFromDb(
     const byId = new Map(results.map((r) => [Number(r.id), r]))
 
     const stamps: PricingStamps = await loadPricingStamps(db as unknown as Parameters<typeof loadPricingStamps>[0])
+    const buildMax = await loadBuildMaxByMethod(db as unknown as Parameters<typeof loadBuildMaxByMethod>[0])
 
     const batchInputs: {
         key: number
@@ -171,6 +179,16 @@ export async function resolveOrderLinesFromDb(
 
         const validityError = quoteValidityErrorMessage(evaluateQuoteValidity(row, stamps).status, quoteId)
         if (validityError) return { ok: false, error: validityError, status: 409 }
+
+        if (row.dimensions_x != null && row.dimensions_y != null && row.dimensions_z != null) {
+            const sizeError = buildVolumeErrorMessage(
+                row.print_method,
+                { x: row.dimensions_x, y: row.dimensions_y, z: row.dimensions_z },
+                buildMax,
+                row.file_name || `견적 #${quoteId}`
+            )
+            if (sizeError) return { ok: false, error: sizeError, status: 422 }
+        }
 
         const requestedQty = Math.max(1, Math.floor(Number(item.quantity) || 1))
         const cartQty = Math.max(1, Math.floor(Number(row.cart_quantity) || 1))

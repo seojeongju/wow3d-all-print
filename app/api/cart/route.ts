@@ -9,6 +9,7 @@ import {
     verifyToken,
 } from '@/lib/api-utils';
 import { evaluateQuoteValidity, loadPricingStamps, type QuoteValidityRow } from '@/lib/quote-validity';
+import { buildVolumeErrorMessage, loadBuildMaxByMethod } from '@/lib/build-volume';
 
 async function resolveCartOwner(request: NextRequest): Promise<{
     userId: number | null;
@@ -141,6 +142,20 @@ export async function POST(request: NextRequest) {
 
         const quoteId = Number(body.quoteId);
         const previousQuoteId = body.previousQuoteId ? Number(body.previousQuoteId) : null;
+
+        const sizeRow = await env.DB.prepare(
+            'SELECT print_method, dimensions_x, dimensions_y, dimensions_z FROM quotes WHERE id = ?'
+        )
+            .bind(quoteId)
+            .first<{ print_method: string | null; dimensions_x: number; dimensions_y: number; dimensions_z: number }>();
+        if (sizeRow) {
+            const sizeError = buildVolumeErrorMessage(
+                sizeRow.print_method,
+                { x: sizeRow.dimensions_x, y: sizeRow.dimensions_y, z: sizeRow.dimensions_z },
+                await loadBuildMaxByMethod(env.DB)
+            );
+            if (sizeError) return errorResponse(sizeError, 422);
+        }
 
         // 견적 재저장으로 quote_id가 바뀐 경우 장바구니 행 연결 갱신
         if (
