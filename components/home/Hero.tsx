@@ -14,10 +14,9 @@ import {
     Printer,
     Lightbulb,
 } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback, useRef, type DragEvent, type ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { useFileStore } from '@/store/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';

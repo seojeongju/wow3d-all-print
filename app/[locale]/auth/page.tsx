@@ -2,7 +2,7 @@
 
 import { useState, Suspense, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Link } from '@/i18n/navigation'
+import { Link, prefetchExactIfNeeded } from '@/i18n/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -86,6 +86,7 @@ function AuthContent() {
               ? t('toast.kakaoWelcome', { name: user.name })
               : t('toast.welcome', { name: user.name })
           )
+          prefetchExactIfNeeded(router, returnPath)
           router.replace(returnPath)
         }
       } catch {
@@ -143,6 +144,7 @@ function AuthContent() {
       showToast.success(t('toast.loginSuccess'), t('toast.welcomeBack', { name: result.data.user.name }))
 
       const target = returnTo || (result.data.user?.role === 'admin' || result.data.user?.role === 'super_admin' ? '/admin' : '/')
+      prefetchExactIfNeeded(router, target)
       router.push(target)
     } catch (error) {
       showToast.error(
@@ -183,6 +185,7 @@ function AuthContent() {
 
       showToast.success(t('toast.signupSuccess'), t('toast.signupSuccessDesc'))
 
+      prefetchExactIfNeeded(router, returnTo || '/')
       router.push(returnTo || '/')
     } catch (error) {
       showToast.error(
