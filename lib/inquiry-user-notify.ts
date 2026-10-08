@@ -8,6 +8,8 @@ export type UserReplyNotifyPayload = {
     subject?: string | null;
     message: string;
     replyMessage: string;
+    /** 메일에 직접 첨부할 파일 (content: base64) */
+    attachments?: { filename: string; content: string }[];
 };
 
 /**
@@ -26,6 +28,19 @@ export async function notifyUserInquiryReplied(
     const formattedOriginalMessage = escapeHtml(payload.message).replace(/\n/g, '<br>');
     const formattedReplyMessage = escapeHtml(payload.replyMessage).replace(/\n/g, '<br>');
     const originalSubject = payload.subject?.trim() || '일반 문의';
+    const attachmentNames = (payload.attachments || []).map((a) => a.filename);
+    const attachmentText = attachmentNames.length
+        ? ['', `--- 첨부파일 ${attachmentNames.length}개 ---`, ...attachmentNames.map((n) => `· ${n}`)]
+        : [];
+    const attachmentHtml = attachmentNames.length
+        ? `
+            <div style="margin: -16px 0 32px; padding: 14px 18px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #ffffff;">
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">📎 첨부파일 ${attachmentNames.length}개 (이 메일에 함께 첨부되어 있습니다)</div>
+                ${attachmentNames
+                    .map((n) => `<div style="font-size: 12px; color: #475569; line-height: 1.7; word-break: break-all;">· ${escapeHtml(n)}</div>`)
+                    .join('')}
+            </div>`
+        : '';
 
     const textBody = [
         `안녕하세요, ${payload.name}님.`,
@@ -38,6 +53,7 @@ export async function notifyUserInquiryReplied(
         '',
         '--- 답변 내용 ---',
         payload.replyMessage,
+        ...attachmentText,
         '',
         '추가 문의가 있으시면 이 메일에 「답장」해 주시면 됩니다.',
         '상세한 내용은 WOW3D 홈페이지에서도 확인하실 수 있습니다.',
@@ -68,6 +84,7 @@ export async function notifyUserInquiryReplied(
                     ${formattedReplyMessage}
                 </div>
             </div>
+${attachmentHtml}
 
             <!-- 이전 문의 내용 -->
             <div style="margin-bottom: 32px; border: 1px solid #f1f5f9; border-radius: 16px; padding: 20px;">
@@ -106,6 +123,7 @@ export async function notifyUserInquiryReplied(
             text: textBody,
             html: htmlBody,
             reply_to: adminReplyTo,
+            attachments: payload.attachments,
         },
         env
     );

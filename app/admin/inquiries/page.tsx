@@ -7,11 +7,21 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Search, Loader2, Eye, Paperclip, Sparkles, MailWarning, Send, RotateCw, Mail, MonitorSmartphone, History } from 'lucide-react'
+import { Search, Loader2, Eye, Paperclip, Sparkles, MailWarning, Send, RotateCw, Mail, MonitorSmartphone, History, X, FileText, Download } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 import { inquiryFileDisplayName, parseInquiryFileUrls } from '@/lib/inquiry-files'
+import {
+  formatFileSize,
+  isAllowedReplyAttachment,
+  isImageAttachment,
+  REPLY_ATTACHMENT_ACCEPT,
+  REPLY_ATTACHMENT_HINT,
+  REPLY_ATTACHMENT_MAX_COUNT,
+  REPLY_ATTACHMENT_MAX_TOTAL,
+  type ReplyAttachmentMeta,
+} from '@/lib/inquiry-reply-attachments'
 import AdminListPagination from '@/components/admin/AdminListPagination'
 import {
   Select,
@@ -57,6 +67,21 @@ type InquiryReply = {
   send_error: string | null
   created_at: string
   sent_at: string | null
+  attachments?: ReplyAttachmentMeta[]
+}
+
+type PendingReplyFile = {
+  id: string
+  file: File
+  previewUrl: string | null
+}
+
+/** 클립보드로 붙여 넣은 캡처는 이름이 모두 image.png 라 구분되도록 바꾼다 */
+function renamePastedImage(file: File): File {
+  if (!/^image\.(png|jpe?g|gif|webp)$/i.test(file.name)) return file
+  const ext = file.name.split('.').pop() || 'png'
+  const stamp = new Date().toLocaleTimeString('ko-KR', { hour12: false }).replace(/:/g, '')
+  return new File([file], `캡처_${stamp}_${Math.random().toString(36).slice(2, 6)}.${ext}`, { type: file.type })
 }
 
 type AdminNotifyInfo = {
@@ -125,6 +150,10 @@ export default function AdminInquiriesPage() {
   const [repliesSchemaReady, setRepliesSchemaReady] = useState(true)
   const [adminNotify, setAdminNotify] = useState<AdminNotifyInfo | null>(null)
   const [replyDraft, setReplyDraft] = useState('')
+  const [replyFiles, setReplyFiles] = useState<PendingReplyFile[]>([])
+  const [replyDragOver, setReplyDragOver] = useState(false)
+  const replyFileInputRef = useRef<HTMLInputElement>(null)
+  const replyFilesRef = useRef<PendingReplyFile[]>([])
   const [sendingReply, setSendingReply] = useState(false)
   const [resendingReplyId, setResendingReplyId] = useState<number | null>(null)
   const [resendingNotify, setResendingNotify] = useState(false)
@@ -272,6 +301,97 @@ export default function AdminInquiriesPage() {
     setDetailStatus((s) => (s !== 'replied' && s !== 'closed' ? 'replied' : s))
   }
 
+  const replyFilesTotal = replyFiles.reduce((sum, f) => sum + f.file.size, 0)
+
+  const clearReplyFiles = useCallback(() => {
+    replyFilesRef.current.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl))
+    replyFilesRef.current = []
+    setReplyFiles([])
+  }, [])
+
+  useEffect(() => {
+    replyFilesRef.current = replyFiles
+  }, [replyFiles])
+
+  const detailId = detail?.id != null ? Number(detail.id) : null
+  useEffect(() => {
+    clearReplyFiles()
+  }, [detailId, clearReplyFiles])
+
+  useEffect(() => () => replyFilesRef.current.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl)), [])
+
+  const addReplyFiles = (incoming: File[]) => {
+    if (incoming.length === 0) return
+    const blocked = incoming.filter((f) => !isAllowedReplyAttachment(f.name))
+    if (blocked.length > 0) {
+      toast({
+        title: '첨부할 수 없는 파일이 있습니다.',
+        description: `${blocked.map((f) => f.name).join(', ')} — 허용: ${REPLY_ATTACHMENT_HINT}`,
+        variant: 'destructive',
+      })
+    }
+    const current = replyFilesRef.current
+    let total = current.reduce((sum, f) => sum + f.file.size, 0)
+    const added: PendingReplyFile[] = []
+    for (const raw of incoming.filter((f) => isAllowedReplyAttachment(f.name))) {
+      if (current.length + added.length >= REPLY_ATTACHMENT_MAX_COUNT) {
+        toast({ title: `첨부파일은 최대 ${REPLY_ATTACHMENT_MAX_COUNT}개까지 보낼 수 있습니다.`, variant: 'destructive' })
+        break
+      }
+      if (total + raw.size > REPLY_ATTACHMENT_MAX_TOTAL) {
+        toast({
+          title: '첨부 용량을 초과했습니다.',
+          description: `${raw.name} (${formatFileSize(raw.size)}) — 메일 첨부는 합계 ${formatFileSize(REPLY_ATTACHMENT_MAX_TOTAL)}까지 가능합니다.`,
+          variant: 'destructive',
+        })
+        continue
+      }
+      const file = renamePastedImage(raw)
+      total += file.size
+      added.push({
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        previewUrl: isImageAttachment(file.name) ? URL.createObjectURL(file) : null,
+      })
+    }
+    if (added.length > 0) {
+      const next = [...current, ...added]
+      replyFilesRef.current = next
+      setReplyFiles(next)
+    }
+  }
+
+  const removeReplyFile = (id: string) => {
+    const target = replyFilesRef.current.find((f) => f.id === id)
+    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl)
+    const next = replyFilesRef.current.filter((f) => f.id !== id)
+    replyFilesRef.current = next
+    setReplyFiles(next)
+  }
+
+  const downloadReplyAttachment = async (inquiryId: number, att: ReplyAttachmentMeta) => {
+    try {
+      const res = await fetch(
+        `/api/admin/inquiries/${inquiryId}/replies/file?key=${encodeURIComponent(att.key)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      )
+      if (!res.ok) throw new Error('파일을 열 수 없습니다.')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = att.name || 'attachment'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      toast({
+        title: '첨부파일 열기 실패',
+        description: err instanceof Error ? err.message : '잠시 후 다시 시도해 주세요.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const handleSendReply = async () => {
     if (!detail?.id) return
     const message = replyDraft.trim()
@@ -279,24 +399,40 @@ export default function AdminInquiriesPage() {
       toast({ title: '답변 내용을 입력해 주세요.', variant: 'destructive' })
       return
     }
-    if (!window.confirm(`${String(detail.email || '고객')}님에게 답변 메일을 발송합니다. 계속할까요?`)) return
+    const files = replyFilesRef.current
+    const attachNote = files.length ? `\n첨부파일 ${files.length}개(${formatFileSize(replyFilesTotal)})가 함께 발송됩니다.` : ''
+    if (!window.confirm(`${String(detail.email || '고객')}님에게 답변 메일을 발송합니다.${attachNote}\n계속할까요?`)) return
     const inquiryId = Number(detail.id)
     setSendingReply(true)
     try {
-      const res = await fetch(`/api/admin/inquiries/${inquiryId}/replies`, {
-        method: 'POST',
-        headers: authJsonHeaders(),
-        body: JSON.stringify({ message }),
-      })
+      let res: Response
+      if (files.length > 0) {
+        const form = new FormData()
+        form.append('message', message)
+        files.forEach((f) => form.append('files', f.file, f.file.name))
+        res = await fetch(`/api/admin/inquiries/${inquiryId}/replies`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        })
+      } else {
+        res = await fetch(`/api/admin/inquiries/${inquiryId}/replies`, {
+          method: 'POST',
+          headers: authJsonHeaders(),
+          body: JSON.stringify({ message }),
+        })
+      }
       const json = await res.json()
       const reply = json.data?.reply as InquiryReply | undefined
       if (reply) setReplies((prev) => [...prev, reply])
       if (json.success) {
         setReplyDraft('')
+        clearReplyFiles()
         markRepliedLocally(inquiryId)
         toast({ title: '답변을 발송했습니다.', description: '고객에게 메일이 전송되고 상태가 답변완료로 바뀌었습니다.' })
       } else if (reply) {
         setReplyDraft('')
+        clearReplyFiles()
         toast({
           title: '답변은 기록됐지만 메일 발송에 실패했습니다.',
           description: json.error || '이력에서 재발송해 주세요.',
@@ -871,6 +1007,24 @@ export default function AdminInquiriesPage() {
                           )}
                         </div>
                         <p className="text-sm text-white/85 whitespace-pre-wrap break-words">{r.body}</p>
+                        {r.attachments && r.attachments.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {r.attachments.map((att) => (
+                              <button
+                                key={att.key}
+                                type="button"
+                                onClick={() => downloadReplyAttachment(Number(detail.id), att)}
+                                className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-white/10 bg-black/25 px-2 py-1 text-[11px] text-white/70 hover:border-teal-400/40 hover:text-teal-200"
+                                title={`${att.name} 내려받기`}
+                              >
+                                <Paperclip className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{att.name}</span>
+                                <span className="shrink-0 text-white/35">{formatFileSize(att.size)}</span>
+                                <Download className="w-3 h-3 shrink-0 text-white/40" />
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
                         {r.send_status === 'failed' ? (
                           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                             <p className="text-[11px] text-rose-200/80">{r.send_error || '메일 발송에 실패했습니다.'}</p>
@@ -897,7 +1051,25 @@ export default function AdminInquiriesPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-teal-400/25 bg-teal-500/[0.06] p-3 space-y-2">
+              <div
+                className={`rounded-xl border p-3 space-y-2 transition-colors ${
+                  replyDragOver ? 'border-teal-300/70 bg-teal-500/[0.14]' : 'border-teal-400/25 bg-teal-500/[0.06]'
+                }`}
+                onDragOver={(e) => {
+                  if (!repliesSchemaReady || sendingReply || !e.dataTransfer.types.includes('Files')) return
+                  e.preventDefault()
+                  setReplyDragOver(true)
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setReplyDragOver(false)
+                }}
+                onDrop={(e) => {
+                  if (!repliesSchemaReady || sendingReply) return
+                  e.preventDefault()
+                  setReplyDragOver(false)
+                  addReplyFiles(Array.from(e.dataTransfer.files))
+                }}
+              >
                 <Label className="flex items-center gap-1.5 text-[11px] font-bold text-teal-200">
                   <Send className="w-3.5 h-3.5" />
                   고객에게 답변하기
@@ -907,11 +1079,83 @@ export default function AdminInquiriesPage() {
                     <textarea
                       value={replyDraft}
                       onChange={(e) => setReplyDraft(e.target.value)}
+                      onPaste={(e) => {
+                        const pasted = Array.from(e.clipboardData.files)
+                        if (pasted.length === 0) return
+                        e.preventDefault()
+                        addReplyFiles(pasted)
+                      }}
                       rows={5}
                       maxLength={10000}
                       className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-sm text-white placeholder:text-white/30 resize-y"
                       placeholder="고객에게 보낼 답변을 입력하세요. 발송하면 고객 이메일로 전송되고 상태가 답변완료로 바뀝니다."
                     />
+
+                    <input
+                      ref={replyFileInputRef}
+                      type="file"
+                      multiple
+                      accept={REPLY_ATTACHMENT_ACCEPT}
+                      className="hidden"
+                      onChange={(e) => {
+                        addReplyFiles(Array.from(e.target.files || []))
+                        e.target.value = ''
+                      }}
+                    />
+                    {replyFiles.length > 0 ? (
+                      <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                        {replyFiles.map((f) => (
+                          <li
+                            key={f.id}
+                            className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/25 p-1.5 pr-1"
+                          >
+                            {f.previewUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={f.previewUrl} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
+                            ) : (
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-white/5">
+                                <FileText className="h-4 w-4 text-white/50" />
+                              </span>
+                            )}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[12px] text-white/85">{f.file.name}</span>
+                              <span className="block text-[10px] text-white/40">{formatFileSize(f.file.size)}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeReplyFile(f.id)}
+                              disabled={sendingReply}
+                              className="rounded p-1 text-white/40 hover:bg-white/10 hover:text-white disabled:opacity-40"
+                              aria-label={`${f.file.name} 빼기`}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => replyFileInputRef.current?.click()}
+                        disabled={sendingReply}
+                        className="h-7 border-white/15 text-white/75 hover:bg-white/10 text-[11px]"
+                      >
+                        <Paperclip className="w-3.5 h-3.5 mr-1" />
+                        파일 첨부
+                      </Button>
+                      <p
+                        className={`text-[10px] ${
+                          replyFilesTotal > REPLY_ATTACHMENT_MAX_TOTAL * 0.8 ? 'text-amber-300/80' : 'text-white/35'
+                        }`}
+                      >
+                        {replyFiles.length > 0
+                          ? `${replyFiles.length}개 · ${formatFileSize(replyFilesTotal)} / ${formatFileSize(REPLY_ATTACHMENT_MAX_TOTAL)}`
+                          : `${REPLY_ATTACHMENT_HINT} · 합계 ${formatFileSize(REPLY_ATTACHMENT_MAX_TOTAL)}까지 · 끌어다 놓기·캡처 붙여넣기 가능`}
+                      </p>
+                    </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[11px] text-white/40 break-all">받는 사람: {String(detail.email || '-')}</p>
                       <Button

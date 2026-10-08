@@ -1,4 +1,4 @@
-import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
+﻿import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
 import { hasSameReply, isMissingRepliesSchema, sendInquiryReply, type InquiryDb } from '@/lib/inquiry-replies';
 
 export type ProcessInquiryEmailReplyInput = {
@@ -38,7 +38,7 @@ export async function processInquiryEmailReply(
 ): Promise<ProcessInquiryEmailReplyResult> {
     const replyMessage = input.replyMessage?.trim();
     if (!replyMessage || replyMessage.length < 2) {
-        return { ok: false, error: '?듭옣 蹂몃Ц??鍮꾩뼱 ?덉뒿?덈떎.', status: 400 };
+        return { ok: false, error: '답장 본문이 비어 있습니다.', status: 400 };
     }
 
     const allowedFrom = getAllowedAdminEmails(env);
@@ -48,7 +48,7 @@ export async function processInquiryEmailReply(
         return normalizeEmail(m ? m[1] : fromNormRaw);
     })();
     if (!allowedFrom.includes(fromNorm)) {
-        return { ok: false, error: '?덉슜?섏? ?딆? 諛쒖떊 二쇱냼?낅땲??', status: 403 };
+        return { ok: false, error: '허용되지 않은 발신 주소입니다.', status: 403 };
     }
 
     let row: Record<string, unknown> | null = null;
@@ -62,16 +62,16 @@ export async function processInquiryEmailReply(
             .first();
     } catch (e) {
         console.error('processInquiryEmailReply select failed', e);
-        return { ok: false, error: '臾몄쓽 議고쉶 ?ㅽ뙣', status: 500 };
+        return { ok: false, error: '문의 조회 실패', status: 500 };
     }
 
     if (!row) {
-        return { ok: false, error: '臾몄쓽瑜?李얠쓣 ???놁뒿?덈떎.', status: 404 };
+        return { ok: false, error: '문의를 찾을 수 없습니다.', status: 404 };
     }
 
     const storedToken = String(row.reply_token || '');
     if (!storedToken || storedToken !== input.token) {
-        return { ok: false, error: '?좏슚?섏? ?딆? ?듭옣 ?좏겙?낅땲??', status: 403 };
+        return { ok: false, error: '유효하지 않은 답장 토큰입니다.', status: 403 };
     }
 
     const inquiry = {
@@ -95,11 +95,11 @@ export async function processInquiryEmailReply(
     } catch (e) {
         if (!isMissingRepliesSchema(e)) {
             console.error('processInquiryEmailReply reply record failed', e);
-            return { ok: false, error: '?듬? 湲곕줉 ?ㅽ뙣', status: 500 };
+            return { ok: false, error: '답변 기록 실패', status: 500 };
         }
     }
 
-    // inquiry_replies ?뚯씠釉붿씠 ?꾩쭅 ?녿뒗 DB: ?댁쟾 諛⑹떇(愿由ъ옄 硫붾え???듬? ???
+    // inquiry_replies 테이블이 아직 없는 DB: 이전 방식(관리자 메모에 답변 저장)
     const prevNote = String(row.admin_note || '');
     const alreadyReplied = inquiry.status === 'replied' && prevNote === replyMessage;
     if (alreadyReplied) {
@@ -115,7 +115,7 @@ export async function processInquiryEmailReply(
             .run();
     } catch (e) {
         console.error('processInquiryEmailReply update failed', e);
-        return { ok: false, error: '臾몄쓽 ?곹깭 ?낅뜲?댄듃 ?ㅽ뙣', status: 500 };
+        return { ok: false, error: '문의 상태 업데이트 실패', status: 500 };
     }
 
     let userNotified = false;

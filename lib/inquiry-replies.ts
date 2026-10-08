@@ -1,7 +1,9 @@
-import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
+﻿import { notifyUserInquiryReplied } from '@/lib/inquiry-user-notify';
 import type { SendEmailResult } from '@/lib/mail-utils';
+import { parseReplyAttachments, type ReplyAttachmentMeta } from '@/lib/inquiry-reply-attachments';
 
 export type InquiryDb = CloudflareEnv['DB'];
+export type InquiryBucket = CloudflareEnv['BUCKET'];
 
 export type InquiryReplyChannel = 'admin_web' | 'email_reply' | 'legacy';
 export type InquiryReplySendStatus = 'sent' | 'failed' | 'unknown';
@@ -17,6 +19,7 @@ export type InquiryReplyRow = {
     created_by: number | null;
     created_at: string;
     sent_at: string | null;
+    attachments: ReplyAttachmentMeta[];
 };
 
 export type InquiryForReply = {
@@ -28,11 +31,33 @@ export type InquiryForReply = {
     status: string;
 };
 
+/** 메일에 첨부할 파일 (content: base64) */
+export type ReplyAttachmentPayload = {
+    meta: ReplyAttachmentMeta;
+    content: string;
+};
+
 const REPLY_BODY_MAX = 10000;
 
 export function isMissingRepliesSchema(e: unknown): boolean {
     const msg = e instanceof Error ? e.message : String(e);
     return /no such table:\s*inquiry_replies|no such column:\s*admin_notify/i.test(msg);
+}
+
+export function isMissingAttachmentsColumn(e: unknown): boolean {
+    const msg = e instanceof Error ? e.message : String(e);
+    return /no such column:\s*attachments|has no column named attachments/i.test(msg);
+}
+
+/** 메일을 보낸 뒤 이력 저장만 실패하는 일이 없도록 발송 전에 확인 */
+export async function hasAttachmentsColumn(db: InquiryDb): Promise<boolean> {
+    try {
+        await db.prepare('SELECT attachments FROM inquiry_replies LIMIT 0').all();
+        return true;
+    } catch (e) {
+        if (isMissingAttachmentsColumn(e)) return false;
+        throw e;
+    }
 }
 
 export function normalizeReplyBody(raw: unknown): string {
@@ -41,7 +66,7 @@ export function normalizeReplyBody(raw: unknown): string {
 
 const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
 
-/** 愿由ъ옄 留ㅼ옣 踰붿쐞??臾몄쓽 1嫄?(store_id 而щ읆???녿뒗 DB??吏?? */
+/** 관리자 매장 범위의 문의 1건 (store_id 컬럼이 없는 DB도 지원) */
 export async function findInquiryForStore(
     db: InquiryDb,
     inquiryId: number,
@@ -73,18 +98,40 @@ export function toInquiryForReply(row: Record<string, unknown>): InquiryForReply
     };
 }
 
-export async function listInquiryReplies(db: InquiryDb, inquiryId: number): Promise<InquiryReplyRow[]> {
-    const { results } = await db
-        .prepare(
-            `SELECT id, inquiry_id, channel, body, sent_to, send_status, send_error, created_by, created_at, sent_at
-             FROM inquiry_replies WHERE inquiry_id = ? ORDER BY created_at ASC, id ASC`
-        )
-        .bind(inquiryId)
-        .all<InquiryReplyRow>();
-    return results || [];
+/** SELECT * 로 읽어 attachments 컬럼이 아직 없는 DB에서도 동작 */
+function toReplyRow(raw: Record<string, unknown>): InquiryReplyRow {
+    return {
+        id: Number(raw.id),
+        inquiry_id: Number(raw.inquiry_id),
+        channel: raw.channel as InquiryReplyChannel,
+        body: String(raw.body ?? ''),
+        sent_to: (raw.sent_to as string | null) ?? null,
+        send_status: raw.send_status as InquiryReplySendStatus,
+        send_error: (raw.send_error as string | null) ?? null,
+        created_by: raw.created_by == null ? null : Number(raw.created_by),
+        created_at: String(raw.created_at ?? ''),
+        sent_at: (raw.sent_at as string | null) ?? null,
+        attachments: parseReplyAttachments(raw.attachments),
+    };
 }
 
-/** 硫붿씪 ?듭옣 ?ъ쟾??Worker ?ъ떆?? ?깆쑝濡?媛숈? 蹂몃Ц???대? 湲곕줉?먮뒗吏 */
+async function getReplyRow(db: InquiryDb, replyId: number): Promise<InquiryReplyRow | null> {
+    const raw = await db
+        .prepare('SELECT * FROM inquiry_replies WHERE id = ?')
+        .bind(replyId)
+        .first<Record<string, unknown>>();
+    return raw ? toReplyRow(raw) : null;
+}
+
+export async function listInquiryReplies(db: InquiryDb, inquiryId: number): Promise<InquiryReplyRow[]> {
+    const { results } = await db
+        .prepare('SELECT * FROM inquiry_replies WHERE inquiry_id = ? ORDER BY created_at ASC, id ASC')
+        .bind(inquiryId)
+        .all<Record<string, unknown>>();
+    return (results || []).map(toReplyRow);
+}
+
+/** 메일 답장 재전송(Worker 재시도 등)으로 같은 본문이 이미 기록됐는지 */
 export async function hasSameReply(
     db: InquiryDb,
     inquiryId: number,
@@ -98,52 +145,75 @@ export async function hasSameReply(
     return Boolean(row);
 }
 
-/**
- * 怨좉컼?먭쾶 ?듬? 硫붿씪??蹂대궡怨?寃곌낵瑜??대젰???④릿??
- * 諛쒖넚???깃났?섎㈃ 臾몄쓽 ?곹깭瑜??뚮떟蹂?꾨즺?띾줈 諛붽씔?? ?대? 硫붾え(admin_note)??嫄대뱶由ъ? ?딅뒗??
- */
-export async function sendInquiryReply(
-    db: InquiryDb,
+async function sendReplyMail(
     env: Record<string, unknown>,
     inquiry: InquiryForReply,
-    input: { body: string; channel: InquiryReplyChannel; createdBy?: number | null }
-): Promise<{ reply: InquiryReplyRow | null; result: SendEmailResult }> {
-    let result: SendEmailResult;
+    body: string,
+    attachments: ReplyAttachmentPayload[]
+): Promise<SendEmailResult> {
     try {
-        result = await notifyUserInquiryReplied(
+        return await notifyUserInquiryReplied(
             {
                 inquiryId: inquiry.id,
                 name: inquiry.name,
                 email: inquiry.email,
                 subject: inquiry.subject,
                 message: inquiry.message,
-                replyMessage: input.body,
+                replyMessage: body,
+                attachments: attachments.map((a) => ({ filename: a.meta.name, content: a.content })),
             },
             env
         );
     } catch (e) {
-        result = { ok: false, error: e instanceof Error ? e.message : '?듬? 硫붿씪 諛쒖넚 ?ㅽ뙣' };
+        return { ok: false, error: e instanceof Error ? e.message : '답변 메일 발송 실패' };
     }
+}
+
+/**
+ * 고객에게 답변 메일을 보내고 결과를 이력에 남긴다.
+ * 발송에 성공하면 문의 상태를 「답변완료」로 바꾼다. 내부 메모(admin_note)는 건드리지 않는다.
+ */
+export async function sendInquiryReply(
+    db: InquiryDb,
+    env: Record<string, unknown>,
+    inquiry: InquiryForReply,
+    input: {
+        body: string;
+        channel: InquiryReplyChannel;
+        createdBy?: number | null;
+        attachments?: ReplyAttachmentPayload[];
+    }
+): Promise<{ reply: InquiryReplyRow | null; result: SendEmailResult }> {
+    const attachments = input.attachments || [];
+    const result = await sendReplyMail(env, inquiry, input.body, attachments);
 
     const sendStatus: InquiryReplySendStatus = result.ok ? 'sent' : 'failed';
     const sendError = result.ok ? null : result.error;
+    const baseValues = [
+        inquiry.id,
+        input.channel,
+        input.body,
+        inquiry.email,
+        sendStatus,
+        sendError,
+        input.createdBy ?? null,
+    ];
 
-    const inserted = await db
-        .prepare(
-            `INSERT INTO inquiry_replies (inquiry_id, channel, body, sent_to, send_status, send_error, created_by, sent_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'sent' THEN CURRENT_TIMESTAMP ELSE NULL END)`
-        )
-        .bind(
-            inquiry.id,
-            input.channel,
-            input.body,
-            inquiry.email,
-            sendStatus,
-            sendError,
-            input.createdBy ?? null,
-            sendStatus
-        )
-        .run();
+    const inserted = attachments.length
+        ? await db
+              .prepare(
+                  `INSERT INTO inquiry_replies (inquiry_id, channel, body, sent_to, send_status, send_error, created_by, attachments, sent_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'sent' THEN CURRENT_TIMESTAMP ELSE NULL END)`
+              )
+              .bind(...baseValues, JSON.stringify(attachments.map((a) => a.meta)), sendStatus)
+              .run()
+        : await db
+              .prepare(
+                  `INSERT INTO inquiry_replies (inquiry_id, channel, body, sent_to, send_status, send_error, created_by, sent_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'sent' THEN CURRENT_TIMESTAMP ELSE NULL END)`
+              )
+              .bind(...baseValues, sendStatus)
+              .run();
 
     if (result.ok && inquiry.status !== 'replied' && inquiry.status !== 'closed') {
         await db
@@ -153,48 +223,45 @@ export async function sendInquiryReply(
     }
 
     const replyId = Number(inserted.meta?.last_row_id);
-    const reply = replyId
-        ? await db
-              .prepare(
-                  `SELECT id, inquiry_id, channel, body, sent_to, send_status, send_error, created_by, created_at, sent_at
-                   FROM inquiry_replies WHERE id = ?`
-              )
-              .bind(replyId)
-              .first<InquiryReplyRow>()
-        : null;
-
+    const reply = replyId ? await getReplyRow(db, replyId) : null;
     return { reply, result };
 }
 
-/** 諛쒖넚 ?ㅽ뙣???듬???媛숈? ?댁슜?쇰줈 ?ㅼ떆 蹂대궦??*/
+/** R2에 보관한 답변 첨부를 다시 읽어 메일 첨부용 base64로 만든다 */
+async function loadStoredAttachments(
+    bucket: InquiryBucket | undefined,
+    metas: ReplyAttachmentMeta[]
+): Promise<ReplyAttachmentPayload[] | { error: string }> {
+    if (metas.length === 0) return [];
+    if (!bucket) return { error: '파일 저장소(R2)를 사용할 수 없어 첨부파일을 다시 보낼 수 없습니다.' };
+    const out: ReplyAttachmentPayload[] = [];
+    for (const meta of metas) {
+        const obj = await bucket.get(meta.key);
+        if (!obj) return { error: `첨부파일을 찾을 수 없습니다: ${meta.name}` };
+        const buf = await obj.arrayBuffer();
+        out.push({ meta, content: Buffer.from(buf).toString('base64') });
+    }
+    return out;
+}
+
+/** 발송 실패한 답변을 같은 내용(첨부 포함)으로 다시 보낸다 */
 export async function resendInquiryReply(
     db: InquiryDb,
     env: Record<string, unknown>,
     inquiry: InquiryForReply,
-    replyId: number
+    replyId: number,
+    bucket?: InquiryBucket
 ): Promise<{ reply: InquiryReplyRow | null; result: SendEmailResult } | null> {
-    const row = await db
-        .prepare(`SELECT id, body, send_status FROM inquiry_replies WHERE id = ? AND inquiry_id = ?`)
+    const raw = await db
+        .prepare('SELECT * FROM inquiry_replies WHERE id = ? AND inquiry_id = ?')
         .bind(replyId, inquiry.id)
-        .first<{ id: number; body: string; send_status: string }>();
-    if (!row) return null;
+        .first<Record<string, unknown>>();
+    if (!raw) return null;
+    const row = toReplyRow(raw);
 
-    let result: SendEmailResult;
-    try {
-        result = await notifyUserInquiryReplied(
-            {
-                inquiryId: inquiry.id,
-                name: inquiry.name,
-                email: inquiry.email,
-                subject: inquiry.subject,
-                message: inquiry.message,
-                replyMessage: row.body,
-            },
-            env
-        );
-    } catch (e) {
-        result = { ok: false, error: e instanceof Error ? e.message : '?듬? 硫붿씪 諛쒖넚 ?ㅽ뙣' };
-    }
+    const loaded = await loadStoredAttachments(bucket, row.attachments);
+    const result: SendEmailResult =
+        'error' in loaded ? { ok: false, error: loaded.error } : await sendReplyMail(env, inquiry, row.body, loaded);
 
     if (result.ok) {
         await db
@@ -216,17 +283,10 @@ export async function resendInquiryReply(
             .run();
     }
 
-    const reply = await db
-        .prepare(
-            `SELECT id, inquiry_id, channel, body, sent_to, send_status, send_error, created_by, created_at, sent_at
-             FROM inquiry_replies WHERE id = ?`
-        )
-        .bind(row.id)
-        .first<InquiryReplyRow>();
-    return { reply, result };
+    return { reply: await getReplyRow(db, row.id), result };
 }
 
-/** 愿由ъ옄 ?뚮┝ 硫붿씪 諛쒖넚 寃곌낵 ???(而щ읆???꾩쭅 ?놁쑝硫?議곗슜??嫄대꼫?) */
+/** 관리자 알림 메일 발송 결과 저장 (컬럼이 아직 없으면 조용히 건너뜀) */
 export async function recordAdminNotifyResult(
     db: InquiryDb,
     inquiryId: number,
@@ -251,7 +311,7 @@ export async function recordAdminNotifyResult(
             .run();
     } catch (e) {
         if (!isMissingRepliesSchema(e)) {
-            console.warn('愿由ъ옄 ?뚮┝ 諛쒖넚 ?곹깭 ????ㅽ뙣', e);
+            console.warn('관리자 알림 발송 상태 저장 실패', e);
         }
     }
 }

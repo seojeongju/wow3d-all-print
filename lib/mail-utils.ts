@@ -10,6 +10,8 @@ export interface SendEmailOptions {
     html?: string;
     from?: string;
     reply_to?: string;
+    /** content: base64 문자열 (Resend 기준 메일 1통 합계 40MB 이하) */
+    attachments?: { filename: string; content: string }[];
 }
 
 export type SendEmailResult = { ok: true } | { ok: false; error: string };
@@ -51,6 +53,7 @@ export async function sendEmailWithResult(
                 text: options.text,
                 html: options.html,
                 reply_to: options.reply_to,
+                ...(options.attachments?.length ? { attachments: options.attachments } : {}),
             }),
         });
 
