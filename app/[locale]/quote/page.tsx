@@ -22,6 +22,8 @@ import { buildFileSourceFromFileName, buildQuoteModelAuthHeaders, fetchQuoteMode
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePhotoHandoffStore } from "@/store/usePhotoHandoffStore";
 import { readMeshyActiveJobId, saveMeshyActiveJob } from "@/lib/meshy-active-job";
+import { takeInterruptedAnalysis } from "@/lib/analysis-inflight-marker";
+import ModelAnalyzingPanel from "@/components/quote/ModelAnalyzingPanel";
 import { useQuoteFunnelTracking } from "@/hooks/useQuoteFunnelTracking";
 import { showToast } from "@/lib/toast-helper";
 
@@ -212,6 +214,21 @@ function QuoteContent() {
         if (activeMeshyJob) saveMeshyActiveJob(activeMeshyJob);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- 진입 시 1회만
     }, []);
+
+    // 직전 방문에서 분석 도중 탭이 멈춰 종료·새로고침된 경우 안내
+    useEffect(() => {
+        const interrupted = takeInterruptedAnalysis();
+        if (!interrupted || useFileStore.getState().file) return;
+        setEntryMode('file');
+        useUploadNoticeStore.getState().showAnalysisFailed(interrupted, 'interrupted');
+    }, []);
+
+    const handleCancelAnalysis = useCallback(() => {
+        reset();
+        useUploadNoticeStore.getState().clear();
+        setEntryMode('file');
+        setActiveTab('settings');
+    }, [reset]);
 
     // 업로드 실패 안내(용량 초과·분석 실패)는 업로드 화면에 표시되므로 그 화면으로 전환
     // 진입 시점에 이미 있던 안내(이전 방문 잔여)로는 화면을 바꾸지 않음
@@ -518,41 +535,12 @@ function QuoteContent() {
                                             initial={false}
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.95 }}
-                                            className="space-y-6 sm:space-y-8 flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px]"
                                         >
-                                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.5rem] bg-teal-400/20 border border-teal-400/30 flex items-center justify-center relative group">
-                                                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-teal-400 animate-spin" />
-                                                <div className="absolute inset-0 rounded-[2.5rem] bg-teal-400/25 blur-2xl animate-pulse group-hover:blur-3xl transition-all" />
-                                            </div>
-                                            <div className="text-center space-y-2 sm:space-y-3">
-                                                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-                                                    {t('analyzingTitle')} <span className="text-teal-400">{t('analyzingTitleAccent')}</span>
-                                                </h1>
-                                                <p className="text-white/60 text-xs sm:text-sm break-keep font-bold leading-relaxed px-4">
-                                                    {t('analyzingBody')}
-                                                    <br className="hidden sm:block" />
-                                                    {t('analyzing')}
-                                                </p>
-                                                {file.size >= 20 * 1024 * 1024 ? (
-                                                    <p className="text-amber-300/90 text-[11px] sm:text-xs font-bold break-keep px-6">
-                                                        {t('analyzingLargeFile')}
-                                                    </p>
-                                                ) : null}
-                                                {analysisError ? (
-                                                    <p className="text-rose-300 text-[11px] sm:text-xs font-bold break-keep px-6">
-                                                        {analysisError}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                            <div className="w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/10 border border-white/20 flex items-center gap-4 shadow-xl">
-                                                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-teal-400/20 border border-teal-400/30 flex items-center justify-center text-teal-400 shrink-0">
-                                                    <FileBox className="w-6 h-6 sm:w-7 sm:h-7" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="text-xs sm:text-sm font-black text-white truncate">{file.name}</div>
-                                                    <div className="text-[10px] sm:text-xs font-black text-white/40 tracking-[0.1em] uppercase mt-0.5">{file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}</div>
-                                                </div>
-                                            </div>
+                                            <ModelAnalyzingPanel
+                                                file={file}
+                                                analysisError={analysisError}
+                                                onCancel={handleCancelAnalysis}
+                                            />
                                         </motion.div>
                                 ) : !entryMode ? (
                                         <motion.div

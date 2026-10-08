@@ -502,9 +502,25 @@
     "analysisFailReason": {
       "parse_failed": "File could not be read",
       "empty_geometry": "No printable geometry",
-      "error": "Error during analysis"
+      "error": "Error during analysis",
+      "timeout": "Analysis timed out",
+      "too_complex": "Browser memory limit exceeded",
+      "interrupted": "Previous analysis was interrupted"
     },
     "analysisFailBody": "The file may be corrupted or saved in an unsupported format/version. Please upload a different file.",
+    "analysisFailBodyHeavy": "This model is too large or detailed (too many triangles) for your browser to finish the automatic analysis. Send us the file through a channel below and we'll check it and quote manually.",
+    "analysisStagesAria": "Model analysis progress",
+    "analysisStage": {
+      "reading": "Reading file",
+      "parsing": "Parsing 3D geometry",
+      "preparing": "Preparing surfaces",
+      "measuring": "Measuring size & volume"
+    },
+    "analysisElapsed": "Elapsed {time}",
+    "analysisLimit": "Up to {min} min",
+    "analysisSlowTitle": "This large, high-resolution model is taking a while",
+    "analysisSlowBody": "Analysis continues in the background and the page stays responsive. If it doesn't finish within {min} min, we'll stop it and show you how to get a quote from us. If you'd rather not wait, contact us for a quote now.",
+    "analysisCancel": "Cancel analysis and upload another file",
     "analysisFailTip": "Re-exporting as binary STL or 3MF from your CAD/slicer usually fixes this. If it still fails, send us the file and we'll check it and quote manually.",
     "analysisFailEmailSubject": "[3D file analysis error – quote request] {name}",
     "dropzoneInvalidType": "Only STL, OBJ, 3MF, PLY, STEP, or STP files can be dragged or selected.",

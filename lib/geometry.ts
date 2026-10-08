@@ -1289,10 +1289,15 @@ export const analyzeGeometry = (geometry: THREE.BufferGeometry): GeometryAnalysi
     if (!geometry.attributes.normal) {
         geometry.computeVertexNormals();
     }
+    return analyzeMeshGeometry(geometry);
+};
+
+/** 정점 법선 없이 position(+index)만으로 전체 정밀 분석 — Web Worker에서 사용 */
+export function analyzeMeshGeometry(geometry: THREE.BufferGeometry): GeometryAnalysis {
     const ranges = getModelPartRanges(geometry);
     if (ranges) return analyzeMultiPartGeometry(geometry, ranges);
     return analyzeGeometryInternal(geometry, { sampleStride: 1, includeOverhang: true });
-};
+}
 
 const yieldToMain = () =>
     new Promise<void>((resolve) => {

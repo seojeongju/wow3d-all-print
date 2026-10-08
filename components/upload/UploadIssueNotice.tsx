@@ -29,13 +29,17 @@ export default function UploadIssueNotice({
     const talkUrl = getNaverTalkTalkChatUrl()
     const isDark = variant === 'dark'
     const tooLarge = notice.kind === 'too_large'
+    // 파일은 정상이지만 브라우저에서 처리하기에 너무 무거운 경우
+    const tooHeavy =
+        notice.kind === 'analysis_failed' &&
+        (notice.reason === 'timeout' || notice.reason === 'too_complex' || notice.reason === 'interrupted')
 
     const title = tooLarge ? t('largeFileTitle') : t('analysisFailTitle')
     const detail = tooLarge
         ? t('largeFileLimit', { max: formatMb(MODEL_FILE_MAX_BYTES) })
         : t(`analysisFailReason.${notice.reason}`)
-    const body = tooLarge ? t('largeFileBody') : t('analysisFailBody')
-    const tip = tooLarge ? t('largeFileTip') : t('analysisFailTip')
+    const body = tooLarge ? t('largeFileBody') : tooHeavy ? t('analysisFailBodyHeavy') : t('analysisFailBody')
+    const tip = tooLarge || tooHeavy ? t('largeFileTip') : t('analysisFailTip')
     const subject = tooLarge
         ? t('largeFileEmailSubject', { name: notice.name })
         : t('analysisFailEmailSubject', { name: notice.name })

@@ -2,7 +2,10 @@ import * as THREE from 'three'
 import { useFileStore } from '@/store/useFileStore'
 import { analyzeGeometryBoundingBox, analyzeGeometryProgressive } from '@/lib/geometry'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
+import { ModelParseCancelledError, ModelParseError, takeWorkerAnalysis } from '@/lib/model-parse-client'
+import { clearAnalysisInFlight, markAnalysisInFlight } from '@/lib/analysis-inflight-marker'
 import { useUploadNoticeStore, type AnalysisFailReason } from '@/store/useUploadNoticeStore'
+import { useAnalysisProgressStore } from '@/store/useAnalysisProgressStore'
 import {
     getScalePercentMax,
     meshyAutoFitScalePercent,
@@ -108,12 +111,16 @@ export function runAnalysisFromGeometry(
         return
     }
 
+    const workerAnalysis = takeWorkerAnalysis(geometry)
+
     void (async () => {
         try {
-            const refined = await analyzeGeometryProgressive(geometry, (partial) => {
-                if (!isCurrentRun(gen)) return
-                useFileStore.getState().setAnalysis(partial)
-            })
+            const refined = workerAnalysis
+                ? await workerAnalysis
+                : await analyzeGeometryProgressive(geometry, (partial) => {
+                      if (!isCurrentRun(gen)) return
+                      useFileStore.getState().setAnalysis(partial)
+                  })
             if (isCurrentRun(gen)) {
                 useFileStore.getState().setAnalysis(refined)
                 useFileStore.getState().setAnalysisError(null)
@@ -122,6 +129,7 @@ export function runAnalysisFromGeometry(
                 useFileStore.getState().applyAutoPlacement()
             }
         } catch (e) {
+            if (e instanceof ModelParseCancelledError) return
             console.error('refined analysis:', e)
             if (isCurrentRun(gen) && !useFileStore.getState().baseAnalysis) {
                 useFileStore.getState().setAnalysisError(
@@ -142,6 +150,9 @@ export function ensureModelAnalysisForFile(file: File): Promise<void> {
     const gen = ++analysisGeneration
 
     const task = (async () => {
+        const progress = useAnalysisProgressStore.getState()
+        progress.setStage(file, 'reading')
+        markAnalysisInFlight(file)
         try {
             const geo = await getParsedModelGeometry(file)
             if (!isCurrentRun(gen)) return
@@ -150,11 +161,18 @@ export function ensureModelAnalysisForFile(file: File): Promise<void> {
                 return
             }
             if (useFileStore.getState().baseAnalysis) return
+            progress.setStage(file, 'measuring')
             runAnalysisFromGeometry(geo, file, gen)
         } catch (e) {
+            if (e instanceof ModelParseCancelledError) return
+            if (e instanceof ModelParseError) {
+                failModelAnalysis(file, gen, e.reason, e)
+                return
+            }
             failModelAnalysis(file, gen, 'error', e)
         } finally {
             ensurePromises.delete(file)
+            clearAnalysisInFlight()
         }
     })()
 
