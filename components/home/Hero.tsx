@@ -33,6 +33,7 @@ import { HERO_CONVERSION_EVENTS } from '@/lib/conversion-events';
 import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conversion-event';
 import { usePhotoHandoffStore } from '@/store/usePhotoHandoffStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import HeroLiveStats from './HeroLiveStats';
 
 /** three.js(약 850KB)는 첫 JS 번들에서 분리 — 배경 장식이라 화면 표시 후 불러와도 된다 */
 const LandingHeroScene = dynamic(() => import('./LandingHeroScene'), { ssr: false });
@@ -379,7 +380,7 @@ export default function Hero() {
 
                     {/* 신뢰 시그널 — 빈 아바타 대신 명확한 근거 */}
                     <div className="mb-6 space-y-3">
-                        <p className="text-sm font-bold text-white/90">{t('customers')}</p>
+                        <HeroLiveStats />
                         <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-teal-400" aria-hidden />
