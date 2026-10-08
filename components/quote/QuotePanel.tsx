@@ -420,6 +420,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     // 기본 금액(공급가)과 산출 금액 중 큰 것을 선택한 후 부가세 적용
     const baseAmount = minPriceKr != null && minPriceKr > 0 ? Math.max(quoteDetail.total, minPriceKr) : quoteDetail.total
     const totalPrice = roundTo100(baseAmount * 1.1, priceRoundMode)
+    const supplyAmount = Math.round(Math.round(totalPrice) / 1.1)
     const estimatedTimeHours = quoteDetail.time
     const variableCostKrw = quoteDetail.variableCostKrw
     const setupCostKrw = quoteDetail.setupCostKrw
@@ -983,8 +984,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     <span className="ml-1 font-mono text-sm normal-case tracking-tight text-white">{volumeCm3.toFixed(1)}<span className="ml-0.5 text-[10px] text-white/30">cm³</span></span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/40">
-                    <Layers className="w-3.5 h-3.5 text-indigo-400/60" /> {t('surface')}
-                    <span className="ml-1 font-mono text-sm normal-case tracking-tight text-white">{surfaceAreaCm2.toFixed(1)}<span className="ml-0.5 text-[10px] text-white/30">cm²</span></span>
+                    <Layers className="w-3.5 h-3.5 text-indigo-400/60" /> {t('sizeShort')}
+                    <span className="ml-1 font-mono text-sm normal-case tracking-tight text-white">{bx.toFixed(1)}×{by.toFixed(1)}×{bz.toFixed(1)}<span className="ml-0.5 text-[10px] text-white/30">mm</span></span>
                 </div>
             </div>
 
@@ -1202,37 +1203,23 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                 <div className="text-slate-400">{t('volume')}</div>
                                 <div className="font-mono text-slate-100">{volumeCm3.toFixed(1)} cm³</div>
-                                <div className="text-slate-400">{t('surface')}</div>
-                                <div className="font-mono text-slate-100">{surfaceAreaCm2.toFixed(1)} cm²</div>
                                 <div className="text-slate-400">{t('dimensions')}</div>
                                 <div className="font-mono text-slate-100">{bx.toFixed(1)} × {by.toFixed(1)} × {bz.toFixed(1)} mm</div>
                             </div>
                         </section>
                         <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{t('result')}</h4>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <div className="text-slate-400">{t('timeRequired')}</div>
-                                <div className="font-bold text-emerald-400">
-                                    {formatEstimatedPrintTime(quoteDetail.time, locale)}
-                                    <span className="ml-1.5 text-xs font-medium text-emerald-400/60">({quoteDetail.time.toFixed(2)} h)</span>
-                                </div>
-                                <div className="text-slate-400">{t('materialAmount')}</div>
-                                <div className="font-mono font-medium text-slate-100">{quoteDetail.materialAmount.toFixed(1)} {quoteDetail.materialUnit}</div>
-                                <div className="text-slate-400">{t('layerCount')}</div>
-                                <div className="font-mono font-bold text-slate-100">{quoteDetail.numLayers.toLocaleString()} layers</div>
-                            </div>
-                        </section>
-                        <section>
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{t('costBreakdown')}</h4>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{t('priceSummary')}</h4>
                             <div className="space-y-2 text-sm">
-                                <div className="flex justify-between"><span className="text-slate-400">{t('costMachine')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.machine).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">{t('costOther')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.other).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-400">{t('costLabor')}</span><span className="font-mono text-slate-100">₩{Math.round(quoteDetail.costBreakdown.labor).toLocaleString()}</span></div>
-                                <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50">
-                                    <span className="text-slate-400">{t('vat')}</span>
-                                    <span className="font-mono text-slate-300">₩{Math.round(quoteDetail.total * 0.1).toLocaleString()}</span>
+                                {/* 세부 원가 항목은 비노출 — 최종가에서 역산해 공급가액+부가세=최종가가 맞게 표시 */}
+                                <div className="flex justify-between">
+                                    <span className="text-slate-400">{t('supplyAmount')}</span>
+                                    <span className="font-mono text-slate-100">₩{supplyAmount.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between pt-2 font-bold text-lg">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-400">{t('vat')}</span>
+                                    <span className="font-mono text-slate-300">₩{(Math.round(totalPrice) - supplyAmount).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 mt-2 border-t border-slate-600/50 font-bold text-lg">
                                     <span className="text-slate-100">{t('finalTotal')}</span>
                                     <span className="text-primary">₩{Math.round(totalPrice).toLocaleString()}</span>
                                 </div>
