@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from 'next-intl';
 const POLL_MS = 10_000;
 const ROLL_MS = 1100;
 
-type PublicStats = { members: number; todayQuoteViews: number };
+type PublicStats = { members: number; weekQuoteViews: number };
 
 /** 0~9를 세 번 이어 붙인 띠 — 가운데 구간(10~19)을 기준으로 앞뒤로 굴린다 */
 const STRIP = Array.from({ length: 30 }, (_, i) => i % 10);
@@ -213,12 +213,12 @@ export default function HeroLiveStats() {
                 const json = (await res.json()) as { success?: boolean; data?: PublicStats };
                 if (!alive) return;
                 if (json.success && json.data) {
-                    const { members, todayQuoteViews } = json.data;
+                    const { members, weekQuoteViews } = json.data;
                     // 값이 실제로 달라졌을 때만 갱신해 애니메이션이 불필요하게 돌지 않게 한다
                     setStats((prev) =>
-                        prev && prev.members === members && prev.todayQuoteViews === todayQuoteViews
+                        prev && prev.members === members && prev.weekQuoteViews === weekQuoteViews
                             ? prev
-                            : { members, todayQuoteViews }
+                            : { members, weekQuoteViews }
                     );
                     setFailed(false);
                 } else {
@@ -281,9 +281,9 @@ export default function HeroLiveStats() {
                 />
                 <StatCard
                     icon={<Calculator className="h-3.5 w-3.5" aria-hidden />}
-                    label={t('statsTodayQuotesLabel')}
-                    value={stats?.todayQuoteViews ?? null}
-                    renderValue={(num) => t.rich('statsTodayQuotesValue', { num: () => num, unit })}
+                    label={t('statsWeekQuotesLabel')}
+                    value={stats?.weekQuoteViews ?? null}
+                    renderValue={(num) => t.rich('statsWeekQuotesValue', { num: () => num, unit })}
                 />
             </div>
         </div>
