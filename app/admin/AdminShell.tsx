@@ -95,7 +95,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     const isSuperAdmin = user?.store_id === 1 || user?.role === 'super_admin';
 
     return (
-        <div className="min-h-screen max-w-[100vw] overflow-x-hidden bg-[#0a0a0a] text-white">
+        <div className="min-h-screen max-w-[100vw] overflow-x-clip bg-[#0a0a0a] text-white">
             <AdminHeader />
             <div className="flex min-w-0">
                 <aside className="w-64 shrink-0 hidden lg:flex flex-col border-r border-white/5 bg-[#0c0c0c] min-h-[calc(100vh-3.5rem)]">
