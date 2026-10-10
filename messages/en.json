@@ -3873,6 +3873,57 @@
     "showcaseTitle": "3D printer product",
     "showcaseTitleAccent": "showcase",
     "showcaseSubtitle": "Click a card to open field-specific production examples and samples.",
+    "largeEyebrow": "Large-Format 3D Printing",
+    "largeTitleBefore": "Large-format 3D",
+    "largeTitleAccent": "printing service",
+    "largeSubtitle": "From human-sized character sculptures to exhibits and large prototypes. Dedicated large-format machines plus split printing, joining, and finishing know-how turn big projects into one seamless piece.",
+    "largeImages": [
+      {
+        "alt": "Industrial large-format 3D printer with a large build chamber",
+        "caption": "Large-chamber 3D printer",
+        "desc": "Dedicated machines that print big parts in one piece"
+      },
+      {
+        "alt": "3D printed character sculptures taller than a person, with a visitor",
+        "caption": "Taller than a person",
+        "desc": "Large characters for exhibitions and pop-ups"
+      },
+      {
+        "alt": "Large hippo character sculpture printed on a large-format 3D printer, next to a person",
+        "caption": "Large character prints",
+        "desc": "Smooth results even on curvy sculptures"
+      }
+    ],
+    "largeFeatures": [
+      {
+        "title": "Dedicated large machines",
+        "desc": "Large-chamber printers produce big parts in one go, reducing seams and assembly."
+      },
+      {
+        "title": "Split printing & precise joining",
+        "desc": "Pieces larger than the build volume are split with structure in mind, then aligned and joined into one."
+      },
+      {
+        "title": "Post-processing & painting",
+        "desc": "Sanding, filler, primer, and paint for an exhibition- and delivery-ready finish."
+      },
+      {
+        "title": "Structure & weight review",
+        "desc": "We review internal structure, wall thickness, and weight so large parts stay stable without warping."
+      }
+    ],
+    "largeUseCasesLabel": "A great fit for",
+    "largeUseCases": [
+      "Large figures & character sculptures",
+      "Exhibition & pop-up store props",
+      "Retail displays & photo zones",
+      "Architecture & interior models",
+      "Large prototypes & mockups",
+      "Stage & film props"
+    ],
+    "largeCta": "Consult on large-format printing",
+    "largeCtaHint": "Tell us the size, quantity, and purpose—we will suggest a split strategy and a quote.",
+    "largeInquiryTemplate": "[Large-format 3D printing inquiry]\n- Target size (W×D×H):\n- Quantity:\n- Purpose (exhibit, sculpture, prototype, etc.):\n- Finish (painting, etc.):\n- Desired delivery date:",
     "processTitleBefore": "Fast, accurate",
     "processTitleAccent": "one-stop process",
     "processSubtitle": "From requirements to prototype validation—WOW3D supports a one-stop fabrication model.",

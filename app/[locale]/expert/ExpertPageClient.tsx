@@ -20,6 +20,11 @@ import {
     Mail,
     Phone,
     Box,
+    Maximize2,
+    Puzzle,
+    Paintbrush,
+    Scale,
+    ArrowRight,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -46,6 +51,21 @@ type ShowcaseCard = {
 }
 
 type ProcessStep = { title: string; desc: string }
+type LargeImage = { alt: string; caption: string; desc: string }
+type LargeFeature = { title: string; desc: string }
+
+const LARGE_IMAGE_SRCS = [
+    '/images/expert/large-format/large-format-printer.jpg',
+    '/images/expert/large-format/large-figure-sculptures.jpg',
+    '/images/expert/large-format/large-hippo-print.jpg',
+]
+
+const LARGE_FEATURE_ICONS = [
+    <Maximize2 key="size" className="w-5 h-5" />,
+    <Puzzle key="split" className="w-5 h-5" />,
+    <Paintbrush key="finish" className="w-5 h-5" />,
+    <Scale key="weight" className="w-5 h-5" />,
+]
 
 function toCards(items: ShowcaseCategoryCard[]): ShowcaseCard[] {
     return items.map((it) => ({
@@ -65,6 +85,9 @@ export default function ExpertPageClient({
     const t = useTranslations('Expert')
     const [showcaseCards] = useState<ShowcaseCard[]>(() => toCards(initialCards))
     const processSteps = t.raw('processSteps') as ProcessStep[]
+    const largeImages = t.raw('largeImages') as LargeImage[]
+    const largeFeatures = t.raw('largeFeatures') as LargeFeature[]
+    const largeUseCases = t.raw('largeUseCases') as string[]
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [file, setFile] = useState<File | null>(null)
@@ -81,6 +104,13 @@ export default function ExpertPageClient({
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0])
         }
+    }
+
+    const startLargeFormatInquiry = () => {
+        setFormData((prev) =>
+            prev.message.trim() ? prev : { ...prev, message: t('largeInquiryTemplate') }
+        )
+        document.getElementById('inquiry')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -242,6 +272,113 @@ export default function ExpertPageClient({
                                 </motion.div>
                             </Link>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            <section className="relative py-12 md:py-20 px-6 z-10" id="large-format" aria-labelledby="large-format-title">
+                <div className="container mx-auto max-w-7xl space-y-10 md:space-y-14">
+                    <div className="text-center space-y-4 md:space-y-5">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-400/15 border border-indigo-400/30 text-indigo-200 text-[11px] font-black uppercase tracking-[0.3em]">
+                            <Maximize2 className="w-3.5 h-3.5" /> {t('largeEyebrow')}
+                        </div>
+                        <h2
+                            id="large-format-title"
+                            className="text-3xl md:text-5xl font-black text-white tracking-tight break-keep"
+                        >
+                            {t('largeTitleBefore')}{' '}
+                            <span className="text-teal-400">{t('largeTitleAccent')}</span>
+                        </h2>
+                        <div className="w-20 h-1 bg-teal-400 mx-auto rounded-full" />
+                        <p className="text-sm md:text-base text-white/50 font-bold max-w-2xl mx-auto break-keep leading-relaxed">
+                            {t('largeSubtitle')}
+                        </p>
+                    </div>
+
+                    <div className="grid sm:grid-cols-3 gap-4 md:gap-6">
+                        {largeImages.map((img, idx) => (
+                            <motion.figure
+                                key={LARGE_IMAGE_SRCS[idx] ?? idx}
+                                initial={{ opacity: 0, y: 40 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.12 }}
+                                viewport={{ once: true }}
+                                className={`group relative aspect-[4/5] rounded-[1.75rem] md:rounded-[2rem] overflow-hidden border border-white/10 bg-slate-900 shadow-2xl ${
+                                    idx === 1 ? 'sm:-translate-y-6' : ''
+                                }`}
+                            >
+                                <img
+                                    src={LARGE_IMAGE_SRCS[idx]}
+                                    alt={img.alt}
+                                    width={819}
+                                    height={1024}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                                <figcaption className="absolute bottom-4 left-4 right-4 md:bottom-5 md:left-5 md:right-5 text-white">
+                                    <p className="text-lg md:text-xl font-black tracking-tight break-keep group-hover:text-teal-300 transition-colors">
+                                        {img.caption}
+                                    </p>
+                                    <p className="mt-1 text-[13px] font-bold text-white/65 break-keep">{img.desc}</p>
+                                </figcaption>
+                            </motion.figure>
+                        ))}
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+                        {largeFeatures.map((f, idx) => (
+                            <motion.div
+                                key={f.title}
+                                initial={{ opacity: 0, y: 24 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.08 }}
+                                viewport={{ once: true }}
+                                className="group rounded-2xl md:rounded-[1.5rem] bg-white/[0.03] border border-white/10 p-5 md:p-6 hover:bg-white/[0.06] hover:border-teal-400/40 transition-all"
+                            >
+                                <div className="w-11 h-11 rounded-xl bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-300 mb-4 group-hover:bg-teal-400 group-hover:text-slate-950 transition-all">
+                                    {LARGE_FEATURE_ICONS[idx]}
+                                </div>
+                                <h3 className="text-base md:text-lg font-black text-white tracking-tight break-keep">
+                                    {f.title}
+                                </h3>
+                                <p className="mt-2 text-[13px] font-bold text-white/50 leading-relaxed break-keep">
+                                    {f.desc}
+                                </p>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <div className="rounded-[1.75rem] md:rounded-[2rem] border border-teal-400/20 bg-gradient-to-r from-teal-400/[0.08] via-white/[0.02] to-indigo-400/[0.08] p-6 md:p-8 flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
+                        <div className="flex-1 space-y-3">
+                            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-teal-300/90">
+                                {t('largeUseCasesLabel')}
+                            </p>
+                            <ul className="flex flex-wrap gap-2">
+                                {largeUseCases.map((u) => (
+                                    <li
+                                        key={u}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5 text-[12px] md:text-[13px] font-bold text-white/80"
+                                    >
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0" /> {u}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="lg:w-[320px] shrink-0 space-y-3">
+                            <Button
+                                type="button"
+                                size="lg"
+                                onClick={startLargeFormatInquiry}
+                                className="w-full h-14 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black text-base gap-2 shadow-2xl shadow-teal-400/20"
+                            >
+                                {t('largeCta')} <ArrowRight className="w-5 h-5" />
+                            </Button>
+                            <p className="text-[12px] font-bold text-white/45 leading-relaxed break-keep text-center lg:text-left">
+                                {t('largeCtaHint')}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
