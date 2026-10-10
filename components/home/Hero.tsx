@@ -233,7 +233,7 @@ export default function Hero() {
     ];
 
     return (
-        <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 sm:pt-32 pb-16 sm:pb-20">
+        <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 sm:pt-32 lg:pt-[6.5rem] pb-16 sm:pb-20 lg:pb-8">
             <div className="absolute inset-0 bg-gradient-to-br from-[#0b1220] via-[#111827] to-[#0f172a]" />
             <div
                 className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-screen"
@@ -252,25 +252,25 @@ export default function Hero() {
                     transition={{ duration: 0.65, ease: 'easeOut' }}
                     className="flex h-full min-h-0 flex-col text-left"
                 >
-                    <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-teal-400/25 bg-teal-400/10 px-3.5 py-1.5">
+                    <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-teal-400/25 bg-teal-400/10 px-3.5 py-1.5 lg:mb-3">
                         <Sparkles className="h-3.5 w-3.5 text-teal-300" aria-hidden />
                         <span className="text-[11px] font-bold tracking-wide text-teal-100 sm:text-xs">
                             {t('badgePhoto')}
                         </span>
                     </div>
 
-                    <p className="mb-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                    <p className="mb-3 text-2xl font-black tracking-tight text-white sm:text-3xl lg:mb-2 lg:text-[1.65rem]">
                         WOW3D<span className="ml-1 font-light text-teal-400">PRO</span>
                     </p>
 
-                    <h1 className="mb-4 text-[1.7rem] font-black leading-[1.18] tracking-tight text-white sm:text-[2.35rem] md:text-[2.55rem] lg:text-[2.7rem] break-keep">
+                    <h1 className="mb-4 text-[1.7rem] font-black leading-[1.18] tracking-tight text-white sm:text-[2.35rem] md:text-[2.55rem] lg:mb-3 lg:text-[2.45rem] xl:text-[2.6rem] break-keep">
                         {t('titleLine1')}{' '}
                         <span className="text-white/90">{t('titleLine2')}</span>
                         <br />
                         <span className="text-teal-300">{t('titleAccent')}</span>
                     </h1>
 
-                    <p className="mb-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/72 break-keep sm:text-base">
+                    <p className="mb-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/72 break-keep sm:text-base lg:mb-4 lg:max-w-none lg:text-[15px]">
                         <span className="font-semibold text-white">{t('subtitleLead')}</span>
                         <br className="hidden sm:block" />
                         <span className="mt-1 inline-block sm:mt-1.5">
@@ -282,10 +282,10 @@ export default function Hero() {
                     </p>
 
                     {/* 전환 여정 3단계 */}
-                    <ol className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3" aria-label={t('subtitleLead')}>
+                    <ol className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3 lg:mb-5" aria-label={t('subtitleLead')}>
                         {steps.map((step, idx) => (
                             <li key={step.n} className="flex items-center gap-2 sm:gap-3">
-                                <span className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-3 py-2">
+                                <span className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-3 py-2 lg:py-1.5">
                                     <span className="text-[10px] font-black tabular-nums text-teal-300/90">
                                         {step.n}
                                     </span>
@@ -300,7 +300,7 @@ export default function Hero() {
                         ))}
                     </ol>
 
-                    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white/40">
+                    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white/40 lg:mb-2">
                         {t('choosePath')}
                     </p>
 
@@ -314,16 +314,16 @@ export default function Hero() {
                                 trackHero(HERO_CONVERSION_EVENTS.FORK_FILE);
                                 trackHero(HERO_CONVERSION_EVENTS.CTA_FILE);
                             }}
-                            className="group relative flex flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 shadow-[0_10px_30px_rgba(20,184,166,0.12)] transition-all hover:-translate-y-0.5 hover:border-teal-300/55 hover:from-teal-400/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60"
+                            className="group relative flex flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 lg:p-4 shadow-[0_10px_30px_rgba(20,184,166,0.12)] transition-all hover:-translate-y-0.5 hover:border-teal-300/55 hover:from-teal-400/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60"
                         >
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-teal-300/40 bg-teal-400/20 text-teal-200">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl lg:mb-3 lg:h-10 lg:w-10 border border-teal-300/40 bg-teal-400/20 text-teal-200">
                                 <FileBox className="h-6 w-6" />
                             </div>
                             <p className="text-lg font-black text-white">{t('hasFile')}</p>
                             <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep">
                                 {t('hasFileDesc')}
                             </p>
-                            <span className="mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-teal-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-teal-300">
+                            <span className="mt-4 inline-flex h-11 lg:mt-3 lg:h-10 items-center justify-center gap-1.5 rounded-xl bg-teal-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-teal-300">
                                 {t('getQuote')}
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                             </span>
@@ -337,16 +337,16 @@ export default function Hero() {
                                 trackHero(HERO_CONVERSION_EVENTS.FORK_PHOTO);
                                 trackHero(HERO_CONVERSION_EVENTS.CTA_PHOTO);
                             }}
-                            className="group relative flex flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 shadow-[0_10px_30px_rgba(99,102,241,0.12)] transition-all hover:-translate-y-0.5 hover:border-indigo-300/55 hover:from-indigo-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60"
+                            className="group relative flex flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 lg:p-4 shadow-[0_10px_30px_rgba(99,102,241,0.12)] transition-all hover:-translate-y-0.5 hover:border-indigo-300/55 hover:from-indigo-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60"
                         >
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-300/40 bg-indigo-500/20 text-indigo-200">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl lg:mb-3 lg:h-10 lg:w-10 border border-indigo-300/40 bg-indigo-500/20 text-indigo-200">
                                 <ImageIcon className="h-6 w-6" />
                             </div>
                             <p className="text-lg font-black text-white">{t('hasPhoto')}</p>
                             <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep">
                                 {t('hasPhotoDesc')}
                             </p>
-                            <span className="mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300">
+                            <span className="mt-4 inline-flex h-11 lg:mt-3 lg:h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300">
                                 {t('make3d')}
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                             </span>
@@ -357,7 +357,7 @@ export default function Hero() {
                     <Link
                         href="/expert"
                         onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'expert' })}
-                        className="group mb-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 transition-all hover:border-teal-400/30 hover:bg-teal-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 sm:items-center sm:px-4"
+                        className="group mb-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 lg:mb-4 lg:py-2.5 transition-all hover:border-teal-400/30 hover:bg-teal-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 sm:items-center sm:px-4"
                     >
                         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/[0.05] text-teal-300/90 sm:mt-0">
                             <Lightbulb className="h-4 w-4" aria-hidden />
@@ -379,7 +379,7 @@ export default function Hero() {
                     </p>
 
                     {/* 신뢰 시그널 — 빈 아바타 대신 명확한 근거 */}
-                    <div className="mb-6 space-y-3">
+                    <div className="mb-6 space-y-3 lg:mb-4 lg:space-y-2.5">
                         <HeroLiveStats />
                         <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75">
@@ -402,21 +402,21 @@ export default function Hero() {
                         <Link
                             href="/print-methods"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
+                            className="flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
                         >
                             {t('linkMethods')}
                         </Link>
                         <Link
                             href="/materials"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
+                            className="flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
                         >
                             {t('linkMaterials')}
                         </Link>
                         <Link
                             href="/#ai-3d-maker"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
+                            className="flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 sm:text-[13px]"
                         >
                             {t('linkMaker')}
                         </Link>
@@ -424,7 +424,7 @@ export default function Hero() {
                             type="button"
                             onClick={handleTrySample}
                             disabled={isLoadingSample}
-                            className="flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
+                            className="flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
                         >
                             {isLoadingSample ? t('sampleLoading') : t('sampleCta')}
                         </button>

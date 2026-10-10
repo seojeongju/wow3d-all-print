@@ -148,7 +148,7 @@ function StatCard({
     const fmtLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
 
     return (
-        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] px-3.5 py-3 lg:py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             <AnimatePresence>
                 {bump && !reduce ? (
                     <motion.span

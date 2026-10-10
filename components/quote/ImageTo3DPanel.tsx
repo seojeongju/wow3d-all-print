@@ -697,9 +697,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                         ? t('checkingQuota')
                         : !token
                           ? t('loginRequired')
-                          : quota && remainingTotal <= 0
-                            ? t('quotaExhausted')
-                            : quota
+                          : quota
                               ? t('remainingToday', {
                                     remaining: quota.remainingDaily ?? quota.remainingToday,
                                     limit: quota.limit,
@@ -709,8 +707,13 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                     : '')
                               : t('checkingQuota')}
                 </p>
-                {authHydrated && token && quota && remainingTotal > 0 && (
-                    <span className="text-[10px] font-bold text-white/30 break-keep">
+                {authHydrated && token && quota && (
+                    <span
+                        className={cn(
+                            'text-[10px] font-bold break-keep',
+                            remainingTotal <= 0 ? 'text-amber-100/50' : 'text-white/30'
+                        )}
+                    >
                         {quota.resetsHint || t('quotaDefault', { limit: MESHY_USER_DAILY_LIMIT })}
                     </span>
                 )}
