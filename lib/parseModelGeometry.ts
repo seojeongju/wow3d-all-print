@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { STLLoader, OBJLoader, ThreeMFLoader, PLYLoader, mergeBufferGeometries } from 'three-stdlib';
 import { loadStepAsBufferGeometry } from '@/lib/stepLoader';
 import { MODEL_PARTS_USERDATA_KEY, type ModelPartRange } from '@/lib/geometry';
+import { MESH_ORIENT_USERDATA_KEY, orientMeshConsistently } from '@/lib/mesh-orient';
 
 export type ParsedModelType = 'stl' | 'obj' | '3mf' | 'ply' | 'step';
 
@@ -95,6 +96,7 @@ export async function parseModelArrayBuffer(
         }
 
         if (geo) {
+            geo.userData[MESH_ORIENT_USERDATA_KEY] = orientMeshConsistently(geo).flipped;
             geo.center();
             geo.computeVertexNormals();
         }

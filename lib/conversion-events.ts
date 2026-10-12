@@ -3,6 +3,7 @@ export const CONVERSION_EVENT_CATEGORY = {
     QUOTE: 'quote',
     CHECKOUT: 'checkout',
     CALCULATOR: 'calculator',
+    CHECKER: 'checker',
 } as const;
 
 export type ConversionEventCategory =
@@ -52,6 +53,14 @@ export const CALCULATOR_CONVERSION_EVENTS = {
     CTA_CONSULT: 'calc_cta_consult',
 } as const;
 
+/** 무료 STL 점검기(/stl-checker) 이벤트 */
+export const CHECKER_CONVERSION_EVENTS = {
+    VIEW: 'checker_view',
+    UPLOAD: 'checker_upload',
+    RESULT: 'checker_result',
+    CTA_QUOTE: 'checker_cta_quote',
+} as const;
+
 export type HeroConversionEventName =
     (typeof HERO_CONVERSION_EVENTS)[keyof typeof HERO_CONVERSION_EVENTS];
 
@@ -60,6 +69,7 @@ export const ALLOWED_CONVERSION_EVENT_NAMES = new Set<string>([
     ...Object.values(QUOTE_CONVERSION_EVENTS),
     ...Object.values(CHECKOUT_CONVERSION_EVENTS),
     ...Object.values(CALCULATOR_CONVERSION_EVENTS),
+    ...Object.values(CHECKER_CONVERSION_EVENTS),
 ]);
 
 export type FunnelEventRow = {
@@ -144,11 +154,19 @@ export const CALCULATOR_EVENT_LABELS: Record<string, string> = {
     [CALCULATOR_CONVERSION_EVENTS.CTA_CONSULT]: '계산기 → 대형·상담',
 };
 
+export const CHECKER_EVENT_LABELS: Record<string, string> = {
+    [CHECKER_CONVERSION_EVENTS.VIEW]: 'STL 점검기 진입',
+    [CHECKER_CONVERSION_EVENTS.UPLOAD]: '점검 파일 업로드',
+    [CHECKER_CONVERSION_EVENTS.RESULT]: '점검 결과 확인',
+    [CHECKER_CONVERSION_EVENTS.CTA_QUOTE]: '점검기 → 견적',
+};
+
 export const ALL_FUNNEL_EVENT_LABELS: Record<string, string> = {
     ...HERO_EVENT_LABELS,
     ...QUOTE_EVENT_LABELS,
     ...CHECKOUT_EVENT_LABELS,
     ...CALCULATOR_EVENT_LABELS,
+    ...CHECKER_EVENT_LABELS,
 };
 
 const FILE_INTENT_EVENTS = new Set<string>([

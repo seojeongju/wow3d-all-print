@@ -4,6 +4,7 @@ import { getCustomProductList } from '@/lib/custom-products-public';
 import { CUSTOM_PRODUCT_SLUGS } from '@/lib/custom-products';
 import { getAllPublishedNews } from '@/lib/news-public';
 import { formatNewsDateKo } from '@/lib/news';
+import { USE_CASES } from '@/lib/use-case-pages';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,9 @@ export async function GET() {
         `- Home: ${SITE_URL}/`,
         `- Quote (자동견적): ${SITE_URL}/quote`,
         `- Price Calculator (파일 없이 크기·형태·소재·수량으로 예상 가격·출력 시간 확인): ${absoluteUrl('/price-calculator')}`,
+        `- Free STL Checker (브라우저에서 구멍·비다양체·뒤집힌 면·크기 오류 무료 점검, 파일 서버 전송 없음): ${absoluteUrl('/stl-checker')}`,
+        `- Use Cases Hub (용도별 추천 출력 방식·소재·설계 팁): ${absoluteUrl('/use-cases')}`,
+        ...USE_CASES.map((u) => `- Use Case · ${u.en.name} (${u.ko.name}): ${absoluteUrl(u.path)}`),
         `- Custom Products Hub (맞춤 상품): ${absoluteUrl('/custom')}`,
         `- Photo to 3D Quote (사진(이미지)→AI 3D): ${SITE_URL}/quote?entry=photo`,
         `- Photo to 3D Guide: ${absoluteUrl('/guides/photo-to-3d-printing-quote')}`,
@@ -125,6 +129,8 @@ export async function GET() {
         `- Materials guide: ${SITE_URL}/materials`,
         `- Pricing explanation: ${absoluteUrl('/guides/3d-printing-quote-guide')}`,
         `- Price estimate without a 3D file: ${absoluteUrl('/price-calculator')}`,
+        `- Check a 3D file for errors before printing: ${absoluteUrl('/stl-checker')}`,
+        `- Process and material by use case: ${absoluteUrl('/use-cases')}`,
         `- Photo to 3D printing guide: ${absoluteUrl('/guides/photo-to-3d-printing-quote')}`,
         `- Capstone design prototyping: ${absoluteUrl('/services/capstone')}`,
         '',

@@ -28,7 +28,9 @@ export const CLIENT_NAMESPACES = {
     "quotes": ["Common","LocaleSwitcher","Nav","SavedQuotes","Search"],
     "search": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
     "services": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search","Services"],
+    "stl-checker": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Quote","Search","StlChecker"],
     "terms": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search","Terms"],
+    "use-cases": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
 } as const
 
 export type ClientNamespaceScope = keyof typeof CLIENT_NAMESPACES

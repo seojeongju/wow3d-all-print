@@ -94,7 +94,7 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
             },
             {
                 title: 'Check before upload',
-                body: 'Use a slicer or mesh inspector and aim for a closed, watertight solid when possible.',
+                body: 'Use a slicer or mesh inspector, such as the free WOW3D STL checker that runs in your browser, and aim for a closed, watertight solid when possible.',
             },
             {
                 title: 'If it still will not print',
@@ -111,8 +111,8 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
                 a: 'CAD sources are accurate, but mesh conversion can introduce resolution or face issues — check after convert.',
             },
         ],
-        ctaHref: '/guides/3d-printing-file-preparation',
-        ctaLabel: 'View file prep guide',
+        ctaHref: '/stl-checker',
+        ctaLabel: 'Check my file for free',
     },
     {
         slug: 'minimum-wall-thickness',

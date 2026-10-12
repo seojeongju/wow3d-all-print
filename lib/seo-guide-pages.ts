@@ -105,7 +105,7 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
             },
             {
                 title: '업로드 전 점검',
-                body: '슬라이서나 메쉬 검사 도구로 오류를 확인하고, 가능하면 닫힌 솔리드(watertight)로 만드세요.',
+                body: '슬라이서나 메쉬 검사 도구(브라우저에서 바로 쓰는 와우쓰리디 무료 STL 점검기 등)로 오류를 확인하고, 가능하면 닫힌 솔리드(watertight)로 만드세요.',
             },
             {
                 title: '그래도 출력이 어렵다면',
@@ -122,8 +122,8 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
                 a: 'CAD 원본은 정확하지만, 메쉬 변환 과정에서 해상도·면 문제가 생길 수 있어 변환 후 확인이 필요합니다.',
             },
         ],
-        ctaHref: '/guides/3d-printing-file-preparation',
-        ctaLabel: '파일 준비 가이드 보기',
+        ctaHref: '/stl-checker',
+        ctaLabel: '무료로 파일 점검하기',
     },
     {
         slug: 'minimum-wall-thickness',

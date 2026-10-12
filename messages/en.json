@@ -14,6 +14,10 @@
     "guidesDesc": "Quotes, materials & file prep",
     "priceCalculator": "Price calculator",
     "priceCalculatorDesc": "Estimate a price from size, no file",
+    "useCases": "Use cases",
+    "useCasesDesc": "Figures, enclosures, jigs and more",
+    "stlChecker": "Free STL checker",
+    "stlCheckerDesc": "Find holes, flipped faces and other file errors",
     "news": "Industry News",
     "newsDesc": "3D printing news with expert notes (Korean)",
     "capstone": "Capstone & Graduation",
@@ -5033,5 +5037,164 @@
     "guideTurnaround": "Turnaround time guide",
     "breadcrumbHome": "Home",
     "breadcrumbCalc": "Price calculator"
+  },
+  "UseCases": {
+    "hubMetaTitle": "3D Printing by Use Case | Figures, Enclosures, Jigs, Architectural Models",
+    "hubMetaDescription": "Figures, electronics enclosures, jigs and fixtures, replacement parts, architectural models, cosplay props, logos and trophies: see the recommended process, material, design tips and a sample price for each use.",
+    "hubEyebrow": "USE CASES",
+    "hubTitle": "What are you making?",
+    "hubTitleAccent": "3D printing guides by use case",
+    "hubSubtitle": "Pick what you want to make and we will show which process and material fit, what to watch for in the design, and roughly what it costs.",
+    "breadcrumbHome": "Home",
+    "breadcrumbHub": "Use cases",
+    "viewCase": "Learn more",
+    "toolsHeading": "No file yet, or still preparing one?",
+    "toolCalcTitle": "Price calculator",
+    "toolCalcDesc": "Estimate a price range from size and material, no file needed.",
+    "toolCheckerTitle": "Free STL checker",
+    "toolCheckerDesc": "Check for holes, flipped faces and other errors right in your browser, without uploading.",
+    "toolPhotoTitle": "Photo to 3D",
+    "toolPhotoDesc": "AI turns a single photo into a 3D model and takes you straight to a quote.",
+    "recommendHeading": "Recommended process & material",
+    "checklistHeading": "Design checklist",
+    "checkerCta": "Run a free STL check before printing",
+    "estimateEyebrow": "Sample price",
+    "estimateBody": "We have pre-filled the price calculator with {size}. Change the size, material and quantity to compare prices.",
+    "estimateCta": "See a price in the calculator",
+    "quoteEyebrow": "Exact quote",
+    "quoteHeading": "Have a 3D file? Get an exact quote now",
+    "quoteBody": "Upload STL, OBJ, 3MF or STEP and we analyze volume and supports to price it instantly. No sign-up needed.",
+    "quoteCta": "Upload a file for an instant quote",
+    "faqHeading": "Frequently asked questions",
+    "relatedHeading": "Related resources",
+    "otherCasesHeading": "Other use cases"
+  },
+  "StlChecker": {
+    "metaTitle": "Free STL Checker | Check 3D Printing File Errors Online",
+    "metaDescription": "Check STL, OBJ, 3MF and STEP files for holes, non-manifold edges, flipped faces and size or unit errors for free, right in your browser without uploading. See printer fit per process and the support ratio too.",
+    "eyebrow": "FREE STL CHECKER",
+    "title": "Check your 3D file",
+    "titleAccent": "in 30 seconds, free",
+    "subtitle": "Find holes, flipped faces and unit mistakes before they ruin a print. Your file never leaves your browser.",
+    "dropTitle": "Drag a 3D file here or click to choose",
+    "dropHint": "STL · OBJ · 3MF · PLY · STEP · up to 100MB",
+    "privacy": "Your file is analyzed only in your browser and is never sent to or stored on our servers.",
+    "sampleCta": "Try a sample file",
+    "sampleFail": "Could not load the sample file. Please try again later.",
+    "invalidType": "Only STL, OBJ, 3MF, PLY and STEP files can be checked.",
+    "tooLarge": "Only files up to 100MB can be checked.",
+    "whatWeCheck": [
+      { "title": "Holes & open edges", "desc": "Missing faces make volume and printing inaccurate." },
+      { "title": "Non-manifold edges", "desc": "Edges shared by three or more faces can confuse the slicer." },
+      { "title": "Flipped faces", "desc": "Inside-out faces may fail to print or fill in hollow areas." },
+      { "title": "Size, units & printer fit", "desc": "Spot unit mistakes and parts too large for any printer." }
+    ],
+    "checkAnother": "Check another file",
+    "stages": {
+      "reading": "Reading the file…",
+      "parsing": "Parsing the geometry…",
+      "preparing": "Preparing the view…",
+      "measuring": "Measuring size and volume…",
+      "inspecting": "Checking the mesh for errors…"
+    },
+    "stats": {
+      "size": "Size",
+      "volume": "Volume",
+      "surface": "Surface area",
+      "triangles": "Triangles"
+    },
+    "fitTitle": "Printer fit by process",
+    "fitYes": "Fits",
+    "fitNo": "Too large",
+    "fitMax": "Max {max}",
+    "verdictEyebrow": "Result",
+    "verdict": {
+      "good": {
+        "title": "Ready to print",
+        "desc": "A closed shape with no holes or flipped faces. You can quote and print this file as is.",
+        "descAutoFixed": "A closed shape with no holes; a few flipped faces were fixed automatically. You can quote and print this file as is."
+      },
+      "warn": {
+        "title": "A few things to check",
+        "desc": "Nothing serious, but review the items below. Most are corrected during print preparation."
+      },
+      "fix": {
+        "title": "We recommend fixing this file",
+        "desc": "Holes or non-manifold edges can make volume and print results inaccurate. Small errors are fixed by our team before printing, so you can still get a quote right away."
+      }
+    },
+    "tooComplex": "With {count} triangles this mesh is too large for a detailed browser check. Size and volume were measured normally, and our team reviews the file before printing.",
+    "inspectFail": "We could not finish checking this mesh. Request a quote and our team will review the file directly.",
+    "checks": {
+      "holes": {
+        "title": "Holes & open edges",
+        "good": "Closed shape with no openings.",
+        "bad": "{holes} hole(s) ({edges} open edges) found. Fill the holes in your modeling software."
+      },
+      "manifold": {
+        "title": "Non-manifold edges",
+        "good": "Every edge connects exactly two faces.",
+        "bad": "{edges} edges are shared by three or more faces. Check for overlapping faces or touching parts."
+      },
+      "normals": {
+        "title": "Face orientation (normals)",
+        "good": "All faces point consistently outward.",
+        "fixed": "Found and automatically fixed {count} flipped face(s). Volume, pricing and printing are unaffected, but recalculating normals in your source file is still a good idea.",
+        "bad": "{edges} edges with inconsistent orientation and {shells} inside-out shell(s). Recalculating normals is recommended."
+      },
+      "shells": {
+        "title": "Shells",
+        "good": "A single connected model.",
+        "many": "{count} separate shells. This is normal if the file contains several parts printed together."
+      },
+      "degenerate": {
+        "title": "Zero-area triangles",
+        "detail": "{count} triangles have no area. They have almost no effect and slicers ignore them."
+      },
+      "size": {
+        "title": "Size & units",
+        "good": "{size}, a typical print size.",
+        "tiny": "{size} is very small. Check that the file was not saved in cm, m or inches. You can switch units on the quote page.",
+        "tooBig": "{size} is larger than all of our printers. Split printing or a large-format consultation is needed."
+      },
+      "support": {
+        "title": "Supports",
+        "ratio": "About {ratio}% of the surface needs support. Auto-orientation on the quote page can reduce it.",
+        "none": "This shape needs almost no support."
+      }
+    },
+    "fixTitle": "How do I fix it?",
+    "fixBody": "Microsoft 3D Builder, Meshmixer, or the Repair feature in PrusaSlicer or Bambu Studio fixes most issues. If that is hard, just request a quote as is.",
+    "fixGuide": "Guide to fixing STL file errors",
+    "ctaQuote": "Get a quote for this file",
+    "ctaQuoteHint": "Go straight to the quote page with the same file, no re-upload needed.",
+    "ctaQuoteSample": "Get a quote for my own file",
+    "ctaQuoteSampleHint": "Upload your own 3D file instead of the sample and we will price it instantly.",
+    "faqTitle": "STL checker FAQ",
+    "faqs": [
+      {
+        "q": "Is my file uploaded to your server?",
+        "a": "No. The check runs entirely in your browser and the file is never sent to or stored on our servers. It is used only if you choose to get a quote."
+      },
+      {
+        "q": "What does it check?",
+        "a": "Holes (open edges), non-manifold edges, flipped faces, separate shells, zero-area triangles, size and unit mistakes, and whether the part fits each printer. Wall thickness and self-intersections are reviewed by our team after you request a quote."
+      },
+      {
+        "q": "Can a file with errors still be printed?",
+        "a": "Small holes and flipped faces are usually corrected automatically during print preparation. Large holes can make the volume and price inaccurate, so we recommend fixing them first."
+      },
+      {
+        "q": "Can it check STEP files?",
+        "a": "Yes. STEP/STP files are converted to a mesh in your browser and checked the same way. STEP files exported straight from CAD usually have very few errors."
+      }
+    ],
+    "guidesTitle": "Learn more",
+    "guideFix": "Guide to fixing STL file errors",
+    "guidePrep": "Preparing files for 3D printing",
+    "guideWall": "Minimum wall thickness",
+    "guideUseCases": "3D printing by use case",
+    "breadcrumbHome": "Home",
+    "breadcrumbChecker": "STL checker"
   }
 }

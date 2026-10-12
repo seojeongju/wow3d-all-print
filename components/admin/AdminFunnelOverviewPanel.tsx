@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import {
     CALCULATOR_CONVERSION_EVENTS,
     CALCULATOR_EVENT_LABELS,
+    CHECKER_CONVERSION_EVENTS,
+    CHECKER_EVENT_LABELS,
     CHECKOUT_CONVERSION_EVENTS,
     HERO_CONVERSION_EVENTS,
     HERO_EVENT_LABELS,
@@ -110,6 +112,13 @@ const CALCULATOR_DETAIL_ORDER = [
     CALCULATOR_CONVERSION_EVENTS.CTA_CONSULT,
 ];
 
+const CHECKER_DETAIL_ORDER = [
+    CHECKER_CONVERSION_EVENTS.VIEW,
+    CHECKER_CONVERSION_EVENTS.UPLOAD,
+    CHECKER_CONVERSION_EVENTS.RESULT,
+    CHECKER_CONVERSION_EVENTS.CTA_QUOTE,
+];
+
 const SOURCE_COLORS = [...ADMIN_CHART_SEQUENCE];
 
 const CHART_H = 200;
@@ -186,6 +195,7 @@ export default function AdminFunnelOverviewPanel({
     const heroDetails = orderDetailRows(heroRows, HERO_DETAIL_ORDER, HERO_EVENT_LABELS);
     const quoteDetails = orderDetailRows(quoteRows, QUOTE_DETAIL_ORDER, QUOTE_EVENT_LABELS);
     const calculatorDetails = orderDetailRows(quoteRows, CALCULATOR_DETAIL_ORDER, CALCULATOR_EVENT_LABELS);
+    const checkerDetails = orderDetailRows(quoteRows, CHECKER_DETAIL_ORDER, CHECKER_EVENT_LABELS);
 
     const totalSourceCount = quoteTrafficSources.reduce((a, s) => a + s.count, 0);
     const hasTrend = trend.some((p) =>
@@ -535,7 +545,10 @@ export default function AdminFunnelOverviewPanel({
                 </div>
 
                 {/* 접기 가능한 상세 이벤트 */}
-                {(heroDetails.length > 0 || quoteDetails.length > 0 || calculatorDetails.length > 0) && (
+                {(heroDetails.length > 0 ||
+                    quoteDetails.length > 0 ||
+                    calculatorDetails.length > 0 ||
+                    checkerDetails.length > 0) && (
                     <div className="rounded-xl border border-white/5">
                         <button
                             type="button"
@@ -545,7 +558,7 @@ export default function AdminFunnelOverviewPanel({
                         >
                             <span className="text-[11px] font-bold text-white/60">
                                 이벤트 상세
-                                <span className="ml-2 font-medium text-white/30">히어로·견적·가격 계산기 세부 행동</span>
+                                <span className="ml-2 font-medium text-white/30">히어로·견적·가격 계산기·STL 점검기 세부 행동</span>
                             </span>
                             <ChevronDown
                                 className={cn(
@@ -555,10 +568,11 @@ export default function AdminFunnelOverviewPanel({
                             />
                         </button>
                         {showDetails && (
-                            <div className="grid gap-px border-t border-white/5 bg-white/5 sm:grid-cols-3">
+                            <div className="grid gap-px border-t border-white/5 bg-white/5 sm:grid-cols-2 lg:grid-cols-4">
                                 <DetailList title="히어로" rows={heroDetails} />
                                 <DetailList title="견적 단계" rows={quoteDetails} />
                                 <DetailList title="가격 계산기" rows={calculatorDetails} />
+                                <DetailList title="STL 점검기" rows={checkerDetails} />
                             </div>
                         )}
                     </div>

@@ -33,6 +33,8 @@ import {
     GraduationCap,
     Search,
     Calculator,
+    ScanSearch,
+    Lightbulb,
     type LucideIcon,
 } from "lucide-react";
 import SiteSearchDialog from "@/components/search/SiteSearchDialog";
@@ -204,6 +206,8 @@ export default function Header() {
                     { label: t('printMethods'), href: '/print-methods', desc: t('printMethodsDesc'), icon: Printer },
                     { label: t('guides'), href: '/guides', desc: t('guidesDesc'), icon: BookOpen },
                     { label: t('priceCalculator'), href: '/price-calculator', desc: t('priceCalculatorDesc'), icon: Calculator },
+                    { label: t('stlChecker'), href: '/stl-checker', desc: t('stlCheckerDesc'), icon: ScanSearch },
+                    { label: t('useCases'), href: '/use-cases', desc: t('useCasesDesc'), icon: Lightbulb },
                     { label: t('news'), href: '/news', desc: t('newsDesc'), icon: Newspaper },
                     { label: t('capstone'), href: '/services/capstone', desc: t('capstoneDesc'), icon: GraduationCap },
                 ],

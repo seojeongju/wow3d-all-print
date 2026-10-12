@@ -106,6 +106,20 @@ export default function PriceCalculatorClient() {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- 진입 시 1회만
     }, [])
 
+    /** 활용 사례 페이지 등에서 넘어온 URL 프리셋 (?w=&d=&h=&shape=&method=&qty=) */
+    useEffect(() => {
+        const p = new URLSearchParams(window.location.search)
+        const preset = [p.get('w'), p.get('d'), p.get('h')].map((v) => clampEstimatorDim(v ?? ''))
+        if (preset.every((v) => v >= 1)) {
+            setDims({ x: String(preset[0]), y: String(preset[1]), z: String(preset[2]) })
+        }
+        const presetShape = ESTIMATOR_SHAPES.find((s) => s === p.get('shape'))
+        if (presetShape) setShape(presetShape)
+        const presetMethod = ESTIMATOR_METHODS.find((m) => m === p.get('method'))
+        if (presetMethod) setMethod(presetMethod)
+        if (p.get('qty')) setQuantity(clampEstimatorQty(p.get('qty')))
+    }, [])
+
     useEffect(() => {
         let cancelled = false
         Promise.all([

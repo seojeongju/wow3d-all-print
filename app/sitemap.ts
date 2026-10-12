@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
 import { SERVICE_LANDINGS } from "@/lib/seo-service-pages";
 import { NEW_SEO_GUIDES } from "@/lib/seo-guide-pages";
+import { USE_CASES } from "@/lib/use-case-pages";
 import { SHOWCASE_SLUGS } from "@/lib/showcase";
 import { CUSTOM_PRODUCT_SLUGS } from "@/lib/custom-products";
 import { getCustomProductList } from "@/lib/custom-products-public";
@@ -22,6 +23,13 @@ const PUBLIC_PAGES: PublicPage[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/quote", priority: 0.98, changeFrequency: "weekly" },
   { path: "/price-calculator", priority: 0.95, changeFrequency: "weekly" },
+  { path: "/stl-checker", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/use-cases", priority: 0.9, changeFrequency: "weekly" },
+  ...USE_CASES.map((u) => ({
+    path: u.path,
+    priority: 0.88,
+    changeFrequency: "monthly" as const,
+  })),
   { path: "/custom", priority: 0.95, changeFrequency: "weekly" },
   { path: "/services", priority: 0.96, changeFrequency: "weekly" },
   ...SERVICE_LANDINGS.map((s) => ({

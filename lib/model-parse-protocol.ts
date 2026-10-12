@@ -9,6 +9,8 @@ export type ParsedGeometryPayload = {
     index: Uint32Array | null
     /** 3MF 다중 객체: 객체별 인덱스 범위 */
     parts: { start: number; count: number }[] | null
+    /** 해석 직후 방향을 바로잡은 삼각형 수 */
+    orientFlipped: number
 }
 
 export type ModelParseRequest = { id: number; file: File }

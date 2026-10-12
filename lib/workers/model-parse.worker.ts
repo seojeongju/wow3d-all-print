@@ -9,6 +9,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { parseThreeMF } from '@/lib/threemf-fast-parser'
 import { analyzeMeshGeometry, MODEL_PARTS_USERDATA_KEY } from '@/lib/geometry'
+import { orientMeshConsistently } from '@/lib/mesh-orient'
 import type { ModelParseRequest, ModelParseResponse, ModelParseStage, ParsedGeometryPayload } from '@/lib/model-parse-protocol'
 
 const ctx = self as unknown as {
@@ -106,6 +107,7 @@ ctx.onmessage = async (event: MessageEvent<ModelParseRequest>) => {
         }
         stage(id, 'preparing')
         const { geo, parts } = result
+        const { flipped: orientFlipped } = orientMeshConsistently(geo)
         geo.center()
         geo.computeVertexNormals()
         const position = geo.getAttribute('position').array as Float32Array
@@ -122,7 +124,7 @@ ctx.onmessage = async (event: MessageEvent<ModelParseRequest>) => {
         if (index) measureGeo.setIndex(new THREE.BufferAttribute(index.slice(), 1))
         if (parts) measureGeo.userData[MODEL_PARTS_USERDATA_KEY] = parts
 
-        const payload: ParsedGeometryPayload = { position, normal, index, parts }
+        const payload: ParsedGeometryPayload = { position, normal, index, parts, orientFlipped }
         const transfer: Transferable[] = [position.buffer, normal.buffer]
         if (index) transfer.push(index.buffer)
         post({ id, type: 'done', payload }, transfer)

@@ -4,6 +4,7 @@
 import * as THREE from 'three'
 import { MODEL_PARTS_USERDATA_KEY, type GeometryAnalysis } from '@/lib/geometry'
 import { parseModelArrayBuffer } from '@/lib/parseModelGeometry'
+import { MESH_ORIENT_USERDATA_KEY } from '@/lib/mesh-orient'
 import type { ModelParseResponse, ModelParseStage, ParsedGeometryPayload } from '@/lib/model-parse-protocol'
 
 export type { ModelParseStage } from '@/lib/model-parse-protocol'
@@ -39,6 +40,7 @@ function payloadToGeometry(p: ParsedGeometryPayload): THREE.BufferGeometry {
     geo.setAttribute('normal', new THREE.BufferAttribute(p.normal, 3))
     if (p.index) geo.setIndex(new THREE.BufferAttribute(p.index, 1))
     if (p.parts) geo.userData[MODEL_PARTS_USERDATA_KEY] = p.parts
+    geo.userData[MESH_ORIENT_USERDATA_KEY] = p.orientFlipped ?? 0
     return geo
 }
 

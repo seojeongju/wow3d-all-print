@@ -589,7 +589,7 @@ export async function GET(req: NextRequest) {
                     COUNT(*) AS cnt,
                     COUNT(DISTINCT session_id) AS session_cnt
                 FROM conversion_events
-                WHERE event_category IN ('quote', 'checkout', 'calculator')
+                WHERE event_category IN ('quote', 'checkout', 'calculator', 'checker')
                   AND created_at >= ${sinceExpr}
                 GROUP BY event_name
                 ORDER BY cnt DESC
