@@ -1,3 +1,3 @@
 'use client'
 
-export { default } from '../error'
+export { default } from '@/components/layout/RouteErrorView'
