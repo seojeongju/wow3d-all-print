@@ -147,7 +147,7 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
     const [aiOpen, setAiOpen] = useState(false)
     const [aiStyle, setAiStyle] = useState<NewsImageStyle>('photo')
     const [aiScene, setAiScene] = useState('')
-    const [aiImage, setAiImage] = useState<{ base64: string; alt: string } | null>(null)
+    const [aiImage, setAiImage] = useState<{ base64: string; alt: string; promptScene: string } | null>(null)
     const [aiGenerating, setAiGenerating] = useState(false)
     const coverInputRef = useRef<HTMLInputElement>(null)
     const postIdRef = useRef<number | null>(postId)
@@ -309,7 +309,11 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
             })
             const j = await res.json()
             if (!res.ok) throw new Error(j.error || '생성 실패')
-            setAiImage({ base64: j.data.image, alt: j.data.alt || aiImage?.alt || '' })
+            setAiImage({
+                base64: j.data.image,
+                alt: j.data.alt || aiImage?.alt || '',
+                promptScene: j.data.promptScene || '',
+            })
             setAiScene(j.data.scene)
         } catch (e) {
             toast({
@@ -551,15 +555,15 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                     ))}
                                 </div>
                                 <Field
-                                    label="장면 설명(영어)"
-                                    hint="비워 두면 제목·요약을 바탕으로 AI가 자동 작성합니다. 결과가 마음에 들지 않으면 문장을 고친 뒤 다시 생성하세요. 글자·로고는 자동으로 제외됩니다."
+                                    label="장면 설명(한국어·영어)"
+                                    hint="한국어로 써도 됩니다 — 이미지 AI가 이해하도록 자동으로 영어로 옮겨 생성합니다. 비워 두면 제목·요약을 바탕으로 AI가 자동 작성합니다. 결과가 마음에 들지 않으면 문장을 고친 뒤 다시 생성하세요. 글자·로고는 자동으로 제외됩니다."
                                 >
                                     <textarea
                                         className={cn(inputCls, 'min-h-[70px] text-xs leading-relaxed')}
                                         value={aiScene}
                                         maxLength={500}
                                         onChange={(e) => setAiScene(e.target.value)}
-                                        placeholder="예: a desktop 3D printer printing a black polycarbonate gear, close-up of the hot nozzle"
+                                        placeholder="예: 검은색 폴리카보네이트 기어를 출력 중인 데스크톱 3D프린터, 뜨거운 노즐 클로즈업"
                                     />
                                 </Field>
                                 <div className="flex flex-wrap gap-2">
@@ -598,6 +602,12 @@ export default function NewsEditor({ postId: initialId }: { postId?: number }) {
                                             실제 게시 화면과 같은 16:9 비율로 잘린 미리보기입니다. AI 생성 이미지는 실제 제품·현장과 다를 수 있으니 사실과
                                             혼동되지 않는지 확인하세요.
                                         </p>
+                                        {aiImage.promptScene && aiImage.promptScene !== aiScene ? (
+                                            <p className="text-[11px] leading-relaxed text-white/35 break-keep">
+                                                <span className="font-bold text-white/50">이미지 AI에 전달된 영어 묘사:</span>{' '}
+                                                {aiImage.promptScene}
+                                            </p>
+                                        ) : null}
                                         <Button
                                             type="button"
                                             disabled={uploading || aiGenerating}
