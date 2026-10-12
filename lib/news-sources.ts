@@ -111,7 +111,21 @@ export function decodeEntities(s: string): string {
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
         .replace(/&nbsp;/g, ' ')
+        .replace(/&(lsquo|rsquo|ldquo|rdquo|middot|hellip|ndash|mdash|bull|times);/g, (_, name: string) => NAMED_ENTITIES[name] ?? _)
         .replace(/&amp;/g, '&')
+}
+
+const NAMED_ENTITIES: Record<string, string> = {
+    lsquo: '‘',
+    rsquo: '’',
+    ldquo: '“',
+    rdquo: '”',
+    middot: '·',
+    hellip: '…',
+    ndash: '–',
+    mdash: '—',
+    bull: '•',
+    times: '×',
 }
 
 export function htmlToPlain(s: string): string {

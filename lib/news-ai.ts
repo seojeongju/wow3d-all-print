@@ -66,19 +66,73 @@ function metaContent(html: string, key: string): string {
     return decodeEntities((m?.[1] ?? m?.[2] ?? '').trim())
 }
 
-/** 기사 HTML에서 본문 문단만 추출 */
+/** AI 초안을 만들 수 있는 최소 본문 길이 (generateNewsAiDraft 검사와 같음) */
+const ARTICLE_MIN_CHARS = 200
+
+/** 본문 영역 표시: 표준 itemprop + 국내 언론 CMS에서 흔한 본문 컨테이너 id·class */
+const ARTICLE_BODY_MARKER_RE =
+    /itemprop\s*=\s*["']articleBody["']|id\s*=\s*["'](?:news_body_area|article-view-content-div|articleBody|article_body|articleBodyContents|newsct_article|dic_area|news_body|newsBody|textBody|article-body)["']|class\s*=\s*["'][^"']*\b(?:article_body|article-body|news_body|news_text|article_txt|art_txt|view_con)\b[^"']*["']/gi
+
+/** openIdx의 여는 태그부터 같은 이름 태그의 짝이 맞는 닫는 태그까지 잘라낸다 */
+function sliceBalancedElement(html: string, openIdx: number): string {
+    const tag = /^<([a-zA-Z][\w-]*)/.exec(html.slice(openIdx, openIdx + 40))?.[1]
+    if (!tag) return ''
+    const re = new RegExp(`<(/?)${tag}\\b[^>]*?(/?)>`, 'gi')
+    re.lastIndex = openIdx
+    let depth = 0
+    for (let m = re.exec(html); m; m = re.exec(html)) {
+        if (m[1]) depth--
+        else if (!m[2]) depth++
+        if (depth <= 0) return html.slice(openIdx, re.lastIndex)
+    }
+    return html.slice(openIdx)
+}
+
+/** 본문 영역 안의 메뉴·캡션 등을 걷어내고 문단 텍스트로 변환 */
+function scopeToText(scope: string): string {
+    const cleaned = scope.replace(/<(nav|header|footer|aside|form|figure)\b[\s\S]*?<\/\1>/gi, ' ')
+    const paragraphs = (cleaned.match(/<(p|h2|h3|li)\b[^>]*>[\s\S]*?<\/\1>/gi) ?? [])
+        .map((p) => htmlToPlain(p))
+        .filter((p) => p.length >= 25 && !/^(copyright|ⓒ|©|저작권자|무단전재)/i.test(p))
+    return paragraphs.length >= 3 ? paragraphs.join('\n') : htmlToPlain(cleaned)
+}
+
+function longestText(scopes: string[]): string {
+    let best = ''
+    for (const scope of scopes) {
+        const text = scopeToText(scope)
+        if (text.length > best.length) best = text
+    }
+    return best
+}
+
+/**
+ * 기사 HTML에서 본문 문단만 추출.
+ * 1) itemprop="articleBody"·본문 컨테이너 영역 → 2) <article> 블록 중 가장 긴 것 → 3) 페이지 전체 순으로,
+ * 앞 단계가 충분한 길이를 못 채우면 다음 단계로 넘어간다.
+ */
 export function extractArticleText(html: string): string {
-    const cleaned = html
+    const base = html
         .replace(/<script[\s\S]*?<\/script>/gi, ' ')
         .replace(/<style[\s\S]*?<\/style>/gi, ' ')
         .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-        .replace(/<(nav|header|footer|aside|form|figure)[\s\S]*?<\/\1>/gi, ' ')
-    const scope = /<article[\s\S]*?<\/article>/i.exec(cleaned)?.[0] ?? cleaned
-    const paragraphs = (scope.match(/<(p|h2|h3|li)[^>]*>[\s\S]*?<\/\1>/gi) ?? [])
-        .map((p) => htmlToPlain(p))
-        .filter((p) => p.length >= 25 && !/^(copyright|ⓒ|©|저작권자|무단전재)/i.test(p))
-    const text = paragraphs.length >= 3 ? paragraphs.join('\n') : htmlToPlain(scope)
-    return text.slice(0, ARTICLE_MAX_CHARS)
+
+    const bodyScopes: string[] = []
+    for (const m of base.matchAll(ARTICLE_BODY_MARKER_RE)) {
+        const openIdx = base.lastIndexOf('<', m.index)
+        if (openIdx >= 0) bodyScopes.push(sliceBalancedElement(base, openIdx))
+    }
+    const fromBody = longestText(bodyScopes)
+    if (fromBody.length >= ARTICLE_MIN_CHARS) return fromBody.slice(0, ARTICLE_MAX_CHARS)
+
+    const articleScopes: string[] = []
+    for (const m of base.matchAll(/<article\b/gi)) articleScopes.push(sliceBalancedElement(base, m.index))
+    const fromArticle = longestText(articleScopes)
+    if (fromArticle.length >= ARTICLE_MIN_CHARS) return fromArticle.slice(0, ARTICLE_MAX_CHARS)
+
+    const fromPage = scopeToText(base)
+    const best = [fromBody, fromArticle, fromPage].reduce((a, b) => (b.length > a.length ? b : a), '')
+    return best.slice(0, ARTICLE_MAX_CHARS)
 }
 
 export async function fetchArticle(rawUrl: string): Promise<ArticleSource> {
@@ -209,7 +263,7 @@ export async function generateNewsAiDraft(
     env: AiEnv,
     adminNote = ''
 ): Promise<NewsAiDraft> {
-    if (article.text.length < 200) {
+    if (article.text.length < ARTICLE_MIN_CHARS) {
         throw new Error('원문 본문을 충분히 읽지 못했습니다. 다른 기사 주소를 사용하거나 직접 작성해 주세요.')
     }
     const key = resolveOpenAiKey(env)
