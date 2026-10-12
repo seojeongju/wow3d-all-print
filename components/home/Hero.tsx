@@ -13,6 +13,8 @@ import {
     ShieldCheck,
     Printer,
     Lightbulb,
+    Calculator,
+    ScanSearch,
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -58,6 +60,13 @@ function DeferredHeroScene() {
 }
 
 type UploadMode = 'file' | 'photo';
+
+/** 파일·사진이 없거나 출력 가능 여부가 불안한 방문자의 출구 (key = 문구 키·전환 이벤트 link 값) */
+const HERO_SIDE_LINKS = [
+    { key: 'expert', href: '/expert', icon: Lightbulb },
+    { key: 'calculator', href: '/price-calculator', icon: Calculator },
+    { key: 'checker', href: '/stl-checker', icon: ScanSearch },
+] as const;
 
 export default function Hero() {
     const t = useTranslations('Home.hero');
@@ -353,26 +362,30 @@ export default function Hero() {
                         </Link>
                     </div>
 
-                    {/* 아이디어만 있는 경우 — 보조 스트립 (주 CTA보다 낮은 비중) */}
-                    <Link
-                        href="/expert"
-                        onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'expert' })}
-                        className="group mb-6 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 lg:mb-4 lg:py-2.5 transition-all hover:border-teal-400/30 hover:bg-teal-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 sm:items-center sm:px-4"
-                    >
-                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/[0.05] text-teal-300/90 sm:mt-0">
-                            <Lightbulb className="h-4 w-4" aria-hidden />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-white/90 break-keep">{t('ideaTitle')}</p>
-                            <p className="mt-0.5 text-xs leading-relaxed text-white/55 break-keep sm:text-[13px]">
-                                {t('ideaDesc')}
-                            </p>
-                        </div>
-                        <span className="hidden shrink-0 items-center gap-1 text-xs font-bold text-teal-300/90 transition group-hover:text-teal-200 sm:inline-flex">
-                            {t('ideaCta')}
-                            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                        </span>
-                    </Link>
+                    {/* 바로 견적이 어려운 방문자용 보조 메뉴 — 주 CTA보다 낮은 비중, 모바일은 목적지 이름만 */}
+                    <div className="mb-6 grid grid-cols-3 gap-2 lg:mb-4 sm:gap-2.5">
+                        {HERO_SIDE_LINKS.map(({ key, href, icon: Icon }) => (
+                            <Link
+                                key={key}
+                                href={href}
+                                onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: key })}
+                                className="group flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-all hover:border-teal-400/30 hover:bg-teal-400/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5"
+                            >
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-white/[0.05] text-teal-300/90">
+                                    <Icon className="h-4 w-4" aria-hidden />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="hidden text-[13px] font-bold leading-snug text-white/90 break-keep sm:block">
+                                        {t(`sideLinks.${key}.title`)}
+                                    </p>
+                                    <p className="inline-flex items-center gap-0.5 text-[12px] font-bold leading-snug text-white/90 break-keep sm:mt-0.5 sm:text-xs sm:font-semibold sm:text-teal-300/90 sm:group-hover:text-teal-200">
+                                        {t(`sideLinks.${key}.cta`)}
+                                        <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 sm:block" aria-hidden />
+                                    </p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
 
                     <p className="mb-4 text-xs font-medium text-white/45 break-keep lg:hidden">
                         {t('dropZoneHint')}

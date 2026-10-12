@@ -128,9 +128,20 @@
       "hasPhoto": "I only have photos",
       "hasPhotoDesc": "AI builds 3D, then quote",
       "make3d": "Create 3D",
-      "ideaTitle": "Only have an idea?",
-      "ideaDesc": "From product design to prototypes—we support one-stop product development.",
-      "ideaCta": "Ask about development",
+      "sideLinks": {
+        "expert": {
+          "title": "Only have an idea?",
+          "cta": "Product development"
+        },
+        "calculator": {
+          "title": "Just want a price?",
+          "cta": "Price calculator"
+        },
+        "checker": {
+          "title": "Is my file OK?",
+          "cta": "Free STL check"
+        }
+      },
       "tabFileQuote": "Quote from 3D file",
       "tabPhoto3d": "Photo to 3D",
       "customers": "A 3D printing service you can trust",
