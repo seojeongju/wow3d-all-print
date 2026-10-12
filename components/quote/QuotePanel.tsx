@@ -38,6 +38,7 @@ import { useQuoteEstimateLog, type QuoteEstimateSnapshot } from '@/hooks/useQuot
 import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
 import InchUnitNotice from '@/components/quote/InchUnitNotice'
+import QuoteEmailSave from '@/components/quote/QuoteEmailSave'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
@@ -612,7 +613,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         ]
     )
 
-    const handleSaveQuote = async () => {
+    const handleSaveQuote = async (opts?: { silent?: boolean }) => {
         if (!analysis || !file) return
 
         const quoteIdBeforeSave = savedQuoteId
@@ -789,7 +790,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             }
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
-            if (token && user?.id) {
+            if (opts?.silent) {
+                // 견적 메일 등 호출한 쪽이 결과를 안내
+            } else if (token && user?.id) {
                 showToast.success(
                     t('toastSaved'),
                     createdNewVariant
@@ -818,16 +821,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         }
     }
 
-    const handleAddToCart = async () => {
-        if (!file || !analysis) {
-            showToast.error(t('toastAddFail'), t('toastNoAnalysis'));
-            return;
-        }
-        if (overflow) {
-            showToast.error(t('overflowTitle'), t('overflowCartBlocked'));
-            return;
-        }
-
+    /** 설정이 바뀌지 않았고 이미 저장된 ID가 있으면 재사용, 아니면 새로 저장 */
+    const ensureQuoteSaved = async (opts?: { silent?: boolean }) => {
+        if (!analysis) return null
         const configKey = buildQuoteConfigKey({
             printMethod,
             fdmMaterial,
@@ -842,14 +838,23 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             dimensions: analysis.boundingBox,
         });
 
-        let savedQuote;
-        // 설정이 바뀌지 않았고 이미 저장된 ID가 있으면 재사용
         if (savedQuoteId && configKey === lastSavedConfig && !resaveLoadedQuote.current) {
-            savedQuote = { id: savedQuoteId };
-        } else {
-            savedQuote = await handleSaveQuote();
+            return { id: savedQuoteId } as Partial<SaveQuoteResult> & { id: number }
+        }
+        return handleSaveQuote(opts)
+    }
+
+    const handleAddToCart = async () => {
+        if (!file || !analysis) {
+            showToast.error(t('toastAddFail'), t('toastNoAnalysis'));
+            return;
+        }
+        if (overflow) {
+            showToast.error(t('overflowTitle'), t('overflowCartBlocked'));
+            return;
         }
 
+        const savedQuote = await ensureQuoteSaved()
         if (!savedQuote) return
 
         try {
@@ -1280,7 +1285,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 variant="ghost"
                                 size="lg"
                                 className="rounded-xl sm:rounded-2xl bg-white/10 border border-white/25 hover:bg-white/16 hover:border-white/40 text-white font-black gap-2 h-12 sm:h-16 text-[13px] sm:text-[15px] tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all active:scale-[0.98]"
-                                onClick={handleSaveQuote}
+                                onClick={() => void handleSaveQuote()}
                             >
                                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                 {t('save')}
@@ -1306,6 +1311,13 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                             {t('goCart')} <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
+                )}
+                {!embedded && (
+                    <QuoteEmailSave
+                        disabled={!analysis || isSaving}
+                        ensureSaved={() => ensureQuoteSaved({ silent: true })}
+                        printMethod={printMethod}
+                    />
                 )}
                 {!embedded && (
                     <p className="text-[11px] text-white/35 font-bold text-center leading-relaxed break-keep pt-1">

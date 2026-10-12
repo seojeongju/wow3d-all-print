@@ -64,5 +64,6 @@ mode = "smart"
 cpu_ms = 60000
 
 # 매일 00:00 KST(UTC 15:00) — 배송중→배송완료(5일), 배송완료→완료됨(2일) 자동 전환
+# 매일 10:00 KST(UTC 01:00) — 견적 메일 리마인드 (scripts/worker-entry.mjs QUOTE_REMINDER_CRON)
 [triggers]
-crons = ["0 15 * * *"]
+crons = ["0 15 * * *", "0 1 * * *"]

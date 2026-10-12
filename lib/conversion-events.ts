@@ -34,6 +34,7 @@ export const QUOTE_CONVERSION_EVENTS = {
     ANALYSIS_COMPLETE: 'quote_analysis_complete',
     ESTIMATE_VIEW: 'quote_estimate_view',
     ADD_TO_CART: 'quote_add_to_cart',
+    EMAIL_SAVE: 'quote_email_save',
 } as const;
 
 /** 결제·주문 이벤트 */
@@ -127,6 +128,7 @@ export const QUOTE_EVENT_LABELS: Record<string, string> = {
     [QUOTE_CONVERSION_EVENTS.ANALYSIS_COMPLETE]: '분석 완료',
     [QUOTE_CONVERSION_EVENTS.ESTIMATE_VIEW]: '견적 금액 확인',
     [QUOTE_CONVERSION_EVENTS.ADD_TO_CART]: '장바구니 담기',
+    [QUOTE_CONVERSION_EVENTS.EMAIL_SAVE]: '견적 메일 받기',
 };
 
 export const CHECKOUT_EVENT_LABELS: Record<string, string> = {

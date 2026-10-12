@@ -16,6 +16,9 @@ const LOOKALIKE_ALLOWLIST = JSON.stringify([
     },
 ]);
 
+/** wrangler.toml [triggers] crons 와 같은 문자열이어야 함 */
+const QUOTE_REMINDER_CRON = '0 1 * * *';
+
 export { DOQueueHandler, DOShardedTagCache, BucketCachePurge };
 
 export default {
@@ -34,7 +37,12 @@ export default {
         return openNext.fetch(request, env, ctx);
     },
     async scheduled(event, env, ctx) {
-        for (const path of ['/api/cron/order-auto-status', '/api/cron/news-collect']) {
+        // 견적 리마인드는 손님이 메일을 확인하기 좋은 오전(10:00 KST)에만 발송
+        const paths =
+            event.cron === QUOTE_REMINDER_CRON
+                ? ['/api/cron/quote-reminders']
+                : ['/api/cron/order-auto-status', '/api/cron/news-collect'];
+        for (const path of paths) {
             const req = new Request(`https://cron.internal${path}`, {
                 method: 'POST',
                 headers: {

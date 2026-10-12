@@ -666,6 +666,19 @@
     "quoteBox": "Saved quotes",
     "goCart": "Go to cart",
     "saveHint": "Saving alone does not place an order. Add to cart, then checkout.",
+    "emailSaveTitle": "Email me this quote",
+    "emailSaveDesc": "We send you a link to this quote so you can continue later, on any device.",
+    "emailSavePlaceholder": "Email address",
+    "emailSaveRemindLabel": "Remind me about this quote once in 3 days (optional)",
+    "emailSavePrivacy": "Your email is used only to send this quote and one reminder if you opt in, and is deleted after 90 days. You can unsubscribe from the reminder at the bottom of the email.",
+    "emailSaveSubmit": "Send quote email",
+    "emailSaveCancel": "Close",
+    "emailSaveSentTitle": "Quote email sent",
+    "emailSaveSentDesc": "We sent the quote to {email}",
+    "emailSaveSentHint": "Can't find it? Please check your spam folder.",
+    "emailSaveRemindOn": "We'll remind you once in 3 days. Can't find the email? Check your spam folder.",
+    "emailSaveAgain": "Send to another address",
+    "emailSaveFail": "Could not send the quote email",
     "estimateLogNotice": "For consultation and service improvement, the file name, dimensions, selected options, quoted price and a preview image are recorded. The original file is kept only when you save or add to cart.",
     "toastCartUpdated": "Cart updated",
     "toastCartUpdatedDesc": "Updated quote price and options were applied to your cart.",
@@ -3403,6 +3416,12 @@
             "Quote consultation and follow-up, pricing and service improvement (stats)"
           ],
           [
+            "Quote by email",
+            "Email address, whether you agreed to the reminder (optional)",
+            "When you use “Email me this quote”",
+            "Sending the quote link, one quote reminder (only if you agree)"
+          ],
+          [
             "Site search",
             "Search terms entered, search results selected, random visitor identifier (stored in the browser)",
             "Automatic when using site search",
@@ -3452,6 +3471,10 @@
           {
             "label": "Site search records",
             "text": "Automatically destroyed 1 year after the search."
+          },
+          {
+            "label": "Quote email requests",
+            "text": "Automatically destroyed 90 days after the request. If you unsubscribe, reminder emails stop immediately."
           },
           {
             "label": "Tax-related",
