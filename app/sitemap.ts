@@ -21,6 +21,7 @@ type PublicPage = {
 const PUBLIC_PAGES: PublicPage[] = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/quote", priority: 0.98, changeFrequency: "weekly" },
+  { path: "/price-calculator", priority: 0.95, changeFrequency: "weekly" },
   { path: "/custom", priority: 0.95, changeFrequency: "weekly" },
   { path: "/services", priority: 0.96, changeFrequency: "weekly" },
   ...SERVICE_LANDINGS.map((s) => ({

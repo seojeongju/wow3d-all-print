@@ -12,6 +12,8 @@
     "printMethodsDesc": "FDM · SLA · DLP comparison",
     "guides": "Guides",
     "guidesDesc": "Quotes, materials & file prep",
+    "priceCalculator": "Price calculator",
+    "priceCalculatorDesc": "Estimate a price from size, no file",
     "news": "Industry News",
     "newsDesc": "3D printing news with expert notes (Korean)",
     "capstone": "Capstone & Graduation",
@@ -415,6 +417,9 @@
     "make3dCta": "Create 3D",
     "makerHintBefore": "For logo / 2.5D badges, use ",
     "makerHintAfter": ".",
+    "noFileCalcTitle": "No file or photo yet?",
+    "noFileCalcDesc": "Pick a size and material to see an estimated price",
+    "noFileCalcCta": "Price calculator",
     "stepUpload": "Upload",
     "stepConfigure": "Configure",
     "settingsTitle": "Quote settings",
@@ -4914,5 +4919,96 @@
     "guidesSectionTitle": "3D Printing Industry News",
     "guidesSectionDesc": "Material, hardware and industry updates with notes from our production team.",
     "viewAll": "View all"
+  },
+  "PriceCalculator": {
+    "metaTitle": "3D Printing Price Calculator | Estimate Without a File - Wow3D",
+    "metaDescription": "No 3D file yet? Pick size, shape, material and quantity to see an estimated 3D printing price range and print time instantly. Compare FDM, SLA and DLP materials for free.",
+    "eyebrow": "QUICK PRICE ESTIMATOR",
+    "title": "No file needed —",
+    "titleAccent": "3D printing price in 30 seconds",
+    "subtitle": "Choose size, shape, material and quantity to see an estimated price range based on the same rates as our live quote.",
+    "sizeLabel": "Size (mm)",
+    "width": "Width",
+    "depth": "Depth",
+    "height": "Height",
+    "sizeHint": "A rough size is fine. 1 cm = 10 mm",
+    "examplesLabel": "Try an example",
+    "examples": {
+      "part": "Small part",
+      "case": "Electronics case",
+      "stand": "Stand / holder",
+      "figure": "Figure"
+    },
+    "shapeLabel": "Shape",
+    "shapes": {
+      "solid": { "title": "Block / mechanical", "desc": "Simple, mostly solid form" },
+      "general": { "title": "General shape", "desc": "Typical form with curves" },
+      "shell": { "title": "Case / housing", "desc": "Hollow box (1.5–2.5 mm walls)" },
+      "figure": { "title": "Figure / sculpture", "desc": "Thin, detailed features" }
+    },
+    "methodLabel": "Print method",
+    "methods": {
+      "fdm": { "title": "FDM", "desc": "Functional parts, most economical" },
+      "sla": { "title": "SLA", "desc": "Smooth, precise, large prints" },
+      "dlp": { "title": "DLP", "desc": "Small precise parts, miniatures" }
+    },
+    "methodGuide": "Compare print methods",
+    "materialLabel": "Material",
+    "materialGuideFdm": "PLA vs ABS vs PETG",
+    "materialGuideResin": "Compare resin types",
+    "materialNone": "No materials available.",
+    "strengthLabel": "Strength (infill)",
+    "strength": {
+      "appearance": "Visual 20%",
+      "functional": "Functional 40%",
+      "strength": "High strength 80%"
+    },
+    "qtyLabel": "Quantity",
+    "qtyHint": "Printing several in the same material applies setup and the minimum charge only once, lowering the unit price.",
+    "resultEyebrow": "Estimated price (VAT incl.)",
+    "resultPerUnit": "{range} each",
+    "printTime": "Estimated print time",
+    "minApplied": "The minimum print charge ({amount}) applies. Ordering several together lowers the unit price significantly.",
+    "loading": "Loading rates…",
+    "invalidDims": "Enter width, depth and height between 1 and 2,000 mm.",
+    "overflowTitle": "Exceeds the maximum build size",
+    "overflowBody": "The {method} maximum build size is {max}. Try another method or ask us about split or large-format printing.",
+    "consultTitle": "Large prints are quoted by consultation",
+    "consultBody": "At this size the price depends heavily on hollowing and splitting. Our large-format team will suggest the most economical approach.",
+    "consultCta": "Ask about large-format printing",
+    "compareTitle": "Same size, different material?",
+    "compareHint": "Tap a material to recalculate instantly.",
+    "compareConsult": "Consult",
+    "ctaFile": "Get an exact quote",
+    "ctaFileHint": "Upload a 3D file (STL, 3MF, STEP) and we analyze the geometry for an exact price instantly.",
+    "ctaPhoto": "No file? Quote from a photo",
+    "ctaPhotoHint": "AI turns a single photo into a 3D model and continues to a quote.",
+    "disclaimer": "The estimate is a range based on typical values for each shape. The actual price depends on your model's volume and supports; uploading a file calculates it exactly with the same rates.",
+    "faqTitle": "Price calculator FAQ",
+    "faqs": [
+      {
+        "q": "Can I get an exact price without a file?",
+        "a": "We show a range estimated from size and shape. It uses the same rates and formula as our live quote, but without the real volume and supports it is shown as a range. Upload a 3D file (STL, 3MF, STEP) for an exact price instantly."
+      },
+      {
+        "q": "Why does a small part show the minimum price?",
+        "a": "Each print method has a minimum charge to cover preparation and machine setup. Ordering several pieces in the same material applies the minimum and setup only once, so the unit price drops significantly."
+      },
+      {
+        "q": "Should I choose FDM or SLA/DLP?",
+        "a": "FDM suits functional parts and prototypes where strength and price matter. SLA/DLP resin printing suits figures and precision parts that need smooth surfaces and fine detail."
+      },
+      {
+        "q": "Is print time the same as lead time?",
+        "a": "The print time shown is how long the printer runs. For total lead time including post-processing, inspection and shipping, see our turnaround time guide."
+      }
+    ],
+    "guidesTitle": "Learn more",
+    "guideQuote": "3D printing quote guide",
+    "guideMaterials": "PLA vs ABS vs PETG",
+    "guideMethods": "FDM vs SLA vs DLP",
+    "guideTurnaround": "Turnaround time guide",
+    "breadcrumbHome": "Home",
+    "breadcrumbCalc": "Price calculator"
   }
 }

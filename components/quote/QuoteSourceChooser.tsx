@@ -1,6 +1,6 @@
 'use client'
 
-import { FileBox, ImageIcon, ArrowRight, Sparkles } from 'lucide-react'
+import { FileBox, ImageIcon, ArrowRight, Sparkles, Calculator } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
@@ -77,6 +77,22 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                     </span>
                 </button>
             </div>
+
+            <Link
+                href="/price-calculator"
+                className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-all hover:border-teal-400/30 hover:bg-white/[0.07]"
+            >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-teal-300">
+                    <Calculator className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-black text-white break-keep">{t('noFileCalcTitle')}</p>
+                    <p className="text-[11px] font-medium text-white/50 break-keep">{t('noFileCalcDesc')}</p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-black text-teal-300 group-hover:gap-2">
+                    {t('noFileCalcCta')} <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+            </Link>
 
             <p className="text-[11px] font-bold leading-relaxed text-white/35 break-keep">
                 {t('makerHintBefore')}

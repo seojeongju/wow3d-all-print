@@ -19,6 +19,7 @@ export const CLIENT_NAMESPACES = {
     "news": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
     "order-complete": ["OrderComplete"],
     "partnership": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Partnership","PartnershipSmartStore","Search"],
+    "price-calculator": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","PriceCalculator","Search"],
     "print": ["Print"],
     "print-methods": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","PrintMethods","Search"],
     "privacy": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Privacy","Search"],

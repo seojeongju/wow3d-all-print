@@ -2,6 +2,7 @@ export const CONVERSION_EVENT_CATEGORY = {
     HERO: 'hero',
     QUOTE: 'quote',
     CHECKOUT: 'checkout',
+    CALCULATOR: 'calculator',
 } as const;
 
 export type ConversionEventCategory =
@@ -41,6 +42,15 @@ export const CHECKOUT_CONVERSION_EVENTS = {
     ORDER_COMPLETE: 'order_complete',
 } as const;
 
+/** 간편 가격 계산기(/price-calculator) 이벤트 */
+export const CALCULATOR_CONVERSION_EVENTS = {
+    VIEW: 'calc_view',
+    ESTIMATE: 'calc_estimate',
+    CTA_FILE: 'calc_cta_file',
+    CTA_PHOTO: 'calc_cta_photo',
+    CTA_CONSULT: 'calc_cta_consult',
+} as const;
+
 export type HeroConversionEventName =
     (typeof HERO_CONVERSION_EVENTS)[keyof typeof HERO_CONVERSION_EVENTS];
 
@@ -48,6 +58,7 @@ export const ALLOWED_CONVERSION_EVENT_NAMES = new Set<string>([
     ...Object.values(HERO_CONVERSION_EVENTS),
     ...Object.values(QUOTE_CONVERSION_EVENTS),
     ...Object.values(CHECKOUT_CONVERSION_EVENTS),
+    ...Object.values(CALCULATOR_CONVERSION_EVENTS),
 ]);
 
 export type FunnelEventRow = {
@@ -123,10 +134,19 @@ export const CHECKOUT_EVENT_LABELS: Record<string, string> = {
     [CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE]: '주문 완료',
 };
 
+export const CALCULATOR_EVENT_LABELS: Record<string, string> = {
+    [CALCULATOR_CONVERSION_EVENTS.VIEW]: '가격 계산기 진입',
+    [CALCULATOR_CONVERSION_EVENTS.ESTIMATE]: '가격 계산기 조건 변경',
+    [CALCULATOR_CONVERSION_EVENTS.CTA_FILE]: '계산기 → 파일 견적',
+    [CALCULATOR_CONVERSION_EVENTS.CTA_PHOTO]: '계산기 → 사진 견적',
+    [CALCULATOR_CONVERSION_EVENTS.CTA_CONSULT]: '계산기 → 대형·상담',
+};
+
 export const ALL_FUNNEL_EVENT_LABELS: Record<string, string> = {
     ...HERO_EVENT_LABELS,
     ...QUOTE_EVENT_LABELS,
     ...CHECKOUT_EVENT_LABELS,
+    ...CALCULATOR_EVENT_LABELS,
 };
 
 const FILE_INTENT_EVENTS = new Set<string>([

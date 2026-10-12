@@ -12,6 +12,8 @@
     "printMethodsDesc": "FDM · SLA · DLP 비교",
     "guides": "가이드",
     "guidesDesc": "견적·소재·파일 준비 안내",
+    "priceCalculator": "가격 계산기",
+    "priceCalculatorDesc": "파일 없이 크기로 예상 가격 확인",
     "news": "최신 동향",
     "newsDesc": "3D프린팅 업계 소식과 실무 해설",
     "capstone": "캡스톤·졸업작품",
@@ -415,6 +417,9 @@
     "make3dCta": "3D 만들기",
     "makerHintBefore": "로고·2.5D 배지는 ",
     "makerHintAfter": "를 이용해 주세요.",
+    "noFileCalcTitle": "아직 파일도 사진도 없나요?",
+    "noFileCalcDesc": "크기·소재만 고르면 예상 가격을 바로 볼 수 있어요",
+    "noFileCalcCta": "가격 계산기",
     "stepUpload": "업로드",
     "stepConfigure": "견적 설정",
     "settingsTitle": "견적 세부 설정",
@@ -4915,5 +4920,96 @@
     "guidesSectionTitle": "3D프린팅 최신 동향",
     "guidesSectionDesc": "소재·장비·산업 소식을 와우3D 실무 관점으로 정리했습니다.",
     "viewAll": "전체 보기"
+  },
+  "PriceCalculator": {
+    "metaTitle": "3D프린팅 가격 계산기 | 파일 없이 크기만으로 예상 견적 - 와우3D",
+    "metaDescription": "3D 파일이 없어도 크기·형태·소재·수량만 고르면 3D프린팅 예상 가격 범위와 출력 시간을 바로 확인할 수 있습니다. FDM·SLA·DLP 소재별 가격 비교까지 무료로 계산해 보세요.",
+    "eyebrow": "QUICK PRICE ESTIMATOR",
+    "title": "파일 없이 30초 만에",
+    "titleAccent": "3D프린팅 예상 가격",
+    "subtitle": "크기·형태·소재·수량만 고르면 실제 견적과 같은 단가 기준으로 예상 금액 범위를 바로 보여 드립니다.",
+    "sizeLabel": "크기 (mm)",
+    "width": "가로",
+    "depth": "세로",
+    "height": "높이",
+    "sizeHint": "대략적인 크기만 입력해도 됩니다. 1cm = 10mm",
+    "examplesLabel": "예시로 채우기",
+    "examples": {
+      "part": "소형 부품",
+      "case": "전자기기 케이스",
+      "stand": "거치대·홀더",
+      "figure": "피규어"
+    },
+    "shapeLabel": "형태",
+    "shapes": {
+      "solid": { "title": "블록·기계 부품", "desc": "속이 꽉 찬 단순한 형태" },
+      "general": { "title": "일반 형상", "desc": "곡면·굴곡이 있는 보통 형태" },
+      "shell": { "title": "케이스·하우징", "desc": "속이 빈 상자형 (벽 1.5~2.5mm)" },
+      "figure": { "title": "피규어·조형물", "desc": "가늘고 복잡한 디테일" }
+    },
+    "methodLabel": "출력 방식",
+    "methods": {
+      "fdm": { "title": "FDM", "desc": "기능 부품·시제품, 가장 경제적" },
+      "sla": { "title": "SLA", "desc": "매끈한 표면·고정밀, 대형 출력" },
+      "dlp": { "title": "DLP", "desc": "소형 정밀 부품·미니어처" }
+    },
+    "methodGuide": "출력 방식 차이 알아보기",
+    "materialLabel": "소재",
+    "materialGuideFdm": "PLA·ABS·PETG 차이 보기",
+    "materialGuideResin": "레진 소재 차이 보기",
+    "materialNone": "등록된 소재가 없습니다.",
+    "strengthLabel": "강도 (속채움)",
+    "strength": {
+      "appearance": "외관용 20%",
+      "functional": "기능용 40%",
+      "strength": "고강도 80%"
+    },
+    "qtyLabel": "수량",
+    "qtyHint": "같은 소재로 여러 개를 함께 출력하면 셋업비·최소 금액이 한 번만 적용돼 개당 가격이 내려갑니다.",
+    "resultEyebrow": "예상 견적 (VAT 포함)",
+    "resultPerUnit": "개당 {range}",
+    "printTime": "예상 출력 시간",
+    "minApplied": "최소 출력 금액({amount})이 적용된 금액입니다. 여러 개를 함께 주문하면 개당 가격이 크게 내려갑니다.",
+    "loading": "단가 정보를 불러오는 중…",
+    "invalidDims": "가로·세로·높이를 1~2,000mm 사이로 입력해 주세요.",
+    "overflowTitle": "장비 최대 출력 크기를 넘습니다",
+    "overflowBody": "{method} 최대 출력 크기는 {max}입니다. 다른 출력 방식을 고르거나 분할·대형 출력 상담을 받아 보세요.",
+    "consultTitle": "대형 출력은 상담 견적을 권장합니다",
+    "consultBody": "이 크기는 속을 비우는 쉘 출력이나 분할 출력 방식에 따라 금액이 크게 달라집니다. 대형 출력 상담으로 가장 경제적인 방법을 안내해 드립니다.",
+    "consultCta": "대형 출력 상담하기",
+    "compareTitle": "같은 크기, 다른 소재라면?",
+    "compareHint": "소재를 누르면 바로 바꿔서 계산합니다.",
+    "compareConsult": "상담 필요",
+    "ctaFile": "정확한 견적 받기",
+    "ctaFileHint": "3D 파일(STL·3MF·STEP)을 올리면 형상을 분석해 정확한 금액을 바로 계산합니다.",
+    "ctaPhoto": "파일이 없다면 사진으로 견적",
+    "ctaPhotoHint": "사진 한 장으로 AI가 3D 모델을 만들어 견적까지 이어집니다.",
+    "disclaimer": "예상 금액은 형태별 평균값을 기준으로 한 범위입니다. 실제 금액은 모델의 부피와 서포트 양에 따라 달라지며, 파일을 올리면 같은 단가로 정확하게 계산됩니다.",
+    "faqTitle": "가격 계산기 자주 묻는 질문",
+    "faqs": [
+      {
+        "q": "파일 없이도 정확한 가격을 알 수 있나요?",
+        "a": "크기와 형태로 추정한 범위를 보여 드립니다. 실제 견적과 같은 단가·공식을 쓰지만 모델의 실제 부피와 서포트 양을 알 수 없어 범위로 표시합니다. 3D 파일(STL·3MF·STEP)을 올리면 정확한 금액이 바로 계산됩니다."
+      },
+      {
+        "q": "작은 부품인데 왜 최소 금액이 나오나요?",
+        "a": "출력 준비와 장비 세팅 비용 때문에 출력 방식별 최소 금액이 있습니다. 같은 소재로 여러 개를 함께 주문하면 최소 금액과 셋업비가 한 번만 적용돼 개당 가격이 크게 내려갑니다."
+      },
+      {
+        "q": "FDM과 SLA·DLP 중 무엇을 골라야 하나요?",
+        "a": "기능 부품이나 시제품처럼 강도와 가격이 중요하면 FDM이 적합합니다. 매끈한 표면과 세밀한 디테일이 중요한 피규어·정밀 부품은 SLA·DLP 레진 출력이 적합합니다."
+      },
+      {
+        "q": "출력 시간과 제작 기간은 같은가요?",
+        "a": "계산 결과의 출력 시간은 프린터가 실제로 출력하는 시간입니다. 후가공·검수·배송을 포함한 전체 제작 기간은 제작 기간 가이드에서 확인할 수 있습니다."
+      }
+    ],
+    "guidesTitle": "더 알아보기",
+    "guideQuote": "3D프린팅 견적 가이드",
+    "guideMaterials": "PLA·ABS·PETG 비교",
+    "guideMethods": "FDM·SLA·DLP 비교",
+    "guideTurnaround": "제작 기간 가이드",
+    "breadcrumbHome": "홈",
+    "breadcrumbCalc": "가격 계산기"
   }
 }
