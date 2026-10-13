@@ -59,6 +59,9 @@ export const CHECKER_CONVERSION_EVENTS = {
     UPLOAD: 'checker_upload',
     RESULT: 'checker_result',
     CTA_QUOTE: 'checker_cta_quote',
+    REPAIR: 'checker_repair',
+    REPAIR_LOGIN: 'checker_repair_login',
+    REPAIR_DOWNLOAD: 'checker_repair_download',
 } as const;
 
 export type HeroConversionEventName =
@@ -159,6 +162,9 @@ export const CHECKER_EVENT_LABELS: Record<string, string> = {
     [CHECKER_CONVERSION_EVENTS.UPLOAD]: '점검 파일 업로드',
     [CHECKER_CONVERSION_EVENTS.RESULT]: '점검 결과 확인',
     [CHECKER_CONVERSION_EVENTS.CTA_QUOTE]: '점검기 → 견적',
+    [CHECKER_CONVERSION_EVENTS.REPAIR]: '자동 리페어 실행',
+    [CHECKER_CONVERSION_EVENTS.REPAIR_LOGIN]: '리페어 파일 다운로드 → 로그인',
+    [CHECKER_CONVERSION_EVENTS.REPAIR_DOWNLOAD]: '리페어 파일 다운로드',
 };
 
 export const ALL_FUNNEL_EVENT_LABELS: Record<string, string> = {

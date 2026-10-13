@@ -5084,16 +5084,17 @@
     "otherCasesHeading": "Other use cases"
   },
   "StlChecker": {
-    "metaTitle": "Free STL Checker | Check 3D Printing File Errors Online",
-    "metaDescription": "Check STL, OBJ, 3MF and STEP files for holes, non-manifold edges, flipped faces and size or unit errors for free, right in your browser without uploading. See printer fit per process and the support ratio too.",
-    "eyebrow": "FREE STL CHECKER",
-    "title": "Check your 3D file",
+    "metaTitle": "Free STL Checker & Repair | Find and Fix 3D Printing File Errors Online",
+    "metaDescription": "Check STL, OBJ, 3MF and STEP files for holes, non-manifold edges, flipped faces and size or unit errors, then repair them automatically, free and right in your browser without uploading. Fill holes, close gaps and unify normals, compare before and after, and download the repaired STL.",
+    "eyebrow": "FREE STL CHECKER & REPAIR",
+    "title": "Check and repair your 3D file",
     "titleAccent": "in 30 seconds, free",
-    "subtitle": "Find holes, flipped faces and unit mistakes before they ruin a print. Your file never leaves your browser.",
+    "subtitle": "Find holes, flipped faces and unit mistakes before they ruin a print, see exactly where they are, and fix them in one click. Your file never leaves your browser.",
     "dropTitle": "Drag a 3D file here or click to choose",
     "dropHint": "STL · OBJ · 3MF · PLY · STEP · up to 100MB",
     "privacy": "Your file is analyzed only in your browser and is never sent to or stored on our servers.",
     "sampleCta": "Try a sample file",
+    "sampleBrokenCta": "Try repair on a broken sample",
     "sampleFail": "Could not load the sample file. Please try again later.",
     "invalidType": "Only STL, OBJ, 3MF, PLY and STEP files can be checked.",
     "tooLarge": "Only files up to 100MB can be checked.",
@@ -5143,12 +5144,12 @@
       "holes": {
         "title": "Holes & open edges",
         "good": "Closed shape with no openings.",
-        "bad": "{holes} hole(s) ({edges} open edges) found. Fill the holes in your modeling software."
+        "bad": "{holes} hole(s) ({edges} open edges) found. The red lines in the viewer mark them, and auto repair can fill them."
       },
       "manifold": {
         "title": "Non-manifold edges",
         "good": "Every edge connects exactly two faces.",
-        "bad": "{edges} edges are shared by three or more faces. Check for overlapping faces or touching parts."
+        "bad": "{edges} edges are shared by three or more faces (orange in the viewer). Check for overlapping faces or touching parts."
       },
       "normals": {
         "title": "Face orientation (normals)",
@@ -5179,6 +5180,59 @@
     },
     "fixTitle": "How do I fix it?",
     "fixBody": "Microsoft 3D Builder, Meshmixer, or the Repair feature in PrusaSlicer or Bambu Studio fixes most issues. If that is hard, just request a quote as is.",
+    "issues": {
+      "show": "Show problem areas",
+      "holes": "Holes",
+      "nonManifold": "Non-manifold",
+      "flipped": "Flipped faces"
+    },
+    "repair": {
+      "title": "Auto repair",
+      "desc": "Fill holes, close tiny gaps, remove duplicate faces and unify face orientation right in your browser. Your file is never sent to our servers.",
+      "removeFragments": "Also remove tiny loose fragments",
+      "run": "Run auto repair",
+      "running": "Repairing…",
+      "nothing": "There is nothing to repair automatically. Get a quote for this file as is.",
+      "failed": "Something went wrong while repairing. Request a quote and our team will fix the file for you.",
+      "tooLarge": "With {count} triangles this mesh is too large to repair in the browser. Request a quote and our team will fix it.",
+      "limitNote": "Self-intersecting faces and thin walls are not repaired automatically; our team reviews them after you request a quote.",
+      "verdictEyebrow": "Repaired file result",
+      "viewOriginal": "Original",
+      "viewRepaired": "Repaired",
+      "compareTitle": "Before and after repair",
+      "colItem": "Item",
+      "colBefore": "Before",
+      "colAfter": "After",
+      "pending": "Checking…",
+      "rows": {
+        "holes": "Holes",
+        "openEdges": "Open edges",
+        "nonManifold": "Non-manifold edges",
+        "flipped": "Misoriented edges",
+        "shells": "Shells",
+        "triangles": "Triangles",
+        "volume": "Volume"
+      },
+      "reportTitle": "What was repaired",
+      "report": {
+        "holes": "Filled {count} hole(s) ({added} triangles added)",
+        "stitched": "Stitched {count} vertices across tiny gaps",
+        "duplicate": "Removed {count} duplicate overlapping face(s)",
+        "internal": "Removed {count} face(s) trapped inside the model",
+        "degenerate": "Removed {count} zero-area triangle(s)",
+        "fragments": "Removed {count} tiny loose fragment(s) ({triangles} triangles)",
+        "flipped": "Unified the orientation of {count} flipped face(s)",
+        "skipped": "{count} hole(s) were too large or too tangled to fill."
+      },
+      "remainNonManifold": "The remaining {count} non-manifold edge(s) may be parts that touch each other, so they were left as is. Slicers usually print these fine.",
+      "download": "Download repaired STL",
+      "downloadLogin": "Log in to download the repaired STL",
+      "downloadLoginHint": "Members can download repaired files for free. Your repair result will still be here when you come back after logging in.",
+      "stlNote": "The repaired file is saved as STL. Your original file is not changed.",
+      "restored": "We restored the repair you made before logging in. You can download the repaired file now.",
+      "ctaQuote": "Get a quote for the repaired file",
+      "ctaQuoteHint": "Go straight to the quote page with the repaired file, no re-upload needed."
+    },
     "fixGuide": "Guide to fixing STL file errors",
     "ctaQuote": "Get a quote for this file",
     "ctaQuoteHint": "Go straight to the quote page with the same file, no re-upload needed.",
@@ -5196,7 +5250,15 @@
       },
       {
         "q": "Can a file with errors still be printed?",
-        "a": "Small holes and flipped faces are usually corrected automatically during print preparation. Large holes can make the volume and price inaccurate, so we recommend fixing them first."
+        "a": "Small holes and flipped faces are usually corrected automatically during print preparation. Large holes can make the volume and price inaccurate, so we recommend running auto repair before getting a quote."
+      },
+      {
+        "q": "Can it fix STL errors automatically?",
+        "a": "Yes. Click 'Run auto repair' in the results to fill holes, close tiny gaps, remove duplicate and internal faces, unify face orientation and remove tiny loose fragments right in your browser, then compare the before and after results. It works like the automatic repair in Bambu Studio or PrusaSlicer; self-intersecting faces are not covered."
+      },
+      {
+        "q": "How do I get the repaired file?",
+        "a": "Anyone can run the repair for free, and downloading the repaired STL is free for logged-in members. Your repair result is kept when you return after logging in, and 'Get a quote for the repaired file' takes you straight to pricing without re-uploading."
       },
       {
         "q": "Can it check STEP files?",
@@ -5209,6 +5271,6 @@
     "guideWall": "Minimum wall thickness",
     "guideUseCases": "3D printing by use case",
     "breadcrumbHome": "Home",
-    "breadcrumbChecker": "STL checker"
+    "breadcrumbChecker": "STL checker & repair"
   }
 }

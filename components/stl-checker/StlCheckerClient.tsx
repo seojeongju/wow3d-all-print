@@ -6,12 +6,17 @@ import {
     AlertTriangle,
     ArrowRight,
     CheckCircle2,
+    Download,
+    Eye,
+    EyeOff,
     Info,
     Loader2,
     Lock,
+    LogIn,
     RotateCcw,
     ScanSearch,
     Upload,
+    Wrench,
     XCircle,
     type LucideIcon,
 } from 'lucide-react'
@@ -26,13 +31,24 @@ import { useAnalysisProgressStore } from '@/store/useAnalysisProgressStore'
 import { useCpuModelAnalysis } from '@/hooks/useCpuModelAnalysis'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
 import { MESH_ORIENT_USERDATA_KEY } from '@/lib/mesh-orient'
+import { meshVolumeCm3, type GeometryAnalysis } from '@/lib/geometry'
 import {
     MODEL_FILE_ACCEPT_STRING,
     getModelFileFromDataTransfer,
     hasModelFileExtension,
     isModelFileTooLarge,
 } from '@/lib/model-file'
-import { inspectMesh, meshVerdict, type MeshInspectOutcome, type MeshVerdict } from '@/lib/mesh-inspect'
+import {
+    inspectMesh,
+    meshVerdict,
+    type MeshHighlights,
+    type MeshInspection,
+    type MeshInspectOutcome,
+    type MeshVerdict,
+} from '@/lib/mesh-inspect'
+import { meshRepairChanged } from '@/lib/mesh-repair'
+import { runMeshRepair } from '@/lib/mesh-repair-client'
+import { savePendingRepair, takePendingRepair, type PendingRepair } from '@/lib/stl-repair-pending'
 import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
 import { ESTIMATOR_METHODS, type EstimatorSpecs } from '@/lib/price-estimator'
 import { CHECKER_CONVERSION_EVENTS, CONVERSION_EVENT_CATEGORY } from '@/lib/conversion-events'
@@ -40,13 +56,23 @@ import { trackConversionEvent, trackConversionEventOnce } from '@/lib/track-conv
 
 type CheckStatus = 'good' | 'warn' | 'fix' | 'info'
 
-type InspectState = { file: File; outcome: MeshInspectOutcome | null; failed: boolean; autoOriented: number }
+type InspectState = {
+    file: File
+    outcome: MeshInspectOutcome | null
+    failed: boolean
+    autoOriented: number
+    /** 메쉬 부호 부피 (cm³) — 리페어 전·후 비교용 */
+    volume: number | null
+}
 
 /** 최장 변이 이보다 작으면 단위(cm·m·inch) 오류 가능성 */
 const TINY_MODEL_MM = 5
 const SAMPLE_PATH = '/test_cube.stl'
 /** 견적 페이지가 샘플 파일명은 진입 시 비우므로 샘플은 핸드오프하지 않음 */
 const SAMPLE_NAME = 'test_cube.stl'
+/** 자동 리페어 체험용 — 구멍·틈·중복 면·뒤집힌 면·부스러기를 일부러 넣은 합성 원기둥 */
+const BROKEN_SAMPLE_PATH = '/broken_sample.stl'
+const BROKEN_SAMPLE_NAME = 'broken_sample.stl'
 
 const STATUS_STYLE: Record<CheckStatus, { icon: LucideIcon; className: string }> = {
     good: { icon: CheckCircle2, className: 'text-emerald-400' },
@@ -59,6 +85,28 @@ const VERDICT_STYLE: Record<MeshVerdict, string> = {
     good: 'border-emerald-400/30 bg-emerald-500/10',
     warn: 'border-amber-400/30 bg-amber-500/10',
     fix: 'border-rose-400/30 bg-rose-500/10',
+}
+
+const ISSUE_LEGEND = [
+    { key: 'holes', field: 'openEdges', color: 'bg-rose-500' },
+    { key: 'nonManifold', field: 'nonManifoldEdges', color: 'bg-amber-500' },
+    { key: 'flipped', field: 'flippedEdges', color: 'bg-purple-500' },
+] as const
+
+function repairedFileName(name: string): string {
+    const base = name.replace(/\.[^.]+$/, '')
+    return `${base}_repaired.stl`
+}
+
+function isRepairable(m: MeshInspection): boolean {
+    return (
+        m.openEdges > 0 ||
+        m.nonManifoldEdges > 0 ||
+        m.flippedEdges > 0 ||
+        m.invertedShells > 0 ||
+        m.degenerateTriangles > 0 ||
+        m.shells > 1
+    )
 }
 
 export default function StlCheckerClient() {
@@ -77,9 +125,19 @@ export default function StlCheckerClient() {
     const [specs, setSpecs] = useState<EstimatorSpecs | null>(null)
     const [notice, setNotice] = useState<string | null>(null)
     const [dragging, setDragging] = useState(false)
-    const [loadingSample, setLoadingSample] = useState(false)
+    const [loadingSample, setLoadingSample] = useState<string | null>(null)
+    const [repair, setRepair] = useState<PendingRepair | null>(null)
+    const [repairing, setRepairing] = useState(false)
+    const [repairMessage, setRepairMessage] = useState<string | null>(null)
+    const [removeFragments, setRemoveFragments] = useState(true)
+    const [showIssues, setShowIssues] = useState(true)
+    const [restored, setRestored] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const trackedResultFor = useRef<File | null>(null)
+    /** 리페어 전·후를 오갈 때 다시 계산하지 않도록 파일별 점검·분석 결과 보관 */
+    const inspectCache = useRef(new WeakMap<File, InspectState>())
+    const analysisCache = useRef(new WeakMap<File, GeometryAnalysis>())
+    const restoreStarted = useRef(false)
 
     useEffect(() => {
         trackConversionEventOnce('wow3d-checker-view', {
@@ -97,27 +155,59 @@ export default function StlCheckerClient() {
             .catch(() => { })
     }, [])
 
+    // 로그인하러 가기 전에 보관한 리페어 결과 복원 (이메일 로그인은 화면 이동만 하므로 같은 파일이 남아 있을 수 있음)
+    useEffect(() => {
+        if (restoreStarted.current) return
+        restoreStarted.current = true
+        void takePendingRepair().then((pending) => {
+            if (!pending) return
+            const current = useFileStore.getState().file
+            const sameAs = (f: File) => current != null && current.name === f.name && current.size === f.size
+            if (current && !sameAs(pending.repaired) && !sameAs(pending.original)) return
+            setRepair(pending)
+            setRestored(true)
+            setFile(pending.repaired)
+        })
+    }, [setFile])
+
     // 뷰어·치수 분석과 같은 파싱 결과를 재사용해 메쉬 무결성 점검
     useEffect(() => {
         if (!file) return
+        const cached = inspectCache.current.get(file)
+        if (cached) {
+            setInspect(cached)
+            return
+        }
         let cancelled = false
         getParsedModelGeometry(file)
             .then(async (geo) => {
-                const outcome = geo ? await inspectMesh(geo, () => cancelled) : null
+                const outcome = geo ? await inspectMesh(geo, () => cancelled, { highlights: true }) : null
                 const autoOriented = Number(geo?.userData[MESH_ORIENT_USERDATA_KEY]) || 0
-                if (!cancelled) setInspect({ file, outcome, failed: outcome == null, autoOriented })
+                if (cancelled) return
+                const volume = geo ? meshVolumeCm3(geo) : null
+                const next = { file, outcome, failed: outcome == null, autoOriented, volume }
+                inspectCache.current.set(file, next)
+                setInspect(next)
             })
             .catch(() => {
-                if (!cancelled) setInspect({ file, outcome: null, failed: true, autoOriented: 0 })
+                if (!cancelled) setInspect({ file, outcome: null, failed: true, autoOriented: 0, volume: null })
             })
         return () => {
             cancelled = true
         }
     }, [file])
 
+    // bbox 근사·중간값이 아닌 정밀 분석(배치 후보 포함)만 보관
+    useEffect(() => {
+        if (file && analysis?.orientations) analysisCache.current.set(file, analysis)
+    }, [file, analysis])
+
     const isSample = file?.name === SAMPLE_NAME
+    const viewingRepaired = repair != null && file === repair.repaired
     const current = inspect && inspect.file === file ? inspect : null
     const mesh = current?.outcome?.status === 'ok' ? current.outcome.result : null
+    const highlights: MeshHighlights | null =
+        current?.outcome?.status === 'ok' ? current.outcome.highlights ?? null : null
     const meshDone = current != null
     const autoOriented = current?.autoOriented ?? 0
     const busy = Boolean(file) && (!meshDone || (!analysis && !analysisError))
@@ -137,7 +227,7 @@ export default function StlCheckerClient() {
         baseVerdict === 'good' && box && (tiny || !fitsAny) ? 'warn' : baseVerdict
 
     useEffect(() => {
-        if (!file || busy || trackedResultFor.current === file) return
+        if (!file || busy || trackedResultFor.current === file || viewingRepaired) return
         trackedResultFor.current = file
         trackConversionEvent({
             eventName: CHECKER_CONVERSION_EVENTS.RESULT,
@@ -153,7 +243,13 @@ export default function StlCheckerClient() {
                 size: box ? formatBuildDims(box) : '',
             },
         })
-    }, [file, busy, verdict, current, mesh, box, userId, autoOriented])
+    }, [file, busy, verdict, current, mesh, box, userId, autoOriented, viewingRepaired])
+
+    const clearRepair = () => {
+        setRepair(null)
+        setRepairMessage(null)
+        setRestored(false)
+    }
 
     const acceptFile = useCallback(
         (f: File | null | undefined) => {
@@ -167,6 +263,9 @@ export default function StlCheckerClient() {
                 return
             }
             setNotice(null)
+            setRepair(null)
+            setRepairMessage(null)
+            setRestored(false)
             setFile(f)
             trackConversionEvent({
                 eventName: CHECKER_CONVERSION_EVENTS.UPLOAD,
@@ -178,29 +277,110 @@ export default function StlCheckerClient() {
         [setFile, t, userId]
     )
 
-    const loadSample = async () => {
-        setLoadingSample(true)
+    const loadSample = async (path: string, name: string) => {
+        setLoadingSample(name)
         try {
-            const res = await fetch(SAMPLE_PATH)
+            const res = await fetch(path)
             if (!res.ok) throw new Error('sample')
             const blob = await res.blob()
-            acceptFile(new File([blob], SAMPLE_NAME, { type: 'model/stl' }))
+            acceptFile(new File([blob], name, { type: 'model/stl' }))
         } catch {
             setNotice(t('sampleFail'))
         } finally {
-            setLoadingSample(false)
+            setLoadingSample(null)
         }
     }
 
+    /** 원본 ↔ 리페어 파일 전환 — 해석·분석 결과를 재사용 */
+    const switchTo = (target: File) => {
+        if (target === useFileStore.getState().file) return
+        setFile(target, undefined, { keepParseCache: true })
+        const cached = analysisCache.current.get(target)
+        if (cached) {
+            useFileStore.getState().setAnalysis(cached)
+            useFileStore.getState().applyAutoPlacement()
+        }
+    }
+
+    const runRepair = async () => {
+        if (!file || !mesh || repairing) return
+        setRepairing(true)
+        setRepairMessage(null)
+        trackConversionEvent({
+            eventName: CHECKER_CONVERSION_EVENTS.REPAIR,
+            category: CONVERSION_EVENT_CATEGORY.CHECKER,
+            userId,
+            metadata: {
+                holes: mesh.holes,
+                nonManifold: mesh.nonManifoldEdges,
+                triangles: mesh.triangles,
+                sample: file.name === BROKEN_SAMPLE_NAME,
+            },
+        })
+        try {
+            const geo = await getParsedModelGeometry(file)
+            if (!geo) throw new Error('parse')
+            const result = await runMeshRepair(geo, { removeFragments })
+            if (result.status === 'too_large') {
+                setRepairMessage(t('repair.tooLarge', { count: result.triangles.toLocaleString() }))
+                return
+            }
+            if (result.status !== 'ok') {
+                setRepairMessage(t('repair.failed'))
+                return
+            }
+            // 해석 직후 자동으로 바로잡은 면도 리페어 파일에는 반영되어 있으므로 함께 집계
+            const report = { ...result.report, flippedFixed: result.report.flippedFixed + autoOriented }
+            if (!meshRepairChanged(report)) {
+                setRepairMessage(t('repair.nothing'))
+                return
+            }
+            const repaired = new File([result.stl], repairedFileName(file.name), { type: 'model/stl' })
+            setRepair({ original: file, repaired, report, before: mesh, beforeVolume: current?.volume ?? null })
+            setShowIssues(true)
+            switchTo(repaired)
+        } catch {
+            setRepairMessage(t('repair.failed'))
+        } finally {
+            setRepairing(false)
+        }
+    }
+
+    const downloadRepaired = async () => {
+        if (!repair) return
+        if (!userId) {
+            trackConversionEvent({
+                eventName: CHECKER_CONVERSION_EVENTS.REPAIR_LOGIN,
+                category: CONVERSION_EVENT_CATEGORY.CHECKER,
+            })
+            await savePendingRepair(repair)
+            router.push(`/auth?return=${encodeURIComponent('/stl-checker')}`)
+            return
+        }
+        trackConversionEvent({
+            eventName: CHECKER_CONVERSION_EVENTS.REPAIR_DOWNLOAD,
+            category: CONVERSION_EVENT_CATEGORY.CHECKER,
+            userId,
+            metadata: { triangles: repair.report.trianglesAfter },
+        })
+        const url = URL.createObjectURL(repair.repaired)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = repair.repaired.name
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    }
+
     const goQuote = () => {
+        if (repair) switchTo(repair.repaired)
         trackConversionEvent({
             eventName: CHECKER_CONVERSION_EVENTS.CTA_QUOTE,
             category: CONVERSION_EVENT_CATEGORY.CHECKER,
             userId,
-            metadata: { verdict: verdict ?? 'unknown', sample: isSample },
+            metadata: { verdict: verdict ?? 'unknown', sample: isSample, repaired: repair != null },
         })
         router.push(
-            isSample
+            isSample && !repair
                 ? '/quote?entry=file&guide_source=stl_checker'
                 : '/quote?entry=file&handoff=1&guide_source=stl_checker'
         )
@@ -210,6 +390,7 @@ export default function StlCheckerClient() {
         reset()
         setInspect(null)
         setNotice(null)
+        clearRepair()
     }
 
     const formatNum = (n: number) => n.toLocaleString()
@@ -304,6 +485,49 @@ export default function StlCheckerClient() {
         }
     }
 
+    const canRepair = mesh != null && !repair && isRepairable(mesh)
+    const legend = highlights ? ISSUE_LEGEND.filter((l) => highlights[l.field].length > 0) : []
+    const afterState = repair ? inspectCache.current.get(repair.repaired) : undefined
+    const afterMesh = afterState?.outcome?.status === 'ok' ? afterState.outcome.result : null
+    const afterVolume = afterState?.volume ?? null
+
+    const reportLines: string[] = []
+    if (repair) {
+        const r = repair.report
+        if (r.holesFilled > 0) reportLines.push(t('repair.report.holes', { count: formatNum(r.holesFilled), added: formatNum(r.holeTrianglesAdded) }))
+        if (r.stitchedVertices > 0) reportLines.push(t('repair.report.stitched', { count: formatNum(r.stitchedVertices) }))
+        if (r.duplicateRemoved > 0) reportLines.push(t('repair.report.duplicate', { count: formatNum(r.duplicateRemoved) }))
+        if (r.internalFacesRemoved > 0) reportLines.push(t('repair.report.internal', { count: formatNum(r.internalFacesRemoved) }))
+        if (r.degenerateRemoved > 0) reportLines.push(t('repair.report.degenerate', { count: formatNum(r.degenerateRemoved) }))
+        if (r.fragmentsRemoved > 0)
+            reportLines.push(t('repair.report.fragments', { count: formatNum(r.fragmentsRemoved), triangles: formatNum(r.fragmentTrianglesRemoved) }))
+        if (r.flippedFixed > 0) reportLines.push(t('repair.report.flipped', { count: formatNum(r.flippedFixed) }))
+    }
+
+    const compareRows: Array<{ key: string; before: string; after: string | null; improved: boolean }> = repair
+        ? [
+              { key: 'holes', b: repair.before.holes, a: afterMesh?.holes },
+              { key: 'openEdges', b: repair.before.openEdges, a: afterMesh?.openEdges },
+              { key: 'nonManifold', b: repair.before.nonManifoldEdges, a: afterMesh?.nonManifoldEdges },
+              { key: 'flipped', b: repair.before.flippedEdges, a: afterMesh?.flippedEdges },
+              { key: 'shells', b: repair.before.shells, a: afterMesh?.shells },
+              { key: 'triangles', b: repair.before.triangles, a: afterMesh?.triangles },
+          ].map((row) => ({
+              key: row.key,
+              before: formatNum(row.b),
+              after: row.a == null ? null : formatNum(row.a),
+              improved: row.a != null && row.a < row.b && row.key !== 'triangles',
+          }))
+        : []
+    if (repair) {
+        compareRows.push({
+            key: 'volume',
+            before: repair.beforeVolume != null ? `${repair.beforeVolume.toFixed(1)} cm³` : '-',
+            after: afterVolume != null ? `${afterVolume.toFixed(1)} cm³` : null,
+            improved: false,
+        })
+    }
+
     const stageLabel = !meshDone && analysis ? t('stages.inspecting') : t(`stages.${stage ?? 'reading'}`)
     const faqs = t.raw('faqs') as Array<{ q: string; a: string }>
 
@@ -311,6 +535,23 @@ export default function StlCheckerClient() {
         <div className={cn('rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl sm:p-6', className)}>
             {children}
         </div>
+    )
+
+    const sampleButton = (path: string, name: string, label: string, accent?: boolean) => (
+        <button
+            type="button"
+            onClick={() => void loadSample(path, name)}
+            disabled={loadingSample != null}
+            className={cn(
+                'inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] font-black disabled:opacity-50',
+                accent
+                    ? 'border-teal-400/40 bg-teal-400/10 text-teal-200 hover:text-white'
+                    : 'border-white/15 bg-white/5 text-white/70 hover:text-white'
+            )}
+        >
+            {loadingSample === name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : accent ? <Wrench className="h-3.5 w-3.5" /> : null}
+            {label}
+        </button>
     )
 
     return (
@@ -389,15 +630,10 @@ export default function StlCheckerClient() {
                                 <p className="flex items-center gap-2 text-[12px] font-bold text-white/50 break-keep">
                                     <Lock className="h-3.5 w-3.5 shrink-0 text-teal-300" /> {t('privacy')}
                                 </p>
-                                <button
-                                    type="button"
-                                    onClick={() => void loadSample()}
-                                    disabled={loadingSample}
-                                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[12px] font-black text-white/70 hover:text-white disabled:opacity-50"
-                                >
-                                    {loadingSample ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                                    {t('sampleCta')}
-                                </button>
+                                <div className="flex flex-wrap gap-2">
+                                    {sampleButton(SAMPLE_PATH, SAMPLE_NAME, t('sampleCta'))}
+                                    {sampleButton(BROKEN_SAMPLE_PATH, BROKEN_SAMPLE_NAME, t('sampleBrokenCta'), true)}
+                                </div>
                             </div>
                             <div className="grid gap-3 pt-4 sm:grid-cols-2">
                                 {(t.raw('whatWeCheck') as Array<{ title: string; desc: string }>).map((item) => (
@@ -414,7 +650,52 @@ export default function StlCheckerClient() {
                         <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
                             <div className="space-y-4">
                                 <div className="relative h-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#080808] sm:h-[440px]">
-                                    <Scene compact />
+                                    <Scene compact highlights={showIssues ? highlights : null} />
+                                    {repair || legend.length > 0 ? (
+                                        <div className="pointer-events-none absolute left-3 top-3 z-20 flex max-w-[calc(100%-5rem)] flex-col items-start gap-2">
+                                            {repair ? (
+                                                <div className="pointer-events-auto inline-flex rounded-full border border-white/15 bg-slate-950/80 p-1 backdrop-blur">
+                                                    {[
+                                                        { id: 'original', label: t('repair.viewOriginal'), target: repair.original, active: !viewingRepaired },
+                                                        { id: 'repaired', label: t('repair.viewRepaired'), target: repair.repaired, active: viewingRepaired },
+                                                    ].map((v) => (
+                                                        <button
+                                                            key={v.id}
+                                                            type="button"
+                                                            onClick={() => switchTo(v.target)}
+                                                            disabled={busy}
+                                                            className={cn(
+                                                                'rounded-full px-3 py-1 text-[11px] font-black transition-colors',
+                                                                v.active ? 'bg-teal-400 text-slate-950' : 'text-white/60 hover:text-white'
+                                                            )}
+                                                        >
+                                                            {v.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                            {legend.length > 0 ? (
+                                                <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-white/15 bg-slate-950/80 px-3 py-1.5 backdrop-blur">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowIssues((v) => !v)}
+                                                        className="inline-flex items-center gap-1 text-[11px] font-black text-white/80 hover:text-white"
+                                                    >
+                                                        {showIssues ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                                                        {t('issues.show')}
+                                                    </button>
+                                                    {showIssues
+                                                        ? legend.map((l) => (
+                                                              <span key={l.key} className="inline-flex items-center gap-1 text-[10px] font-bold text-white/60">
+                                                                  <span className={cn('h-2 w-2 rounded-full', l.color)} />
+                                                                  {t(`issues.${l.key}`)}
+                                                              </span>
+                                                          ))
+                                                        : null}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
                                 </div>
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <p className="min-w-0 truncate text-sm font-black text-white/70" title={file.name}>
@@ -477,6 +758,38 @@ export default function StlCheckerClient() {
                                           </div>
                                       )
                                     : null}
+                                {repair
+                                    ? panel(
+                                          <div>
+                                              <p className="text-sm font-black text-white">{t('repair.compareTitle')}</p>
+                                              <table className="mt-3 w-full text-[12px]">
+                                                  <thead>
+                                                      <tr className="text-left text-[11px] font-black text-white/40">
+                                                          <th className="pb-2 font-black">{t('repair.colItem')}</th>
+                                                          <th className="pb-2 text-right font-black">{t('repair.colBefore')}</th>
+                                                          <th className="pb-2 text-right font-black">{t('repair.colAfter')}</th>
+                                                      </tr>
+                                                  </thead>
+                                                  <tbody>
+                                                      {compareRows.map((row) => (
+                                                          <tr key={row.key} className="border-t border-white/5">
+                                                              <td className="py-1.5 font-bold text-white/70">{t(`repair.rows.${row.key}`)}</td>
+                                                              <td className="py-1.5 text-right font-black tabular-nums text-white/50">{row.before}</td>
+                                                              <td
+                                                                  className={cn(
+                                                                      'py-1.5 text-right font-black tabular-nums',
+                                                                      row.improved ? 'text-emerald-300' : 'text-white'
+                                                                  )}
+                                                              >
+                                                                  {row.after ?? t('repair.pending')}
+                                                              </td>
+                                                          </tr>
+                                                      ))}
+                                                  </tbody>
+                                              </table>
+                                          </div>
+                                      )
+                                    : null}
                             </div>
 
                             <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
@@ -492,7 +805,7 @@ export default function StlCheckerClient() {
                                         {verdict ? (
                                             <div className={cn('rounded-[1.75rem] border p-5 sm:p-6', VERDICT_STYLE[verdict])}>
                                                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/60">
-                                                    {t('verdictEyebrow')}
+                                                    {viewingRepaired ? t('repair.verdictEyebrow') : t('verdictEyebrow')}
                                                 </p>
                                                 <p className="mt-2 text-2xl font-black text-white break-keep">
                                                     {t(`verdict.${verdict}.title`)}
@@ -517,6 +830,90 @@ export default function StlCheckerClient() {
                                                 {analysisError}
                                             </p>
                                         ) : null}
+                                        {canRepair
+                                            ? panel(
+                                                  <div className="space-y-3">
+                                                      <p className="flex items-center gap-2 text-sm font-black text-white">
+                                                          <Wrench className="h-4 w-4 text-teal-300" /> {t('repair.title')}
+                                                      </p>
+                                                      <p className="text-[12px] font-medium leading-relaxed text-white/55 break-keep">
+                                                          {t('repair.desc')}
+                                                      </p>
+                                                      {mesh && mesh.shells > 1 ? (
+                                                          <label className="flex cursor-pointer items-center gap-2 text-[12px] font-bold text-white/70">
+                                                              <input
+                                                                  type="checkbox"
+                                                                  checked={removeFragments}
+                                                                  onChange={(e) => setRemoveFragments(e.target.checked)}
+                                                                  className="h-4 w-4 accent-teal-400"
+                                                              />
+                                                              {t('repair.removeFragments')}
+                                                          </label>
+                                                      ) : null}
+                                                      <button
+                                                          type="button"
+                                                          onClick={() => void runRepair()}
+                                                          disabled={repairing}
+                                                          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-teal-400/40 bg-teal-400/15 px-5 py-3 text-sm font-black text-teal-100 transition-colors hover:bg-teal-400/25 disabled:opacity-60"
+                                                      >
+                                                          {repairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+                                                          {repairing ? t('repair.running') : t('repair.run')}
+                                                      </button>
+                                                      {repairMessage ? (
+                                                          <p className="text-[12px] font-bold leading-relaxed text-amber-200 break-keep">{repairMessage}</p>
+                                                      ) : null}
+                                                      <p className="text-[11px] font-medium leading-relaxed text-white/40 break-keep">
+                                                          {t('repair.limitNote')}
+                                                      </p>
+                                                  </div>
+                                              )
+                                            : null}
+                                        {repair
+                                            ? panel(
+                                                  <div className="space-y-3">
+                                                      {restored ? (
+                                                          <p className="rounded-xl border border-teal-400/30 bg-teal-500/10 px-3 py-2 text-[12px] font-bold text-teal-100 break-keep">
+                                                              {t('repair.restored')}
+                                                          </p>
+                                                      ) : null}
+                                                      <p className="flex items-center gap-2 text-sm font-black text-white">
+                                                          <CheckCircle2 className="h-4 w-4 text-emerald-400" /> {t('repair.reportTitle')}
+                                                      </p>
+                                                      <ul className="space-y-1.5">
+                                                          {reportLines.map((line) => (
+                                                              <li key={line} className="flex gap-2 text-[12px] font-medium leading-relaxed text-white/70 break-keep">
+                                                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-300" />
+                                                                  {line}
+                                                              </li>
+                                                          ))}
+                                                      </ul>
+                                                      {repair.report.holesSkipped > 0 ? (
+                                                          <p className="text-[12px] font-bold leading-relaxed text-amber-200 break-keep">
+                                                              {t('repair.report.skipped', { count: formatNum(repair.report.holesSkipped) })}
+                                                          </p>
+                                                      ) : null}
+                                                      {afterMesh && afterMesh.nonManifoldEdges > 0 ? (
+                                                          <p className="text-[12px] font-bold leading-relaxed text-amber-200 break-keep">
+                                                              {t('repair.remainNonManifold', { count: formatNum(afterMesh.nonManifoldEdges) })}
+                                                          </p>
+                                                      ) : null}
+                                                      <button
+                                                          type="button"
+                                                          onClick={() => void downloadRepaired()}
+                                                          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-white/15"
+                                                      >
+                                                          {userId ? <Download className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+                                                          {userId ? t('repair.download') : t('repair.downloadLogin')}
+                                                      </button>
+                                                      <p className="text-[11px] font-medium leading-relaxed text-white/45 break-keep">
+                                                          {userId ? t('repair.stlNote') : t('repair.downloadLoginHint')}
+                                                      </p>
+                                                      <p className="text-[11px] font-medium leading-relaxed text-white/40 break-keep">
+                                                          {t('repair.limitNote')}
+                                                      </p>
+                                                  </div>
+                                              )
+                                            : null}
                                         {checks.length
                                             ? panel(
                                                   <ul className="space-y-3">
@@ -537,7 +934,7 @@ export default function StlCheckerClient() {
                                                   </ul>
                                               )
                                             : null}
-                                        {verdict && verdict !== 'good' ? (
+                                        {verdict && verdict !== 'good' && !canRepair && !repair ? (
                                             panel(
                                                 <div className="space-y-2">
                                                     <p className="text-sm font-black text-white">{t('fixTitle')}</p>
@@ -563,10 +960,11 @@ export default function StlCheckerClient() {
                                         disabled={!analysis && !isSample}
                                         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-teal-400 px-5 py-3.5 text-sm font-black text-slate-950 shadow-[0_0_30px_rgba(45,212,191,0.25)] transition-all hover:bg-teal-300 disabled:opacity-50"
                                     >
-                                        {isSample ? t('ctaQuoteSample') : t('ctaQuote')} <ArrowRight className="h-4 w-4" />
+                                        {repair ? t('repair.ctaQuote') : isSample ? t('ctaQuoteSample') : t('ctaQuote')}{' '}
+                                        <ArrowRight className="h-4 w-4" />
                                     </button>
                                     <p className="px-1 text-[11px] font-medium leading-relaxed text-white/50 break-keep">
-                                        {isSample ? t('ctaQuoteSampleHint') : t('ctaQuoteHint')}
+                                        {repair ? t('repair.ctaQuoteHint') : isSample ? t('ctaQuoteSampleHint') : t('ctaQuoteHint')}
                                     </p>
                                 </div>
                                 <p className="flex items-start gap-2 px-1 text-[11px] font-bold leading-relaxed text-white/40 break-keep">

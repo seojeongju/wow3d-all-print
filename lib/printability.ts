@@ -5,7 +5,7 @@ export type PrintabilityWarning = {
     message: string
 }
 
-/** AI 생성 STL의 출력 적합성 휴리스틱 (자동 수리는 하지 않음) */
+/** AI 생성 STL의 출력 적합성 휴리스틱 (자동 리페어는 하지 않음) */
 export function assessPrintability(analysis: GeometryAnalysis, locale: string = 'ko'): PrintabilityWarning[] {
     const en = locale === 'en'
     const warnings: PrintabilityWarning[] = []

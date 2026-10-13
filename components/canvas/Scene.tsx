@@ -17,6 +17,7 @@ import ModelTransformPanel from '@/components/canvas/ModelTransformPanel'
 import { ViewerErrorBoundary } from '@/components/canvas/ViewerErrorBoundary'
 import { degreesToRadians } from '@/lib/model-transform'
 import { layFlatMatrix, type Vec3Tuple } from '@/lib/stl-bake'
+import type { MeshHighlights } from '@/lib/mesh-inspect'
 
 const IDENTITY_QUATERNION = new THREE.Quaternion()
 
@@ -93,17 +94,69 @@ function MeasurementTool() {
 
 type ModelType = 'stl' | 'obj' | '3mf' | 'ply' | 'step'
 
+const HIGHLIGHT_COLORS = { open: '#f43f5e', nonManifold: '#f59e0b', flipped: '#a855f7' }
+
+function bufferGeometryOf(values: Float32Array): THREE.BufferGeometry | null {
+    if (values.length === 0) return null
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(values, 3))
+    return geo
+}
+
+/** STL 점검 문제 위치 — 모델에 가려지지 않도록 깊이 테스트 없이 위에 그림 */
+function ProblemHighlights({ data }: { data: MeshHighlights }) {
+    const geos = useMemo(
+        () => ({
+            open: bufferGeometryOf(data.openEdges),
+            nonManifold: bufferGeometryOf(data.nonManifoldEdges),
+            flipped: bufferGeometryOf(data.flippedEdges),
+            holeCenters: bufferGeometryOf(data.holeCenters),
+            nonManifoldPoints: bufferGeometryOf(data.nonManifoldPoints),
+        }),
+        [data]
+    )
+    useEffect(
+        () => () => {
+            for (const g of Object.values(geos)) g?.dispose()
+        },
+        [geos]
+    )
+    const line = (geo: THREE.BufferGeometry | null, color: string) =>
+        geo ? (
+            <lineSegments geometry={geo} renderOrder={10}>
+                <lineBasicMaterial color={color} depthTest={false} transparent opacity={0.95} />
+            </lineSegments>
+        ) : null
+    const points = (geo: THREE.BufferGeometry | null, color: string) =>
+        geo ? (
+            <points geometry={geo} renderOrder={11}>
+                <pointsMaterial color={color} size={11} sizeAttenuation={false} depthTest={false} transparent opacity={0.9} />
+            </points>
+        ) : null
+    return (
+        <>
+            {line(geos.open, HIGHLIGHT_COLORS.open)}
+            {line(geos.nonManifold, HIGHLIGHT_COLORS.nonManifold)}
+            {line(geos.flipped, HIGHLIGHT_COLORS.flipped)}
+            {points(geos.holeCenters, HIGHLIGHT_COLORS.open)}
+            {points(geos.nonManifoldPoints, HIGHLIGHT_COLORS.nonManifold)}
+        </>
+    )
+}
+
 // 3D 모델 컴포넌트
 function Model({
     url,
     type: _modelType,
     color,
-    showMeasurements
+    showMeasurements,
+    highlights,
 }: {
     url: string;
     type: ModelType;
     color: string;
     showMeasurements: boolean;
+    highlights?: MeshHighlights | null;
 }) {
     const t = useTranslations('Quote')
     const fileRecord = useFileStore((s) => s.file)
@@ -263,6 +316,7 @@ function Model({
                         side={THREE.DoubleSide}
                     />
                 </mesh>
+                {highlights ? <ProblemHighlights data={highlights} /> : null}
             </group>
             {showMeasurements && boundingBox && (
                 <>
@@ -369,7 +423,15 @@ function WebGlContextGuard({ onContextLost }: { onContextLost: () => void }) {
 }
 
 // 뷰어 컨텐츠 컴포넌트
-function ViewerContent({ color, showMeasurements }: { color: string, showMeasurements: boolean }) {
+function ViewerContent({
+    color,
+    showMeasurements,
+    highlights,
+}: {
+    color: string
+    showMeasurements: boolean
+    highlights?: MeshHighlights | null
+}) {
     const file = useFileStore((s) => s.file)
     const fileUrl = useFileStore((s) => s.fileUrl)
 
@@ -384,6 +446,7 @@ function ViewerContent({ color, showMeasurements }: { color: string, showMeasure
                 type={modelType}
                 color={color}
                 showMeasurements={showMeasurements}
+                highlights={highlights}
             />
         )
     }
@@ -406,8 +469,12 @@ function ViewerContent({ color, showMeasurements }: { color: string, showMeasure
 }
 
 // 메인 Scene 컴포넌트
-type SceneProps = { compact?: boolean }
-export default function Scene({ compact = false }: SceneProps) {
+type SceneProps = {
+    compact?: boolean
+    /** STL 점검기: 현재 파일의 문제 위치 표시 */
+    highlights?: MeshHighlights | null
+}
+export default function Scene({ compact = false, highlights = null }: SceneProps) {
     useCpuModelAnalysis()
     const t = useTranslations('Quote')
     const canvasRef = useRef<HTMLDivElement>(null)
@@ -517,7 +584,7 @@ export default function Scene({ compact = false }: SceneProps) {
                                 <directionalLight position={[-10, -5, -10]} intensity={0.4} />
                                 <pointLight position={[0, 20, 0]} intensity={0.6} />
                                 <Bounds fit clip margin={1.5}>
-                                    <ViewerContent color={modelColor} showMeasurements={showMeasurements} />
+                                    <ViewerContent color={modelColor} showMeasurements={showMeasurements} highlights={highlights} />
                                     <ViewPresetHandler />
                                 </Bounds>
                                 <Grid

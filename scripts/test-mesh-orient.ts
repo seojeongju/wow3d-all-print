@@ -55,7 +55,7 @@ const near = (a: number, b: number) => Math.abs(a - b) < 1e-3
 
 async function main() {
     // 1) 원래 샘플(옆면 8개가 뒤집힌 20mm 정육면체) → 8cm³로 복구
-    const oldCube = execSync('git show HEAD:public/test_cube.stl')
+    const oldCube = execSync('git show e757762:public/test_cube.stl')
     const oldBuf = oldCube.buffer.slice(oldCube.byteOffset, oldCube.byteOffset + oldCube.byteLength) as ArrayBuffer
     const legacy = await run('기존 샘플', oldBuf)
     assert.ok(near(legacy.volume, 8), `기존 샘플 부피 ${legacy.volume}`)

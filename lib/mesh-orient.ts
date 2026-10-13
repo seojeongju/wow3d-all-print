@@ -37,13 +37,16 @@ function containsBox(outer: Shell, inner: Shell, tol: number): boolean {
     return true
 }
 
-export function orientMeshConsistently(geometry: THREE.BufferGeometry): MeshOrientResult {
+export function orientMeshConsistently(
+    geometry: THREE.BufferGeometry,
+    opts: { maxTriangles?: number } = {}
+): MeshOrientResult {
     const pos = geometry.getAttribute('position')
     if (!pos) return { triangles: 0, flipped: 0, skipped: false }
     const index = geometry.getIndex()
     const triangles = Math.floor((index ? index.count : pos.count) / 3)
     if (triangles === 0) return { triangles, flipped: 0, skipped: false }
-    if (triangles > MESH_ORIENT_MAX_TRIANGLES) return { triangles, flipped: 0, skipped: true }
+    if (triangles > (opts.maxTriangles ?? MESH_ORIENT_MAX_TRIANGLES)) return { triangles, flipped: 0, skipped: true }
 
     const idx = index ? index.array : null
     const corner = (i: number) => (idx ? idx[i] : i)

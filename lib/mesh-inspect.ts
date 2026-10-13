@@ -29,8 +29,23 @@ export type MeshInspection = {
     invertedShells: number
 }
 
+/** 뷰어에 표시할 문제 위치 — 모서리는 선분 좌표(6개씩), 표식은 점 좌표(3개씩) */
+export type MeshHighlights = {
+    openEdges: Float32Array
+    nonManifoldEdges: Float32Array
+    flippedEdges: Float32Array
+    /** 구멍마다 경계 정점의 평균 위치 */
+    holeCenters: Float32Array
+    /** 비다양체 모서리 중점 */
+    nonManifoldPoints: Float32Array
+}
+
+/** 종류별 표시 상한 (아주 지저분한 파일에서 뷰어가 무거워지지 않게) */
+const HIGHLIGHT_MAX_SEGMENTS = 150_000
+const HIGHLIGHT_MAX_POINTS = 3_000
+
 export type MeshInspectOutcome =
-    | { status: 'ok'; result: MeshInspection }
+    | { status: 'ok'; result: MeshInspection; highlights?: MeshHighlights }
     | { status: 'too_large'; triangles: number }
 
 const yieldToMain = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
@@ -51,7 +66,8 @@ function union(parent: Int32Array, a: number, b: number) {
 
 export async function inspectMesh(
     geometry: THREE.BufferGeometry,
-    isCancelled: () => boolean = () => false
+    isCancelled: () => boolean = () => false,
+    opts: { highlights?: boolean } = {}
 ): Promise<MeshInspectOutcome | null> {
     const pos = geometry.getAttribute('position')
     if (!pos) return null
@@ -66,6 +82,8 @@ export async function inspectMesh(
     const diag = bb ? bb.min.distanceTo(bb.max) : 1
     const eps = Math.max(diag * 1e-6, 1e-6)
     const weldId = new Int32Array(pos.count)
+    /** 용접 정점 → 대표 원본 정점 (문제 위치 좌표용) */
+    const firstOf = opts.highlights ? new Int32Array(pos.count) : null
     const keyToId = new Map<string, number>()
     for (let i = 0; i < pos.count; i++) {
         const key = `${Math.round(pos.getX(i) / eps)},${Math.round(pos.getY(i) / eps)},${Math.round(pos.getZ(i) / eps)}`
@@ -73,6 +91,7 @@ export async function inspectMesh(
         if (id === undefined) {
             id = keyToId.size
             keyToId.set(key, id)
+            if (firstOf) firstOf[id] = i
         }
         weldId[i] = id
         if (i % YIELD_EVERY === 0) {
@@ -165,17 +184,41 @@ export async function inspectMesh(
         const rb = holeFind(b)
         if (ra !== rb) holeParent.set(ra, rb)
     }
+    const openSeg: number[] = []
+    const nonManifoldSeg: number[] = []
+    const flippedSeg: number[] = []
+    const nonManifoldPts: number[] = []
+    const pushSegment = (out: number[], lo: number, hi: number) => {
+        if (!firstOf || out.length >= HIGHLIGHT_MAX_SEGMENTS * 6) return
+        const a = firstOf[lo]
+        const b = firstOf[hi]
+        out.push(pos.getX(a), pos.getY(a), pos.getZ(a), pos.getX(b), pos.getY(b), pos.getZ(b))
+    }
     let processed = 0
     for (const [key, value] of edges) {
         const count = Math.floor(value / ORIENT_SPAN)
         const sum = (value % ORIENT_SPAN) - ORIENT_OFFSET
+        const lo = Math.floor(key / vertexCount)
+        const hi = key % vertexCount
         if (count === 1) {
             openEdges++
-            holeUnion(Math.floor(key / vertexCount), key % vertexCount)
+            holeUnion(lo, hi)
+            pushSegment(openSeg, lo, hi)
         } else if (count > 2) {
             nonManifoldEdges++
+            pushSegment(nonManifoldSeg, lo, hi)
+            if (firstOf && nonManifoldPts.length < HIGHLIGHT_MAX_POINTS * 3) {
+                const a = firstOf[lo]
+                const b = firstOf[hi]
+                nonManifoldPts.push(
+                    (pos.getX(a) + pos.getX(b)) / 2,
+                    (pos.getY(a) + pos.getY(b)) / 2,
+                    (pos.getZ(a) + pos.getZ(b)) / 2
+                )
+            }
         } else if (sum !== 0) {
             flippedEdges++
+            pushSegment(flippedSeg, lo, hi)
         }
         if (++processed % YIELD_EVERY === 0) {
             await yieldToMain()
@@ -185,6 +228,33 @@ export async function inspectMesh(
     edges.clear()
     let holes = 0
     for (const [k] of holeParent) if (holeFind(k) === k) holes++
+    let highlights: MeshHighlights | undefined
+    if (firstOf) {
+        const sums = new Map<number, [number, number, number, number]>()
+        for (const [k] of holeParent) {
+            const root = holeFind(k)
+            let s = sums.get(root)
+            if (!s) {
+                if (sums.size >= HIGHLIGHT_MAX_POINTS) continue
+                s = [0, 0, 0, 0]
+                sums.set(root, s)
+            }
+            const i = firstOf[k]
+            s[0] += pos.getX(i)
+            s[1] += pos.getY(i)
+            s[2] += pos.getZ(i)
+            s[3]++
+        }
+        const centers: number[] = []
+        for (const [, s] of sums) centers.push(s[0] / s[3], s[1] / s[3], s[2] / s[3])
+        highlights = {
+            openEdges: Float32Array.from(openSeg),
+            nonManifoldEdges: Float32Array.from(nonManifoldSeg),
+            flippedEdges: Float32Array.from(flippedSeg),
+            holeCenters: Float32Array.from(centers),
+            nonManifoldPoints: Float32Array.from(nonManifoldPts),
+        }
+    }
 
     // 4) 덩어리별 부호 부피·범위 — 음수인데 다른 덩어리 안에 있지 않으면 안팎이 뒤집힌 덩어리
     //    (속을 비운 모델의 안쪽 껍데기는 일부러 안쪽을 향하므로 제외)
@@ -235,6 +305,7 @@ export async function inspectMesh(
 
     return {
         status: 'ok',
+        highlights,
         result: {
             triangles,
             vertices: vertexCount,

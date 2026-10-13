@@ -652,6 +652,26 @@ class ContourCurveMeter {
     }
 }
 
+/** 사면체 부호 부피 합 (cm³) — 열린 메쉬는 근사값 */
+export function meshVolumeCm3(geometry: THREE.BufferGeometry): number {
+    const pos = geometry.getAttribute('position');
+    if (!pos) return 0;
+    const idx = geometry.getIndex();
+    const p = pos.array as ArrayLike<number>;
+    const count = idx ? idx.count : pos.count;
+    let sum = 0;
+    for (let i = 0; i + 2 < count; i += 3) {
+        const a = (idx ? idx.getX(i) : i) * 3;
+        const b = (idx ? idx.getX(i + 1) : i + 1) * 3;
+        const c = (idx ? idx.getX(i + 2) : i + 2) * 3;
+        sum +=
+            p[a] * (p[b + 1] * p[c + 2] - p[b + 2] * p[c + 1]) +
+            p[a + 1] * (p[b + 2] * p[c] - p[b] * p[c + 2]) +
+            p[a + 2] * (p[b] * p[c + 1] - p[b + 1] * p[c]);
+    }
+    return Math.abs(sum / 6) / 1000;
+}
+
 export function aabbVolumeCm3(box: { x: number; y: number; z: number }): number {
     const x = Math.max(0, Number(box.x) || 0);
     const y = Math.max(0, Number(box.y) || 0);

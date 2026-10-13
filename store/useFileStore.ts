@@ -58,7 +58,8 @@ interface FileState {
     orientationLocked: boolean
     /** 단위 없는 파일(STL 등)을 인치로 보고 ×25.4 변환 중 */
     unitInch: boolean
-    setFile: (file: File, source?: FileSourceMeta) => void
+    /** keepParseCache: 이전 파일의 해석 결과를 남김 (STL 점검기 수리 전·후 전환) */
+    setFile: (file: File, source?: FileSourceMeta, opts?: { keepParseCache?: boolean }) => void
     setSavedQuoteId: (id: number | null) => void
     setSavedFileR2Url: (url: string | null) => void
     setPrintContextForFit: (method: PrintMethodKey, bedMax: BedMaxMm | null) => void
@@ -102,10 +103,10 @@ export const useFileStore = create<FileState>((set, get) => ({
     transform: { ...DEFAULT_MODEL_TRANSFORM },
     orientationLocked: false,
     unitInch: false,
-    setFile: (file, source) => {
+    setFile: (file, source, opts) => {
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
-            invalidateModelParseCache(state.file)
+            if (!opts?.keepParseCache) invalidateModelParseCache(state.file)
             cancelModelAnalysisRun()
             return {
                 file,
