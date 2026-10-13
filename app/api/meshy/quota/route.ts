@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
 import { MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
 import { getProviderAvailability } from '@/lib/image-to-3d-provider'
-import { getMeshyQuotaSnapshot } from '@/lib/meshy-quota'
+import { getMeshyQuotaSnapshot, isMeshyUnlimitedRole } from '@/lib/meshy-quota'
 
 /**
  * GET /api/meshy/quota
@@ -61,13 +61,36 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'DB를 사용할 수 없습니다' }, { status: 503 })
         }
 
-        const snap = await getMeshyQuotaSnapshot(env.DB, auth.userId)
+        const userRow = await env.DB.prepare(`SELECT role FROM users WHERE id = ?`)
+            .bind(auth.userId)
+            .first<{ role: string | null }>()
+        const unlimited = isMeshyUnlimitedRole(userRow?.role)
+        const snap = await getMeshyQuotaSnapshot(env.DB, auth.userId, { unlimited })
+
+        if (unlimited) {
+            return NextResponse.json({
+                success: true,
+                data: {
+                    configured,
+                    loginRequired: false,
+                    unlimited: true,
+                    limit: snap.limit,
+                    usedToday: snap.usedToday,
+                    remainingToday: snap.remainingDaily,
+                    remainingDaily: snap.remainingDaily,
+                    bonusRemaining: snap.bonusRemaining,
+                    remainingTotal: snap.remainingTotal,
+                    resetsHint: '관리자 계정은 횟수 제한 없이 이용할 수 있습니다',
+                },
+            })
+        }
 
         return NextResponse.json({
             success: true,
             data: {
                 configured,
                 loginRequired: false,
+                unlimited: false,
                 limit: snap.limit,
                 usedToday: snap.usedToday,
                 remainingToday: snap.remainingDaily,

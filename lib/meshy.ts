@@ -9,6 +9,10 @@ export const MESHY_IMAGE_MAX_BYTES = 8 * 1024 * 1024
 export const MESHY_GUEST_DAILY_LIMIT = 0
 /** 회원 계정(user_id)당 한국 시간 기준 1일 1회 */
 export const MESHY_USER_DAILY_LIMIT = 1
+/** 같은 IP(네트워크)에서 하루 무료(daily) 생성 합계 한도 — 보너스·관리자 생성은 제외 */
+export const MESHY_IP_DAILY_LIMIT = 3
+/** 주문 결제 확인 시 자동 지급하는 보너스 횟수 */
+export const MESHY_ORDER_BONUS_CREDITS = 1
 
 /** D1/SQLite: 한국(UTC+9) 캘린더일 기준 오늘 생성분 카운트 조건 */
 export const MESHY_TODAY_KST_SQL = `date(created_at, '+9 hours') = date('now', '+9 hours')`

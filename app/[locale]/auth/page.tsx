@@ -42,13 +42,14 @@ function BrandMark({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
 function AuthContent() {
   const t = useTranslations('Auth')
-  const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const { setUser } = useAuthStore()
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = safeAuthReturnPath(searchParams.get('return'), '') || undefined
   const isPhotoQuoteReturn = Boolean(returnTo?.includes('entry=photo'))
+  // 사진 AI에서 넘어온 방문자는 대부분 신규라 회원가입 탭을 먼저 보여 줌
+  const [isLogin, setIsLogin] = useState(!isPhotoQuoteReturn)
   const photoQuoteReturn = returnTo?.includes('entry=photo') ? returnTo : '/quote?entry=photo'
   const tokenFromUrl = searchParams.get('token')
   const returnPath = safeAuthReturnPath(searchParams.get('return'), '/')

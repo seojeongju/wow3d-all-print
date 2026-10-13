@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Link } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { useDropzone, type FileRejection } from 'react-dropzone'
 import {
     ImageIcon,
@@ -18,7 +18,8 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useFileStore } from '@/store/useFileStore'
-import { MESHY_IMAGE_MAX_BYTES, MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
+import { MESHY_IMAGE_MAX_BYTES, MESHY_IP_DAILY_LIMIT, MESHY_USER_DAILY_LIMIT } from '@/lib/meshy'
+import { savePendingPhoto, takePendingPhoto } from '@/lib/meshy-pending-photo'
 import { preprocessMeshyImage } from '@/lib/meshy-client-preprocess'
 import { buildAiPhotoResultFileName } from '@/lib/meshy-r2'
 import {
@@ -48,6 +49,7 @@ type JobStatus =
 
 type QuotaInfo = {
     loginRequired: boolean
+    unlimited?: boolean
     limit: number
     usedToday: number
     remainingToday: number
@@ -505,6 +507,53 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
         applyPhotoFile(initialPhoto)
     }, [initialPhoto, applyPhotoFile, photoLocked, t])
 
+    const router = useRouter()
+    const authHref = `/auth?return=${encodeURIComponent('/quote?entry=photo')}`
+    const [photoRestored, setPhotoRestored] = useState(false)
+
+    /** 로그인·가입 페이지로 가기 전에 고른 사진과 옵션을 브라우저에 보관 */
+    const goToAuth = async () => {
+        if (selected && selected.size > 0) {
+            await savePendingPhoto({
+                main: selected,
+                right: extraViews.right,
+                back: extraViews.back,
+                left: extraViews.left,
+                quality,
+                enhanceContrast,
+                useRemoveBg,
+            })
+        }
+        router.push(authHref)
+    }
+
+    // 로그인 후 돌아오면 보관해 둔 사진 복원 (한 번만)
+    const pendingCheckedRef = useRef(false)
+    const busyForRestoreRef = useRef(false)
+    useEffect(() => {
+        busyForRestoreRef.current = !!selected || photoLocked
+    }, [selected, photoLocked])
+    useEffect(() => {
+        if (!authHydrated || !token || pendingCheckedRef.current) return
+        pendingCheckedRef.current = true
+        void (async () => {
+            const pending = await takePendingPhoto()
+            if (!pending || busyForRestoreRef.current) return
+            applyPhotoFile(pending.main)
+            const views = { right: pending.right, back: pending.back, left: pending.left }
+            setExtraViews(views)
+            setExtraPreview({
+                right: views.right ? URL.createObjectURL(views.right) : null,
+                back: views.back ? URL.createObjectURL(views.back) : null,
+                left: views.left ? URL.createObjectURL(views.left) : null,
+            })
+            setQuality(pending.quality)
+            setEnhanceContrast(pending.enhanceContrast)
+            setUseRemoveBg(pending.useRemoveBg)
+            setPhotoRestored(true)
+        })()
+    }, [authHydrated, token, applyPhotoFile])
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         maxFiles: 1,
@@ -594,6 +643,8 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     setError(t('errLoginButton'))
                 } else if (code === 'DAILY_LIMIT') {
                     setError((json as { error?: string }).error || t('errQuotaUsedFixed'))
+                } else if (code === 'IP_DAILY_LIMIT') {
+                    setError(t('errIpLimit', { limit: MESHY_IP_DAILY_LIMIT }))
                 } else if (code === 'IMAGE_TO_3D_NOT_CONFIGURED' || code === 'MESHY_NOT_CONFIGURED') {
                     setError(t('errNotReady'))
                 } else {
@@ -697,7 +748,9 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                         ? t('checkingQuota')
                         : !token
                           ? t('loginRequired')
-                          : quota
+                          : quota?.unlimited
+                            ? t('unlimited')
+                            : quota
                               ? t('remainingToday', {
                                     remaining: quota.remainingDaily ?? quota.remainingToday,
                                     limit: quota.limit,
@@ -707,7 +760,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                     : '')
                               : t('checkingQuota')}
                 </p>
-                {authHydrated && token && quota && (
+                {authHydrated && token && quota && !quota.unlimited && (
                     <span
                         className={cn(
                             'text-[10px] font-bold break-keep',
@@ -718,15 +771,23 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     </span>
                 )}
                 {authHydrated && !token && (
-                    <Link
-                        href={`/auth?return=${encodeURIComponent('/quote?entry=photo')}`}
+                    <button
+                        type="button"
+                        onClick={() => void goToAuth()}
                         className="inline-flex h-7 items-center gap-1 rounded-md bg-indigo-500/90 px-2 text-[11px] font-black text-white"
                     >
                         <LogIn className="w-3 h-3" />
                         {t('login')}
-                    </Link>
+                    </button>
                 )}
             </div>
+
+            {photoRestored && status === 'idle' && hasSelectedImage && (
+                <div className="flex items-center gap-2 rounded-xl border border-teal-400/25 bg-teal-500/10 px-3 py-2 text-teal-100">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <p className="text-[12px] font-bold break-keep">{t('photoRestored')}</p>
+                </div>
+            )}
 
             {resuming && (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 text-white/60">
@@ -1082,13 +1143,14 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                                 {t('generateCta')}
                             </button>
                         ) : (
-                            <Link
-                                href={`/auth?return=${encodeURIComponent('/quote?entry=photo')}`}
+                            <button
+                                type="button"
+                                onClick={() => void goToAuth()}
                                 className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black flex items-center justify-center gap-2 transition-all"
                             >
                                 <LogIn className="w-4 h-4" />
                                 {t('loginThenGenerate')}
-                            </Link>
+                            </button>
                         )
                     )}
 

@@ -29,6 +29,15 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
     cancelled: '취소',
 };
 
+/** 결제가 확인된 이후 단계 (결제 확인 ~ 완료) */
+export const PAID_ORDER_STATUSES: ReadonlySet<string> = new Set([
+    'payment_confirmed',
+    'production',
+    'shipping',
+    'delivered',
+    'completed',
+]);
+
 export function isOrderStatus(value: string): value is OrderStatus {
     return (ORDER_STATUS_VALUES as readonly string[]).includes(value);
 }

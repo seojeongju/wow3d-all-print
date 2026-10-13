@@ -1,7 +1,14 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { Env } from '@/env';
-import { errorResponse, successResponse, verifyPassword, generateToken } from '@/lib/api-utils';
+import {
+    errorResponse,
+    successResponse,
+    verifyPassword,
+    generateToken,
+    hashPassword,
+    passwordNeedsRehash,
+} from '@/lib/api-utils';
 
 function safeJson500(msg: string): Response {
     try {
@@ -76,6 +83,18 @@ export async function POST(request: NextRequest) {
 
         const userId = Number(raw.id ?? raw.ID);
         const email = String(raw.email ?? '');
+
+        // 구 형식(솔트 없는 SHA-256) 비밀번호는 로그인 성공 시 PBKDF2로 다시 저장
+        if (passwordNeedsRehash(passwordHash)) {
+            try {
+                await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+                    .bind(await hashPassword(body.password), userId)
+                    .run();
+            } catch (e) {
+                try { console.error('login rehash error', e); } catch { }
+            }
+        }
+
         let token: string;
         try {
             token = await generateToken(userId, email);

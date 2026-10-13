@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
 import { sanitizeR2FileName } from '@/lib/r2-quote-file'
-import { MESHY_IMAGE_MAX_BYTES, isAllowedMeshyImage } from '@/lib/meshy'
+import {
+    MESHY_IMAGE_MAX_BYTES,
+    MESHY_IP_DAILY_LIMIT,
+    MESHY_USER_DAILY_LIMIT,
+    isAllowedMeshyImage,
+} from '@/lib/meshy'
 import { isAllowedTripoImage, TRIPO_IMAGE_MAX_BYTES, TripoApiError } from '@/lib/tripo'
 import {
     createImageTo3DTask,
@@ -11,9 +16,12 @@ import {
     type ImageTo3DProvider,
 } from '@/lib/image-to-3d-provider'
 import {
-    consumeMeshyBonusCredit,
+    getClientIp,
     getMeshyQuotaSnapshot,
-    peekMeshySlot,
+    hashClientIp,
+    isMeshyUnlimitedRole,
+    refundMeshyBonusCredit,
+    reserveMeshyJob,
 } from '@/lib/meshy-quota'
 import { resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
 
@@ -113,7 +121,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/meshy/jobs
  * FormData: image (jpg/png)
- * 권한: 로그인 회원 · 일일 1회 + 관리자 보너스
+ * 권한: 로그인 회원 · 일일 1회(같은 IP 합계 한도 포함) + 보너스, 관리자는 제한 없음
  */
 export async function POST(request: NextRequest) {
     try {
@@ -185,57 +193,79 @@ export async function POST(request: NextRequest) {
         }
 
         const userId = auth.userId
-        const slot = await peekMeshySlot(env.DB, userId)
-        if (!slot) {
-            const snap = await getMeshyQuotaSnapshot(env.DB, userId)
+        const userRow = await env.DB.prepare(`SELECT role FROM users WHERE id = ?`)
+            .bind(userId)
+            .first<{ role: string | null }>()
+        if (!userRow) {
+            return NextResponse.json(
+                { error: '회원 정보를 찾을 수 없습니다. 다시 로그인해 주세요.', code: 'LOGIN_REQUIRED' },
+                { status: 401 }
+            )
+        }
+        const unlimited = isMeshyUnlimitedRole(userRow.role)
+        const ipHash = await hashClientIp(
+            getClientIp(request),
+            typeof envRecord.IP_HASH_SALT === 'string' ? envRecord.IP_HASH_SALT : null
+        )
+
+        const safeName = sanitizeR2FileName(image.name || 'photo.jpg')
+        const reserved = await reserveMeshyJob(env.DB, {
+            userId,
+            sourceFileName: safeName,
+            provider,
+            ipHash,
+            unlimited,
+        })
+        if (!reserved.ok) {
+            const ipLimited = reserved.code === 'IP_DAILY_LIMIT'
             return NextResponse.json(
                 {
-                    error: '오늘 AI 모델링 이용 횟수와 보너스 횟수를 모두 사용했습니다. 내일 다시 시도하거나 관리자에게 추가 횟수를 요청해 주세요.',
-                    code: 'DAILY_LIMIT',
-                    limit: snap.limit,
+                    error: ipLimited
+                        ? `같은 네트워크(IP)에서 오늘 무료 이용 횟수(${MESHY_IP_DAILY_LIMIT}회)를 모두 사용했습니다. 내일 다시 시도해 주세요.`
+                        : '오늘 AI 모델링 이용 횟수와 보너스 횟수를 모두 사용했습니다. 내일 다시 시도하거나 관리자에게 추가 횟수를 요청해 주세요.',
+                    code: reserved.code,
+                    limit: ipLimited ? MESHY_IP_DAILY_LIMIT : MESHY_USER_DAILY_LIMIT,
                     remainingToday: 0,
                     bonusRemaining: 0,
                 },
                 { status: 429 }
             )
         }
+        const { jobId, slot, bonusCreditId } = reserved
 
-        const insert = await env.DB.prepare(
-            `INSERT INTO meshy_jobs (user_id, session_id, status, source_file_name, progress, provider)
-             VALUES (?, ?, 'uploading', ?, 0, ?)`
-        )
-            .bind(userId, null, sanitizeR2FileName(image.name || 'photo.jpg'), provider)
-            .run()
-
-        const jobId = Number((insert.meta as { last_row_id?: number })?.last_row_id || 0)
-        if (!jobId) {
-            return NextResponse.json({ error: '작업 생성 실패' }, { status: 500 })
-        }
-
-        const safeName = sanitizeR2FileName(image.name || 'photo.jpg')
-        const sourceKey = `meshy/${jobId}/${safeName}`
-        const buffer = await image.arrayBuffer()
-        await env.BUCKET.put(sourceKey, buffer, {
-            httpMetadata: { contentType: image.type || 'image/jpeg' },
-        })
-
-        await env.DB.prepare(
-            `UPDATE meshy_jobs SET source_image_key = ?, updated_at = datetime('now') WHERE id = ?`
-        )
-            .bind(sourceKey, jobId)
-            .run()
-
-        const extraBuffers: ArrayBuffer[] = []
-        const extraMimes: string[] = []
-        const extraNames: string[] = []
-        for (const extra of extraFiles) {
-            extraBuffers.push(await extra.arrayBuffer())
-            extraMimes.push(extra.type || 'image/jpeg')
-            extraNames.push(extra.name || 'view.jpg')
+        /** 외부 작업이 만들어지기 전 실패: job을 failed로 바꿔 일일 슬롯을 돌려주고, 선차감한 보너스도 복구 */
+        const releaseSlot = async (message: string) => {
+            await env.DB.prepare(
+                `UPDATE meshy_jobs SET status = 'failed', error_message = ?, updated_at = datetime('now') WHERE id = ?`
+            )
+                .bind(message, jobId)
+                .run()
+            if (bonusCreditId) await refundMeshyBonusCredit(env.DB, bonusCreditId)
         }
 
         let externalTaskId: string
         try {
+            const sourceKey = `meshy/${jobId}/${safeName}`
+            const buffer = await image.arrayBuffer()
+            await env.BUCKET.put(sourceKey, buffer, {
+                httpMetadata: { contentType: image.type || 'image/jpeg' },
+            })
+
+            await env.DB.prepare(
+                `UPDATE meshy_jobs SET source_image_key = ?, updated_at = datetime('now') WHERE id = ?`
+            )
+                .bind(sourceKey, jobId)
+                .run()
+
+            const extraBuffers: ArrayBuffer[] = []
+            const extraMimes: string[] = []
+            const extraNames: string[] = []
+            for (const extra of extraFiles) {
+                extraBuffers.push(await extra.arrayBuffer())
+                extraMimes.push(extra.type || 'image/jpeg')
+                extraNames.push(extra.name || 'view.jpg')
+            }
+
             const created = await createImageTo3DTask(provider as ImageTo3DProvider, envRecord, {
                 imageBuffer: buffer,
                 imageMime: image.type || 'image/jpeg',
@@ -257,28 +287,8 @@ export async function POST(request: NextRequest) {
                     : e instanceof TripoApiError && e.tripoCode === 1002
                       ? 'AI_SERVICE_UNAVAILABLE'
                       : undefined
-            await env.DB.prepare(
-                `UPDATE meshy_jobs SET status = 'failed', error_message = ?, updated_at = datetime('now') WHERE id = ?`
-            )
-                .bind(msg, jobId)
-                .run()
+            await releaseSlot(msg)
             return NextResponse.json({ error: msg, jobId, code }, { status })
-        }
-
-        // 외부 API 작업 생성 성공 후에만 보너스 차감 (실패 시 일일·보너스 모두 미차감)
-        if (slot === 'bonus') {
-            const ok = await consumeMeshyBonusCredit(env.DB, userId)
-            if (!ok) {
-                await env.DB.prepare(
-                    `UPDATE meshy_jobs SET status = 'failed', error_message = ?, updated_at = datetime('now') WHERE id = ?`
-                )
-                    .bind('보너스 횟수 차감에 실패했습니다. 다시 시도해 주세요.', jobId)
-                    .run()
-                return NextResponse.json(
-                    { error: '보너스 횟수 차감에 실패했습니다. 다시 시도해 주세요.', jobId },
-                    { status: 409 }
-                )
-            }
         }
 
         await env.DB.prepare(
@@ -289,7 +299,7 @@ export async function POST(request: NextRequest) {
             .bind(externalTaskId, jobId)
             .run()
 
-        const snapAfter = await getMeshyQuotaSnapshot(env.DB, userId)
+        const snapAfter = await getMeshyQuotaSnapshot(env.DB, userId, { unlimited })
 
         return NextResponse.json({
             success: true,

@@ -20,6 +20,10 @@ interface CloudflareEnv {
 	/** 최신 동향 후보 수집용 NAVER API HUB(네이버 클라우드) 뉴스 검색 Client ID/Secret */
 	NAVER_CLIENT_ID?: string;
 	NAVER_CLIENT_SECRET?: string;
+	/** 로그인 토큰(JWT) HMAC 서명 비밀키 — 32자 이상, wrangler secret으로 등록 */
+	JWT_SECRET?: string;
+	/** 선택: 사진→AI 3D IP 한도 집계용 IP 해시 솔트 */
+	IP_HASH_SALT?: string;
 	/** 카카오 로그인 REST 키 */
 	KAKAO_REST_API_KEY?: string;
 	/** 카카오맵 JavaScript 키 (인터랙티브 지도, 공개용) */

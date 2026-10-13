@@ -3,7 +3,8 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { normalizeAmountBeforeSave } from '@/lib/amount-display';
 import { processAutoOrderStatusTransitions, statusTimestampSql } from '@/lib/order-auto-status';
-import { isOrderStatus } from '@/lib/order-status';
+import { isOrderStatus, PAID_ORDER_STATUSES } from '@/lib/order-status';
+import { grantMeshyOrderBonus } from '@/lib/meshy-quota';
 
 type ExpertQuoteItem = {
     unit_price?: number;
@@ -187,6 +188,10 @@ export async function PATCH(
         }
 
         await processAutoOrderStatusTransitions(env.DB);
+
+        if (status !== null && PAID_ORDER_STATUSES.has(status)) {
+            await grantMeshyOrderBonus(env.DB, numId);
+        }
 
         return NextResponse.json({ success: true });
     } catch (e: unknown) {
