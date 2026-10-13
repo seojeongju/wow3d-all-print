@@ -36,7 +36,7 @@ export const MAKERSPACES: Makerspace[] = [
         addressDetail: '구미첨단의료기술타워 606호',
         lat: 36.1057,
         lng: 128.3885,
-        phone: '054-464-3144',
+        phone: '054-464-3137',
         hours: '평일 09:00 – 18:00',
         transit: '구미 공단동 · 산호대로',
     },
