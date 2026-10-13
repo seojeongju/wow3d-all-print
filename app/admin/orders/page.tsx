@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Download, Loader2, Eye, FileDown, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Search, Download, Loader2, Eye, FileDown, ChevronLeft, ChevronRight, RefreshCw, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import JSZip from 'jszip';
@@ -182,6 +182,8 @@ function OrderListInner() {
     const [savingDetail, setSavingDetail] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
+    const [openingBambuKey, setOpeningBambuKey] = useState<string | null>(null);
+    const [bambuHelpOpen, setBambuHelpOpen] = useState(false);
     // 상태를 제작중으로 변경 시 수정 견적 금액 확인 다이얼로그
     const [confirmProductionDialog, setConfirmProductionDialog] = useState<{ orderId: number; expertAmount: number; autoAmount: number } | null>(null);
 
@@ -455,6 +457,58 @@ function OrderListInner() {
     };
 
 
+    /**
+     * Bambu Studio로 열기 — 서명 링크를 받아 관리자 PC의 실행기(wow3d-bambu://)에 넘김
+     * 브라우저는 설치 여부를 알려 주지 않으므로, 창 포커스가 빠지지 않으면 설치 안내를 띄움
+     */
+    const handleOpenInBambu = async (orderId: number, quoteIds: number[], key: string) => {
+        const ids = quoteIds.filter((id) => Number.isInteger(id) && id > 0);
+        if (ids.length === 0) {
+            toast({ title: '열 파일이 없습니다.', variant: 'destructive' });
+            return;
+        }
+        setOpeningBambuKey(key);
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}/file-link`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ quoteIds: ids }),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.success) throw new Error(json?.error || '링크 발급 실패');
+            const links = (json.data?.links ?? []) as { url: string }[];
+            const protocolUrl =
+                'wow3d-bambu://open?' + links.map((l) => `u=${encodeURIComponent(l.url)}`).join('&');
+
+            let left = false;
+            const onBlur = () => {
+                left = true;
+            };
+            window.addEventListener('blur', onBlur, { once: true });
+            window.location.href = protocolUrl;
+            window.setTimeout(() => {
+                window.removeEventListener('blur', onBlur);
+                if (!left && document.hasFocus()) {
+                    toast({
+                        title: 'Bambu Studio가 열리지 않았나요?',
+                        description: '이 PC에 WOW3D 실행기를 한 번 설치해야 합니다. 상단 「Bambu 실행기 설치」를 확인해 주세요.',
+                    });
+                }
+            }, 2500);
+        } catch (e) {
+            toast({
+                title: 'Bambu Studio로 열기 실패',
+                description: e instanceof Error ? e.message : '다시 시도해 주세요',
+                variant: 'destructive',
+            });
+        } finally {
+            setOpeningBambuKey(null);
+        }
+    };
+
     const handleBulkDownload = async (orderId?: number, itemsToUse?: OrderItemSummary[] | AdminOrderItem[]) => {
         const orderIdToUse = orderId || detailOrderId;
         const items = itemsToUse || detailData?.items || [];
@@ -668,6 +722,14 @@ function OrderListInner() {
                     <Button variant="outline" size="sm" className="border-white/20 text-white/90 hover:bg-white/10" onClick={handleCsvDownload}>
                         <Download className="w-4 h-4 mr-2" /> CSV 다운로드
                     </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10"
+                        onClick={() => setBambuHelpOpen(true)}
+                    >
+                        <Printer className="w-4 h-4 mr-2" /> Bambu 실행기 설치
+                    </Button>
                 </div>
             </div>
 
@@ -722,7 +784,9 @@ function OrderListInner() {
                                                     const items = parseItemsSummary(order.items_summary);
 
                                                     if (items.length > 0) {
+                                                        const bambuKey = `order-${order.id}`;
                                                         return (
+                                                            <>
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
@@ -736,6 +800,29 @@ function OrderListInner() {
                                                                 <FileDown className="w-3.5 h-3.5 mr-1 group-hover:scale-110 transition-transform" />
                                                                 다운로드
                                                             </Button>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-7 px-2.5 text-xs font-semibold border-emerald-500/40 text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/25"
+                                                                disabled={openingBambuKey === bambuKey}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleOpenInBambu(
+                                                                        order.id,
+                                                                        items.map((it) => Number(it.quote_id)),
+                                                                        bambuKey
+                                                                    );
+                                                                }}
+                                                                title="Bambu Studio로 바로 열기 (실행기 설치 필요)"
+                                                            >
+                                                                {openingBambuKey === bambuKey ? (
+                                                                    <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                                                                ) : (
+                                                                    <Printer className="w-3.5 h-3.5 mr-1" />
+                                                                )}
+                                                                Bambu
+                                                            </Button>
+                                                            </>
                                                         );
                                                     }
                                                     return null;
@@ -1049,6 +1136,7 @@ function OrderListInner() {
                                                         <td className="p-2 text-right font-medium">₩ {subtotal.toLocaleString()}</td>
                                                         <td className="p-2 text-center">
                                                             {it.file_url ? (
+                                                                <div className="flex flex-col items-center gap-0.5">
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
@@ -1071,6 +1159,25 @@ function OrderListInner() {
                                                                         </>
                                                                     )}
                                                                 </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 px-3 text-xs text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/10 disabled:opacity-50"
+                                                                    disabled={openingBambuKey === `item-${it.id}`}
+                                                                    title="Bambu Studio로 바로 열기 (실행기 설치 필요)"
+                                                                    onClick={() => {
+                                                                        if (it.quote_id == null) return;
+                                                                        handleOpenInBambu(Number(detailOrderId), [Number(it.quote_id)], `item-${it.id}`);
+                                                                    }}
+                                                                >
+                                                                    {openingBambuKey === `item-${it.id}` ? (
+                                                                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                                                                    ) : (
+                                                                        <Printer className="w-3.5 h-3.5 mr-1" />
+                                                                    )}
+                                                                    Bambu
+                                                                </Button>
+                                                                </div>
                                                             ) : (
                                                                 <span className="text-[10px] text-white/30">파일 없음</span>
                                                             )}
@@ -1172,6 +1279,52 @@ function OrderListInner() {
                             }}
                         >
                             제작 시작 확인
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Bambu Studio 실행기 설치 안내 */}
+            <Dialog open={bambuHelpOpen} onOpenChange={setBambuHelpOpen}>
+                <DialogContent className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-white flex items-center gap-2">
+                            <Printer className="w-5 h-5 text-emerald-300" /> Bambu Studio로 바로 열기 설정
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-1 text-sm text-white/75">
+                        <p className="break-keep">
+                            브라우저는 보안상 PC 프로그램을 직접 실행할 수 없어, 작업 PC마다 WOW3D 실행기를 한 번 설치해야 합니다.
+                            (Windows · Bambu Studio 설치 필요 · 관리자 권한 불필요)
+                        </p>
+                        <ol className="list-decimal pl-5 space-y-2 break-keep">
+                            <li>
+                                <a
+                                    href="/tools/wow3d-bambu-setup.ps1"
+                                    download
+                                    className="text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+                                >
+                                    설치 파일(wow3d-bambu-setup.ps1) 받기
+                                </a>
+                            </li>
+                            <li>받은 파일을 마우스 오른쪽 클릭 → <b>PowerShell에서 실행</b> → &quot;설치가 완료되었습니다&quot; 창 확인</li>
+                            <li>
+                                주문관리에서 <b>Bambu</b> 버튼 클릭 → 브라우저가 실행 허용을 물으면 &quot;항상 허용&quot; 체크 후 열기
+                            </li>
+                        </ol>
+                        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55 space-y-1 break-keep">
+                            <p>· 버튼을 누르면 10분간만 유효한 서명 링크로 파일을 받아 임시 폴더에 저장한 뒤 Bambu Studio로 엽니다.</p>
+                            <p>· 견적 치수로 맞춘 STL이 열리며, 임시 파일은 7일 뒤 자동 정리됩니다.</p>
+                            <p>· 실행 정책 때문에 실행이 막히면 PowerShell에서 아래 명령으로 설치하세요.</p>
+                            <code className="block mt-1 rounded bg-black/50 px-2 py-1.5 text-[11px] text-white/80 break-all">
+                                powershell -ExecutionPolicy Bypass -File &quot;$env:USERPROFILE\Downloads\wow3d-bambu-setup.ps1&quot;
+                            </code>
+                            <p>· 제거: 위 명령 끝에 <code>-Uninstall</code>을 붙여 실행</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" className="border-white/10 text-white" onClick={() => setBambuHelpOpen(false)}>
+                            닫기
                         </Button>
                     </DialogFooter>
                 </DialogContent>

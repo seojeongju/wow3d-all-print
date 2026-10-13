@@ -184,6 +184,18 @@ function base64UrlToUtf8(segment: string): string {
     return new TextDecoder().decode(bytes);
 }
 
+/** 서버 전용 값 서명 (JWT_SECRET HMAC). 비밀키가 없으면 null */
+export async function signServerValue(data: string): Promise<string | null> {
+    const secret = getJwtSecret();
+    if (!secret) return null;
+    return signJwt(data, secret);
+}
+
+export async function verifyServerSignature(data: string, signature: string): Promise<boolean> {
+    const expected = await signServerValue(data);
+    return !!expected && timingSafeEqual(signature, expected);
+}
+
 /**
  * JWT 토큰 생성 (HS256 — JWT_SECRET으로 HMAC 서명)
  */

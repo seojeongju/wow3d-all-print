@@ -11,6 +11,7 @@ import {
     verifyPassword,
     verifyToken,
 } from '../lib/api-utils'
+import { createSignedOrderFileUrl, verifySignedOrderFileParams } from '../lib/admin-file-link'
 
 function b64url(text: string): string {
     return Buffer.from(text).toString('base64url')
@@ -45,6 +46,22 @@ async function main() {
     // 예전 방식(비밀키 없는 SHA-256)으로 위조한 토큰은 거부
     const legacySig = createHash('sha256').update(`${header}.${forgedPayload}`).digest('hex')
     assert.deepEqual(await verifyToken(`${header}.${forgedPayload}.${legacySig}`), { error: 'signature_mismatch' })
+
+    // 관리자 주문 파일 서명 링크: 정상 통과, 견적·주문·매장 변조 및 만료 거부
+    const link = await createSignedOrderFileUrl('https://www.wow3dp.co.kr', 1, 100, 200)
+    assert.ok(link)
+    const params = new URL(link!).searchParams
+    assert.equal(await verifySignedOrderFileParams(100, params), 1)
+    assert.equal(await verifySignedOrderFileParams(101, params), null)
+    const otherQuote = new URLSearchParams(params)
+    otherQuote.set('quoteId', '201')
+    assert.equal(await verifySignedOrderFileParams(100, otherQuote), null)
+    const otherStore = new URLSearchParams(params)
+    otherStore.set('s', '2')
+    assert.equal(await verifySignedOrderFileParams(100, otherStore), null)
+    const expired = new URLSearchParams(params)
+    expired.set('exp', String(Date.now() - 1000))
+    assert.equal(await verifySignedOrderFileParams(100, expired), null)
 
     console.log('test-auth-crypto: 모든 검증 통과')
 }

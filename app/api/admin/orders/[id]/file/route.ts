@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { requireAdminAuth } from '@/lib/api-utils';
+import { verifySignedOrderFileParams } from '@/lib/admin-file-link';
 import { resolveQuoteR2KeyCandidates } from '@/lib/r2-quote-file';
 import {
     parseMeshyJobIdFromFileName,
@@ -10,7 +11,7 @@ import { bakeStlToTargetMm, parseModelTransformJson, quoteSizedFileName } from '
 
 /**
  * GET /api/admin/orders/[id]/file - 주문 항목의 모델링 파일 다운로드 (관리자)
- * Query: ?quoteId=
+ * Query: ?quoteId= (관리자 토큰) 또는 ?quoteId=&s=&exp=&sig= (서명 링크)
  */
 export async function GET(
   req: NextRequest,
@@ -21,19 +22,30 @@ export async function GET(
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 });
     if (!env?.BUCKET) return NextResponse.json({ error: 'R2 BUCKET not available' }, { status: 503 });
 
-    const auth = await requireAdminAuth(req, env.DB);
-    if (auth instanceof Response) return auth;
-
     const { id } = await context.params;
     const numId = parseInt(id, 10);
     if (!Number.isInteger(numId)) {
       return NextResponse.json({ error: 'Invalid order id' }, { status: 400 });
     }
 
+    // 서명 링크(Bambu Studio 실행기 등)는 로그인 헤더 대신 서명으로 인증
+    let storeId: number;
+    if (req.nextUrl.searchParams.has('sig')) {
+      const signedStoreId = await verifySignedOrderFileParams(numId, req.nextUrl.searchParams);
+      if (signedStoreId == null) {
+        return NextResponse.json({ error: '링크가 만료되었거나 올바르지 않습니다' }, { status: 403 });
+      }
+      storeId = signedStoreId;
+    } else {
+      const auth = await requireAdminAuth(req, env.DB);
+      if (auth instanceof Response) return auth;
+      storeId = auth.storeId;
+    }
+
     const order = await env.DB.prepare(
       'SELECT id FROM orders WHERE id = ? AND (store_id = ? OR store_id IS NULL)'
     )
-      .bind(numId, auth.storeId)
+      .bind(numId, storeId)
       .first();
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
