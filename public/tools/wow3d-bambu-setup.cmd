@@ -144,6 +144,10 @@ try {
     New-Item -Path $protocolKey -Value 'URL:WOW3D Bambu Studio Opener' -Force | Out-Null
     New-ItemProperty -Path $protocolKey -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
     $command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$handlerPath`" `"%1`""
+    # Windows Terminal이 기본 콘솔이면 Hidden이 무시되고, Bambu Studio가 그 창에 붙어 로그를 계속 출력하므로 보이지 않는 콘솔에서 실행
+    if ([Environment]::OSVersion.Version.Build -ge 18362) {
+        $command = "conhost.exe --headless $command"
+    }
     New-Item -Path "$protocolKey\shell\open\command" -Value $command -Force | Out-Null
 
     [System.Windows.MessageBox]::Show(

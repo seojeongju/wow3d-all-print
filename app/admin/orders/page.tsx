@@ -1322,6 +1322,7 @@ function OrderListInner() {
                             <p>· 버튼을 누르면 10분간만 유효한 서명 링크로 파일을 받아 임시 폴더에 저장한 뒤 Bambu Studio로 엽니다.</p>
                             <p>· 견적 치수로 맞춘 STL이 열리며, 임시 파일은 7일 뒤 자동 정리됩니다.</p>
                             <p>· 설치 후에도 열리지 않으면 브라우저를 완전히 닫았다가 다시 열어 주세요.</p>
+                            <p>· 실행할 때 PowerShell 창이 함께 떠 있다면 새 설치 파일로 한 번 더 설치하세요.</p>
                             <p>· 제거: 명령 프롬프트에서 아래처럼 실행 (경로는 실제 다운로드 위치)</p>
                             <code className="block mt-1 rounded bg-black/50 px-2 py-1.5 text-[11px] text-white/80 break-all">
                                 &quot;%USERPROFILE%\Downloads\wow3d-bambu-setup.cmd&quot; -Uninstall
