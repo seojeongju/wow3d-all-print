@@ -97,14 +97,18 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
                 body: 'Use a slicer or mesh inspector, such as the free WOW3D STL checker that runs in your browser, and aim for a closed, watertight solid when possible.',
             },
             {
+                title: 'Fix it with auto repair',
+                body: 'In the WOW3D STL checker, "Run auto repair" fills holes, stitches gaps, removes duplicate and internal faces and unifies face orientation in one step, and you can download the repaired STL. STL, OBJ and PLY files uploaded to the auto-quote get the same repair automatically, and you can switch back to quoting the original.',
+            },
+            {
                 title: 'If it still will not print',
                 body: 'Walls that look fine on screen can still be too thin or unsupported. WOW3D may review and suggest fixes.',
             },
         ],
         faqs: [
             {
-                q: 'Can I still get a quote with a broken STL?',
-                a: 'Analysis may still run, but production can need repairs. Fixing early saves time.',
+                q: 'Can I still get a quote if my STL has holes?',
+                a: 'Yes. The auto-quote repairs holes and gaps automatically, prices the repaired file and lists what was fixed. Errors it cannot fix, such as self-intersections or very large holes, are reviewed by our team, who will suggest how to fix them.',
             },
             {
                 q: 'Are STEP files error-free?',
@@ -136,8 +140,16 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
                 title: 'Pins, text, and ribs',
                 body: 'Tiny protrusions and lettering below process resolution can smear. Thicken critical details or adjust engraving depth.',
             },
+            {
+                title: 'Checked automatically on upload',
+                body: 'When you upload to the WOW3D auto-quote, wall thickness is measured automatically. If a significant area is thinner than 1mm for FDM or 0.6mm for SLA/DLP, you get a warning and the areas are marked in the 3D viewer. Changing the scale or print method recalculates the check, so you can see right away whether scaling up clears it.',
+            },
         ],
         faqs: [
+            {
+                q: 'Does the quote warn me about thin walls?',
+                a: 'Yes. Wall thickness is measured on upload, and if much of the surface is below the minimum you get a warning with the thinnest value. Thin walls are not fixed automatically, so thicken them in your design or consider SLA/DLP.',
+            },
             {
                 q: 'Is meeting the minimum enough?',
                 a: 'Minimums are starting points. Add thickness for loads, assembly, and post-processing.',

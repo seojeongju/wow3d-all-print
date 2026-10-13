@@ -52,13 +52,20 @@ export function buildQuoteHowToSchema() {
             {
                 '@type': 'HowToStep',
                 position: 2,
+                name: '파일 자동 점검 · 리페어',
+                text: 'STL·OBJ·PLY 파일의 구멍·틈·중복 면 같은 메쉬 오류는 업로드 즉시 브라우저에서 자동 리페어해 견적하며, 원본 파일로 되돌릴 수 있습니다. 벽 두께도 측정해 FDM 1mm, SLA·DLP 0.6mm보다 얇은 부분은 경고와 함께 3D 뷰어에 표시합니다.',
+                url: absoluteUrl('/quote'),
+            },
+            {
+                '@type': 'HowToStep',
+                position: 3,
                 name: '가격 · 예상 제작기간 확인',
                 text: '소재·출력 방식을 선택하면 가격이 실시간으로 반영됩니다. 검수·후처리 후 포장하여 발송하며, 평균 3~7일 내 수령 가능합니다.',
                 url: absoluteUrl('/quote'),
             },
             {
                 '@type': 'HowToStep',
-                position: 3,
+                position: 4,
                 name: '주문 · 결제',
                 text: '배송 정보를 입력하고 결제하면 주문이 접수됩니다. 이후 제작·검수·발송이 진행됩니다.',
                 url: absoluteUrl('/checkout'),

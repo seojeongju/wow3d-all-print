@@ -108,7 +108,7 @@ export const QNA_EN_BY_QUESTION: Record<string, { question: string; answer: stri
     '파일이 열리는데도 출력이 어려운 경우가 있나요?': {
         question: 'Can a file open but still be hard to print?',
         answer:
-            'Yes. Even if the model displays, thin walls, non-manifold meshes, bad faces, internal collisions, or hard-to-support structures can block printing. WOW3D can review the file and suggest fixes.',
+            'Yes. Even if the model displays, thin walls, non-manifold meshes, bad faces, internal collisions, or hard-to-support structures can block printing. When you upload to the WOW3D auto-quote, open meshes and gaps are repaired automatically and walls thinner than the recommended minimum are flagged. For anything else, our team can review the file and suggest fixes.',
     },
     '깨진 STL 파일(구멍·뒤집힌 면)을 자동으로 고칠 수 있나요?': {
         question: 'Can a broken STL file (holes, flipped faces) be fixed automatically?',
@@ -129,6 +129,16 @@ export const QNA_EN_BY_QUESTION: Record<string, { question: string; answer: stri
         question: 'Are there errors auto repair cannot fix?',
         answer:
             'Self-intersecting faces, very thin walls, and holes that are too large or have tangled boundaries are not repaired automatically. Meshes with more than 2 million triangles are also too large for in-browser repair. You can still request a quote as is, and our team will review the file and fix it or suggest how to improve it.',
+    },
+    '자동견적에 깨진 STL 파일을 올려도 견적이 나오나요?': {
+        question: 'Can I still get an auto-quote if my STL file is broken?',
+        answer:
+            'Yes. When you upload an STL, OBJ or PLY file to the WOW3D auto-quote (wow3dp.co.kr/en/quote), it checks the mesh for holes, gaps and duplicate faces. If it finds any, it repairs the file in your browser and prices the repaired version. The quote screen lists what was fixed (holes filled, gaps stitched and so on), and you can switch back with "Quote the original file". The file you quote is the file we print. 3MF and STEP files and photo-to-AI 3D models are not auto-repaired.',
+    },
+    '견적할 때 벽이 너무 얇은지도 확인해 주나요?': {
+        question: 'Does the quote check whether walls are too thin?',
+        answer:
+            'Yes. The auto-quote measures wall thickness on your model. If a significant area is thinner than 1mm for FDM or 0.6mm for SLA/DLP, it shows a warning with the thinnest value and marks those areas in the 3D viewer. Changing the scale or print method recalculates the check. Thin walls are not fixed automatically, so thicken them in your design or scale the model up, and consider SLA/DLP when fine detail matters. Our team also reviews every order before printing.',
     },
     '3D 파일 없이 3D 프린팅 견적을 받을 수 있나요?': {
         question: 'Can I get a 3D printing quote without a 3D file?',

@@ -485,10 +485,18 @@
       {
         "q": "Can the final production price differ from the automatic quote?",
         "a": "Most models match the automatic quote, but complex geometry or special finishing may be reviewed and adjusted by our team."
+      },
+      {
+        "q": "Can I upload a broken STL file (holes, gaps)?",
+        "a": "Yes. STL, OBJ and PLY uploads are checked for holes, gaps and duplicate faces. If any are found, the file is repaired in your browser and the quote uses the repaired version. The quote screen lists what was fixed, and you can switch back to the original file. The file you quote is the file we print."
+      },
+      {
+        "q": "Does it check whether walls are too thin?",
+        "a": "Yes. Wall thickness is measured automatically. If a significant area is thinner than 1mm for FDM or 0.6mm for SLA/DLP, you get a warning and the areas are marked in the 3D viewer. Changing the scale or print method recalculates it. Thin walls are not fixed automatically, so thicken them in your design or consider SLA/DLP."
       }
     ],
     "metaTitle": "Instant 3D printing quote | File or photo to price",
-    "metaDescription": "Get an instant 3D printing quote from STL/OBJ/STEP uploads or photo-to-AI 3D modeling. Live pricing for FDM, SLA, and more.",
+    "metaDescription": "Get an instant 3D printing quote from STL/OBJ/STEP uploads or photo-to-AI 3D modeling. Broken meshes are auto-repaired and thin walls flagged on upload. Live pricing for FDM, SLA and more.",
     "stepOrder": "Order complete",
     "exit": "Exit",
     "replaceFile": "Replace file",
@@ -541,7 +549,9 @@
       "instant 3D printing quote",
       "3D printer price",
       "STL quote",
-      "photo to 3D quote"
+      "photo to 3D quote",
+      "STL auto repair",
+      "3D printing minimum wall thickness"
     ],
     "modelLoadFailTitle": "Failed to load model",
     "modelLoadFailDesc": "Could not open the saved 3D file. Please try again shortly.",
