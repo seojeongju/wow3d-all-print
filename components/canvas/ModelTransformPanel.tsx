@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
@@ -12,7 +12,7 @@ import {
     scalePercentFromTargetMm,
 } from '@/lib/model-transform'
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
-import { RotateCcw, Maximize2, Wand2 } from 'lucide-react'
+import { RotateCcw, Maximize2, Wand2, ChevronDown } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
 import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_EN } from '@/lib/meshy-disclaimer'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,11 @@ export default function ModelTransformPanel({ className }: { className?: string 
 
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
+    // 모바일에선 패널이 뷰어를 거의 덮어 모델 조작이 안 되므로 접힌 상태로 시작
+    const [collapsed, setCollapsed] = useState(
+        () => typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches
+    )
+    const bodyId = useId()
     const isAiPhoto = fileSource.kind === 'meshy-photo'
     const scaleMax = getScalePercentMax(fileSource.kind, unitInch, baseLongestMm(baseAnalysis))
 
@@ -99,28 +104,58 @@ export default function ModelTransformPanel({ className }: { className?: string 
     return (
         <div
             className={cn(
-                'pointer-events-auto w-[min(100%,340px)] rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl p-3 sm:p-4 space-y-3',
+                'pointer-events-auto rounded-2xl border border-white/15 bg-black/70 backdrop-blur-xl shadow-2xl',
+                collapsed ? 'w-auto max-w-full p-2' : 'w-[min(100%,340px)] p-3 sm:p-4 space-y-3',
                 className
             )}
         >
             <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
+                <button
+                    type="button"
+                    onClick={() => setCollapsed((c) => !c)}
+                    aria-expanded={!collapsed}
+                    aria-controls={bodyId}
+                    title={collapsed ? t('transformExpand') : t('transformCollapse')}
+                    className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-0.5 text-left hover:bg-white/5 transition-colors"
+                >
                     <Maximize2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
                     <span className="text-[10px] font-black uppercase tracking-[0.18em] text-white/70 truncate">
                         Model Adjust
                     </span>
-                </div>
-                <button
-                    type="button"
-                    onClick={resetTransform}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black text-white/50 hover:text-teal-300 hover:bg-white/5 transition-colors"
-                    title={t('transformResetTitle')}
-                >
-                    <RotateCcw className="w-3 h-3" />
-                    {t('transformReset')}
+                    {collapsed ? (
+                        <span className="font-mono text-[10px] font-bold tabular-nums text-teal-300/90 whitespace-nowrap">
+                            {box.x.toFixed(0)}×{box.y.toFixed(0)}×{box.z.toFixed(0)}mm · {transform.scalePercent}%
+                        </span>
+                    ) : null}
+                    {collapsed && isAiPhoto ? (
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden />
+                    ) : null}
+                    <ChevronDown
+                        className={cn(
+                            'w-3.5 h-3.5 shrink-0 text-white/50 transition-transform',
+                            !collapsed && 'rotate-180'
+                        )}
+                        aria-hidden
+                    />
                 </button>
+                {!collapsed ? (
+                    <button
+                        type="button"
+                        onClick={resetTransform}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black text-white/50 hover:text-teal-300 hover:bg-white/5 transition-colors"
+                        title={t('transformResetTitle')}
+                    >
+                        <RotateCcw className="w-3 h-3" />
+                        {t('transformReset')}
+                    </button>
+                ) : null}
             </div>
 
+            {collapsed ? null : (
+            <div
+                id={bodyId}
+                className="space-y-3 max-h-[45dvh] overflow-y-auto overscroll-contain custom-scrollbar sm:max-h-none sm:overflow-visible"
+            >
             {isAiPhoto && (
                 <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-2.5 py-2 text-[10px] font-bold text-amber-100/90 leading-relaxed break-keep space-y-1.5">
                     <p className="text-amber-50">
@@ -247,6 +282,8 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     <span className="font-mono text-white/75">{effective.volume.toFixed(2)} cm³</span>
                 </div>
             </div>
+            </div>
+            )}
         </div>
     )
 }

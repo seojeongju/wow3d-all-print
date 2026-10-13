@@ -617,6 +617,8 @@
     "viewerViewLeft": "Left",
     "viewerViewRight": "Right",
     "transformReset": "Reset",
+    "transformExpand": "Show size controls",
+    "transformCollapse": "Hide size controls",
     "transformResetTitle": "Reset scale and re-apply auto placement",
     "transformPhotoHintBefore": "Match real size with",
     "transformPhotoHintStrong": "dimensions (mm)",

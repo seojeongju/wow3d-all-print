@@ -618,6 +618,8 @@
     "viewerViewLeft": "측면L",
     "viewerViewRight": "측면R",
     "transformReset": "초기화",
+    "transformExpand": "크기 조정 펼치기",
+    "transformCollapse": "크기 조정 접기",
     "transformResetTitle": "스케일 초기화 및 자동 배치 다시 적용",
     "transformPhotoHintBefore": "아래",
     "transformPhotoHintStrong": "치수(mm)",
