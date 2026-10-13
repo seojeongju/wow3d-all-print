@@ -1300,14 +1300,20 @@ function OrderListInner() {
                         <ol className="list-decimal pl-5 space-y-2 break-keep">
                             <li>
                                 <a
-                                    href="/tools/wow3d-bambu-setup.ps1"
+                                    href="/tools/wow3d-bambu-setup.cmd"
                                     download
                                     className="text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
                                 >
-                                    설치 파일(wow3d-bambu-setup.ps1) 받기
+                                    설치 파일(wow3d-bambu-setup.cmd) 받기
                                 </a>
+                                <span className="block text-xs text-white/45">
+                                    브라우저가 &quot;위험할 수 있는 파일&quot;이라고 하면 다운로드 목록에서 <b>유지</b>를 선택하세요.
+                                </span>
                             </li>
-                            <li>받은 파일을 마우스 오른쪽 클릭 → <b>PowerShell에서 실행</b> → &quot;설치가 완료되었습니다&quot; 창 확인</li>
+                            <li>
+                                받은 파일을 <b>더블클릭</b> → &quot;Windows의 PC 보호&quot; 화면이 나오면 <b>추가 정보 → 실행</b> →
+                                &quot;설치가 완료되었습니다&quot; 창 확인
+                            </li>
                             <li>
                                 주문관리에서 <b>Bambu</b> 버튼 클릭 → 브라우저가 실행 허용을 물으면 &quot;항상 허용&quot; 체크 후 열기
                             </li>
@@ -1315,11 +1321,11 @@ function OrderListInner() {
                         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55 space-y-1 break-keep">
                             <p>· 버튼을 누르면 10분간만 유효한 서명 링크로 파일을 받아 임시 폴더에 저장한 뒤 Bambu Studio로 엽니다.</p>
                             <p>· 견적 치수로 맞춘 STL이 열리며, 임시 파일은 7일 뒤 자동 정리됩니다.</p>
-                            <p>· 실행 정책 때문에 실행이 막히면 PowerShell에서 아래 명령으로 설치하세요.</p>
+                            <p>· 설치 후에도 열리지 않으면 브라우저를 완전히 닫았다가 다시 열어 주세요.</p>
+                            <p>· 제거: 명령 프롬프트에서 아래처럼 실행 (경로는 실제 다운로드 위치)</p>
                             <code className="block mt-1 rounded bg-black/50 px-2 py-1.5 text-[11px] text-white/80 break-all">
-                                powershell -ExecutionPolicy Bypass -File &quot;$env:USERPROFILE\Downloads\wow3d-bambu-setup.ps1&quot;
+                                &quot;%USERPROFILE%\Downloads\wow3d-bambu-setup.cmd&quot; -Uninstall
                             </code>
-                            <p>· 제거: 위 명령 끝에 <code>-Uninstall</code>을 붙여 실행</p>
                         </div>
                     </div>
                     <DialogFooter>

@@ -1,0 +1,4 @@
+# Windows 실행 파일은 배포 환경과 무관하게 CRLF로 내려가야 정상 동작합니다
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf

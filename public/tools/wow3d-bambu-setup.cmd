@@ -1,8 +1,15 @@
-﻿# WOW3D 관리자 PC용 "Bambu Studio로 열기" 실행기 설치 스크립트 (Windows)
+<# : WOW3D Bambu Studio opener setup (cmd + PowerShell hybrid)
+@echo off
+set "WOW3D_SETUP=%~f0"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$t = [IO.File]::ReadAllText($env:WOW3D_SETUP, [Text.Encoding]::UTF8); & ([scriptblock]::Create($t)) %*"
+if errorlevel 1 pause
+exit /b %errorlevel%
+#>
+# WOW3D 관리자 PC용 "Bambu Studio로 열기" 실행기 설치 파일 (Windows)
 # - 관리자 주문관리의 "Bambu" 버튼(wow3d-bambu:// 링크)을 받아 STL을 내려받고 Bambu Studio로 엽니다
 # - 현재 사용자 범위(HKCU)에만 등록하므로 관리자 권한이 필요 없습니다
-# 설치:  이 파일을 마우스 오른쪽 클릭 → "PowerShell에서 실행"
-# 제거:  powershell -ExecutionPolicy Bypass -File .\wow3d-bambu-setup.ps1 -Uninstall
+# 설치:  이 파일을 더블클릭 (Windows 보호 화면이 나오면 "추가 정보" → "실행")
+# 제거:  명령 프롬프트에서  wow3d-bambu-setup.cmd -Uninstall
 
 param([switch]$Uninstall)
 
@@ -13,14 +20,15 @@ $protocolKey = 'HKCU:\Software\Classes\wow3d-bambu'
 
 Add-Type -AssemblyName PresentationFramework
 
-if ($Uninstall) {
-    if (Test-Path $protocolKey) { Remove-Item $protocolKey -Recurse -Force }
-    if (Test-Path $handlerPath) { Remove-Item $handlerPath -Force }
-    [System.Windows.MessageBox]::Show('WOW3D Bambu Studio 실행기를 제거했습니다.', 'WOW3D') | Out-Null
-    exit 0
-}
+try {
+    if ($Uninstall) {
+        if (Test-Path $protocolKey) { Remove-Item $protocolKey -Recurse -Force }
+        if (Test-Path $handlerPath) { Remove-Item $handlerPath -Force }
+        [System.Windows.MessageBox]::Show('WOW3D Bambu Studio 실행기를 제거했습니다.', 'WOW3D') | Out-Null
+        exit 0
+    }
 
-$handler = @'
+    $handler = @'
 # WOW3D: wow3d-bambu://open?u=<서명된 파일 주소>&u=... 를 받아 Bambu Studio로 엽니다
 param([string]$Uri)
 
@@ -130,15 +138,19 @@ try {
 }
 '@
 
-New-Item -ItemType Directory -Path $installDir -Force | Out-Null
-Set-Content -Path $handlerPath -Value $handler -Encoding UTF8
+    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+    Set-Content -Path $handlerPath -Value $handler -Encoding UTF8
 
-New-Item -Path $protocolKey -Value 'URL:WOW3D Bambu Studio Opener' -Force | Out-Null
-New-ItemProperty -Path $protocolKey -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
-$command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$handlerPath`" `"%1`""
-New-Item -Path "$protocolKey\shell\open\command" -Value $command -Force | Out-Null
+    New-Item -Path $protocolKey -Value 'URL:WOW3D Bambu Studio Opener' -Force | Out-Null
+    New-ItemProperty -Path $protocolKey -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
+    $command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$handlerPath`" `"%1`""
+    New-Item -Path "$protocolKey\shell\open\command" -Value $command -Force | Out-Null
 
-[System.Windows.MessageBox]::Show(
-    "설치가 완료되었습니다.`n관리자 주문관리에서 'Bambu' 버튼을 누르면 Bambu Studio로 바로 열립니다.`n(처음 한 번은 브라우저가 열기 허용을 물어봅니다)",
-    'WOW3D'
-) | Out-Null
+    [System.Windows.MessageBox]::Show(
+        "설치가 완료되었습니다.`n관리자 주문관리에서 'Bambu' 버튼을 누르면 Bambu Studio로 바로 열립니다.`n(처음 한 번은 브라우저가 열기 허용을 물어봅니다)",
+        'WOW3D'
+    ) | Out-Null
+} catch {
+    [System.Windows.MessageBox]::Show("설치하지 못했습니다.`n$($_.Exception.Message)", 'WOW3D') | Out-Null
+    exit 1
+}
