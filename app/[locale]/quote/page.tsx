@@ -24,7 +24,10 @@ import { usePhotoHandoffStore } from "@/store/usePhotoHandoffStore";
 import { readMeshyActiveJobId, saveMeshyActiveJob } from "@/lib/meshy-active-job";
 import { takeInterruptedAnalysis } from "@/lib/analysis-inflight-marker";
 import ModelAnalyzingPanel from "@/components/quote/ModelAnalyzingPanel";
+import QuoteFileHealthCard, { thinHighlights, useQuoteThinState } from "@/components/quote/QuoteFileHealthCard";
 import { useQuoteFunnelTracking } from "@/hooks/useQuoteFunnelTracking";
+import { useQuoteFileHealth } from "@/hooks/useQuoteFileHealth";
+import { useQuoteFileHealthStore } from "@/store/useQuoteFileHealthStore";
 import { showToast } from "@/lib/toast-helper";
 import { getPhotoFileFromDataTransfer } from "@/lib/photo-file";
 import { MESHY_IMAGE_MAX_BYTES } from "@/lib/meshy";
@@ -101,13 +104,26 @@ function QuoteContent() {
         }));
     }, [t]);
     const { file, baseAnalysis, analysisError, reset, setFile } = useFileStore();
-    const analysis = baseAnalysis;
+    const searchParams = useSearchParams();
+    const loadQuoteId = searchParams.get('load_quote_id');
+    // 저장된 견적은 고객이 확정한 파일이므로 다시 고치지 않음
+    useQuoteFileHealth({ autoRepair: !loadQuoteId });
+    const healthDecidedFile = useQuoteFileHealthStore((s) => s.decidedFile);
+    const showThin = useQuoteFileHealthStore((s) => s.showThin);
+    const thinState = useQuoteThinState();
+    const viewerHighlights = useMemo(
+        () =>
+            showThin && thinState?.status === 'ok' && thinState.warn
+                ? thinHighlights(thinState.summary.thinPoints)
+                : null,
+        [showThin, thinState]
+    );
+    // 자동 리페어 여부가 정해지기 전엔 원본 기준 금액이 잠깐 보이지 않도록 분석 화면 유지
+    const analysis = file && healthDecidedFile === file ? baseAnalysis : null;
     const showQuotePanel = Boolean(file && analysis);
     const [step, setStep] = useState(1); // 1: Upload, 2: Configure
     // 모바일: 기본은 업로드 패널(견적 설정). 'viewer'만 보이면 FileUpload가 숨겨져 업로드 불가 이슈 발생
     const [activeTab, setActiveTab] = useState<'settings' | 'viewer'>('settings');
-    const searchParams = useSearchParams();
-    const loadQuoteId = searchParams.get('load_quote_id');
     const loadMeshyJobIdRaw = searchParams.get('meshy_job_id');
     const loadMeshyJobId = (() => {
         const n = Number(loadMeshyJobIdRaw);
@@ -259,12 +275,13 @@ function QuoteContent() {
         if (loadQuoteId) setEntryMode('file');
     }, [loadQuoteId]);
 
-    // Auto-switch to settings tab when analysis is complete
+    // 분석이 끝나는 순간에만 설정 탭으로 전환 — 이후 사용자가 뷰어 탭을 고르면 그대로 둠
+    const hadAnalysisRef = useRef(false);
     useEffect(() => {
-        if (analysis && activeTab === 'viewer') {
-            setActiveTab('settings');
-        }
-    }, [analysis, activeTab]);
+        const has = Boolean(analysis);
+        if (has && !hadAnalysisRef.current) setActiveTab('settings');
+        hadAnalysisRef.current = has;
+    }, [analysis]);
 
     // Load quote data if ID is present
     useEffect(() => {
@@ -557,6 +574,7 @@ function QuoteContent() {
                                                 {t('loadedQuoteHint')}
                                             </div>
                                         ) : null}
+                                        <QuoteFileHealthCard />
                                         <div className="relative">
                                             {analysisError ? (
                                                 <div className="mb-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-[11px] sm:text-xs font-bold text-amber-100/90 leading-relaxed break-keep">
@@ -720,7 +738,7 @@ function QuoteContent() {
                         <div className="flex-1 relative group min-h-[min(60dvh,560px)]">
                             <div className="absolute inset-0 z-0">
                                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><Loader2 className="w-12 h-12 text-teal-400/30 animate-spin" /></div>}>
-                                    <Scene />
+                                    <Scene highlights={viewerHighlights} />
                                 </Suspense>
                             </div>
                             {isViewerDragging ? (

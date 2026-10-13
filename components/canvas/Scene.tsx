@@ -94,7 +94,7 @@ function MeasurementTool() {
 
 type ModelType = 'stl' | 'obj' | '3mf' | 'ply' | 'step'
 
-const HIGHLIGHT_COLORS = { open: '#f43f5e', nonManifold: '#f59e0b', flipped: '#a855f7' }
+const HIGHLIGHT_COLORS = { open: '#f43f5e', nonManifold: '#f59e0b', flipped: '#a855f7', thin: '#38bdf8' }
 
 function bufferGeometryOf(values: Float32Array): THREE.BufferGeometry | null {
     if (values.length === 0) return null
@@ -112,6 +112,7 @@ function ProblemHighlights({ data }: { data: MeshHighlights }) {
             flipped: bufferGeometryOf(data.flippedEdges),
             holeCenters: bufferGeometryOf(data.holeCenters),
             nonManifoldPoints: bufferGeometryOf(data.nonManifoldPoints),
+            thinPoints: data.thinPoints ? bufferGeometryOf(data.thinPoints) : null,
         }),
         [data]
     )
@@ -127,10 +128,10 @@ function ProblemHighlights({ data }: { data: MeshHighlights }) {
                 <lineBasicMaterial color={color} depthTest={false} transparent opacity={0.95} />
             </lineSegments>
         ) : null
-    const points = (geo: THREE.BufferGeometry | null, color: string) =>
+    const points = (geo: THREE.BufferGeometry | null, color: string, size = 11) =>
         geo ? (
             <points geometry={geo} renderOrder={11}>
-                <pointsMaterial color={color} size={11} sizeAttenuation={false} depthTest={false} transparent opacity={0.9} />
+                <pointsMaterial color={color} size={size} sizeAttenuation={false} depthTest={false} transparent opacity={0.9} />
             </points>
         ) : null
     return (
@@ -140,6 +141,7 @@ function ProblemHighlights({ data }: { data: MeshHighlights }) {
             {line(geos.flipped, HIGHLIGHT_COLORS.flipped)}
             {points(geos.holeCenters, HIGHLIGHT_COLORS.open)}
             {points(geos.nonManifoldPoints, HIGHLIGHT_COLORS.nonManifold)}
+            {points(geos.thinPoints, HIGHLIGHT_COLORS.thin, 6)}
         </>
     )
 }

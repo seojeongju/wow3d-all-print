@@ -38,6 +38,8 @@ export type MeshHighlights = {
     holeCenters: Float32Array
     /** 비다양체 모서리 중점 */
     nonManifoldPoints: Float32Array
+    /** 기준보다 얇은 벽 표본 위치 (견적 화면) */
+    thinPoints?: Float32Array
 }
 
 /** 종류별 표시 상한 (아주 지저분한 파일에서 뷰어가 무거워지지 않게) */

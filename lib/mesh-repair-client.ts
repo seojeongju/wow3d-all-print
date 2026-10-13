@@ -22,7 +22,8 @@ export type MeshRepairResponse =
 
 const REPAIR_TIMEOUT_MS = 180_000
 
-function readArrays(geometry: THREE.BufferGeometry): { position: Float32Array; index: Uint32Array | null } {
+/** Worker로 넘길 수 있게 위치·인덱스를 일반 배열로 복사 */
+export function readGeometryArrays(geometry: THREE.BufferGeometry): { position: Float32Array; index: Uint32Array | null } {
     const pos = geometry.getAttribute('position')
     let position: Float32Array
     if (pos.array instanceof Float32Array && pos.itemSize === 3 && !('isInterleavedBufferAttribute' in pos)) {
@@ -47,7 +48,7 @@ function repairOnMainThread(req: Omit<MeshRepairRequest, 'id'>): MeshRepairJobRe
 }
 
 export function runMeshRepair(geometry: THREE.BufferGeometry, options: MeshRepairOptions): Promise<MeshRepairJobResult> {
-    const req = readArrays(geometry)
+    const req = readGeometryArrays(geometry)
     if (typeof Worker === 'undefined') return Promise.resolve().then(() => repairOnMainThread({ ...req, options }))
 
     return new Promise((resolve, reject) => {

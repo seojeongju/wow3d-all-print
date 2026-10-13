@@ -110,6 +110,26 @@ export const QNA_EN_BY_QUESTION: Record<string, { question: string; answer: stri
         answer:
             'Yes. Even if the model displays, thin walls, non-manifold meshes, bad faces, internal collisions, or hard-to-support structures can block printing. WOW3D can review the file and suggest fixes.',
     },
+    '깨진 STL 파일(구멍·뒤집힌 면)을 자동으로 고칠 수 있나요?': {
+        question: 'Can a broken STL file (holes, flipped faces) be fixed automatically?',
+        answer:
+            'Yes. Upload the file to the free WOW3D STL Checker (wow3dp.co.kr/en/stl-checker) and it color-marks holes, non-manifold edges and flipped faces in the 3D viewer. One click on "Run auto repair" fills holes, closes tiny gaps, removes duplicate and internal faces, unifies face orientation and removes tiny loose fragments. It works like the automatic repair in Bambu Studio or PrusaSlicer, and you can compare the before and after results in a table.',
+    },
+    '자동 리페어를 하면 파일이 서버로 전송되나요?': {
+        question: 'Is my file sent to a server during auto repair?',
+        answer:
+            'No. Checking and auto repair both run entirely in your browser, and the file is never sent to or stored on our servers. The file is only used for quoting and production if you choose "Get a quote for the repaired file".',
+    },
+    '리페어된 STL 파일은 어떻게 받나요? 비용이 드나요?': {
+        question: 'How do I get the repaired STL file? Does it cost anything?',
+        answer:
+            'Anyone can run auto repair for free, and downloading the repaired STL is free for logged-in members. Your repair result is kept when you return after logging in, and "Get a quote for the repaired file" takes you straight to auto-quote without re-uploading. The repaired file is saved as STL and your original file is not changed.',
+    },
+    '자동 리페어로 고칠 수 없는 오류도 있나요?': {
+        question: 'Are there errors auto repair cannot fix?',
+        answer:
+            'Self-intersecting faces, very thin walls, and holes that are too large or have tangled boundaries are not repaired automatically. Meshes with more than 2 million triangles are also too large for in-browser repair. You can still request a quote as is, and our team will review the file and fix it or suggest how to improve it.',
+    },
     '3D 파일 없이 3D 프린팅 견적을 받을 수 있나요?': {
         question: 'Can I get a 3D printing quote without a 3D file?',
         answer:

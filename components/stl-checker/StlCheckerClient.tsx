@@ -46,7 +46,7 @@ import {
     type MeshInspectOutcome,
     type MeshVerdict,
 } from '@/lib/mesh-inspect'
-import { meshRepairChanged } from '@/lib/mesh-repair'
+import { meshRepairChanged, repairedFileName } from '@/lib/mesh-repair'
 import { runMeshRepair } from '@/lib/mesh-repair-client'
 import { savePendingRepair, takePendingRepair, type PendingRepair } from '@/lib/stl-repair-pending'
 import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
@@ -92,11 +92,6 @@ const ISSUE_LEGEND = [
     { key: 'nonManifold', field: 'nonManifoldEdges', color: 'bg-amber-500' },
     { key: 'flipped', field: 'flippedEdges', color: 'bg-purple-500' },
 ] as const
-
-function repairedFileName(name: string): string {
-    const base = name.replace(/\.[^.]+$/, '')
-    return `${base}_repaired.stl`
-}
 
 function isRepairable(m: MeshInspection): boolean {
     return (

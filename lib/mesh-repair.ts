@@ -703,6 +703,33 @@ export function repairMesh(
     }
 }
 
+/** 리페어 파일 이름 — 관리자가 주문 파일에서 자동 리페어 여부를 알아볼 수 있게 접미사를 붙임 */
+export function repairedFileName(name: string): string {
+    const base = name.replace(/\.[^.]+$/, '')
+    return `${base}_repaired.stl`
+}
+
+/** 바이너리 STL의 경계 상자 크기 [x, y, z] */
+export function binaryStlSize(stl: ArrayBuffer): [number, number, number] | null {
+    if (stl.byteLength < 84) return null
+    const view = new DataView(stl)
+    const triangles = view.getUint32(80, true)
+    if (84 + triangles * 50 > stl.byteLength || triangles === 0) return null
+    const min = [Infinity, Infinity, Infinity]
+    const max = [-Infinity, -Infinity, -Infinity]
+    for (let t = 0; t < triangles; t++) {
+        const o = 84 + t * 50 + 12
+        for (let v = 0; v < 3; v++) {
+            for (let k = 0; k < 3; k++) {
+                const x = view.getFloat32(o + v * 12 + k * 4, true)
+                if (x < min[k]) min[k] = x
+                if (x > max[k]) max[k] = x
+            }
+        }
+    }
+    return [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
+}
+
 /** 삼각형 목록(9개 좌표씩) → 바이너리 STL */
 export function encodeBinaryStl(positions: Float32Array, header = 'WOW3D repaired STL'): ArrayBuffer {
     const triangles = Math.floor(positions.length / 9)
