@@ -22,8 +22,9 @@ export async function GET(request: NextRequest) {
         const storeId = storeIdParam ? parseInt(storeIdParam) : null;
         const tagParam = url.searchParams.get('tag');
         const tag = tagParam === 'photo-to-3d' ? 'photo-to-3d' as const : null;
+        const locale = url.searchParams.get('locale');
 
-        const result = await getPublicGallery({ page, limit, storeId, tag });
+        const result = await getPublicGallery({ page, limit, storeId, tag, locale });
 
         return NextResponse.json({
             success: true,

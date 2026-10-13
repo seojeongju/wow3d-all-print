@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
 import { cn } from '@/lib/utils';
 
@@ -565,6 +565,7 @@ function SkeletonCard({ className }: { className?: string }) {
 // ─────────────────────────────────────────────────────
 export default function GallerySection() {
     const t = useTranslations('Home.gallery');
+    const locale = useLocale();
     const scrollRef = useRef<HTMLDivElement>(null);
     const pausedRef = useRef(false);
     const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -621,7 +622,7 @@ export default function GallerySection() {
     useEffect(() => {
         async function fetchGallery() {
             try {
-                const res = await fetch(`/api/gallery?page=1&limit=24`);
+                const res = await fetch(`/api/gallery?page=1&limit=24&locale=${locale}`);
                 if (!res.ok) throw new Error('fetch failed');
                 const json = await res.json();
                 if (json.success && json.data.items) {
@@ -636,7 +637,7 @@ export default function GallerySection() {
             }
         }
         fetchGallery();
-    }, []);
+    }, [locale]);
 
     // 자동 좌측 슬라이드 (무한 루프)
     useEffect(() => {

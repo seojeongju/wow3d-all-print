@@ -2,7 +2,10 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { getPublishedQnas, localizeQnas } from '@/lib/qna'
 import { QNA_EN_BY_QUESTION } from '@/lib/qna-en'
 import { getShowcaseCategories } from '@/lib/showcase-public'
-import { getCustomProductList } from '@/lib/custom-products-public'
+import { getCustomProductList, localizeCustomProducts } from '@/lib/custom-products-public'
+import type { CustomProductPublic } from '@/lib/custom-products'
+import { localizeGalleryItems } from '@/lib/gallery-public'
+import { hasHangul } from '@/lib/content-translate-ai'
 import { parseFeaturesJson } from '@/lib/showcase'
 import { getAllPublishedNews } from '@/lib/news-public'
 import { NEWS_CATEGORY_LABEL_KO } from '@/lib/news'
@@ -98,9 +101,9 @@ async function loadShowcaseDocs(db: Db | undefined): Promise<SearchDoc[]> {
     return docs
 }
 
-async function loadProductDocs(): Promise<SearchDoc[]> {
+async function loadProductDocs(): Promise<{ ko: SearchDoc[]; en: SearchDoc[] }> {
     const products = await getCustomProductList()
-    return products.map((p) => ({
+    const toDoc = (p: CustomProductPublic): SearchDoc => ({
         id: `product:${p.slug}`,
         type: 'product',
         title: p.title,
@@ -109,7 +112,12 @@ async function loadProductDocs(): Promise<SearchDoc[]> {
         keywords: p.highlights,
         body: [stripHtml(p.description), stripHtml(p.detailBody), p.priceNote].join(' \n'),
         image: p.images[0] ?? null,
-    }))
+    })
+    // 영문 검색에는 이미 번역된 상품만 (검색 때문에 AI 번역을 돌리지 않음)
+    const en = (await localizeCustomProducts(products, 'en', { background: false }))
+        .filter((p) => !hasHangul(p.title))
+        .map(toDoc)
+    return { ko: products.map(toDoc), en }
 }
 
 async function loadNewsDocs(): Promise<SearchDoc[]> {
@@ -127,8 +135,8 @@ async function loadNewsDocs(): Promise<SearchDoc[]> {
     }))
 }
 
-async function loadGalleryDocs(db: Db | undefined): Promise<SearchDoc[]> {
-    if (!db) return []
+async function loadGalleryDocs(db: Db | undefined): Promise<{ ko: SearchDoc[]; en: SearchDoc[] }> {
+    if (!db) return { ko: [], en: [] }
     const { results } = await db
         .prepare(
             `SELECT id, title, description, material, print_method, tags, image_url
@@ -136,18 +144,21 @@ async function loadGalleryDocs(db: Db | undefined): Promise<SearchDoc[]> {
              ORDER BY created_at DESC LIMIT ${GALLERY_LIMIT}`
         )
         .all<GalleryRow>()
-    return (results ?? [])
-        .filter((r: GalleryRow) => r.title)
-        .map((r: GalleryRow) => ({
-            id: `gallery:${r.id}`,
-            type: 'gallery' as const,
-            title: r.title,
-            url: '/gallery',
-            summary: stripHtml(r.description),
-            keywords: [r.material, r.print_method, ...parseTags(r.tags)].filter((k): k is string => Boolean(k)),
-            image: r.image_url && /^(https?:)?\//.test(r.image_url) ? r.image_url : null,
-            boost: 0.8,
-        }))
+    const rows = (results ?? []).filter((r: GalleryRow) => r.title)
+    const toDoc = (r: GalleryRow): SearchDoc => ({
+        id: `gallery:${r.id}`,
+        type: 'gallery' as const,
+        title: r.title,
+        url: '/gallery',
+        summary: stripHtml(r.description),
+        keywords: [r.material, r.print_method, ...parseTags(r.tags)].filter((k): k is string => Boolean(k)),
+        image: r.image_url && /^(https?:)?\//.test(r.image_url) ? r.image_url : null,
+        boost: 0.8,
+    })
+    const en = (await localizeGalleryItems(rows, 'en', { background: false }))
+        .filter((r) => !hasHangul(r.title))
+        .map(toDoc)
+    return { ko: rows.map(toDoc), en }
 }
 
 async function settle<T>(p: Promise<T>, fallback: T, label: string): Promise<T> {
@@ -160,7 +171,7 @@ async function settle<T>(p: Promise<T>, fallback: T, label: string): Promise<T> 
 }
 
 /**
- * DB 기반 검색 문서. DB 원문은 한국어뿐이라 영문 검색에는 번역된 FAQ만 포함한다.
+ * DB 기반 검색 문서. DB 원문은 한국어뿐이라 영문 검색에는 번역된 FAQ·맞춤 상품·갤러리만 포함한다.
  */
 export async function getDynamicSearchDocs(locale: SearchLocale): Promise<SearchDoc[]> {
     if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache[locale]
@@ -176,15 +187,15 @@ export async function getDynamicSearchDocs(locale: SearchLocale): Promise<Search
     const [faq, showcase, products, gallery, news] = await Promise.all([
         settle(loadFaqDocs(), { ko: [], en: [] }, 'FAQ'),
         settle(loadShowcaseDocs(db), [], '쇼케이스'),
-        settle(loadProductDocs(), [], '맞춤 상품'),
-        settle(loadGalleryDocs(db), [], '갤러리'),
+        settle(loadProductDocs(), { ko: [], en: [] }, '맞춤 상품'),
+        settle(loadGalleryDocs(db), { ko: [], en: [] }, '갤러리'),
         settle(loadNewsDocs(), [], '최신 동향'),
     ])
 
     cache = {
         at: Date.now(),
-        ko: [...faq.ko, ...showcase, ...products, ...news, ...gallery],
-        en: faq.en,
+        ko: [...faq.ko, ...showcase, ...products.ko, ...news, ...gallery.ko],
+        en: [...faq.en, ...products.en, ...gallery.en],
     }
     return cache[locale]
 }

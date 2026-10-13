@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import type { CustomProductPublic } from '@/lib/custom-products'
 import { Loader2, Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import ContentTranslationPanel from '@/components/admin/ContentTranslationPanel'
 
 export default function AdminCustomProductsPage() {
     const { token } = useAuthStore()
@@ -80,6 +81,8 @@ export default function AdminCustomProductsPage() {
                     </Button>
                 </Link>
             </div>
+
+            <ContentTranslationPanel type="custom_product" />
 
             {loading ? (
                 <div className="flex justify-center py-20">

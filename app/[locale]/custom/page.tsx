@@ -73,7 +73,7 @@ export default async function CustomProductsPage({ params }: Props) {
     const locale = resolveLocale(localeParam)
     setRequestLocale(locale)
     const t = await getTranslations({ locale, namespace: 'CustomProducts' })
-    const products = await getCustomProductList()
+    const products = await getCustomProductList(locale)
 
     const hubPath = customPath(locale)
     const schemas = [

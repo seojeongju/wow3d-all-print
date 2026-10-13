@@ -9,8 +9,60 @@ import {
     type CustomProductOption,
     type CustomProductPublic,
 } from '@/lib/custom-products'
+import { localizeEntities, pickHangulFields, type LocalizeSpec } from '@/lib/content-translations'
+import { isProbablyHtml } from '@/lib/sanitize-html'
 
 const DEFAULT_STORE_ID = 1
+
+const NO_HTML_KEYS: ReadonlySet<string> = new Set()
+const DETAIL_HTML_KEYS: ReadonlySet<string> = new Set(['detailBody'])
+
+/** 번역 캐시 키 — DB 상품은 id, 시드 폴백은 slug */
+export function customProductTranslationId(p: Pick<CustomProductPublic, 'id' | 'slug'>): string {
+    return p.id != null && p.id > 0 ? String(p.id) : `seed_${p.slug}`
+}
+
+export const customProductTranslationSpec: LocalizeSpec<CustomProductPublic> = {
+    type: 'custom_product',
+    idOf: customProductTranslationId,
+    extract: (p) =>
+        pickHangulFields([
+            ['title', p.title],
+            ['summary', p.summary],
+            ['description', p.description],
+            ['detailBody', p.detailBody],
+            ['priceNote', p.priceNote],
+            ...p.options.flatMap((o, i): [string, string][] => [
+                [`options.${i}.label`, o.label],
+                ...o.choices.map((c, j): [string, string] => [`options.${i}.choices.${j}`, c]),
+            ]),
+            ...p.highlights.map((h, i): [string, string] => [`highlights.${i}`, h]),
+        ]),
+    htmlKeys: (p) => (isProbablyHtml(p.detailBody) ? DETAIL_HTML_KEYS : NO_HTML_KEYS),
+    apply: (p, tr) => ({
+        ...p,
+        title: tr.title ?? p.title,
+        summary: tr.summary ?? p.summary,
+        description: tr.description ?? p.description,
+        detailBody: tr.detailBody ?? p.detailBody,
+        priceNote: tr.priceNote ?? p.priceNote,
+        options: p.options.map((o, i) => ({
+            ...o,
+            label: tr[`options.${i}.label`] ?? o.label,
+            choices: o.choices.map((c, j) => tr[`options.${i}.choices.${j}`] ?? c),
+        })),
+        highlights: p.highlights.map((h, i) => tr[`highlights.${i}`] ?? h),
+    }),
+}
+
+/** 영문 요청이면 저장된 번역을 적용 (없으면 원문, 백그라운드로 번역) */
+export function localizeCustomProducts(
+    products: CustomProductPublic[],
+    locale: string | null | undefined,
+    options?: { background?: boolean }
+): Promise<CustomProductPublic[]> {
+    return localizeEntities(products, locale, customProductTranslationSpec, options)
+}
 
 type ProductRow = {
     id: number
@@ -111,7 +163,14 @@ function seedFallbackList(includeInactive = false): CustomProductPublic[] {
 }
 
 /** 공개 목록 (활성만) */
-export async function getCustomProductList(): Promise<CustomProductPublic[]> {
+export async function getCustomProductList(
+    locale?: string | null,
+    options?: { background?: boolean }
+): Promise<CustomProductPublic[]> {
+    return localizeCustomProducts(await loadCustomProductList(), locale, options)
+}
+
+async function loadCustomProductList(): Promise<CustomProductPublic[]> {
     try {
         const { env } = await getCloudflareContext({ async: true })
         if (!env?.DB) return seedFallbackList()
@@ -140,8 +199,16 @@ export async function getCustomProductList(): Promise<CustomProductPublic[]> {
 
 /** 공개 상세 */
 export async function getCustomProductBySlug(
-    slug: string
+    slug: string,
+    locale?: string | null
 ): Promise<CustomProductPublic | null> {
+    const product = await loadCustomProductBySlug(slug)
+    if (!product) return null
+    const [localized] = await localizeCustomProducts([product], locale)
+    return localized
+}
+
+async function loadCustomProductBySlug(slug: string): Promise<CustomProductPublic | null> {
     const normalized = (() => {
         let s = String(slug || '').trim()
         for (let i = 0; i < 2; i++) {

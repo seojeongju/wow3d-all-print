@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     setRequestLocale(locale)
     const slug = normalizeCustomProductSlug(slugRaw)
 
-    const product = await getCustomProductBySlug(slug)
+    const product = await getCustomProductBySlug(slug, locale)
     if (!product) {
         return { title: 'Not Found' }
     }
@@ -83,7 +83,7 @@ export default async function CustomProductDetailPage({ params }: Props) {
     setRequestLocale(locale)
 
     const slug = normalizeCustomProductSlug(slugRaw)
-    const product = await getCustomProductBySlug(slug)
+    const product = await getCustomProductBySlug(slug, locale)
     if (!product) notFound()
 
     const t = await getTranslations({ locale, namespace: 'CustomProducts' })

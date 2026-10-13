@@ -28,12 +28,12 @@ export default async function GalleryPage({ params, searchParams }: Props) {
 
     const { tag, id } = await searchParams
     const galleryTag = tag === 'photo-to-3d' ? ('photo-to-3d' as const) : null
-    const result = await getPublicGallery({ page: 1, limit: ITEMS_PER_PAGE, tag: galleryTag })
+    const result = await getPublicGallery({ page: 1, limit: ITEMS_PER_PAGE, tag: galleryTag, locale })
     const initialItemId = id?.trim() || null
 
     let seedItems = result.items as GalleryItem[]
     if (initialItemId && !seedItems.some((i) => String(i.id) === String(initialItemId))) {
-        const one = await getPublicGalleryItemById(initialItemId)
+        const one = await getPublicGalleryItemById(initialItemId, locale)
         if (one) seedItems = [one as GalleryItem, ...seedItems]
     }
 

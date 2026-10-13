@@ -8,10 +8,11 @@ import { insertGalleryExtraImage } from '@/lib/gallery-images';
 type Params = { params: Promise<{ id: string }> };
 
 /** GET /api/gallery/[id] — 공개 갤러리 단일 항목 */
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
     try {
         const { id } = await params;
-        const item = await getPublicGalleryItemById(decodeURIComponent(id));
+        const locale = request.nextUrl.searchParams.get('locale');
+        const item = await getPublicGalleryItemById(decodeURIComponent(id), locale);
         if (!item) {
             return NextResponse.json({ error: '갤러리 항목을 찾을 수 없습니다' }, { status: 404 });
         }

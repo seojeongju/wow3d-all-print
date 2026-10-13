@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Grid3X3, Loader2, Box, ChevronLeft, ChevronRight, Home } from 'lucide-react'
 import { Link, useRouter } from '@/i18n/navigation'
@@ -25,6 +25,7 @@ export default function GalleryPageClient({
     initialItemId = null,
 }: GalleryPageClientProps) {
     const t = useTranslations('Gallery')
+    const locale = useLocale()
     const router = useRouter()
     const searchParams = useSearchParams()
     const [items, setItems] = useState<GalleryItem[]>(initialItems)
@@ -41,7 +42,7 @@ export default function GalleryPageClient({
         setLoading(true)
         try {
             const tagQuery = tag === 'photo-to-3d' ? '&tag=photo-to-3d' : ''
-            const res = await fetch(`/api/gallery?page=${p}&limit=${ITEMS_PER_PAGE}${tagQuery}`)
+            const res = await fetch(`/api/gallery?page=${p}&limit=${ITEMS_PER_PAGE}${tagQuery}&locale=${locale}`)
             if (res.ok) {
                 const json = await res.json()
                 if (json.success) {
@@ -107,7 +108,7 @@ export default function GalleryPageClient({
             if (/^\d+$/.test(idStr)) {
                 void (async () => {
                     try {
-                        const res = await fetch(`/api/gallery/${encodeURIComponent(idStr)}`)
+                        const res = await fetch(`/api/gallery/${encodeURIComponent(idStr)}?locale=${locale}`)
                         const json = await res.json()
                         if (res.ok && json.success && json.data) {
                             const full = json.data as GalleryItem
@@ -122,7 +123,7 @@ export default function GalleryPageClient({
                 })()
             }
         },
-        [replaceGalleryQuery, searchParams],
+        [replaceGalleryQuery, searchParams, locale],
     )
 
     const closeItem = useCallback(() => {
@@ -146,7 +147,7 @@ export default function GalleryPageClient({
                 let cancelled = false
                 void (async () => {
                     try {
-                        const res = await fetch(`/api/gallery/${encodeURIComponent(String(idFromUrl))}`)
+                        const res = await fetch(`/api/gallery/${encodeURIComponent(String(idFromUrl))}?locale=${locale}`)
                         const json = await res.json()
                         if (!cancelled && res.ok && json.success && json.data) {
                             const full = json.data as GalleryItem
@@ -175,7 +176,7 @@ export default function GalleryPageClient({
         let cancelled = false
         void (async () => {
             try {
-                const res = await fetch(`/api/gallery/${encodeURIComponent(idFromUrl)}`)
+                const res = await fetch(`/api/gallery/${encodeURIComponent(idFromUrl)}?locale=${locale}`)
                 const json = await res.json()
                 if (!cancelled && res.ok && json.success && json.data) {
                     setSelectedItem(json.data as GalleryItem)

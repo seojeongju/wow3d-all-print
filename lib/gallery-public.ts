@@ -1,5 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { isPhotoTo3DGalleryTag } from '@/lib/photo-to-3d-showcase';
+import { localizeEntities, pickHangulFields, type LocalizeSpec } from '@/lib/content-translations';
 import {
     buildGalleryImageUrls,
     loadGalleryExtraImagesByItemIds,
@@ -28,6 +29,62 @@ export type PublicGalleryResult = {
 };
 
 type GalleryDbRow = PublicGalleryItem & { id: number };
+
+/** 번역 대상 텍스트 필드 (목록·검색 행 공통) */
+export type GalleryTextFields = {
+    id: string | number;
+    title: string;
+    description?: string | null;
+    material?: string | null;
+    tags?: string | null;
+};
+
+function parseTagList(raw: string | null | undefined): string[] {
+    if (!raw) return [];
+    try {
+        const v = JSON.parse(raw);
+        return Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string') : [];
+    } catch {
+        return [];
+    }
+}
+
+function gallerySpec<T extends GalleryTextFields>(): LocalizeSpec<T> {
+    return {
+        type: 'gallery',
+        idOf: (it) => String(it.id),
+        extract: (it) =>
+            pickHangulFields([
+                ['title', it.title],
+                ['description', it.description],
+                ['material', it.material],
+                ...parseTagList(it.tags).map((t, i): [string, string] => [`tags.${i}`, t]),
+            ]),
+        apply: (it, tr) => {
+            const tags = parseTagList(it.tags);
+            return {
+                ...it,
+                title: tr.title ?? it.title,
+                description: tr.description ?? it.description,
+                material: tr.material ?? it.material,
+                tags: tags.length > 0 ? JSON.stringify(tags.map((t, i) => tr[`tags.${i}`] ?? t)) : it.tags,
+            };
+        },
+    };
+}
+
+/** 영문 요청이면 저장된 번역을 적용 (없으면 원문, 백그라운드로 번역) */
+export function localizeGalleryItems<T extends GalleryTextFields>(
+    items: T[],
+    locale: string | null | undefined,
+    options?: { background?: boolean }
+): Promise<T[]> {
+    return localizeEntities(items, locale, gallerySpec<T>(), options);
+}
+
+export function getGalleryTranslationSpec(): LocalizeSpec<PublicGalleryItem> {
+    return gallerySpec<PublicGalleryItem>();
+}
 
 function cleanText(text: string) {
     if (!text) return '';
@@ -198,6 +255,7 @@ export async function getPublicGallery(options?: {
     limit?: number;
     storeId?: number | null;
     tag?: 'photo-to-3d' | null;
+    locale?: string | null;
 }): Promise<PublicGalleryResult> {
     const page = Math.max(1, options?.page ?? 1);
     const limit = Math.min(50, Math.max(4, options?.limit ?? 8));
@@ -270,18 +328,26 @@ export async function getPublicGallery(options?: {
     const total = merged.length;
     const pageItems = merged.slice(offset, offset + limit);
     const withImages = await attachExtraImages(pageItems);
+    const localized = await localizeGalleryItems(withImages, options?.locale);
 
     return {
-        items: withImages,
+        items: localized,
         pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     };
 }
 
 /** 공개 갤러리 단일 항목 (딥링크·홈 슬라이더 클릭용) */
 export async function getPublicGalleryItemById(
-    id: string | number
+    id: string | number,
+    locale?: string | null
 ): Promise<PublicGalleryItem | null> {
-    const idStr = String(id).trim();
+    const item = await findPublicGalleryItem(String(id).trim());
+    if (!item) return null;
+    const [localized] = await localizeGalleryItems([item], locale);
+    return localized;
+}
+
+async function findPublicGalleryItem(idStr: string): Promise<PublicGalleryItem | null> {
     if (!idStr) return null;
 
     try {
@@ -308,4 +374,19 @@ export async function getPublicGalleryItemById(
 
     const all = await getPublicGallery({ page: 1, limit: 50 });
     return all.items.find((item) => String(item.id) === idStr) ?? null;
+}
+
+/** 관리자 일괄 번역용 — 공개 중인 갤러리 전체 (DB + 외부 연동) */
+export async function getAllPublicGalleryTextItems(db: {
+    prepare(q: string): { all<R>(): Promise<{ results?: R[] }> };
+}): Promise<PublicGalleryItem[]> {
+    const res = await db
+        .prepare(
+            `SELECT id, title, description, material, tags, image_url, created_at
+             FROM gallery_items WHERE is_visible = 1
+             ORDER BY created_at DESC, sort_order DESC`
+        )
+        .all<PublicGalleryItem>();
+    const remote = await getRemoteGalleryItemsCached();
+    return [...(res.results ?? []), ...remote];
 }

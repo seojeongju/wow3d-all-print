@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Image as ImageIcon, Loader2, Trash2, Edit2, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import ContentTranslationPanel from '@/components/admin/ContentTranslationPanel';
 import {
     Dialog,
     DialogContent,
@@ -366,6 +367,8 @@ export default function AdminGalleryPage() {
                     <Plus className="w-4 h-4" /> 갤러리 업로드
                 </Button>
             </div>
+
+            <ContentTranslationPanel type="gallery" />
 
             {/* 필터 섹션 */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
