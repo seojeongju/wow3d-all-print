@@ -377,3 +377,242 @@
   background-color: transparent !important;
   background: transparent !important;
 }
+/* ── 히어로 메뉴 마우스 오버 모션 (components/home/Hero.tsx) ── */
+@property --hero-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.hero-glow-teal {
+  --hero-glow: rgba(45, 212, 191, 0.22);
+  --hero-glow-strong: rgba(94, 234, 212, 0.95);
+}
+
+.hero-glow-indigo {
+  --hero-glow: rgba(129, 140, 248, 0.24);
+  --hero-glow-strong: rgba(165, 180, 252, 0.95);
+}
+
+/* 메인 선택 카드 — 커서를 따라 기울고(--rx/--ry), 빛이 따라다님(--mx/--my) */
+.hero-tilt {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  --lift: 0px;
+  --scale: 1;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift)) scale(var(--scale));
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.hero-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: -1; /* .hero-tilt(transform)가 쌓임 맥락이라 카드 배경 위, 글자 아래에 깔림 */
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle 240px at var(--mx) var(--my), var(--hero-glow), transparent 70%);
+  transition: opacity 0.3s ease;
+}
+
+/* 테두리를 따라 도는 빛 */
+.hero-tilt::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--hero-angle), transparent 0 68%, var(--hero-glow-strong) 84%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* CTA 버튼 위로 지나가는 광택 */
+.hero-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-130%) skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  pointer-events: none;
+}
+
+.hero-tilt:focus-visible {
+  --lift: -4px;
+  --scale: 1.02;
+}
+
+.hero-tilt:focus-visible .hero-spotlight,
+.hero-tilt:focus-visible::before {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-tilt:hover {
+    --lift: -4px;
+    --scale: 1.02;
+  }
+
+  .hero-tilt:hover .hero-spotlight {
+    opacity: 1;
+  }
+
+  .hero-tilt:hover::before {
+    opacity: 1;
+    animation: hero-border-spin 2.4s linear infinite;
+  }
+
+  .hero-tilt:hover .hero-shine::after {
+    animation: hero-shine 0.9s ease-out 0.1s;
+  }
+
+  /* 한 카드에 올리면 옆 카드는 한발 물러남 */
+  .hero-fork:has(> .hero-tilt:hover) > .hero-tilt:not(:hover) {
+    --scale: 0.98;
+    opacity: 0.6;
+  }
+
+  /* 사진 카드 반짝이 */
+  .group:hover .hero-twinkle {
+    animation: hero-twinkle 1.1s ease-in-out infinite;
+  }
+
+  /* 보조 메뉴 아이콘별 모션 */
+  .group:hover .hero-icon-flash {
+    animation: hero-flash 0.9s ease-out;
+  }
+
+  .group:hover .hero-icon-pop {
+    animation: hero-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .group:hover .hero-scan-line {
+    animation: hero-scan 1s ease-in-out infinite;
+  }
+
+  /* 드롭존: 점선이 흐르고 업로드 아이콘이 떠오름 */
+  .group:hover .hero-dash-flow {
+    opacity: 1;
+  }
+
+  .group:hover .hero-dash-flow rect {
+    animation: hero-dash 1.2s linear infinite;
+  }
+
+  .group:hover .hero-bob {
+    animation: hero-bob 1.4s ease-in-out infinite;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hero-tilt:active {
+    --scale: 0.98;
+  }
+}
+
+.hero-twinkle {
+  opacity: 0;
+}
+
+.hero-scan-line {
+  opacity: 0;
+}
+
+.hero-dash-flow {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hero-dash-flow rect {
+  fill: none;
+  stroke-width: 3;
+  stroke-dasharray: 10 8;
+}
+
+/* 하단 텍스트 링크: 밑줄이 왼쪽에서 오른쪽으로 그려짐 */
+.hero-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 0.3s ease;
+}
+
+.group:hover .hero-underline,
+.group:focus-visible .hero-underline {
+  background-size: 100% 1px;
+}
+
+@keyframes hero-border-spin {
+  to { --hero-angle: 360deg; }
+}
+
+@keyframes hero-shine {
+  to { transform: translateX(230%) skewX(-20deg); }
+}
+
+@keyframes hero-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(20deg); }
+}
+
+@keyframes hero-flash {
+  0% { filter: drop-shadow(0 0 0 rgba(253, 224, 71, 0)); }
+  35% { filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.95)); color: rgb(254, 240, 138); }
+  100% { filter: drop-shadow(0 0 0 rgba(253, 224, 71, 0)); }
+}
+
+@keyframes hero-pop {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-3px) scale(1.15); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes hero-scan {
+  0% { opacity: 0; transform: translateY(-9px); }
+  20%, 80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(9px); }
+}
+
+@keyframes hero-dash {
+  to { stroke-dashoffset: -36; }
+}
+
+@keyframes hero-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* 동작 줄이기: 기울기·흐름 모션은 끄고 색 변화만 유지 */
+@media (prefers-reduced-motion: reduce) {
+  .hero-tilt {
+    transform: none !important;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+
+  .hero-tilt::before,
+  .hero-shine::after,
+  .hero-twinkle,
+  .hero-icon-flash,
+  .hero-icon-pop,
+  .hero-scan-line,
+  .hero-dash-flow rect,
+  .hero-bob {
+    animation: none !important;
+  }
+}
