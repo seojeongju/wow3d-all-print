@@ -1,3 +1,5 @@
+import { formatKoreanDateISO } from '@/lib/date-utils';
+
 export const CONVERSION_EVENT_CATEGORY = {
     HERO: 'hero',
     QUOTE: 'quote',
@@ -255,9 +257,7 @@ export function buildConversionFunnelTrend(
     const byDate = new Map<string, ConversionFunnelTrendPoint>();
 
     for (let i = dayCount - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().slice(0, 10);
+        const key = formatKoreanDateISO(new Date(Date.now() - i * 86_400_000));
         byDate.set(key, {
             date: key,
             heroView: 0,

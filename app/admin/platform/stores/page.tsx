@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Plus, Store as StoreIcon, ExternalLink } from 'lucide-react';
+import { formatKoreanDate } from '@/lib/date-utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -113,7 +114,7 @@ export default function StoreManagementPage() {
                                     <td className="p-4 font-mono text-yellow-500">{store.slug}</td>
                                     <td className="p-4">{store.owner_id ? `User #${store.owner_id}` : '-'}</td>
                                     <td className="p-4 uppercase text-xs font-bold text-white/50">{store.plan}</td>
-                                    <td className="p-4 text-white/30 text-xs">{new Date(store.created_at).toLocaleDateString()}</td>
+                                    <td className="p-4 text-white/30 text-xs">{formatKoreanDate(store.created_at)}</td>
                                     <td className="p-4 text-right">
                                         <Button
                                             variant="ghost" size="sm"

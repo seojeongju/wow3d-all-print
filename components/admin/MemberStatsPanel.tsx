@@ -177,7 +177,7 @@ export default function MemberStatsPanel({ token }: Props) {
                     <p className="text-[10px] text-white/30 leading-relaxed">
                         관리자 페이지 접속은 제외됩니다.
                         {online?.checkedAt
-                            ? ` 마지막 확인 ${new Date(online.checkedAt).toLocaleTimeString('ko-KR')}`
+                            ? ` 마지막 확인 ${new Date(online.checkedAt).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' })}`
                             : ''}
                     </p>
                 </CardContent>

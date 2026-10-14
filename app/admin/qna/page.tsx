@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Search, Loader2, Plus, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react'
+import { formatKoreanDate } from '@/lib/date-utils'
 import { showToast } from '@/lib/toast-helper'
 import { useAuthStore } from '@/store/useAuthStore'
 import AdminListPagination from '@/components/admin/AdminListPagination'
@@ -354,7 +355,7 @@ export default function AdminQnAPage() {
                       )}
                     </td>
                     <td className="p-4 text-white/30 text-xs">
-                      {new Date(q.created_at).toLocaleDateString('ko-KR')}
+                      {formatKoreanDate(q.created_at)}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">

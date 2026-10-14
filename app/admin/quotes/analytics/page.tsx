@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
-import { format } from 'date-fns';
+import { formatKoreanPattern } from '@/lib/date-utils';
 import QuoteEstimateLogsPanel from '@/components/admin/QuoteEstimateLogsPanel';
 import { formatTrafficSourceLabel } from '@/lib/quote-attribution';
 
@@ -359,7 +359,7 @@ export default function QuoteAnalyticsPage() {
                 </p>
             </td>
             <td className="p-4">{opts?.nested ? <span className="text-[10px] text-white/25">└ 포함 파일</span> : renderCustomerCell(item)}</td>
-            <td className="p-4 text-white/50 text-xs">{format(new Date(item.created_at), 'yy/MM/dd HH:mm')}</td>
+            <td className="p-4 text-white/50 text-xs">{formatKoreanPattern(item.created_at, 'yy/MM/dd HH:mm')}</td>
             <td className="p-4 text-right">{renderActions(item, 'opacity-0 group-hover:opacity-100 transition-opacity')}</td>
         </tr>
     );
@@ -430,7 +430,7 @@ export default function QuoteAnalyticsPage() {
                     </td>
                     <td className="p-4">{renderCustomerCell(primary)}</td>
                     <td className="p-4 text-white/50 text-xs">
-                        {format(new Date(primary.created_at), 'yy/MM/dd HH:mm')}
+                        {formatKoreanPattern(primary.created_at, 'yy/MM/dd HH:mm')}
                         <span className="block text-[9px] text-white/25">최근 업로드</span>
                     </td>
                     <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>

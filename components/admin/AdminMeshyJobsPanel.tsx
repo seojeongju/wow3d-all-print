@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { formatKoreanDateTime } from '@/lib/date-utils'
 import {
     Dialog,
     DialogContent,
@@ -580,7 +581,7 @@ export default function AdminMeshyJobsPanel({ token }: Props) {
                                                 #{j.id}
                                             </span>
                                             <span className="text-[9px] text-white/40 whitespace-nowrap">
-                                                {j.createdAt}
+                                                {formatKoreanDateTime(j.createdAt)}
                                             </span>
                                         </div>
                                         <p className="text-[10px] font-bold text-white/80 truncate">

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Loader2, Plus, Pencil, Trash2, Mail, Info } from 'lucide-react';
+import { formatKoreanDate } from '@/lib/date-utils';
 import {
     Dialog,
     DialogContent,
@@ -210,7 +211,7 @@ export default function EmailTemplatesPage() {
                                     </div>
                                 </div>
                                 <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] text-white/30">
-                                    <span>업데이트: {new Date(template.updated_at).toLocaleDateString('ko-KR')}</span>
+                                    <span>업데이트: {formatKoreanDate(template.updated_at)}</span>
                                     {template.html_content && <span>HTML 지원</span>}
                                 </div>
                             </CardContent>

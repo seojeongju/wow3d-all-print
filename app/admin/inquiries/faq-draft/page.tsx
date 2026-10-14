@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Search, Loader2, Sparkles, HelpCircle, ArrowRight } from 'lucide-react'
+import { formatKoreanDate } from '@/lib/date-utils'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 import AdminListPagination from '@/components/admin/AdminListPagination'
@@ -341,9 +342,7 @@ export default function AdminFaqDraftPage() {
                           <span>{CATEGORY_LABELS[String(inq.category || '')] || '-'}</span>
                           <span>·</span>
                           <span>
-                            {inq.created_at
-                              ? new Date(String(inq.created_at)).toLocaleDateString('ko-KR')
-                              : '-'}
+                            {formatKoreanDate(inq.created_at ? String(inq.created_at) : null)}
                           </span>
                         </div>
                       </button>

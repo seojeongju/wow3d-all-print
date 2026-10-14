@@ -42,7 +42,7 @@ export async function GET(
             SELECT COUNT(*) AS cnt
             FROM traffic_logs
             WHERE LOWER(TRIM(source)) = LOWER(TRIM(?))
-              AND created_at >= date('now', ?)
+              AND created_at >= datetime(date('now', '+9 hours', ?), '-9 hours')
             `
         )
             .bind(source, since)
@@ -55,7 +55,7 @@ export async function GET(
             SELECT COALESCE(NULLIF(TRIM(medium), ''), 'none') AS label, COUNT(*) AS count
             FROM traffic_logs
             WHERE LOWER(TRIM(source)) = LOWER(TRIM(?))
-              AND created_at >= date('now', ?)
+              AND created_at >= datetime(date('now', '+9 hours', ?), '-9 hours')
             GROUP BY label
             ORDER BY count DESC
             LIMIT 20
@@ -69,7 +69,7 @@ export async function GET(
             SELECT COALESCE(NULLIF(TRIM(campaign), ''), '(없음)') AS label, COUNT(*) AS count
             FROM traffic_logs
             WHERE LOWER(TRIM(source)) = LOWER(TRIM(?))
-              AND created_at >= date('now', ?)
+              AND created_at >= datetime(date('now', '+9 hours', ?), '-9 hours')
             GROUP BY label
             ORDER BY count DESC
             LIMIT 20
@@ -83,7 +83,7 @@ export async function GET(
             SELECT COALESCE(NULLIF(TRIM(path), ''), '/') AS label, COUNT(*) AS count
             FROM traffic_logs
             WHERE LOWER(TRIM(source)) = LOWER(TRIM(?))
-              AND created_at >= date('now', ?)
+              AND created_at >= datetime(date('now', '+9 hours', ?), '-9 hours')
             GROUP BY label
             ORDER BY count DESC
             LIMIT 20
@@ -97,7 +97,7 @@ export async function GET(
             SELECT referrer_url, COUNT(*) AS count
             FROM traffic_logs
             WHERE LOWER(TRIM(source)) = LOWER(TRIM(?))
-              AND created_at >= date('now', ?)
+              AND created_at >= datetime(date('now', '+9 hours', ?), '-9 hours')
             GROUP BY referrer_url
             ORDER BY count DESC
             LIMIT 30
@@ -122,7 +122,7 @@ export async function GET(
             SELECT created_at, medium, campaign, referrer_url, path
             FROM traffic_logs
             WHERE LOWER(TRIM(source)) = LOWER(TRIM(?))
-              AND created_at >= date('now', ?)
+              AND created_at >= datetime(date('now', '+9 hours', ?), '-9 hours')
             ORDER BY created_at DESC
             LIMIT 15
             `

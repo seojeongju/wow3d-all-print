@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { buildAdminUsersXlsx, type AdminUserExportRow } from '@/lib/admin-users-xlsx'
+import { kstTodayISO } from '@/lib/date-utils'
 
 function likePattern(raw: string): string {
     const t = raw.trim().replace(/[%_\\]/g, '')
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
         const rows = (results || []) as AdminUserExportRow[]
         const buffer = await buildAdminUsersXlsx(rows)
 
-        const date = new Date().toISOString().slice(0, 10)
+        const date = kstTodayISO()
         const fileName = `wow3d-users-${date}.xlsx`
 
         return new NextResponse(buffer, {

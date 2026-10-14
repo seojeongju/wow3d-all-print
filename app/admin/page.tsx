@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
     Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
+import { formatKoreanDateTimeShort } from '@/lib/date-utils';
 import {
     DollarSign,
     ShoppingBag,
@@ -513,14 +514,7 @@ export default function AdminDashboard() {
                                                             </span>
                                                         </div>
                                                         <span className="mt-0.5 block truncate text-[9px] font-medium text-white/30">
-                                                            {o.createdAt
-                                                                ? new Date(o.createdAt).toLocaleString('ko-KR', {
-                                                                      month: 'short',
-                                                                      day: 'numeric',
-                                                                      hour: '2-digit',
-                                                                      minute: '2-digit',
-                                                                  })
-                                                                : '-'}
+                                                            {formatKoreanDateTimeShort(o.createdAt)}
                                                         </span>
                                                     </div>
                                                 </div>

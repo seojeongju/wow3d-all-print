@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Search, Loader2, Eye, Paperclip, Sparkles, MailWarning, Send, RotateCw, Mail, MonitorSmartphone, History, X, FileText, Download } from 'lucide-react'
+import { formatKoreanDate } from '@/lib/date-utils'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -80,7 +81,7 @@ type PendingReplyFile = {
 function renamePastedImage(file: File): File {
   if (!/^image\.(png|jpe?g|gif|webp)$/i.test(file.name)) return file
   const ext = file.name.split('.').pop() || 'png'
-  const stamp = new Date().toLocaleTimeString('ko-KR', { hour12: false }).replace(/:/g, '')
+  const stamp = new Date().toLocaleTimeString('ko-KR', { hour12: false, timeZone: 'Asia/Seoul' }).replace(/:/g, '')
   return new File([file], `캡처_${stamp}_${Math.random().toString(36).slice(2, 6)}.${ext}`, { type: file.type })
 }
 
@@ -781,7 +782,7 @@ export default function AdminInquiriesPage() {
                       </div>
                     </td>
                     <td className="p-4 text-white/50">
-                      {inq.created_at ? new Date(String(inq.created_at)).toLocaleDateString('ko-KR') : '-'}
+                      {formatKoreanDate(inq.created_at ? String(inq.created_at) : null)}
                     </td>
                     <td className="p-4">
                       <Select

@@ -1,7 +1,7 @@
 'use client';
 
 import { correctDisplayAmount } from '@/lib/amount-display';
-import { formatKoreanDate } from '@/lib/date-utils';
+import { formatKoreanDate, formatKoreanDateTime, kstTodayISO } from '@/lib/date-utils';
 import {
     formatQuoteGuideContext,
     formatQuotePrintSettings,
@@ -365,7 +365,7 @@ function OrderListInner() {
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `wow3d-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.download = `wow3d-orders-${kstTodayISO()}.csv`;
             a.click();
             URL.revokeObjectURL(a.href);
             toast({ title: `CSV 다운로드 완료 (${rows.length}건)` });
@@ -1039,7 +1039,7 @@ function OrderListInner() {
                                     <div className="col-span-2">
                                         <span className="text-[10px] font-bold text-white/40 uppercase">견적서 발송 일시</span>
                                         <p className="text-emerald-400/90 text-sm">
-                                            {new Date(String(detailData.order.quotation_sent_at)).toLocaleString('ko-KR')}
+                                            {formatKoreanDateTime(String(detailData.order.quotation_sent_at))}
                                         </p>
                                     </div>
                                 )}

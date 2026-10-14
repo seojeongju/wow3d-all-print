@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, Sparkles, Gift, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react'
+import { formatKoreanDateTime } from '@/lib/date-utils'
 import { useAuthStore } from '@/store/useAuthStore'
 import { showToast } from '@/lib/toast-helper'
 import AdminMeshyUserPicker, { type MeshyUserOption } from '@/components/admin/AdminMeshyUserPicker'
@@ -428,7 +429,7 @@ export default function AdminMeshyPage() {
                                                     ) : null}
                                                 </td>
                                                 <td className="py-2 pr-3">{j.credits_used ?? '-'}</td>
-                                                <td className="py-2 pr-3 whitespace-nowrap">{j.created_at}</td>
+                                                <td className="py-2 pr-3 whitespace-nowrap">{formatKoreanDateTime(j.created_at)}</td>
                                             </tr>
                                         )
                                     })}

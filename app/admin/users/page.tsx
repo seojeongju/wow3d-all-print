@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, Users, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { formatKoreanDate, kstTodayISO } from '@/lib/date-utils';
 import { showToast } from '@/lib/toast-helper';
 import { useAuthStore } from '@/store/useAuthStore';
 import MemberStatsPanel from '@/components/admin/MemberStatsPanel';
@@ -191,7 +192,7 @@ export default function AdminUsersPage() {
             const m = /filename\*=UTF-8''([^;]+)|filename="([^"]+)"/i.exec(cd);
             const fileName = m
                 ? decodeURIComponent(m[1] || m[2] || '')
-                : `wow3d-users-${new Date().toISOString().slice(0, 10)}.xlsx`;
+                : `wow3d-users-${kstTodayISO()}.xlsx`;
 
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -390,7 +391,7 @@ export default function AdminUsersPage() {
                                         <td className="p-4">{getRoleBadge(u.role || 'user')}</td>
                                         <td className="p-4">{getStageBadge(u)}</td>
                                         <td className="p-4 text-white/50">
-                                            {u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '-'}
+                                            {formatKoreanDate(u.created_at)}
                                         </td>
                                         <td className="p-4 text-right">
                                             <Select

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Loader2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatKoreanDateTimeShort } from '@/lib/date-utils';
 import {
     Dialog,
     DialogContent,
@@ -323,14 +324,7 @@ export default function TrafficSourcePanel({ sources, token, dayCount = 30 }: Pr
                                                 {detail.recentSamples.map((row, i) => (
                                                     <tr key={i} className="border-b border-white/5 last:border-0">
                                                         <td className="px-3 py-2 text-white/50 whitespace-nowrap">
-                                                            {row.createdAt
-                                                                ? new Date(row.createdAt).toLocaleString('ko-KR', {
-                                                                      month: 'short',
-                                                                      day: 'numeric',
-                                                                      hour: '2-digit',
-                                                                      minute: '2-digit',
-                                                                  })
-                                                                : '-'}
+                                                            {formatKoreanDateTimeShort(row.createdAt)}
                                                         </td>
                                                         <td className="px-3 py-2 text-white/70">
                                                             {trafficMediumLabel(row.medium)}

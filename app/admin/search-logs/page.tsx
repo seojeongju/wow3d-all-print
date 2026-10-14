@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import { formatKoreanPattern } from '@/lib/date-utils';
 import { ChevronLeft, ChevronRight, ExternalLink, Loader2, MousePointerClick, SearchX, TextSearch, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,11 +41,6 @@ const SOURCE_LABEL: Record<string, string> = {
     modal: '빠른 검색',
     robot: '안내로봇',
 };
-
-/** DB 저장값은 UTC(datetime('now')) */
-function parseUtc(s: string): Date {
-    return new Date(s.includes('T') ? s : `${s.replace(' ', 'T')}Z`);
-}
 
 function percent(part: number, total: number): string {
     return total > 0 ? `${Math.round((part / total) * 100)}%` : '-';
@@ -225,7 +220,7 @@ export default function AdminSearchLogsPage() {
                                                         <td className="py-2 text-right text-white/80">{q.count}</td>
                                                         <td className="py-2 text-right text-white/60">{q.visitors}</td>
                                                         <td className="py-2 text-right text-white/50">
-                                                            {q.last_at ? format(parseUtc(q.last_at), 'MM.dd HH:mm') : '-'}
+                                                            {formatKoreanPattern(q.last_at, 'MM.dd HH:mm')}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -283,7 +278,7 @@ export default function AdminSearchLogsPage() {
                                             <tbody>
                                                 {data.recent.map((r) => (
                                                     <tr key={r.id} className="border-t border-white/5">
-                                                        <td className="py-2 text-white/45 whitespace-nowrap">{format(parseUtc(r.created_at), 'MM.dd HH:mm')}</td>
+                                                        <td className="py-2 text-white/45 whitespace-nowrap">{formatKoreanPattern(r.created_at, 'MM.dd HH:mm')}</td>
                                                         <td className="py-2 font-bold text-white">
                                                             {r.query}
                                                             {r.locale === 'en' && <span className="ml-1.5 text-[10px] text-white/40">EN</span>}

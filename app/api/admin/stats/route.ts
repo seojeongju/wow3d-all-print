@@ -28,6 +28,11 @@ import {
     STATS_RANGE,
     statsSqlOffsetDays,
 } from '@/lib/admin-stats-range';
+import { kstDateSql, kstStartUtcSql } from '@/lib/date-utils';
+
+/** 이번 달/지난 달 1일 00:00 KST (UTC 컬럼 비교용) */
+const KST_MONTH_START = kstStartUtcSql("'start of month'");
+const KST_LAST_MONTH_START = kstStartUtcSql("'start of month'", "'-1 month'");
 
 const STORE_ORDERS = '(o.store_id = ? OR o.store_id IS NULL)';
 const STORE_INQUIRIES = '(store_id = ? OR store_id IS NULL)';
@@ -74,7 +79,7 @@ export async function GET(req: NextRequest) {
     const granularity = parseStatsGranularity(req.nextUrl.searchParams.get('granularity'));
     const rangeMeta = STATS_RANGE[granularity];
     const sqlOffset = statsSqlOffsetDays(granularity);
-    const sinceExpr = `date('now', '-${sqlOffset} days')`;
+    const sinceExpr = kstStartUtcSql(`'-${sqlOffset} days'`);
 
     try {
         let totalSalesThisMonth = 0;
@@ -86,9 +91,9 @@ export async function GET(req: NextRequest) {
         try {
             const agg = await env.DB.prepare(`
             SELECT 
-                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month') THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_this_month,
-                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month','-1 month') AND o.created_at < date('now','start of month') THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_last_month,
-                SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= ${KST_MONTH_START} THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_this_month,
+                COALESCE(SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= ${KST_LAST_MONTH_START} AND o.created_at < ${KST_MONTH_START} THEN ${ORDER_SALES_AMOUNT} ELSE 0 END), 0) as total_sales_last_month,
+                SUM(CASE WHEN o.status != 'cancelled' AND o.created_at >= ${KST_MONTH_START} THEN 1 ELSE 0 END) as new_orders_count,
                 SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
             FROM orders o
             WHERE ${STORE_ORDERS}
@@ -103,9 +108,9 @@ export async function GET(req: NextRequest) {
             try {
                 const agg = await env.DB.prepare(`
                 SELECT 
-                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_this_month,
-                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_last_month,
-                    SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= ${KST_MONTH_START} THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_this_month,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= ${KST_LAST_MONTH_START} AND created_at < ${KST_MONTH_START} THEN ${ORDER_SALES_AMOUNT_PLAIN} ELSE 0 END), 0) as total_sales_last_month,
+                    SUM(CASE WHEN status != 'cancelled' AND created_at >= ${KST_MONTH_START} THEN 1 ELSE 0 END) as new_orders_count,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
                 FROM orders
             `).first() as Record<string, unknown> | null;
@@ -116,9 +121,9 @@ export async function GET(req: NextRequest) {
             } catch {
                 const agg = await env.DB.prepare(`
                 SELECT 
-                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_this_month,
-                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month','-1 month') AND created_at < date('now','start of month') THEN total_amount ELSE 0 END), 0) as total_sales_last_month,
-                    SUM(CASE WHEN status != 'cancelled' AND created_at >= date('now','start of month') THEN 1 ELSE 0 END) as new_orders_count,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= ${KST_MONTH_START} THEN total_amount ELSE 0 END), 0) as total_sales_this_month,
+                    COALESCE(SUM(CASE WHEN status != 'cancelled' AND created_at >= ${KST_LAST_MONTH_START} AND created_at < ${KST_MONTH_START} THEN total_amount ELSE 0 END), 0) as total_sales_last_month,
+                    SUM(CASE WHEN status != 'cancelled' AND created_at >= ${KST_MONTH_START} THEN 1 ELSE 0 END) as new_orders_count,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders_count
                 FROM orders
             `).first() as Record<string, unknown> | null;
@@ -142,7 +147,7 @@ export async function GET(req: NextRequest) {
                 .bind(storeId)
                 .first() as { c: number } | null;
             const userNew = await env.DB.prepare(`
-                SELECT COUNT(*) as c FROM users WHERE ${STORE_USERS} AND created_at >= date('now','start of month')
+                SELECT COUNT(*) as c FROM users WHERE ${STORE_USERS} AND created_at >= ${KST_MONTH_START}
             `)
                 .bind(storeId)
                 .first() as { c: number } | null;
@@ -151,7 +156,7 @@ export async function GET(req: NextRequest) {
         } catch {
             const userTotal = await env.DB.prepare('SELECT COUNT(*) as c FROM users').first() as { c: number } | null;
             const userNew = await env.DB.prepare(`
-                SELECT COUNT(*) as c FROM users WHERE created_at >= date('now','start of month')
+                SELECT COUNT(*) as c FROM users WHERE created_at >= ${KST_MONTH_START}
             `).first() as { c: number } | null;
             totalUsers = Number(userTotal?.c ?? 0);
             newSignupsCount = Number(userNew?.c ?? 0);
@@ -168,7 +173,7 @@ export async function GET(req: NextRequest) {
         const trendSql = (storeFilter: boolean, useExpertAmount: boolean) => {
             const amountExpr = useExpertAmount ? ORDER_SALES_AMOUNT : 'o.total_amount';
             return `
-            SELECT date(o.created_at) as d,
+            SELECT ${kstDateSql('o.created_at')} as d,
                 SUM(CASE WHEN o.status != 'cancelled' THEN 1 ELSE 0 END) as order_count,
                 COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN ${amountExpr} ELSE 0 END), 0) as amount,
                 COALESCE(SUM(CASE
@@ -406,7 +411,7 @@ export async function GET(req: NextRequest) {
 
         try {
             const { results: visitorRows } = await env.DB.prepare(`
-                SELECT date(created_at) as d,
+                SELECT ${kstDateSql('created_at')} as d,
                     COUNT(*) as page_views,
                     COUNT(DISTINCT session_id) as unique_sessions,
                     COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN session_id END) as member_sessions,
@@ -459,7 +464,7 @@ export async function GET(req: NextRequest) {
 
         try {
             const { results: funnelRows } = await env.DB.prepare(`
-                SELECT date(q.created_at) as d,
+                SELECT ${kstDateSql('q.created_at')} as d,
                     COUNT(*) as total_quotes,
                     SUM(CASE WHEN EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id) THEN 1 ELSE 0 END) as ordered_cnt,
                     SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.quote_id = q.id)
@@ -608,13 +613,13 @@ export async function GET(req: NextRequest) {
                 quoteConversionEvents.filter((r) => r.eventName.startsWith('quote_')),
             );
 
-            // 추이 버킷: 일/주/월 단위로 DISTINCT 세션을 직접 집계 (일별 합산 과대 방지)
+            // 추이 버킷: 일/주/월 단위로 DISTINCT 세션을 직접 집계 (일별 합산 과대 방지, KST 기준)
             const trendDateExpr =
                 granularity === 'month'
-                    ? `date(created_at, 'start of month')`
+                    ? `date(created_at, '+9 hours', 'start of month')`
                     : granularity === 'week'
-                      ? `date(created_at, '-' || ((cast(strftime('%w', created_at) as integer) + 6) % 7) || ' days')`
-                      : `date(created_at)`;
+                      ? `date(created_at, '+9 hours', '-' || ((cast(strftime('%w', created_at, '+9 hours') as integer) + 6) % 7) || ' days')`
+                      : kstDateSql('created_at');
 
             const { results: dailyRows } = await env.DB.prepare(
                 `

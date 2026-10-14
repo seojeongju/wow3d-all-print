@@ -10,6 +10,7 @@ import {
     subMonths,
     subWeeks,
 } from 'date-fns'
+import { kstTodayISO } from '@/lib/date-utils'
 import type { SalesTrendPoint } from '@/lib/sales-trend'
 import type { VisitorTrendPoint } from '@/lib/visitor-trend'
 import type { ConversionFunnelTrendPoint } from '@/lib/conversion-events'
@@ -110,7 +111,8 @@ function emptyFunnel(date: string): ConversionFunnelTrendPoint {
 }
 
 function bucketDates(g: StatsGranularity): string[] {
-    const end = new Date()
+    // 서버(UTC)·브라우저 시간대와 무관하게 오늘 KST 달력 날짜 기준
+    const end = parseISO(kstTodayISO())
     if (g === 'week') {
         const start = startOfWeek(subWeeks(end, STATS_RANGE.week.bucketCount - 1), {
             weekStartsOn: 1,

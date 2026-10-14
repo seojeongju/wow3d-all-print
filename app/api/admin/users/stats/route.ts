@@ -7,6 +7,7 @@ import {
     statsSqlOffsetDays,
     type CountTrendPoint,
 } from '@/lib/admin-stats-range';
+import { kstDateSql, kstStartUtcSql } from '@/lib/date-utils';
 
 /**
  * GET /api/admin/users/stats - 회원 가입 추이 (관리자 전용)
@@ -25,16 +26,16 @@ export async function GET(req: NextRequest) {
         const offsetDays = statsSqlOffsetDays(granularity);
         const sinceExpr =
             granularity === 'month'
-                ? `date('now','start of month','-11 months')`
+                ? kstStartUtcSql("'start of month'", "'-11 months'")
                 : granularity === 'week'
-                  ? `date('now','-${offsetDays + 6} days')`
-                  : `date('now','-${offsetDays} days')`;
+                  ? kstStartUtcSql(`'-${offsetDays + 6} days'`)
+                  : kstStartUtcSql(`'-${offsetDays} days'`);
 
         const { results } = (await env.DB.prepare(
-            `SELECT date(created_at) AS d, COUNT(*) AS c
+            `SELECT ${kstDateSql('created_at')} AS d, COUNT(*) AS c
              FROM users
              WHERE store_id = ? AND created_at >= ${sinceExpr}
-             GROUP BY date(created_at)
+             GROUP BY d
              ORDER BY d ASC`
         )
             .bind(storeId)
@@ -47,11 +48,11 @@ export async function GET(req: NextRequest) {
         const summary = (await env.DB.prepare(
             `SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN created_at >= date('now') THEN 1 ELSE 0 END) AS today,
-                SUM(CASE WHEN created_at >= date('now','-6 days') THEN 1 ELSE 0 END) AS last7,
-                SUM(CASE WHEN created_at >= date('now','start of month') THEN 1 ELSE 0 END) AS this_month,
-                SUM(CASE WHEN created_at >= date('now','start of month','-1 month')
-                          AND created_at < date('now','start of month') THEN 1 ELSE 0 END) AS last_month
+                SUM(CASE WHEN created_at >= ${kstStartUtcSql()} THEN 1 ELSE 0 END) AS today,
+                SUM(CASE WHEN created_at >= ${kstStartUtcSql("'-6 days'")} THEN 1 ELSE 0 END) AS last7,
+                SUM(CASE WHEN created_at >= ${kstStartUtcSql("'start of month'")} THEN 1 ELSE 0 END) AS this_month,
+                SUM(CASE WHEN created_at >= ${kstStartUtcSql("'start of month'", "'-1 month'")}
+                          AND created_at < ${kstStartUtcSql("'start of month'")} THEN 1 ELSE 0 END) AS last_month
              FROM users
              WHERE store_id = ?`
         )

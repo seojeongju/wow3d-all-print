@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { format } from 'date-fns';
+import { formatKoreanPattern } from '@/lib/date-utils';
 import { Box, ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,11 +58,6 @@ const FILTERS: { id: FilterKey; label: string }[] = [
 const PAGE_SIZE = 12;
 const MAX_PAGE_BUTTONS = 5;
 const SEARCH_DEBOUNCE_MS = 400;
-
-/** DB 저장값은 UTC(datetime('now')) */
-function parseUtc(s: string): Date {
-    return new Date(s.includes('T') ? s : `${s.replace(' ', 'T')}Z`);
-}
 
 function formatSize(bytes: number): string {
     if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
@@ -269,7 +264,7 @@ export default function QuoteEstimateLogsPanel() {
                                         )}
                                     </p>
                                     <p className="text-[10px] text-white/30">
-                                        {format(parseUtc(item.updated_at), 'yy/MM/dd HH:mm')}
+                                        {formatKoreanPattern(item.updated_at, 'yy/MM/dd HH:mm')}
                                         {item.change_count > 0 ? ` · 조건 변경 ${item.change_count}회` : ''}
                                         {item.guide_source ? ` · 가이드 유입` : ''}
                                     </p>
