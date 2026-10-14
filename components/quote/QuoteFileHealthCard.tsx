@@ -2,7 +2,26 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { AlertTriangle, CheckCircle2, Eye, EyeOff, Loader2, Undo2, Wrench } from 'lucide-react'
+import {
+    AlertTriangle,
+    CheckCircle2,
+    ChevronRight,
+    CircleDashed,
+    Copy,
+    Droplets,
+    Eye,
+    EyeOff,
+    FileWarning,
+    FlipVertical2,
+    Layers,
+    Link2,
+    Loader2,
+    Maximize2,
+    Ruler,
+    Undo2,
+    Wrench,
+    type LucideIcon,
+} from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
 import { useFileStore } from '@/store/useFileStore'
@@ -20,6 +39,9 @@ export const MIN_WALL_MM: Record<PrintMethodKey, number> = { fdm: 1.0, sla: 0.6,
 /** 측정 잡음·모서리 끝 표본을 경고로 올리지 않도록 최소 개수·비율을 함께 요구 */
 const THIN_WARN_MIN_COUNT = 10
 const THIN_WARN_MIN_RATIO = 0.003
+
+/** 이보다 얇은 값은 겹친 면·두께 없는 면에서 나온 측정값이라 "미만"으로만 표시 */
+const THINNEST_DISPLAY_FLOOR_MM = 0.05
 
 const EMPTY = new Float32Array(0)
 
@@ -60,6 +82,40 @@ export function thinHighlights(points: Float32Array): MeshHighlights {
 
 function formatMm(v: number): string {
     return v >= 1 ? v.toFixed(1) : v.toFixed(2)
+}
+
+/** 원본 → 자동 리페어 → 견적·출력 흐름의 한 단계 */
+function FlowStep({ icon: Icon, label, sub, tone }: { icon: LucideIcon; label: string; sub: string; tone: string }) {
+    return (
+        <li className="flex min-w-0 flex-1 flex-col items-center gap-1 text-center">
+            <span className={cn('flex h-9 w-9 items-center justify-center rounded-full border', tone)}>
+                <Icon className="h-4 w-4" aria-hidden />
+            </span>
+            <span className="text-[11px] font-black leading-tight text-white break-keep">{label}</span>
+            <span className="text-[10px] font-bold leading-tight text-white/50 break-keep">{sub}</span>
+        </li>
+    )
+}
+
+/** 표면 중 얇은 부분 비율 도넛 */
+function RatioRing({ percent }: { percent: number }) {
+    const r = 24
+    const c = 2 * Math.PI * r
+    return (
+        <svg viewBox="0 0 60 60" className="h-16 w-16 shrink-0 -rotate-90" aria-hidden>
+            <circle cx="30" cy="30" r={r} fill="none" strokeWidth="7" className="stroke-white/10" />
+            <circle
+                cx="30"
+                cy="30"
+                r={r}
+                fill="none"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray={`${(Math.min(percent, 100) / 100) * c} ${c}`}
+                className="stroke-amber-400"
+            />
+        </svg>
+    )
 }
 
 export default function QuoteFileHealthCard() {
@@ -104,44 +160,82 @@ export default function QuoteFileHealthCard() {
         }
     }
 
-    const fixes: string[] = []
+    const fixes: { key: string; icon: LucideIcon; count: number; unit: 'unitSpots' | 'unitFaces' }[] = []
     if (repair) {
         const r = repair.report
-        if (r.holesFilled > 0) fixes.push(t('fixHoles', { count: r.holesFilled }))
-        if (r.stitchedVertices > 0) fixes.push(t('fixStitched', { count: r.stitchedVertices }))
-        if (r.internalFacesRemoved > 0) fixes.push(t('fixInternal', { count: r.internalFacesRemoved }))
+        if (r.holesFilled > 0) fixes.push({ key: 'statHoles', icon: CircleDashed, count: r.holesFilled, unit: 'unitSpots' })
+        if (r.stitchedVertices > 0) fixes.push({ key: 'statStitched', icon: Link2, count: r.stitchedVertices, unit: 'unitSpots' })
+        if (r.internalFacesRemoved > 0) fixes.push({ key: 'statInternal', icon: Layers, count: r.internalFacesRemoved, unit: 'unitFaces' })
         if (r.duplicateRemoved + r.degenerateRemoved > 0) {
-            fixes.push(t('fixDuplicates', { count: r.duplicateRemoved + r.degenerateRemoved }))
+            fixes.push({ key: 'statDuplicates', icon: Copy, count: r.duplicateRemoved + r.degenerateRemoved, unit: 'unitFaces' })
         }
-        if (r.flippedFixed > 0) fixes.push(t('fixFlipped', { count: r.flippedFixed }))
+        if (r.flippedFixed > 0) fixes.push({ key: 'statFlipped', icon: FlipVertical2, count: r.flippedFixed, unit: 'unitFaces' })
     }
+    const fixTotal = fixes.reduce((sum, f) => sum + f.count, 0)
 
     return (
         <div className="space-y-3">
             {viewingRepaired && repair ? (
-                <div className="rounded-2xl border border-teal-400/30 bg-teal-500/10 px-4 py-3.5 space-y-2.5">
+                <div className="rounded-2xl border border-teal-400/30 bg-teal-500/10 px-4 py-3.5 space-y-3">
                     <div className="flex items-start gap-2.5">
-                        <Wrench className="w-4 h-4 mt-0.5 shrink-0 text-teal-300" aria-hidden />
-                        <div className="min-w-0 space-y-1">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-400/20 text-teal-300">
+                            <Wrench className="h-3.5 w-3.5" aria-hidden />
+                        </span>
+                        <div className="min-w-0 space-y-0.5">
                             <p className="text-xs sm:text-sm font-black text-white break-keep">{t('repairedTitle')}</p>
-                            <p className="text-[11px] sm:text-xs font-bold text-teal-100/80 leading-relaxed break-keep">
+                            <p className="text-[11px] sm:text-xs font-bold text-teal-100/70 leading-relaxed break-keep">
                                 {t('repairedDesc')}
                             </p>
                         </div>
                     </div>
+
+                    {/* 처리 흐름 */}
+                    <ol className="flex items-start rounded-xl border border-white/10 bg-black/20 px-2 py-2.5">
+                        <FlowStep
+                            icon={FileWarning}
+                            label={t('flowOriginal')}
+                            sub={t('flowOriginalSub')}
+                            tone="border-amber-300/40 bg-amber-400/15 text-amber-200"
+                        />
+                        <ChevronRight className="mt-2.5 h-4 w-4 shrink-0 text-white/30" aria-hidden />
+                        <FlowStep
+                            icon={Wrench}
+                            label={t('flowRepair')}
+                            sub={fixTotal > 0 ? t('flowRepairSub', { count: fixTotal }) : t('flowRepairSubDone')}
+                            tone="border-teal-300/50 bg-teal-400/20 text-teal-200"
+                        />
+                        <ChevronRight className="mt-2.5 h-4 w-4 shrink-0 text-white/30" aria-hidden />
+                        <FlowStep
+                            icon={CheckCircle2}
+                            label={t('flowQuote')}
+                            sub={t('flowQuoteSub')}
+                            tone="border-emerald-300/50 bg-emerald-400/20 text-emerald-200"
+                        />
+                    </ol>
+
+                    {/* 수정 항목별 수치 */}
                     {fixes.length > 0 ? (
-                        <ul className="flex flex-wrap gap-1.5 pl-6">
-                            {fixes.map((fix) => (
+                        <ul className="grid grid-cols-2 gap-1.5">
+                            {fixes.map(({ key, icon: Icon, count, unit }) => (
                                 <li
-                                    key={fix}
-                                    className="rounded-full border border-teal-300/25 bg-teal-400/10 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-teal-100/90"
+                                    key={key}
+                                    className="flex items-center gap-2 rounded-xl border border-teal-300/20 bg-teal-400/[0.07] px-2.5 py-2"
                                 >
-                                    {fix}
+                                    <Icon className="h-4 w-4 shrink-0 text-teal-300" aria-hidden />
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-black leading-none text-white tabular-nums">
+                                            {t(unit, { count })}
+                                        </p>
+                                        <p className="mt-1 text-[10px] font-bold leading-tight text-teal-100/70 break-keep">
+                                            {t(key)}
+                                        </p>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
                     ) : null}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-6">
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                         <button
                             type="button"
                             onClick={() => switchTo(repair.original, true)}
@@ -192,48 +286,13 @@ export default function QuoteFileHealthCard() {
             ) : null}
 
             {thin?.status === 'ok' && thin.warn ? (
-                <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3.5 space-y-2.5">
-                    <div className="flex items-start gap-2.5">
-                        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-300" aria-hidden />
-                        <div className="min-w-0 space-y-1">
-                            <p className="text-xs sm:text-sm font-black text-white break-keep">
-                                {t('thinTitle', { method: thin.method.toUpperCase(), min: formatMm(thin.minWallMm) })}
-                            </p>
-                            <p className="text-[11px] sm:text-xs font-bold text-amber-100/80 leading-relaxed break-keep">
-                                {t('thinDesc', {
-                                    ratio: Math.max(1, Math.round(thin.summary.thinRatio * 100)),
-                                    min: formatMm(thin.minWallMm),
-                                    thinnest: formatMm(thin.summary.minMm ?? 0),
-                                })}
-                            </p>
-                            <p className="text-[11px] sm:text-xs font-bold text-white/55 leading-relaxed break-keep">
-                                {thin.method === 'fdm' ? t('thinAdviceFdm') : t('thinAdviceResin')}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-6">
-                        <button
-                            type="button"
-                            onClick={() => setShowThin(!showThin)}
-                            aria-pressed={showThin}
-                            className={cn(
-                                'inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-[11px] sm:text-xs font-black transition-colors',
-                                showThin
-                                    ? 'border-sky-300/50 bg-sky-400 text-slate-900'
-                                    : 'border-sky-400/30 bg-sky-400/15 text-sky-200 hover:bg-sky-400/25'
-                            )}
-                        >
-                            {showThin ? <EyeOff className="w-3.5 h-3.5" aria-hidden /> : <Eye className="w-3.5 h-3.5" aria-hidden />}
-                            {showThin ? t('thinHide') : t('thinShow')}
-                        </button>
-                        <Link
-                            href="/guides/minimum-wall-thickness"
-                            className="text-[11px] sm:text-xs font-black text-amber-200/90 hover:text-amber-100"
-                        >
-                            {t('thinGuide')} →
-                        </Link>
-                    </div>
-                </div>
+                <ThinWallCard
+                    method={thin.method}
+                    minWallMm={thin.minWallMm}
+                    summary={thin.summary}
+                    showThin={showThin}
+                    onToggleThin={() => setShowThin(!showThin)}
+                />
             ) : null}
 
             {thin?.status === 'ok' && !thin.warn ? (
@@ -242,6 +301,138 @@ export default function QuoteFileHealthCard() {
                     {t('thinOk', { method: thin.method.toUpperCase(), min: formatMm(thin.minWallMm) })}
                 </div>
             ) : null}
+        </div>
+    )
+}
+
+function ThinWallCard({
+    method,
+    minWallMm,
+    summary,
+    showThin,
+    onToggleThin,
+}: {
+    method: PrintMethodKey
+    minWallMm: number
+    summary: ThicknessSummary
+    showThin: boolean
+    onToggleThin: () => void
+}) {
+    const t = useTranslations('Quote.health')
+    const percent = Math.max(1, Math.round(summary.thinRatio * 100))
+    const thinnest = summary.minMm ?? 0
+    const thinnestLabel =
+        thinnest < THINNEST_DISPLAY_FLOOR_MM
+            ? t('thinThinnestBelow', { value: formatMm(THINNEST_DISPLAY_FLOOR_MM) })
+            : t('thinThinnestValue', { value: formatMm(thinnest) })
+    // 게이지는 0 ~ 권장 두께의 2배, 권장 두께가 가운데
+    const gaugeMax = minWallMm * 2
+    const markerPos = Math.min(Math.max(thinnest / gaugeMax, 0), 1) * 100
+
+    const remedies: { key: string; icon: LucideIcon }[] = [
+        { key: 'thinFixThicken', icon: Ruler },
+        { key: 'thinFixScale', icon: Maximize2 },
+        ...(method === 'fdm' ? [{ key: 'thinFixResin', icon: Droplets }] : []),
+    ]
+
+    return (
+        <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3.5 space-y-3">
+            <div className="flex items-start gap-2.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
+                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+                </span>
+                <div className="min-w-0 space-y-1">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm font-black text-white break-keep">
+                        {t('thinTitle')}
+                        <span className="rounded-full border border-amber-300/30 bg-amber-400/15 px-2 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-100">
+                            {t('thinStandard', { method: method.toUpperCase(), min: formatMm(minWallMm) })}
+                        </span>
+                    </p>
+                    <p className="text-[11px] sm:text-xs font-bold text-amber-100/75 leading-relaxed break-keep">{t('thinRisk')}</p>
+                </div>
+            </div>
+
+            {/* 얇은 비율 + 두께 게이지 */}
+            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+                <div className="relative flex shrink-0 flex-col items-center">
+                    <div className="relative">
+                        <RatioRing percent={percent} />
+                        <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-white tabular-nums">
+                            {percent}%
+                        </span>
+                    </div>
+                    <span className="mt-1 max-w-[4.5rem] text-center text-[10px] font-bold leading-tight text-white/55 break-keep">
+                        {t('thinRatioLabel')}
+                    </span>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-end justify-between gap-2">
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-white/50">{t('thinGaugeThinnest')}</p>
+                            <p className="text-sm font-black text-rose-200 tabular-nums">{thinnestLabel}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-bold text-white/50">{t('thinGaugeMin')}</p>
+                            <p className="text-sm font-black text-emerald-200 tabular-nums">{formatMm(minWallMm)}mm</p>
+                        </div>
+                    </div>
+                    <div className="relative h-2.5 rounded-full">
+                        <div className="absolute inset-y-0 left-0 w-1/2 rounded-l-full bg-gradient-to-r from-rose-500/80 to-amber-400/80" />
+                        <div className="absolute inset-y-0 right-0 w-1/2 rounded-r-full bg-emerald-400/60" />
+                        <div className="absolute left-1/2 top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80" />
+                        <div
+                            className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-rose-300 bg-slate-950 shadow-[0_0_10px_rgba(251,113,133,0.7)]"
+                            style={{ left: `${markerPos}%` }}
+                        />
+                    </div>
+                    <div className="relative mt-1.5 h-3 text-[10px] font-bold text-white/40 tabular-nums">
+                        <span className="absolute left-0">0</span>
+                        <span className="absolute left-1/2 -translate-x-1/2">{formatMm(minWallMm)}</span>
+                        <span className="absolute right-0">{formatMm(gaugeMax)}mm</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* 해결 방법 */}
+            <div className="space-y-1.5">
+                <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white/45">{t('thinFixesTitle')}</p>
+                <ul className={cn('grid gap-1.5', remedies.length === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
+                    {remedies.map(({ key, icon: Icon }) => (
+                        <li
+                            key={key}
+                            className="flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1.5 py-2 text-center"
+                        >
+                            <Icon className="h-4 w-4 text-amber-200" aria-hidden />
+                            <span className="text-[10px] sm:text-[11px] font-black leading-tight text-white/85 break-keep">{t(key)}</span>
+                        </li>
+                    ))}
+                </ul>
+                <p className="text-[10px] sm:text-[11px] font-bold text-white/45 break-keep">{t('thinReview')}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <button
+                    type="button"
+                    onClick={onToggleThin}
+                    aria-pressed={showThin}
+                    className={cn(
+                        'inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-[11px] sm:text-xs font-black transition-colors',
+                        showThin
+                            ? 'border-sky-300/50 bg-sky-400 text-slate-900'
+                            : 'border-sky-400/30 bg-sky-400/15 text-sky-200 hover:bg-sky-400/25'
+                    )}
+                >
+                    {showThin ? <EyeOff className="w-3.5 h-3.5" aria-hidden /> : <Eye className="w-3.5 h-3.5" aria-hidden />}
+                    {showThin ? t('thinHide') : t('thinShow')}
+                </button>
+                <Link
+                    href="/guides/minimum-wall-thickness"
+                    className="text-[11px] sm:text-xs font-black text-amber-200/90 hover:text-amber-100"
+                >
+                    {t('thinGuide')} →
+                </Link>
+            </div>
         </div>
     )
 }
