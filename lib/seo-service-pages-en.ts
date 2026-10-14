@@ -187,6 +187,26 @@ export const SERVICE_LANDINGS_EN: ServiceLandingConfig[] = [
                 q: 'What should I check in a graduation project file?',
                 a: 'Units (mm), wall thickness, mesh errors, split needs, and support placement.',
             },
+            {
+                q: 'Can I print without a 3D file?',
+                a: 'Yes. Create an AI 3D model from a product photo (JPG/PNG) and continue to auto-quote and order. For precise dimensions or drawings, request 3D modeling to get a print-ready file.',
+            },
+            {
+                q: 'Which process suits display pieces vs. working demos?',
+                a: 'For presentation and display appearance, consider SLA/DLP resin; for structure and working demos, FDM. You can also split parts across processes and assemble them.',
+            },
+            {
+                q: 'What if my piece is too large for the printer?',
+                a: 'Pieces larger than the build volume are split, printed, and assembled. See the large-print splitting guide for split lines and joining.',
+            },
+            {
+                q: 'Can I order several project files at once?',
+                a: 'Yes. Add multiple files to the cart and order together — the minimum order amount applies once per process and material (separately for different materials).',
+            },
+            {
+                q: 'Can you handle painting and other finishing?',
+                a: 'Sanding, painting, and curing options can be selected at the quote stage. Finishing can extend production time, so leave room in your schedule.',
+            },
         ],
         primaryCta: { label: 'Get a graduation quote', href: '/quote' },
         secondaryCta: {
@@ -197,6 +217,7 @@ export const SERVICE_LANDINGS_EN: ServiceLandingConfig[] = [
             { href: '/services/capstone', title: 'Capstone design prototyping' },
             { href: '/guides/graduation-project-checklist', title: 'Graduation checklist' },
             { href: '/guides/3d-printing-turnaround-time', title: 'Turnaround time' },
+            { href: '/guides/splitting-large-3d-prints', title: 'Splitting large prints' },
         ],
     },
     {

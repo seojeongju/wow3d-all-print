@@ -12,6 +12,18 @@ import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { pickServiceWorkPhotos } from '@/lib/seo-work-photos'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
+import {
+    InfoChecklist,
+    InfoDocs,
+    InfoFaq,
+    InfoHeroStats,
+    InfoMatch,
+    InfoProcess,
+    InfoScope,
+    InfoTeam,
+    InfoTimeline,
+} from '@/components/seo/ServiceInfographics'
+import { getServiceInfographic } from '@/lib/service-infographics'
 import { Link, getPathname } from '@/i18n/navigation'
 import type { AppLocale } from '@/i18n/routing'
 
@@ -24,6 +36,7 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
     const t = await getTranslations({ locale, namespace: 'ServiceChrome' })
     const showcaseItems =
         config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems(locale) : null
+    const info = getServiceInfographic(config.slug, locale)
 
     const faqItems: QnAItem[] = config.faqs.map((f, i) => ({
         id: i + 1,
@@ -100,22 +113,32 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                             </Link>
                         )}
                     </div>
+                    {info ? <InfoHeroStats stats={info.stats} /> : null}
                 </div>
             </section>
 
             <section className="py-16">
                 <div className="container mx-auto px-6 max-w-5xl space-y-14">
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-black mb-6">{t('suitableHeading')}</h2>
-                        <ul className="space-y-4">
-                            {config.bullets.map((b) => (
-                                <li key={b} className="flex items-start gap-3 text-white/75 break-keep">
-                                    <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
-                                    <span className="font-medium leading-relaxed">{b}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    {info ? (
+                        <>
+                            <InfoScope scope={info.scope} />
+                            <InfoProcess process={info.process} />
+                            <InfoTimeline timeline={info.timeline} />
+                            <InfoMatch match={info.match} />
+                        </>
+                    ) : (
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-black mb-6">{t('suitableHeading')}</h2>
+                            <ul className="space-y-4">
+                                {config.bullets.map((b) => (
+                                    <li key={b} className="flex items-start gap-3 text-white/75 break-keep">
+                                        <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
+                                        <span className="font-medium leading-relaxed">{b}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
                     {config.slug === 'photo-to-3d' && showcaseItems && (
                         <PhotoTo3DBeforeAfter
@@ -133,20 +156,29 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                         layout="block"
                     />
 
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-black mb-6">{t('faqHeading')}</h2>
-                        <div className="space-y-4">
-                            {config.faqs.map((f) => (
-                                <article
-                                    key={f.q}
-                                    className="rounded-3xl border border-white/10 bg-white/[0.03] p-6"
-                                >
-                                    <h3 className="text-lg font-black mb-2 break-keep">{f.q}</h3>
-                                    <p className="text-white/65 leading-relaxed break-keep">{f.a}</p>
-                                </article>
-                            ))}
+                    {info ? (
+                        <>
+                            {info.checklist ? <InfoChecklist checklist={info.checklist} /> : null}
+                            {info.docs ? <InfoDocs docs={info.docs} /> : null}
+                            <InfoTeam team={info.team} />
+                            <InfoFaq heading={t('faqHeading')} faqs={config.faqs} />
+                        </>
+                    ) : (
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-black mb-6">{t('faqHeading')}</h2>
+                            <div className="space-y-4">
+                                {config.faqs.map((f) => (
+                                    <article
+                                        key={f.q}
+                                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6"
+                                    >
+                                        <h3 className="text-lg font-black mb-2 break-keep">{f.q}</h3>
+                                        <p className="text-white/65 leading-relaxed break-keep">{f.a}</p>
+                                    </article>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {config.relatedGuides && config.relatedGuides.length > 0 && (
                         <div>

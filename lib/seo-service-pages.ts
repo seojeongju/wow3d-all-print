@@ -188,6 +188,26 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
                 q: '졸업작품 파일은 무엇을 점검해야 하나요?',
                 a: '단위(mm), 벽 두께, 메쉬 오류, 분할 필요 여부, 서포트 위치를 미리 점검하세요.',
             },
+            {
+                q: '3D 파일이 없으면 졸업작품을 출력할 수 없나요?',
+                a: '제품 사진(JPG/PNG)으로 AI 3D 모델을 만든 뒤 자동견적·주문까지 진행할 수 있습니다. 정밀 치수·도면이 필요한 작품은 3D 모델링 의뢰로 출력용 파일 제작을 상담할 수 있습니다.',
+            },
+            {
+                q: '전시용 작품과 작동 시연 작품은 어떤 출력이 좋나요?',
+                a: '발표·전시용 외관이 중요하면 SLA·DLP 레진, 구조·기능 시연이 중요하면 FDM을 우선 검토하세요. 부위별로 공정을 나눠 출력한 뒤 조립할 수도 있습니다.',
+            },
+            {
+                q: '작품이 커서 3D프린터에 한 번에 안 들어가면 어떻게 하나요?',
+                a: '장비 빌드 볼륨을 넘는 작품은 분할 출력한 뒤 조립하는 방식으로 대응합니다. 분할 위치와 접합 방법은 대형 출력 분할 가이드를 참고하세요.',
+            },
+            {
+                q: '작품 파일이 여러 개인데 한 번에 주문할 수 있나요?',
+                a: '가능합니다. 장바구니에 여러 파일을 담아 한 번에 주문할 수 있고, 같은 출력 방식·같은 소재끼리는 최소 주문금액이 한 번만 적용됩니다(소재가 다르면 소재별로 적용).',
+            },
+            {
+                q: '도장 같은 후가공도 맡길 수 있나요?',
+                a: '연마, 도장, 경화 등 후가공 옵션을 견적 단계에서 선택할 수 있습니다. 후가공이 들어가면 제작 기간이 늘어날 수 있으니 일정에 여유를 두세요.',
+            },
         ],
         primaryCta: { label: '졸업작품 견적 받기', href: '/quote' },
         secondaryCta: { label: '졸업작품 체크리스트', href: '/guides/graduation-project-checklist' },
@@ -195,6 +215,7 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
             { href: '/services/capstone', title: '캡스톤디자인 시제품 제작' },
             { href: '/guides/graduation-project-checklist', title: '졸업작품 체크리스트' },
             { href: '/guides/3d-printing-turnaround-time', title: '제작 기간' },
+            { href: '/guides/splitting-large-3d-prints', title: '대형 출력 분할' },
         ],
     },
     {
