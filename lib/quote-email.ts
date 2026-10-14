@@ -1,6 +1,7 @@
 import { escapeHtml } from '@/lib/mail-utils';
 import { formatEstimatedPrintTime } from '@/lib/print-time-estimate';
 import { getSiteUrl } from '@/lib/site-url';
+import { formatPrintColor } from '@/lib/print-color';
 
 /** 견적 메일 리마인드 발송 시점 (신청 후) */
 export const QUOTE_REMINDER_DELAY_DAYS = 3;
@@ -37,6 +38,8 @@ export type QuoteEmailRow = {
     resin_type?: string | null;
     resin_type_name?: string | null;
     fdm_infill?: number | null;
+    print_color?: string | null;
+    print_color_note?: string | null;
     dimensions_x: number;
     dimensions_y: number;
     dimensions_z: number;
@@ -156,12 +159,13 @@ const SENDER_INFO = {
 
 const TALKTALK_URL = 'https://talk.naver.com/ct/wowi7tu';
 
-function quoteMaterialLabel(q: QuoteEmailRow): string {
+function quoteMaterialLabel(q: QuoteEmailRow, locale: 'ko' | 'en'): string {
+    const color = formatPrintColor(q.print_color, q.print_color_note, locale);
     if (q.print_method === 'fdm') {
         const name = q.fdm_material_name || q.fdm_material || '-';
-        return q.fdm_infill ? `${name} · ${q.fdm_infill}%` : name;
+        return [name, color, q.fdm_infill ? `${q.fdm_infill}%` : ''].filter(Boolean).join(' · ');
     }
-    return q.resin_type_name || q.resin_type || '-';
+    return [q.resin_type_name || q.resin_type || '-', color].filter(Boolean).join(' · ');
 }
 
 function formatSize(q: QuoteEmailRow): string {
@@ -198,7 +202,7 @@ export function buildQuoteEmail(input: {
     const rows: [string, string][] = [
         [c.file, quote.file_name],
         [c.method, String(quote.print_method || '').toUpperCase()],
-        [c.material, quoteMaterialLabel(quote)],
+        [c.material, quoteMaterialLabel(quote, locale)],
         [c.size, formatSize(quote)],
         [c.time, formatEstimatedPrintTime(Number(quote.estimated_time_hours) || 0, locale)],
     ];

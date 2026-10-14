@@ -57,6 +57,8 @@ type OrderItemSummary = {
     resin_type?: string | null;
     layer_thickness?: number | null;
     post_processing?: number | boolean | null;
+    print_color?: string | null;
+    print_color_note?: string | null;
 };
 
 type AdminOrder = {
@@ -116,7 +118,21 @@ type AdminOrderItem = Record<string, unknown> & {
     model_transform?: string | null;
     guide_source?: string | null;
     guide_topic?: string | null;
+    print_color?: string | null;
+    print_color_note?: string | null;
 };
+
+/** 기타 색상은 재고 확인 후 금액·일정 확정 필요 */
+function OtherColorBadge({ note }: { note?: string | null }) {
+    return (
+        <span
+            className="inline-flex items-center rounded-md bg-orange-400/15 border border-orange-400/40 px-2 py-0.5 text-[10px] font-black text-orange-300"
+            title="기타 색상 — 재고 확인 후 금액·일정 확정 필요"
+        >
+            기타 색상 확인{note ? `: ${note}` : ''}
+        </span>
+    );
+}
 
 function parseItemsSummary(raw: unknown): OrderItemSummary[] {
     try {
@@ -834,13 +850,19 @@ function OrderListInner() {
                                                 if (!first) return null;
                                                 const line = formatQuotePrintSettings(first);
                                                 const guideLine = formatQuoteGuideContext(first);
-                                                if (!line && !guideLine) return null;
+                                                const otherColor = items.find((it) => it.print_color === 'other');
+                                                if (!line && !guideLine && !otherColor) return null;
                                                 return (
                                                     <div className="max-w-[220px]">
                                                         {line ? (
                                                             <p className="text-[10px] text-white/40 truncate" title={line}>
                                                                 {String(first.print_method || '').toUpperCase()} · {line}
                                                             </p>
+                                                        ) : null}
+                                                        {otherColor ? (
+                                                            <div className="mt-0.5 truncate">
+                                                                <OtherColorBadge note={otherColor.print_color_note} />
+                                                            </div>
                                                         ) : null}
                                                         {guideLine ? (
                                                             <p className="text-[10px] text-teal-300/70 truncate" title={guideLine}>
@@ -1090,6 +1112,9 @@ function OrderListInner() {
                                                                 <span className="inline-flex items-center rounded-md bg-teal-400/15 border border-teal-400/25 px-2 py-0.5 text-[10px] font-black tracking-wide text-teal-300">
                                                                     {method}
                                                                 </span>
+                                                                {it.print_color === 'other' ? (
+                                                                    <OtherColorBadge note={it.print_color_note} />
+                                                                ) : null}
                                                                 {settingsLine ? (
                                                                     <span className="text-[11px] text-white/70 leading-relaxed">{settingsLine}</span>
                                                                 ) : (

@@ -9,6 +9,7 @@ import { P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO } from '@/lib/print-time-estimate';
 import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
 import { resolveServerResinQuote } from '@/lib/server-resin-quote';
 import { normalizeLayFlat } from '@/lib/stl-bake';
+import { normalizePrintColor, normalizePrintColorNote, PRINT_COLOR_DEFAULT } from '@/lib/print-color';
 
 /**
  * GET /api/quotes - 견적 목록 조회
@@ -128,6 +129,12 @@ export async function POST(request: NextRequest) {
         // 필수 필드 검증
         if (!body.fileName || body.volumeCm3 == null || !body.printMethod || body.totalPrice == null) {
             return errorResponse('필수 필드가 누락되었습니다', 400);
+        }
+
+        const printColor = normalizePrintColor(body.printColor) ?? PRINT_COLOR_DEFAULT;
+        const printColorNote = printColor === 'other' ? normalizePrintColorNote(body.printColorNote) : null;
+        if (printColor === 'other' && !printColorNote) {
+            return errorResponse('기타 색상을 선택한 경우 원하는 색상을 입력해 주세요', 400);
         }
 
         // 세션 ID 또는 사용자 ID
@@ -406,6 +413,17 @@ export async function POST(request: NextRequest) {
                         .run()
                 } catch {
                     /* model_transform 컬럼 없는 구 DB */
+                }
+            }
+
+            // 출력 색상 (schema_quotes_print_color 미적용 DB면 무시)
+            if (quoteId > 0) {
+                try {
+                    await env.DB.prepare('UPDATE quotes SET print_color = ?, print_color_note = ? WHERE id = ?')
+                        .bind(printColor, printColorNote, quoteId)
+                        .run()
+                } catch {
+                    /* print_color 컬럼 없는 구 DB */
                 }
             }
 

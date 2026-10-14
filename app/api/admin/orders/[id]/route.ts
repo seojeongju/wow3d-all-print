@@ -76,6 +76,7 @@ export async function GET(
                        q.fdm_infill, q.fdm_layer_height, q.fdm_support,
                        COALESCE(q.resin_type_name, q.resin_type) as resin_type,
                        q.layer_thickness, q.post_processing,
+                       q.print_color, q.print_color_note,
                        q.volume_cm3, q.estimated_time_hours, q.total_price,
                        q.dimensions_x, q.dimensions_y, q.dimensions_z, q.model_transform
                 FROM order_items oi

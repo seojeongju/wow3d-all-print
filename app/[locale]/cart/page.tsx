@@ -48,6 +48,8 @@ type QuoteRow = {
     resin_type_name?: string
     layer_thickness?: number
     post_processing?: number | boolean
+    print_color?: string | null
+    print_color_note?: string | null
     total_price: number
     estimated_time_hours: number
     variable_cost_krw?: number | null
@@ -74,6 +76,8 @@ function quoteRowPrintSettings(row: QuoteRow): QuotePrintSettings {
         resin_type_name: row.resin_type_name,
         layer_thickness: row.layer_thickness,
         post_processing: row.post_processing,
+        print_color: row.print_color,
+        print_color_note: row.print_color_note,
     }
 }
 

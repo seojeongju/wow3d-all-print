@@ -48,6 +48,8 @@ export async function GET(
                     COALESCE(q.resin_type_name, q.resin_type) AS resin_type,
                     q.layer_thickness,
                     q.post_processing,
+                    q.print_color,
+                    q.print_color_note,
                     q.total_price,
                     q.estimated_time_hours,
                     q.created_at,
@@ -134,6 +136,8 @@ export async function GET(
                 resin_type: row.resin_type as string | null,
                 layer_thickness: row.layer_thickness as number | null,
                 post_processing: row.post_processing as number | boolean | null,
+                print_color: (row.print_color as string | null) ?? null,
+                print_color_note: (row.print_color_note as string | null) ?? null,
             }) || null
 
         const totalPrice = Number(row.total_price)

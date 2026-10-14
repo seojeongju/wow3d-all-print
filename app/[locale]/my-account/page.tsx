@@ -72,6 +72,8 @@ function mapQuoteFromApi(row: any): Quote {
         resinType: row.resinType ?? row.resin_type ?? undefined,
         layerThickness: row.layerThickness ?? row.layer_thickness ?? undefined,
         postProcessing: !!(row.postProcessing ?? row.post_processing),
+        printColor: row.printColor ?? row.print_color ?? undefined,
+        printColorNote: row.printColorNote ?? row.print_color_note ?? undefined,
         totalPrice: Number(row.totalPrice ?? row.total_price ?? 0),
         estimatedTimeHours: Number(row.estimatedTimeHours ?? row.estimated_time_hours ?? 0),
         userId: row.userId ?? row.user_id ?? undefined,
@@ -91,6 +93,8 @@ function quoteToPrintSettings(quote: Quote): QuotePrintSettings {
         resin_type: quote.resinType,
         layer_thickness: quote.layerThickness,
         post_processing: quote.postProcessing,
+        print_color: quote.printColor,
+        print_color_note: quote.printColorNote,
     };
 }
 

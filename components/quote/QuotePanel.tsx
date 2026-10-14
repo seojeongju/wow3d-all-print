@@ -8,12 +8,12 @@ import { Separator } from '@/components/ui/separator'
 import {
     Loader2, Box, Layers, Printer,
     Droplets, Zap, Save, ShoppingCart,
-    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight
+    ChevronRight, Wallet, Clock, ShieldCheck, AlertTriangle, FileText, List, ArrowRight, Palette
 } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { showToast } from '@/lib/toast-helper'
+import { resolveErrorCopy } from '@/lib/toast-helper'
 import { QUOTE_PRICE_ROUND_MODE, roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
 import { parseMeshyJobIdFromFileName } from '@/lib/meshy-r2'
@@ -39,10 +39,18 @@ import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
 import InchUnitNotice from '@/components/quote/InchUnitNotice'
 import QuoteEmailSave from '@/components/quote/QuoteEmailSave'
+import QuoteActionFeedback, { type QuoteFeedback, type QuoteFeedbackAction } from '@/components/quote/QuoteActionFeedback'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
 import { MESHY_AI_DISCLAIMER_SHORT, MESHY_AI_DISCLAIMER_SHORT_EN } from '@/lib/meshy-disclaimer'
+import {
+    formatPrintColor,
+    normalizePrintColor,
+    PRINT_COLOR_DEFAULT,
+    PRINT_COLOR_NOTE_MAX,
+    type PrintColor,
+} from '@/lib/print-color'
 
 type PrintSpecs = {
     fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
@@ -73,6 +81,8 @@ type InitialQuoteData = Partial<Quote> & {
     layer_thickness?: number | null
     post_processing?: boolean | number | null
     model_transform?: string | null
+    print_color?: string | null
+    print_color_note?: string | null
 }
 
 type UploadResponse = {
@@ -99,6 +109,8 @@ function buildQuoteConfigKey(input: {
     resinType: string
     slaLayerHeight: number
     postProcessing: boolean
+    printColor: PrintColor
+    printColorNote: string
     totalPrice: number
     modelTransform: {
         scalePercent: number
@@ -118,6 +130,8 @@ function buildQuoteConfigKey(input: {
         resinType: input.resinType,
         slaLayerHeight: input.slaLayerHeight,
         postProcessing: input.postProcessing,
+        printColor: input.printColor,
+        printColorNote: input.printColor === 'other' ? input.printColorNote.trim() : '',
         totalPrice: input.totalPrice,
         scalePercent: input.modelTransform.scalePercent,
         rotX: input.modelTransform.rotX,
@@ -145,6 +159,24 @@ const defaultQuoteDetail = {
 export default function QuotePanel({ embedded = false, initialQuote, reloadQuoteId, guideSource, guideTopic }: QuotePanelProps) {
     const t = useTranslations('QuotePanel')
     const locale = useLocale()
+    /** 저장·장바구니 결과 안내 (화면 가운데) */
+    const [feedback, setFeedback] = useState<QuoteFeedback | null>(null)
+    const showFeedback = useCallback(
+        (next: Omit<QuoteFeedback, 'id'>) => setFeedback({ ...next, id: Date.now() }),
+        []
+    )
+    const closeFeedback = useCallback(() => setFeedback(null), [])
+    const showErrorFeedback = useCallback(
+        (title: string, error?: unknown, retry?: () => void) => {
+            const copy = resolveErrorCopy(title, error, locale)
+            showFeedback({
+                kind: 'error',
+                ...copy,
+                actions: retry ? [{ label: t('feedbackRetry'), onClick: retry, primary: true }] : undefined,
+            })
+        },
+        [locale, showFeedback, t]
+    )
     const file = useFileStore((s) => s.file)
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
@@ -172,6 +204,11 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const [slaLayerHeight, setSlaLayerHeight] = useState(0.05) // mm
     /** 레진 출력은 세척·2차 경화·서포트 제거 없이 완성 불가 → 기본 후처리 항상 포함 */
     const postProcessing = true
+    /** 출력 색상 — 금액 무관, 기타는 고객 메모로 받아 담당자가 확인 */
+    const [printColor, setPrintColor] = useState<PrintColor>(PRINT_COLOR_DEFAULT)
+    const [printColorNote, setPrintColorNote] = useState('')
+    const printColorNoteMissing = printColor === 'other' && !printColorNote.trim()
+    const printColorNoteRef = useRef<HTMLInputElement>(null)
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
     /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
@@ -206,6 +243,12 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         } else {
             if (initialQuote.resin_type) setResinType(initialQuote.resin_type)
             if (initialQuote.layer_thickness) setSlaLayerHeight(initialQuote.layer_thickness)
+        }
+
+        const loadedColor = normalizePrintColor(initialQuote.print_color)
+        if (loadedColor) {
+            setPrintColor(loadedColor)
+            setPrintColorNote(loadedColor === 'other' ? (initialQuote.print_color_note ?? '') : '')
         }
 
         const storedTransform = parseStoredModelTransform(initialQuote.model_transform)
@@ -461,6 +504,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 resinType,
                 slaLayerHeight,
                 postProcessing,
+                printColor,
+                printColorNote,
                 totalPrice,
                 modelTransform,
                 dimensions: analysis.boundingBox,
@@ -477,6 +522,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         resinType,
         slaLayerHeight,
         postProcessing,
+        printColor,
+        printColorNote,
         totalPrice,
         modelTransform,
     ])
@@ -505,6 +552,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                       layerThickness: slaLayerHeight,
                       postProcessing,
                   }),
+            printColor,
+            printColorNote: printColor === 'other' ? printColorNote.trim() : undefined,
             totalPrice: price,
             estimatedTimeHours: hours,
             variableCostKrw,
@@ -522,6 +571,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             layerHeight,
             minPriceKr,
             postProcessing,
+            printColor,
+            printColorNote,
             printMethod,
             resinType,
             savedFileR2Url,
@@ -540,8 +591,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             resolvedTotalPrice: number,
             resolvedEstimatedHours: number,
             previousQuoteId?: number | null
-        ) => {
-            if (!file || !analysis) return
+        ): Promise<boolean> => {
+            if (!file || !analysis) return false
 
             const linkIds = new Set<number>()
             if (reloadQuoteId) linkIds.add(reloadQuoteId)
@@ -555,7 +606,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 const existingName = (item.quote?.fileName || '').trim().toLowerCase()
                 return Boolean(fileKey && existingName && existingName === fileKey)
             })
-            if (!linked) return
+            if (!linked) return false
 
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
             if (token) {
@@ -579,7 +630,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         ...(prevId ? { previousQuoteId: prevId } : {}),
                     }),
                 })
-                if (!res.ok) return
+                if (!res.ok) return false
 
                 const quoteForCart = buildQuoteForCart(
                     finalQuoteId,
@@ -587,7 +638,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     resolvedEstimatedHours
                 )
                 addToCart(quoteForCart, 1, false)
-                showToast.success(t('toastCartUpdated'), t('toastCartUpdatedDesc'))
+                return true
             } catch {
                 /* 로컬만 갱신 */
                 const quoteForCart = buildQuoteForCart(
@@ -596,6 +647,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     resolvedEstimatedHours
                 )
                 addToCart(quoteForCart, 1, false)
+                return false
             }
         },
         [
@@ -607,7 +659,6 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             reloadQuoteId,
             savedQuoteId,
             sessionId,
-            t,
             token,
             user?.id,
         ]
@@ -615,6 +666,11 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
 
     const handleSaveQuote = async (opts?: { silent?: boolean }) => {
         if (!analysis || !file) return
+        if (printColorNoteMissing) {
+            showErrorFeedback(t('colorOtherRequiredTitle'), t('colorOtherRequired'))
+            printColorNoteRef.current?.focus()
+            return null
+        }
 
         const quoteIdBeforeSave = savedQuoteId
 
@@ -637,6 +693,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 resinType,
                 slaLayerHeight,
                 postProcessing,
+                printColor,
+                printColorNote,
                 totalPrice,
                 modelTransform,
                 dimensions: analysis.boundingBox,
@@ -736,6 +794,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     layerThickness: slaLayerHeight,
                     postProcessing,
                 }),
+                printColor,
+                ...(printColor === 'other' ? { printColorNote: printColorNote.trim() } : {}),
                 totalPrice,
                 estimatedTimeHours,
                 variableCostKrw,
@@ -780,32 +840,53 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             const resolvedEstimatedHours =
                 typeof data.estimatedTimeHours === 'number' ? data.estimatedTimeHours : estimatedTimeHours
 
-            if (finalQuoteId) {
-                await syncCartIfLinked(
-                    finalQuoteId,
-                    resolvedTotalPrice,
-                    resolvedEstimatedHours,
-                    quoteIdBeforeSave ?? reloadQuoteId ?? null
-                )
-            }
+            const cartSynced = finalQuoteId
+                ? await syncCartIfLinked(
+                      finalQuoteId,
+                      resolvedTotalPrice,
+                      resolvedEstimatedHours,
+                      quoteIdBeforeSave ?? reloadQuoteId ?? null
+                  )
+                : false
 
             if (data?.sessionId && !token) setSessionId(data.sessionId)
+            const priceHighlight = {
+                label: t('feedbackPriceLabel', { method: printMethod.toUpperCase() }),
+                value: `₩${Math.round(resolvedTotalPrice).toLocaleString()}`,
+            }
             if (opts?.silent) {
-                // 견적 메일 등 호출한 쪽이 결과를 안내
-            } else if (token && user?.id) {
-                showToast.success(
-                    t('toastSaved'),
-                    createdNewVariant
-                        ? t('toastSavedNew')
-                        : t('toastSavedBox')
-                );
+                // 견적 메일·장바구니 담기 등 호출한 쪽이 결과를 안내
+            } else if (cartSynced) {
+                showFeedback({
+                    kind: 'cart',
+                    title: t('toastCartUpdated'),
+                    description: t('toastCartUpdatedDesc'),
+                    highlight: priceHighlight,
+                    actions: [
+                        { label: t('feedbackGoCart'), href: '/cart', primary: true },
+                        { label: t('feedbackContinue') },
+                    ],
+                })
             } else {
-                showToast.info(
-                    t('toastSaved'),
-                    createdNewVariant
+                const isMember = Boolean(token && user?.id)
+                const addToCartAction: QuoteFeedbackAction = {
+                    label: t('addToCart'),
+                    onClick: () => void handleAddToCart(),
+                    primary: true,
+                }
+                showFeedback({
+                    kind: isMember ? 'saved' : 'savedLocal',
+                    title: t('toastSaved'),
+                    description: createdNewVariant
                         ? t('toastSavedNew')
-                        : t('toastSavedLocal')
-                );
+                        : isMember
+                          ? t('toastSavedBox')
+                          : t('toastSavedLocal'),
+                    highlight: priceHighlight,
+                    actions: isMember
+                        ? [addToCartAction, { label: t('quoteBox'), href: '/quotes' }]
+                        : [addToCartAction, { label: t('feedbackClose') }],
+                })
             }
             return {
                 ...data,
@@ -814,7 +895,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 estimatedTimeHours: data.estimatedTimeHours ?? estimatedTimeHours,
             };
         } catch (error) {
-            showToast.error(t('toastError'), error);
+            showErrorFeedback(t('toastSaveFail'), error, () => void handleSaveQuote(opts))
             return null
         } finally {
             setIsSaving(false)
@@ -833,6 +914,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             resinType,
             slaLayerHeight,
             postProcessing,
+            printColor,
+            printColorNote,
             totalPrice,
             modelTransform,
             dimensions: analysis.boundingBox,
@@ -846,15 +929,15 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
 
     const handleAddToCart = async () => {
         if (!file || !analysis) {
-            showToast.error(t('toastAddFail'), t('toastNoAnalysis'));
-            return;
+            showErrorFeedback(t('toastAddFail'), t('toastNoAnalysis'))
+            return
         }
         if (overflow) {
-            showToast.error(t('overflowTitle'), t('overflowCartBlocked'));
-            return;
+            showErrorFeedback(t('overflowTitle'), t('overflowCartBlocked'))
+            return
         }
 
-        const savedQuote = await ensureQuoteSaved()
+        const savedQuote = await ensureQuoteSaved({ silent: true })
         if (!savedQuote) return
 
         try {
@@ -920,18 +1003,29 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                           layerThickness: slaLayerHeight,
                           postProcessing,
                       }),
+                printColor,
+                printColorNote: printColor === 'other' ? printColorNote.trim() : undefined,
                 totalPrice: resolvedTotalPrice,
                 estimatedTimeHours: resolvedEstimatedHours,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 thumbnailDataUrl: thumbnailDataUrl || undefined,
             }
-            showToast.success(
-                alreadyInCart ? t('toastCartUpdated') : t('toastCartAdd'),
-                alreadyInCart
+            showFeedback({
+                kind: 'cart',
+                title: alreadyInCart ? t('toastCartUpdated') : t('toastCartAdd'),
+                description: alreadyInCart
                     ? t('toastCartAddMethod', { method: printMethod.toUpperCase() })
-                    : t('toastCartAddOk')
-            );
+                    : t('toastCartAddOk'),
+                highlight: {
+                    label: t('feedbackPriceLabel', { method: printMethod.toUpperCase() }),
+                    value: `₩${Math.round(resolvedTotalPrice).toLocaleString()}`,
+                },
+                actions: [
+                    { label: t('feedbackGoCart'), href: '/cart', primary: true },
+                    { label: t('feedbackContinue') },
+                ],
+            })
             addToCart(quoteForCart as Quote, 1, alreadyInCart ? false : true)
             trackConversionEvent({
                 eventName: QUOTE_CONVERSION_EVENTS.ADD_TO_CART,
@@ -944,7 +1038,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 },
             })
         } catch (error) {
-            showToast.error(t('toastAddFail'), error);
+            showErrorFeedback(t('toastCartAddFail'), error, () => void handleAddToCart())
         }
     }
 
@@ -1088,6 +1182,60 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         </div>
                     </div>
 
+                    {/* 출력 색상 — 화이트·블랙·기타(직접 입력) */}
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 px-1">
+                            <Palette className="w-3.5 h-3.5 text-teal-400" />
+                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('colorLabel')}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t('colorLabel')}>
+                            {([
+                                { id: 'white', label: t('colorWhite'), swatch: 'bg-white border-white/60', style: undefined },
+                                { id: 'black', label: t('colorBlack'), swatch: 'bg-black border-white/40', style: undefined },
+                                { id: 'other', label: t('colorOther'), swatch: 'border-white/30', style: { background: 'conic-gradient(#f43f5e, #f59e0b, #22c55e, #3b82f6, #a855f7, #f43f5e)' } },
+                            ] as const).map((c) => {
+                                const selected = printColor === c.id
+                                return (
+                                    <button
+                                        key={c.id}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={selected}
+                                        onClick={() => {
+                                            setPrintColor(c.id)
+                                            if (c.id === 'other') requestAnimationFrame(() => printColorNoteRef.current?.focus())
+                                        }}
+                                        className={`flex items-center justify-center gap-2 h-10 rounded-xl border text-xs font-black transition-all ${selected
+                                            ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20 text-teal-300'
+                                            : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20 hover:text-white/80'
+                                            }`}
+                                    >
+                                        <span className={`w-3.5 h-3.5 shrink-0 rounded-full border ${c.swatch}`} style={c.style} aria-hidden="true" />
+                                        {c.label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        {printColor === 'other' && (
+                            <div className="space-y-1.5">
+                                <input
+                                    ref={printColorNoteRef}
+                                    type="text"
+                                    value={printColorNote}
+                                    onChange={(e) => setPrintColorNote(e.target.value.slice(0, PRINT_COLOR_NOTE_MAX))}
+                                    maxLength={PRINT_COLOR_NOTE_MAX}
+                                    placeholder={t('colorOtherPlaceholder')}
+                                    aria-label={t('colorOtherPlaceholder')}
+                                    aria-invalid={printColorNoteMissing}
+                                    className={`w-full h-10 px-3 rounded-xl bg-white/5 border text-sm text-white placeholder:text-white/30 outline-none transition-colors focus:border-teal-400/60 ${printColorNoteMissing ? 'border-amber-400/50' : 'border-white/10'}`}
+                                />
+                                <p className="px-1 text-[10px] text-amber-200/80 font-medium leading-snug break-keep">
+                                    {t('colorOtherNotice')}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Sliders & Switches */}
                     {printMethod === 'fdm' ? (
                         <div className="space-y-4">
@@ -1193,6 +1341,8 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 <div className="font-medium text-slate-100">{printMethod.toUpperCase()}</div>
                                 <div className="text-slate-400">{t('material')}</div>
                                 <div className="font-medium text-slate-100">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
+                                <div className="text-slate-400">{t('colorLabel')}</div>
+                                <div className="font-medium text-slate-100 break-keep">{formatPrintColor(printColor, printColorNote, locale)}</div>
                                 <div className="text-slate-400">{t('layerThickness')}</div>
                                 <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
                                 {printMethod === 'fdm' && (
@@ -1362,6 +1512,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             </div>
             )}
             <KakaoChannelFab visible={!!analysis} />
+            <QuoteActionFeedback feedback={feedback} onClose={closeFeedback} closeLabel={t('feedbackClose')} />
         </div>
     )
 }

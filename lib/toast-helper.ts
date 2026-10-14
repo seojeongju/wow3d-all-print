@@ -35,6 +35,46 @@ const COPY: Record<UiLocale, {
 }
 
 /**
+ * 에러 객체·메시지를 사용자용 제목/설명으로 변환 (네트워크·세션 오류는 공통 문구로 치환)
+ * @param title 기본 오류 제목 (예: "목록 조회 실패")
+ * @param error 실제 에러 객체 또는 메시지
+ * @param locale 선택 — 미지정 시 document/path로 판별
+ */
+export function resolveErrorCopy(title: string, error?: unknown, locale?: string): { title: string; description: string } {
+    const ui = resolveLocale(locale)
+    const c = COPY[ui]
+    let description: string = c.unknownError
+    let finalTitle: string = title
+
+    if (error) {
+        if (typeof error === 'string') {
+            description = error
+        } else if (typeof error === 'object') {
+            const e = error as { error?: unknown; message?: unknown }
+            description = String(e.error || e.message || description)
+        }
+    }
+
+    if (description.toLowerCase().includes('failed to fetch') ||
+        description.toLowerCase().includes('network error')) {
+        finalTitle = c.networkTitle
+        description = c.networkDesc
+    } else if (
+        description.toLowerCase().includes('unauthorized') ||
+        description.includes('인증이 필요합니다') ||
+        description.includes('유효하지 않은 토큰') ||
+        description.includes('세션이 만료') ||
+        description.toLowerCase().includes('session has expired') ||
+        description.toLowerCase().includes('authentication required')
+    ) {
+        finalTitle = c.authTitle
+        description = c.authDesc
+    }
+
+    return { title: finalTitle, description }
+}
+
+/**
  * Wow3D Pro 전용 토스트 유틸리티
  *
  * 모든 API 호출에 대해 일관되고 친절한 피드백을 제공합니다.
@@ -47,7 +87,7 @@ export const showToast = {
         toast({
             title: `✅ ${title}`,
             description: description,
-            className: "bg-emerald-500/10 border-emerald-500/20 text-emerald-200 font-bold shadow-2xl",
+            className: "bg-emerald-950/95 border-emerald-400/40 text-emerald-50 font-bold shadow-2xl backdrop-blur",
         });
     },
 
@@ -58,34 +98,7 @@ export const showToast = {
      * @param locale 선택 — 미지정 시 document/path로 판별
      */
     error: (title: string, error?: any, locale?: string) => {
-        const ui = resolveLocale(locale)
-        const c = COPY[ui]
-        let description: string = c.unknownError
-        let finalTitle: string = title
-
-        if (error) {
-            if (typeof error === 'string') {
-                description = error
-            } else if (typeof error === 'object') {
-                description = String(error.error || error.message || description)
-            }
-        }
-
-        if (description.toLowerCase().includes('failed to fetch') ||
-            description.toLowerCase().includes('network error')) {
-            finalTitle = c.networkTitle
-            description = c.networkDesc
-        } else if (
-            description.toLowerCase().includes('unauthorized') ||
-            description.includes('인증이 필요합니다') ||
-            description.includes('유효하지 않은 토큰') ||
-            description.includes('세션이 만료') ||
-            description.toLowerCase().includes('session has expired') ||
-            description.toLowerCase().includes('authentication required')
-        ) {
-            finalTitle = c.authTitle
-            description = c.authDesc
-        }
+        const { title: finalTitle, description } = resolveErrorCopy(title, error, locale)
 
         toast({
             title: `❌ ${finalTitle}`,
@@ -102,7 +115,7 @@ export const showToast = {
         toast({
             title: `ℹ️ ${title}`,
             description: description,
-            className: "bg-white/[0.03] border-white/10 text-white font-medium shadow-2xl",
+            className: "bg-slate-900/95 border-white/15 text-white font-medium shadow-2xl backdrop-blur",
         });
     }
 };

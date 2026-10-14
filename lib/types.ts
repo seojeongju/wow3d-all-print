@@ -50,6 +50,11 @@ export interface QuoteData {
     layerThickness?: number;
     postProcessing?: boolean;
 
+    // 출력 색상 (금액 무관, 기타는 담당자 확인 후 확정)
+    printColor?: 'white' | 'black' | 'other';
+    /** 기타 색상일 때 고객이 적은 희망 색상 */
+    printColorNote?: string;
+
     // 가격 정보
     totalPrice: number;
     estimatedTimeHours: number;
