@@ -123,7 +123,7 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                         <>
                             <InfoScope scope={info.scope} />
                             <InfoProcess process={info.process} />
-                            <InfoTimeline timeline={info.timeline} />
+                            {info.timeline ? <InfoTimeline timeline={info.timeline} /> : null}
                             <InfoMatch match={info.match} />
                         </>
                     ) : (
@@ -160,7 +160,7 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                         <>
                             {info.checklist ? <InfoChecklist checklist={info.checklist} /> : null}
                             {info.docs ? <InfoDocs docs={info.docs} /> : null}
-                            <InfoTeam team={info.team} />
+                            {info.team ? <InfoTeam team={info.team} /> : null}
                             <InfoFaq heading={t('faqHeading')} faqs={config.faqs} />
                         </>
                     ) : (

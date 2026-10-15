@@ -6,6 +6,7 @@ import {
     ArrowRight,
     Box,
     Droplets,
+    FileBox,
     GraduationCap,
     ImageIcon,
     Layers,
@@ -13,6 +14,7 @@ import {
     Package,
     PenTool,
     Printer,
+    Target,
     Upload,
     Zap,
     type LucideIcon,
@@ -22,6 +24,7 @@ import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { Link } from '@/i18n/navigation'
 import { SERVICE_LANDINGS } from '@/lib/seo-service-pages'
+import { getServicesHubInfographic, type HubFinderLane, type HubGroup } from '@/lib/services-hub-infographic'
 import { cn } from '@/lib/utils'
 
 type ServiceVisual = {
@@ -98,6 +101,47 @@ const SERVICE_VISUALS: Record<string, ServiceVisual> = {
     },
 }
 
+const LANE_STYLES: Record<HubFinderLane['key'], { icon: LucideIcon; tone: string; chip: string; line: string }> = {
+    file: {
+        icon: FileBox,
+        tone: 'border-teal-400/30 bg-teal-400/[0.06] text-teal-300',
+        chip: 'border-teal-400/25 bg-teal-400/10 text-teal-100',
+        line: 'from-teal-400/60',
+    },
+    nofile: {
+        icon: ImageIcon,
+        tone: 'border-rose-400/30 bg-rose-400/[0.06] text-rose-300',
+        chip: 'border-rose-400/25 bg-rose-400/10 text-rose-100',
+        line: 'from-rose-400/60',
+    },
+    purpose: {
+        icon: Target,
+        tone: 'border-sky-400/30 bg-sky-400/[0.06] text-sky-300',
+        chip: 'border-sky-400/25 bg-sky-400/10 text-sky-100',
+        line: 'from-sky-400/60',
+    },
+}
+
+const METHOD_TONES = {
+    fdm: { text: 'text-amber-300', bar: 'bg-amber-400', ring: 'border-amber-400/25 hover:border-amber-400/50' },
+    sla: { text: 'text-cyan-300', bar: 'bg-cyan-400', ring: 'border-cyan-400/25 hover:border-cyan-400/50' },
+    dlp: { text: 'text-violet-300', bar: 'bg-violet-400', ring: 'border-violet-400/25 hover:border-violet-400/50' },
+} as const
+
+const GROUP_COLS: Record<number, string> = {
+    2: 'lg:grid-cols-2',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-4',
+}
+
+const SERVICE_PATHS: Record<string, string> = Object.fromEntries(SERVICE_LANDINGS.map((s) => [s.slug, s.path]))
+
+/** 허브 전체에서 쓰는 서비스 일련번호 (목적별 묶음 순서 기준) */
+function serviceNumbers(groups: HubGroup[]) {
+    const order = groups.flatMap((g) => g.services)
+    return Object.fromEntries(order.map((slug, i) => [slug, String(i + 1).padStart(2, '0')]))
+}
+
 const fadeUp = {
     initial: { opacity: 0, y: 18 },
     animate: { opacity: 1, y: 0 },
@@ -107,6 +151,8 @@ export default function ServicesHubClient({ workPhotos }: { workPhotos?: React.R
     const t = useTranslations('Services')
     const tCommon = useTranslations('Common')
     const locale = useLocale() === 'en' ? 'en' : 'ko'
+    const info = getServicesHubInfographic(locale)
+    const numbers = serviceNumbers(info.groups)
 
     const PROCESS: { step: string; title: string; desc: string; icon: LucideIcon }[] = [
         { step: '01', title: t('flowUpload'), desc: t('flowUploadDesc'), icon: Upload },
@@ -169,6 +215,24 @@ export default function ServicesHubClient({ workPhotos }: { workPhotos?: React.R
                                 </Link>
                             </motion.div>
                         </div>
+
+                        <motion.dl
+                            {...fadeUp}
+                            transition={{ delay: 0.2 }}
+                            className="mx-auto mt-12 grid max-w-5xl grid-cols-2 gap-3 md:grid-cols-4"
+                        >
+                            {info.stats.map((s) => (
+                                <div
+                                    key={s.label}
+                                    className="rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4 text-left backdrop-blur-sm"
+                                >
+                                    <dt className="sr-only">{s.label}</dt>
+                                    <dd className="text-2xl font-black tracking-tight text-teal-300 tabular-nums md:text-3xl">{s.value}</dd>
+                                    <dd className="mt-1 text-sm font-black text-white break-keep">{s.label}</dd>
+                                    <dd className="text-[12px] font-bold text-white/45 break-keep">{s.sub}</dd>
+                                </div>
+                            ))}
+                        </motion.dl>
                     </div>
                 </section>
 
@@ -213,6 +277,149 @@ export default function ServicesHubClient({ workPhotos }: { workPhotos?: React.R
                     </div>
                 </section>
 
+                {/* 보유 자료별 서비스 찾기 */}
+                <section className="pb-16 sm:pb-24" aria-labelledby="service-finder-heading">
+                    <div className="container mx-auto px-6">
+                        <div className="mx-auto mb-10 max-w-2xl text-center">
+                            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-teal-400/80">{info.finder.eyebrow}</p>
+                            <h2 id="service-finder-heading" className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl break-keep">
+                                {info.finder.title}
+                            </h2>
+                            <p className="mt-3 text-sm text-white/45 break-keep sm:text-base">{info.finder.body}</p>
+                        </div>
+
+                        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-3">
+                            {info.finder.lanes.map((lane, li) => {
+                                const style = LANE_STYLES[lane.key]
+                                const LaneIcon = style.icon
+                                return (
+                                    <motion.div
+                                        key={lane.key}
+                                        initial={{ opacity: 0, y: 16 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: li * 0.06 }}
+                                        className="flex flex-col rounded-[2rem] border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                                    >
+                                        <div className={cn('rounded-3xl border p-5', style.tone)}>
+                                            <div className="flex items-center gap-3">
+                                                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10">
+                                                    <LaneIcon className="h-5 w-5" aria-hidden />
+                                                </span>
+                                                <h3 className="text-lg font-black text-white break-keep">{lane.title}</h3>
+                                            </div>
+                                            <p className="mt-3 text-sm font-medium text-white/60 break-keep">{lane.body}</p>
+                                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                                {lane.examples.map((ex) => (
+                                                    <span
+                                                        key={ex}
+                                                        className={cn('rounded-lg border px-2 py-0.5 text-[11px] font-black', style.chip)}
+                                                    >
+                                                        {ex}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div aria-hidden className="flex justify-center py-1">
+                                            <span className={cn('h-7 w-px bg-gradient-to-b to-transparent', style.line)} />
+                                        </div>
+
+                                        <ul className="space-y-2">
+                                            {lane.services.map((slug) => {
+                                                const visual = SERVICE_VISUALS[slug]
+                                                const path = SERVICE_PATHS[slug]
+                                                if (!visual || !path) return null
+                                                const Icon = visual.icon
+                                                return (
+                                                    <li key={slug}>
+                                                        <Link
+                                                            href={path as '/'}
+                                                            className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                                                        >
+                                                            <Icon className={cn('h-4 w-4 shrink-0', visual.accent)} aria-hidden />
+                                                            <span className="min-w-0 flex-1">
+                                                                <span className="block text-sm font-black text-white">{visual.title[locale]}</span>
+                                                                <span className="block truncate text-[12px] font-medium text-white/45">
+                                                                    {visual.blurb[locale]}
+                                                                </span>
+                                                            </span>
+                                                            <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition-transform group-hover:translate-x-0.5 group-hover:text-white/70" aria-hidden />
+                                                        </Link>
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+                                    </motion.div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </section>
+
+                {/* 출력 방식 비교 */}
+                <section className="pb-16 sm:pb-24" aria-labelledby="print-methods-heading">
+                    <div className="container mx-auto px-6">
+                        <div className="mx-auto mb-10 flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-teal-400/80">{info.methods.eyebrow}</p>
+                                <h2 id="print-methods-heading" className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                                    {info.methods.title}
+                                </h2>
+                                <p className="mt-2 text-sm text-white/45 break-keep">{info.methods.body}</p>
+                            </div>
+                            <Link
+                                href={'/print-methods' as '/'}
+                                className="inline-flex shrink-0 items-center gap-1.5 text-sm font-black text-teal-300 hover:text-teal-200"
+                            >
+                                {info.methods.moreLabel}
+                                <ArrowRight className="h-4 w-4" aria-hidden />
+                            </Link>
+                        </div>
+
+                        <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-3">
+                            {info.methods.items.map((m) => {
+                                const tone = METHOD_TONES[m.key]
+                                return (
+                                    <Link
+                                        key={m.key}
+                                        href={m.href as '/'}
+                                        className={cn(
+                                            'group flex flex-col rounded-[2rem] border bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.05]',
+                                            tone.ring
+                                        )}
+                                    >
+                                        <div className="flex items-baseline justify-between gap-3">
+                                            <h3 className={cn('text-3xl font-black tracking-tight', tone.text)}>{m.name}</h3>
+                                            <ArrowRight className="h-4 w-4 text-white/30 transition-transform group-hover:translate-x-0.5 group-hover:text-white/70" aria-hidden />
+                                        </div>
+                                        <p className="mt-1 text-sm font-medium text-white/55 break-keep">{m.principle}</p>
+                                        <p className="mt-3 inline-block self-start rounded-lg bg-white/10 px-2 py-1 text-[12px] font-black text-white/85 break-keep">
+                                            {m.best}
+                                        </p>
+                                        <dl className="mt-5 space-y-2.5 border-t border-white/10 pt-4">
+                                            {info.methods.metrics.map((metric, mi) => (
+                                                <div key={metric} className="grid grid-cols-[84px_1fr] items-center gap-3">
+                                                    <dt className="text-[12px] font-bold text-white/55 break-keep">{metric}</dt>
+                                                    <dd className="flex gap-1" aria-label={`${metric} ${m.scores[mi]}/5`}>
+                                                        {[1, 2, 3, 4, 5].map((n) => (
+                                                            <span
+                                                                key={n}
+                                                                className={cn('h-2 flex-1 rounded-full', n <= m.scores[mi] ? tone.bar : 'bg-white/10')}
+                                                            />
+                                                        ))}
+                                                    </dd>
+                                                </div>
+                                            ))}
+                                        </dl>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                        <p className="mx-auto mt-3 max-w-6xl text-[12px] font-bold text-white/40 break-keep">{info.methods.note}</p>
+                    </div>
+                </section>
+
                 <section className="pb-20 sm:pb-28" aria-labelledby="core-services-heading">
                     <div className="container mx-auto px-6">
                         <div className="mx-auto mb-10 flex max-w-6xl flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
@@ -225,73 +432,86 @@ export default function ServicesHubClient({ workPhotos }: { workPhotos?: React.R
                             <p className="max-w-md text-sm text-white/40 break-keep">{t('lineupHint')}</p>
                         </div>
 
-                        <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <motion.div
-                                initial={{ opacity: 0, y: 16 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                className="sm:col-span-2 xl:col-span-1"
-                            >
+                        <div className="mx-auto max-w-6xl space-y-10">
+                            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                                 <Link
                                     href="/quote"
-                                    className="group relative flex h-full min-h-[220px] flex-col overflow-hidden rounded-[1.75rem] border border-teal-400/35 bg-gradient-to-br from-teal-400/20 via-teal-500/10 to-transparent p-6 transition-all hover:border-teal-300/55 hover:shadow-[0_0_40px_rgba(45,212,191,0.15)] sm:p-7"
+                                    className="group relative flex flex-col gap-5 overflow-hidden rounded-[1.75rem] border border-teal-400/35 bg-gradient-to-br from-teal-400/20 via-teal-500/10 to-transparent p-6 transition-all hover:border-teal-300/55 hover:shadow-[0_0_40px_rgba(45,212,191,0.15)] sm:flex-row sm:items-center sm:p-7"
                                 >
-                                    <div className="relative z-[1] flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-400 text-slate-950">
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-400 text-slate-950">
                                         <Zap className="h-6 w-6" />
                                     </div>
-                                    <p className="relative z-[1] mt-5 text-[10px] font-black uppercase tracking-[0.24em] text-teal-200">
-                                        {t('startHere')}
-                                    </p>
-                                    <h3 className="relative z-[1] mt-2 text-2xl font-black text-white">{t('autoQuoteTitle')}</h3>
-                                    <p className="relative z-[1] mt-2 flex-1 text-sm font-medium text-white/65 break-keep">
-                                        {t('autoQuoteDesc')}
-                                    </p>
-                                    <span className="relative z-[1] mt-5 inline-flex items-center gap-1.5 text-sm font-extrabold text-teal-200">
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-teal-200">{t('startHere')}</p>
+                                        <h3 className="mt-1 text-2xl font-black text-white">{t('autoQuoteTitle')}</h3>
+                                        <p className="mt-1 text-sm font-medium text-white/65 break-keep">{t('autoQuoteDesc')}</p>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1.5 text-sm font-extrabold text-teal-200">
                                         {t('startQuote')}
                                         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                                     </span>
                                 </Link>
                             </motion.div>
 
-                            {SERVICE_LANDINGS.map((service, index) => {
-                                const visual = SERVICE_VISUALS[service.slug]
-                                if (!visual) return null
-                                const Icon = visual.icon
-                                return (
-                                    <motion.div
-                                        key={service.slug}
-                                        initial={{ opacity: 0, y: 16 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ delay: Math.min(index * 0.04, 0.24) }}
-                                    >
-                                        <Link
-                                            href={service.path}
-                                            className={cn(
-                                                'group flex h-full min-h-[200px] flex-col rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-6 transition-all sm:p-7',
-                                                visual.ring,
-                                            )}
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
-                                                    <Icon className={cn('h-5 w-5', visual.accent)} aria-hidden />
-                                                </div>
-                                                <span className="text-[10px] font-black tracking-[0.18em] text-white/30">
-                                                    {String(index + 1).padStart(2, '0')}
-                                                </span>
-                                            </div>
-                                            <h3 className="mt-5 text-xl font-black text-white">{visual.title[locale]}</h3>
-                                            <p className="mt-2 flex-1 text-sm font-medium leading-relaxed text-white/50 break-keep">
-                                                {visual.blurb[locale]}
-                                            </p>
-                                            <span className={cn('mt-5 inline-flex items-center gap-1.5 text-sm font-bold', visual.accent)}>
-                                                {tCommon('learnMore')}
-                                                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                                            </span>
-                                        </Link>
-                                    </motion.div>
-                                )
-                            })}
+                            {info.groups.map((group, gi) => (
+                                <div key={group.key}>
+                                    <div className="mb-4 flex items-baseline gap-3">
+                                        <span className="text-[11px] font-black tabular-nums text-teal-400/80">{String(gi + 1).padStart(2, '0')}</span>
+                                        <h3 className="text-lg font-black text-white sm:text-xl">{group.title}</h3>
+                                        <p className="hidden text-sm font-medium text-white/40 sm:block break-keep">{group.body}</p>
+                                    </div>
+                                    <div className={cn('grid gap-4 sm:grid-cols-2', GROUP_COLS[group.services.length] ?? 'lg:grid-cols-3')}>
+                                        {group.services.map((slug, index) => {
+                                            const visual = SERVICE_VISUALS[slug]
+                                            const path = SERVICE_PATHS[slug]
+                                            if (!visual || !path) return null
+                                            const Icon = visual.icon
+                                            return (
+                                                <motion.div
+                                                    key={slug}
+                                                    initial={{ opacity: 0, y: 16 }}
+                                                    whileInView={{ opacity: 1, y: 0 }}
+                                                    viewport={{ once: true }}
+                                                    transition={{ delay: Math.min(index * 0.04, 0.24) }}
+                                                >
+                                                    <Link
+                                                        href={path as '/'}
+                                                        className={cn(
+                                                            'group flex h-full flex-col rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-6 transition-all sm:min-h-[200px] sm:p-7',
+                                                            visual.ring,
+                                                        )}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                                                                <Icon className={cn('h-5 w-5', visual.accent)} aria-hidden />
+                                                            </div>
+                                                            <span className="text-[10px] font-black tracking-[0.18em] text-white/30">{numbers[slug]}</span>
+                                                        </div>
+                                                        <h4 className="mt-5 text-xl font-black text-white">{visual.title[locale]}</h4>
+                                                        <p className="mt-2 text-sm font-medium leading-relaxed text-white/50 break-keep">
+                                                            {visual.blurb[locale]}
+                                                        </p>
+                                                        <div className="mt-3 flex flex-1 flex-wrap content-start gap-1.5">
+                                                            {(info.chips[slug] ?? []).map((chip) => (
+                                                                <span
+                                                                    key={chip}
+                                                                    className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[11px] font-black text-white/70"
+                                                                >
+                                                                    {chip}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                        <span className={cn('mt-5 inline-flex items-center gap-1.5 text-sm font-bold', visual.accent)}>
+                                                            {tCommon('learnMore')}
+                                                            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                                                        </span>
+                                                    </Link>
+                                                </motion.div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </section>

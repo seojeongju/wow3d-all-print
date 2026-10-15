@@ -7,8 +7,16 @@ import {
     ChevronDown,
     ClipboardList,
     Columns3,
+    Droplets,
+    Eye,
+    Factory,
+    FileBox,
     Files,
     Flag,
+    Focus,
+    Gauge,
+    Images,
+    Layers,
     Lightbulb,
     PackageCheck,
     Paintbrush,
@@ -16,11 +24,14 @@ import {
     PiggyBank,
     Printer,
     ReceiptText,
+    Repeat2,
     Ruler,
     ScanSearch,
     Scissors,
     ScrollText,
     Sparkles,
+    Sun,
+    Upload,
     Wallet,
     type LucideIcon,
 } from 'lucide-react'
@@ -46,6 +57,38 @@ const INFO_ICONS: Record<InfoIcon, LucideIcon> = {
     mesh: Box,
     split: Scissors,
     support: Columns3,
+    repeat: Repeat2,
+    focus: Focus,
+    sun: Sun,
+    images: Images,
+    resin: Droplets,
+    gauge: Gauge,
+    file: FileBox,
+    eye: Eye,
+    factory: Factory,
+    layers: Layers,
+    upload: Upload,
+    saving: PiggyBank,
+}
+
+/** 항목 수에 맞춘 그리드 열 (Tailwind가 감지하도록 클래스 전체 문자열 유지) */
+const LG_COLS: Record<number, string> = {
+    2: 'lg:grid-cols-2',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-4',
+    5: 'lg:grid-cols-5',
+}
+const MD_COLS: Record<number, string> = {
+    2: 'md:grid-cols-2',
+    3: 'md:grid-cols-3',
+    4: 'md:grid-cols-4',
+    5: 'md:grid-cols-5',
+}
+/** 첫·마지막 열 중앙을 잇는 가로 연결선 위치 */
+const LINE_INSET: Record<number, string> = {
+    3: 'left-[16.7%] right-[16.7%]',
+    4: 'left-[12.5%] right-[12.5%]',
+    5: 'left-[10%] right-[10%]',
 }
 
 const DOC_ICONS: LucideIcon[] = [ClipboardList, ScrollText, ReceiptText]
@@ -101,7 +144,7 @@ export function InfoScope({ scope }: { scope: ServiceInfographicContent['scope']
     return (
         <section>
             <SectionHeading heading={scope.heading} />
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <ul className={cn('grid gap-3 sm:grid-cols-2', LG_COLS[scope.items.length] ?? 'lg:grid-cols-4')}>
                 {scope.items.map((item) => {
                     const Icon = INFO_ICONS[item.icon]
                     return (
@@ -124,10 +167,12 @@ export function InfoScope({ scope }: { scope: ServiceInfographicContent['scope']
 
 /** 시작 지점별 5단계 진행 흐름 */
 export function InfoProcess({ process }: { process: ServiceInfographicContent['process'] }) {
+    const count = process.steps.length
+    const hasEntry = process.steps.some((s) => s.entry)
     return (
         <section>
             <SectionHeading eyebrow={process.eyebrow} heading={process.heading} body={process.body} />
-            <ol className="relative grid gap-4 md:grid-cols-5 md:gap-3">
+            <ol className={cn('relative grid gap-4 md:gap-3', MD_COLS[count] ?? 'md:grid-cols-5')}>
                 {/* 단계 연결선 (데스크톱 가로, 모바일 세로) */}
                 <span
                     aria-hidden
@@ -135,14 +180,18 @@ export function InfoProcess({ process }: { process: ServiceInfographicContent['p
                 />
                 <span
                     aria-hidden
-                    className="absolute hidden md:block left-[10%] right-[10%] top-[114px] h-px bg-gradient-to-r from-violet-400/60 via-teal-400/50 to-teal-400/80"
+                    className={cn(
+                        'absolute hidden md:block h-px bg-gradient-to-r from-violet-400/60 via-teal-400/50 to-teal-400/80',
+                        LINE_INSET[count] ?? 'left-[10%] right-[10%]',
+                        hasEntry ? 'top-[114px]' : 'top-[22px]'
+                    )}
                 />
                 {process.steps.map((step, i) => {
                     const Icon = INFO_ICONS[step.icon]
                     return (
                         <li key={step.title} className="relative flex gap-4 md:flex-col md:gap-0">
                             {/* 시작점 안내 */}
-                            <div className="hidden md:flex h-[92px] flex-col justify-end pb-3">
+                            <div className={cn('hidden h-[92px] flex-col justify-end pb-3', hasEntry && 'md:flex')}>
                                 {step.entry ? (
                                     <Link
                                         href={step.entry.href as '/'}
@@ -194,7 +243,7 @@ export function InfoProcess({ process }: { process: ServiceInfographicContent['p
 }
 
 /** 발표일 역산 간트 차트 */
-export function InfoTimeline({ timeline }: { timeline: ServiceInfographicContent['timeline'] }) {
+export function InfoTimeline({ timeline }: { timeline: NonNullable<ServiceInfographicContent['timeline']> }) {
     const span = Math.max(...timeline.ticks)
     const pos = (d: number) => `${((span - d) / span) * 100}%`
 
@@ -296,13 +345,20 @@ export function InfoMatch({ match }: { match: ServiceInfographicContent['match']
     return (
         <section>
             <SectionHeading eyebrow={match.eyebrow} heading={match.heading} body={match.body} />
-            <div className="grid gap-4 md:grid-cols-3">
+            <div
+                className={cn(
+                    'grid gap-4',
+                    match.cards.length === 2 && 'md:grid-cols-2',
+                    match.cards.length === 3 && 'md:grid-cols-3',
+                    match.cards.length >= 4 && 'md:grid-cols-2 lg:grid-cols-4'
+                )}
+            >
                 {match.cards.map((card) => {
                     const tone = CARD_TONES[card.tone]
                     return (
                         <article
                             key={card.purpose}
-                            className={cn('rounded-3xl border bg-white/[0.03] p-6 space-y-4', tone.ring)}
+                            className={cn('flex flex-col gap-4 rounded-3xl border bg-white/[0.03] p-6', tone.ring)}
                         >
                             <div className="space-y-2">
                                 <span className={cn('inline-block rounded-full px-3 py-1 text-[11px] font-black', tone.chip)}>
@@ -314,7 +370,7 @@ export function InfoMatch({ match }: { match: ServiceInfographicContent['match']
                                 </h3>
                                 <p className="text-sm text-white/60 leading-relaxed break-keep">{card.why}</p>
                             </div>
-                            <dl className="space-y-2.5 border-t border-white/10 pt-4">
+                            <dl className="mt-auto space-y-2.5 border-t border-white/10 pt-4">
                                 {match.metrics.map((metric, mi) => (
                                     <div key={metric} className="grid grid-cols-[84px_1fr] items-center gap-3">
                                         <dt className="text-[12px] font-bold text-white/55 break-keep">{metric}</dt>
@@ -394,11 +450,12 @@ export function InfoDocs({ docs }: { docs: NonNullable<ServiceInfographicContent
 
 /** 출력 전 파일 점검표 */
 export function InfoChecklist({ checklist }: { checklist: NonNullable<ServiceInfographicContent['checklist']> }) {
+    const CtaIcon = INFO_ICONS[checklist.cta.icon ?? 'scan']
     return (
         <section>
             <SectionHeading eyebrow={checklist.eyebrow} heading={checklist.heading} body={checklist.body} />
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5 md:p-7 space-y-5">
-                <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <ol className={cn('grid gap-3 sm:grid-cols-2', LG_COLS[checklist.items.length] ?? 'lg:grid-cols-4')}>
                     {checklist.items.map((item, i) => {
                         const Icon = INFO_ICONS[item.icon]
                         return (
@@ -428,7 +485,7 @@ export function InfoChecklist({ checklist }: { checklist: NonNullable<ServiceInf
                         href={checklist.cta.href as '/'}
                         className="inline-flex items-center gap-2 rounded-2xl bg-indigo-400 px-5 py-3 text-sm font-black text-slate-950 hover:bg-indigo-300 transition-colors"
                     >
-                        <ScanSearch className="h-4 w-4" aria-hidden />
+                        <CtaIcon className="h-4 w-4" aria-hidden />
                         {checklist.cta.label}
                     </Link>
                     {checklist.guide ? (
@@ -479,8 +536,10 @@ export function InfoFaq({ heading, faqs }: { heading: string; faqs: { q: string;
 }
 
 /** 팀 묶음 주문·예산 절감 */
-export function InfoTeam({ team }: { team: ServiceInfographicContent['team'] }) {
-    const tipIcons: LucideIcon[] = [Printer, Sparkles, Files]
+export function InfoTeam({ team }: { team: NonNullable<ServiceInfographicContent['team']> }) {
+    const tipIcons: LucideIcon[] = team.tipIcons?.map((k) => INFO_ICONS[k]) ?? [Printer, Sparkles, Files]
+    const TipsIcon = INFO_ICONS[team.tipsIcon ?? 'saving']
+    const ChipIcon = team.chipIcon ? INFO_ICONS[team.chipIcon] : Files
     return (
         <section>
             <SectionHeading eyebrow={team.eyebrow} heading={team.heading} body={team.body} />
@@ -499,7 +558,7 @@ export function InfoTeam({ team }: { team: ServiceInfographicContent['team'] }) 
                                             key={f}
                                             className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] font-bold text-white/75"
                                         >
-                                            <Files className="h-3 w-3 text-white/40" aria-hidden />
+                                            <ChipIcon className="h-3 w-3 text-white/40" aria-hidden />
                                             {f}
                                         </span>
                                     ))}
@@ -514,7 +573,7 @@ export function InfoTeam({ team }: { team: ServiceInfographicContent['team'] }) 
                 </div>
                 <div className="rounded-[2rem] border border-amber-400/25 bg-amber-400/[0.06] p-6 space-y-4">
                     <div className="flex items-center gap-2">
-                        <PiggyBank className="h-5 w-5 text-amber-300" aria-hidden />
+                        <TipsIcon className="h-5 w-5 text-amber-300" aria-hidden />
                         <h3 className="font-black">{team.tipsHeading}</h3>
                     </div>
                     <ol className="space-y-3">

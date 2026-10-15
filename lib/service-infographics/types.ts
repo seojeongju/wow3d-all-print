@@ -17,6 +17,18 @@ export type InfoIcon =
     | 'mesh'
     | 'split'
     | 'support'
+    | 'repeat'
+    | 'focus'
+    | 'sun'
+    | 'images'
+    | 'resin'
+    | 'gauge'
+    | 'file'
+    | 'eye'
+    | 'factory'
+    | 'layers'
+    | 'upload'
+    | 'saving'
 
 export type InfoTone = 'teal' | 'sky' | 'amber' | 'violet'
 
@@ -38,7 +50,8 @@ export type ServiceInfographicContent = {
             entry?: { label: string; href: string; cta: string }
         }[]
     }
-    timeline: {
+    /** 마감일 역산 일정 (캡스톤·졸업작품) */
+    timeline?: {
         eyebrow: string
         heading: string
         body: string
@@ -55,14 +68,15 @@ export type ServiceInfographicContent = {
         eyebrow: string
         heading: string
         body: string
-        metrics: [string, string, string]
+        metrics: string[]
         note: string
         cards: {
             purpose: string
             method: string
             materials: string
             why: string
-            scores: [number, number, number]
+            /** metrics 순서와 같은 1~5 점수 */
+            scores: number[]
             tone: Exclude<InfoTone, 'amber'>
         }[]
     }
@@ -80,15 +94,21 @@ export type ServiceInfographicContent = {
         heading: string
         body: string
         items: { icon: InfoIcon; title: string; body: string; badge: string }[]
-        cta: { label: string; href: string }
+        cta: { label: string; href: string; icon?: InfoIcon }
         guide?: { label: string; href: string }
     }
-    team: {
+    /** 입력 묶음 → 결과 흐름 + 팁 패널 (묶음 주문, 파일 형식별 처리 등) */
+    team?: {
         eyebrow: string
         heading: string
         body: string
         groups: { label: string; files: string[]; result: string }[]
         tipsHeading: string
         tips: string[]
+        /** 팁 패널 제목 아이콘 (기본: 저금통) */
+        tipsIcon?: InfoIcon
+        tipIcons?: InfoIcon[]
+        /** 입력 칩 아이콘 (기본: 파일) */
+        chipIcon?: InfoIcon
     }
 }
