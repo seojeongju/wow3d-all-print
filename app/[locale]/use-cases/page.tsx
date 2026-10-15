@@ -2,25 +2,15 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import {
     ArrowRight,
-    Building2,
     Calculator,
     Camera,
     ChevronRight,
-    Cog,
-    Cpu,
     FileBox,
     FlaskConical,
     ListChecks,
     MousePointerClick,
-    PersonStanding,
     Ruler,
     ScanSearch,
-    Sparkles,
-    Swords,
-    Trophy,
-    Type,
-    Wrench,
-    type LucideIcon,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -32,52 +22,9 @@ import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import { cn } from '@/lib/utils'
+import { METHODS, METHOD_STYLE, ScoreBars, caseIconFor } from '@/components/seo/use-case-visuals'
 
 type Props = { params: Promise<{ locale: string }> }
-
-/** 용도별 대표 아이콘 */
-const CASE_ICONS: Record<string, LucideIcon> = {
-    'figures-miniatures': PersonStanding,
-    'electronics-enclosures': Cpu,
-    'jigs-fixtures': Wrench,
-    'replacement-parts': Cog,
-    'architectural-models': Building2,
-    'cosplay-props': Swords,
-    'logos-signage': Type,
-    'trophies-awards': Trophy,
-}
-
-/** 출력 방식별 색상 */
-const METHOD_STYLE: Record<UseCaseMethod, { badge: string; bar: string; ring: string; text: string }> = {
-    fdm: {
-        badge: 'border-teal-400/40 bg-teal-400/15 text-teal-200',
-        bar: 'bg-teal-400',
-        ring: 'border-teal-400/30 hover:border-teal-300/60',
-        text: 'text-teal-300',
-    },
-    sla: {
-        badge: 'border-indigo-400/40 bg-indigo-400/15 text-indigo-200',
-        bar: 'bg-indigo-400',
-        ring: 'border-indigo-400/30 hover:border-indigo-300/60',
-        text: 'text-indigo-300',
-    },
-    dlp: {
-        badge: 'border-fuchsia-400/40 bg-fuchsia-400/15 text-fuchsia-200',
-        bar: 'bg-fuchsia-400',
-        ring: 'border-fuchsia-400/30 hover:border-fuchsia-300/60',
-        text: 'text-fuchsia-300',
-    },
-}
-
-const METHODS: UseCaseMethod[] = ['fdm', 'sla', 'dlp']
-
-/** 출력 방식 비교 — 일반적인 경향 (5점 척도) */
-const METHOD_SCORES: Record<UseCaseMethod, { detail: number; strength: number; size: number; cost: number }> = {
-    fdm: { detail: 2, strength: 4, size: 5, cost: 5 },
-    sla: { detail: 5, strength: 3, size: 3, cost: 3 },
-    dlp: { detail: 5, strength: 3, size: 2, cost: 4 },
-}
-const METRICS = ['detail', 'strength', 'size', 'cost'] as const
 
 function hubPath(locale: AppLocale) {
     return getPathname({ locale, href: '/use-cases' })
@@ -142,6 +89,12 @@ export default async function UseCasesHubPage({ params }: Props) {
     })
     const largestDim = Math.max(...cases.map((c) => c.maxDim))
     const tipCount = cases.reduce((sum, c) => sum + c.content.checklist.length, 0)
+    const metricLabels = {
+        detail: t('metric_detail'),
+        strength: t('metric_strength'),
+        size: t('metric_size'),
+        cost: t('metric_cost'),
+    }
     const casesByMethod = (m: UseCaseMethod) => cases.filter((c) => c.config.example.method === m)
 
     const flow = [
@@ -245,7 +198,7 @@ export default async function UseCasesHubPage({ params }: Props) {
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             {cases.map(({ config: u, content: c, maxDim }) => {
-                                const Icon = CASE_ICONS[u.slug] ?? Sparkles
+                                const Icon = caseIconFor(u.slug)
                                 const style = METHOD_STYLE[u.example.method]
                                 const lead = c.recommendations[0]
                                 return (
@@ -324,7 +277,6 @@ export default async function UseCasesHubPage({ params }: Props) {
                         <div className="mt-6 grid gap-4 md:grid-cols-3">
                             {METHODS.map((m) => {
                                 const style = METHOD_STYLE[m]
-                                const scores = METHOD_SCORES[m]
                                 const used = casesByMethod(m)
                                 return (
                                     <div key={m} className="flex flex-col rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
@@ -336,24 +288,9 @@ export default async function UseCasesHubPage({ params }: Props) {
                                         </div>
                                         <p className="mt-1.5 text-sm text-white/60 leading-relaxed break-keep">{t(`method_${m}_desc`)}</p>
 
-                                        <dl className="mt-5 space-y-3">
-                                            {METRICS.map((metric) => (
-                                                <div key={metric}>
-                                                    <div className="flex items-center justify-between text-[11px] font-bold text-white/55">
-                                                        <dt>{t(`metric_${metric}`)}</dt>
-                                                        <dd className="tabular-nums text-white/40">{scores[metric]}/5</dd>
-                                                    </div>
-                                                    <div className="mt-1 grid grid-cols-5 gap-1" aria-hidden>
-                                                        {[1, 2, 3, 4, 5].map((n) => (
-                                                            <span
-                                                                key={n}
-                                                                className={cn('h-2 rounded-full', n <= scores[metric] ? style.bar : 'bg-white/10')}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </dl>
+                                        <div className="mt-5">
+                                            <ScoreBars method={m} labels={metricLabels} />
+                                        </div>
 
                                         {used.length > 0 && (
                                             <div className="mt-5 border-t border-white/10 pt-4">
