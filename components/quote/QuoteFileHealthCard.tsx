@@ -341,19 +341,22 @@ function ThinWallCard({
     ]
 
     return (
-        <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3.5 space-y-3">
+        <div className="rounded-2xl border border-amber-400/25 bg-amber-500/[0.08] px-4 py-3.5 space-y-3">
             <div className="flex items-start gap-2.5">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
                     <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
                 </span>
-                <div className="min-w-0 space-y-1">
+                <div className="min-w-0 space-y-1.5">
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm font-black text-white break-keep">
                         {t('thinTitle')}
                         <span className="rounded-full border border-amber-300/30 bg-amber-400/15 px-2 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-100">
                             {t('thinStandard', { method: method.toUpperCase(), min: formatMm(minWallMm) })}
                         </span>
                     </p>
-                    <p className="text-[11px] sm:text-xs font-bold text-amber-100/75 leading-relaxed break-keep">{t('thinRisk')}</p>
+                    <p className="inline-flex max-w-full items-center rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-2.5 py-1 text-[11px] sm:text-xs font-black text-emerald-100 break-keep">
+                        {t('thinOrderOk')}
+                    </p>
+                    <p className="text-[11px] sm:text-xs font-bold text-amber-50/70 leading-relaxed break-keep">{t('thinRisk')}</p>
                 </div>
             </div>
 
@@ -375,7 +378,7 @@ function ThinWallCard({
                     <div className="mb-2 flex items-end justify-between gap-2">
                         <div className="min-w-0">
                             <p className="text-[10px] font-bold text-white/50">{t('thinGaugeThinnest')}</p>
-                            <p className="text-sm font-black text-rose-200 tabular-nums">{thinnestLabel}</p>
+                            <p className="text-sm font-black text-amber-100 tabular-nums">{thinnestLabel}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-bold text-white/50">{t('thinGaugeMin')}</p>
@@ -383,11 +386,11 @@ function ThinWallCard({
                         </div>
                     </div>
                     <div className="relative h-2.5 rounded-full">
-                        <div className="absolute inset-y-0 left-0 w-1/2 rounded-l-full bg-gradient-to-r from-rose-500/80 to-amber-400/80" />
-                        <div className="absolute inset-y-0 right-0 w-1/2 rounded-r-full bg-emerald-400/60" />
+                        <div className="absolute inset-y-0 left-0 w-1/2 rounded-l-full bg-gradient-to-r from-amber-500/70 to-amber-300/70" />
+                        <div className="absolute inset-y-0 right-0 w-1/2 rounded-r-full bg-emerald-400/55" />
                         <div className="absolute left-1/2 top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/80" />
                         <div
-                            className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-rose-300 bg-slate-950 shadow-[0_0_10px_rgba(251,113,133,0.7)]"
+                            className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-200 bg-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.45)]"
                             style={{ left: `${markerPos}%` }}
                         />
                     </div>
@@ -399,7 +402,7 @@ function ThinWallCard({
                 </div>
             </div>
 
-            {/* 해결 방법 */}
+            {/* 품질 개선 제안 — 거절이 아니라 선택지 */}
             <div className="space-y-1.5">
                 <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white/45">{t('thinFixesTitle')}</p>
                 <ul className={cn('grid gap-1.5', remedies.length === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
@@ -413,7 +416,9 @@ function ThinWallCard({
                         </li>
                     ))}
                 </ul>
-                <p className="text-[10px] sm:text-[11px] font-bold text-white/45 break-keep">{t('thinReview')}</p>
+                <p className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] sm:text-[11px] font-bold text-white/60 break-keep">
+                    {t('thinReview')}
+                </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
