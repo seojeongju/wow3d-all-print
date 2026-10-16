@@ -50,7 +50,9 @@ export const SCALE_PERCENT_MIN = 1
 export const SCALE_PERCENT_MAX = 400
 /** Tripo 등 일부 AI STL은 mm 단위가 매우 작아 400%로는 참고 치수에 도달하지 못함 */
 export const AI_PHOTO_SCALE_PERCENT_MAX = 15000
-export const SCALE_PERCENT_STEP = 1
+/** 스케일 % 소수 자릿수 — mm 직접 입력이 0.01mm 단위로 맞게 함 */
+export const SCALE_PERCENT_DECIMALS = 2
+export const SCALE_PERCENT_STEP = 0.01
 
 /** 사진→AI 3D: 출력 방식 최대 치수(제한축)의 중간(50%)으로 최장축 맞춤 */
 export const MESHY_AUTOFIT_BED_FRACTION = 0.5
@@ -120,7 +122,16 @@ export function baseLongestMm(base: GeometryAnalysis | null | undefined): number
 export function clampScalePercent(value: number, maxPercent = SCALE_PERCENT_MAX): number {
     if (!Number.isFinite(value)) return 100
     const max = maxPercent > 0 ? maxPercent : SCALE_PERCENT_MAX
-    return Math.min(max, Math.max(SCALE_PERCENT_MIN, Math.round(value)))
+    const factor = 10 ** SCALE_PERCENT_DECIMALS
+    const rounded = Math.round(value * factor) / factor
+    return Math.min(max, Math.max(SCALE_PERCENT_MIN, rounded))
+}
+
+/** UI·로그용 — 불필요한 끝자리 0 제거 (100, 206.47) */
+export function formatScalePercent(value: number): string {
+    const n = clampScalePercent(value, AI_PHOTO_SCALE_PERCENT_MAX)
+    if (Number.isInteger(n)) return String(n)
+    return n.toFixed(SCALE_PERCENT_DECIMALS).replace(/\.?0+$/, '')
 }
 
 /** 축별 스케일 — 미지정이면 균일 scalePercent */

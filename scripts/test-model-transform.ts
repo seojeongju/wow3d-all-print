@@ -82,6 +82,20 @@ assert(axes.x === 200 && axes.y === 100 && axes.z === 100, `axes after x200 got 
 const pctZ = scalePercentFromTargetMm(baseNu, DEFAULT_MODEL_TRANSFORM, 'z', 8)
 assert(pctZ === 200, `target 8mm on z=4 → 200% got ${pctZ}`)
 
+// mm 직접 입력: 소수 %로 목표 치수에 맞춤 (정수 %면 149.66으로 어긋남)
+const baseMmIn: GeometryAnalysis = {
+    volume: 1,
+    surfaceArea: 10,
+    boundingBox: { x: 72.65, y: 56.65, z: 20 },
+}
+const pct150 = scalePercentFromTargetMm(baseMmIn, DEFAULT_MODEL_TRANSFORM, 'x', 150)
+assert(Math.abs(pct150 - 206.47) < 1e-9, `150mm → ~206.47% got ${pct150}`)
+const at150 = applyTransformToAnalysis(
+    baseMmIn,
+    withAxisScalePercent(withUniformScalePercent(DEFAULT_MODEL_TRANSFORM, 100), 'x', pct150)
+)
+assert(Math.abs(at150.boundingBox.x - 150) < 0.005, `applied x expected ~150 got ${at150.boundingBox.x}`)
+
 // 비율 유지 스케일: Z만 50%인 상태에서 Z→100%면 세 축 모두 ×2
 const stretched = withAxisScalePercent(withUniformScalePercent(DEFAULT_MODEL_TRANSFORM, 100), 'z', 50)
 const kept = withProportionalAxisScale(stretched, 'z', 100)

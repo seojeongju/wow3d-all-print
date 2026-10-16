@@ -6,6 +6,7 @@ import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
 import {
     baseLongestMm,
     clampScalePercent,
+    formatScalePercent,
     getScalePercentMax,
     isUniformScaleAxes,
     resolveScaleAxesPercent,
@@ -48,7 +49,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const scaleMax = getScalePercentMax(fileSource.kind, unitInch, baseLongestMm(baseAnalysis))
     const scaleAxes = resolveScaleAxesPercent(transform, scaleMax)
     const uniformFromStore = isUniformScaleAxes(scaleAxes)
-    const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
+    const [scaleDraft, setScaleDraft] = useState(() => formatScalePercent(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
     /** 비율 잠금 — 저장된 축별 값이 다르면 잠금 해제 상태로 시작 */
     const [lockRatio, setLockRatio] = useState(true)
@@ -64,7 +65,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     }, [isAiPhoto, baseAnalysis, printMethodForFit, bedMaxForFit])
 
     useEffect(() => {
-        setScaleDraft(String(transform.scalePercent))
+        setScaleDraft(formatScalePercent(transform.scalePercent))
     }, [transform.scalePercent])
 
     useEffect(() => {
@@ -92,12 +93,12 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const commitScalePercent = (raw: string) => {
         const n = Number(raw)
         if (!Number.isFinite(n)) {
-            setScaleDraft(String(transform.scalePercent))
+            setScaleDraft(formatScalePercent(transform.scalePercent))
             return
         }
         const next = clampScalePercent(n, scaleMax)
         // 상한·하한에 걸려 값이 그대로면 store 변경이 없어 입력칸이 갱신되지 않음
-        if (next === transform.scalePercent) setScaleDraft(String(next))
+        if (next === transform.scalePercent) setScaleDraft(formatScalePercent(next))
         // 축별 조절 후 잠금 상태면 현재 비율을 유지한 채 크기만 맞춤
         if (lockRatio && !uniformFromStore) {
             setScaleKeepingRatio(next, { fromUser: true })
@@ -156,8 +157,8 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         <span className="font-mono text-[10px] font-bold tabular-nums text-teal-300/90 whitespace-nowrap">
                             {box.x.toFixed(0)}×{box.y.toFixed(0)}×{box.z.toFixed(0)}mm
                             {lockRatio && uniformFromStore
-                                ? ` · ${transform.scalePercent}%`
-                                : ` · ${scaleAxes.x}/${scaleAxes.y}/${scaleAxes.z}%`}
+                                ? ` · ${formatScalePercent(transform.scalePercent)}%`
+                                : ` · ${formatScalePercent(scaleAxes.x)}/${formatScalePercent(scaleAxes.y)}/${formatScalePercent(scaleAxes.z)}%`}
                         </span>
                     ) : null}
                     {collapsed && isAiPhoto ? (
@@ -230,14 +231,19 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     <div className="flex items-center gap-1.5 shrink-0">
                         <input
                             type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                            inputMode="decimal"
                             min={SCALE_PERCENT_MIN}
                             max={scaleMax}
                             step={SCALE_PERCENT_STEP}
                             value={scaleDraft}
                             disabled={!lockRatio}
-                            onChange={(e) => setScaleDraft(e.target.value.replace(/[^\d]/g, ''))}
+                            onChange={(e) =>
+                                setScaleDraft(
+                                    e.target.value
+                                        .replace(/[^\d.]/g, '')
+                                        .replace(/(\..*)\./g, '$1')
+                                )
+                            }
                             onBlur={() => commitScalePercent(scaleDraft)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -285,7 +291,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                                 {axis}
                                 {!lockRatio ? (
                                     <span className="ml-0.5 text-white/35 normal-case">
-                                        {scaleAxes[axis]}%
+                                        {formatScalePercent(scaleAxes[axis])}%
                                     </span>
                                 ) : null}
                             </div>
