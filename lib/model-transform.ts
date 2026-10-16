@@ -180,6 +180,52 @@ export function withAxisScalePercent(
     }
 }
 
+/**
+ * 세 축에 동일 배율을 곱해 현재 축 비율을 유지한 채 크기만 변경.
+ * 균일 스케일이면 withUniformScalePercent와 동일 결과.
+ */
+export function withProportionalScaleFactor(
+    transform: ModelTransform,
+    factor: number,
+    maxPercent = AI_PHOTO_SCALE_PERCENT_MAX
+): ModelTransform {
+    const cur = resolveScaleAxesPercent(transform, maxPercent)
+    if (!(factor > 0) || !Number.isFinite(factor)) return transform
+    let f = factor
+    for (const v of [cur.x, cur.y, cur.z]) {
+        if (!(v > 0)) continue
+        if (v * f > maxPercent) f = maxPercent / v
+        if (v * f < SCALE_PERCENT_MIN) f = SCALE_PERCENT_MIN / v
+    }
+    const next = {
+        x: clampScalePercent(cur.x * f, maxPercent),
+        y: clampScalePercent(cur.y * f, maxPercent),
+        z: clampScalePercent(cur.z * f, maxPercent),
+    }
+    return {
+        ...transform,
+        scalePercent: representativeScalePercent(next, maxPercent),
+        scaleXPercent: next.x,
+        scaleYPercent: next.y,
+        scaleZPercent: next.z,
+    }
+}
+
+/** 한 축 목표 %에 맞추되, 나머지 축도 같은 배율로 키워 현재 비율 유지 */
+export function withProportionalAxisScale(
+    transform: ModelTransform,
+    axis: 'x' | 'y' | 'z',
+    percent: number,
+    maxPercent = AI_PHOTO_SCALE_PERCENT_MAX
+): ModelTransform {
+    const cur = resolveScaleAxesPercent(transform, maxPercent)
+    const from = cur[axis]
+    const target = clampScalePercent(percent, maxPercent)
+    if (!(from > 0)) return withUniformScalePercent(transform, target, maxPercent)
+    if (isUniformScaleAxes(cur)) return withUniformScalePercent(transform, target, maxPercent)
+    return withProportionalScaleFactor(transform, target / from, maxPercent)
+}
+
 /** 해당 방식 베드에서 가장 짧은 축 × 50% = 기본 참고 최장축(mm) */
 export function meshyAutoFitTargetMm(bed: BedMaxMm): number {
     const limiting = Math.min(bed.x, bed.y, bed.z)

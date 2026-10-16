@@ -23,6 +23,8 @@ import {
     resolveScaleAxesPercent,
     withUniformScalePercent,
     withAxisScalePercent,
+    withProportionalAxisScale,
+    withProportionalScaleFactor,
     representativeScalePercent,
 } from '@/lib/model-transform'
 
@@ -75,6 +77,10 @@ interface FileState {
     setScalePercent: (percent: number, opts?: { fromUser?: boolean }) => void
     /** 출력 축 하나의 스케일만 변경 (축별 조절) */
     setAxisScalePercent: (axis: 'x' | 'y' | 'z', percent: number, opts?: { fromUser?: boolean }) => void
+    /** 비율 잠금: 한 축 목표에 맞추며 현재 축 비율 유지 */
+    setAxisScaleKeepingRatio: (axis: 'x' | 'y' | 'z', percent: number, opts?: { fromUser?: boolean }) => void
+    /** 비율 잠금: 대표 %를 목표로 맞추며 현재 축 비율 유지 */
+    setScaleKeepingRatio: (percent: number, opts?: { fromUser?: boolean }) => void
     /** 인치 → mm 변환 켜기/끄기 (현재 스케일에 ×25.4 또는 ÷25.4) */
     setUnitInch: (on: boolean) => void
     /** 서포트·출력 시간이 가장 적은 자세로 배치 (슬라이서 자동 배치) — 잠금 상태면 무시 */
@@ -175,6 +181,44 @@ export const useFileStore = create<FileState>((set, get) => ({
             )
             return {
                 transform: withAxisScalePercent(state.transform, axis, percent, max),
+                ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
+            }
+        }),
+    setAxisScaleKeepingRatio: (axis, percent, opts) =>
+        set((state) => {
+            const max = getScalePercentMax(
+                state.fileSource.kind,
+                state.unitInch,
+                baseLongestMm(state.baseAnalysis)
+            )
+            return {
+                transform: withProportionalAxisScale(state.transform, axis, percent, max),
+                ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
+            }
+        }),
+    setScaleKeepingRatio: (percent, opts) =>
+        set((state) => {
+            const max = getScalePercentMax(
+                state.fileSource.kind,
+                state.unitInch,
+                baseLongestMm(state.baseAnalysis)
+            )
+            const cur = resolveScaleAxesPercent(state.transform, max)
+            const from = representativeScalePercent(cur, max)
+            if (!(from > 0)) {
+                return {
+                    transform: withUniformScalePercent(state.transform, percent, max),
+                    ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
+                }
+            }
+            const target = clampScalePercent(percent, max)
+            // 이미 균일이면 균일 스케일로, 아니면 현재 비율 유지
+            const next =
+                cur.x === cur.y && cur.y === cur.z
+                    ? withUniformScalePercent(state.transform, target, max)
+                    : withProportionalScaleFactor(state.transform, target / from, max)
+            return {
+                transform: next,
                 ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
             }
         }),

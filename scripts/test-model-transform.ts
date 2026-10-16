@@ -11,6 +11,7 @@ import {
     resolveScaleAxesPercent,
     scalePercentFromTargetMm,
     withAxisScalePercent,
+    withProportionalAxisScale,
     withUniformScalePercent,
     type ModelTransform,
 } from '../lib/model-transform'
@@ -80,5 +81,14 @@ const axes = resolveScaleAxesPercent(
 assert(axes.x === 200 && axes.y === 100 && axes.z === 100, `axes after x200 got ${JSON.stringify(axes)}`)
 const pctZ = scalePercentFromTargetMm(baseNu, DEFAULT_MODEL_TRANSFORM, 'z', 8)
 assert(pctZ === 200, `target 8mm on z=4 → 200% got ${pctZ}`)
+
+// 비율 유지 스케일: Z만 50%인 상태에서 Z→100%면 세 축 모두 ×2
+const stretched = withAxisScalePercent(withUniformScalePercent(DEFAULT_MODEL_TRANSFORM, 100), 'z', 50)
+const kept = withProportionalAxisScale(stretched, 'z', 100)
+const keptAxes = resolveScaleAxesPercent(kept)
+assert(keptAxes.x === 200 && keptAxes.y === 200 && keptAxes.z === 100, `proportional keep got ${JSON.stringify(keptAxes)}`)
+const keptBox = applyTransformToAnalysis(baseNu, kept)
+assert(Math.abs(keptBox.boundingBox.x - 40) < 1e-9, `proportional bbox x got ${keptBox.boundingBox.x}`)
+assert(Math.abs(keptBox.boundingBox.z - 4) < 1e-9, `proportional bbox z got ${keptBox.boundingBox.z}`)
 
 console.log('test-model-transform: ok')

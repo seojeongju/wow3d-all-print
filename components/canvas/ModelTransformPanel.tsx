@@ -33,6 +33,8 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const transform = useFileStore((s) => s.transform)
     const setScalePercent = useFileStore((s) => s.setScalePercent)
     const setAxisScalePercent = useFileStore((s) => s.setAxisScalePercent)
+    const setAxisScaleKeepingRatio = useFileStore((s) => s.setAxisScaleKeepingRatio)
+    const setScaleKeepingRatio = useFileStore((s) => s.setScaleKeepingRatio)
     const orientationLocked = useFileStore((s) => s.orientationLocked)
     const resetTransform = useFileStore((s) => s.resetTransform)
     const meshyFitScalePercent = useFileStore((s) => s.meshyFitScalePercent)
@@ -95,8 +97,13 @@ export default function ModelTransformPanel({ className }: { className?: string 
         }
         const next = clampScalePercent(n, scaleMax)
         // 상한·하한에 걸려 값이 그대로면 store 변경이 없어 입력칸이 갱신되지 않음
-        if (next === transform.scalePercent && lockRatio) setScaleDraft(String(next))
-        setScalePercent(next, { fromUser: true })
+        if (next === transform.scalePercent) setScaleDraft(String(next))
+        // 축별 조절 후 잠금 상태면 현재 비율을 유지한 채 크기만 맞춤
+        if (lockRatio && !uniformFromStore) {
+            setScaleKeepingRatio(next, { fromUser: true })
+        } else {
+            setScalePercent(next, { fromUser: true })
+        }
         setLockRatio(true)
     }
 
@@ -107,28 +114,21 @@ export default function ModelTransformPanel({ className }: { className?: string 
             return
         }
         const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n, scaleMax)
-        if (lockRatio) {
-            if (next === transform.scalePercent) {
-                setDimDraft({ x: box.x.toFixed(2), y: box.y.toFixed(2), z: box.z.toFixed(2) })
-            }
-            setScalePercent(next, { fromUser: true })
-            return
-        }
         const cur = resolveScaleAxesPercent(transform, scaleMax)[axis]
         if (next === cur) {
             setDimDraft((d) => ({ ...d, [axis]: box[axis].toFixed(2) }))
+        }
+        if (lockRatio) {
+            // 현재 축 비율을 유지한 채 전체 크기만 변경 (균일이면 균일 스케일과 동일)
+            setAxisScaleKeepingRatio(axis, next, { fromUser: true })
+            return
         }
         setAxisScalePercent(axis, next, { fromUser: true })
     }
 
     const toggleLockRatio = () => {
-        if (!lockRatio) {
-            // 잠금 켤 때: 대표 배율로 세 축 맞춤
-            setScalePercent(transform.scalePercent, { fromUser: true })
-            setLockRatio(true)
-            return
-        }
-        setLockRatio(false)
+        // 잠금 on/off는 이후 입력 동작만 바꾸고, 지금 치수는 건드리지 않음
+        setLockRatio((v) => !v)
     }
 
     return (
