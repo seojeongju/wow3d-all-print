@@ -8,6 +8,10 @@ import {
     meshyAutoFitScalePercent,
     meshyAutoFitTargetMm,
     nextAxis90,
+    resolveScaleAxesPercent,
+    scalePercentFromTargetMm,
+    withAxisScalePercent,
+    withUniformScalePercent,
     type ModelTransform,
 } from '../lib/model-transform'
 import type { GeometryAnalysis } from '../lib/geometry'
@@ -55,5 +59,26 @@ assert(fitSla != null && fitSla < (fit812 as number), 'SLA mid smaller than FDM'
 
 const fitTiny = meshyAutoFitScalePercent(0.8, 'fdm')
 assert(fitTiny != null && fitTiny > 400 && fitTiny <= 15000, `tiny model autofit expected >400 got ${fitTiny}`)
+
+// 축별(비균일) 스케일: Z만 50% → bbox.z 절반, 부피 ∝ sx·sy·sz
+const baseNu: GeometryAnalysis = {
+    volume: 0.8,
+    surfaceArea: 12,
+    boundingBox: { x: 20, y: 10, z: 4 },
+}
+const nu = applyTransformToAnalysis(
+    baseNu,
+    withAxisScalePercent(withUniformScalePercent(DEFAULT_MODEL_TRANSFORM, 100), 'z', 50)
+)
+assert(Math.abs(nu.boundingBox.x - 20) < 1e-9, `nu bbox x expected 20 got ${nu.boundingBox.x}`)
+assert(Math.abs(nu.boundingBox.y - 10) < 1e-9, `nu bbox y expected 10 got ${nu.boundingBox.y}`)
+assert(Math.abs(nu.boundingBox.z - 2) < 1e-9, `nu bbox z expected 2 got ${nu.boundingBox.z}`)
+assert(Math.abs(nu.volume - 0.4) < 1e-9, `nu volume expected 0.4 got ${nu.volume}`)
+const axes = resolveScaleAxesPercent(
+    withAxisScalePercent(withUniformScalePercent(DEFAULT_MODEL_TRANSFORM, 100), 'x', 200)
+)
+assert(axes.x === 200 && axes.y === 100 && axes.z === 100, `axes after x200 got ${JSON.stringify(axes)}`)
+const pctZ = scalePercentFromTargetMm(baseNu, DEFAULT_MODEL_TRANSFORM, 'z', 8)
+assert(pctZ === 200, `target 8mm on z=4 → 200% got ${pctZ}`)
 
 console.log('test-model-transform: ok')

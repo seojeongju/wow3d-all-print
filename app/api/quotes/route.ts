@@ -393,8 +393,14 @@ export async function POST(request: NextRequest) {
 
             if (quoteId > 0 && body.modelTransform) {
                 try {
+                    const sx = Number(body.modelTransform.scaleXPercent)
+                    const sy = Number(body.modelTransform.scaleYPercent)
+                    const sz = Number(body.modelTransform.scaleZPercent)
                     const payload = JSON.stringify({
                         scalePercent: Number(body.modelTransform.scalePercent) || 100,
+                        ...(Number.isFinite(sx) && sx > 0 ? { scaleXPercent: sx } : {}),
+                        ...(Number.isFinite(sy) && sy > 0 ? { scaleYPercent: sy } : {}),
+                        ...(Number.isFinite(sz) && sz > 0 ? { scaleZPercent: sz } : {}),
                         rotX: Number(body.modelTransform.rotX) || 0,
                         rotY: Number(body.modelTransform.rotY) || 0,
                         rotZ: Number(body.modelTransform.rotZ) || 0,

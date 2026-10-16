@@ -7,19 +7,21 @@ import {
     baseLongestMm,
     clampScalePercent,
     getScalePercentMax,
+    isUniformScaleAxes,
+    resolveScaleAxesPercent,
     SCALE_PERCENT_MIN,
     SCALE_PERCENT_STEP,
     scalePercentFromTargetMm,
 } from '@/lib/model-transform'
 import { maybeAutoFitMeshyScale } from '@/lib/model-analysis-runner'
-import { RotateCcw, Maximize2, Wand2, ChevronDown } from 'lucide-react'
+import { RotateCcw, Maximize2, Wand2, ChevronDown, Link2, Unlink2 } from 'lucide-react'
 import { assessPrintability } from '@/lib/printability'
 import { MESHY_AI_DISCLAIMER, MESHY_AI_DISCLAIMER_EN } from '@/lib/meshy-disclaimer'
 import { cn } from '@/lib/utils'
 
 /**
  * 자동견적 뷰어용 모델 컨트롤
- * - 균일 스케일(%) 직접 입력 + 치수(mm) 직접 입력
+ * - 균일 스케일(%) · 축별 치수(mm) 입력 (비율 잠금 on/off)
  * - 배치는 자동(서포트·출력 시간 최소) — 회전에 따라 견적이 달라지므로 수동 회전은 제공하지 않음
  */
 export default function ModelTransformPanel({ className }: { className?: string }) {
@@ -30,6 +32,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const baseAnalysis = useFileStore((s) => s.baseAnalysis)
     const transform = useFileStore((s) => s.transform)
     const setScalePercent = useFileStore((s) => s.setScalePercent)
+    const setAxisScalePercent = useFileStore((s) => s.setAxisScalePercent)
     const orientationLocked = useFileStore((s) => s.orientationLocked)
     const resetTransform = useFileStore((s) => s.resetTransform)
     const meshyFitScalePercent = useFileStore((s) => s.meshyFitScalePercent)
@@ -39,15 +42,19 @@ export default function ModelTransformPanel({ className }: { className?: string 
     const unitInch = useFileStore((s) => s.unitInch)
     const effective = useEffectiveAnalysis()
 
+    const isAiPhoto = fileSource.kind === 'meshy-photo'
+    const scaleMax = getScalePercentMax(fileSource.kind, unitInch, baseLongestMm(baseAnalysis))
+    const scaleAxes = resolveScaleAxesPercent(transform, scaleMax)
+    const uniformFromStore = isUniformScaleAxes(scaleAxes)
     const [scaleDraft, setScaleDraft] = useState(String(transform.scalePercent))
     const [dimDraft, setDimDraft] = useState({ x: '', y: '', z: '' })
+    /** 비율 잠금 — 저장된 축별 값이 다르면 잠금 해제 상태로 시작 */
+    const [lockRatio, setLockRatio] = useState(true)
     // 모바일에선 패널이 뷰어를 거의 덮어 모델 조작이 안 되므로 접힌 상태로 시작
     const [collapsed, setCollapsed] = useState(
         () => typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches
     )
     const bodyId = useId()
-    const isAiPhoto = fileSource.kind === 'meshy-photo'
-    const scaleMax = getScalePercentMax(fileSource.kind, unitInch, baseLongestMm(baseAnalysis))
 
     useEffect(() => {
         if (!isAiPhoto || !baseAnalysis) return
@@ -57,6 +64,10 @@ export default function ModelTransformPanel({ className }: { className?: string 
     useEffect(() => {
         setScaleDraft(String(transform.scalePercent))
     }, [transform.scalePercent])
+
+    useEffect(() => {
+        if (!uniformFromStore) setLockRatio(false)
+    }, [uniformFromStore])
 
     useEffect(() => {
         if (!effective) return
@@ -84,8 +95,9 @@ export default function ModelTransformPanel({ className }: { className?: string 
         }
         const next = clampScalePercent(n, scaleMax)
         // 상한·하한에 걸려 값이 그대로면 store 변경이 없어 입력칸이 갱신되지 않음
-        if (next === transform.scalePercent) setScaleDraft(String(next))
+        if (next === transform.scalePercent && lockRatio) setScaleDraft(String(next))
         setScalePercent(next, { fromUser: true })
+        setLockRatio(true)
     }
 
     const commitAxisMm = (axis: 'x' | 'y' | 'z', raw: string) => {
@@ -95,10 +107,28 @@ export default function ModelTransformPanel({ className }: { className?: string 
             return
         }
         const next = scalePercentFromTargetMm(baseAnalysis, transform, axis, n, scaleMax)
-        if (next === transform.scalePercent) {
-            setDimDraft({ x: box.x.toFixed(2), y: box.y.toFixed(2), z: box.z.toFixed(2) })
+        if (lockRatio) {
+            if (next === transform.scalePercent) {
+                setDimDraft({ x: box.x.toFixed(2), y: box.y.toFixed(2), z: box.z.toFixed(2) })
+            }
+            setScalePercent(next, { fromUser: true })
+            return
         }
-        setScalePercent(next, { fromUser: true })
+        const cur = resolveScaleAxesPercent(transform, scaleMax)[axis]
+        if (next === cur) {
+            setDimDraft((d) => ({ ...d, [axis]: box[axis].toFixed(2) }))
+        }
+        setAxisScalePercent(axis, next, { fromUser: true })
+    }
+
+    const toggleLockRatio = () => {
+        if (!lockRatio) {
+            // 잠금 켤 때: 대표 배율로 세 축 맞춤
+            setScalePercent(transform.scalePercent, { fromUser: true })
+            setLockRatio(true)
+            return
+        }
+        setLockRatio(false)
     }
 
     return (
@@ -124,7 +154,10 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     </span>
                     {collapsed ? (
                         <span className="font-mono text-[10px] font-bold tabular-nums text-teal-300/90 whitespace-nowrap">
-                            {box.x.toFixed(0)}×{box.y.toFixed(0)}×{box.z.toFixed(0)}mm · {transform.scalePercent}%
+                            {box.x.toFixed(0)}×{box.y.toFixed(0)}×{box.z.toFixed(0)}mm
+                            {lockRatio && uniformFromStore
+                                ? ` · ${transform.scalePercent}%`
+                                : ` · ${scaleAxes.x}/${scaleAxes.y}/${scaleAxes.z}%`}
                         </span>
                     ) : null}
                     {collapsed && isAiPhoto ? (
@@ -188,7 +221,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                 </div>
             )}
 
-            {/* 스케일 % 직접 입력 */}
+            {/* 균일 스케일 % — 비율 잠금일 때만 활성 */}
             <div className="space-y-1.5">
                 <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <span className="text-[11px] font-bold text-white/55 shrink-0">
@@ -203,6 +236,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                             max={scaleMax}
                             step={SCALE_PERCENT_STEP}
                             value={scaleDraft}
+                            disabled={!lockRatio}
                             onChange={(e) => setScaleDraft(e.target.value.replace(/[^\d]/g, ''))}
                             onBlur={() => commitScalePercent(scaleDraft)}
                             onKeyDown={(e) => {
@@ -210,22 +244,36 @@ export default function ModelTransformPanel({ className }: { className?: string 
                                     e.currentTarget.blur()
                                 }
                             }}
-                            className="min-w-[5.5rem] w-[6.5rem] rounded-lg border border-white/15 bg-black/40 px-2.5 py-1 text-right font-mono text-[12px] tabular-nums text-teal-300 outline-none focus:border-teal-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="min-w-[5.5rem] w-[6.5rem] rounded-lg border border-white/15 bg-black/40 px-2.5 py-1 text-right font-mono text-[12px] tabular-nums text-teal-300 outline-none focus:border-teal-400/50 disabled:opacity-40 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             aria-label={t('transformScaleAria')}
                         />
                         <span className="text-teal-300/80 text-[11px] font-bold">%</span>
                     </div>
                 </div>
                 <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
-                    {t('transformScaleHint')}
+                    {lockRatio ? t('transformScaleHint') : t('transformScaleHintPerAxis')}
                 </p>
             </div>
 
             {/* 치수 mm 직접 입력 */}
             <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-bold text-white/55">{t('transformDimLabel')}</span>
-                    <span className="text-[9px] font-bold text-white/30">{t('transformDimUniform')}</span>
+                    <button
+                        type="button"
+                        onClick={toggleLockRatio}
+                        aria-pressed={lockRatio}
+                        title={lockRatio ? t('transformUnlockRatio') : t('transformLockRatio')}
+                        className={cn(
+                            'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-black transition-colors',
+                            lockRatio
+                                ? 'border-teal-400/40 bg-teal-400/15 text-teal-200'
+                                : 'border-amber-400/40 bg-amber-400/10 text-amber-100'
+                        )}
+                    >
+                        {lockRatio ? <Link2 className="w-3 h-3" /> : <Unlink2 className="w-3 h-3" />}
+                        {lockRatio ? t('transformDimUniform') : t('transformDimPerAxis')}
+                    </button>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
                     {(['x', 'y', 'z'] as const).map((axis) => (
@@ -235,6 +283,11 @@ export default function ModelTransformPanel({ className }: { className?: string 
                         >
                             <div className="text-[8px] font-black text-teal-400/80 uppercase text-center mb-1">
                                 {axis}
+                                {!lockRatio ? (
+                                    <span className="ml-0.5 text-white/35 normal-case">
+                                        {scaleAxes[axis]}%
+                                    </span>
+                                ) : null}
                             </div>
                             <input
                                 type="text"
@@ -257,7 +310,7 @@ export default function ModelTransformPanel({ className }: { className?: string 
                     ))}
                 </div>
                 <p className="text-[9px] text-white/35 font-bold leading-relaxed break-keep">
-                    {t('transformDimHint')}
+                    {lockRatio ? t('transformDimHint') : t('transformDimHintPerAxis')}
                 </p>
             </div>
 

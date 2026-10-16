@@ -28,9 +28,22 @@ export function parseStoredModelTransform(raw: unknown): StoredModelTransform | 
         const o = typeof raw === 'string' ? JSON.parse(raw) : raw
         if (!o || typeof o !== 'object') return null
         const r = o as Record<string, unknown>
+        const scalePercent = clampScalePercent(
+            Number(r.scalePercent) || 100,
+            AI_PHOTO_SCALE_PERCENT_MAX
+        )
+        const axisOr = (key: 'scaleXPercent' | 'scaleYPercent' | 'scaleZPercent') => {
+            const n = Number(r[key])
+            return Number.isFinite(n) && n > 0
+                ? clampScalePercent(n, AI_PHOTO_SCALE_PERCENT_MAX)
+                : undefined
+        }
         return {
             // 출처별 상한은 store(setTransformFull)에서 적용 — 여기서 400%로 자르면 인치 변환·AI 모델 스케일이 사라짐
-            scalePercent: clampScalePercent(Number(r.scalePercent) || 100, AI_PHOTO_SCALE_PERCENT_MAX),
+            scalePercent,
+            ...(axisOr('scaleXPercent') != null ? { scaleXPercent: axisOr('scaleXPercent') } : {}),
+            ...(axisOr('scaleYPercent') != null ? { scaleYPercent: axisOr('scaleYPercent') } : {}),
+            ...(axisOr('scaleZPercent') != null ? { scaleZPercent: axisOr('scaleZPercent') } : {}),
             rotX: normalizeAxis90(r.rotX),
             rotY: normalizeAxis90(r.rotY),
             rotZ: normalizeAxis90(r.rotZ),

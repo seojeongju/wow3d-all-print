@@ -20,6 +20,10 @@ import {
     type BedMaxMm,
     type ModelTransform,
     type PrintMethodKey,
+    resolveScaleAxesPercent,
+    withUniformScalePercent,
+    withAxisScalePercent,
+    representativeScalePercent,
 } from '@/lib/model-transform'
 
 export type FileSourceKind = 'upload' | 'meshy-photo' | null
@@ -69,6 +73,8 @@ interface FileState {
     setAnalysisError: (message: string | null) => void
     /** fromUser: 사용자가 직접 조절한 경우 재자동맞춤 억제 */
     setScalePercent: (percent: number, opts?: { fromUser?: boolean }) => void
+    /** 출력 축 하나의 스케일만 변경 (축별 조절) */
+    setAxisScalePercent: (axis: 'x' | 'y' | 'z', percent: number, opts?: { fromUser?: boolean }) => void
     /** 인치 → mm 변환 켜기/끄기 (현재 스케일에 ×25.4 또는 ÷25.4) */
     setUnitInch: (on: boolean) => void
     /** 서포트·출력 시간이 가장 적은 자세로 배치 (슬라이서 자동 배치) — 잠금 상태면 무시 */
@@ -149,28 +155,48 @@ export const useFileStore = create<FileState>((set, get) => ({
     setAnalysis: (data) => set({ baseAnalysis: data }),
     setAnalysisError: (message) => set({ analysisError: message }),
     setScalePercent: (percent, opts) =>
-        set((state) => ({
-            transform: {
-                ...state.transform,
-                scalePercent: clampScalePercent(
-                    percent,
-                    getScalePercentMax(state.fileSource.kind, state.unitInch, baseLongestMm(state.baseAnalysis))
-                ),
-            },
-            ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
-        })),
+        set((state) => {
+            const max = getScalePercentMax(
+                state.fileSource.kind,
+                state.unitInch,
+                baseLongestMm(state.baseAnalysis)
+            )
+            return {
+                transform: withUniformScalePercent(state.transform, percent, max),
+                ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
+            }
+        }),
+    setAxisScalePercent: (axis, percent, opts) =>
+        set((state) => {
+            const max = getScalePercentMax(
+                state.fileSource.kind,
+                state.unitInch,
+                baseLongestMm(state.baseAnalysis)
+            )
+            return {
+                transform: withAxisScalePercent(state.transform, axis, percent, max),
+                ...(opts?.fromUser ? { meshyScaleUserOverride: true } : {}),
+            }
+        }),
     setUnitInch: (on) =>
         set((state) => {
             if (state.unitInch === on || state.fileSource.kind === 'meshy-photo') return {}
             const factor = on ? INCH_TO_MM : 1 / INCH_TO_MM
+            const max = getScalePercentMax(state.fileSource.kind, on, baseLongestMm(state.baseAnalysis))
+            const axes = resolveScaleAxesPercent(state.transform, AI_PHOTO_SCALE_PERCENT_MAX)
+            const next = {
+                x: clampScalePercent(axes.x * factor, max),
+                y: clampScalePercent(axes.y * factor, max),
+                z: clampScalePercent(axes.z * factor, max),
+            }
             return {
                 unitInch: on,
                 transform: {
                     ...state.transform,
-                    scalePercent: clampScalePercent(
-                        state.transform.scalePercent * factor,
-                        getScalePercentMax(state.fileSource.kind, on, baseLongestMm(state.baseAnalysis))
-                    ),
+                    scalePercent: representativeScalePercent(next, max),
+                    scaleXPercent: next.x,
+                    scaleYPercent: next.y,
+                    scaleZPercent: next.z,
                 },
             }
         }),
@@ -187,20 +213,29 @@ export const useFileStore = create<FileState>((set, get) => ({
             (!t.layFlat && !next.layFlat) ||
             (!!t.layFlat && !!next.layFlat && t.layFlat.every((v, i) => v === next.layFlat![i]))
         if (t.rotX !== next.rotX || t.rotY !== next.rotY || t.rotZ !== next.rotZ || !sameLayFlat || !t.snapToBed) {
-            set({ transform: { ...next, snapToBed: true } })
+            // 자동 배치는 자세만 바꾸고 사용자가 맞춘 축별 스케일은 유지
+            set({
+                transform: {
+                    ...next,
+                    snapToBed: true,
+                    scalePercent: t.scalePercent,
+                    scaleXPercent: t.scaleXPercent,
+                    scaleYPercent: t.scaleYPercent,
+                    scaleZPercent: t.scaleZPercent,
+                },
+            })
         }
         return result
     },
     resetTransform: () => {
-        set((state) => ({
-            transform: {
-                ...DEFAULT_MODEL_TRANSFORM,
-                scalePercent:
-                    state.meshyFitScalePercent ?? (state.unitInch ? INCH_SCALE_PERCENT : 100),
-            },
-            orientationLocked: false,
-            meshyScaleUserOverride: false,
-        }))
+        set((state) => {
+            const p = state.meshyFitScalePercent ?? (state.unitInch ? INCH_SCALE_PERCENT : 100)
+            return {
+                transform: withUniformScalePercent({ ...DEFAULT_MODEL_TRANSFORM }, p),
+                orientationLocked: false,
+                meshyScaleUserOverride: false,
+            }
+        })
         get().applyAutoPlacement()
     },
     setTransformFull: (transform, opts) =>
@@ -212,16 +247,19 @@ export const useFileStore = create<FileState>((set, get) => ({
                 (transform.unitInch ?? (state.unitInch || transform.scalePercent > SCALE_PERCENT_MAX))
             // 견적 재로드 직후에는 원본 분석 전이라 크기 기준 상한을 모름 → 저장값을 자르지 않음
             const longest = baseLongestMm(state.baseAnalysis)
-            const scalePercent = clampScalePercent(
-                transform.scalePercent,
+            const max =
                 isUpload && longest == null
                     ? AI_PHOTO_SCALE_PERCENT_MAX
                     : getScalePercentMax(state.fileSource.kind, unitInch, longest)
-            )
+            const axes = resolveScaleAxesPercent(transform, max)
+            const scalePercent = representativeScalePercent(axes, max)
             return {
                 unitInch,
                 transform: {
                     scalePercent,
+                    scaleXPercent: axes.x,
+                    scaleYPercent: axes.y,
+                    scaleZPercent: axes.z,
                     rotX: transform.rotX,
                     rotY: transform.rotY,
                     rotZ: transform.rotZ,

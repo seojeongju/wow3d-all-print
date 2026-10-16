@@ -114,6 +114,9 @@ function buildQuoteConfigKey(input: {
     totalPrice: number
     modelTransform: {
         scalePercent: number
+        scaleXPercent?: number
+        scaleYPercent?: number
+        scaleZPercent?: number
         rotX: number
         rotY: number
         rotZ: number
@@ -134,6 +137,9 @@ function buildQuoteConfigKey(input: {
         printColorNote: input.printColor === 'other' ? input.printColorNote.trim() : '',
         totalPrice: input.totalPrice,
         scalePercent: input.modelTransform.scalePercent,
+        scaleXPercent: input.modelTransform.scaleXPercent ?? input.modelTransform.scalePercent,
+        scaleYPercent: input.modelTransform.scaleYPercent ?? input.modelTransform.scalePercent,
+        scaleZPercent: input.modelTransform.scaleZPercent ?? input.modelTransform.scalePercent,
         rotX: input.modelTransform.rotX,
         rotY: input.modelTransform.rotY,
         rotZ: input.modelTransform.rotZ,

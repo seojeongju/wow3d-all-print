@@ -54,7 +54,7 @@ export type QuoteThinState =
 export function useQuoteThinState(): QuoteThinState {
     const file = useFileStore((s) => s.file)
     const method = useFileStore((s) => s.printMethodForFit)
-    const scalePercent = useFileStore((s) => s.transform.scalePercent)
+    const transform = useFileStore((s) => s.transform)
     const thickness = useQuoteFileHealthStore((s) => s.thickness)
 
     return useMemo(() => {
@@ -62,10 +62,15 @@ export function useQuoteThinState(): QuoteThinState {
         if (thickness.status === 'measuring') return { status: 'measuring' }
         if (thickness.status !== 'ok') return null
         const minWallMm = MIN_WALL_MM[method] ?? MIN_WALL_MM.fdm
-        const summary = summarizeThickness(thickness.result, minWallMm, scalePercent / 100)
+        // 축별 스케일이면 가장 작게 줄어든 축 기준으로 얇은 벽을 보수적으로 판정
+        const sx = (transform.scaleXPercent ?? transform.scalePercent) / 100
+        const sy = (transform.scaleYPercent ?? transform.scalePercent) / 100
+        const sz = (transform.scaleZPercent ?? transform.scalePercent) / 100
+        const scale = Math.min(sx, sy, sz)
+        const summary = summarizeThickness(thickness.result, minWallMm, scale)
         const warn = summary.thinCount >= THIN_WARN_MIN_COUNT && summary.thinRatio >= THIN_WARN_MIN_RATIO
         return { status: 'ok', method, minWallMm, summary, warn }
-    }, [file, thickness, method, scalePercent])
+    }, [file, thickness, method, transform.scalePercent, transform.scaleXPercent, transform.scaleYPercent, transform.scaleZPercent])
 }
 
 /** 뷰어에 얇은 부위만 표시하는 하이라이트 */

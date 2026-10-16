@@ -14,8 +14,15 @@ import { rotatePointEulerXyz, type Vec3Tuple } from '@/lib/stl-bake'
 export type Axis90 = 0 | 90 | 180 | 270
 
 export type ModelTransform = {
-    /** 100 = 원본 크기 */
+    /** 100 = 원본 크기 — 균일 스케일 또는 축별 스케일의 대표값(기하평균) */
     scalePercent: number
+    /**
+     * 출력 좌표(회전·평면 배치 후) X/Y/Z 축별 스케일 %.
+     * 없으면 scalePercent와 동일한 균일 스케일로 본다.
+     */
+    scaleXPercent?: number
+    scaleYPercent?: number
+    scaleZPercent?: number
     rotX: Axis90
     rotY: Axis90
     rotZ: Axis90
@@ -24,6 +31,8 @@ export type ModelTransform = {
     /** 이 바깥 법선(원본 좌표)의 평면을 바닥에 놓음 — 90° 회전보다 먼저 적용 */
     layFlat?: Vec3Tuple | null
 }
+
+export type ScaleAxesPercent = { x: number; y: number; z: number }
 
 export type PrintMethodKey = 'fdm' | 'sla' | 'dlp'
 
@@ -114,6 +123,63 @@ export function clampScalePercent(value: number, maxPercent = SCALE_PERCENT_MAX)
     return Math.min(max, Math.max(SCALE_PERCENT_MIN, Math.round(value)))
 }
 
+/** 축별 스케일 — 미지정이면 균일 scalePercent */
+export function resolveScaleAxesPercent(
+    transform: Pick<ModelTransform, 'scalePercent' | 'scaleXPercent' | 'scaleYPercent' | 'scaleZPercent'>,
+    maxPercent = AI_PHOTO_SCALE_PERCENT_MAX
+): ScaleAxesPercent {
+    const u = clampScalePercent(transform.scalePercent, maxPercent)
+    return {
+        x: clampScalePercent(transform.scaleXPercent ?? u, maxPercent),
+        y: clampScalePercent(transform.scaleYPercent ?? u, maxPercent),
+        z: clampScalePercent(transform.scaleZPercent ?? u, maxPercent),
+    }
+}
+
+export function isUniformScaleAxes(axes: ScaleAxesPercent): boolean {
+    return axes.x === axes.y && axes.y === axes.z
+}
+
+/** 축별 % → 대표 scalePercent(기하평균, 균일이면 그 값) */
+export function representativeScalePercent(axes: ScaleAxesPercent, maxPercent = AI_PHOTO_SCALE_PERCENT_MAX): number {
+    if (isUniformScaleAxes(axes)) return clampScalePercent(axes.x, maxPercent)
+    const g = Math.cbrt((axes.x / 100) * (axes.y / 100) * (axes.z / 100)) * 100
+    return clampScalePercent(g, maxPercent)
+}
+
+export function withUniformScalePercent(
+    transform: ModelTransform,
+    percent: number,
+    maxPercent = AI_PHOTO_SCALE_PERCENT_MAX
+): ModelTransform {
+    const p = clampScalePercent(percent, maxPercent)
+    return {
+        ...transform,
+        scalePercent: p,
+        scaleXPercent: p,
+        scaleYPercent: p,
+        scaleZPercent: p,
+    }
+}
+
+/** 출력 축 하나에만 스케일 적용 (나머지 유지) */
+export function withAxisScalePercent(
+    transform: ModelTransform,
+    axis: 'x' | 'y' | 'z',
+    percent: number,
+    maxPercent = AI_PHOTO_SCALE_PERCENT_MAX
+): ModelTransform {
+    const cur = resolveScaleAxesPercent(transform, maxPercent)
+    const next = { ...cur, [axis]: clampScalePercent(percent, maxPercent) }
+    return {
+        ...transform,
+        scalePercent: representativeScalePercent(next, maxPercent),
+        scaleXPercent: next.x,
+        scaleYPercent: next.y,
+        scaleZPercent: next.z,
+    }
+}
+
 /** 해당 방식 베드에서 가장 짧은 축 × 50% = 기본 참고 최장축(mm) */
 export function meshyAutoFitTargetMm(bed: BedMaxMm): number {
     const limiting = Math.min(bed.x, bed.y, bed.z)
@@ -171,8 +237,8 @@ export function getRotatedBaseBox(
 }
 
 /**
- * 특정 축 목표 치수(mm) → 균일 스케일 %.
- * 균일 스케일이므로 X/Y/Z 중 하나를 바꾸면 전체가 비례 변경된다.
+ * 특정 축 목표 치수(mm) → 그 축의 스케일 %.
+ * 균일 모드에서는 호출측에서 세 축에 같이 적용하면 된다.
  */
 export function scalePercentFromTargetMm(
     base: GeometryAnalysis,
@@ -184,7 +250,7 @@ export function scalePercentFromTargetMm(
     const rotated = getRotatedBaseBox(base, transform)
     const baseMm = rotated[axis]
     if (!(baseMm > 0) || !Number.isFinite(targetMm) || targetMm <= 0) {
-        return transform.scalePercent
+        return resolveScaleAxesPercent(transform, maxPercent)[axis]
     }
     return clampScalePercent((targetMm / baseMm) * 100, maxPercent)
 }
@@ -240,51 +306,50 @@ export function getUpAxisKey(transform: Pick<ModelTransform, 'rotX' | 'rotY' | '
 }
 
 /**
- * 원본 분석값에 균일 스케일·90° 회전을 반영.
- * - 부피 ∝ s³, 면적·오버행 ∝ s², 서포트 부피 ∝ s³, 서포트 기둥 높이 ∝ s
- * - 바운딩 박스는 스케일 후 축 순열
+ * 원본 분석값에 스케일·90° 회전을 반영.
+ * - 스케일은 출력 좌표(회전·평면 배치 후) 축별 적용 — 균일이면 기존과 동일
+ * - 부피 ∝ sx·sy·sz, 면적은 상자 근사 (sx sy+sy sz+sz sx)/3
  * - 오버행·서포트는 슬라이서처럼 회전 후 바닥(최저점)에 놓인 상태 기준
  */
 export function applyTransformToAnalysis(
     base: GeometryAnalysis,
     transform: ModelTransform
 ): GeometryAnalysis {
-    const s = clampScalePercent(transform.scalePercent, AI_PHOTO_SCALE_PERCENT_MAX) / 100
-    const s2 = s * s
-    const s3 = s2 * s
+    const axes = resolveScaleAxesPercent(transform, AI_PHOTO_SCALE_PERCENT_MAX)
+    const sx = axes.x / 100
+    const sy = axes.y / 100
+    const sz = axes.z / 100
+    const s3 = sx * sy * sz
+    const sArea = (sx * sy + sy * sz + sz * sx) / 3
+    const sLen = Math.cbrt(s3)
 
     // 평면 배치는 바닥 고정 상태에서 Z 회전만 쓰므로 그 면의 지표를 그대로 사용
     const face = findFaceOrientation(base, transform.layFlat)
     const box = face?.box ?? base.boundingBox
-    const scaledBox = { x: box.x * s, y: box.y * s, z: box.z * s }
-    const boundingBox = applyAxisRotations(
-        scaledBox,
-        transform.rotX,
-        transform.rotY,
-        transform.rotZ
-    )
+    const rotated = applyAxisRotations(box, transform.rotX, transform.rotY, transform.rotZ)
+    const boundingBox = { x: rotated.x * sx, y: rotated.y * sy, z: rotated.z * sz }
 
     const placed: OrientationSupport | undefined = face ?? base.orientations?.[getUpAxisKey(transform)]
     const src = placed ?? base
-    const area = (v: number | undefined) => (v !== undefined ? v * s2 : undefined)
+    const area = (v: number | undefined) => (v !== undefined ? v * sArea : undefined)
     const supportVolume = src.supportVolume
 
     return sanitizeGeometryAnalysis({
         volume: base.volume * s3,
-        surfaceArea: base.surfaceArea * s2,
+        surfaceArea: base.surfaceArea * sArea,
         overhangArea: area(src.overhangArea),
         ...(supportVolume !== undefined ? { supportVolume: supportVolume * s3 } : {}),
-        ...(src.supportColumnMm !== undefined ? { supportColumnMm: src.supportColumnMm * s } : {}),
+        ...(src.supportColumnMm !== undefined ? { supportColumnMm: src.supportColumnMm * sLen } : {}),
         ...(src.lateralArea !== undefined ? { lateralArea: area(src.lateralArea) } : {}),
         ...(src.topArea !== undefined ? { topArea: area(src.topArea) } : {}),
         ...(src.bottomArea !== undefined ? { bottomArea: area(src.bottomArea) } : {}),
         ...(src.bedArea !== undefined ? { bedArea: area(src.bedArea) } : {}),
         ...(src.slowWallArea !== undefined ? { slowWallArea: area(src.slowWallArea) } : {}),
         ...(src.curvedWallArea !== undefined ? { curvedWallArea: area(src.curvedWallArea) } : {}),
-        ...(src.contourLoops !== undefined ? { contourLoops: src.contourLoops * s } : {}),
+        ...(src.contourLoops !== undefined ? { contourLoops: src.contourLoops * sLen } : {}),
         ...(base.partCount != null ? { partCount: base.partCount } : {}),
-        ...(src.partHeightSum !== undefined ? { partHeightSum: src.partHeightSum * s } : {}),
-        ...(base.partSpacing !== undefined ? { partSpacing: base.partSpacing * s } : {}),
+        ...(src.partHeightSum !== undefined ? { partHeightSum: src.partHeightSum * sLen } : {}),
+        ...(base.partSpacing !== undefined ? { partSpacing: base.partSpacing * sLen } : {}),
         boundingBox,
     })
 }

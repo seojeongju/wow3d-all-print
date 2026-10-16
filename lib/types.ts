@@ -72,6 +72,10 @@ export interface QuoteData {
     /** 뷰어에서 적용한 스케일·평면 배치·90° 회전 — 관리자 STL 다운로드 시 베이크 */
     modelTransform?: {
         scalePercent: number;
+        /** 출력 축별 스케일 % — 없으면 scalePercent와 동일(균일) */
+        scaleXPercent?: number;
+        scaleYPercent?: number;
+        scaleZPercent?: number;
         rotX: number;
         rotY: number;
         rotZ: number;

@@ -172,7 +172,13 @@ function Model({
     const bedRef = useRef<THREE.Group>(null)
     const geometryRef = useRef<THREE.BufferGeometry | null>(null)
     const transform = useFileStore((s) => s.transform)
-    const scale = transform.scalePercent / 100
+    // 출력 축(회전 후) 기준 스케일 — 균일이면 기존과 동일
+    const scaleX =
+        (transform.scaleXPercent ?? transform.scalePercent) / 100
+    const scaleY =
+        (transform.scaleYPercent ?? transform.scalePercent) / 100
+    const scaleZ =
+        (transform.scaleZPercent ?? transform.scalePercent) / 100
     const layFlatKey = transform.layFlat ? transform.layFlat.join(',') : ''
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 법선 값이 같으면 같은 회전
     const layFlatQuat = useMemo(() => layFlatQuaternion(transform.layFlat), [layFlatKey])
@@ -212,7 +218,17 @@ function Model({
             }
         }, 50)
         return () => clearTimeout(t)
-    }, [geometry, scale, transform.rotX, transform.rotY, transform.rotZ, transform.snapToBed, layFlatQuat])
+    }, [
+        geometry,
+        scaleX,
+        scaleY,
+        scaleZ,
+        transform.rotX,
+        transform.rotY,
+        transform.rotZ,
+        transform.snapToBed,
+        layFlatQuat,
+    ])
 
     useEffect(() => {
         if (!url) return
@@ -299,8 +315,9 @@ function Model({
     return (
         // 슬라이서와 같은 Z-up 베드 좌표 (그리드는 three.js XZ 평면)
         <group ref={bedRef} rotation={[-Math.PI / 2, 0, 0]}>
+        {/* 축별 스케일은 회전·평면 배치 뒤(출력 좌표)에 적용 — 치수 입력 X/Y/Z와 일치 */}
+        <group scale={[scaleX, scaleY, scaleZ]}>
         <group
-            scale={[scale, scale, scale]}
             // 견적·STL 베이크와 같은 X → Y → Z 회전 순서
             rotation={[
                 degreesToRadians(transform.rotX),
@@ -335,6 +352,7 @@ function Model({
                     <MeasurementTool />
                 </>
             )}
+        </group>
         </group>
         </group>
     )
