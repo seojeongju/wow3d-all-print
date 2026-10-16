@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAuthOrGuest } from '@/lib/api-utils'
 import { resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
+import { canUserDownloadMeshyStl } from '@/lib/meshy-stl-download'
 
 type JobRow = {
     id: number
@@ -14,7 +15,8 @@ type JobRow = {
 
 /**
  * GET /api/meshy/jobs/[id]/model
- * 생성된 STL 다운로드 (작업 소유자만)
+ * - 기본: 작업 소유자만 프리뷰·견적용으로 STL 스트리밍 (inline)
+ * - ?download=1: 내 PC 저장 — 해당 모델이 「제작 중」이상 주문에 포함된 회원만
  */
 export async function GET(
     request: NextRequest,
@@ -29,6 +31,10 @@ export async function GET(
         if (!Number.isInteger(jobId) || jobId < 1) {
             return NextResponse.json({ error: '잘못된 작업 ID' }, { status: 400 })
         }
+
+        const wantDownload =
+            request.nextUrl.searchParams.get('download') === '1' ||
+            request.nextUrl.searchParams.get('download') === 'true'
 
         const { env } = getCloudflareContext()
         if (!env?.DB || !env?.BUCKET) {
@@ -52,6 +58,28 @@ export async function GET(
             return NextResponse.json({ error: '모델이 아직 준비되지 않았습니다' }, { status: 409 })
         }
 
+        if (wantDownload) {
+            if (auth.isGuest || !auth.userId) {
+                return NextResponse.json(
+                    {
+                        error: 'STL 파일 저장은 로그인 후, 출력 주문이 제작 중으로 진행된 뒤에만 가능합니다.',
+                        code: 'MESHY_STL_DOWNLOAD_FORBIDDEN',
+                    },
+                    { status: 403 }
+                )
+            }
+            const canSave = await canUserDownloadMeshyStl(env.DB, jobId, auth.userId)
+            if (!canSave) {
+                return NextResponse.json(
+                    {
+                        error: 'STL 파일 저장은 해당 모델의 출력 주문이 「제작 중」으로 진행된 뒤에만 가능합니다. 사이트에서 미리보기·견적·주문은 계속 이용할 수 있습니다.',
+                        code: 'MESHY_STL_DOWNLOAD_FORBIDDEN',
+                    },
+                    { status: 403 }
+                )
+            }
+        }
+
         const object = await env.BUCKET.get(job.result_file_key)
         if (!object) return NextResponse.json({ error: '모델 파일을 찾을 수 없습니다' }, { status: 404 })
 
@@ -61,9 +89,12 @@ export async function GET(
         // 브라우저 디스크 캐시 쓰기 실패(ERR_CACHE_WRITE_FAILURE) 방지 — 바이너리 STL은 캐시하지 않음
         headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
         headers.set('Pragma', 'no-cache')
+        // 저장 요청만 attachment — 기본은 inline으로 프리뷰·견적용
         headers.set(
             'Content-Disposition',
-            `attachment; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
+            wantDownload
+                ? `attachment; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
+                : `inline; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
         )
 
         return new NextResponse(object.body as BodyInit, { headers })

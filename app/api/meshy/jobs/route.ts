@@ -24,6 +24,7 @@ import {
     reserveMeshyJob,
 } from '@/lib/meshy-quota'
 import { resolveUserAiPhotoFileName } from '@/lib/meshy-r2'
+import { meshyStlDownloadAllowedByJobIds } from '@/lib/meshy-stl-download'
 
 /**
  * GET /api/meshy/jobs
@@ -89,9 +90,16 @@ export async function GET(request: NextRequest) {
             list = (rows.results ?? []).map((j: Omit<JobListRow, 'quote_id'>) => ({ ...j, quote_id: null }))
         }
 
+        const downloadAllowed = await meshyStlDownloadAllowedByJobIds(
+            env.DB,
+            Number(auth.userId),
+            list.map((j) => j.id)
+        )
+
         const items = list.map((j: JobListRow) => {
             const hasErrorText = !!(j.error_message && String(j.error_message).trim())
             const isFailed = j.status === 'failed' || j.status === 'canceled'
+            const modelReady = j.status === 'succeeded' && !!j.result_file_key
             return {
                 jobId: j.id,
                 status: j.status,
@@ -99,7 +107,9 @@ export async function GET(request: NextRequest) {
                 thumbnailUrl: j.thumbnail_url,
                 resultFileName: resolveUserAiPhotoFileName(j.id, j.result_file_name),
                 sourceFileName: j.source_file_name,
-                modelReady: j.status === 'succeeded' && !!j.result_file_key,
+                modelReady,
+                /** PC에 STL 저장 가능 — 주문이 「제작 중」이상일 때만 true */
+                downloadAllowed: modelReady && downloadAllowed.has(j.id),
                 quoteId: j.quote_id != null && Number(j.quote_id) > 0 ? Number(j.quote_id) : null,
                 // sanitize는 null에도 기본 실패 문구를 반환하므로, 실제 실패/에러 텍스트가 있을 때만 전달
                 error:

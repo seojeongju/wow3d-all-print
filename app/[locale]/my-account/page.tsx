@@ -15,7 +15,7 @@ import {
 import {
     User, Package, FileText, LogOut, Loader2, ShoppingBag, Clock,
     Trash2, Edit2, ShieldCheck, Minus, Plus, Search,
-    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, ArrowLeft, Camera, Sparkles
+    RotateCcw, CheckCircle2, CreditCard, MapPin, Phone, Mail, ArrowLeft, Camera, Sparkles, Download
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { showToast } from '@/lib/toast-helper';
@@ -44,6 +44,8 @@ type MeshyJobListItem = {
     resultFileName?: string | null;
     sourceFileName?: string | null;
     modelReady: boolean;
+    /** 주문이 「제작 중」이상일 때만 true — STL PC 저장 */
+    downloadAllowed: boolean;
     quoteId?: number | null;
     error?: string | null;
     createdAt?: string;
@@ -425,6 +427,7 @@ export default function MyAccountPage() {
                                 resultFileName: j.resultFileName ?? null,
                                 sourceFileName: j.sourceFileName ?? null,
                                 modelReady: !!j.modelReady,
+                                downloadAllowed: !!j.downloadAllowed,
                                 quoteId: j.quoteId != null && Number(j.quoteId) > 0 ? Number(j.quoteId) : null,
                                 error: j.error ?? null,
                                 createdAt: j.createdAt ?? '',
@@ -606,6 +609,40 @@ export default function MyAccountPage() {
             return { label: t('aiJobsStatusProcessing'), className: 'bg-amber-500/15 text-amber-300 border-amber-400/30' };
         }
         return { label: t('aiJobsStatusOther'), className: 'bg-white/10 text-white/50 border-white/15' };
+    };
+
+    const handleDownloadMeshyStl = async (job: MeshyJobListItem) => {
+        if (!job.downloadAllowed || !token) return;
+        setMeshyJobActionId(job.jobId);
+        try {
+            const res = await fetch(`/api/meshy/jobs/${job.jobId}/model?download=1`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store',
+            });
+            if (!res.ok) {
+                const j = await res.json().catch(() => ({}));
+                throw new Error(
+                    (j as { error?: string }).error || t('aiJobsToastDownloadFail')
+                );
+            }
+            const blob = await res.blob();
+            if (!blob.size) throw new Error(t('aiJobsToastDownloadFail'));
+            const fileName = job.resultFileName || `ai-photo-${job.jobId}.stl`;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast.success(t('aiJobsToastDownloadOk'));
+        } catch (e) {
+            showToast.error(
+                t('aiJobsToastDownloadFail'),
+                e instanceof Error ? e.message : undefined
+            );
+        } finally {
+            setMeshyJobActionId(null);
+        }
     };
 
     const handleContinueMeshyJob = (job: MeshyJobListItem) => {
@@ -1304,6 +1341,26 @@ export default function MyAccountPage() {
                                                                         {t('aiJobsAddCart')}
                                                                     </Button>
                                                                 </div>
+                                                            ) : null}
+                                                            {job.modelReady && job.downloadAllowed ? (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="w-full h-11 rounded-xl border-teal-400/30 bg-teal-400/10 text-teal-200 font-black text-xs gap-1.5"
+                                                                    disabled={meshyJobActionId === job.jobId}
+                                                                    onClick={() => void handleDownloadMeshyStl(job)}
+                                                                >
+                                                                    {meshyJobActionId === job.jobId ? (
+                                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                    ) : (
+                                                                        <Download className="w-3.5 h-3.5" />
+                                                                    )}
+                                                                    {t('aiJobsDownloadStl')}
+                                                                </Button>
+                                                            ) : null}
+                                                            {job.modelReady && !job.downloadAllowed ? (
+                                                                <p className="text-[10px] font-bold text-white/35 text-center leading-relaxed break-keep">
+                                                                    {t('aiJobsDownloadLocked')}
+                                                                </p>
                                                             ) : null}
                                                         </div>
                                                     </div>

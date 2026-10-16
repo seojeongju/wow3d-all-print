@@ -1240,6 +1240,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                     <li>{t('note2')}</li>
                     <li>{t('note3')}</li>
                     <li>{t('note4')}</li>
+                    <li>{t('note5')}</li>
                     <li className="text-amber-200/80">· {t('disclaimerShort')}</li>
                 </ul>
             </div>
