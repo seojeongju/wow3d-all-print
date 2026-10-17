@@ -309,13 +309,23 @@ export default function AdminInquiriesPage() {
     [token, toast]
   )
 
-  const markRepliedLocally = (inquiryId: number) => {
+  const markRepliedLocally = (inquiryId: number, opts?: { updateDetail?: boolean }) => {
+    const updateDetail = opts?.updateDetail !== false
     setInquiries((prev) =>
       prev.map((i) =>
-        i.id === inquiryId && i.status !== 'replied' && i.status !== 'closed' ? { ...i, status: 'replied' } : i
+        Number(i.id) === inquiryId && i.status !== 'replied' && i.status !== 'closed'
+          ? { ...i, status: 'replied' }
+          : i
       )
     )
-    setDetail((d) => (d && d.id === inquiryId && d.status !== 'replied' && d.status !== 'closed' ? { ...d, status: 'replied' } : d))
+    // 발송 성공 후 모달을 닫을 때는 detail을 건드리지 않음 (setDetail(null)과 충돌 방지)
+    if (updateDetail) {
+      setDetail((d) =>
+        d && Number(d.id) === inquiryId && d.status !== 'replied' && d.status !== 'closed'
+          ? { ...d, status: 'replied' }
+          : d
+      )
+    }
     setDetailStatus((s) => (s !== 'replied' && s !== 'closed' ? 'replied' : s))
   }
 
@@ -326,6 +336,25 @@ export default function AdminInquiriesPage() {
     replyFilesRef.current = []
     setReplyFiles([])
   }, [])
+
+  /** 답변 발송 성공 후 상세 모달 닫기 — sending 플래그를 먼저 내려 Radix onOpenChange와 충돌하지 않게 함 */
+  const closeDetailAfterSuccessfulReply = useCallback(
+    (inquiryId: number, emailLabel: string) => {
+      setReplyDraft('')
+      clearReplyFiles()
+      markRepliedLocally(inquiryId, { updateDetail: false })
+      setSendingReply(false)
+      // 다음 틱에 닫아 Dialog controlled open 전환이 발송 중 가드에 걸리지 않게 함
+      queueMicrotask(() => {
+        setDetail(null)
+      })
+      toast({
+        title: '답변 발송 완료',
+        description: `${emailLabel}님에게 메일을 보냈고, 문의 상태를 답변완료로 바꿨습니다.`,
+      })
+    },
+    [clearReplyFiles, toast]
+  )
 
   useEffect(() => {
     replyFilesRef.current = replyFiles
@@ -419,7 +448,8 @@ export default function AdminInquiriesPage() {
     }
     const files = replyFilesRef.current
     const attachNote = files.length ? `\n첨부파일 ${files.length}개(${formatFileSize(replyFilesTotal)})가 함께 발송됩니다.` : ''
-    if (!window.confirm(`${String(detail.email || '고객')}님에게 답변 메일을 발송합니다.${attachNote}\n계속할까요?`)) return
+    const emailLabel = String(detail.email || '고객')
+    if (!window.confirm(`${emailLabel}님에게 답변 메일을 발송합니다.${attachNote}\n계속할까요?`)) return
     const inquiryId = Number(detail.id)
     setSendingReply(true)
     try {
@@ -440,19 +470,16 @@ export default function AdminInquiriesPage() {
           body: JSON.stringify({ message }),
         })
       }
-      const json = await res.json()
+      const json = await res.json().catch(() => ({} as { success?: boolean; error?: string; data?: { reply?: InquiryReply } }))
       const reply = json.data?.reply as InquiryReply | undefined
       if (reply) setReplies((prev) => [...prev, reply])
-      if (json.success) {
-        setReplyDraft('')
-        clearReplyFiles()
-        markRepliedLocally(inquiryId)
-        setDetail(null)
-        toast({
-          title: '답변 발송 완료',
-          description: `${String(detail.email || '고객')}님에게 메일을 보냈고, 문의 상태를 답변완료로 바꿨습니다.`,
-        })
-      } else if (reply) {
+      // API success 또는 이력상 발송 성공이면 모달 닫기
+      const sentOk = Boolean(json.success) || reply?.send_status === 'sent'
+      if (sentOk) {
+        closeDetailAfterSuccessfulReply(inquiryId, emailLabel)
+        return
+      }
+      if (reply) {
         setReplyDraft('')
         clearReplyFiles()
         toast({
@@ -860,10 +887,13 @@ export default function AdminInquiriesPage() {
       </Card>
 
       <Dialog
-        open={!!detail}
+        open={detail != null}
         onOpenChange={(open) => {
-          // 발송 중에는 실수로 닫히지 않게 함
-          if (!open && !sendingReply) setDetail(null)
+          // 발송 중 바깥 클릭·ESC로 닫기 차단. 발송 성공 시에는 setDetail(null)로 직접 닫음.
+          if (!open) {
+            if (sendingReply) return
+            setDetail(null)
+          }
         }}
       >
         <DialogContent
