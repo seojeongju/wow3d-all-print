@@ -7,7 +7,24 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Search, Loader2, Eye, Paperclip, Sparkles, MailWarning, Send, RotateCw, Mail, MonitorSmartphone, History, X, FileText, Download } from 'lucide-react'
+import {
+  Search,
+  Loader2,
+  Eye,
+  Paperclip,
+  Sparkles,
+  MailWarning,
+  Send,
+  RotateCw,
+  Mail,
+  MonitorSmartphone,
+  History,
+  X,
+  FileText,
+  Download,
+  CheckCircle2,
+  BadgeCheck,
+} from 'lucide-react'
 import { formatKoreanDate } from '@/lib/date-utils'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
@@ -430,13 +447,17 @@ export default function AdminInquiriesPage() {
         setReplyDraft('')
         clearReplyFiles()
         markRepliedLocally(inquiryId)
-        toast({ title: '답변을 발송했습니다.', description: '고객에게 메일이 전송되고 상태가 답변완료로 바뀌었습니다.' })
+        setDetail(null)
+        toast({
+          title: '답변 발송 완료',
+          description: `${String(detail.email || '고객')}님에게 메일을 보냈고, 문의 상태를 답변완료로 바꿨습니다.`,
+        })
       } else if (reply) {
         setReplyDraft('')
         clearReplyFiles()
         toast({
           title: '답변은 기록됐지만 메일 발송에 실패했습니다.',
-          description: json.error || '이력에서 재발송해 주세요.',
+          description: json.error || '모달을 닫지 않았습니다. 아래 이력에서 재발송해 주세요.',
           variant: 'destructive',
         })
       } else {
@@ -838,10 +859,16 @@ export default function AdminInquiriesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
+      <Dialog
+        open={!!detail}
+        onOpenChange={(open) => {
+          // 발송 중에는 실수로 닫히지 않게 함
+          if (!open && !sendingReply) setDetail(null)
+        }}
+      >
         <DialogContent
           className="bg-[#0c0c0c] border-white/10 text-white sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden gap-4"
-          showCloseButton
+          showCloseButton={!sendingReply}
         >
           <DialogHeader className="shrink-0 pr-8">
             <DialogTitle className="text-white">문의 상세 #{String(detail?.id ?? '')}</DialogTitle>
@@ -1053,7 +1080,7 @@ export default function AdminInquiriesPage() {
               </div>
 
               <div
-                className={`rounded-xl border p-3 space-y-2 transition-colors ${
+                className={`rounded-xl border p-3 space-y-3 transition-colors ${
                   replyDragOver ? 'border-teal-300/70 bg-teal-500/[0.14]' : 'border-teal-400/25 bg-teal-500/[0.06]'
                 }`}
                 onDragOver={(e) => {
@@ -1071,12 +1098,61 @@ export default function AdminInquiriesPage() {
                   addReplyFiles(Array.from(e.dataTransfer.files))
                 }}
               >
-                <Label className="flex items-center gap-1.5 text-[11px] font-bold text-teal-200">
-                  <Send className="w-3.5 h-3.5" />
-                  고객에게 답변하기
-                </Label>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <Label className="flex items-center gap-1.5 text-[11px] font-bold text-teal-200">
+                    <Send className="w-3.5 h-3.5" />
+                    고객에게 답변하기
+                  </Label>
+                  <span className="rounded-full border border-teal-400/25 bg-teal-500/10 px-2 py-0.5 text-[10px] font-bold text-teal-100/80">
+                    발송 후 이 창이 닫힙니다
+                  </span>
+                </div>
+
                 {repliesSchemaReady ? (
                   <>
+                    <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2.5 space-y-2">
+                      <p className="text-[11px] font-black text-white/70">발송하면 이렇게 진행됩니다</p>
+                      <ol className="grid gap-2 sm:grid-cols-3">
+                        <li className="flex items-start gap-2 rounded-md border border-white/5 bg-white/[0.03] px-2 py-1.5">
+                          <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-300" aria-hidden />
+                          <span className="text-[10px] font-bold leading-snug text-white/65 break-keep">
+                            고객 이메일로 답변 메일 전송
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2 rounded-md border border-white/5 bg-white/[0.03] px-2 py-1.5">
+                          <BadgeCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" aria-hidden />
+                          <span className="text-[10px] font-bold leading-snug text-white/65 break-keep">
+                            문의 상태를 「답변완료」로 변경
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2 rounded-md border border-white/5 bg-white/[0.03] px-2 py-1.5">
+                          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-300" aria-hidden />
+                          <span className="text-[10px] font-bold leading-snug text-white/65 break-keep">
+                            답변 이력 저장 후 상세 창 닫기
+                          </span>
+                        </li>
+                      </ol>
+                      <p className="text-[10px] text-white/40 leading-relaxed break-keep">
+                        메일만 실패한 경우에는 창을 유지하고, 아래 이력에서 재발송할 수 있습니다. 내부 메모는 이 버튼으로 발송되지 않습니다.
+                      </p>
+                    </div>
+
+                    {sendingReply ? (
+                      <div
+                        className="flex items-center gap-2.5 rounded-lg border border-teal-400/40 bg-teal-500/15 px-3 py-2.5"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-teal-200" aria-hidden />
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-black text-teal-50">고객에게 답변 메일을 보내는 중…</p>
+                          <p className="text-[10px] font-bold text-teal-100/70 truncate">
+                            {String(detail.email || '-')} · 완료되면 이 창이 자동으로 닫힙니다
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+
                     <textarea
                       value={replyDraft}
                       onChange={(e) => setReplyDraft(e.target.value)}
@@ -1088,8 +1164,9 @@ export default function AdminInquiriesPage() {
                       }}
                       rows={5}
                       maxLength={10000}
-                      className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-sm text-white placeholder:text-white/30 resize-y"
-                      placeholder="고객에게 보낼 답변을 입력하세요. 발송하면 고객 이메일로 전송되고 상태가 답변완료로 바뀝니다."
+                      disabled={sendingReply}
+                      className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-sm text-white placeholder:text-white/30 resize-y disabled:opacity-50"
+                      placeholder="고객에게 보낼 답변을 입력하세요"
                     />
 
                     <input
@@ -1157,17 +1234,20 @@ export default function AdminInquiriesPage() {
                           : `${REPLY_ATTACHMENT_HINT} · 합계 ${formatFileSize(REPLY_ATTACHMENT_MAX_TOTAL)}까지 · 끌어다 놓기·캡처 붙여넣기 가능`}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11px] text-white/40 break-all">받는 사람: {String(detail.email || '-')}</p>
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-2.5 py-2">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-white/40">받는 사람</p>
+                        <p className="text-[12px] font-bold text-white/80 break-all">{String(detail.email || '-')}</p>
+                      </div>
                       <Button
                         type="button"
                         size="sm"
                         onClick={handleSendReply}
                         disabled={sendingReply || replyDraft.trim().length < 2}
-                        className="bg-teal-500 text-slate-950 hover:bg-teal-400"
+                        className="bg-teal-500 text-slate-950 hover:bg-teal-400 shrink-0"
                       >
                         {sendingReply ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Send className="w-4 h-4 mr-1.5" />}
-                        답변 발송
+                        {sendingReply ? '발송 중…' : '답변 발송'}
                       </Button>
                     </div>
                   </>
@@ -1223,10 +1303,15 @@ export default function AdminInquiriesPage() {
               FAQ 초안 생성
             </Button>
             <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
-              <Button variant="outline" className="border-white/10 text-white flex-1 sm:flex-none" onClick={() => setDetail(null)}>
+              <Button
+                variant="outline"
+                className="border-white/10 text-white flex-1 sm:flex-none"
+                onClick={() => setDetail(null)}
+                disabled={sendingReply}
+              >
                 닫기
               </Button>
-              <Button onClick={handleSaveDetail} disabled={savingDetail} className="flex-1 sm:flex-none">
+              <Button onClick={handleSaveDetail} disabled={savingDetail || sendingReply} className="flex-1 sm:flex-none">
                 {savingDetail ? <Loader2 className="w-4 h-4 animate-spin" /> : '메모·상태 저장'}
               </Button>
             </div>
