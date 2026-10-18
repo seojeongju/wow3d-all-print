@@ -35,6 +35,14 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
+    // 한국어 대표 URL은 접두어 없음 — /ko, /ko/* 는 영구 이동(308)으로 통합 (next-intl 기본 307은 임시 이동)
+    const koPrefixed = pathname.match(/^\/ko(\/.*)?$/)
+    if (koPrefixed) {
+        const url = request.nextUrl.clone()
+        url.pathname = koPrefixed[1] || '/'
+        return NextResponse.redirect(url, 308)
+    }
+
     // API·관리자·정적 메타는 locale 라우팅 제외
     if (
         pathname.startsWith('/api') ||

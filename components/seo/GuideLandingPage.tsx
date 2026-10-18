@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-react'
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import ContentDatesNote from '@/components/seo/ContentDatesNote'
+import { getGuideKeyAnswer } from '@/lib/guide-key-answers'
 import type { GuideLandingConfig } from '@/lib/seo-guide-pages'
 import type { QnAItem } from '@/lib/qna'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
@@ -30,6 +31,8 @@ export default async function GuideLandingPage({ config, locale }: Props) {
         category: 'guide',
     }))
 
+    const keyAnswer = getGuideKeyAnswer(config.slug, locale)
+
     const schemas = [
         buildBreadcrumbSchema([
             { name: t('breadcrumbHome'), path: homePath },
@@ -40,6 +43,7 @@ export default async function GuideLandingPage({ config, locale }: Props) {
             headline: config.title,
             description: config.description,
             path: articlePath,
+            abstract: keyAnswer ?? undefined,
         }),
         buildFaqPageSchema(faqItems, articlePath),
     ]
@@ -65,6 +69,14 @@ export default async function GuideLandingPage({ config, locale }: Props) {
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {config.description}
                     </p>
+                    {keyAnswer ? (
+                        <div className="max-w-3xl rounded-2xl border border-teal-400/25 bg-teal-400/[0.07] px-5 py-4">
+                            <p className="mb-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-teal-300">
+                                {t('keyAnswerLabel')}
+                            </p>
+                            <p className="text-base leading-relaxed text-white/85 break-keep">{keyAnswer}</p>
+                        </div>
+                    ) : null}
                     <ContentDatesNote path={articlePath} locale={locale} />
                 </div>
             </section>

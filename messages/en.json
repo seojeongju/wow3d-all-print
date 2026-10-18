@@ -2895,7 +2895,8 @@
     "defaultContactCta": "Contact us",
     "faqHeading": "FAQ",
     "authorLabel": "By",
-    "authorName": "Seo Jeongju, CEO of WOW3D"
+    "authorName": "Seo Jeongju, CEO of WOW3D",
+    "keyAnswerLabel": "Quick answer"
   },
   "QnAPage": {
     "metaTitle": "3D printing FAQ · photo-to-3D modeling · common questions",

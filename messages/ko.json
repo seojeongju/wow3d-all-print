@@ -2896,7 +2896,8 @@
     "defaultContactCta": "1:1 문의하기",
     "faqHeading": "FAQ",
     "authorLabel": "글",
-    "authorName": "(주)와우쓰리디 대표 서정주"
+    "authorName": "(주)와우쓰리디 대표 서정주",
+    "keyAnswerLabel": "핵심 답변"
   },
   "QnAPage": {
     "metaTitle": "3D 프린팅 FAQ · 사진(이미지) 3D 모델링 · 자주 묻는 질문",

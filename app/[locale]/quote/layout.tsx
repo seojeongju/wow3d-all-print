@@ -110,7 +110,7 @@ export default async function QuoteLayout({ children, params }: Props) {
       { name: t("breadcrumbHome"), path: locale === "en" ? "/en" : "/" },
       { name: t("breadcrumbQuote"), path },
     ]),
-    buildQuoteHowToSchema(),
+    buildQuoteHowToSchema(locale),
     buildPhotoTo3DHowToSchema({ locale }),
     buildFaqPageSchema(
       faqs.map((f, i) => ({ id: i + 1, question: f.q, answer: f.a, category: "quote" })),

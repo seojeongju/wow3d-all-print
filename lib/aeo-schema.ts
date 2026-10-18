@@ -124,8 +124,54 @@ export function buildFaqPageSchema(items: QnAItem[], pagePath = '/qna') {
     };
 }
 
-/** 3D 프린팅 견적 요청 (파일 업로드 또는 사진 AI 3D) */
-export function buildQuoteHowToSchema() {
+/** 3D 프린팅 견적 요청 (파일 업로드 또는 사진 AI 3D) — 영문 페이지는 영문 절차·/en 경로 */
+export function buildQuoteHowToSchema(locale: string = 'ko') {
+    if (locale === 'en') {
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to get a 3D printing quote from WOW3D',
+            description:
+                'Upload a 3D model file or create an AI 3D model from a product photo, see the instant price and lead time, then order and pay.',
+            totalTime: 'PT15M',
+            inLanguage: 'en',
+            supply: [
+                { '@type': 'HowToSupply', name: '3D model file (STL, OBJ, 3MF, PLY, STEP, STP)' },
+                { '@type': 'HowToSupply', name: 'Or a product photo (JPG, PNG)' },
+            ],
+            tool: [{ '@type': 'HowToTool', name: 'WOW3D online instant quote' }],
+            step: [
+                {
+                    '@type': 'HowToStep',
+                    position: 1,
+                    name: 'Upload a file for an instant quote',
+                    text: 'STL, OBJ, 3MF and PLY files are quoted instantly; STEP and STP are converted automatically. No 3D file? Create an AI 3D model from a product photo (JPG/PNG).',
+                    url: absoluteUrl('/en/quote'),
+                },
+                {
+                    '@type': 'HowToStep',
+                    position: 2,
+                    name: 'Automatic file check and repair',
+                    text: 'Mesh errors such as holes, gaps and duplicate faces in STL, OBJ and PLY files are repaired in the browser before quoting, and you can switch back to the original. Walls thinner than 1 mm (FDM) or 0.6 mm (SLA/DLP) are flagged in the 3D viewer.',
+                    url: absoluteUrl('/en/quote'),
+                },
+                {
+                    '@type': 'HowToStep',
+                    position: 3,
+                    name: 'Check price and lead time',
+                    text: 'Choose the process and material and the price updates in real time. After inspection and finishing we ship, and most orders arrive within 3–7 days.',
+                    url: absoluteUrl('/en/quote'),
+                },
+                {
+                    '@type': 'HowToStep',
+                    position: 4,
+                    name: 'Order and pay',
+                    text: 'Enter shipping details and pay to place the order; production, inspection and shipping follow.',
+                    url: absoluteUrl('/en/checkout'),
+                },
+            ],
+        };
+    }
     return {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
@@ -371,6 +417,8 @@ export function buildArticleSchema(input: {
     path: string;
     imagePath?: string;
     locale?: string;
+    /** 화면 상단 핵심 답변과 같은 문장 */
+    abstract?: string;
 }) {
     const url = absoluteUrl(input.path);
     const dates = getContentDates(input.path);
@@ -386,6 +434,7 @@ export function buildArticleSchema(input: {
         '@id': `${url}#article`,
         headline: input.headline,
         description: input.description,
+        ...(input.abstract ? { abstract: input.abstract } : {}),
         image,
         inLanguage: input.locale === 'en' || input.path.startsWith('/en/') ? 'en' : 'ko-KR',
         author: CEO_REF,
