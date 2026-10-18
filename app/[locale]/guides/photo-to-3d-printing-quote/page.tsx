@@ -21,7 +21,7 @@ import { SITE_URL } from '@/lib/site-url'
 import { buildPhotoTo3DOgImages } from '@/lib/seo-work-photos'
 import { Check, X } from 'lucide-react'
 
-/** DB(D1) ?�용???�시 ??빌드 ?�점 ?�적 ?�성 금�? */
+/** DB(D1) 내용을 표시 — 빌드 시점 정적 생성 금지 */
 export const dynamic = 'force-dynamic'
 
 type Props = {

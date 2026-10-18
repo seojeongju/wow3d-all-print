@@ -26,7 +26,7 @@ type FaqItem = { q: string; a: string }
 
 const RESIN_KEYS = ['standard', 'tough', 'clear', 'flexible'] as const
 type ResinKey = (typeof RESIN_KEYS)[number]
-/** 카드 ???�이 ?�진 ??종류�?묶어 ?�개??Standard·Tough / Clear·Flexible) */
+/** 카드 한 장이 레진 두 종류를 묶어 소개함(Standard·Tough / Clear·Flexible) */
 const CARD_KEYS: ResinKey[][] = [
     ['standard', 'tough'],
     ['clear', 'flexible'],
