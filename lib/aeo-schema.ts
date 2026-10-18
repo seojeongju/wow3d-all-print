@@ -47,9 +47,26 @@ const KNOWS_ABOUT = [
 /**
  * 회사와 같은 엔티티임을 알리는 공식 외부 프로필.
  * 옛 브랜드(3D쿠키·3D팹카페) 계정은 다른 엔티티로 오인될 수 있어 넣지 않는다 (푸터 링크와는 별개).
- * 와우쓰리디 이름의 공식 채널(네이버 플레이스 등)이 생기면 여기에 추가.
+ * 네이버 플레이스·와우쓰리디 전용 SNS가 생기면 아래에 추가한다.
  */
-const SAME_AS: string[] = [];
+function buildOrganizationSameAs(): string[] {
+    const urls: string[] = [
+        // next.config 기본값과 동일한 와우쓰리디 네이버 톡톡 (브랜드 ID: wowi7tu)
+        'https://talk.naver.com/ct/wowi7tu',
+    ]
+    const talkCustom =
+        typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_NAVER_TALKTALK_CHAT_URL?.trim() : ''
+    if (talkCustom && !urls.includes(talkCustom)) {
+        urls.push(talkCustom)
+    }
+    const kakaoRaw =
+        typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_KAKAO_CHANNEL_SEARCH_ID?.trim() : ''
+    if (kakaoRaw) {
+        const id = kakaoRaw.startsWith('_') ? kakaoRaw : `_${kakaoRaw}`
+        urls.push(`https://pf.kakao.com/${id}`)
+    }
+    return urls
+}
 
 /** 가이드 저자 — (주)와우쓰리디 대표 */
 export const CEO_PERSON_ID = `${SITE_URL}/#ceo`;
@@ -123,6 +140,16 @@ export function buildFaqPageSchema(items: QnAItem[], pagePath = '/qna') {
         })),
         url: `${SITE_URL}${pagePath}`,
     };
+}
+
+/** AEO — 음성·AI 스니펫이 읽을 CSS 선택자 (화면의 .aeo-lead / #aeo-key-answer와 맞춤) */
+export const AEO_SPEAKABLE_SELECTORS = ['.aeo-lead', '#aeo-key-answer'] as const
+
+export function buildSpeakableSchema(cssSelectors: readonly string[] = AEO_SPEAKABLE_SELECTORS) {
+    return {
+        '@type': 'SpeakableSpecification',
+        cssSelector: [...cssSelectors],
+    }
 }
 
 /** 3D 프린팅 견적 요청 (파일 업로드 또는 사진 AI 3D) — 영문 페이지는 영문 절차·/en 경로 */
@@ -282,6 +309,7 @@ export function buildWebPageSchema(input?: {
         },
         image: imageUrl,
         inLanguage: input?.locale === 'en' ? 'en' : 'ko-KR',
+        speakable: buildSpeakableSchema(),
         ...(dates
             ? { datePublished: kstDateToIso(dates.published), dateModified: kstDateToIso(dates.modified) }
             : {}),
@@ -446,10 +474,70 @@ export function buildArticleSchema(input: {
         isPartOf: WEBSITE_REF,
         mainEntityOfPage: url,
         url,
+        speakable: buildSpeakableSchema(),
         ...(dates
             ? { datePublished: kstDateToIso(dates.published), dateModified: kstDateToIso(dates.modified) }
             : {}),
     };
+}
+
+/** 서비스 랜딩용 Service 스키마 — 공정·채널·관련 HowTo를 구조화해 AEO·GEO 인용에 쓰임 */
+export function buildServiceLandingSchema(input: {
+    name: string
+    description: string
+    path: string
+    serviceType: string
+    locale?: string
+    audience?: string
+    /** 견적·주문으로 이어지는 URL (기본 /quote) */
+    channelPath?: string
+    /** 관련 HowTo 페이지 경로 (예: /quote → HowTo @id와 연결) */
+    relatedHowToPath?: string
+    catalogItems?: string[]
+}) {
+    const url = absoluteUrl(input.path)
+    const channelPath = input.channelPath ?? '/quote'
+    const howToPath = input.relatedHowToPath ?? channelPath
+
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Service',
+        '@id': `${url}#service`,
+        name: input.name,
+        description: input.description,
+        url,
+        serviceType: input.serviceType,
+        category: '3D Printing',
+        provider: ORG_REF,
+        areaServed: { '@type': 'Country', name: 'KR' },
+        inLanguage: input.locale === 'en' ? 'en' : 'ko-KR',
+        termsOfService: absoluteUrl('/terms'),
+        ...(input.audience
+            ? { audience: { '@type': 'Audience', audienceType: input.audience } }
+            : {}),
+        availableChannel: {
+            '@type': 'ServiceChannel',
+            name: input.locale === 'en' ? 'Online instant quote' : '웹 자동견적',
+            serviceUrl: absoluteUrl(channelPath),
+            availableLanguage: ['Korean', 'English'],
+        },
+        isRelatedTo: [
+            { '@id': `${SITE_URL}/#service` },
+            { '@type': 'HowTo', url: absoluteUrl(howToPath) },
+        ],
+        ...(input.catalogItems && input.catalogItems.length > 0
+            ? {
+                  hasOfferCatalog: {
+                      '@type': 'OfferCatalog',
+                      name: input.name,
+                      itemListElement: input.catalogItems.map((item) => ({
+                          '@type': 'Offer',
+                          itemOffered: { '@type': 'Service', name: item },
+                      })),
+                  },
+              }
+            : {}),
+    }
 }
 
 /** 회사(Organization) — 3개 제작센터를 하위 사업장으로 연결 */
@@ -478,7 +566,7 @@ export function buildOrganizationSchema() {
         },
         knowsAbout: KNOWS_ABOUT,
         areaServed: 'KR',
-        ...(SAME_AS.length > 0 ? { sameAs: SAME_AS } : {}),
+        sameAs: buildOrganizationSameAs(),
         subOrganization: MAKERSPACES.map((c) => ({ '@id': localBusinessId(c) })),
         contactPoint: {
             '@type': 'ContactPoint',

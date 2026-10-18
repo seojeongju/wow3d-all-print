@@ -26,7 +26,7 @@ type FaqItem = { q: string; a: string }
 
 const RESIN_KEYS = ['standard', 'tough', 'clear', 'flexible'] as const
 type ResinKey = (typeof RESIN_KEYS)[number]
-/** 카드 한 장이 레진 두 종류를 묶어 소개함(Standard·Tough / Clear·Flexible) */
+/** 카드 ???�이 ?�진 ??종류�?묶어 ?�개??Standard·Tough / Clear·Flexible) */
 const CARD_KEYS: ResinKey[][] = [
     ['standard', 'tough'],
     ['clear', 'flexible'],
@@ -141,7 +141,7 @@ export default async function ResinGuidePage({ params }: Props) {
                         <br />
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
                     <KeyAnswerBox path={path} locale={locale} />
                     <ContentDatesNote path={path} locale={locale} />
                 </div>

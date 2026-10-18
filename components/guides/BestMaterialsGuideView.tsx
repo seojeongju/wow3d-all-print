@@ -129,7 +129,7 @@ export async function BestMaterialsGuidePage({ params, slug }: Props) {
                         <br />
                         <span className="text-teal-400">{t(`${slug}.h1Accent`)}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t(`${slug}.intro`)}</p>
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t(`${slug}.intro`)}</p>
                     <KeyAnswerBox path={path} locale={locale} />
                     <ContentDatesNote path={path} locale={locale} />
                 </div>

@@ -10,8 +10,11 @@ import { getAllPublishedNews } from "@/lib/news-public";
 import { utcSqlToIso } from "@/lib/news";
 import { getContentDates, kstDateToIso } from "@/lib/content-dates";
 
-/** 관리자가 발행한 맞춤 상품·최신 동향 글이 배포 없이 반영되도록 런타임 생성 */
-export const dynamic = "force-dynamic";
+/**
+ * 맞춤 상품·최신 동향은 DB에서 읽되, 매 요청 force-dynamic 대신 ISR로 안정화한다.
+ * DB 장애 시에도 정적 PUBLIC_PAGES는 항상 반환되도록 조회부를 try/catch로 감싼다.
+ */
+export const revalidate = 3600;
 
 type PublicPage = {
   path: string;
@@ -127,9 +130,21 @@ function pushLocalizedEntries(entries: MetadataRoute.Sitemap, page: PublicPage) 
   });
 }
 
+async function resolveNewsPosts() {
+  try {
+    return await getAllPublishedNews();
+  } catch (e) {
+    console.warn("sitemap news", e);
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
-  const customPages = await resolveCustomProductPages();
+  const [customPages, news] = await Promise.all([
+    resolveCustomProductPages(),
+    resolveNewsPosts(),
+  ]);
   const pages = [...PUBLIC_PAGES, ...customPages];
 
   for (const page of pages) {
@@ -137,7 +152,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   /** 최신 동향은 한국어 전용 콘텐츠 — 영문 경로는 noindex이므로 ko URL만 수록 */
-  const news = await getAllPublishedNews();
   const newsLatest = news[0] ? utcSqlToIso(news[0].updatedAt) : null;
   entries.push({
     url: `${SITE_URL}/news`,

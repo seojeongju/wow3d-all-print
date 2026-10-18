@@ -4,7 +4,7 @@ import type { AppLocale } from '@/i18n/routing'
 
 /**
  * 페이지 상단 "핵심 답변" 상자 (AEO — 결론 먼저).
- * 내용은 lib/guide-key-answers.ts에서 경로로 찾으며, Article 스키마 abstract와 같은 문장이다.
+ * 내용은 lib/guide-key-answers.ts에서 경로로 찾으며, Article 스키마 abstract·Speakable(#aeo-key-answer)과 같은 문장이다.
  */
 export default async function KeyAnswerBox({
     path,
@@ -20,7 +20,10 @@ export default async function KeyAnswerBox({
     const t = await getTranslations({ locale, namespace: 'GuideChrome' })
 
     return (
-        <div className={`max-w-3xl rounded-2xl border border-teal-400/25 bg-teal-400/[0.07] px-5 py-4 ${className}`}>
+        <div
+            id="aeo-key-answer"
+            className={`max-w-3xl rounded-2xl border border-teal-400/25 bg-teal-400/[0.07] px-5 py-4 ${className}`}
+        >
             <p className="mb-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-teal-300">
                 {t('keyAnswerLabel')}
             </p>

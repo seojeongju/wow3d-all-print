@@ -21,7 +21,7 @@ import { SITE_URL } from '@/lib/site-url'
 import { buildPhotoTo3DOgImages } from '@/lib/seo-work-photos'
 import { Check, X } from 'lucide-react'
 
-/** DB(D1) 내용을 표시 — 빌드 시점 정적 생성 금지 */
+/** DB(D1) ?�용???�시 ??빌드 ?�점 ?�적 ?�성 금�? */
 export const dynamic = 'force-dynamic'
 
 type Props = {
@@ -184,7 +184,7 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
                         <br />
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {t('heroBody')}
                     </p>
                     <KeyAnswerBox path={path} locale={locale} />

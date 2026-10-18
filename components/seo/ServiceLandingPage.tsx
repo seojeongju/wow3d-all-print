@@ -3,8 +3,13 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
-import { absoluteUrl } from '@/lib/site-url'
-import { buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
+import {
+    buildBreadcrumbSchema,
+    buildFaqPageSchema,
+    buildServiceLandingSchema,
+    buildWebPageSchema,
+} from '@/lib/aeo-schema'
+import { getServiceSchemaMeta } from '@/lib/service-schema-meta'
 import type { ServiceLandingConfig } from '@/lib/seo-service-pages'
 import type { QnAItem } from '@/lib/qna'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
@@ -50,6 +55,8 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
     const servicesPath = getPathname({ locale, href: '/services' })
     const pagePath = getPathname({ locale, href: config.path as '/' })
     const displayName = config.h1Accent ? `${config.h1} ${config.h1Accent}` : config.h1
+    const schemaMeta = getServiceSchemaMeta(config.slug)
+    const lang = locale === 'en' ? 'en' : 'ko'
 
     const schemas = [
         buildBreadcrumbSchema([
@@ -57,20 +64,24 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
             { name: t('breadcrumbServices'), path: servicesPath },
             { name: displayName, path: pagePath },
         ]),
+        buildWebPageSchema({
+            name: displayName,
+            description: config.description,
+            path: pagePath,
+            locale,
+        }),
         buildFaqPageSchema(faqItems, pagePath),
-        {
-            '@context': 'https://schema.org',
-            '@type': 'Service',
+        buildServiceLandingSchema({
             name: config.title.split('|')[0].trim(),
             description: config.description,
-            provider: {
-                '@type': 'Organization',
-                name: t('organizationName'),
-                url: absoluteUrl('/'),
-            },
-            areaServed: 'KR',
-            url: absoluteUrl(pagePath),
-        },
+            path: pagePath,
+            locale,
+            serviceType: schemaMeta?.serviceType[lang] ?? displayName,
+            audience: schemaMeta?.audience[lang],
+            channelPath: schemaMeta?.channelPath ?? config.primaryCta.href,
+            relatedHowToPath: schemaMeta?.relatedHowToPath,
+            catalogItems: schemaMeta?.catalogItems[lang],
+        }),
         ...(config.slug === 'photo-to-3d' && showcaseItems
             ? [buildPhotoTo3DShowcaseSchema(showcaseItems)]
             : []),
@@ -93,7 +104,7 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                         {config.h1}{' '}
                         <span className="text-teal-400">{config.h1Accent}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {config.description}
                     </p>
                     <KeyAnswerBox path={pagePath} locale={locale} />

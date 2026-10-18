@@ -63,7 +63,7 @@ export default async function GuideLandingPage({ config, locale }: Props) {
                         <br />
                         <span className="text-teal-400">{config.h1Accent}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {config.description}
                     </p>
                     <KeyAnswerBox path={articlePath} locale={locale} />

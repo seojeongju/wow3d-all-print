@@ -50,6 +50,7 @@ export async function GET() {
         `- Website: ${SITE_URL}`,
         '- Services: 3D프린팅 자동견적, FDM/SLA/DLP 출력, 시제품 제작, 소량 양산, 3D 모델링 대행, 사진→AI 3D 모델링, 맞춤 상품(키캡·키링·케이스 등), 캡스톤디자인 시제품',
         '- Contact: 02-3144-3137, wow3d16@naver.com (평일 09:00–18:00 KST)',
+        '- Official chat: https://talk.naver.com/ct/wowi7tu (네이버 톡톡 · 와우쓰리디)',
         '- Centers:',
         ...centerLines.map((l) => `  ${l}`),
         '',

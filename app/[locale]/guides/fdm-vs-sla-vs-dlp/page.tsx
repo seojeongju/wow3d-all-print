@@ -149,7 +149,7 @@ export default async function CompareGuidePage({ params }: Props) {
                         <br />
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg leading-relaxed text-white/70 break-keep">{t('intro')}</p>
+                    <p className="aeo-lead max-w-3xl text-lg leading-relaxed text-white/70 break-keep">{t('intro')}</p>
                     <KeyAnswerBox path={path} locale={locale} />
                     <ContentDatesNote path={path} locale={locale} />
                 </div>

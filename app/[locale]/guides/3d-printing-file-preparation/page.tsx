@@ -145,7 +145,7 @@ export default async function FilePreparationGuidePage({ params }: Props) {
                         <br />
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
                     <KeyAnswerBox path={path} locale={locale} />
                     <ContentDatesNote path={path} locale={locale} />
                 </div>

@@ -91,7 +91,9 @@ export default async function UseCaseLandingPage({ config, locale }: Props) {
                             <br />
                             <span className="text-teal-400">{c.h1Accent}</span>
                         </h1>
-                        <p className="max-w-2xl text-base md:text-lg text-white/70 leading-relaxed break-keep">{c.intro}</p>
+                        <p className="aeo-lead max-w-2xl text-base md:text-lg text-white/70 leading-relaxed break-keep">
+                            {c.intro}
+                        </p>
                         <KeyAnswerBox path={pagePath} locale={locale} />
                         <ContentDatesNote path={pagePath} locale={locale} />
                         <div className="flex flex-wrap gap-3 pt-2">

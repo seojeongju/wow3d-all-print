@@ -81,7 +81,7 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
     const tChrome = await getTranslations({ locale, namespace: 'GuideChrome' })
 
     const tableRows = t.raw('tableRows') as CompareTableRow[]
-    /** 카드는 PLA·ABS·PETG·PC 순서로 한 장씩 */
+    /** 카드??PLA·ABS·PETG·PC ?�서�????�씩 */
     const cards = (t.raw('cards') as CardItem[]).map((card, i) => ({ ...card, keys: [MATERIAL_KEYS[i]] }))
     const faqs = t.raw('faqs') as FaqItem[]
     const materialDetails = t.raw('materialDetails') as Record<MaterialKey, MaterialDetail>
@@ -137,7 +137,7 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
                         <br />
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
-                    <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
+                    <p className="aeo-lead max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
                     <KeyAnswerBox path={path} locale={locale} />
                     <ContentDatesNote path={path} locale={locale} />
                 </div>
