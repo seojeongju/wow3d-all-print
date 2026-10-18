@@ -12,7 +12,7 @@ import {
     getPhotoTo3DGuideTitle,
 } from '@/lib/seo-photo-to-3d'
 import { getContentDates } from '@/lib/content-dates'
-import { getGuideKeyAnswer } from '@/lib/guide-key-answers'
+import { getKeyAnswer } from '@/lib/guide-key-answers'
 import { absoluteUrl } from '@/lib/site-url'
 
 /**
@@ -70,11 +70,13 @@ function makeDoc(
     faqs: LlmsFaq[]
 ): LlmsDoc {
     const lp = localizedPath(path, locale)
+    // 화면 상단 핵심 답변이 있으면 설명 뒤에 붙여 AI가 결론을 바로 읽게 함
+    const keyAnswer = getKeyAnswer(path, locale)
     return {
         path: lp,
         url: absoluteUrl(lp),
         title,
-        description,
+        description: keyAnswer ? `${description} ${keyAnswer}` : description,
         modified: getContentDates(path)?.modified ?? null,
         faqs,
     }
@@ -113,11 +115,9 @@ export function getGuideDocs(locale: LlmsLocale): LlmsDoc[] {
         asFaqs(getPhotoTo3DFaqs(locale))
     )
 
-    // 화면 상단 핵심 답변이 있으면 설명 뒤에 붙여 AI가 결론을 바로 읽게 함
-    const dynamicGuides = (locale === 'en' ? NEW_SEO_GUIDES_EN : NEW_SEO_GUIDES).map((g) => {
-        const keyAnswer = getGuideKeyAnswer(g.slug, locale)
-        return makeDoc(locale, g.path, g.title, keyAnswer ? `${g.description} ${keyAnswer}` : g.description, asFaqs(g.faqs))
-    })
+    const dynamicGuides = (locale === 'en' ? NEW_SEO_GUIDES_EN : NEW_SEO_GUIDES).map((g) =>
+        makeDoc(locale, g.path, g.title, g.description, asFaqs(g.faqs))
+    )
 
     return [photo, ...fromMessages, ...dynamicGuides].filter((d) => d.title)
 }

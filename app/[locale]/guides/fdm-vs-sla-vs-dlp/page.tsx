@@ -12,6 +12,7 @@ import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
 import ContentDatesNote from '@/components/seo/ContentDatesNote'
+import KeyAnswerBox from '@/components/seo/KeyAnswerBox'
 
 type Props = {
     params: Promise<{ locale: string }>
@@ -149,6 +150,7 @@ export default async function CompareGuidePage({ params }: Props) {
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
                     <p className="max-w-3xl text-lg leading-relaxed text-white/70 break-keep">{t('intro')}</p>
+                    <KeyAnswerBox path={path} locale={locale} />
                     <ContentDatesNote path={path} locale={locale} />
                 </div>
             </section>

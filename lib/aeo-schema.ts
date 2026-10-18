@@ -10,6 +10,7 @@ import {
 } from '@/lib/site-url';
 import { getContentDates, kstDateToIso } from '@/lib/content-dates';
 import { MAKERSPACES, type Makerspace } from '@/lib/makerspaces';
+import { getKeyAnswer } from '@/lib/guide-key-answers';
 
 /**
  * 엔티티 고정 @id — 모든 페이지의 스키마가 같은 회사·사이트·사업장을 가리키도록 참조로 연결한다.
@@ -422,6 +423,9 @@ export function buildArticleSchema(input: {
 }) {
     const url = absoluteUrl(input.path);
     const dates = getContentDates(input.path);
+    const isEn = input.locale === 'en' || input.path.startsWith('/en/');
+    // 화면 핵심 답변(KeyAnswerBox)과 같은 문장 — 명시하지 않으면 경로로 자동 조회
+    const abstract = input.abstract ?? getKeyAnswer(input.path, isEn ? 'en' : 'ko');
     const image = input.imagePath
         ? input.imagePath.startsWith('http')
             ? input.imagePath
@@ -434,9 +438,9 @@ export function buildArticleSchema(input: {
         '@id': `${url}#article`,
         headline: input.headline,
         description: input.description,
-        ...(input.abstract ? { abstract: input.abstract } : {}),
+        ...(abstract ? { abstract } : {}),
         image,
-        inLanguage: input.locale === 'en' || input.path.startsWith('/en/') ? 'en' : 'ko-KR',
+        inLanguage: isEn ? 'en' : 'ko-KR',
         author: CEO_REF,
         publisher: ORG_REF,
         isPartOf: WEBSITE_REF,

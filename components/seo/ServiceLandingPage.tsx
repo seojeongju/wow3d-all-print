@@ -9,6 +9,7 @@ import type { ServiceLandingConfig } from '@/lib/seo-service-pages'
 import type { QnAItem } from '@/lib/qna'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
+import KeyAnswerBox from '@/components/seo/KeyAnswerBox'
 import { pickServiceWorkPhotos } from '@/lib/seo-work-photos'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
@@ -95,6 +96,7 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {config.description}
                     </p>
+                    <KeyAnswerBox path={pagePath} locale={locale} />
                     <div className="flex flex-wrap gap-3 pt-4">
                         <Link href={config.primaryCta.href as '/'}>
                             <Button className="h-12 px-6 rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black gap-2">
