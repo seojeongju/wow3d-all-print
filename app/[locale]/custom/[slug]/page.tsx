@@ -38,7 +38,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return { title: 'Not Found' }
     }
 
-    const t = await getTranslations({ locale, namespace: 'CustomProducts' })
     const title = product.title
     const description = product.summary || product.description
     const path = getPathname({ locale, href: `/custom/${product.slug}` })
@@ -46,7 +45,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const mainImage = absoluteUrl(getProductMainImage(product))
 
     return {
-        title: `${title} | ${t('metaBrand')}`,
+        // 브랜드는 레이아웃 제목 템플릿이 붙이므로 상품명만 (중복 방지)
+        title,
         description,
         alternates: {
             canonical,

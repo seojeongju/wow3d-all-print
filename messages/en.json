@@ -5605,6 +5605,8 @@
     ],
     "ctaQuote": "Get an exact quote for my file",
     "ctaCalculator": "Open price calculator",
-    "breadcrumbCurrent": "3D printing price examples"
+    "breadcrumbCurrent": "3D printing price examples",
+    "minAppliedBadge": "Minimum",
+    "answerMinNote": "For small parts like this, the per-process minimum order amount applies, so ordering several pieces together can lower the price per piece."
   }
 }

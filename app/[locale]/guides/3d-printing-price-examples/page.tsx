@@ -138,7 +138,9 @@ export default async function PriceExamplesGuidePage({ params }: Props) {
                   fdmPrice: rangeText(leadFdm, locale),
                   slaMaterial: leadSla.materialName,
                   slaPrice: rangeText(leadSla, locale),
-              })
+              }) +
+              // 작은 부품은 최소 주문 금액이 적용된 값이므로 그 사실을 함께 밝힘
+              (leadFdm.range.low.minApplied || leadSla.range.low.minApplied ? ` ${t('answerMinNote')}` : '')
             : t('answerFallback')
 
     const path = guidePath(locale)
@@ -222,7 +224,14 @@ export default async function PriceExamplesGuidePage({ params }: Props) {
                                                     <td key={method} className="p-4">
                                                         {cell.status === 'ok' ? (
                                                             <>
-                                                                <p className="font-black text-white">{rangeText(cell, locale)}</p>
+                                                                <p className="font-black text-white">
+                                                                    {rangeText(cell, locale)}
+                                                                    {cell.range.low.minApplied ? (
+                                                                        <span className="ml-1.5 align-middle rounded-md border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[10px] font-black text-amber-200">
+                                                                            {t('minAppliedBadge')}
+                                                                        </span>
+                                                                    ) : null}
+                                                                </p>
                                                                 <p className="mt-0.5 text-xs text-white/50">
                                                                     {cell.materialName} · {hoursText(cell, t)}
                                                                 </p>
