@@ -6,6 +6,7 @@ import { getAllPublishedNews } from '@/lib/news-public';
 import { formatNewsDateKo } from '@/lib/news';
 import { getGuideDocs, getServiceDocs, getUseCaseDocs, llmsLine } from '@/lib/llms-content';
 import { MAKERSPACES } from '@/lib/makerspaces';
+import { CUSTOM_PRODUCT_PRICE_RANGE_KRW } from '@/lib/aeo-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,7 @@ export async function GET() {
         '',
         '## Company',
         '- Name: (주)와우쓰리디 / WOW3D Co., Ltd.',
+        '- CEO: 서정주 (가이드 저자·감수)',
         `- Website: ${SITE_URL}`,
         '- Services: 3D프린팅 자동견적, FDM/SLA/DLP 출력, 시제품 제작, 소량 양산, 3D 모델링 대행, 사진→AI 3D 모델링, 맞춤 상품(키캡·키링·케이스 등), 캡스톤디자인 시제품',
         '- Contact: 02-3144-3137, wow3d16@naver.com (평일 09:00–18:00 KST)',
@@ -93,7 +95,7 @@ export async function GET() {
         `- [스마트상점 기술보급 (MSLA-DLP 공식 공급)](${absoluteUrl('/partnership/smart-store')})`,
         '',
         '## Custom Products',
-        `- [맞춤 상품 허브](${absoluteUrl('/custom')}): 옵션(색상·사이즈·각인·사진)을 고른 뒤 자동견적 또는 제품개발 문의로 진행하는 맞춤 견적가 상품`,
+        `- [맞춤 상품 허브](${absoluteUrl('/custom')}): 옵션(색상·사이즈·각인·사진)을 고른 뒤 자동견적 또는 제품개발 문의로 진행하는 맞춤 견적가 상품. 가격대 ${CUSTOM_PRODUCT_PRICE_RANGE_KRW.low.toLocaleString('ko-KR')}원~${CUSTOM_PRODUCT_PRICE_RANGE_KRW.high.toLocaleString('ko-KR')}원(VAT 포함, 옵션·수량에 따라 맞춤 견적)`,
         ...customLines,
         '',
         '## 3D Printing News (최신 동향)',

@@ -9,6 +9,7 @@ import { getProductMainImage, normalizeCustomProductSlug } from '@/lib/custom-pr
 import {
     buildBreadcrumbSchema,
     buildCustomProductSchema,
+    CUSTOM_PRODUCT_PRICE_RANGE_KRW,
 } from '@/lib/aeo-schema'
 import CustomProductDetailClient from './CustomProductDetailClient'
 
@@ -99,6 +100,8 @@ export default async function CustomProductDetailPage({ params }: Props) {
             priceNote: product.priceNote,
             brandName: t('metaBrand'),
             sku: product.slug,
+            lowPrice: CUSTOM_PRODUCT_PRICE_RANGE_KRW.low,
+            highPrice: CUSTOM_PRODUCT_PRICE_RANGE_KRW.high,
         }),
         buildBreadcrumbSchema([
             { name: locale === 'en' ? 'Home' : '홈', path: locale === 'en' ? '/en' : '/' },

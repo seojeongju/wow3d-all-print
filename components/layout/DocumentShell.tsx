@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import { ZustandPersistGate } from "@/components/ZustandPersistGate";
-import { buildBusinessSchemas, buildWebSiteSearchActionSchema } from "@/lib/aeo-schema";
+import { buildBusinessSchemas, buildCeoPersonSchema, buildWebSiteSearchActionSchema } from "@/lib/aeo-schema";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +37,7 @@ export default function DocumentShell({
   const globalGraph = {
     "@context": "https://schema.org",
     // @graph 안의 노드는 각자 @context를 갖지 않음
-    "@graph": [buildWebSiteSearchActionSchema(), ...buildBusinessSchemas()].map((schema) => {
+    "@graph": [buildWebSiteSearchActionSchema(), ...buildBusinessSchemas(), buildCeoPersonSchema()].map((schema) => {
       const node: Record<string, unknown> = { ...schema };
       delete node["@context"];
       return node;

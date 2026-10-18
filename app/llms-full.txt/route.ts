@@ -47,6 +47,8 @@ export async function GET() {
         '',
         `> (주)와우쓰리디(WOW3D)의 3D프린팅 자동견적·출력 서비스, 가이드, 자주 묻는 질문 전문입니다. 요약 목록은 ${absoluteUrl('/llms.txt')}, 원문은 각 URL을 참고하세요.`,
         '',
+        '- 가이드 저자·감수: (주)와우쓰리디 대표 서정주',
+        '',
         '## 3D프린팅 자동견적',
         '',
         `- URL: ${absoluteUrl('/quote')}`,

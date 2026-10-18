@@ -43,12 +43,28 @@ const KNOWS_ABOUT = [
     '캡스톤디자인 시제품',
 ];
 
-const SAME_AS = [
-    'https://www.band.us/@3dcookiehd',
-    'https://blog.naver.com/3dcookiehd',
-    'https://www.instagram.com/3dcookie_hd/',
-    'https://ko-kr.facebook.com/3dfabcafe/',
-];
+/**
+ * 회사와 같은 엔티티임을 알리는 공식 외부 프로필.
+ * 옛 브랜드(3D쿠키·3D팹카페) 계정은 다른 엔티티로 오인될 수 있어 넣지 않는다 (푸터 링크와는 별개).
+ * 와우쓰리디 이름의 공식 채널(네이버 플레이스 등)이 생기면 여기에 추가.
+ */
+const SAME_AS: string[] = [];
+
+/** 가이드 저자 — (주)와우쓰리디 대표 */
+export const CEO_PERSON_ID = `${SITE_URL}/#ceo`;
+const CEO_REF = { '@id': CEO_PERSON_ID };
+
+export function buildCeoPersonSchema() {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        '@id': CEO_PERSON_ID,
+        name: '서정주',
+        jobTitle: '대표',
+        worksFor: ORG_REF,
+        knowsAbout: KNOWS_ABOUT,
+    };
+}
 
 const WEEKDAY_HOURS = [
     {
@@ -259,6 +275,9 @@ export function buildCollectionPageSchema(input: {
     };
 }
 
+/** 맞춤 상품 가격 범위 (VAT 포함, 옵션·수량에 따라 맞춤 견적) — 상품별로 달라지면 상품 데이터로 옮길 것 */
+export const CUSTOM_PRODUCT_PRICE_RANGE_KRW = { low: 8000, high: 12000 } as const;
+
 /**
  * 맞춤 상품 상세.
  * 고정가가 없는 견적형 상품은 가격 없는 Offer를 넣으면 Google에서 "가격 누락" 오류가 나므로
@@ -273,6 +292,7 @@ export function buildCustomProductSchema(input: {
     brandName?: string;
     sku?: string;
     lowPrice?: number;
+    highPrice?: number;
 }) {
     const images = (input.imageUrls.length > 0 ? input.imageUrls : [absoluteUrl(OG_IMAGE_PATH)]).map(
         (src) => (src.startsWith('http') ? src : absoluteUrl(src))
@@ -302,6 +322,9 @@ export function buildCustomProductSchema(input: {
                       url,
                       priceCurrency: 'KRW',
                       lowPrice: input.lowPrice,
+                      ...(input.highPrice && input.highPrice >= input.lowPrice
+                          ? { highPrice: input.highPrice }
+                          : {}),
                       availability: 'https://schema.org/InStock',
                       itemCondition: 'https://schema.org/NewCondition',
                       seller: ORG_REF,
@@ -365,7 +388,7 @@ export function buildArticleSchema(input: {
         description: input.description,
         image,
         inLanguage: input.locale === 'en' || input.path.startsWith('/en/') ? 'en' : 'ko-KR',
-        author: ORG_REF,
+        author: CEO_REF,
         publisher: ORG_REF,
         isPartOf: WEBSITE_REF,
         mainEntityOfPage: url,
@@ -402,7 +425,7 @@ export function buildOrganizationSchema() {
         },
         knowsAbout: KNOWS_ABOUT,
         areaServed: 'KR',
-        sameAs: SAME_AS,
+        ...(SAME_AS.length > 0 ? { sameAs: SAME_AS } : {}),
         subOrganization: MAKERSPACES.map((c) => ({ '@id': localBusinessId(c) })),
         contactPoint: {
             '@type': 'ContactPoint',

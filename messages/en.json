@@ -2893,7 +2893,9 @@
     "hubCta": "All guides",
     "defaultQuoteCta": "Start auto quote",
     "defaultContactCta": "Contact us",
-    "faqHeading": "FAQ"
+    "faqHeading": "FAQ",
+    "authorLabel": "By",
+    "authorName": "Seo Jeongju, CEO of WOW3D"
   },
   "QnAPage": {
     "metaTitle": "3D printing FAQ · photo-to-3D modeling · common questions",
