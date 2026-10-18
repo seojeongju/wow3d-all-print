@@ -18,7 +18,7 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
     {
         slug: 'printing',
         path: '/services/printing',
-        title: '3D프린팅출력 · 3D프린터출력 대행 | 와우쓰리디 WOW3D',
+        title: '3D프린팅출력 · 3D프린터출력 대행',
         h1: '3D프린팅출력',
         h1Accent: '· 3D프린터출력 대행',
         description:

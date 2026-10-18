@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import GuideCTA from '@/components/guides/GuideCTA'
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 import {
     buildPhotoTo3DHowToSchema,
     buildPhotoTo3DShowcaseSchema,
@@ -185,6 +186,7 @@ export default async function PhotoTo3DPrintingGuidePage({ params }: Props) {
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {t('heroBody')}
                     </p>
+                    <ContentDatesNote path={path} locale={locale} />
                     <div className="flex flex-wrap gap-3 pt-2">
                         <Link
                             href={PHOTO_TO_3D_QUOTE_PATH as '/'}

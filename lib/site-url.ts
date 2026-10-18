@@ -35,7 +35,8 @@ export const OG_QUOTE_IMAGE_ALT =
     '와우쓰리디 WOW3D 3D프린팅 자동견적 — 파일 업로드 후 즉시 출력 가격 확인';
 
 export const EN_SITE_NAME = 'WOW3D Co., Ltd.';
-export const EN_BRAND_SUFFIX = 'WOW3D Co., Ltd.';
+/** 영문 제목 접미사 — 짧게 유지해 검색 결과에서 제목이 잘리지 않게 함 (회사 정식명은 EN_SITE_NAME) */
+export const EN_BRAND_SUFFIX = 'WOW3D';
 export const OG_IMAGE_ALT_EN = 'WOW3D 3D printing service — prototypes and industrial parts';
 export const OG_QUOTE_IMAGE_ALT_EN = 'WOW3D instant 3D printing quote — upload a file and see the price';
 

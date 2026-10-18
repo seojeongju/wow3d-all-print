@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import GuideCTA from '@/components/guides/GuideCTA'
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 import { getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
@@ -128,6 +129,7 @@ export async function BestMaterialsGuidePage({ params, slug }: Props) {
                         <span className="text-teal-400">{t(`${slug}.h1Accent`)}</span>
                     </h1>
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t(`${slug}.intro`)}</p>
+                    <ContentDatesNote path={path} locale={locale} />
                 </div>
             </section>
 

@@ -62,7 +62,7 @@ export default async function PriceCalculatorLayout({ children, params }: Props)
     const faqs = t.raw('faqs') as Array<{ q: string; a: string }>
 
     const schemas = [
-        buildWebPageSchema({ name: t('metaTitle'), description: t('metaDescription'), path }),
+        buildWebPageSchema({ name: t('metaTitle'), description: t('metaDescription'), path, locale }),
         buildBreadcrumbSchema([
             { name: t('breadcrumbHome'), path: locale === 'en' ? '/en' : '/' },
             { name: t('breadcrumbCalc'), path },

@@ -4,7 +4,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, Calculator, Layers, Printer, Clock } from 'lucide-react'
-import { buildArticleSchema } from '@/lib/aeo-schema'
+import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
@@ -77,6 +78,13 @@ export default async function QuoteGuidePage({ params }: Props) {
     const faqs = t.raw('faqs') as FaqItem[]
 
     const path = guidePath(locale)
+    const tChrome = await getTranslations({ locale, namespace: 'GuideChrome' })
+
+    const breadcrumbSchema = buildBreadcrumbSchema([
+        { name: tChrome('breadcrumbHome'), path: getPathname({ locale, href: '/' }) },
+        { name: tChrome('breadcrumbGuides'), path: getPathname({ locale, href: '/guides' }) },
+        { name: t('articleHeadline'), path },
+    ])
 
     const articleSchema = buildArticleSchema({
         headline: t('articleHeadline'),
@@ -103,7 +111,7 @@ export default async function QuoteGuidePage({ params }: Props) {
             <Header />
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify([faqSchema, articleSchema]) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify([breadcrumbSchema, faqSchema, articleSchema]) }}
             />
 
             <section className="pt-32 pb-20 border-b border-white/10">
@@ -118,6 +126,7 @@ export default async function QuoteGuidePage({ params }: Props) {
                             <span className="text-teal-400">{t('h1Accent')}</span>
                         </h1>
                         <p className="text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
+                        <ContentDatesNote path={path} locale={locale} />
                     </div>
                 </div>
             </section>

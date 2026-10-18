@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   buildBreadcrumbSchema,
-  buildCollectionPageSchema,
+  buildFaqPageSchema,
   buildQuoteHowToSchema,
   buildPhotoTo3DHowToSchema,
   buildWebPageSchema,
 } from "@/lib/aeo-schema";
+import QuoteSeoSection from "@/components/seo/QuoteSeoSection";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
 import {
@@ -91,6 +92,9 @@ export default async function QuoteLayout({ children, params }: Props) {
   const quoteDescription = t("metaDescription");
   const path = quotePath(locale);
 
+  // 화면 하단 QuoteSeoSection에 실제로 노출되는 FAQ와 동일한 문구로 FAQPage 생성
+  const faqs = t.raw("faqs") as Array<{ q: string; a: string }>;
+
   const schemas = [
     buildWebPageSchema({
       name: quoteTitle,
@@ -100,12 +104,7 @@ export default async function QuoteLayout({ children, params }: Props) {
       imageWidth: OG_QUOTE_IMAGE_WIDTH,
       imageHeight: OG_QUOTE_IMAGE_HEIGHT,
       imageCaption: ogQuoteImageAlt(locale),
-    }),
-    buildCollectionPageSchema({
-      name: t("collectionName"),
-      description: t("collectionDesc"),
-      path,
-      imagePath: OG_QUOTE_IMAGE_PATH,
+      locale,
     }),
     buildBreadcrumbSchema([
       { name: t("breadcrumbHome"), path: locale === "en" ? "/en" : "/" },
@@ -113,6 +112,10 @@ export default async function QuoteLayout({ children, params }: Props) {
     ]),
     buildQuoteHowToSchema(),
     buildPhotoTo3DHowToSchema({ locale }),
+    buildFaqPageSchema(
+      faqs.map((f, i) => ({ id: i + 1, question: f.q, answer: f.a, category: "quote" })),
+      path
+    ),
   ];
 
   return (
@@ -122,6 +125,7 @@ export default async function QuoteLayout({ children, params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
       />
       <ScopedIntlProvider scope="quote" locale={locale}>{children}</ScopedIntlProvider>
+      <QuoteSeoSection locale={locale} />
     </>
   );
 }

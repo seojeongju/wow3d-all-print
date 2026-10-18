@@ -42,7 +42,8 @@ export function middleware(request: NextRequest) {
         pathname === '/sitemap.xml' ||
         pathname === '/robots.txt' ||
         pathname === '/rss.xml' ||
-        pathname.startsWith('/llms.txt')
+        pathname === '/llms.txt' ||
+        pathname === '/llms-full.txt'
     ) {
         return NextResponse.next()
     }

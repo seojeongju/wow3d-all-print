@@ -5,11 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ClearCartWhenGuest } from "@/components/ClearCartWhenGuest";
 import TrafficTracker from "@/components/analytics/TrafficTracker";
 import { ZustandPersistGate } from "@/components/ZustandPersistGate";
-import {
-  buildBusinessSchemas,
-  buildWebPageSchema,
-  buildWebSiteSearchActionSchema,
-} from "@/lib/aeo-schema";
+import { buildBusinessSchemas, buildWebSiteSearchActionSchema } from "@/lib/aeo-schema";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +32,17 @@ export default function DocumentShell({
   lang: string;
   children: React.ReactNode;
 }) {
-  const businessSchemas = buildBusinessSchemas();
+  // 전역 엔티티(사이트·회사·본점·서비스)만 @graph 하나로 출력.
+  // 페이지별 WebPage는 각 페이지가 직접 출력한다 — 여기서 홈 WebPage를 넣으면 모든 페이지가 홈 URL을 주장하게 됨.
+  const globalGraph = {
+    "@context": "https://schema.org",
+    // @graph 안의 노드는 각자 @context를 갖지 않음
+    "@graph": [buildWebSiteSearchActionSchema(), ...buildBusinessSchemas()].map((schema) => {
+      const node: Record<string, unknown> = { ...schema };
+      delete node["@context"];
+      return node;
+    }),
+  };
 
   return (
     <html lang={lang} className="dark" suppressHydrationWarning>
@@ -50,13 +56,7 @@ export default function DocumentShell({
       >
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify([
-              buildWebSiteSearchActionSchema(),
-              buildWebPageSchema(),
-              ...businessSchemas,
-            ]),
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(globalGraph) }}
         />
         <ZustandPersistGate />
         <ClearCartWhenGuest />

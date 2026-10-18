@@ -1,5 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { NextResponse } from 'next/server'
+import { loadPublicMaterials } from '@/lib/pricing-public-data'
 
 /**
  * GET /api/materials - 견적용 소재 목록 (관리자 “소재”와 동일 소스, is_active=1 또는 NULL)
@@ -14,24 +15,8 @@ export async function GET() {
     if (!env?.DB) {
       return NextResponse.json({ success: true, data: [] })
     }
-    const { results } = await env.DB.prepare(
-      'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type ASC, sort_order ASC, name ASC'
-    ).all()
-    const rows = (results || []) as Array<{ id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }>
-    return NextResponse.json(
-      {
-        success: true,
-        data: rows.map((r) => ({
-          id: r.id,
-          name: r.name,
-          type: r.type,
-          price_per_gram: Number(r.price_per_gram) || 0,
-          price_per_ml: r.price_per_ml != null && Number.isFinite(r.price_per_ml) ? Number(r.price_per_ml) : null,
-          density: Number(r.density) || 1.24,
-        })),
-      },
-      { headers: { 'Cache-Control': 'no-store' } }
-    )
+    const data = await loadPublicMaterials(env.DB)
+    return NextResponse.json({ success: true, data }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (e) {
     console.error('GET /api/materials', e)
     return NextResponse.json({ success: true, data: [] })

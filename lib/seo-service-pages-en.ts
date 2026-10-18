@@ -5,7 +5,7 @@ export const SERVICE_LANDINGS_EN: ServiceLandingConfig[] = [
     {
         slug: 'printing',
         path: '/services/printing',
-        title: '3D Printing Service · Print-on-Demand | WOW3D',
+        title: '3D Printing Service · Print-on-Demand',
         h1: '3D Printing',
         h1Accent: '· Print Service',
         description:

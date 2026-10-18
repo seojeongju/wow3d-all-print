@@ -17,6 +17,7 @@ type MessageTree = { [key: string]: unknown }
 const NAMESPACE_PAGES: { path: string; ns: string; type: SearchDocType; boost?: number }[] = [
     { path: '/guides/photo-to-3d-printing-quote', ns: 'PhotoTo3DGuide', type: 'guide' },
     { path: '/guides/3d-printing-quote-guide', ns: 'QuoteGuide', type: 'guide' },
+    { path: '/guides/3d-printing-price-examples', ns: 'PriceExamplesGuide', type: 'guide' },
     { path: '/guides/3d-printing-file-preparation', ns: 'FilePrepGuide', type: 'guide' },
     { path: '/guides/fdm-vs-sla-vs-dlp', ns: 'ProcessCompareGuide', type: 'guide' },
     { path: '/guides/3d-printing-turnaround-time', ns: 'TurnaroundGuide', type: 'guide' },

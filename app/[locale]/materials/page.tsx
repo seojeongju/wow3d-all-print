@@ -189,7 +189,7 @@ export default function MaterialsPage() {
                         className="text-2xl font-black text-white/90 mb-12 flex items-center gap-4 px-2"
                     >
                         <div className="w-2 h-8 bg-teal-400 rounded-full" />
-                        FDM Materials
+                        {t('fdmHeading')}
                     </motion.h2>
                     <div className="space-y-8">
                         {fdmMaterials.map((m, i) => (
@@ -218,7 +218,7 @@ export default function MaterialsPage() {
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-12 relative z-10">
                                     <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">Mechanical Propertis</h4>
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">{t('propertiesHeading')}</h4>
                                         <ul className="space-y-3">
                                             {m.features.map((f) => (
                                                 <li key={f} className="flex items-start gap-3 group/item">
@@ -229,7 +229,7 @@ export default function MaterialsPage() {
                                         </ul>
                                     </div>
                                     <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">Practical Applications</h4>
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">{t('applicationsHeading')}</h4>
                                         <ul className="space-y-3">
                                             {m.applications.map((a) => (
                                                 <li key={a} className="flex items-start gap-3 group/item">
@@ -274,7 +274,7 @@ export default function MaterialsPage() {
                         className="text-2xl font-black text-white/90 mb-12 flex items-center gap-4 px-2"
                     >
                         <div className="w-2 h-8 bg-indigo-500 rounded-full" />
-                        Resin Materials (SLA · DLP)
+                        {t('resinHeading')}
                     </motion.h2>
                     <div className="space-y-8">
                         {resinMaterials.map((m, i) => (
@@ -304,7 +304,7 @@ export default function MaterialsPage() {
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-12 relative z-10">
                                     <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">Mechanical Propertis</h4>
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">{t('propertiesHeading')}</h4>
                                         <ul className="space-y-3">
                                             {m.features.map((f) => (
                                                 <li key={f} className="flex items-start gap-3 group/item">
@@ -315,7 +315,7 @@ export default function MaterialsPage() {
                                         </ul>
                                     </div>
                                     <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">Practical Applications</h4>
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">{t('applicationsHeading')}</h4>
                                         <ul className="space-y-3">
                                             {m.applications.map((a) => (
                                                 <li key={a} className="flex items-start gap-3 group/item">

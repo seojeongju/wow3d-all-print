@@ -8,6 +8,7 @@ import { CUSTOM_PRODUCT_SLUGS } from "@/lib/custom-products";
 import { getCustomProductList } from "@/lib/custom-products-public";
 import { getAllPublishedNews } from "@/lib/news-public";
 import { utcSqlToIso } from "@/lib/news";
+import { getContentDates, kstDateToIso } from "@/lib/content-dates";
 
 /** 관리자가 발행한 맞춤 상품·최신 동향 글이 배포 없이 반영되도록 런타임 생성 */
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ const PUBLIC_PAGES: PublicPage[] = [
   { path: "/guides", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/photo-to-3d-printing-quote", priority: 0.92, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-quote-guide", priority: 0.92, changeFrequency: "weekly" },
+  { path: "/guides/3d-printing-price-examples", priority: 0.92, changeFrequency: "weekly" },
   { path: "/guides/fdm-vs-sla-vs-dlp", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-file-preparation", priority: 0.9, changeFrequency: "weekly" },
   { path: "/guides/3d-printing-turnaround-time", priority: 0.86, changeFrequency: "weekly" },
@@ -99,12 +101,11 @@ async function resolveCustomProductPages(): Promise<PublicPage[]> {
   }
 }
 
-function pushLocalizedEntries(
-  entries: MetadataRoute.Sitemap,
-  page: PublicPage,
-  lastModified: Date
-) {
+function pushLocalizedEntries(entries: MetadataRoute.Sitemap, page: PublicPage) {
   const { path, priority = 0.8, changeFrequency = "weekly" } = page;
+  // 실제 콘텐츠 수정일만 lastmod로 — 날짜를 모르는 페이지(DB 상품 등)는 생략
+  const dates = getContentDates(path);
+  const lastModified = dates ? kstDateToIso(dates.modified) : undefined;
   const koPath = path === "/" ? "" : path;
   const enPath = path === "/" ? "/en" : `/en${path}`;
   const koUrl = `${SITE_URL}${koPath}`;
@@ -128,12 +129,11 @@ function pushLocalizedEntries(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
-  const lastModified = new Date();
   const customPages = await resolveCustomProductPages();
   const pages = [...PUBLIC_PAGES, ...customPages];
 
   for (const page of pages) {
-    pushLocalizedEntries(entries, page, lastModified);
+    pushLocalizedEntries(entries, page);
   }
 
   /** 최신 동향은 한국어 전용 콘텐츠 — 영문 경로는 noindex이므로 ko URL만 수록 */
@@ -141,7 +141,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const newsLatest = news[0] ? utcSqlToIso(news[0].updatedAt) : null;
   entries.push({
     url: `${SITE_URL}/news`,
-    lastModified: newsLatest ? new Date(newsLatest) : lastModified,
+    lastModified: newsLatest ? new Date(newsLatest) : undefined,
     changeFrequency: "daily",
     priority: 0.88,
   });
@@ -149,7 +149,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const modified = utcSqlToIso(post.updatedAt) ?? utcSqlToIso(post.publishedAt);
     entries.push({
       url: `${SITE_URL}/news/${encodeURIComponent(post.slug)}`,
-      lastModified: modified ? new Date(modified) : lastModified,
+      lastModified: modified ? new Date(modified) : undefined,
       changeFrequency: "monthly",
       priority: 0.8,
     });

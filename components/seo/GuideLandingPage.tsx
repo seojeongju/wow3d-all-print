@@ -4,6 +4,7 @@ import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-react'
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 import type { GuideLandingConfig } from '@/lib/seo-guide-pages'
 import type { QnAItem } from '@/lib/qna'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
@@ -64,6 +65,7 @@ export default async function GuideLandingPage({ config, locale }: Props) {
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">
                         {config.description}
                     </p>
+                    <ContentDatesNote path={articlePath} locale={locale} />
                 </div>
             </section>
 

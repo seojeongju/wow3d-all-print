@@ -8,6 +8,89 @@ import {
     OG_IMAGE_WIDTH,
     SITE_URL,
 } from '@/lib/site-url';
+import { getContentDates, kstDateToIso } from '@/lib/content-dates';
+import { MAKERSPACES, type Makerspace } from '@/lib/makerspaces';
+
+/**
+ * 엔티티 고정 @id — 모든 페이지의 스키마가 같은 회사·사이트·사업장을 가리키도록 참조로 연결한다.
+ * (AI·검색엔진이 흩어진 스키마를 하나의 회사로 인식하게 하는 핵심)
+ */
+export const ORG_ID = `${SITE_URL}/#organization`;
+export const WEBSITE_ID = `${SITE_URL}/#website`;
+export const HQ_LOCALBUSINESS_ID = `${SITE_URL}/#localbusiness`;
+
+const ORG_REF = { '@id': ORG_ID };
+const WEBSITE_REF = { '@id': WEBSITE_ID };
+
+const ORG_NAME = '(주)와우쓰리디';
+const ORG_EMAIL = 'wow3d16@naver.com';
+const ORG_TELEPHONE = '02-3144-3137';
+const LOGO_URL = absoluteUrl('/thumbnail.png');
+
+/** 회사 전문 분야 — AI가 "무엇을 하는 회사인지" 연결할 때 쓰는 주제어 */
+const KNOWS_ABOUT = [
+    '3D 프린팅',
+    '3D프린팅 출력 대행',
+    '3D프린팅 자동견적',
+    'FDM 3D 프린팅',
+    'SLA 3D 프린팅',
+    'DLP 3D 프린팅',
+    '시제품 제작',
+    '소량 양산',
+    '3D 모델링',
+    'STL 파일 리페어',
+    '사진 기반 AI 3D 모델링',
+    '캡스톤디자인 시제품',
+];
+
+const SAME_AS = [
+    'https://www.band.us/@3dcookiehd',
+    'https://blog.naver.com/3dcookiehd',
+    'https://www.instagram.com/3dcookie_hd/',
+    'https://ko-kr.facebook.com/3dfabcafe/',
+];
+
+const WEEKDAY_HOURS = [
+    {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        opens: '09:00',
+        closes: '18:00',
+    },
+];
+
+function localBusinessId(center: Makerspace) {
+    return center.id === 'hongdae' ? HQ_LOCALBUSINESS_ID : `${SITE_URL}/#localbusiness-${center.id}`;
+}
+
+/** 제작센터(메이커스페이스) 1곳의 LocalBusiness — 홍대센터가 본점 */
+export function buildMakerspaceLocalBusiness(center: Makerspace) {
+    const isHq = center.id === 'hongdae';
+    return {
+        '@type': 'LocalBusiness',
+        '@id': localBusinessId(center),
+        name: `(주)와우쓰리디 WOW3D ${center.name}`,
+        description: isHq
+            ? '(주)와우쓰리디 본점. 3D프린팅출력, 3D프린터출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 마포구(홍대·상수) 제작센터입니다.'
+            : `(주)와우쓰리디 ${center.name}. 3D프린팅 출력·시제품 제작 상담을 제공하는 ${center.label} 제작센터입니다.`,
+        url: absoluteUrl('/makerspace'),
+        image: [absoluteUrl(OG_IMAGE_PATH), absoluteUrl(OG_IMAGE_WIDE_PATH)],
+        email: ORG_EMAIL,
+        ...(center.phone ? { telephone: center.phone } : {}),
+        priceRange: '$$',
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: center.addressDetail ? `${center.address} ${center.addressDetail}` : center.address,
+            addressCountry: 'KR',
+            ...(isHq ? { addressLocality: '마포구', addressRegion: '서울', postalCode: '04044' } : {}),
+        },
+        geo: { '@type': 'GeoCoordinates', latitude: center.lat, longitude: center.lng },
+        hasMap: `https://map.kakao.com/link/map/${encodeURIComponent(center.name)},${center.lat},${center.lng}`,
+        openingHoursSpecification: WEEKDAY_HOURS,
+        areaServed: 'KR',
+        parentOrganization: ORG_REF,
+    };
+}
 
 export function buildFaqPageSchema(items: QnAItem[], pagePath = '/qna') {
     return {
@@ -84,18 +167,13 @@ export function buildWebSiteSearchActionSchema() {
     return {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: '(주)와우쓰리디',
-        alternateName: ['와우쓰리디', 'WOW3D', '와우3D'],
+        '@id': WEBSITE_ID,
+        name: ORG_NAME,
+        alternateName: ['와우쓰리디', 'WOW3D', '와우3D', '와우쓰리디 3D프린팅'],
         url: SITE_URL,
         image: absoluteUrl(OG_IMAGE_PATH),
-        publisher: {
-            '@type': 'Organization',
-            name: '(주)와우쓰리디',
-            logo: {
-                '@type': 'ImageObject',
-                url: absoluteUrl('/thumbnail.png'),
-            },
-        },
+        inLanguage: ['ko-KR', 'en'],
+        publisher: ORG_REF,
     };
 }
 
@@ -108,6 +186,7 @@ export function buildWebPageSchema(input?: {
     imageWidth?: number;
     imageHeight?: number;
     imageCaption?: string;
+    locale?: string;
 }) {
     const path = input?.path ?? '/';
     const imagePath = input?.imagePath ?? OG_IMAGE_PATH;
@@ -116,15 +195,21 @@ export function buildWebPageSchema(input?: {
     const height = input?.imageHeight ?? OG_IMAGE_HEIGHT;
     const caption = input?.imageCaption ?? OG_IMAGE_ALT;
 
+    const url = absoluteUrl(path);
+    const dates = getContentDates(path);
+
     return {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: input?.name ?? '3D프린팅출력 · 3D프린터출력 전문 | (주)와우쓰리디 WOW3D',
         description:
             input?.description ??
             '3D프린팅출력·3D프린터출력 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환. 시제품제작부터 소량생산까지.',
-        url: absoluteUrl(path),
-        isPartOf: { '@type': 'WebSite', url: SITE_URL, name: '(주)와우쓰리디' },
+        url,
+        isPartOf: WEBSITE_REF,
+        about: ORG_REF,
+        publisher: ORG_REF,
         primaryImageOfPage: {
             '@type': 'ImageObject',
             url: imageUrl,
@@ -133,7 +218,10 @@ export function buildWebPageSchema(input?: {
             caption,
         },
         image: imageUrl,
-        inLanguage: 'ko-KR',
+        inLanguage: input?.locale === 'en' ? 'en' : 'ko-KR',
+        ...(dates
+            ? { datePublished: kstDateToIso(dates.published), dateModified: kstDateToIso(dates.modified) }
+            : {}),
     };
 }
 
@@ -171,7 +259,11 @@ export function buildCollectionPageSchema(input: {
     };
 }
 
-/** 맞춤 상품 상세 — 고정가 없음(견적형)이므로 숫자 가격은 넣지 않음 */
+/**
+ * 맞춤 상품 상세.
+ * 고정가가 없는 견적형 상품은 가격 없는 Offer를 넣으면 Google에서 "가격 누락" 오류가 나므로
+ * lowPrice(최저 견적가)가 있을 때만 AggregateOffer를 넣고, 없으면 견적 안내를 속성으로만 표시한다.
+ */
 export function buildCustomProductSchema(input: {
     name: string;
     description: string;
@@ -180,6 +272,7 @@ export function buildCustomProductSchema(input: {
     priceNote?: string;
     brandName?: string;
     sku?: string;
+    lowPrice?: number;
 }) {
     const images = (input.imageUrls.length > 0 ? input.imageUrls : [absoluteUrl(OG_IMAGE_PATH)]).map(
         (src) => (src.startsWith('http') ? src : absoluteUrl(src))
@@ -197,15 +290,24 @@ export function buildCustomProductSchema(input: {
             '@type': 'Brand',
             name: input.brandName || 'WOW3D',
         },
+        manufacturer: ORG_REF,
         category: '3D Printing Custom Product',
-        offers: {
-            '@type': 'Offer',
-            url,
-            priceCurrency: 'KRW',
-            availability: 'https://schema.org/InStock',
-            itemCondition: 'https://schema.org/NewCondition',
-            description: input.priceNote || '맞춤 견적가',
-        },
+        additionalProperty: [
+            { '@type': 'PropertyValue', name: '가격 안내', value: input.priceNote || '맞춤 견적가' },
+        ],
+        ...(input.lowPrice && input.lowPrice > 0
+            ? {
+                  offers: {
+                      '@type': 'AggregateOffer',
+                      url,
+                      priceCurrency: 'KRW',
+                      lowPrice: input.lowPrice,
+                      availability: 'https://schema.org/InStock',
+                      itemCondition: 'https://schema.org/NewCondition',
+                      seller: ORG_REF,
+                  },
+              }
+            : {}),
         url,
     };
 }
@@ -236,105 +338,94 @@ export function buildCustomProductItemListSchema(
     };
 }
 
+/**
+ * 가이드·활용 사례 Article.
+ * 작성일·수정일은 lib/content-dates.ts에서 경로로 찾아 넣는다 (AI 답변이 최신성·출처를 판단하는 신호).
+ */
 export function buildArticleSchema(input: {
     headline: string;
     description: string;
     path: string;
+    imagePath?: string;
+    locale?: string;
 }) {
+    const url = absoluteUrl(input.path);
+    const dates = getContentDates(input.path);
+    const image = input.imagePath
+        ? input.imagePath.startsWith('http')
+            ? input.imagePath
+            : absoluteUrl(input.imagePath)
+        : absoluteUrl(OG_IMAGE_PATH);
+
     return {
         '@context': 'https://schema.org',
         '@type': 'Article',
+        '@id': `${url}#article`,
         headline: input.headline,
         description: input.description,
-        author: {
-            '@type': 'Organization',
-            name: '(주)와우쓰리디',
+        image,
+        inLanguage: input.locale === 'en' || input.path.startsWith('/en/') ? 'en' : 'ko-KR',
+        author: ORG_REF,
+        publisher: ORG_REF,
+        isPartOf: WEBSITE_REF,
+        mainEntityOfPage: url,
+        url,
+        ...(dates
+            ? { datePublished: kstDateToIso(dates.published), dateModified: kstDateToIso(dates.modified) }
+            : {}),
+    };
+}
+
+/** 회사(Organization) — 3개 제작센터를 하위 사업장으로 연결 */
+export function buildOrganizationSchema() {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        '@id': ORG_ID,
+        name: ORG_NAME,
+        legalName: ORG_NAME,
+        alternateName: ['WOW3D', '와우쓰리디', '와우3D', 'WOW3D Co., Ltd.'],
+        description:
+            '(주)와우쓰리디(WOW3D)는 3D 파일·사진 업로드 자동견적부터 FDM·SLA·DLP 3D프린팅 출력, 시제품 제작, 소량 양산, 3D 모델링까지 제공하는 한국의 3D프린팅 전문 기업입니다.',
+        url: SITE_URL,
+        logo: { '@type': 'ImageObject', url: LOGO_URL },
+        image: [absoluteUrl(OG_IMAGE_PATH), absoluteUrl(OG_IMAGE_WIDE_PATH)],
+        email: ORG_EMAIL,
+        telephone: ORG_TELEPHONE,
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: '독막로 93 상수빌딩 4층',
+            addressLocality: '마포구',
+            addressRegion: '서울',
+            postalCode: '04044',
+            addressCountry: 'KR',
         },
-        publisher: {
-            '@type': 'Organization',
-            name: '(주)와우쓰리디',
+        knowsAbout: KNOWS_ABOUT,
+        areaServed: 'KR',
+        sameAs: SAME_AS,
+        subOrganization: MAKERSPACES.map((c) => ({ '@id': localBusinessId(c) })),
+        contactPoint: {
+            '@type': 'ContactPoint',
+            telephone: ORG_TELEPHONE,
+            email: ORG_EMAIL,
+            contactType: 'customer service',
+            areaServed: 'KR',
+            availableLanguage: ['Korean', 'English'],
         },
-        mainEntityOfPage: absoluteUrl(input.path),
-        url: absoluteUrl(input.path),
     };
 }
 
 export function buildBusinessSchemas() {
+    const hq = MAKERSPACES.find((c) => c.id === 'hongdae') ?? MAKERSPACES[0];
     return [
-        {
-            '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: '(주)와우쓰리디',
-            alternateName: ['WOW3D', '와우쓰리디', '와우3D'],
-            url: SITE_URL,
-            logo: absoluteUrl('/thumbnail.png'),
-            image: [
-                absoluteUrl(OG_IMAGE_PATH),
-                absoluteUrl(OG_IMAGE_WIDE_PATH),
-            ],
-            email: 'wow3d16@naver.com',
-            telephone: '02-3144-3137',
-            sameAs: [
-                'https://www.band.us/@3dcookiehd',
-                'https://blog.naver.com/3dcookiehd',
-                'https://www.instagram.com/3dcookie_hd/',
-                'https://ko-kr.facebook.com/3dfabcafe/',
-            ],
-            contactPoint: {
-                '@type': 'ContactPoint',
-                telephone: '02-3144-3137',
-                email: 'wow3d16@naver.com',
-                contactType: 'customer service',
-                areaServed: 'KR',
-                availableLanguage: 'Korean',
-            },
-        },
-        {
-            '@context': 'https://schema.org',
-            '@type': 'LocalBusiness',
-            '@id': `${SITE_URL}#localbusiness`,
-            name: '(주)와우쓰리디 (WOW3D)',
-            description:
-                '(주)와우쓰리디는 3D프린팅출력, 3D프린터출력, 시제품 제작, 자동견적 서비스를 제공하는 서울 기반 업체입니다.',
-            url: SITE_URL,
-            image: [
-                absoluteUrl(OG_IMAGE_PATH),
-                absoluteUrl(OG_IMAGE_WIDE_PATH),
-            ],
-            email: 'wow3d16@naver.com',
-            telephone: '02-3144-3137',
-            priceRange: '$$',
-            address: {
-                '@type': 'PostalAddress',
-                streetAddress: '독막로 93 상수빌딩 4층',
-                addressLocality: '마포구',
-                addressRegion: '서울',
-                postalCode: '04044',
-                addressCountry: 'KR',
-            },
-            geo: {
-                '@type': 'GeoCoordinates',
-                latitude: 37.5477,
-                longitude: 126.9226,
-            },
-            openingHoursSpecification: [
-                {
-                    '@type': 'OpeningHoursSpecification',
-                    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                    opens: '09:00',
-                    closes: '18:00',
-                },
-            ],
-            areaServed: 'KR',
-        },
+        buildOrganizationSchema(),
+        { '@context': 'https://schema.org', ...buildMakerspaceLocalBusiness(hq) },
         {
             '@context': 'https://schema.org',
             '@type': 'Service',
+            '@id': `${SITE_URL}/#service`,
             serviceType: '3D프린팅출력 및 3D프린터출력 · 시제품제작',
-            provider: {
-                '@type': 'LocalBusiness',
-                name: '(주)와우쓰리디 (WOW3D)',
-            },
+            provider: ORG_REF,
             areaServed: 'KR',
             description:
                 '3D프린팅출력·3D프린터출력 자동견적, FDM·SLA·DLP 출력, 시제품 제작, 소량 양산, 파일 검토와 납기 상담 서비스를 제공합니다.',

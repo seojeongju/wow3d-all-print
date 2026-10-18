@@ -63,7 +63,13 @@ export default async function HomePage({ params }: Props) {
   const homeFaqItems = localizeQnas(pickVisibleFaqItems(qnas, 6), locale);
   const homePath = getPathname({ locale, href: '/' });
   const homeFaqSchema = homeFaqItems.length > 0 ? buildFaqPageSchema(homeFaqItems, homePath) : null;
-  const webPageSchema = buildWebPageSchema();
+  const t = await getTranslations({ locale, namespace: 'Home' });
+  const webPageSchema = buildWebPageSchema({
+    name: t('metaTitle'),
+    description: t('metaDescription'),
+    path: homePath,
+    locale,
+  });
 
   return (
     <>

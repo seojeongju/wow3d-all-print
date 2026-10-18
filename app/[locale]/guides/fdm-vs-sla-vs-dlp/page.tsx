@@ -10,6 +10,8 @@ import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
+import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 
 type Props = {
     params: Promise<{ locale: string }>
@@ -104,6 +106,27 @@ export default async function CompareGuidePage({ params }: Props) {
     const methodsMap = tPm.raw('methods') as Record<string, MethodMsg>
     const faqs = tPm.raw('faqs') as FaqItem[]
 
+    const path = guidePath(locale)
+    const workPhotos = pickGuideWorkPhotos('fdm-vs-sla-vs-dlp', locale)
+    const schemas = [
+        buildBreadcrumbSchema([
+            { name: tChrome('breadcrumbHome'), path: getPathname({ locale, href: '/' }) },
+            { name: tChrome('breadcrumbGuides'), path: getPathname({ locale, href: '/guides' }) },
+            { name: t('ogTitle'), path },
+        ]),
+        buildArticleSchema({
+            headline: t('ogTitle'),
+            description: t('metaDescription'),
+            path,
+            imagePath: workPhotos[0]?.absoluteSrc,
+            locale,
+        }),
+        buildFaqPageSchema(
+            faqs.map((f, i) => ({ id: i + 1, question: f.q, answer: f.a, category: 'guide' })),
+            path,
+        ),
+    ]
+
     const wowSummaries = GUIDE_PRINT_METHOD_SUMMARIES.filter((m) => m.category === 'wow3d').filter((m) =>
         (WOW_METHOD_IDS as readonly string[]).includes(m.id),
     )
@@ -114,6 +137,7 @@ export default async function CompareGuidePage({ params }: Props) {
     return (
         <main className="min-h-screen bg-[#020617] text-white">
             <Header />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />
             <section className="pt-32 pb-20">
                 <div className="container mx-auto max-w-5xl space-y-6 px-6">
                     <div className="inline-flex rounded-full border border-teal-400/20 bg-teal-400/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">
@@ -125,6 +149,7 @@ export default async function CompareGuidePage({ params }: Props) {
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
                     <p className="max-w-3xl text-lg leading-relaxed text-white/70 break-keep">{t('intro')}</p>
+                    <ContentDatesNote path={path} locale={locale} />
                 </div>
             </section>
 
@@ -286,7 +311,7 @@ export default async function CompareGuidePage({ params }: Props) {
                     </div>
                 </div>
             </section>
-            <WorkPhotosSection photos={pickGuideWorkPhotos('fdm-vs-sla-vs-dlp', locale)} locale={locale} />
+            <WorkPhotosSection photos={workPhotos} locale={locale} />
 
             <Footer />
         </main>

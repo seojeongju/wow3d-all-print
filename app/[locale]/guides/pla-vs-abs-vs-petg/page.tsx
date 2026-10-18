@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-react'
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 import { Link, getPathname } from '@/i18n/navigation'
 import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
@@ -136,6 +137,7 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
+                    <ContentDatesNote path={path} locale={locale} />
                 </div>
             </section>
 

@@ -410,7 +410,7 @@
     "bottomTitle": "Get a quote now",
     "bottomDesc": "Upload files and check pricing without signing up.",
     "bottomContact": "Contact",
-    "metaTitle": "3D Printing Services | Prototypes · FDM · SLA | WOW3D",
+    "metaTitle": "3D Printing Services | Prototypes · FDM · SLA",
     "metaDescription": "Explore WOW3D PRO core services: print-on-demand, prototypes, FDM & SLA, photo→AI 3D, graduation projects, small batch, and 3D modeling.",
     "ogTitle": "WOW3D PRO Core Services | 3D Printing",
     "ogDescription": "From upload to auto-quote, production, and shipping. Pick the service that fits your goal.",
@@ -418,6 +418,60 @@
     "collectionDescription": "Print service, prototypes, FDM, SLA, photo→AI 3D, graduation projects, small batch, modeling, and more.",
     "breadcrumbHome": "Home",
     "breadcrumbServices": "Services"
+  },
+  "QuoteSeo": {
+    "eyebrow": "About instant 3D printing quotes",
+    "h1": "Instant 3D printing quote — upload a file, see price and lead time",
+    "answer": "WOW3D's instant quote analyzes volume, surface area and print time as soon as you upload an STL, OBJ, 3MF or PLY file, and shows prices for FDM, SLA and DLP right away. STEP and STP files are converted automatically. No 3D file? Upload a product photo (JPG or PNG) and AI builds a 3D model you can quote. Production, inspection and shipping take 3–7 days on average after you order.",
+    "factsTitle": "Instant quote at a glance",
+    "facts": [
+      {
+        "label": "Instant-quote files",
+        "value": "STL · OBJ · 3MF · PLY (STEP · STP auto-converted)"
+      },
+      {
+        "label": "Processes",
+        "value": "FDM (PLA · ABS · PETG · PC · TPU), SLA · DLP resin"
+      },
+      {
+        "label": "Automatic file check",
+        "value": "Holes, gaps and duplicate faces repaired; thin-wall warning below FDM 1 mm · SLA/DLP 0.6 mm"
+      },
+      {
+        "label": "Lead time",
+        "value": "3–7 days on average after order confirmation"
+      },
+      {
+        "label": "No 3D file?",
+        "value": "Photo → AI 3D model (signed-in members, once a day) or the price calculator"
+      }
+    ],
+    "stepsTitle": "From quote to order in 4 steps",
+    "steps": [
+      {
+        "name": "Upload",
+        "text": "Upload a 3D model, or create one from a product photo with AI."
+      },
+      {
+        "name": "Automatic check & repair",
+        "text": "Mesh errors are repaired before quoting, and thin walls are highlighted in the 3D viewer."
+      },
+      {
+        "name": "Choose options & see the price",
+        "text": "Pick the process, material, layer height and infill — price and print time update live."
+      },
+      {
+        "name": "Order & pay",
+        "text": "Add to cart and pay; we then produce, inspect and ship."
+      }
+    ],
+    "faqTitle": "Instant quote FAQ",
+    "moreTitle": "Learn more",
+    "linkPriceCalculator": "Estimate a price without a file (price calculator)",
+    "linkQuoteGuide": "How 3D printing quotes are calculated",
+    "linkPriceExamples": "3D printing price examples by size",
+    "linkStlChecker": "Free STL checker & automatic repair",
+    "linkProcess": "FDM vs SLA vs DLP guide"
   },
   "Quote": {
     "eyebrow": "Start your quote",
@@ -1244,7 +1298,11 @@
       "titleAfter": "starts here.",
       "subtitle": "Upload a file—no complex math—and get a precise quote instantly.",
       "button": "Start a quote"
-    }
+    },
+    "fdmHeading": "FDM materials (filament)",
+    "resinHeading": "Resin materials (SLA · DLP)",
+    "propertiesHeading": "Key properties",
+    "applicationsHeading": "Typical applications"
   },
   "Makerspace": {
     "metaTitle": "Makerspace directions | Hongdae · Gumi · Jeonju",
@@ -2127,6 +2185,25 @@
     ],
     "flowTitle": "Typical flow",
     "flowBody": "Many jobs quote instantly, but complex geometry or revised quotes may get a separate lead-time note after admin review. WOW3D proceeds order confirmation → production → QC → shipping.",
+    "faqTitle": "Lead time FAQ",
+    "faqs": [
+      {
+        "q": "How long does 3D printing usually take?",
+        "a": "After the order is confirmed we produce, inspect and ship it, and most orders arrive within 3–7 days on average. Timing varies with the process (FDM, SLA, DLP), quantity and post-processing."
+      },
+      {
+        "q": "What makes the lead time longer?",
+        "a": "Fine layer heights, larger quantities, extra post-processing such as washing, curing, assembly or painting, and files that need error fixes or a manual review all add print or work time."
+      },
+      {
+        "q": "Do complex parts follow the instant-quote timeline?",
+        "a": "Typical models proceed on the instant-quote basis. Complex geometry or orders that need a revised quote are reviewed by our team, and we then confirm the lead time separately."
+      },
+      {
+        "q": "How can I shorten the lead time?",
+        "a": "Lower the layer height only as far as your accuracy needs, choose only the post-processing you really need, and check your file for errors before uploading to avoid fix-and-review time. For tight deadlines, contact us in advance."
+      }
+    ],
     "ctaContact": "Ask about lead time",
     "ctaQuote": "Start auto quote"
   },
@@ -2809,6 +2886,8 @@
     "more": "View more work"
   },
   "GuideChrome": {
+    "updatedLabel": "Last updated",
+    "publishedLabel": "First published",
     "breadcrumbHome": "Home",
     "breadcrumbGuides": "Guides",
     "hubCta": "All guides",
@@ -3423,7 +3502,7 @@
     "organizationName": "WOW3D Co., Ltd."
   },
   "Gallery": {
-    "metaTitle": "3D Printed Prototype Gallery | 100+ Real Builds | WOW3D",
+    "metaTitle": "3D Printed Prototype Gallery | 100+ Real Builds",
     "metaDescription": "Browse WOW3D’s 3D printing prototype gallery — real FDM, SLA, and DLP builds with material and process notes.",
     "ogTitle": "3D Printed Prototype Gallery | WOW3D",
     "ogDescription": "100+ high-quality 3D print and prototype references in one place.",
@@ -3439,7 +3518,7 @@
     "empty": "No gallery images yet."
   },
   "Privacy": {
-    "metaTitle": "Privacy Policy | WOW3D PRO",
+    "metaTitle": "Privacy Policy",
     "metaDescription": "WOW3D PRO Privacy Policy. WOW3D Co., Ltd. protects personal information under applicable Korean privacy and network laws.",
     "home": "Home",
     "title": "Privacy Policy",
@@ -3657,7 +3736,7 @@
     ]
   },
   "Terms": {
-    "metaTitle": "Terms of Use | WOW3D PRO",
+    "metaTitle": "Terms of Use",
     "metaDescription": "WOW3D PRO Terms of Use covering 3D printing quotes, orders, production, and shipping.",
     "home": "Home",
     "title": "Terms of Use",
@@ -5039,7 +5118,7 @@
     "viewAll": "View all"
   },
   "PriceCalculator": {
-    "metaTitle": "3D Printing Price Calculator | Estimate Without a File - Wow3D",
+    "metaTitle": "3D Printing Price Calculator | Estimate Without a File",
     "metaDescription": "No 3D file yet? Pick size, shape, material and quantity to see an estimated 3D printing price range and print time instantly. Compare FDM, SLA and DLP materials for free.",
     "eyebrow": "QUICK PRICE ESTIMATOR",
     "title": "No file needed —",
@@ -5059,16 +5138,37 @@
     },
     "shapeLabel": "Shape",
     "shapes": {
-      "solid": { "title": "Block / mechanical", "desc": "Simple, mostly solid form" },
-      "general": { "title": "General shape", "desc": "Typical form with curves" },
-      "shell": { "title": "Case / housing", "desc": "Hollow box (1.5–2.5 mm walls)" },
-      "figure": { "title": "Figure / sculpture", "desc": "Thin, detailed features" }
+      "solid": {
+        "title": "Block / mechanical",
+        "desc": "Simple, mostly solid form"
+      },
+      "general": {
+        "title": "General shape",
+        "desc": "Typical form with curves"
+      },
+      "shell": {
+        "title": "Case / housing",
+        "desc": "Hollow box (1.5–2.5 mm walls)"
+      },
+      "figure": {
+        "title": "Figure / sculpture",
+        "desc": "Thin, detailed features"
+      }
     },
     "methodLabel": "Print method",
     "methods": {
-      "fdm": { "title": "FDM", "desc": "Functional parts, most economical" },
-      "sla": { "title": "SLA", "desc": "Smooth, precise, large prints" },
-      "dlp": { "title": "DLP", "desc": "Small precise parts, miniatures" }
+      "fdm": {
+        "title": "FDM",
+        "desc": "Functional parts, most economical"
+      },
+      "sla": {
+        "title": "SLA",
+        "desc": "Smooth, precise, large prints"
+      },
+      "dlp": {
+        "title": "DLP",
+        "desc": "Small precise parts, miniatures"
+      }
     },
     "methodGuide": "Compare print methods",
     "materialLabel": "Material",
@@ -5223,10 +5323,22 @@
     "invalidType": "Only STL, OBJ, 3MF, PLY and STEP files can be checked.",
     "tooLarge": "Only files up to 100MB can be checked.",
     "whatWeCheck": [
-      { "title": "Holes & open edges", "desc": "Missing faces make volume and printing inaccurate." },
-      { "title": "Non-manifold edges", "desc": "Edges shared by three or more faces can confuse the slicer." },
-      { "title": "Flipped faces", "desc": "Inside-out faces may fail to print or fill in hollow areas." },
-      { "title": "Size, units & printer fit", "desc": "Spot unit mistakes and parts too large for any printer." }
+      {
+        "title": "Holes & open edges",
+        "desc": "Missing faces make volume and printing inaccurate."
+      },
+      {
+        "title": "Non-manifold edges",
+        "desc": "Edges shared by three or more faces can confuse the slicer."
+      },
+      {
+        "title": "Flipped faces",
+        "desc": "Inside-out faces may fail to print or fill in hollow areas."
+      },
+      {
+        "title": "Size, units & printer fit",
+        "desc": "Spot unit mistakes and parts too large for any printer."
+      }
     ],
     "checkAnother": "Check another file",
     "stages": {
@@ -5396,5 +5508,101 @@
     "guideUseCases": "3D printing by use case",
     "breadcrumbHome": "Home",
     "breadcrumbChecker": "STL checker & repair"
+  },
+  "PriceExamplesGuide": {
+    "metaTitle": "3D Printing Price Examples | Cost by Size & Material (FDM, SLA, DLP)",
+    "metaDescription": "Estimated 3D printing prices for small parts, keyrings, figures, enclosures, housings and architectural models by FDM, SLA and DLP — calculated with the same formula and rates as WOW3D's instant quote, VAT included.",
+    "articleHeadline": "3D printing price examples — cost by size and material",
+    "eyebrow": "Price Examples",
+    "h1Line1": "How much does",
+    "h1Accent": "3D printing really cost?",
+    "answerTemplate": "For example, a {item} of {dims} costs about {fdmPrice} with FDM ({fdmMaterial}) and about {slaPrice} with SLA ({slaMaterial}). The table below uses the same formula and current rates as WOW3D's instant quote, VAT included — upload your 3D file to get the exact price.",
+    "answerFallback": "3D printing prices depend on size (volume), process, material, print time and post-processing. The table below is calculated with the same formula as WOW3D's instant quote.",
+    "tableTitle": "Estimated price per item (qty 1, VAT included)",
+    "colItem": "Item · size",
+    "colFdm": "FDM",
+    "colSla": "SLA",
+    "colDlp": "DLP",
+    "cellTooLarge": "Exceeds build volume · split-print quote",
+    "cellConsult": "Large part · custom quote",
+    "cellNoMaterial": "-",
+    "hoursLabel": "approx. {low}–{high} h print",
+    "hoursSingle": "approx. {hours} h print",
+    "calcLink": "Calculate with this size",
+    "asOf": "As of {date} · calculated with current rates",
+    "examples": {
+      "small-part": {
+        "name": "Small mechanical part / bracket",
+        "note": "Small, mostly solid part"
+      },
+      "keyring": {
+        "name": "Keyring / nameplate",
+        "note": "Thin, flat plate"
+      },
+      "figure": {
+        "name": "Figure (100 mm tall)",
+        "note": "Complex shape with many supports"
+      },
+      "enclosure": {
+        "name": "Electronics enclosure",
+        "note": "Hollow case"
+      },
+      "housing": {
+        "name": "Product prototype housing",
+        "note": "Medium hollow case"
+      },
+      "architecture": {
+        "name": "Architectural / display model",
+        "note": "Large general-shape model"
+      }
+    },
+    "notesTitle": "How to read this table",
+    "notes": [
+      "All prices include VAT and are rounded to KRW 100.",
+      "Prices are shown as a range because cost depends on how solid the part is and how much support it needs.",
+      "FDM prices include supports; SLA and DLP prices include washing and curing.",
+      "A minimum order amount may apply to very small parts.",
+      "Models larger than the build volume need split printing and are quoted on request."
+    ],
+    "factorsTitle": "What determines the price",
+    "factors": [
+      {
+        "title": "Volume and size",
+        "body": "Material use and print time grow together. Hollowing a part makes it cheaper."
+      },
+      {
+        "title": "Process",
+        "body": "FDM is economical for functional prototypes; SLA and DLP offer higher accuracy and surface quality but add resin and post-processing cost."
+      },
+      {
+        "title": "Material",
+        "body": "Each material has its own price per gram or mL. The table uses each process’s default material."
+      },
+      {
+        "title": "Print settings",
+        "body": "Lower layer heights and higher infill add print time and material, raising the price."
+      }
+    ],
+    "faqs": [
+      {
+        "q": "How is 3D printing price calculated?",
+        "a": "We add material cost (volume × material rate), machine time and work such as supports and post-processing. WOW3D's instant quote analyzes your file's volume, surface area and height and applies this formula immediately."
+      },
+      {
+        "q": "Why is the estimate shown as a range?",
+        "a": "Without a file we can't know how solid the part is or how much support it needs, so we calculate both a simple and a complex case. Upload a 3D file for an exact price based on the real geometry."
+      },
+      {
+        "q": "Is FDM or SLA cheaper?",
+        "a": "For the same size, FDM is usually more economical. SLA and DLP add resin cost plus washing and curing, but suit small precise parts and smooth surfaces."
+      },
+      {
+        "q": "How do I get an exact price?",
+        "a": "Upload an STL, OBJ, 3MF, PLY or STEP file on the instant quote page to see prices and print time by process and material. No file? Use the price calculator or photo-to-3D quote."
+      }
+    ],
+    "ctaQuote": "Get an exact quote for my file",
+    "ctaCalculator": "Open price calculator",
+    "breadcrumbCurrent": "3D printing price examples"
   }
 }

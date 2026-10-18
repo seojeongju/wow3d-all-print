@@ -9,12 +9,15 @@ import { routing, type AppLocale } from '@/i18n/routing'
 import { SITE_URL } from '@/lib/site-url'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import { buildWorkPhotoOgImages, pickGuideWorkPhotos } from '@/lib/seo-work-photos'
+import { buildArticleSchema, buildBreadcrumbSchema, buildFaqPageSchema } from '@/lib/aeo-schema'
+import ContentDatesNote from '@/components/seo/ContentDatesNote'
 
 type Props = {
     params: Promise<{ locale: string }>
 }
 
 type StepItem = { label: string; title: string; body: string }
+type FaqItem = { q: string; a: string }
 
 const GUIDE_PATH = '/guides/3d-printing-turnaround-time' as const
 
@@ -67,12 +70,36 @@ export default async function TurnaroundGuidePage({ params }: Props) {
     setRequestLocale(locale)
 
     const t = await getTranslations({ locale, namespace: 'TurnaroundGuide' })
+    const tChrome = await getTranslations({ locale, namespace: 'GuideChrome' })
     const steps = t.raw('steps') as StepItem[]
     const factors = t.raw('factors') as string[]
+    const faqs = t.raw('faqs') as FaqItem[]
+
+    const path = guidePath(locale)
+    const workPhotos = pickGuideWorkPhotos('3d-printing-turnaround-time', locale)
+    const schemas = [
+        buildBreadcrumbSchema([
+            { name: tChrome('breadcrumbHome'), path: getPathname({ locale, href: '/' }) },
+            { name: tChrome('breadcrumbGuides'), path: getPathname({ locale, href: '/guides' }) },
+            { name: t('ogTitle'), path },
+        ]),
+        buildArticleSchema({
+            headline: t('ogTitle'),
+            description: t('metaDescription'),
+            path,
+            imagePath: workPhotos[0]?.absoluteSrc,
+            locale,
+        }),
+        buildFaqPageSchema(
+            faqs.map((f, i) => ({ id: i + 1, question: f.q, answer: f.a, category: 'guide' })),
+            path,
+        ),
+    ]
 
     return (
         <main className="min-h-screen bg-[#020617] text-white">
             <Header />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />
             <section className="pt-32 pb-20">
                 <div className="container mx-auto px-6 max-w-5xl space-y-6">
                     <div className="inline-flex rounded-full border border-teal-400/20 bg-teal-400/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.25em] text-teal-300">
@@ -84,6 +111,7 @@ export default async function TurnaroundGuidePage({ params }: Props) {
                         <span className="text-teal-400">{t('h1Accent')}</span>
                     </h1>
                     <p className="max-w-3xl text-lg text-white/70 leading-relaxed break-keep">{t('intro')}</p>
+                    <ContentDatesNote path={path} locale={locale} />
                 </div>
             </section>
 
@@ -113,6 +141,16 @@ export default async function TurnaroundGuidePage({ params }: Props) {
                         <p className="text-white/70 leading-relaxed break-keep">{t('flowBody')}</p>
                     </article>
 
+                    <div className="space-y-5 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
+                        <h2 className="text-2xl font-black">{t('faqTitle')}</h2>
+                        {faqs.map((item) => (
+                            <div key={item.q} className="rounded-2xl border border-white/10 bg-black/15 p-5">
+                                <h3 className="mb-2 text-lg font-black break-keep">{item.q}</h3>
+                                <p className="leading-relaxed text-white/68 break-keep">{item.a}</p>
+                            </div>
+                        ))}
+                    </div>
+
                     <div className="flex gap-3">
                         <Link href={'/contact' as '/'}>
                             <Button className="rounded-2xl bg-teal-400 text-slate-950 hover:bg-teal-300 font-black">
@@ -130,7 +168,7 @@ export default async function TurnaroundGuidePage({ params }: Props) {
                     </div>
                 </div>
             </section>
-            <WorkPhotosSection photos={pickGuideWorkPhotos('3d-printing-turnaround-time', locale)} locale={locale} />
+            <WorkPhotosSection photos={workPhotos} locale={locale} />
 
             <Footer />
         </main>

@@ -147,7 +147,7 @@ function ProductCard({
                                 >
                                     <img
                                         src={src}
-                                        alt=""
+                                        alt={`${product.title} ${i + 2}`}
                                         className="w-full h-full object-cover"
                                         loading="lazy"
                                         onError={(e) => {

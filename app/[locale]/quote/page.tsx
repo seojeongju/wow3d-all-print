@@ -681,9 +681,10 @@ function QuoteContent() {
                                                         </p>
                                                     </div>
                                                 ) : null}
-                                                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                                                {/* 페이지 h1은 서버 렌더링 QuoteSeoSection이 담당 */}
+                                                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                                                     {t('uploadHeading')} <span className="text-teal-400">{t('uploadHeadingAccent')}</span>
-                                                </h1>
+                                                </h2>
                                                 <p className="text-sm text-white/60 font-medium break-keep">
                                                     {t('uploadFormats')}
                                                 </p>
