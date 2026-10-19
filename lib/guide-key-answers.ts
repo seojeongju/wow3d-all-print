@@ -67,8 +67,8 @@ export const PAGE_KEY_ANSWERS: Record<string, GuideKeyAnswer> = {
         en: 'Use Standard resin for visual and detail prototypes, Tough resin for assembly, snap-fit and functional tests, Clear resin for covers and windows that must be transparent, and Flexible resin for grips and gaskets that need to bend. Clear resin needs post-processing such as polishing and coating to reach high transparency.',
     },
     '/guides/fdm-vs-sla-vs-dlp': {
-        ko: '기능 시험·조립 부품은 비용 대비 효율이 좋은 FDM, 매끄러운 표면과 미세 디테일이 중요한 외관·정밀 모형은 SLA, 소형 정밀 부품을 반복 제작할 때는 DLP가 유리합니다. 서포트 없는 복잡 형상·금속 부품은 SLS/SLM/DMLS, 멀티컬러 고해상도 모형은 PolyJet/MJP가 쓰이며, 이 두 방식은 와우쓰리디가 직접 제공하지 않는 참고 공정입니다.',
-        en: 'FDM is the cost-effective choice for functional tests and assemblies, SLA suits visual and precision models that need smooth surfaces and fine detail, and DLP is efficient for repeated small precision parts. SLS/SLM/DMLS (support-free complex or metal parts) and PolyJet/MJP (multi-colour, highest resolution) are reference processes that WOW3D does not offer directly.',
+        ko: '기능 시험·조립 부품은 비용 대비 효율이 좋은 FDM, 매끄러운 표면과 미세 디테일이 중요한 외관·정밀 모형은 SLA, 소형 정밀 부품을 반복 제작할 때는 DLP가 유리합니다. 서포트 없는 복잡 형상·금속 부품은 SLS/SLM/DMLS, 멀티컬러 고해상도 모형은 PolyJet/MJP가 적합하며, 이 두 방식은 자동견적 항목에는 없고 관리자 문의로 제작을 진행합니다.',
+        en: 'FDM is the cost-effective choice for functional tests and assemblies, SLA suits visual and precision models that need smooth surfaces and fine detail, and DLP is efficient for repeated small precision parts. SLS/SLM/DMLS (support-free complex or metal parts) and PolyJet/MJP (multi-colour, highest resolution) are available from WOW3D by contacting an admin—they are not listed in auto-quote.',
     },
     '/guides/3d-printing-turnaround-time': {
         ko: '3D프린팅은 주문 확정 후 제작·검수·발송까지 일반적으로 평균 3~7일 내 수령합니다. 출력 방식, 정밀한 레이어 설정, 수량, 세척·경화·도색 같은 후가공, 파일 오류 수정 여부에 따라 기간이 늘어날 수 있습니다.',

@@ -1358,16 +1358,16 @@
   },
   "PrintMethods": {
     "metaTitle": "Compare FDM, SLA & DLP 3D printing methods",
-    "metaDescription": "Compare WOW3D FDM·SLA·DLP with powder bed fusion (SLS/SLM/DMLS) and material jetting (PolyJet/MJP)—use cases, materials, and surface quality.",
+    "metaDescription": "Compare FDM·SLA·DLP auto-quote with SLS/SLM/DMLS and PolyJet/MJP (available via admin inquiry)—use cases, materials, and surface quality.",
     "breadcrumbHome": "Home",
     "breadcrumbMethods": "Print methods",
-    "infoBadge": "Reference",
+    "infoBadge": "Ask admin",
     "viewDetail": "View details",
-    "providedBy": "Offered by WOW3D",
-    "referenceInfo": "Reference",
+    "providedBy": "Auto quote",
+    "referenceInfo": "Ask admin",
     "viewService": "View service",
     "compareGuide": "Compare guide",
-    "consultSimilar": "Ask about similar builds",
+    "consultSimilar": "Contact admin",
     "principle": "How it works",
     "mainMaterials": "Key materials",
     "suitableUses": "Best for",
@@ -1375,7 +1375,7 @@
     "notes": "Notes",
     "heroTitleLine1": "3D printer",
     "heroTitleAccent": "process comparison",
-    "heroSubtitle": "Compare WOW3D FDM·SLA·DLP with widely used powder bed (SLS/SLM/DMLS) and material jetting (PolyJet/MJP) processes.",
+    "heroSubtitle": "FDM·SLA·DLP are available via auto-quote; SLS/SLM/DMLS and PolyJet/MJP are produced by WOW3D when you contact an admin. Compare processes by use case.",
     "ctaQuote": "Start auto quote",
     "ctaGuide": "Process compare guide",
     "tipFunctional": "Functional prototypes → FDM",
@@ -1395,27 +1395,27 @@
         "desc": "Upload a file for price and lead time"
       }
     },
-    "wowSectionEyebrow": "Offered by WOW3D",
+    "wowSectionEyebrow": "Auto quote",
     "wowSectionTitle": "Processes you can quote and produce now",
-    "refSectionTitle": "Other 3D printing methods",
-    "refSectionDesc": "These processes are not offered directly by WOW3D; they are reference info for industry comparison. For similar needs we suggest FDM·SLA·DLP alternatives or a build consult.",
-    "compareWowTitle": "WOW3D process comparison",
-    "compareRefTitle": "Reference process comparison",
+    "refSectionTitle": "Processes via admin inquiry",
+    "refSectionDesc": "SLS/SLM/DMLS and PolyJet/MJP are not listed in auto-quote, but WOW3D can print and produce them. Contact an admin when you need these processes.",
+    "compareWowTitle": "Auto-quote process comparison",
+    "compareRefTitle": "Admin-inquiry process comparison",
     "compareRefSubtitle": "Powder bed · Material jetting",
     "compareColItem": "Item",
-    "detailWowTitle": "Offered process details",
-    "detailRefTitle": "Other 3D printing methods",
-    "detailRefDesc": "Common industrial processes. WOW3D focuses on FDM·SLA·DLP; if you need the methods below we can discuss alternatives or partner options.",
+    "detailWowTitle": "Auto-quote process details",
+    "detailRefTitle": "Admin-inquiry processes",
+    "detailRefDesc": "SLS/SLM/DMLS and PolyJet/MJP are not in auto-quote, but WOW3D produces them. Share your file, use case, and quantity and an admin will quote and schedule production.",
     "faqTitle": "FAQs before you choose a process",
-    "faqSubtitle": "From picking FDM·SLA·DLP to understanding powder bed and material jetting—common questions answered.",
+    "faqSubtitle": "From FDM·SLA·DLP auto-quote to SLS and PolyJet via admin inquiry—common questions answered.",
     "readGuide": "Read guide",
     "bottomTitle": "Ready to print? Get a quote",
     "bottomDesc": "Upload a file and choose FDM·SLA·DLP for a live quote and estimated lead time.",
     "getQuote": "Get a quote",
     "browseMaterials": "Browse materials",
     "stats": {
-      "provided": "WOW3D processes",
-      "reference": "Reference",
+      "provided": "Auto quote",
+      "reference": "Ask admin",
       "liveQuote": "Custom quote",
       "liveValue": "Live"
     },
@@ -1434,11 +1434,11 @@
       },
       {
         "q": "How do SLS·SLM·DMLS differ from FDM?",
-        "a": "Powder bed fusion can build complex shapes and metal parts without supports, but equipment and cost are higher. Everyday prototypes are often more economical with FDM·SLA·DLP."
+        "a": "Powder bed fusion can build complex shapes and metal parts without supports, but equipment and cost are higher. Everyday prototypes are often more economical with FDM·SLA·DLP auto-quote; if you need SLS/SLM/DMLS, contact an admin—WOW3D can produce them."
       },
       {
         "q": "What is the difference between PolyJet and SLA?",
-        "a": "Both deliver high resolution. PolyJet/MJP jets materials and excels at multi-color/multi-material; SLA photopolymerizes resin and is widely used for fine detail and clear materials."
+        "a": "Both deliver high resolution. PolyJet/MJP jets materials and excels at multi-color/multi-material; SLA photopolymerizes resin and is widely used for fine detail and clear materials. For PolyJet/MJP production, contact an admin."
       }
     ],
     "compareRows": [
@@ -1485,14 +1485,14 @@
       },
       {
         "label": "WOW3D",
-        "powder": "Info only",
-        "jetting": "Info only"
+        "powder": "Ask admin",
+        "jetting": "Ask admin"
       }
     ],
     "featured": [
       {
         "title": "3D printing process compare guide",
-        "desc": "Differences and recommended uses for FDM·SLA·DLP, SLS/SLM/DMLS, PolyJet/MJP, and more."
+        "desc": "Compare FDM·SLA·DLP auto-quote with SLS/SLM/DMLS and PolyJet/MJP via admin inquiry."
       },
       {
         "title": "How quote pricing works",
@@ -2055,15 +2055,15 @@
   },
   "ProcessCompareGuide": {
     "metaTitle": "3D printing process comparison — FDM vs SLA vs DLP vs SLS vs PolyJet",
-    "metaDescription": "Compare FDM·SLA·DLP (offered by WOW3D) with powder bed fusion (SLS/SLM/DMLS) and material jetting (PolyJet/MJP)—use cases, surface quality, and cost at a glance.",
+    "metaDescription": "Compare FDM·SLA·DLP auto-quote with SLS/SLM/DMLS and PolyJet/MJP (admin inquiry)—use cases, surface quality, and cost at a glance.",
     "ogTitle": "3D printing process comparison guide",
-    "ogDescription": "Compare FDM·SLA·DLP with SLS/SLM/DMLS and PolyJet/MJP—differences and recommended uses.",
+    "ogDescription": "Compare FDM·SLA·DLP auto-quote with SLS/SLM/DMLS and PolyJet/MJP via admin inquiry—differences and recommended uses.",
     "eyebrow": "Compare Guide",
     "h1Line1": "3D printing processes—",
     "h1Accent": "what’s the difference?",
-    "intro": "Compare WOW3D’s FDM·SLA·DLP with industry powder bed (SLS/SLM/DMLS) and material jetting (PolyJet/MJP) on one page. Cost, surface quality, strength, and supports decide the right process.",
+    "intro": "FDM·SLA·DLP are available via on-site auto-quote; SLS/SLM/DMLS and PolyJet/MJP are produced when you contact an admin. Cost, surface quality, strength, and supports decide the right process.",
     "tableTitle": "All processes at a glance",
-    "tableNote": "SLS/SLM/DMLS and PolyJet/MJP are reference processes not offered directly by WOW3D. For similar needs we suggest FDM·SLA·DLP alternatives or a production consult.",
+    "tableNote": "SLS/SLM/DMLS and PolyJet/MJP are not listed in auto-quote, but WOW3D can print and produce them. Contact an admin when you need these processes.",
     "colItem": "Item",
     "allCompareRows": [
       {
@@ -2108,19 +2108,19 @@
       },
       {
         "label": "WOW3D offer",
-        "fdm": "Offered",
-        "sla": "Offered",
-        "dlp": "Offered",
-        "powder": "Reference only",
-        "jetting": "Reference only"
+        "fdm": "Auto quote",
+        "sla": "Auto quote",
+        "dlp": "Auto quote",
+        "powder": "Ask admin",
+        "jetting": "Ask admin"
       }
     ],
-    "wowEyebrow": "Offered by WOW3D",
+    "wowEyebrow": "Auto quote",
     "wowTitle": "Processes you can quote and produce now",
-    "badgeProvided": "Offered",
-    "refEyebrow": "Reference",
-    "refTitle": "Other 3D printing processes (reference)",
-    "badgeInfo": "Info only",
+    "badgeProvided": "Auto quote",
+    "refEyebrow": "Inquiry production",
+    "refTitle": "Processes via admin inquiry",
+    "badgeInfo": "Ask admin",
     "tipsTitle": "How to choose",
     "tips": [
       {
@@ -2133,16 +2133,16 @@
       },
       {
         "strong": "Complex shapes without supports · metal parts",
-        "rest": " → SLS/SLM/DMLS (reference) may fit."
+        "rest": " → SLS/SLM/DMLS may fit. Contact an admin."
       },
       {
         "strong": "Multi-color · ultra high-res appearance models",
-        "rest": " → Review PolyJet/MJP (reference)."
+        "rest": " → Consider PolyJet/MJP. Contact an admin."
       }
     ],
     "ctaQuote": "Get an auto quote",
     "ctaMethods": "View process details",
-    "ctaContact": "Production consult"
+    "ctaContact": "Contact admin"
   },
   "TurnaroundGuide": {
     "metaTitle": "Prototype lead time · 3D printing turnaround guide",

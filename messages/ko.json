@@ -1359,16 +1359,16 @@
   },
   "PrintMethods": {
     "metaTitle": "FDM, SLA, DLP 3D 프린팅 방식 비교",
-    "metaDescription": "WOW3D 제공 FDM·SLA·DLP와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 등 3D 프린팅 공정의 차이, 추천 용도, 소재, 표면 품질을 비교 안내합니다.",
+    "metaDescription": "FDM·SLA·DLP 자동견적과 SLS/SLM/DMLS·PolyJet/MJP 관리자 문의 제작까지, 3D 프린팅 공정의 차이·추천 용도·소재·표면 품질을 비교 안내합니다.",
     "breadcrumbHome": "홈",
     "breadcrumbMethods": "출력 방식 비교",
-    "infoBadge": "정보 안내",
+    "infoBadge": "관리자 문의",
     "viewDetail": "상세 보기",
-    "providedBy": "WOW3D 제공",
-    "referenceInfo": "참고 정보",
+    "providedBy": "자동견적",
+    "referenceInfo": "관리자 문의",
     "viewService": "서비스 보기",
     "compareGuide": "비교 가이드",
-    "consultSimilar": "유사 제작 상담",
+    "consultSimilar": "관리자에게 문의",
     "principle": "원리",
     "mainMaterials": "주요 소재",
     "suitableUses": "적합 용도",
@@ -1376,7 +1376,7 @@
     "notes": "참고",
     "heroTitleLine1": "3D 프린터",
     "heroTitleAccent": "출력방식 비교",
-    "heroSubtitle": "WOW3D가 제공하는 FDM·SLA·DLP와 함께, 업계에서 널리 쓰이는 분말 소결(SLS/SLM/DMLS)·재료 분사(PolyJet/MJP) 공정도 비교해 보세요.",
+    "heroSubtitle": "FDM·SLA·DLP는 자동견적으로, SLS/SLM/DMLS·PolyJet/MJP는 관리자 문의로 제작할 수 있습니다. 용도에 맞는 공정을 비교해 보세요.",
     "ctaQuote": "자동견적 시작",
     "ctaGuide": "공정 비교 가이드",
     "tipFunctional": "기능 시제품 → FDM",
@@ -1396,27 +1396,27 @@
         "desc": "파일 업로드 후 가격·납기 확인"
       }
     },
-    "wowSectionEyebrow": "WOW3D 제공",
+    "wowSectionEyebrow": "자동견적",
     "wowSectionTitle": "바로 견적·제작 가능한 공정",
-    "refSectionTitle": "다른 3D 프린팅 방식 알아보기",
-    "refSectionDesc": "아래 공정은 WOW3D에서 직접 제공하지 않으며, 업계 비교·이해를 위한 참고 정보입니다. 유사 요구사항은 FDM·SLA·DLP 대안 또는 제작 상담으로 안내해 드립니다.",
-    "compareWowTitle": "WOW3D 제공 공정 비교",
-    "compareRefTitle": "참고 공정 비교",
+    "refSectionTitle": "관리자 문의로 제작하는 공정",
+    "refSectionDesc": "SLS/SLM/DMLS·PolyJet/MJP는 자동견적 항목에는 없지만 WOW3D에서 출력·제작이 가능합니다. 필요하시면 관리자에게 문의해 주세요.",
+    "compareWowTitle": "자동견적 공정 비교",
+    "compareRefTitle": "관리자 문의 공정 비교",
     "compareRefSubtitle": "분말 소결 · 재료 분사",
     "compareColItem": "항목",
-    "detailWowTitle": "제공 공정 상세 안내",
-    "detailRefTitle": "기타 3D 프린팅 방식",
-    "detailRefDesc": "산업 현장에서 자주 언급되는 공정입니다. WOW3D는 FDM·SLA·DLP 중심으로 제작을 지원하며, 아래 공정이 필요한 경우 대안 소재·공정 또는 파트너 연계를 상담해 드립니다.",
+    "detailWowTitle": "자동견적 공정 상세 안내",
+    "detailRefTitle": "관리자 문의 공정",
+    "detailRefDesc": "SLS/SLM/DMLS·PolyJet/MJP는 자동견적에는 없지만 WOW3D에서 제작을 진행합니다. 파일·용도·수량을 알려주시면 관리자가 견적과 일정을 안내합니다.",
     "faqTitle": "출력 방식 선택 전 자주 묻는 질문",
-    "faqSubtitle": "FDM·SLA·DLP 선택부터 분말 소결·재료 분사 공정 이해까지, 자주 받는 질문을 정리했습니다.",
+    "faqSubtitle": "FDM·SLA·DLP 자동견적부터 SLS·PolyJet 등 관리자 문의 공정까지, 자주 받는 질문을 정리했습니다.",
     "readGuide": "가이드 읽기",
     "bottomTitle": "공정을 정했다면 바로 견적을 받아보세요",
     "bottomDesc": "파일을 업로드하고 FDM·SLA·DLP 중 원하는 방식으로 실시간 견적과 예상 납기를 확인할 수 있습니다.",
     "getQuote": "견적 받기",
     "browseMaterials": "소재 살펴보기",
     "stats": {
-      "provided": "WOW3D 제공",
-      "reference": "참고 공정",
+      "provided": "자동견적",
+      "reference": "관리자 문의",
       "liveQuote": "맞춤 견적",
       "liveValue": "실시간"
     },
@@ -1435,11 +1435,11 @@
       },
       {
         "q": "SLS·SLM·DMLS는 FDM과 어떻게 다른가요?",
-        "a": "분말 소결·용융 방식은 서포트 없이 복잡한 형상과 금속 부품을 만들 수 있지만, 장비·비용이 높은 편입니다. 일반적인 시제품·프로토타입은 FDM·SLA·DLP가 더 경제적인 경우가 많습니다."
+        "a": "분말 소결·용융 방식은 서포트 없이 복잡한 형상과 금속 부품을 만들 수 있지만, 장비·비용이 높은 편입니다. 일반적인 시제품은 FDM·SLA·DLP 자동견적이 더 경제적인 경우가 많고, SLS/SLM/DMLS가 필요하면 관리자에게 문의해 주세요. WOW3D에서도 제작을 진행합니다."
       },
       {
         "q": "PolyJet과 SLA의 차이는 무엇인가요?",
-        "a": "둘 다 높은 해상도를 내지만, PolyJet/MJP는 재료를 분사하는 방식이라 멀티컬러·멀티머티리얼 표현에 강하고, SLA는 레진을 광경화하는 방식으로 정밀 디테일·투명 소재에 많이 쓰입니다."
+        "a": "둘 다 높은 해상도를 내지만, PolyJet/MJP는 재료를 분사하는 방식이라 멀티컬러·멀티머티리얼 표현에 강하고, SLA는 레진을 광경화하는 방식으로 정밀 디테일·투명 소재에 많이 쓰입니다. PolyJet/MJP 제작이 필요하면 관리자에게 문의해 주세요."
       }
     ],
     "compareRows": [
@@ -1486,14 +1486,14 @@
       },
       {
         "label": "WOW3D",
-        "powder": "정보 안내",
-        "jetting": "정보 안내"
+        "powder": "관리자 문의",
+        "jetting": "관리자 문의"
       }
     ],
     "featured": [
       {
         "title": "3D 프린팅 공정 비교 가이드",
-        "desc": "FDM·SLA·DLP와 SLS/SLM/DMLS, PolyJet/MJP 등 주요 공정의 차이와 추천 용도를 정리했습니다."
+        "desc": "FDM·SLA·DLP 자동견적과 SLS/SLM/DMLS·PolyJet/MJP 관리자 문의 등 주요 공정의 차이와 추천 용도를 정리했습니다."
       },
       {
         "title": "견적 계산 방식 가이드",
@@ -2056,15 +2056,15 @@
   },
   "ProcessCompareGuide": {
     "metaTitle": "3D 프린팅 공정 비교 가이드 — FDM vs SLA vs DLP vs SLS vs PolyJet",
-    "metaDescription": "FDM·SLA·DLP(WOW3D 제공)와 분말 소결(SLS/SLM/DMLS), 재료 분사(PolyJet/MJP) 공정의 차이, 추천 용도, 표면 품질, 비용을 한눈에 비교합니다.",
+    "metaDescription": "FDM·SLA·DLP 자동견적과 SLS/SLM/DMLS·PolyJet/MJP 관리자 문의 제작의 차이, 추천 용도, 표면 품질, 비용을 한눈에 비교합니다.",
     "ogTitle": "3D 프린팅 공정 비교 가이드",
-    "ogDescription": "FDM·SLA·DLP와 SLS/SLM/DMLS, PolyJet/MJP 등 주요 3D 프린팅 방식의 차이와 추천 용도를 비교 안내합니다.",
+    "ogDescription": "FDM·SLA·DLP 자동견적과 SLS/SLM/DMLS·PolyJet/MJP 관리자 문의 등 주요 3D 프린팅 방식의 차이와 추천 용도를 비교 안내합니다.",
     "eyebrow": "Compare Guide",
     "h1Line1": "3D 프린팅 공정,",
     "h1Accent": "무엇이 다를까요?",
-    "intro": "WOW3D가 제공하는 FDM·SLA·DLP와 함께, 업계에서 자주 쓰이는 분말 소결(SLS/SLM/DMLS)·재료 분사(PolyJet/MJP) 방식까지 한 페이지에서 비교해 보세요. 비용, 표면 품질, 강도, 서포트 필요 여부에 따라 적합한 공정이 달라집니다.",
+    "intro": "FDM·SLA·DLP는 사이트에서 바로 자동견적할 수 있고, SLS/SLM/DMLS·PolyJet/MJP는 관리자 문의로 제작합니다. 비용, 표면 품질, 강도, 서포트 필요 여부에 따라 적합한 공정이 달라집니다.",
     "tableTitle": "전체 공정 한눈에 비교",
-    "tableNote": "SLS/SLM/DMLS, PolyJet/MJP는 WOW3D에서 직접 제공하지 않는 참고 공정입니다. 유사 요구사항은 FDM·SLA·DLP 대안 또는 제작 상담으로 안내해 드립니다.",
+    "tableNote": "SLS/SLM/DMLS, PolyJet/MJP는 자동견적 항목에는 없지만 WOW3D에서 출력·제작이 가능합니다. 필요하시면 관리자에게 문의해 주세요.",
     "colItem": "항목",
     "allCompareRows": [
       {
@@ -2109,19 +2109,19 @@
       },
       {
         "label": "WOW3D 제공",
-        "fdm": "제공",
-        "sla": "제공",
-        "dlp": "제공",
-        "powder": "참고 안내",
-        "jetting": "참고 안내"
+        "fdm": "자동견적",
+        "sla": "자동견적",
+        "dlp": "자동견적",
+        "powder": "관리자 문의",
+        "jetting": "관리자 문의"
       }
     ],
-    "wowEyebrow": "WOW3D 제공",
+    "wowEyebrow": "자동견적",
     "wowTitle": "바로 견적·제작 가능한 공정",
-    "badgeProvided": "제공",
-    "refEyebrow": "Reference",
-    "refTitle": "다른 3D 프린팅 방식 (참고)",
-    "badgeInfo": "정보 안내",
+    "badgeProvided": "자동견적",
+    "refEyebrow": "문의 제작",
+    "refTitle": "관리자 문의로 제작하는 공정",
+    "badgeInfo": "관리자 문의",
     "tipsTitle": "이렇게 선택해 보세요",
     "tips": [
       {
@@ -2134,16 +2134,16 @@
       },
       {
         "strong": "서포트 없는 복잡 형상·금속 부품",
-        "rest": " → SLS/SLM/DMLS(참고)가 적합할 수 있습니다."
+        "rest": " → SLS/SLM/DMLS가 적합할 수 있습니다. 관리자에게 문의해 주세요."
       },
       {
         "strong": "멀티컬러·최고 해상도 외관 모형",
-        "rest": " → PolyJet/MJP(참고)를 검토해 보세요."
+        "rest": " → PolyJet/MJP를 검토해 보세요. 관리자에게 문의해 주세요."
       }
     ],
     "ctaQuote": "자동견적 받기",
     "ctaMethods": "출력 방식 상세 보기",
-    "ctaContact": "제작 상담"
+    "ctaContact": "관리자에게 문의"
   },
   "TurnaroundGuide": {
     "metaTitle": "시제품 제작 기간 · 3D 프린팅 제작 기간과 납기 안내",

@@ -120,7 +120,7 @@ export const WOW3D_PRINT_METHODS: PrintMethod[] = [
     },
 ]
 
-/** WOW3D에서 직접 제공하지 않지만 비교·이해를 위한 참고 공정 */
+/** 자동견적에는 없고 관리자 문의로 제작 가능한 공정 (SLS/SLM/DMLS, PolyJet/MJP) */
 export const REFERENCE_PRINT_METHODS: PrintMethod[] = [
     {
         id: 'powder-sintering',
@@ -235,17 +235,17 @@ export const PRINT_METHOD_FAQS = [
     },
     {
         q: 'SLS·SLM·DMLS는 FDM과 어떻게 다른가요?',
-        a: '분말 소결·용융 방식은 서포트 없이 복잡한 형상과 금속 부품을 만들 수 있지만, 장비·비용이 높은 편입니다. 일반적인 시제품·프로토타입은 FDM·SLA·DLP가 더 경제적인 경우가 많습니다.',
+        a: '분말 소결·용융 방식은 서포트 없이 복잡한 형상과 금속 부품을 만들 수 있지만, 장비·비용이 높은 편입니다. 일반적인 시제품은 FDM·SLA·DLP 자동견적이 더 경제적인 경우가 많고, SLS/SLM/DMLS가 필요하면 관리자에게 문의해 주세요. WOW3D에서도 제작을 진행합니다.',
     },
     {
         q: 'PolyJet과 SLA의 차이는 무엇인가요?',
-        a: '둘 다 높은 해상도를 내지만, PolyJet/MJP는 재료를 분사하는 방식이라 멀티컬러·멀티머티리얼 표현에 강하고, SLA는 레진을 광경화하는 방식으로 정밀 디테일·투명 소재에 많이 쓰입니다.',
+        a: '둘 다 높은 해상도를 내지만, PolyJet/MJP는 재료를 분사하는 방식이라 멀티컬러·멀티머티리얼 표현에 강하고, SLA는 레진을 광경화하는 방식으로 정밀 디테일·투명 소재에 많이 쓰입니다. PolyJet/MJP 제작이 필요하면 관리자에게 문의해 주세요.',
     },
 ]
 
 export const PRINT_METHOD_STATS = [
-    { label: 'WOW3D 제공', value: '3' },
-    { label: '참고 공정', value: '2' },
+    { label: '자동견적', value: '3' },
+    { label: '관리자 문의', value: '2' },
     { label: '맞춤 견적', value: '실시간' },
 ]
 
@@ -266,7 +266,7 @@ export const REFERENCE_METHOD_COMPARE_ROWS = [
     { label: '원리', powder: '분말 레이저 소결·용융', jetting: '액상 소재 미세 분사' },
     { label: '대표 공정', powder: 'SLS · SLM · DMLS', jetting: 'PolyJet · MJP' },
     { label: '강점', powder: '서포트 없음·금속 가능', jetting: '고해상도·멀티컬러' },
-    { label: 'WOW3D', powder: '정보 안내', jetting: '정보 안내' },
+    { label: 'WOW3D', powder: '관리자 문의', jetting: '관리자 문의' },
 ]
 
 /** 가이드 페이지용 5개 공정 통합 비교 */
@@ -313,11 +313,11 @@ export const ALL_PRINT_METHOD_COMPARE_ROWS = [
     },
     {
         label: 'WOW3D 제공',
-        fdm: '제공',
-        sla: '제공',
-        dlp: '제공',
-        powder: '참고 안내',
-        jetting: '참고 안내',
+        fdm: '자동견적',
+        sla: '자동견적',
+        dlp: '자동견적',
+        powder: '관리자 문의',
+        jetting: '관리자 문의',
     },
 ] as const
 

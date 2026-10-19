@@ -169,7 +169,7 @@ function MethodDetailCard({
                                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
                                         isWow3d
                                             ? 'border border-teal-400/30 bg-teal-400/15 text-teal-300'
-                                            : 'border border-white/15 bg-black/30 text-white/50'
+                                            : 'border border-amber-400/35 bg-amber-400/15 text-amber-200'
                                     }`}
                                 >
                                     {isWow3d ? t('providedBy') : t('referenceInfo')}
@@ -200,7 +200,7 @@ function MethodDetailCard({
                         {!isWow3d && (
                             <Link
                                 href="/contact"
-                                className="rounded-full border border-teal-400/25 bg-teal-400/10 px-4 py-2 text-xs font-bold text-teal-300 transition-colors hover:bg-teal-400/20"
+                                className="rounded-full border border-amber-400/35 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-200 transition-colors hover:bg-amber-400/25"
                             >
                                 {t('consultSimilar')}
                             </Link>
@@ -516,7 +516,7 @@ export default function PrintMethodsClient({ workPhotos }: { workPhotos?: React.
                 </div>
             </section>
 
-            {/* 참고 공정 — Quick cards */}
+            {/* 관리자 문의 공정 — Quick cards */}
             <section className="relative z-10 pb-8">
                 <div className="container mx-auto max-w-6xl px-6">
                     <motion.div
@@ -525,7 +525,9 @@ export default function PrintMethodsClient({ workPhotos }: { workPhotos?: React.
                         viewport={{ once: true }}
                         className="mb-5"
                     >
-                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/40">Reference</p>
+                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-amber-400/80">
+                            {t('referenceInfo')}
+                        </p>
                         <h2 className="mt-1 text-xl font-black text-white md:text-2xl">{t('refSectionTitle')}</h2>
                         <p className="mt-2 text-sm text-white/50 break-keep">{t('refSectionDesc')}</p>
                     </motion.div>
@@ -535,7 +537,7 @@ export default function PrintMethodsClient({ workPhotos }: { workPhotos?: React.
                                 key={m.id}
                                 method={m}
                                 index={i}
-                                infoBadge={t('infoBadge')}
+                                infoBadge={t('referenceInfo')}
                                 viewDetail={t('viewDetail')}
                             />
                         ))}
