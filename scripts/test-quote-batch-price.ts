@@ -140,6 +140,49 @@ const amrAlone = priceCartLinesByMaterialGroup(
 assert.equal(amrHybrid.groups.length, 2, 'AMR형 대형 2파일은 hybrid에서 분리')
 assert.equal(amrHybrid.grandTotalKrw, amrAlone.grandTotalKrw)
 
+// WOW2610193A10MH 재현: 소형 PLA 2파일 묶음은 고객 최소 22,000원 이상
+const realA: CartBatchLineInput = {
+    key: 864,
+    printMethod: 'fdm',
+    material: 'PLA',
+    quantity: 1,
+    totalPriceKrw: 22000,
+    variableCostKrw: 3583.3396691274306,
+    setupCostKrw: 6500,
+    minPriceKrw: 20000,
+    printSizeMm: { x: 3.05, y: 31.5, z: 32.5 },
+}
+const realB: CartBatchLineInput = {
+    key: 866,
+    printMethod: 'fdm',
+    material: 'PLA',
+    quantity: 1,
+    totalPriceKrw: 22000,
+    variableCostKrw: 4478.212607385838,
+    setupCostKrw: 6500,
+    minPriceKrw: 20000,
+    printSizeMm: { x: 6, y: 44, z: 42 },
+}
+const realBatch = priceCartLinesByMaterialGroup([realA, realB], {
+    applyVat: true,
+    minPriceMode: 'hybrid',
+    bedMaxByMethod: bedFdm,
+})
+assert.equal(realBatch.groups.length, 1, '소형 PLA 2파일은 한 그룹')
+assert.ok(realBatch.grandTotalKrw >= 22000, `묶음 최소 미달: ${realBatch.grandTotalKrw}`)
+assert.equal(realBatch.grandTotalKrw, 22000)
+assert.equal(realBatch.groups[0]?.minApplied, true)
+
+// min 누락 시(버그 경로)에는 22,000 미만이 될 수 있음 — 주문 서버는 장비 최소로 보완
+const noMinBatch = priceCartLinesByMaterialGroup(
+    [
+        { ...realA, minPriceKrw: null },
+        { ...realB, minPriceKrw: null },
+    ],
+    { applyVat: true, minPriceMode: 'hybrid', bedMaxByMethod: bedFdm }
+)
+assert.ok(noMinBatch.grandTotalKrw < 22000, 'min 없으면 과소 가능(서버 폴백 필요)')
+
 console.log('test-quote-batch-price: OK')
 console.log({
     aloneSum,
@@ -148,4 +191,6 @@ console.log({
     hybridMix: hybridMix.grandTotalKrw,
     materialMix: materialMix.grandTotalKrw,
     amrHybrid: amrHybrid.grandTotalKrw,
+    realBatch: realBatch.grandTotalKrw,
+    noMinBatch: noMinBatch.grandTotalKrw,
 })

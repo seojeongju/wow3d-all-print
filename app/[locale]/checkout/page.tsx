@@ -290,6 +290,7 @@ function CheckoutContent() {
                 finalNote = `${ordererPrefix}\n${finalNote}`.trim();
             }
 
+            const batchedLineTotals = cartItemsLineTotals(orderItems, cartBatchOptions)
             const body: Record<string, unknown> = {
                 ordererName: formData.ordererName,
                 ordererPhone: formData.ordererPhone,
@@ -298,11 +299,16 @@ function CheckoutContent() {
                 shippingAddress: `${formData.shippingAddress} ${detailAddress}`.trim(),
                 shippingPostalCode: formData.shippingPostalCode || undefined,
                 customerNote: finalNote,
-                cartItems: orderItems.map((item) => ({
-                    quoteId: item.quoteId,
-                    quantity: item.quantity,
-                    totalPrice: item.quote?.totalPrice || 0,
-                })),
+                cartItems: orderItems.map((item) => {
+                    const lineTotal = batchedLineTotals.get(item.id) ?? 0
+                    const qty = Math.max(1, item.quantity)
+                    // 배치(묶음) 적용 후 유효 단가 — 서버 로그 대조용 (확정가는 DB 재계산)
+                    return {
+                        quoteId: item.quoteId,
+                        quantity: item.quantity,
+                        totalPrice: Math.round(lineTotal / qty),
+                    }
+                }),
             }
             if (!isAuthenticated && formData.ordererEmail?.trim()) body.guestEmail = formData.ordererEmail.trim()
 

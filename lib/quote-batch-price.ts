@@ -263,6 +263,17 @@ function shouldSplitMaterialGroupForBed(
     return sumFp > bedArea * fillRatio
 }
 
+/** 공급가 최소 → 고객 표시 최소(부가세·100원 단위) */
+export function customerMinFromSupply(
+    minSupplyKrw: number,
+    applyVat: boolean,
+    roundMode: PriceRoundMode = QUOTE_PRICE_ROUND_MODE
+): number {
+    const minOnce = Math.max(0, Number(minSupplyKrw) || 0)
+    if (!(minOnce > 0)) return 0
+    return applyVat ? roundTo100(minOnce * 1.1, roundMode) : roundTo100(minOnce, roundMode)
+}
+
 function priceOneGroup(
     groupKey: string,
     groupLines: CartBatchLineInput[],
@@ -291,11 +302,19 @@ function priceOneGroup(
     }
 
     const rawSupply = setupOnce + sumVariable
-    const minApplied = minOnce > 0 && rawSupply < minOnce
-    const supplyKrw = minApplied ? minOnce : rawSupply
-    const groupTotalKrw = applyVat
+    let minApplied = minOnce > 0 && rawSupply < minOnce
+    let supplyKrw = minApplied ? minOnce : rawSupply
+    let groupTotalKrw = applyVat
         ? roundTo100(supplyKrw * 1.1, roundMode)
         : roundTo100(supplyKrw, roundMode)
+
+    // 고객가 기준 최소를 한 번 더 보장 (공급가 최소 누락·절삭 누수·구버전 경로 방지)
+    const minCustomer = customerMinFromSupply(minOnce, applyVat, roundMode)
+    if (minCustomer > 0 && groupTotalKrw < minCustomer) {
+        groupTotalKrw = minCustomer
+        supplyKrw = minOnce
+        minApplied = true
+    }
 
     const shares = allocateByWeights(groupTotalKrw, weights, roundMode === 'none' ? 1 : 100)
     const results: CartBatchLineResult[] = []
@@ -316,6 +335,27 @@ function priceOneGroup(
             usedGroupBatch,
         })
     }
+
+    // 수량≥2일 때 단가 절삭으로 합이 최소 미만이 되면 차액을 가장 큰 라인에 보탬
+    if (minCustomer > 0 && groupLinesTotal < minCustomer && results.length > 0) {
+        const deficit = minCustomer - groupLinesTotal
+        let maxIdx = 0
+        for (let i = 1; i < results.length; i++) {
+            if (results[i].lineTotalKrw > results[maxIdx].lineTotalKrw) maxIdx = i
+        }
+        const bumped = results[maxIdx]
+        const lineTotalKrw = bumped.lineTotalKrw + deficit
+        results[maxIdx] = {
+            ...bumped,
+            lineTotalKrw,
+            effectiveUnitKrw:
+                bumped.quantity > 0 ? Math.round(lineTotalKrw / bumped.quantity) : lineTotalKrw,
+        }
+        groupLinesTotal = results.reduce((s, r) => s + r.lineTotalKrw, 0)
+        minApplied = true
+        supplyKrw = minOnce
+    }
+
     return {
         results,
         group: { groupKey, supplyKrw, totalKrw: groupLinesTotal, minApplied },

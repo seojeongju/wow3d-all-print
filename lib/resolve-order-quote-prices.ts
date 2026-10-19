@@ -86,6 +86,34 @@ async function loadBatchMinPriceMode(db: D1Like): Promise<BatchMinPriceMode> {
     }
 }
 
+/** 견적에 min_price_krw가 비었을 때 장비 기본(최소) 금액으로 보완 */
+async function loadEquipmentMinByMethod(
+    db: D1Like
+): Promise<Partial<Record<'fdm' | 'sla' | 'dlp', number>>> {
+    const out: Partial<Record<'fdm' | 'sla' | 'dlp', number>> = {}
+    try {
+        const { results } = await db
+            .prepare(
+                `SELECT type, min_price_krw FROM printer_equipment
+                 WHERE is_active = 1 AND min_price_krw IS NOT NULL AND min_price_krw > ?`
+            )
+            .bind(0)
+            .all<{ type: string; min_price_krw: number }>()
+        for (const r of results || []) {
+            const key = String(r.type || '')
+                .trim()
+                .toLowerCase()
+            if (key !== 'fdm' && key !== 'sla' && key !== 'dlp') continue
+            const n = Number(r.min_price_krw)
+            if (!(n > 0)) continue
+            out[key] = Math.max(out[key] ?? 0, n)
+        }
+    } catch (e) {
+        console.warn('[order-prices] 장비 최소금액 조회 실패 — 견적 컬럼만 사용', e)
+    }
+    return out
+}
+
 function quoteOwnershipClause(auth: {
     isGuest: boolean
     userId?: number
@@ -171,6 +199,7 @@ export async function resolveOrderLinesFromDb(
 
     const stamps: PricingStamps = await loadPricingStamps(db as unknown as Parameters<typeof loadPricingStamps>[0])
     const buildMax = await loadBuildMaxByMethod(db as unknown as Parameters<typeof loadBuildMaxByMethod>[0])
+    const equipmentMinByMethod = await loadEquipmentMinByMethod(db)
 
     const batchInputs: {
         key: number
@@ -226,6 +255,19 @@ export async function resolveOrderLinesFromDb(
             Number(row.dimensions_y) > 0 &&
             Number(row.dimensions_z) > 0
 
+        const methodKey = String(row.print_method || '')
+            .trim()
+            .toLowerCase()
+        const quoteMin =
+            row.min_price_krw != null && Number(row.min_price_krw) > 0
+                ? Number(row.min_price_krw)
+                : null
+        const equipmentMin =
+            methodKey === 'fdm' || methodKey === 'sla' || methodKey === 'dlp'
+                ? equipmentMinByMethod[methodKey]
+                : undefined
+        const minPriceKrw = quoteMin ?? (equipmentMin != null && equipmentMin > 0 ? equipmentMin : null)
+
         batchInputs.push({
             key: quoteId,
             printMethod: String(row.print_method || 'unknown'),
@@ -234,7 +276,7 @@ export async function resolveOrderLinesFromDb(
             totalPriceKrw: Number(row.total_price) || 0,
             variableCostKrw: row.variable_cost_krw,
             setupCostKrw: row.setup_cost_krw,
-            minPriceKrw: row.min_price_krw,
+            minPriceKrw,
             printSizeMm: hasDims
                 ? {
                       x: Number(row.dimensions_x),
