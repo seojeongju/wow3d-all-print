@@ -35,6 +35,7 @@ import {
 } from '@/lib/conversion-events'
 import { trackConversionEvent } from '@/lib/track-conversion-event'
 import { useQuoteEstimateLog, type QuoteEstimateSnapshot } from '@/hooks/useQuoteEstimateLog'
+import { toEstimateTransformPayload } from '@/lib/quote-estimate-transform'
 import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
 import InchUnitNotice from '@/components/quote/InchUnitNotice'
@@ -492,8 +493,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             totalPrice,
             estimatedTimeHours: Math.round(estimatedTimeHours * 100) / 100,
             guideSource: guideSource || undefined,
+            modelTransform: toEstimateTransformPayload(modelTransform),
         }
-    }, [file, analysis, materials.length, totalPrice, bx, by, bz, volumeCm3, surfaceAreaCm2, printMethod, fdmMaterial, resinType, layerHeight, slaLayerHeight, infill, estimatedTimeHours, guideSource])
+    }, [file, analysis, materials.length, totalPrice, bx, by, bz, volumeCm3, surfaceAreaCm2, printMethod, fdmMaterial, resinType, layerHeight, slaLayerHeight, infill, estimatedTimeHours, guideSource, modelTransform])
     const { linkSavedQuote } = useQuoteEstimateLog(file, estimateSnapshot)
 
     // 저장 견적 재로드 시 lastSavedConfig 시드 — 동일 설정이면 UPDATE 유지

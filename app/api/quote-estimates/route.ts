@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse, requireAuthOrGuest } from '@/lib/api-utils';
+import { parseEstimateTransform } from '@/lib/quote-estimate-transform';
 
 const PRINT_METHODS = new Set(['fdm', 'sla', 'dlp']);
 const THUMBNAIL_PREFIXES = ['data:image/jpeg;base64,', 'data:image/webp;base64,'];
@@ -27,6 +28,7 @@ type EstimateBody = {
     guideSource?: unknown;
     thumbnail?: unknown;
     quoteId?: unknown;
+    modelTransform?: unknown;
 };
 
 function num(v: unknown, max = 1e9): number {
@@ -103,6 +105,9 @@ export async function POST(request: NextRequest) {
         const totalPrice = Math.round(num(body.totalPrice, MAX_PRICE_KRW));
         if (totalPrice <= 0) return errorResponse('견적 금액이 없습니다', 400);
 
+        const transformParsed = parseEstimateTransform(body.modelTransform);
+        const modelTransformJson = transformParsed ? JSON.stringify(transformParsed) : null;
+
         const fields = [
             fileName,
             Math.floor(num(body.fileSize, 2_000_000_000)),
@@ -117,6 +122,7 @@ export async function POST(request: NextRequest) {
             body.fdmInfill == null ? null : Math.round(num(body.fdmInfill, 100)),
             totalPrice,
             num(body.estimatedTimeHours, 10_000),
+            modelTransformJson,
         ] as const;
 
         if (id) {
@@ -125,6 +131,7 @@ export async function POST(request: NextRequest) {
                     file_name = ?, file_size = ?, dimensions_x = ?, dimensions_y = ?, dimensions_z = ?,
                     volume_cm3 = ?, surface_area_cm2 = ?, print_method = ?, material_name = ?,
                     layer_height = ?, fdm_infill = ?, total_price = ?, estimated_time_hours = ?,
+                    model_transform = COALESCE(?, model_transform),
                     change_count = change_count + 1,
                     thumbnail_data = COALESCE(?, thumbnail_data),
                     quote_id = COALESCE(?, quote_id),
@@ -152,8 +159,8 @@ export async function POST(request: NextRequest) {
                 file_name, file_size, dimensions_x, dimensions_y, dimensions_z,
                 volume_cm3, surface_area_cm2, print_method, material_name,
                 layer_height, fdm_infill, total_price, estimated_time_hours,
-                thumbnail_data, quote_id, guide_source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                model_transform, thumbnail_data, quote_id, guide_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
             .bind(userId, sessionId, ...fields, thumbnail, quoteId, text(body.guideSource, 80))
             .run();

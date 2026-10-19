@@ -18,6 +18,17 @@ export type QuoteEstimateSnapshot = {
     totalPrice: number;
     estimatedTimeHours: number;
     guideSource?: string;
+    /** 스케일·자세 — 동일 파일 금액 차이 설명용 */
+    modelTransform?: {
+        scalePercent: number;
+        scaleXPercent: number;
+        scaleYPercent: number;
+        scaleZPercent: number;
+        rotX: number;
+        rotY: number;
+        rotZ: number;
+        layFlat: [number, number, number] | null;
+    };
 };
 
 /** 조건을 바꾸는 동안에는 기록하지 않고, 멈춘 뒤 한 번만 보낸다 */

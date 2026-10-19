@@ -8,6 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/useAuthStore';
+import {
+    estimateBaseVolumeCm3,
+    estimateVolumeScaleFactor,
+    formatEstimatePoseLabel,
+    formatEstimateScaleLabel,
+    isNonDefaultEstimateTransform,
+    parseEstimateTransform,
+} from '@/lib/quote-estimate-transform';
 
 type EstimateLog = {
     id: number;
@@ -26,6 +34,7 @@ type EstimateLog = {
     total_price: number;
     estimated_time_hours: number;
     change_count: number;
+    model_transform?: string | null;
     thumbnail_data: string | null;
     quote_id: number | null;
     guide_source: string | null;
@@ -49,10 +58,10 @@ type EstimateStats = {
 type FilterKey = 'unsaved' | 'saved' | 'ordered' | 'all';
 
 const FILTERS: { id: FilterKey; label: string }[] = [
-    { id: 'unsaved', label: '저장 안 함' },
+    { id: 'all', label: '전체' },
     { id: 'saved', label: '저장·장바구니' },
     { id: 'ordered', label: '주문 완료' },
-    { id: 'all', label: '전체' },
+    { id: 'unsaved', label: '저장 안 함' },
 ];
 
 const PAGE_SIZE = 12;
@@ -74,11 +83,62 @@ function statusBadge(item: EstimateLog) {
     return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">확인만 함</Badge>;
 }
 
+/** 치수·부피·스케일 — 동일 파일 금액 차이 원인(스케일/자세)을 바로 보이게 */
+function SizeTransformLines({ item }: { item: EstimateLog }) {
+    const x = Number(item.dimensions_x) || 0;
+    const y = Number(item.dimensions_y) || 0;
+    const z = Number(item.dimensions_z) || 0;
+    const vol = Number(item.volume_cm3) || 0;
+    const transform = parseEstimateTransform(item.model_transform);
+    const highlight = transform ? isNonDefaultEstimateTransform(transform) : false;
+    const volFactor = transform ? estimateVolumeScaleFactor(transform) : 1;
+    const baseVol = transform ? estimateBaseVolumeCm3(vol, transform) : null;
+    const longest = Math.max(x, y, z);
+    const tallPose = z >= longest * 0.85 && z > Math.max(x, y) * 0.9;
+
+    return (
+        <div className="space-y-0.5">
+            <p className="text-[11px] text-white/55">
+                <span className="text-white/35">바닥 </span>
+                {x}×{y}mm
+                <span className="text-white/25"> · </span>
+                <span className={tallPose ? 'text-amber-300/90 font-semibold' : 'text-white/70'}>
+                    높이 {z}mm
+                </span>
+            </p>
+            <p className="text-[11px] text-white/55">
+                <span className="text-teal-300/90 font-semibold">부피 {vol.toLocaleString()}cm³</span>
+                <span className="text-white/25"> · </span>
+                <span className="text-white/40">{formatSize(item.file_size)}</span>
+            </p>
+            {transform ? (
+                <p className={`text-[11px] ${highlight ? 'text-amber-300/85 font-medium' : 'text-white/40'}`}>
+                    스케일 {formatEstimateScaleLabel(transform)}
+                    {Math.abs(volFactor - 1) > 0.02 ? (
+                        <span>
+                            {' '}
+                            (부피 ×{volFactor.toFixed(2)}
+                            {baseVol != null && baseVol > 0
+                                ? ` · 100%≈${Math.round(baseVol * 10) / 10}cm³`
+                                : ''}
+                            )
+                        </span>
+                    ) : null}
+                    <span className="text-white/25"> · </span>
+                    {formatEstimatePoseLabel(transform)}
+                </p>
+            ) : (
+                <p className="text-[10px] text-white/30">스케일·자세 미기록 (배포 전 확인분)</p>
+            )}
+        </div>
+    );
+}
+
 export default function QuoteEstimateLogsPanel() {
     const { token } = useAuthStore();
     const [items, setItems] = useState<EstimateLog[]>([]);
     const [stats, setStats] = useState<EstimateStats | null>(null);
-    const [filter, setFilter] = useState<FilterKey>('unsaved');
+    const [filter, setFilter] = useState<FilterKey>('all');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [filteredTotal, setFilteredTotal] = useState(0);
@@ -250,9 +310,7 @@ export default function QuoteEstimateLogsPanel() {
                                         {item.fdm_infill != null ? ` · 채움 ${item.fdm_infill}%` : ''}
                                         {item.layer_height != null ? ` · ${item.layer_height}mm` : ''}
                                     </p>
-                                    <p className="text-[11px] text-white/45">
-                                        {item.dimensions_x}×{item.dimensions_y}×{item.dimensions_z}mm · {item.volume_cm3}cm³ · {formatSize(item.file_size)}
-                                    </p>
+                                    <SizeTransformLines item={item} />
                                     <p className="text-[11px] text-white/45 truncate">
                                         {item.user_id ? (
                                             <span className="text-white/80">

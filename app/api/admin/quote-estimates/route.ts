@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
                 e.dimensions_x, e.dimensions_y, e.dimensions_z, e.volume_cm3,
                 e.print_method, e.material_name, e.layer_height, e.fdm_infill,
                 e.total_price, e.estimated_time_hours, e.change_count,
-                e.thumbnail_data, e.quote_id, e.guide_source, e.created_at, e.updated_at,
+                e.model_transform, e.thumbnail_data, e.quote_id, e.guide_source, e.created_at, e.updated_at,
                 u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
                 (SELECT o.order_number FROM order_items oi JOIN orders o ON oi.order_id = o.id
                  WHERE oi.quote_id = e.quote_id LIMIT 1) AS order_number
@@ -104,6 +104,12 @@ export async function GET(req: NextRequest) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes('no such table')) {
             return errorResponse('견적 확인 기록 테이블이 아직 없습니다 (schema_quote_estimate_logs.sql 적용 필요)', 503);
+        }
+        if (msg.includes('no such column') && msg.includes('model_transform')) {
+            return errorResponse(
+                '스케일·자세 컬럼이 없습니다 (migrations/schema_quote_estimate_logs_model_transform.sql 적용 필요)',
+                503
+            );
         }
         console.error('GET /api/admin/quote-estimates', e);
         return errorResponse('견적 확인 기록 조회 실패', 500);
