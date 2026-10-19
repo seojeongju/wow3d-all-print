@@ -1,12 +1,18 @@
 /**
  * 주문 생성 시 견적 단가를 DB(quotes) 기준으로 확정
- * - 같은 출력방식·같은 소재: 최소·셋업 1회 + 변동 합산
- * - 출력방식 또는 소재가 다르면: 그룹마다 최소 적용
+ * - cart_batch_min_price_mode(기본 hybrid): 한 판에 넣을 수 있을 때만 소재별 셋업·최소 1회
+ * - 베드 초과·발자국 합 초과 시 라인별 최소 적용
  * - 배치 컬럼 없으면: 구버전 total_price × 수량
  * - 장비 최대 출력 크기 초과 견적은 주문 거부
  */
 
-import { priceCartLinesByMaterialGroup } from '@/lib/quote-batch-price'
+import {
+    BATCH_MIN_PRICE_MODE_SETTING_KEY,
+    parseBatchMinPriceMode,
+    priceCartLinesByMaterialGroup,
+    type BatchMinPriceMode,
+    type BedMaxByMethod,
+} from '@/lib/quote-batch-price'
 import { buildVolumeErrorMessage, loadBuildMaxByMethod } from '@/lib/build-volume'
 import {
     evaluateQuoteValidity,
@@ -67,6 +73,18 @@ function quoteMaterialKey(row: QuoteCartRow): string {
 export type ResolveOrderLinesResult =
     | { ok: true; lines: ResolvedOrderLine[]; totalAmount: number }
     | { ok: false; error: string; status: number }
+
+async function loadBatchMinPriceMode(db: D1Like): Promise<BatchMinPriceMode> {
+    try {
+        const row = await db
+            .prepare('SELECT setting_value FROM store_settings WHERE setting_key = ?')
+            .bind(BATCH_MIN_PRICE_MODE_SETTING_KEY)
+            .all<{ setting_value: string }>()
+        return parseBatchMinPriceMode(row.results?.[0]?.setting_value)
+    } catch {
+        return parseBatchMinPriceMode(null)
+    }
+}
 
 function quoteOwnershipClause(auth: {
     isGuest: boolean
@@ -163,6 +181,7 @@ export async function resolveOrderLinesFromDb(
         variableCostKrw?: number | null
         setupCostKrw?: number | null
         minPriceKrw?: number | null
+        printSizeMm?: { x: number; y: number; z: number } | null
         clientPrice?: number
     }[] = []
 
@@ -199,6 +218,14 @@ export async function resolveOrderLinesFromDb(
                 ? Math.round(Number(item.totalPrice))
                 : undefined
 
+        const hasDims =
+            row.dimensions_x != null &&
+            row.dimensions_y != null &&
+            row.dimensions_z != null &&
+            Number(row.dimensions_x) > 0 &&
+            Number(row.dimensions_y) > 0 &&
+            Number(row.dimensions_z) > 0
+
         batchInputs.push({
             key: quoteId,
             printMethod: String(row.print_method || 'unknown'),
@@ -208,6 +235,13 @@ export async function resolveOrderLinesFromDb(
             variableCostKrw: row.variable_cost_krw,
             setupCostKrw: row.setup_cost_krw,
             minPriceKrw: row.min_price_krw,
+            printSizeMm: hasDims
+                ? {
+                      x: Number(row.dimensions_x),
+                      y: Number(row.dimensions_y),
+                      z: Number(row.dimensions_z),
+                  }
+                : null,
             clientPrice,
         })
     }
@@ -215,6 +249,9 @@ export async function resolveOrderLinesFromDb(
     if (!batchInputs.length) {
         return { ok: false, error: '유효한 주문 항목이 없습니다. 장바구니를 다시 확인해 주세요.', status: 400 }
     }
+
+    const minPriceMode = await loadBatchMinPriceMode(db)
+    const bedMaxByMethod = buildMax as BedMaxByMethod
 
     const priced = priceCartLinesByMaterialGroup(
         batchInputs.map((b) => ({
@@ -226,8 +263,9 @@ export async function resolveOrderLinesFromDb(
             variableCostKrw: b.variableCostKrw,
             setupCostKrw: b.setupCostKrw,
             minPriceKrw: b.minPriceKrw,
+            printSizeMm: b.printSizeMm,
         })),
-        { applyVat: true }
+        { applyVat: true, minPriceMode, bedMaxByMethod }
     )
 
     const byKey = new Map(priced.lines.map((l) => [Number(l.key), l]))

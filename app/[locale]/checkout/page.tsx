@@ -4,7 +4,14 @@ import { useState, useEffect, Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useCartStore, cartItemsLineTotals, cartItemLineTotal } from '@/store/useCartStore'
+import { useCartStore, cartItemsLineTotals, cartItemLineTotal, defaultCartBatchOptions } from '@/store/useCartStore'
+import {
+    BATCH_MIN_PRICE_MODE_SETTING_KEY,
+    parseBatchMinPriceMode,
+    type BatchMinPriceMode,
+    type BedMaxByMethod,
+    type CartBatchOptions,
+} from '@/lib/quote-batch-price'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -86,6 +93,8 @@ function CheckoutContent() {
     })
 
     const [storeSettings, setStoreSettings] = useState(DEFAULT_SHIPPING_SETTINGS)
+    const [batchMinPriceMode, setBatchMinPriceMode] = useState<BatchMinPriceMode>('hybrid')
+    const [bedMaxByMethod, setBedMaxByMethod] = useState<BedMaxByMethod | undefined>(undefined)
 
     useEffect(() => {
         if (items.length === 0 || orderItems.length === 0) router.push('/cart')
@@ -109,13 +118,44 @@ function CheckoutContent() {
                 const json = await res.json()
                 if (json.success && Array.isArray(json.data)) {
                     setStoreSettings(parseShippingSettings(json.data))
+                    const modeRow = json.data.find(
+                        (s: { setting_key?: string }) => s.setting_key === BATCH_MIN_PRICE_MODE_SETTING_KEY
+                    )
+                    if (modeRow?.setting_value != null) {
+                        setBatchMinPriceMode(parseBatchMinPriceMode(modeRow.setting_value))
+                    }
                 }
             } catch (e) {
                 console.error('Failed to load store settings', e)
             }
         }
+        const fetchBeds = async () => {
+            try {
+                const res = await fetch('/api/print-specs')
+                if (!res.ok) return
+                const json = await res.json()
+                const specs = json?.data ?? json
+                if (!specs || typeof specs !== 'object') return
+                const next: BedMaxByMethod = {}
+                for (const key of ['fdm', 'sla', 'dlp'] as const) {
+                    const max = specs[key]?.max
+                    if (max && max.x > 0 && max.y > 0 && max.z > 0) {
+                        next[key] = { x: Number(max.x), y: Number(max.y), z: Number(max.z) }
+                    }
+                }
+                if (Object.keys(next).length) setBedMaxByMethod(next)
+            } catch (e) {
+                console.error('Failed to load print specs', e)
+            }
+        }
         fetchSettings()
+        fetchBeds()
     }, [])
+
+    const cartBatchOptions: CartBatchOptions = defaultCartBatchOptions({
+        minPriceMode: batchMinPriceMode,
+        ...(bedMaxByMethod ? { bedMaxByMethod } : {}),
+    })
 
     const handleAddressSearch = () => {
         if (!window.daum?.Postcode) {
@@ -311,7 +351,7 @@ function CheckoutContent() {
         orderItems.reduce((s, item) => s + cartItemLineTotal(item), 0)
     )
     const totalPriceKWR = Math.round(
-        [...cartItemsLineTotals(orderItems).values()].reduce((s, v) => s + v, 0)
+        [...cartItemsLineTotals(orderItems, cartBatchOptions).values()].reduce((s, v) => s + v, 0)
     )
     const bundleDiscount = Math.max(0, checkoutStandaloneSum - totalPriceKWR)
     const totalLineCount = orderItems.length

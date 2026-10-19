@@ -1,6 +1,6 @@
 {
-  "_comment": "materialAmount: FDM=g, SLA/DLP=mL. hours=시간. slicer-proxy는 Cura/Chitubox 기본 설정 근사값 — 실제 슬라이서 값으로 교체 권장.",
-  "_generatedAt": "2026-07-30T07:44:15.450Z",
+  "_comment": "materialAmount: FDM=g, SLA/DLP=mL. hours=시간. Creality/Bambu 실측은 notes에 명시.",
+  "_generatedAt": "2026-10-19T01:20:00.000Z",
   "samples": [
     {
       "model": "소형",
@@ -37,6 +37,30 @@
       "heightMm": 20,
       "slicerSettings": "DLP 0.05mm / exp 3s",
       "notes": "extract-stl-metrics.ts 자동 생성 (slicer-proxy)"
+    },
+    {
+      "model": "대형",
+      "method": "fdm",
+      "materialAmount": 94.48,
+      "hours": 6.383,
+      "file": "AMR_VA_zig_Black",
+      "volumeCm3": 79.75,
+      "surfaceAreaCm2": 2178,
+      "heightMm": 9,
+      "slicerSettings": "Creality K1 Max 0.20mm Standard / infill 70% / Generic ABS / support on",
+      "notes": "Creality Print 실측. 서포트≈23.98g. GCode 플레이트 경계 경고. public 샘플(커밋 금지)."
+    },
+    {
+      "model": "중형",
+      "method": "fdm",
+      "materialAmount": 51.06,
+      "hours": 1.317,
+      "file": "AMR_GA_zig_Black",
+      "volumeCm3": 79.75,
+      "surfaceAreaCm2": 2178,
+      "heightMm": 9,
+      "slicerSettings": "Creality 0.20mm Standard / infill 70% Grid",
+      "notes": "Creality Print 실측(스크린샷). 사이트 3MF 해석 결과는 VA와 동일 메시로 나와 시간·무게 괴리 큼 — STEP/다른 내보내기 여부 재확인 필요."
     }
   ]
 }

@@ -1,7 +1,8 @@
 /**
  * 수량·다파일 견적 배치 가격
- * - 같은 출력방식·같은 소재 그룹: 최소금액(장비 세팅비)·셋업 1회 + 변동비 합산
- * - 출력방식 또는 소재가 다르면 그룹이 나뉘므로 그룹마다 최소금액 적용
+ * - once_per_material: 같은 출력방식·소재면 셋업·최소 1회 (기존)
+ * - once_per_quote_line: 파일(라인)마다 셋업·최소
+ * - hybrid(기본): 베드에 안 들어가거나 한 판에 못 넣으면 라인별, 가능하면 소재 묶음
  */
 
 import {
@@ -11,6 +12,7 @@ import {
     roundTo100,
     type PriceRoundMode,
 } from '@/lib/amount-display'
+import { fitsBuildVolume, type BuildDims } from '@/lib/build-volume'
 
 export type QuoteBatchPriceInput = {
     /** 1개당 변동비(공급가): 재료+서포트+장비 등 */
@@ -36,6 +38,33 @@ export type QuoteBatchPriceResult = {
     minApplied: boolean
     variableCostKrw: number
     setupCostKrw: number
+}
+
+/** 다파일 최소금액·셋업 공유 정책 */
+export type BatchMinPriceMode = 'once_per_material' | 'once_per_quote_line' | 'hybrid'
+
+/** 과소 견적 방지를 위해 hybrid를 기본으로 함 */
+export const DEFAULT_BATCH_MIN_PRICE_MODE: BatchMinPriceMode = 'hybrid'
+
+export const BATCH_MIN_PRICE_MODE_SETTING_KEY = 'cart_batch_min_price_mode'
+
+export function parseBatchMinPriceMode(raw: unknown): BatchMinPriceMode {
+    const s = String(raw ?? '')
+        .trim()
+        .toLowerCase()
+    if (s === 'once_per_material' || s === 'once_per_quote_line' || s === 'hybrid') return s
+    return DEFAULT_BATCH_MIN_PRICE_MODE
+}
+
+export type BedMaxByMethod = Partial<Record<'fdm' | 'sla' | 'dlp', BuildDims>>
+
+export type CartBatchOptions = {
+    applyVat?: boolean
+    roundMode?: PriceRoundMode
+    minPriceMode?: BatchMinPriceMode
+    bedMaxByMethod?: BedMaxByMethod
+    /** 한 판 면적 여유 (0~1). hybrid에서 footprint 합이 bed×이 값 초과면 라인별 */
+    bedAreaFillRatio?: number
 }
 
 export function normalizeQuoteQuantity(raw: unknown): number {
@@ -129,6 +158,8 @@ export type CartBatchLineInput = {
     variableCostKrw?: number | null
     setupCostKrw?: number | null
     minPriceKrw?: number | null
+    /** 출력 치수(mm) — hybrid 베드 판정용 */
+    printSizeMm?: BuildDims | null
 }
 
 export type CartBatchLineResult = {
@@ -141,7 +172,7 @@ export type CartBatchLineResult = {
     usedGroupBatch: boolean
 }
 
-function normalizePrintMethod(raw: string | undefined | null): PrintMethodGroupKey {
+function normalizePrintMethod(raw: string | undefined | null): string {
     const m = String(raw || '').trim().toLowerCase()
     if (m === 'fdm' || m === 'sla' || m === 'dlp') return m
     return m || 'unknown'
@@ -152,7 +183,7 @@ function normalizeMaterial(raw: string | undefined | null): string {
 }
 
 /** 출력방식 + 소재 그룹 키 (소재 정보가 없으면 출력방식만) */
-function materialGroupKey(line: CartBatchLineInput): PrintMethodGroupKey {
+export function materialGroupKey(line: CartBatchLineInput): PrintMethodGroupKey {
     const method = normalizePrintMethod(line.printMethod)
     const material = normalizeMaterial(line.material)
     return material ? `${method}:${material}` : method
@@ -164,14 +195,139 @@ function hasBatchCosts(line: CartBatchLineInput): boolean {
     return Number.isFinite(v) && v >= 0 && Number.isFinite(s) && s >= 0
 }
 
+function bedForLine(
+    line: CartBatchLineInput,
+    bedMaxByMethod?: BedMaxByMethod
+): BuildDims | null {
+    if (!bedMaxByMethod) return null
+    const m = normalizePrintMethod(line.printMethod)
+    if (m !== 'fdm' && m !== 'sla' && m !== 'dlp') return null
+    return bedMaxByMethod[m] ?? null
+}
+
+function lineFitsBed(line: CartBatchLineInput, bed: BuildDims | null): boolean {
+    if (!bed) return true
+    const d = line.printSizeMm
+    if (!d || !(d.x > 0 && d.y > 0 && d.z > 0)) return true
+    return fitsBuildVolume(d, bed)
+}
+
+/** 출력 XY 발자국(mm²). 치수 없으면 0 */
+function footprintMm2(line: CartBatchLineInput): number {
+    const d = line.printSizeMm
+    if (!d) return 0
+    const x = Math.max(0, Number(d.x) || 0)
+    const y = Math.max(0, Number(d.y) || 0)
+    return x * y
+}
+
 /**
- * 장바구니/주문 라인들을 출력방식·소재별로 묶어 가격 산정.
- * - 같은 방식·같은 소재: 셋업 max 1회 + 변동 합산 + 최소 1회
- * - 방식이나 소재가 다르면: 그룹이 달라 그룹마다 최소 적용
+ * 가격 그룹 키 결정.
+ * - solo: 라인별 셋업·최소
+ * - material: 동일 소재 묶음
+ */
+export function resolvePricingGroupKey(
+    line: CartBatchLineInput,
+    options?: Pick<CartBatchOptions, 'minPriceMode' | 'bedMaxByMethod'>
+): string {
+    const mode = options?.minPriceMode ?? DEFAULT_BATCH_MIN_PRICE_MODE
+    if (mode === 'once_per_quote_line') return `solo:${line.key}`
+
+    const bed = bedForLine(line, options?.bedMaxByMethod)
+    if (mode === 'hybrid' && bed && !lineFitsBed(line, bed)) {
+        return `solo:${line.key}`
+    }
+
+    return materialGroupKey(line)
+}
+
+function shouldSplitMaterialGroupForBed(
+    groupLines: CartBatchLineInput[],
+    bed: BuildDims | null,
+    fillRatio: number
+): boolean {
+    if (!bed || groupLines.length <= 1) return false
+    const bedArea = Math.max(0, bed.x) * Math.max(0, bed.y)
+    if (!(bedArea > 0)) return false
+    let sumFp = 0
+    let known = 0
+    for (const line of groupLines) {
+        const qty = normalizeQuoteQuantity(line.quantity)
+        const fp = footprintMm2(line)
+        if (fp > 0) {
+            sumFp += fp * qty
+            known += 1
+        }
+    }
+    if (known === 0) return false
+    return sumFp > bedArea * fillRatio
+}
+
+function priceOneGroup(
+    groupKey: string,
+    groupLines: CartBatchLineInput[],
+    applyVat: boolean,
+    roundMode: PriceRoundMode
+): {
+    results: CartBatchLineResult[]
+    group: { groupKey: string; supplyKrw: number; totalKrw: number; minApplied: boolean }
+} {
+    let sumVariable = 0
+    let setupOnce = 0
+    let minOnce = 0
+    const weights: number[] = []
+
+    for (const line of groupLines) {
+        const qty = normalizeQuoteQuantity(line.quantity)
+        const variable = Math.max(0, Number(line.variableCostKrw) || 0)
+        const setup = Math.max(0, Number(line.setupCostKrw) || 0)
+        const minP =
+            line.minPriceKrw != null && Number(line.minPriceKrw) > 0 ? Number(line.minPriceKrw) : 0
+        const w = variable * qty
+        weights.push(w)
+        sumVariable += w
+        setupOnce = Math.max(setupOnce, setup)
+        minOnce = Math.max(minOnce, minP)
+    }
+
+    const rawSupply = setupOnce + sumVariable
+    const minApplied = minOnce > 0 && rawSupply < minOnce
+    const supplyKrw = minApplied ? minOnce : rawSupply
+    const groupTotalKrw = applyVat
+        ? roundTo100(supplyKrw * 1.1, roundMode)
+        : roundTo100(supplyKrw, roundMode)
+
+    const shares = allocateByWeights(groupTotalKrw, weights, roundMode === 'none' ? 1 : 100)
+    const results: CartBatchLineResult[] = []
+    let groupLinesTotal = 0
+    const usedGroupBatch = groupLines.length > 1
+    for (let i = 0; i < groupLines.length; i++) {
+        const line = groupLines[i]
+        const qty = normalizeQuoteQuantity(line.quantity)
+        const aligned = alignLineToUnitPrice(shares[i] ?? 0, qty, roundMode)
+        groupLinesTotal += aligned.lineTotal
+        results.push({
+            key: line.key,
+            printMethod: normalizePrintMethod(line.printMethod),
+            groupKey,
+            quantity: qty,
+            lineTotalKrw: aligned.lineTotal,
+            effectiveUnitKrw: aligned.unitPrice,
+            usedGroupBatch,
+        })
+    }
+    return {
+        results,
+        group: { groupKey, supplyKrw, totalKrw: groupLinesTotal, minApplied },
+    }
+}
+
+/**
+ * 장바구니/주문 라인들을 정책에 따라 묶어 가격 산정.
  */
 export function priceCartLinesByMaterialGroup(
     lines: CartBatchLineInput[],
-    options?: { applyVat?: boolean; roundMode?: PriceRoundMode }
+    options?: CartBatchOptions
 ): {
     lines: CartBatchLineResult[]
     grandTotalKrw: number
@@ -179,6 +335,8 @@ export function priceCartLinesByMaterialGroup(
 } {
     const applyVat = options?.applyVat !== false
     const roundMode = options?.roundMode ?? QUOTE_PRICE_ROUND_MODE
+    const mode = options?.minPriceMode ?? DEFAULT_BATCH_MIN_PRICE_MODE
+    const fillRatio = options?.bedAreaFillRatio ?? 0.9
     const results: CartBatchLineResult[] = []
     const groupsOut: { groupKey: string; supplyKrw: number; totalKrw: number; minApplied: boolean }[] =
         []
@@ -208,61 +366,37 @@ export function priceCartLinesByMaterialGroup(
         })
     }
 
-    const byGroup = new Map<string, CartBatchLineInput[]>()
+    /** 1차: 모드·단독 베드 초과로 그룹 키 부여 */
+    const provisional = new Map<string, CartBatchLineInput[]>()
     for (const line of batchable) {
-        const gk = materialGroupKey(line)
-        const arr = byGroup.get(gk) || []
+        const gk = resolvePricingGroupKey(line, {
+            minPriceMode: mode,
+            bedMaxByMethod: options?.bedMaxByMethod,
+        })
+        const arr = provisional.get(gk) || []
         arr.push(line)
-        byGroup.set(gk, arr)
+        provisional.set(gk, arr)
     }
 
-    for (const [groupKey, groupLines] of byGroup) {
-        let sumVariable = 0
-        let setupOnce = 0
-        let minOnce = 0
-        const weights: number[] = []
-
-        for (const line of groupLines) {
-            const qty = normalizeQuoteQuantity(line.quantity)
-            const variable = Math.max(0, Number(line.variableCostKrw) || 0)
-            const setup = Math.max(0, Number(line.setupCostKrw) || 0)
-            const minP =
-                line.minPriceKrw != null && Number(line.minPriceKrw) > 0
-                    ? Number(line.minPriceKrw)
-                    : 0
-            const w = variable * qty
-            weights.push(w)
-            sumVariable += w
-            setupOnce = Math.max(setupOnce, setup)
-            minOnce = Math.max(minOnce, minP)
+    /** 2차: hybrid에서 소재 그룹이 한 판에 안 들어가면 라인별로 분리 */
+    const finalGroups = new Map<string, CartBatchLineInput[]>()
+    for (const [gk, groupLines] of provisional) {
+        if (mode === 'hybrid' && !gk.startsWith('solo:')) {
+            const bed = bedForLine(groupLines[0], options?.bedMaxByMethod)
+            if (shouldSplitMaterialGroupForBed(groupLines, bed, fillRatio)) {
+                for (const line of groupLines) {
+                    finalGroups.set(`solo:${line.key}`, [line])
+                }
+                continue
+            }
         }
+        finalGroups.set(gk, groupLines)
+    }
 
-        const rawSupply = setupOnce + sumVariable
-        const minApplied = minOnce > 0 && rawSupply < minOnce
-        const supplyKrw = minApplied ? minOnce : rawSupply
-        const groupTotalKrw = applyVat
-            ? roundTo100(supplyKrw * 1.1, roundMode)
-            : roundTo100(supplyKrw, roundMode)
-
-        /** 그룹 합계가 100원 단위로 절삭돼 있으므로 품목별 몫도 100원 단위로 배분 */
-        const shares = allocateByWeights(groupTotalKrw, weights, roundMode === 'none' ? 1 : 100)
-        let groupLinesTotal = 0
-        for (let i = 0; i < groupLines.length; i++) {
-            const line = groupLines[i]
-            const qty = normalizeQuoteQuantity(line.quantity)
-            const aligned = alignLineToUnitPrice(shares[i] ?? 0, qty, roundMode)
-            groupLinesTotal += aligned.lineTotal
-            results.push({
-                key: line.key,
-                printMethod: normalizePrintMethod(line.printMethod),
-                groupKey,
-                quantity: qty,
-                lineTotalKrw: aligned.lineTotal,
-                effectiveUnitKrw: aligned.unitPrice,
-                usedGroupBatch: true,
-            })
-        }
-        groupsOut.push({ groupKey, supplyKrw, totalKrw: groupLinesTotal, minApplied })
+    for (const [groupKey, groupLines] of finalGroups) {
+        const priced = priceOneGroup(groupKey, groupLines, applyVat, roundMode)
+        results.push(...priced.results)
+        groupsOut.push(priced.group)
     }
 
     const grandTotalKrw = results.reduce((s, r) => s + r.lineTotalKrw, 0)
@@ -272,7 +406,7 @@ export function priceCartLinesByMaterialGroup(
 /** key → lineTotal 맵 */
 export function cartLineTotalsByKey(
     lines: CartBatchLineInput[],
-    options?: { applyVat?: boolean; roundMode?: PriceRoundMode }
+    options?: CartBatchOptions
 ): Map<string | number, number> {
     const priced = priceCartLinesByMaterialGroup(lines, options)
     return new Map(priced.lines.map((l) => [l.key, l.lineTotalKrw]))

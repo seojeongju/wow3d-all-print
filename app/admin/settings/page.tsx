@@ -585,6 +585,24 @@ export default function AdminSettings() {
                   />
                   <p className="text-[10px] text-white/40 mt-1">결제 예상 금액이 이 기준을 넘으면 배송비가 무료가 됩니다.</p>
                 </div>
+                <div className="space-y-2 md:col-span-2 lg:col-span-3">
+                  <Label className="text-[10px] text-white/50 uppercase">다파일 최소금액·셋업 적용</Label>
+                  <select
+                    className="w-full max-w-xl rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                    value={
+                      storeConfigs.find((s) => s.setting_key === 'cart_batch_min_price_mode')?.setting_value ||
+                      'hybrid'
+                    }
+                    onChange={(e) => handleStoreConfigChange('cart_batch_min_price_mode', e.target.value)}
+                  >
+                    <option value="hybrid">hybrid (권장) — 한 판에 넣을 수 있을 때만 소재별 1회</option>
+                    <option value="once_per_material">once_per_material — 같은 소재면 항상 셋업·최소 1회</option>
+                    <option value="once_per_quote_line">once_per_quote_line — 파일마다 셋업·최소 적용</option>
+                  </select>
+                  <p className="text-[10px] text-white/40 mt-1 break-keep">
+                    hybrid는 베드에 안 들어가거나 한 판 면적을 넘기면 파일별로 최소금액을 적용해, 다파일 과소 견적을 줄입니다.
+                  </p>
+                </div>
               </div>
               <div className="flex justify-end pt-4">
                 <Button onClick={handleSaveStoreConfigs} className="bg-primary text-primary-foreground hover:bg-primary/90">

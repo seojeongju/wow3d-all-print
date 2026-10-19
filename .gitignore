@@ -52,3 +52,14 @@ _temp_migration/
 
 # editor (local)
 .vscode/
+
+# 고객·학습용 샘플 (커밋 금지) — public 기본 데모 STL은 유지
+/public/AMR_*
+/public/**/*.step
+/public/**/*.stp
+!/public/test_cube.stl
+!/public/broken_sample.stl
+!/public/jet_engine_rotor.stl
+/scripts/amr-multi-quote-report.json
+/tmp-*.json
+

@@ -1,6 +1,13 @@
 'use client'
 
-import { useCartStore, cartItemLineTotal } from '@/store/useCartStore'
+import { useCartStore, cartItemLineTotal, defaultCartBatchOptions } from '@/store/useCartStore'
+import {
+    BATCH_MIN_PRICE_MODE_SETTING_KEY,
+    parseBatchMinPriceMode,
+    type BatchMinPriceMode,
+    type BedMaxByMethod,
+    type CartBatchOptions,
+} from '@/lib/quote-batch-price'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -139,6 +146,8 @@ function CartPageContent() {
     const [activeTab, setActiveTab] = useState<'cart' | 'saved' | 'orders'>(initialTab)
     const [addingId, setAddingId] = useState<number | null>(null)
     const [storeSettings, setStoreSettings] = useState(DEFAULT_SHIPPING_SETTINGS)
+    const [batchMinPriceMode, setBatchMinPriceMode] = useState<BatchMinPriceMode>('hybrid')
+    const [bedMaxByMethod, setBedMaxByMethod] = useState<BedMaxByMethod | undefined>(undefined)
     /** quoteId → 유효기간·단가 변경 상태 (서버 판정) */
     const [validityByQuoteId, setValidityByQuoteId] = useState<Map<number, CartValidity>>(new Map())
 
@@ -251,7 +260,7 @@ function CartPageContent() {
         fetchOrders()
     }, [isAuthenticated, token, user?.id])
 
-    // 배송비 및 설정 정보 불러오기
+    // 배송비·다파일 배치 정책·장비 베드 크기
     useEffect(() => {
         const fetchSettings = async () => {
             try {
@@ -260,13 +269,44 @@ function CartPageContent() {
                 const json = await res.json()
                 if (json.success && Array.isArray(json.data)) {
                     setStoreSettings(parseShippingSettings(json.data))
+                    const modeRow = json.data.find(
+                        (s: { setting_key?: string }) => s.setting_key === BATCH_MIN_PRICE_MODE_SETTING_KEY
+                    )
+                    if (modeRow?.setting_value != null) {
+                        setBatchMinPriceMode(parseBatchMinPriceMode(modeRow.setting_value))
+                    }
                 }
             } catch (e) {
                 console.error('Failed to load store settings', e)
             }
         }
+        const fetchBeds = async () => {
+            try {
+                const res = await fetch('/api/print-specs')
+                if (!res.ok) return
+                const json = await res.json()
+                const specs = json?.data ?? json
+                if (!specs || typeof specs !== 'object') return
+                const next: BedMaxByMethod = {}
+                for (const key of ['fdm', 'sla', 'dlp'] as const) {
+                    const max = specs[key]?.max
+                    if (max && max.x > 0 && max.y > 0 && max.z > 0) {
+                        next[key] = { x: Number(max.x), y: Number(max.y), z: Number(max.z) }
+                    }
+                }
+                if (Object.keys(next).length) setBedMaxByMethod(next)
+            } catch (e) {
+                console.error('Failed to load print specs', e)
+            }
+        }
         fetchSettings()
+        fetchBeds()
     }, [])
+
+    const cartBatchOptions: CartBatchOptions = defaultCartBatchOptions({
+        minPriceMode: batchMinPriceMode,
+        ...(bedMaxByMethod ? { bedMaxByMethod } : {}),
+    })
 
     const itemValidity = (quoteId: number): CartValidity | undefined => validityByQuoteId.get(quoteId)
     const needsRecalc = (quoteId: number) => {
@@ -277,8 +317,8 @@ function CartPageContent() {
     const selectedItems = items.filter((i) => selectedIds.has(i.id) && !needsRecalc(i.quoteId))
     const staleSelectedCount = items.filter((i) => selectedIds.has(i.id) && needsRecalc(i.quoteId)).length
     const checkoutIds = selectedItems.map((i) => i.id).join(',')
-    /** 실제 결제 기준(같은 출력방식·소재 최소 1회) */
-    const selectedTotal = getTotalPriceForItems(selectedItems)
+    /** 실제 결제 기준(배치 정책·베드 적합 반영) */
+    const selectedTotal = getTotalPriceForItems(selectedItems, cartBatchOptions)
     const selectedLineCount = selectedItems.length
     const selectedQty = selectedItems.reduce((s, i) => s + i.quantity, 0)
     /** 파일별 단독 견적 합 — 라인 표시용. 수량 변경 시 해당 파일만 변동 */

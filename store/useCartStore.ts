@@ -4,8 +4,11 @@ import type { CartItem, Quote } from '@/lib/types';
 import {
     cartLineTotalsByKey,
     lineTotalFromStoredQuote,
+    DEFAULT_BATCH_MIN_PRICE_MODE,
     type CartBatchLineInput,
-} from '@/lib/quote-batch-price';
+    type CartBatchOptions,
+} from '@/lib/quote-batch-price'
+import { DEFAULT_BED_MAX } from '@/lib/model-transform'
 
 interface CartState {
     items: CartItem[];
@@ -19,8 +22,8 @@ interface CartState {
     /** DB 견적 최신값으로 장바구니 스냅샷 갱신 (출력 방식·금액 불일치 방지) */
     refreshQuoteSnapshots: (quotes: Quote[]) => void;
     clearCart: () => void;
-    getTotalPrice: () => number;
-    getTotalPriceForItems: (itemList: CartItem[]) => number;
+    getTotalPrice: (options?: CartBatchOptions) => number;
+    getTotalPriceForItems: (itemList: CartItem[], options?: CartBatchOptions) => number;
     /** 장바구니 품목(파일) 수 */
     getTotalItems: () => number;
     /** 총 출력 수량 합 */
@@ -30,6 +33,7 @@ interface CartState {
 export function cartItemToBatchInput(item: CartItem): CartBatchLineInput | null {
     const q = item.quote
     if (!q) return null
+    const hasDims = q.dimensionsX > 0 && q.dimensionsY > 0 && q.dimensionsZ > 0
     return {
         key: item.id,
         printMethod: q.printMethod || 'unknown',
@@ -39,15 +43,35 @@ export function cartItemToBatchInput(item: CartItem): CartBatchLineInput | null 
         variableCostKrw: q.variableCostKrw,
         setupCostKrw: q.setupCostKrw,
         minPriceKrw: q.minPriceKrw,
+        printSizeMm: hasDims
+            ? { x: q.dimensionsX, y: q.dimensionsY, z: q.dimensionsZ }
+            : null,
+    }
+}
+
+/** 기본 배치 옵션 — hybrid + 기본 베드 (과소 견적 방지) */
+export function defaultCartBatchOptions(overrides?: CartBatchOptions): CartBatchOptions {
+    return {
+        applyVat: true,
+        minPriceMode: DEFAULT_BATCH_MIN_PRICE_MODE,
+        bedMaxByMethod: {
+            fdm: DEFAULT_BED_MAX.fdm,
+            sla: DEFAULT_BED_MAX.sla,
+            dlp: DEFAULT_BED_MAX.dlp,
+        },
+        ...overrides,
     }
 }
 
 /** 목록 기준 출력방식·소재 그룹 배치 후 라인 합계 맵 */
-export function cartItemsLineTotals(itemList: CartItem[]): Map<number, number> {
+export function cartItemsLineTotals(
+    itemList: CartItem[],
+    options?: CartBatchOptions
+): Map<number, number> {
     const inputs = itemList
         .map(cartItemToBatchInput)
         .filter((x): x is CartBatchLineInput => x != null)
-    const byKey = cartLineTotalsByKey(inputs, { applyVat: true })
+    const byKey = cartLineTotalsByKey(inputs, defaultCartBatchOptions(options))
     const out = new Map<number, number>()
     for (const [k, v] of byKey) {
         out.set(Number(k), v)
@@ -161,13 +185,13 @@ export const useCartStore = create<CartState>()(
 
             clearCart: () => set({ items: [] }),
 
-            getTotalPrice: () => {
+            getTotalPrice: (options) => {
                 const state = get();
-                return [...cartItemsLineTotals(state.items).values()].reduce((a, b) => a + b, 0);
+                return [...cartItemsLineTotals(state.items, options).values()].reduce((a, b) => a + b, 0);
             },
 
-            getTotalPriceForItems: (itemList) => {
-                return [...cartItemsLineTotals(itemList).values()].reduce((a, b) => a + b, 0);
+            getTotalPriceForItems: (itemList, options) => {
+                return [...cartItemsLineTotals(itemList, options).values()].reduce((a, b) => a + b, 0);
             },
 
             /** 장바구니 품목(파일/라인) 수 — 헤더 뱃지·품목 수 표시용 (수량 합이 아님) */
