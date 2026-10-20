@@ -1,15 +1,20 @@
 /**
  * 견적 출력 색상 옵션
- * - 소재별로 선택 가능한 색상이 다르다 (getAllowedPrintColors).
- * - 기타는 고객이 원하는 색상을 직접 적고, 담당자가 재고 확인 후 금액·일정을 확정한다.
+ * - 소재별 기본 색상 + 모든 소재에 투명·기타색상 문의 공통 제공 (getAllowedPrintColors).
+ * - 기타색상 문의는 고객이 원하는 색상을 직접 적고, 담당자가 재고 확인 후 금액·일정을 확정한다.
  * - 색상은 자동 견적 금액에 영향을 주지 않는다.
  */
 
-export const PRINT_COLORS = ['white', 'black', 'other', 'clear'] as const
+/** UI·표시 순서 */
+export const PRINT_COLOR_ORDER = ['white', 'black', 'clear', 'other'] as const
+export const PRINT_COLORS = PRINT_COLOR_ORDER
 export type PrintColor = (typeof PRINT_COLORS)[number]
 
 export const PRINT_COLOR_DEFAULT: PrintColor = 'white'
 export const PRINT_COLOR_NOTE_MAX = 50
+
+/** 모든 소재에 공통으로 붙는 옵션 */
+const PRINT_COLOR_EXTRAS: readonly PrintColor[] = ['clear', 'other']
 
 export function normalizePrintColor(value: unknown): PrintColor | null {
     const v = String(value ?? '').trim().toLowerCase()
@@ -28,11 +33,11 @@ export function normalizePrintColorNote(value: unknown): string | null {
 }
 
 const LABELS: Record<'ko' | 'en', Record<PrintColor, string>> = {
-    ko: { white: '화이트', black: '블랙', other: '기타', clear: '투명' },
-    en: { white: 'White', black: 'Black', other: 'Other', clear: 'Clear' },
+    ko: { white: '화이트', black: '블랙', clear: '투명', other: '기타색상 문의' },
+    en: { white: 'White', black: 'Black', clear: 'Clear', other: 'Other color inquiry' },
 }
 
-/** 표시용 색상 라벨 (예: "블랙", "기타(빨강)", "투명"). 저장값이 없으면 빈 문자열 */
+/** 표시용 색상 라벨 (예: "블랙", "기타색상 문의(빨강)", "투명"). 저장값이 없으면 빈 문자열 */
 export function formatPrintColor(
     color: unknown,
     note?: unknown,
@@ -57,13 +62,18 @@ function resinFamily(materialName: string): 'standard' | 'tough' | 'clear' | 'fl
     return 'other'
 }
 
+/** 기본 옵션에 투명·기타색상 문의를 합치고 표시 순서로 정렬 */
+function withCommonColorExtras(base: readonly PrintColor[]): readonly PrintColor[] {
+    const set = new Set<PrintColor>([...base, ...PRINT_COLOR_EXTRAS])
+    return PRINT_COLOR_ORDER.filter((c) => set.has(c))
+}
+
 /**
  * 출력 방식·소재별 선택 가능한 색상
- * - FDM PLA: 화이트·블랙·기타
- * - FDM ABS·PETG·PC·TPU 등: 화이트·블랙
- * - DLP/SLA Standard·Tough: 화이트·블랙
- * - DLP/SLA Clear: 투명만
- * - DLP/SLA Flexible: 화이트만
+ * - FDM: 화이트·블랙 (+ 투명·기타색상 문의)
+ * - DLP/SLA Standard·Tough: 화이트·블랙 (+ 투명·기타색상 문의)
+ * - DLP/SLA Clear: 투명 (+ 기타색상 문의)
+ * - DLP/SLA Flexible: 화이트 (+ 투명·기타색상 문의)
  */
 export function getAllowedPrintColors(
     printMethod: string,
@@ -73,16 +83,15 @@ export function getAllowedPrintColors(
     const mat = String(materialName ?? '').trim()
 
     if (method === 'fdm') {
-        if (mat.toUpperCase() === 'PLA') return ['white', 'black', 'other']
-        return ['white', 'black']
+        return withCommonColorExtras(['white', 'black'])
     }
 
     // DLP / SLA (및 기타 레진 방식)
     const family = resinFamily(mat)
-    if (family === 'clear') return ['clear']
-    if (family === 'flexible') return ['white']
+    if (family === 'clear') return withCommonColorExtras(['clear'])
+    if (family === 'flexible') return withCommonColorExtras(['white'])
     // Standard · Tough · 미분류 레진
-    return ['white', 'black']
+    return withCommonColorExtras(['white', 'black'])
 }
 
 /** 현재 색상이 소재에서 허용되면 유지, 아니면 허용 목록의 첫 항목으로 보정 */

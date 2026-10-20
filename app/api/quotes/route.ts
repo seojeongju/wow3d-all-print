@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
         const printColor = coercePrintColorForMaterial(requestedColor, body.printMethod, materialForColor);
         const printColorNote = printColor === 'other' ? normalizePrintColorNote(body.printColorNote) : null;
         if (printColor === 'other' && !printColorNote) {
-            return errorResponse('기타 색상을 선택한 경우 원하는 색상을 입력해 주세요', 400);
+            return errorResponse('기타색상 문의를 선택한 경우 원하는 색상을 입력해 주세요', 400);
         }
 
         // 세션 ID 또는 사용자 ID

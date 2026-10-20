@@ -122,14 +122,14 @@ type AdminOrderItem = Record<string, unknown> & {
     print_color_note?: string | null;
 };
 
-/** 기타 색상은 재고 확인 후 금액·일정 확정 필요 */
+/** 기타색상 문의는 재고·제작 가능 여부 확인 후 금액·일정 확정 필요 */
 function OtherColorBadge({ note }: { note?: string | null }) {
     return (
         <span
             className="inline-flex items-center rounded-md bg-orange-400/15 border border-orange-400/40 px-2 py-0.5 text-[10px] font-black text-orange-300"
-            title="기타 색상 — 재고 확인 후 금액·일정 확정 필요"
+            title="기타색상 문의 — 재고·제작 가능 여부 확인 후 금액·일정 확정 필요"
         >
-            기타 색상 확인{note ? `: ${note}` : ''}
+            기타색상 문의{note ? `: ${note}` : ''}
         </span>
     );
 }

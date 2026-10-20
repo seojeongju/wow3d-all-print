@@ -1217,11 +1217,13 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         </div>
                         <div
                             className={`grid gap-2 ${
-                                allowedPrintColors.length >= 3
-                                    ? 'grid-cols-3'
-                                    : allowedPrintColors.length === 2
-                                      ? 'grid-cols-2'
-                                      : 'grid-cols-1'
+                                allowedPrintColors.length >= 4
+                                    ? 'grid-cols-2'
+                                    : allowedPrintColors.length === 3
+                                      ? 'grid-cols-3'
+                                      : allowedPrintColors.length === 2
+                                        ? 'grid-cols-2'
+                                        : 'grid-cols-1'
                             }`}
                             role="radiogroup"
                             aria-label={t('colorLabel')}
@@ -1244,7 +1246,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                             if (c.id === 'other') requestAnimationFrame(() => printColorNoteRef.current?.focus())
                                             else setPrintColorNote('')
                                         }}
-                                        className={`flex items-center justify-center gap-2 h-10 rounded-xl border text-xs font-black transition-all ${selected
+                                        className={`flex items-center justify-center gap-1.5 min-h-10 px-2 py-2 rounded-xl border text-[11px] sm:text-xs font-black leading-tight break-keep transition-all ${selected
                                             ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20 text-teal-300'
                                             : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20 hover:text-white/80'
                                             }`}
