@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef, type CSSProperties } from 'react'
 import { resolveErrorCopy } from '@/lib/toast-helper'
 import { QUOTE_PRICE_ROUND_MODE, roundTo100, type PriceRoundMode } from '@/lib/amount-display'
 import { generateModelThumbnail } from '@/lib/modelThumbnail'
@@ -46,7 +46,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { KakaoChannelFab } from '@/components/quote/KakaoChannelFab'
 import { MESHY_AI_DISCLAIMER_SHORT, MESHY_AI_DISCLAIMER_SHORT_EN } from '@/lib/meshy-disclaimer'
 import {
+    coercePrintColorForMaterial,
     formatPrintColor,
+    getAllowedPrintColors,
     normalizePrintColor,
     PRINT_COLOR_DEFAULT,
     PRINT_COLOR_NOTE_MAX,
@@ -312,6 +314,23 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     useEffect(() => {
         if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
     }, [resinMaterials, resinType, printMethod])
+
+    const activeMaterialName = printMethod === 'fdm' ? fdmMaterial : resinType
+    const allowedPrintColors = useMemo(
+        () => getAllowedPrintColors(printMethod, activeMaterialName),
+        [printMethod, activeMaterialName]
+    )
+
+    // 소재·출력 방식 변경 시 허용되지 않는 색상은 자동 보정
+    useEffect(() => {
+        if (!activeMaterialName) return
+        const next = coercePrintColorForMaterial(printColor, printMethod, activeMaterialName)
+        if (next !== printColor) {
+            setPrintColor(next)
+            if (next !== 'other') setPrintColorNote('')
+        }
+    }, [printMethod, activeMaterialName, printColor])
+
     const MAT_COLORS: Record<string, string> = { 
         PLA: 'text-teal-400', 
         ABS: 'text-amber-400', 
@@ -1190,18 +1209,29 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         </div>
                     </div>
 
-                    {/* 출력 색상 — 화이트·블랙·기타(직접 입력) */}
+                    {/* 출력 색상 — 소재별 허용 옵션만 표시 */}
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 px-1">
                             <Palette className="w-3.5 h-3.5 text-teal-400" />
                             <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('colorLabel')}</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t('colorLabel')}>
+                        <div
+                            className={`grid gap-2 ${
+                                allowedPrintColors.length >= 3
+                                    ? 'grid-cols-3'
+                                    : allowedPrintColors.length === 2
+                                      ? 'grid-cols-2'
+                                      : 'grid-cols-1'
+                            }`}
+                            role="radiogroup"
+                            aria-label={t('colorLabel')}
+                        >
                             {([
-                                { id: 'white', label: t('colorWhite'), swatch: 'bg-white border-white/60', style: undefined },
-                                { id: 'black', label: t('colorBlack'), swatch: 'bg-black border-white/40', style: undefined },
-                                { id: 'other', label: t('colorOther'), swatch: 'border-white/30', style: { background: 'conic-gradient(#f43f5e, #f59e0b, #22c55e, #3b82f6, #a855f7, #f43f5e)' } },
-                            ] as const).map((c) => {
+                                { id: 'white' as const, label: t('colorWhite'), swatch: 'bg-white border-white/60', style: undefined as CSSProperties | undefined },
+                                { id: 'black' as const, label: t('colorBlack'), swatch: 'bg-black border-white/40', style: undefined },
+                                { id: 'clear' as const, label: t('colorClear'), swatch: 'border-cyan-300/50', style: { background: 'linear-gradient(135deg, rgba(165,243,252,0.55) 0%, rgba(255,255,255,0.15) 45%, rgba(34,211,238,0.35) 100%)' } },
+                                { id: 'other' as const, label: t('colorOther'), swatch: 'border-white/30', style: { background: 'conic-gradient(#f43f5e, #f59e0b, #22c55e, #3b82f6, #a855f7, #f43f5e)' } },
+                            ]).filter((c) => allowedPrintColors.includes(c.id)).map((c) => {
                                 const selected = printColor === c.id
                                 return (
                                     <button
@@ -1212,6 +1242,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                         onClick={() => {
                                             setPrintColor(c.id)
                                             if (c.id === 'other') requestAnimationFrame(() => printColorNoteRef.current?.focus())
+                                            else setPrintColorNote('')
                                         }}
                                         className={`flex items-center justify-center gap-2 h-10 rounded-xl border text-xs font-black transition-all ${selected
                                             ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20 text-teal-300'
@@ -1224,7 +1255,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 )
                             })}
                         </div>
-                        {printColor === 'other' && (
+                        {printColor === 'other' && allowedPrintColors.includes('other') && (
                             <div className="space-y-1.5">
                                 <input
                                     ref={printColorNoteRef}

@@ -9,7 +9,13 @@ import { P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO } from '@/lib/print-time-estimate';
 import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
 import { resolveServerResinQuote } from '@/lib/server-resin-quote';
 import { normalizeLayFlat } from '@/lib/stl-bake';
-import { normalizePrintColor, normalizePrintColorNote, PRINT_COLOR_DEFAULT } from '@/lib/print-color';
+import {
+    coercePrintColorForMaterial,
+    isPrintColorAllowed,
+    normalizePrintColor,
+    normalizePrintColorNote,
+    PRINT_COLOR_DEFAULT,
+} from '@/lib/print-color';
 
 /**
  * GET /api/quotes - 견적 목록 조회
@@ -131,7 +137,13 @@ export async function POST(request: NextRequest) {
             return errorResponse('필수 필드가 누락되었습니다', 400);
         }
 
-        const printColor = normalizePrintColor(body.printColor) ?? PRINT_COLOR_DEFAULT;
+        const materialForColor =
+            body.printMethod === 'fdm' ? String(body.fdmMaterial ?? '') : String(body.resinType ?? '');
+        const requestedColor = normalizePrintColor(body.printColor) ?? PRINT_COLOR_DEFAULT;
+        if (!isPrintColorAllowed(requestedColor, body.printMethod, materialForColor)) {
+            return errorResponse('선택한 소재에서 사용할 수 없는 색상입니다', 400);
+        }
+        const printColor = coercePrintColorForMaterial(requestedColor, body.printMethod, materialForColor);
         const printColorNote = printColor === 'other' ? normalizePrintColorNote(body.printColorNote) : null;
         if (printColor === 'other' && !printColorNote) {
             return errorResponse('기타 색상을 선택한 경우 원하는 색상을 입력해 주세요', 400);

@@ -752,6 +752,7 @@
     "colorLabel": "Color",
     "colorWhite": "White",
     "colorBlack": "Black",
+    "colorClear": "Clear",
     "colorOther": "Other",
     "colorOtherPlaceholder": "Describe the color you want (e.g. red, Pantone 186C)",
     "colorOtherNotice": "Other colors depend on stock, so price and lead time may change. Our team will confirm with you.",
