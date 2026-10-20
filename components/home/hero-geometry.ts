@@ -76,33 +76,9 @@ export function extrudeCentered(shape: THREE.Shape, depth: number, bevel = 0.022
     return geo;
 }
 
-export function roundedRectShape(w: number, h: number, r: number) {
-    const s = new THREE.Shape();
-    const x = -w / 2;
-    const y = -h / 2;
-    s.moveTo(x + r, y);
-    s.lineTo(x + w - r, y);
-    s.quadraticCurveTo(x + w, y, x + w, y + r);
-    s.lineTo(x + w, y + h - r);
-    s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    s.lineTo(x + r, y + h);
-    s.quadraticCurveTo(x, y + h, x, y + h - r);
-    s.lineTo(x, y + r);
-    s.quadraticCurveTo(x, y, x + r, y);
-    return s;
-}
-
 export function circleHole(x: number, y: number, r: number) {
     const p = new THREE.Path();
     p.absarc(x, y, r, 0, Math.PI * 2, true);
-    return p;
-}
-
-/** 장공(슬롯) 구멍 */
-export function slotHole(cx: number, cy: number, len: number, r: number) {
-    const p = new THREE.Path();
-    p.absarc(cx + len / 2, cy, r, -Math.PI / 2, Math.PI / 2, true);
-    p.absarc(cx - len / 2, cy, r, Math.PI / 2, (Math.PI * 3) / 2, true);
     return p;
 }
 

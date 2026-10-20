@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { Suspense, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import {
@@ -10,9 +10,8 @@ import {
     createGyroidMesh,
     extrudeCentered,
     involuteGearShape,
-    roundedRectShape,
-    slotHole,
 } from './hero-geometry';
+import { MOTOR_AXIS, MOTOR_GROUPS, MOTOR_SIZE } from './hero-motor-parts';
 
 /**
  * 홈 히어로 업로드 영역 배경 — 실사급 3D 출력물 4종 순환.
@@ -26,7 +25,7 @@ import {
 const VARIANT_MS = 7600;
 const FADE_MS = 700;
 
-type Id = 'gears' | 'glass' | 'bracket' | 'gyroid';
+type Id = 'gears' | 'glass' | 'motor' | 'gyroid';
 
 /** 3D 모델 대신 배경을 투명 처리한 실사 사진으로 보여 주는 변형 */
 const PHOTO_VARIANTS: Partial<Record<Id, { src: string; alt: string }>> = {
@@ -36,7 +35,7 @@ const PHOTO_VARIANTS: Partial<Record<Id, { src: string; alt: string }>> = {
 const VARIANTS: { id: Id; label: string }[] = [
     { id: 'gears', label: '정밀 기어 · FDM PLA·PETG' },
     { id: 'glass', label: '매듭 조형 · 투명 레진' },
-    { id: 'bracket', label: '보강 브라켓 · FDM PETG' },
+    { id: 'motor', label: '모터 분해·조립 · FDM PLA·PETG' },
     { id: 'gyroid', label: '자이로이드 격자 · SLA 레진' },
 ];
 
@@ -235,63 +234,6 @@ function GearPair({ opacityRef }: ModelProps) {
     );
 }
 
-function Bracket({ opacityRef }: ModelProps) {
-    const { baseGeo, wallGeo, gussetGeo, boltHeadGeo, boltGeo, washerGeo, mats } = useMemo(() => {
-        // 바닥판 (XZ 평면, 두께 Y) — 볼트 구멍 2개
-        const base = roundedRectShape(1.9, 1.05, 0.14);
-        base.holes.push(circleHole(-0.62, -0.12, 0.085), circleHole(0.62, -0.12, 0.085));
-        const baseGeo = extrudeCentered(base, 0.16);
-        baseGeo.rotateX(-Math.PI / 2);
-        baseGeo.translate(0, 0, 0.1);
-
-        // 세움판 (XY 평면, 두께 Z) — 장공 + 구멍
-        const wall = roundedRectShape(1.9, 1.25, 0.14);
-        wall.holes.push(slotHole(0, 0.18, 0.62, 0.085), circleHole(-0.62, -0.18, 0.07), circleHole(0.62, -0.18, 0.07));
-        const wallGeo = extrudeCentered(wall, 0.16);
-        wallGeo.translate(0, 0.62 - 0.08, -0.37);
-
-        // 보강 리브 (삼각형, YZ 평면 → X 두께)
-        const g = new THREE.Shape();
-        g.moveTo(0, 0);
-        g.lineTo(0.62, 0);
-        g.lineTo(0, 0.78);
-        g.closePath();
-        const gussetGeo = extrudeCentered(g, 0.11, 0.015);
-        gussetGeo.rotateY(-Math.PI / 2);
-        gussetGeo.translate(0, 0.08, -0.29);
-
-        const boltHeadGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.09, 6);
-        const washerGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.025, 32);
-        const boltGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.32, 20);
-
-        const mats = {
-            petg: fdmMaterial('#d6dbe2', { roughness: 0.34, clearcoat: 0.35, axis: 'y' }),
-            steel: steelMaterial(),
-        };
-        return { baseGeo, wallGeo, gussetGeo, boltHeadGeo, boltGeo, washerGeo, mats };
-    }, []);
-
-    useMaterialFade(useMemo(() => Object.values(mats), [mats]), opacityRef);
-
-    return (
-        <Showcase scale={1.05} y={-0.25}>
-            <group rotation={[0.22, -0.6, 0]}>
-                <mesh geometry={baseGeo} material={mats.petg} castShadow receiveShadow />
-                <mesh geometry={wallGeo} material={mats.petg} castShadow receiveShadow />
-                <mesh geometry={gussetGeo} material={mats.petg} castShadow position={[-0.55, 0, 0]} />
-                <mesh geometry={gussetGeo} material={mats.petg} castShadow position={[0.62, 0, 0]} />
-                {[-0.62, 0.62].map((x) => (
-                    <group key={x} position={[x, 0.08, 0.22]}>
-                        <mesh geometry={washerGeo} material={mats.steel} position={[0, 0.095, 0]} castShadow />
-                        <mesh geometry={boltHeadGeo} material={mats.steel} position={[0, 0.15, 0]} castShadow />
-                        <mesh geometry={boltGeo} material={mats.steel} position={[0, -0.05, 0]} />
-                    </group>
-                ))}
-            </group>
-        </Showcase>
-    );
-}
-
 /** 자이로이드는 생성에 약 0.1~0.2초가 걸려 순환할 때마다 만들면 화면이 끊긴다 → 한 번 만들어 재사용 */
 const gyroidCache = new Map<number, { mesh: THREE.Mesh; mat: THREE.MeshPhysicalMaterial }>();
 
@@ -336,8 +278,6 @@ function CyclingModel({ id, ...props }: ModelProps & { id: Id }) {
     switch (id) {
         case 'gears':
             return <GearPair {...props} />;
-        case 'bracket':
-            return <Bracket {...props} />;
         case 'gyroid':
             return <GyroidSphere {...props} />;
         default:
@@ -454,53 +394,36 @@ function SceneContent({
     );
 }
 
-/* ─────────────────────────── 실사 사진 변형 ─────────────────────────── */
+/* ─────────────────────────── 실사 이미지 변형 (사진·모터 분해도) ─────────────────────────── */
 
-/**
- * 배경을 투명 처리한 실사 사진 — 3D 대신 CSS로 역동적으로 움직인다.
- * 레이어마다 애니메이션 하나씩: 등장(튀어나오며 줌인) · 줌인/줌아웃 · 원근 기울기 · 천천히 회전.
- */
-function PhotoShowcase({
-    id,
+type AnimFn = (name: string, ms: number, extra?: string) => string | undefined;
+
+function makeAnim(reducedMotion: boolean): AnimFn {
+    return (name, ms, extra = '') => (reducedMotion ? undefined : `${name} ${ms}ms ${extra}`);
+}
+
+/** 공용 래퍼: 등장(튀어나오며 줌인) · 줌인/줌아웃 · 원근 기울기 — 레이어마다 애니메이션 하나씩 */
+function FlatShowcase({
     fading,
-    reducedMotion,
+    anim,
+    tilt = 'hero-photo-tilt',
+    children,
 }: {
-    id: Id;
     fading: boolean;
-    reducedMotion: boolean;
+    anim: AnimFn;
+    tilt?: string;
+    children: ReactNode;
 }) {
-    const photo = PHOTO_VARIANTS[id];
-    if (!photo) return null;
-    const anim = (name: string, ms: number, extra = '') =>
-        reducedMotion ? undefined : `${name} ${ms}ms ${extra}`;
-
     return (
         <div
-            key={id}
             className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity ease-out"
             style={{ opacity: fading ? 0 : 1, transitionDuration: `${FADE_MS}ms`, perspective: '900px' }}
             aria-hidden
         >
             <div style={{ animation: anim('hero-photo-in', 1300, 'cubic-bezier(0.34, 1.56, 0.64, 1) both') }}>
                 <div style={{ animation: anim('hero-photo-zoom', 5200, 'ease-in-out 1300ms infinite alternate both') }}>
-                    <div
-                        style={{
-                            animation: anim('hero-photo-tilt', 4300, 'ease-in-out infinite alternate'),
-                            transformStyle: 'preserve-3d',
-                        }}
-                    >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- 투명 WebP를 CSS 변형으로 직접 움직임 */}
-                        <img
-                            src={photo.src}
-                            alt={photo.alt}
-                            draggable={false}
-                            className="w-auto select-none"
-                            style={{
-                                height: 'clamp(220px, 46vw, 430px)',
-                                animation: anim('hero-photo-spin', 32000, 'linear infinite'),
-                                filter: 'drop-shadow(0 26px 28px rgba(2, 6, 23, 0.6)) drop-shadow(0 0 22px rgba(45, 212, 191, 0.18))',
-                            }}
-                        />
+                    <div style={{ animation: anim(tilt, 4300, 'ease-in-out infinite alternate'), transformStyle: 'preserve-3d' }}>
+                        {children}
                     </div>
                 </div>
             </div>
@@ -508,11 +431,93 @@ function PhotoShowcase({
     );
 }
 
+/** 배경을 투명 처리한 실사 사진 — 천천히 회전 */
+function PhotoShowcase({ id, fading, reducedMotion }: { id: Id; fading: boolean; reducedMotion: boolean }) {
+    const photo = PHOTO_VARIANTS[id];
+    if (!photo) return null;
+    const anim = makeAnim(reducedMotion);
+    return (
+        <FlatShowcase key={id} fading={fading} anim={anim}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- 투명 WebP를 CSS 변형으로 직접 움직임 */}
+            <img
+                src={photo.src}
+                alt={photo.alt}
+                draggable={false}
+                className="w-auto select-none"
+                style={{
+                    height: 'clamp(220px, 46vw, 430px)',
+                    animation: anim('hero-photo-spin', 32000, 'linear infinite'),
+                    filter: 'drop-shadow(0 26px 28px rgba(2, 6, 23, 0.6)) drop-shadow(0 0 22px rgba(45, 212, 191, 0.18))',
+                }}
+            />
+        </FlatShowcase>
+    );
+}
+
+/** 조립 시 축 방향으로 모이는 비율 · 볼트가 자기 부품 중심으로 더 다가가는 비율 · 분해→조립→분해 한 주기 */
+const MOTOR_GATHER = 0.55;
+const MOTOR_BOLT_GATHER = 0.85;
+const MOTOR_CYCLE_MS = 6400;
+
+/**
+ * 3D프린팅 질감으로 바꾼 모터 분해도 — 부품 5개(+볼트)가 축을 따라 모였다(조립) 벌어진다(분해).
+ * 각 레이어의 조립 위치는 자기 크기 대비 %로 계산해 CSS 변수(--tx, --ty)로 넘긴다.
+ */
+function MotorShowcase({ fading, reducedMotion }: { fading: boolean; reducedMotion: boolean }) {
+    const anim = makeAnim(reducedMotion);
+    const [ax, ay] = MOTOR_AXIS;
+    return (
+        <FlatShowcase fading={fading} anim={anim} tilt="hero-motor-tilt">
+            <div
+                className="relative select-none"
+                style={{
+                    width: 'clamp(300px, 56vw, 580px)',
+                    aspectRatio: `${MOTOR_SIZE.width} / ${MOTOR_SIZE.height}`,
+                    filter: 'drop-shadow(0 24px 26px rgba(2, 6, 23, 0.55))',
+                }}
+            >
+                {MOTOR_GROUPS.flatMap((g, gi) =>
+                    g.layers.map((L) => {
+                        let dx = -g.s * MOTOR_GATHER * ax;
+                        let dy = -g.s * MOTOR_GATHER * ay;
+                        if (L.kind === 'bolts') {
+                            dx += (g.center[0] - (L.x + L.w / 2)) * MOTOR_BOLT_GATHER;
+                            dy += (g.center[1] - (L.y + L.h / 2)) * MOTOR_BOLT_GATHER;
+                        }
+                        const style = {
+                            position: 'absolute',
+                            left: `${(L.x / MOTOR_SIZE.width) * 100}%`,
+                            top: `${(L.y / MOTOR_SIZE.height) * 100}%`,
+                            width: `${(L.w / MOTOR_SIZE.width) * 100}%`,
+                            height: `${(L.h / MOTOR_SIZE.height) * 100}%`,
+                            // 왼쪽(앞) 부품이 위로 겹치도록
+                            zIndex: (MOTOR_GROUPS.length - gi) * 2 + (L.kind === 'bolts' ? 1 : 0),
+                            '--tx': `${(dx / L.w) * 100}%`,
+                            '--ty': `${(dy / L.h) * 100}%`,
+                            animation: anim(
+                                'hero-motor-assemble',
+                                MOTOR_CYCLE_MS,
+                                `ease-in-out ${L.kind === 'bolts' ? 1100 : 900}ms infinite both`
+                            ),
+                        } as CSSProperties;
+                        return (
+                            // eslint-disable-next-line @next/next/no-img-element -- 분해도 레이어를 CSS 변형으로 직접 이동
+                            <img key={L.src} src={L.src} alt="" draggable={false} style={style} />
+                        );
+                    })
+                )}
+            </div>
+        </FlatShowcase>
+    );
+}
+
 const PHOTO_KEYFRAMES = `
 @keyframes hero-photo-in { from { opacity: 0; transform: scale(0.5) rotate(-28deg) translateY(30px) } to { opacity: 1; transform: none } }
 @keyframes hero-photo-zoom { from { transform: scale(0.9) } to { transform: scale(1.1) } }
 @keyframes hero-photo-tilt { from { transform: rotateY(-16deg) rotateX(7deg) } to { transform: rotateY(16deg) rotateX(-5deg) } }
-@keyframes hero-photo-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`;
+@keyframes hero-photo-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+@keyframes hero-motor-tilt { from { transform: rotateY(-9deg) rotateX(5deg) rotate(-2deg) } to { transform: rotateY(9deg) rotateX(-3deg) rotate(2deg) } }
+@keyframes hero-motor-assemble { 0%, 12% { transform: translate(0, 0) } 42%, 62% { transform: translate(var(--tx), var(--ty)) } 90%, 100% { transform: translate(0, 0) } }`;
 
 export default function LandingHeroScene() {
     const [mounted, setMounted] = useState(false);
@@ -525,6 +530,7 @@ export default function LandingHeroScene() {
         for (const v of Object.values(PHOTO_VARIANTS)) {
             if (v) new window.Image().src = v.src;
         }
+        for (const g of MOTOR_GROUPS) for (const L of g.layers) new window.Image().src = L.src;
     }, [mounted]);
 
     useEffect(() => {
@@ -570,6 +576,7 @@ export default function LandingHeroScene() {
             </Canvas>
 
             <PhotoShowcase id={id} fading={fading} reducedMotion={env.reducedMotion} />
+            {id === 'motor' ? <MotorShowcase fading={fading} reducedMotion={env.reducedMotion} /> : null}
 
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none z-[1]">
                 <span
