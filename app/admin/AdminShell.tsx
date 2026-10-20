@@ -98,8 +98,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <div className="min-h-screen max-w-[100vw] overflow-x-clip bg-[#0a0a0a] text-white">
             <AdminHeader />
             <div className="flex min-w-0">
-                <aside className="w-64 shrink-0 hidden lg:flex flex-col border-r border-white/5 bg-[#0c0c0c] min-h-[calc(100vh-3.5rem)]">
-                    <div className="p-5 border-b border-white/5">
+                <aside className="w-64 shrink-0 hidden lg:flex flex-col border-r border-white/5 bg-[#0c0c0c] sticky top-14 h-[calc(100vh-3.5rem)] self-start">
+                    <div className="p-5 border-b border-white/5 shrink-0">
                         <div className="flex items-center gap-2.5 min-w-0">
                             <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center">
                                 <Boxes className="w-5 h-5 text-white" />
@@ -114,7 +114,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                             </div>
                         </div>
                     </div>
-                    <div className="px-3 py-4 space-y-6 overflow-y-auto">
+                    <div className="px-3 py-4 space-y-6 overflow-y-auto overscroll-contain flex-1 min-h-0">
                         {ADMIN_NAV_GROUPS.map((group, gIdx) => (
                             <div key={gIdx}>
                                 <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 px-3">

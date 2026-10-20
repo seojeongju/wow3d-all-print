@@ -677,15 +677,16 @@ function OrderListInner() {
                 <p className="text-white/70 text-sm mt-1">접수된 주문을 확인하고 상태를 변경할 수 있습니다.</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.06] border border-white/10">
+            <div className="flex flex-col gap-3 sm:gap-4 min-w-0">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-wrap min-w-0">
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.06] border border-white/10 shrink-0 w-fit">
                     <button
                         type="button"
                         onClick={() => {
                             setPage(1);
                             setScopeFilter('all');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                        className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[40px] sm:min-h-0 touch-manipulation ${scopeFilter === 'all' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         전체
                     </button>
@@ -695,23 +696,23 @@ function OrderListInner() {
                             setPage(1);
                             setScopeFilter('mine');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                        className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[40px] sm:min-h-0 touch-manipulation ${scopeFilter === 'mine' ? 'bg-primary/30 text-zinc-100 border border-primary/20' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                     >
                         내 주문
                     </button>
                 </div>
-                <div className="relative flex-1 max-w-sm">
+                <div className="relative flex-1 min-w-0 sm:max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
                     <Input
                         type="search"
                         placeholder="주문번호, 고객명, 이메일, 파일명 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45"
+                        className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/45 h-11 sm:h-10"
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={(v) => { setPage(1); setStatusFilter(v); }}>
-                    <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="w-full sm:w-[180px] bg-white/5 border-white/10 text-white h-11 sm:h-10">
                         <SelectValue placeholder="상태 필터" />
                     </SelectTrigger>
                     <SelectContent>
@@ -723,29 +724,32 @@ function OrderListInner() {
                         ))}
                     </SelectContent>
                 </Select>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="border-white/20 text-white/90 hover:bg-white/10"
+                        className="border-white/20 text-white/90 hover:bg-white/10 shrink-0 h-10"
                         onClick={() => fetchOrders()}
                         disabled={loading}
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                         <span className="ml-1.5 hidden sm:inline">새로고침</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="border-white/20 text-white/90 hover:bg-white/10" onClick={handleCsvDownload}>
-                        <Download className="w-4 h-4 mr-2" /> CSV 다운로드
+                    <Button variant="outline" size="sm" className="border-white/20 text-white/90 hover:bg-white/10 shrink-0 h-10" onClick={handleCsvDownload}>
+                        <Download className="w-4 h-4 mr-2" /> <span className="hidden min-[400px]:inline">CSV 다운로드</span><span className="min-[400px]:hidden">CSV</span>
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10"
+                        className="border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/10 shrink-0 h-10"
                         onClick={() => setBambuHelpOpen(true)}
                     >
-                        <Printer className="w-4 h-4 mr-2" /> Bambu 실행기 설치
+                        <Printer className="w-4 h-4 mr-2" />
+                        <span className="hidden sm:inline">Bambu 실행기 설치</span>
+                        <span className="sm:hidden">Bambu</span>
                     </Button>
+                </div>
                 </div>
             </div>
 

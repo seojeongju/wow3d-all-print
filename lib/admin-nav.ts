@@ -187,3 +187,61 @@ export const ADMIN_HOME_NAV_ITEM: AdminNavItem = {
     icon: Home,
     match: (p) => p === '/',
 }
+
+/** 모바일 메뉴 상단 빠른 이동 (업무 빈도 순) */
+export const ADMIN_MOBILE_QUICK_LINKS: AdminNavItem[] = [
+    { title: '대시보드', href: '/admin', icon: LayoutDashboard, match: (p) => p === '/admin' },
+    {
+        title: '주문',
+        href: '/admin/orders',
+        icon: ShoppingCart,
+        match: (p) => p.startsWith('/admin/orders'),
+    },
+    {
+        title: '견적',
+        href: '/admin/quotes',
+        icon: ClipboardPen,
+        match: (p) =>
+            p === '/admin/quotes' ||
+            (p.startsWith('/admin/quotes/') && !p.startsWith('/admin/quotes/analytics')),
+    },
+    {
+        title: '문의',
+        href: '/admin/inquiries',
+        icon: MessageSquare,
+        match: (p) =>
+            p.startsWith('/admin/inquiries') && !p.startsWith('/admin/inquiries/faq-draft'),
+    },
+    {
+        title: '전환분석',
+        href: '/admin/quotes/analytics',
+        icon: BarChart3,
+        match: (p) => p.startsWith('/admin/quotes/analytics'),
+    },
+]
+
+/** 현재 경로에 맞는 관리자 메뉴 제목 (헤더·브레드크럼용) */
+export function getAdminPageTitle(pathname: string): string {
+    for (const group of ADMIN_NAV_GROUPS) {
+        for (const item of group.items) {
+            if (item.match(pathname)) return item.title
+        }
+    }
+    for (const item of ADMIN_PLATFORM_NAV_ITEMS) {
+        if (item.match(pathname)) return item.title
+    }
+    if (pathname.startsWith('/admin')) return '관리자'
+    return '메뉴'
+}
+
+/** 활성 항목이 속한 그룹명 목록 */
+export function getActiveAdminNavGroupNames(pathname: string, isSuperAdmin: boolean): string[] {
+    const names: string[] = []
+    for (const group of ADMIN_NAV_GROUPS) {
+        if (group.items.some((item) => item.match(pathname))) names.push(group.groupName)
+    }
+    if (isSuperAdmin && ADMIN_PLATFORM_NAV_ITEMS.some((item) => item.match(pathname))) {
+        names.push('플랫폼 관리 (Super)')
+    }
+    return names
+}

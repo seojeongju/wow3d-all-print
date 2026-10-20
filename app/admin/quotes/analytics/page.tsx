@@ -487,22 +487,27 @@ export default function QuoteAnalyticsPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                        <BarChart3 className="w-8 h-8 text-primary" /> 견적 전환 유입 분석
+        <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto pb-12 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2 sm:gap-3">
+                        <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-primary shrink-0" />
+                        <span className="break-keep">견적 전환 유입 분석</span>
                     </h1>
-                    <p className="text-white/50 text-sm mt-2 font-medium">
+                    <p className="text-white/50 text-sm mt-2 font-medium break-keep">
                         견적 산출·전환 흐름과 견적 세션의 유입 채널을 모니터링합니다.
                     </p>
                 </div>
-                <Button onClick={() => fetchData()} variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10">
+                <Button
+                    onClick={() => fetchData()}
+                    variant="outline"
+                    className="bg-white/5 border-white/10 hover:bg-white/10 w-full sm:w-auto shrink-0"
+                >
                     <Clock className="w-4 h-4 mr-2" /> 새로고침
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 {[
                     { label: '전체 유입', value: stats.total, color: 'text-white', bg: 'bg-white/5' },
                     { label: '주문 전환', value: stats.ordered, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
@@ -510,10 +515,10 @@ export default function QuoteAnalyticsPage() {
                     { label: '견적 이탈', value: stats.abandoned, color: 'text-amber-400', bg: 'bg-amber-500/10' },
                     { label: '단순 업로드', value: stats.draft, color: 'text-slate-400', bg: 'bg-slate-500/10' },
                 ].map((s, i) => (
-                    <Card key={i} className={`${s.bg} border-white/10`}>
-                        <CardContent className="p-6">
+                    <Card key={i} className={`${s.bg} border-white/10 ${i === 4 ? 'col-span-2 lg:col-span-1' : ''}`}>
+                        <CardContent className="p-4 sm:p-6">
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{s.label}</p>
-                            <p className={`text-3xl font-black ${s.color}`}>{s.value.toLocaleString()}</p>
+                            <p className={`text-2xl sm:text-3xl font-black tabular-nums ${s.color}`}>{s.value.toLocaleString()}</p>
                         </CardContent>
                     </Card>
                 ))}
@@ -522,55 +527,55 @@ export default function QuoteAnalyticsPage() {
             <QuoteEstimateLogsPanel />
 
             <Card className="bg-white/[0.03] border-white/10">
-                <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4 mb-5">
-                        <div>
+                <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start justify-between gap-4 mb-4 sm:mb-5">
+                        <div className="min-w-0">
                             <p className="text-[10px] font-black uppercase tracking-widest text-teal-300/80 mb-1">Guide Attribution</p>
-                            <h2 className="text-xl font-black text-white">가이드 유입 상위 주제</h2>
-                            <p className="text-sm text-white/45 mt-1">어떤 가이드가 실제 견적과 주문으로 이어지는지 빠르게 확인합니다.</p>
+                            <h2 className="text-lg sm:text-xl font-black text-white break-keep">가이드 유입 상위 주제</h2>
+                            <p className="text-sm text-white/45 mt-1 break-keep">어떤 가이드가 실제 견적과 주문으로 이어지는지 빠르게 확인합니다.</p>
                         </div>
                     </div>
 
                     {stats.guideSources.length > 0 ? (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4">
                             {stats.guideSources.map((guide, index) => (
-                                <div key={`${guide.guideSource}-${index}`} className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                                <div key={`${guide.guideSource}-${index}`} className="rounded-2xl border border-white/10 bg-white/[0.02] p-3.5 sm:p-4 min-w-0">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
-                                            <div className="flex items-center gap-2 mb-2">
+                                            <div className="flex flex-wrap items-center gap-2 mb-2">
                                                 <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-teal-400/15 px-2 text-[10px] font-black text-teal-300">
                                                     #{index + 1}
                                                 </span>
-                                                <Badge className="bg-white/5 text-white/60 border-white/10 text-[10px]">
+                                                <Badge className="bg-white/5 text-white/60 border-white/10 text-[10px] max-w-full truncate">
                                                     {guide.guideSource}
                                                 </Badge>
                                             </div>
-                                            <p className="font-bold text-white break-keep">{guide.guideTopic}</p>
+                                            <p className="font-bold text-white break-keep text-sm sm:text-base">{guide.guideTopic}</p>
                                         </div>
                                         <div className="text-right shrink-0">
-                                            <p className="text-2xl font-black text-teal-300">{guide.quoteCount}</p>
+                                            <p className="text-xl sm:text-2xl font-black text-teal-300 tabular-nums">{guide.quoteCount}</p>
                                             <p className="text-[10px] text-white/35 uppercase tracking-widest">quotes</p>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-4 gap-2 mt-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
                                         {[
                                             { label: '주문', value: guide.orderedCount, color: 'text-emerald-400' },
                                             { label: '장바구니', value: guide.incartCount, color: 'text-blue-400' },
                                             { label: '견적이탈', value: guide.abandonedCount, color: 'text-amber-400' },
                                             { label: '업로드이탈', value: guide.draftCount, color: 'text-slate-400' },
                                         ].map((item) => (
-                                            <div key={item.label} className="rounded-xl border border-white/8 bg-black/20 px-3 py-2">
-                                                <p className="text-[10px] text-white/35 mb-1">{item.label}</p>
-                                                <p className={`font-black ${item.color}`}>{item.value}</p>
+                                            <div key={item.label} className="rounded-xl border border-white/8 bg-black/20 px-3 py-2.5 min-w-0">
+                                                <p className="text-[10px] text-white/45 mb-1 truncate">{item.label}</p>
+                                                <p className={`font-black text-lg tabular-nums ${item.color}`}>{item.value}</p>
                                             </div>
                                         ))}
                                     </div>
 
                                     <div className="mt-4">
-                                        <div className="flex items-center justify-between text-[11px] mb-1.5">
-                                            <span className="text-white/45">주문 전환율</span>
-                                            <span className="font-black text-white">{(guide.orderRate * 100).toFixed(1)}%</span>
+                                        <div className="flex items-center justify-between text-[11px] mb-1.5 gap-2">
+                                            <span className="text-white/45 shrink-0">주문 전환율</span>
+                                            <span className="font-black text-white tabular-nums">{(guide.orderRate * 100).toFixed(1)}%</span>
                                         </div>
                                         <div className="h-2 rounded-full bg-white/8 overflow-hidden">
                                             <div
@@ -583,7 +588,7 @@ export default function QuoteAnalyticsPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center text-white/35">
+                        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 sm:p-8 text-center text-white/35 break-keep">
                             아직 저장된 가이드 유입 데이터가 없습니다.
                         </div>
                     )}
