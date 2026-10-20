@@ -578,7 +578,7 @@ export default function Hero() {
 
                             {/* 3D 배경 — 보이되 텍스트와 충돌하지 않게 */}
                             <div className="pointer-events-none absolute inset-0" aria-hidden>
-                                <div className="absolute inset-0 opacity-55 sm:opacity-60">
+                                <div className="absolute inset-0 opacity-80 sm:opacity-85">
                                     <DeferredHeroScene />
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-b from-[#0b1220]/30 via-transparent to-[#0b1220]/55" />
