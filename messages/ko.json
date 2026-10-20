@@ -755,10 +755,13 @@
     "colorBlack": "블랙",
     "colorClear": "투명",
     "colorOther": "기타색상 문의",
+    "colorOtherSelect": "기타(색상선택)",
     "colorOtherPlaceholder": "원하는 색상을 적어 주세요 (예: 빨강, 팬톤 186C)",
     "colorOtherNotice": "기타 색상은 재고·제작 가능 여부 확인 후 금액·일정이 달라질 수 있으며, 담당자가 확인 후 안내드립니다.",
+    "colorOtherSelectNotice": "기타 색상은 재고 확인 후 금액·일정이 달라질 수 있으며, 담당자가 확인 후 확정해 드립니다.",
     "colorOtherRequiredTitle": "원하는 색상을 입력해 주세요",
     "colorOtherRequired": "기타색상 문의를 선택하셨습니다. 색상 입력란에 원하는 색상을 적어 주세요.",
+    "colorOtherSelectRequired": "기타(색상선택)을 선택하셨습니다. 색상 입력란에 원하는 색상을 적어 주세요.",
     "infillLabel": "인필(채움) 밀도 (Infill)",
     "infillHint": "인필이 높을수록 재료 사용량·출력 시간·견적이 증가합니다. 프리셋으로 빠르게 고르거나 슬라이더로 세밀 조정하세요.",
     "infillPresets": {

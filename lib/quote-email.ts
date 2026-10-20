@@ -160,12 +160,14 @@ const SENDER_INFO = {
 const TALKTALK_URL = 'https://talk.naver.com/ct/wowi7tu';
 
 function quoteMaterialLabel(q: QuoteEmailRow, locale: 'ko' | 'en'): string {
-    const color = formatPrintColor(q.print_color, q.print_color_note, locale);
     if (q.print_method === 'fdm') {
         const name = q.fdm_material_name || q.fdm_material || '-';
+        const color = formatPrintColor(q.print_color, q.print_color_note, locale, name);
         return [name, color, q.fdm_infill ? `${q.fdm_infill}%` : ''].filter(Boolean).join(' · ');
     }
-    return [q.resin_type_name || q.resin_type || '-', color].filter(Boolean).join(' · ');
+    const resin = q.resin_type_name || q.resin_type || '-';
+    const color = formatPrintColor(q.print_color, q.print_color_note, locale, resin);
+    return [resin, color].filter(Boolean).join(' · ');
 }
 
 function formatSize(q: QuoteEmailRow): string {

@@ -49,6 +49,7 @@ import {
     coercePrintColorForMaterial,
     formatPrintColor,
     getAllowedPrintColors,
+    isPlaMaterial,
     normalizePrintColor,
     PRINT_COLOR_DEFAULT,
     PRINT_COLOR_NOTE_MAX,
@@ -316,6 +317,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     }, [resinMaterials, resinType, printMethod])
 
     const activeMaterialName = printMethod === 'fdm' ? fdmMaterial : resinType
+    const isPlaColorUi = printMethod === 'fdm' && isPlaMaterial(fdmMaterial)
     const allowedPrintColors = useMemo(
         () => getAllowedPrintColors(printMethod, activeMaterialName),
         [printMethod, activeMaterialName]
@@ -694,7 +696,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const handleSaveQuote = async (opts?: { silent?: boolean }) => {
         if (!analysis || !file) return
         if (printColorNoteMissing) {
-            showErrorFeedback(t('colorOtherRequiredTitle'), t('colorOtherRequired'))
+            showErrorFeedback(
+                t('colorOtherRequiredTitle'),
+                isPlaColorUi ? t('colorOtherSelectRequired') : t('colorOtherRequired')
+            )
             printColorNoteRef.current?.focus()
             return null
         }
@@ -1232,7 +1237,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 { id: 'white' as const, label: t('colorWhite'), swatch: 'bg-white border-white/60', style: undefined as CSSProperties | undefined },
                                 { id: 'black' as const, label: t('colorBlack'), swatch: 'bg-black border-white/40', style: undefined },
                                 { id: 'clear' as const, label: t('colorClear'), swatch: 'border-cyan-300/50', style: { background: 'linear-gradient(135deg, rgba(165,243,252,0.55) 0%, rgba(255,255,255,0.15) 45%, rgba(34,211,238,0.35) 100%)' } },
-                                { id: 'other' as const, label: t('colorOther'), swatch: 'border-white/30', style: { background: 'conic-gradient(#f43f5e, #f59e0b, #22c55e, #3b82f6, #a855f7, #f43f5e)' } },
+                                { id: 'other' as const, label: isPlaColorUi ? t('colorOtherSelect') : t('colorOther'), swatch: 'border-white/30', style: { background: 'conic-gradient(#f43f5e, #f59e0b, #22c55e, #3b82f6, #a855f7, #f43f5e)' } },
                             ]).filter((c) => allowedPrintColors.includes(c.id)).map((c) => {
                                 const selected = printColor === c.id
                                 return (
@@ -1271,7 +1276,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                     className={`w-full h-10 px-3 rounded-xl bg-white/5 border text-sm text-white placeholder:text-white/30 outline-none transition-colors focus:border-teal-400/60 ${printColorNoteMissing ? 'border-amber-400/50' : 'border-white/10'}`}
                                 />
                                 <p className="px-1 text-[10px] text-amber-200/80 font-medium leading-snug break-keep">
-                                    {t('colorOtherNotice')}
+                                    {isPlaColorUi ? t('colorOtherSelectNotice') : t('colorOtherNotice')}
                                 </p>
                             </div>
                         )}
@@ -1383,7 +1388,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 <div className="text-slate-400">{t('material')}</div>
                                 <div className="font-medium text-slate-100">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
                                 <div className="text-slate-400">{t('colorLabel')}</div>
-                                <div className="font-medium text-slate-100 break-keep">{formatPrintColor(printColor, printColorNote, locale)}</div>
+                                <div className="font-medium text-slate-100 break-keep">{formatPrintColor(printColor, printColorNote, locale, activeMaterialName)}</div>
                                 <div className="text-slate-400">{t('layerThickness')}</div>
                                 <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
                                 {printMethod === 'fdm' && (

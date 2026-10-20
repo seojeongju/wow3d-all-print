@@ -1,7 +1,8 @@
 /**
  * 견적 출력 색상 옵션
- * - 소재별 기본 색상 + 모든 소재에 투명·기타색상 문의 공통 제공 (getAllowedPrintColors).
- * - 기타색상 문의는 고객이 원하는 색상을 직접 적고, 담당자가 재고 확인 후 금액·일정을 확정한다.
+ * - 소재별 기본 색상 + 투명·기타 옵션 (getAllowedPrintColors).
+ * - PLA: 화이트·블랙·투명·기타(색상선택) — 희망 색상 직접 입력
+ * - 그 외: 기본색 + 투명·기타색상 문의
  * - 색상은 자동 견적 금액에 영향을 주지 않는다.
  */
 
@@ -21,6 +22,11 @@ export function normalizePrintColor(value: unknown): PrintColor | null {
     return (PRINT_COLORS as readonly string[]).includes(v) ? (v as PrintColor) : null
 }
 
+/** FDM PLA 여부 (표시 라벨: 기타(색상선택)) */
+export function isPlaMaterial(materialName: unknown): boolean {
+    return String(materialName ?? '').trim().toUpperCase() === 'PLA'
+}
+
 /** 기타 색상 메모 정리 — 제어문자 제거·공백 정리·길이 제한, 비면 null */
 export function normalizePrintColorNote(value: unknown): string | null {
     if (value == null) return null
@@ -37,15 +43,32 @@ const LABELS: Record<'ko' | 'en', Record<PrintColor, string>> = {
     en: { white: 'White', black: 'Black', clear: 'Clear', other: 'Other color inquiry' },
 }
 
-/** 표시용 색상 라벨 (예: "블랙", "기타색상 문의(빨강)", "투명"). 저장값이 없으면 빈 문자열 */
+const OTHER_LABEL_PLA: Record<'ko' | 'en', string> = {
+    ko: '기타(색상선택)',
+    en: 'Other (color pick)',
+}
+
+/** 색상 옵션·요약용 라벨 (PLA의 other는 기타(색상선택)) */
+export function printColorOptionLabel(
+    color: PrintColor,
+    locale: string = 'ko',
+    materialName?: unknown
+): string {
+    const loc = locale === 'en' ? 'en' : 'ko'
+    if (color === 'other' && isPlaMaterial(materialName)) return OTHER_LABEL_PLA[loc]
+    return LABELS[loc][color]
+}
+
+/** 표시용 색상 라벨 (예: "블랙", "기타(색상선택)(빨강)", "투명"). 저장값이 없으면 빈 문자열 */
 export function formatPrintColor(
     color: unknown,
     note?: unknown,
-    locale: string = 'ko'
+    locale: string = 'ko',
+    materialName?: unknown
 ): string {
     const c = normalizePrintColor(color)
     if (!c) return ''
-    const label = LABELS[locale === 'en' ? 'en' : 'ko'][c]
+    const label = printColorOptionLabel(c, locale, materialName)
     if (c !== 'other') return label
     const n = normalizePrintColorNote(note)
     return n ? `${label}(${n})` : label
@@ -70,10 +93,11 @@ function withCommonColorExtras(base: readonly PrintColor[]): readonly PrintColor
 
 /**
  * 출력 방식·소재별 선택 가능한 색상
- * - FDM: 화이트·블랙 (+ 투명·기타색상 문의)
- * - DLP/SLA Standard·Tough: 화이트·블랙 (+ 투명·기타색상 문의)
- * - DLP/SLA Clear: 투명 (+ 기타색상 문의)
- * - DLP/SLA Flexible: 화이트 (+ 투명·기타색상 문의)
+ * - FDM PLA: 화이트·블랙·투명·기타(색상선택)
+ * - FDM 그 외: 화이트·블랙·투명·기타색상 문의
+ * - DLP/SLA Standard·Tough: 화이트·블랙·투명·기타색상 문의
+ * - DLP/SLA Clear: 투명·기타색상 문의
+ * - DLP/SLA Flexible: 화이트·투명·기타색상 문의
  */
 export function getAllowedPrintColors(
     printMethod: string,
@@ -83,6 +107,7 @@ export function getAllowedPrintColors(
     const mat = String(materialName ?? '').trim()
 
     if (method === 'fdm') {
+        // PLA·ABS·PETG 등 동일 옵션 집합 (other 라벨만 PLA는 기타(색상선택))
         return withCommonColorExtras(['white', 'black'])
     }
 

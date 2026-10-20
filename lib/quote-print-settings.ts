@@ -29,11 +29,10 @@ function asBool(v: unknown): boolean {
 export function formatQuotePrintSettings(q: QuotePrintSettings | null | undefined): string {
     if (!q) return ''
     const method = String(q.print_method || '').toLowerCase()
-    const color = formatPrintColor(q.print_color, q.print_color_note)
-
     if (method === 'fdm') {
         const parts: string[] = []
         const mat = q.fdm_material_name || q.fdm_material
+        const color = formatPrintColor(q.print_color, q.print_color_note, 'ko', mat)
         if (mat) parts.push(String(mat))
         if (color) parts.push(color)
         if (q.fdm_infill != null && Number.isFinite(Number(q.fdm_infill))) {
@@ -49,6 +48,7 @@ export function formatQuotePrintSettings(q: QuotePrintSettings | null | undefine
     if (method === 'sla' || method === 'dlp') {
         const parts: string[] = []
         const resin = q.resin_type_name || q.resin_type
+        const color = formatPrintColor(q.print_color, q.print_color_note, 'ko', resin)
         if (resin) parts.push(String(resin))
         if (color) parts.push(color)
         if (q.layer_thickness != null && Number.isFinite(Number(q.layer_thickness))) {
@@ -71,11 +71,10 @@ export function getQuotePrintSettingChips(
     const en = locale === 'en'
     const infillLabel = en ? 'Infill' : '채움'
     const layerLabel = en ? 'Layer' : '레이어'
-    const color = formatPrintColor(q.print_color, q.print_color_note, locale)
-
     if (method === 'fdm') {
         const chips: string[] = []
         const mat = q.fdm_material_name || q.fdm_material
+        const color = formatPrintColor(q.print_color, q.print_color_note, locale, mat)
         if (mat) chips.push(String(mat))
         if (color) chips.push(color)
         if (q.fdm_infill != null && Number.isFinite(Number(q.fdm_infill))) {
@@ -90,6 +89,7 @@ export function getQuotePrintSettingChips(
     if (method === 'sla' || method === 'dlp') {
         const chips: string[] = []
         const resin = q.resin_type_name || q.resin_type
+        const color = formatPrintColor(q.print_color, q.print_color_note, locale, resin)
         if (resin) chips.push(String(resin))
         if (color) chips.push(color)
         if (q.layer_thickness != null && Number.isFinite(Number(q.layer_thickness))) {
