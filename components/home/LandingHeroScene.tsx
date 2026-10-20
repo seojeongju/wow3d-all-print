@@ -7,15 +7,15 @@ import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import {
     circleHole,
-    createGyroidMesh,
     extrudeCentered,
     involuteGearShape,
 } from './hero-geometry';
 import { MOTOR_AXIS, MOTOR_GROUPS, MOTOR_SIZE } from './hero-motor-parts';
 
 /**
- * 홈 히어로 업로드 영역 배경 — 실사급 3D 출력물 4종 순환.
- * - 형상: 인볼류트 기어·나선 화병·보강 브라켓·자이로이드 격자 (실제 치수 규칙으로 생성, 모서리 베벨)
+ * 홈 히어로 업로드 영역 배경 — 출력물 4종 순환.
+ * - 3D: 인볼류트 정밀 기어 쌍 (실제 치수 규칙으로 생성, 모서리 베벨)
+ * - 실사 이미지(배경 투명): 투명 레진 매듭(회전) · 모터 분해·조립(3D프린팅 질감 레이어) · SLA 레진 흉상(흔들림)
  * - 조명: 제품 촬영 스튜디오처럼 소프트박스(Lightformer) 반사 환경 — 외부 HDRI 다운로드 없음
  * - 재질: FDM은 셰이더로 적층 무늬, 레진은 투명·무광 매끈한 표면
  * - 연출: 모델마다 줌인 등장 → 자동 회전 + 줌인/줌아웃 반복, 사용자가 드래그·스크롤하면 잠시 양보
@@ -25,18 +25,20 @@ import { MOTOR_AXIS, MOTOR_GROUPS, MOTOR_SIZE } from './hero-motor-parts';
 const VARIANT_MS = 7600;
 const FADE_MS = 700;
 
-type Id = 'gears' | 'glass' | 'motor' | 'gyroid';
+type Id = 'gears' | 'glass' | 'motor' | 'bust';
 
 /** 3D 모델 대신 배경을 투명 처리한 실사 사진으로 보여 주는 변형 */
-const PHOTO_VARIANTS: Partial<Record<Id, { src: string; alt: string }>> = {
-    glass: { src: '/images/hero/glass-knot.webp', alt: '투명 레진 매듭 조형물' },
+/** motion — spin: 천천히 360° 회전(대칭형 조형) · sway: 좌우로 살짝 흔들림(위아래가 있는 조형) */
+const PHOTO_VARIANTS: Partial<Record<Id, { src: string; alt: string; motion: 'spin' | 'sway' }>> = {
+    glass: { src: '/images/hero/glass-knot.webp', alt: '투명 레진 매듭 조형물', motion: 'spin' },
+    bust: { src: '/images/hero/resin-bust.webp', alt: 'SLA 레진 흉상·건축 조형물', motion: 'sway' },
 };
 
 const VARIANTS: { id: Id; label: string }[] = [
     { id: 'gears', label: '정밀 기어 · FDM PLA·PETG' },
     { id: 'glass', label: '매듭 조형 · 투명 레진' },
     { id: 'motor', label: '모터 분해·조립 · FDM PLA·PETG' },
-    { id: 'gyroid', label: '자이로이드 격자 · SLA 레진' },
+    { id: 'bust', label: '흉상 조형 · SLA 레진' },
 ];
 
 /* ─────────────────────────── 순환·페이드 ─────────────────────────── */
@@ -234,52 +236,10 @@ function GearPair({ opacityRef }: ModelProps) {
     );
 }
 
-/** 자이로이드는 생성에 약 0.1~0.2초가 걸려 순환할 때마다 만들면 화면이 끊긴다 → 한 번 만들어 재사용 */
-const gyroidCache = new Map<number, { mesh: THREE.Mesh; mat: THREE.MeshPhysicalMaterial }>();
-
-function getGyroid(resolution: number) {
-    let hit = gyroidCache.get(resolution);
-    if (!hit) {
-        const mat = new THREE.MeshPhysicalMaterial({
-            color: '#eceae4',
-            roughness: 0.42,
-            metalness: 0,
-            clearcoat: 0.2,
-            clearcoatRoughness: 0.4,
-            sheen: 0.4,
-            sheenRoughness: 0.6,
-            sheenColor: new THREE.Color('#ffffff'),
-        });
-        hit = { mesh: createGyroidMesh(mat, resolution), mat };
-        gyroidCache.set(resolution, hit);
-    }
-    return hit;
-}
-
-function GyroidSphere({ opacityRef, lowPower }: ModelProps) {
-    const { mesh, mat } = useMemo(() => getGyroid(lowPower ? 52 : 68), [lowPower]);
-    useMaterialFade(useMemo(() => [mat], [mat]), opacityRef);
-
-    const spin = useRef<THREE.Group>(null);
-    useFrame((_, dt) => {
-        if (spin.current) spin.current.rotation.x += dt * 0.12;
-    });
-
-    return (
-        <Showcase scale={1.3}>
-            <group ref={spin}>
-                <primitive object={mesh} castShadow receiveShadow />
-            </group>
-        </Showcase>
-    );
-}
-
 function CyclingModel({ id, ...props }: ModelProps & { id: Id }) {
     switch (id) {
         case 'gears':
             return <GearPair {...props} />;
-        case 'gyroid':
-            return <GyroidSphere {...props} />;
         default:
             return null;
     }
@@ -446,7 +406,10 @@ function PhotoShowcase({ id, fading, reducedMotion }: { id: Id; fading: boolean;
                 className="w-auto select-none"
                 style={{
                     height: 'clamp(220px, 46vw, 430px)',
-                    animation: anim('hero-photo-spin', 32000, 'linear infinite'),
+                    animation:
+                        photo.motion === 'spin'
+                            ? anim('hero-photo-spin', 32000, 'linear infinite')
+                            : anim('hero-photo-sway', 5600, 'ease-in-out infinite alternate'),
                     filter: 'drop-shadow(0 26px 28px rgba(2, 6, 23, 0.6)) drop-shadow(0 0 22px rgba(45, 212, 191, 0.18))',
                 }}
             />
@@ -516,6 +479,7 @@ const PHOTO_KEYFRAMES = `
 @keyframes hero-photo-zoom { from { transform: scale(0.9) } to { transform: scale(1.1) } }
 @keyframes hero-photo-tilt { from { transform: rotateY(-16deg) rotateX(7deg) } to { transform: rotateY(16deg) rotateX(-5deg) } }
 @keyframes hero-photo-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+@keyframes hero-photo-sway { from { transform: rotate(-5deg) translateY(4px) } to { transform: rotate(5deg) translateY(-4px) } }
 @keyframes hero-motor-tilt { from { transform: rotateY(-9deg) rotateX(5deg) rotate(-2deg) } to { transform: rotateY(9deg) rotateX(-3deg) rotate(2deg) } }
 @keyframes hero-motor-assemble { 0%, 12% { transform: translate(0, 0) } 42%, 62% { transform: translate(var(--tx), var(--ty)) } 90%, 100% { transform: translate(0, 0) } }`;
 
@@ -538,7 +502,7 @@ export default function LandingHeroScene() {
         const timer = window.setTimeout(() => {
             raf = window.requestAnimationFrame(() => {
                 setEnv({
-                    // 모바일·저사양: 투명 굴절(transmission) 대신 유광 재질, 격자 해상도 낮춤
+                    // 모바일·저사양: 렌더링 해상도(dpr) 낮춤
                     lowPower: window.matchMedia('(max-width: 767px), (pointer: coarse)').matches,
                     reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
                 });

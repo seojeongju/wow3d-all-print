@@ -1,9 +1,8 @@
 import * as THREE from 'three';
-import { MarchingCubes } from 'three/examples/jsm/objects/MarchingCubes.js';
 
 /**
  * 홈 히어로 실사 렌더용 형상 생성 (순수 three — 브라우저·Node 공용).
- * 실제 설계 규칙(인볼류트 치형, 베벨 모서리, 자이로이드 TPMS)으로 만든다.
+ * 실제 설계 규칙(인볼류트 치형, 베벨 모서리)으로 만든다.
  */
 
 /** 표준 압력각 20° 인볼류트 스퍼 기어 외곽 + 구멍 */
@@ -80,32 +79,4 @@ export function circleHole(x: number, y: number, r: number) {
     const p = new THREE.Path();
     p.absarc(x, y, r, 0, Math.PI * 2, true);
     return p;
-}
-
-/** 자이로이드 격자 구 — 마칭 큐브로 한 번 생성 (격자 ∩ 구) */
-export function createGyroidMesh(material: THREE.Material, resolution: number) {
-    const mc = new MarchingCubes(resolution, material, false, false, 160000);
-    mc.isolation = 0;
-    const size = mc.size;
-    const half = size / 2;
-    const freq = Math.PI * 2 * 1.55;
-    for (let z = 0; z < size; z++) {
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
-                const px = (x - half) / half;
-                const py = (y - half) / half;
-                const pz = (z - half) / half;
-                const qx = px * freq;
-                const qy = py * freq;
-                const qz = pz * freq;
-                const g = Math.sin(qx) * Math.cos(qy) + Math.sin(qy) * Math.cos(qz) + Math.sin(qz) * Math.cos(qx);
-                const shell = 0.42 - Math.abs(g);
-                const sphere = (0.8 - Math.sqrt(px * px + py * py + pz * pz)) * 6;
-                mc.field[x + y * size + z * size * size] = Math.min(shell, sphere);
-            }
-        }
-    }
-    mc.update();
-    mc.frustumCulled = false;
-    return mc;
 }
