@@ -12,7 +12,6 @@ import {
     involuteGearShape,
     roundedRectShape,
     slotHole,
-    spiralVaseGeometry,
 } from './hero-geometry';
 
 /**
@@ -27,11 +26,16 @@ import {
 const VARIANT_MS = 7600;
 const FADE_MS = 700;
 
-type Id = 'gears' | 'vase' | 'bracket' | 'gyroid';
+type Id = 'gears' | 'glass' | 'bracket' | 'gyroid';
+
+/** 3D 모델 대신 배경을 투명 처리한 실사 사진으로 보여 주는 변형 */
+const PHOTO_VARIANTS: Partial<Record<Id, { src: string; alt: string }>> = {
+    glass: { src: '/images/hero/glass-knot.webp', alt: '투명 레진 매듭 조형물' },
+};
 
 const VARIANTS: { id: Id; label: string }[] = [
     { id: 'gears', label: '정밀 기어 · FDM PLA·PETG' },
-    { id: 'vase', label: '나선 화병 · 투명 레진' },
+    { id: 'glass', label: '매듭 조형 · 투명 레진' },
     { id: 'bracket', label: '보강 브라켓 · FDM PETG' },
     { id: 'gyroid', label: '자이로이드 격자 · SLA 레진' },
 ];
@@ -40,6 +44,7 @@ const VARIANTS: { id: Id; label: string }[] = [
 
 function useVariantCycle(enabled: boolean) {
     const [index, setIndex] = useState(0);
+    const [fading, setFading] = useState(false);
     const targetOpacity = useRef(1);
 
     useEffect(() => {
@@ -47,9 +52,11 @@ function useVariantCycle(enabled: boolean) {
         let fadeTimer = 0;
         const tick = window.setInterval(() => {
             targetOpacity.current = 0;
+            setFading(true);
             fadeTimer = window.setTimeout(() => {
                 setIndex((i) => (i + 1) % VARIANTS.length);
                 targetOpacity.current = 1;
+                setFading(false);
             }, FADE_MS);
         }, VARIANT_MS);
         return () => {
@@ -58,7 +65,7 @@ function useVariantCycle(enabled: boolean) {
         };
     }, [enabled]);
 
-    return { index, targetOpacity, id: VARIANTS[index].id, label: VARIANTS[index].label };
+    return { index, fading, targetOpacity, id: VARIANTS[index].id, label: VARIANTS[index].label };
 }
 
 function useFadeOpacity(targetOpacity: MutableRefObject<number>) {
@@ -228,44 +235,6 @@ function GearPair({ opacityRef }: ModelProps) {
     );
 }
 
-function SpiralVase({ opacityRef, lowPower }: ModelProps) {
-    const { geo, mat } = useMemo(() => {
-        const geo = spiralVaseGeometry();
-        const mat = lowPower
-            ? new THREE.MeshPhysicalMaterial({
-                  color: '#7dd3c8',
-                  roughness: 0.12,
-                  metalness: 0,
-                  clearcoat: 1,
-                  clearcoatRoughness: 0.08,
-                  side: THREE.DoubleSide,
-              })
-            : new THREE.MeshPhysicalMaterial({
-                  color: '#e6fffb',
-                  roughness: 0.1,
-                  metalness: 0,
-                  transmission: 1,
-                  thickness: 0.35,
-                  ior: 1.5,
-                  attenuationColor: new THREE.Color('#2dd4bf'),
-                  attenuationDistance: 1.1,
-                  clearcoat: 1,
-                  clearcoatRoughness: 0.06,
-                  specularIntensity: 1,
-                  side: THREE.DoubleSide,
-              });
-        return { geo, mat };
-    }, [lowPower]);
-
-    useMaterialFade(useMemo(() => [mat], [mat]), opacityRef, lowPower ? 0.88 : 1);
-
-    return (
-        <Showcase scale={0.95}>
-            <mesh geometry={geo} material={mat} castShadow rotation={[0.12, 0, 0.06]} />
-        </Showcase>
-    );
-}
-
 function Bracket({ opacityRef }: ModelProps) {
     const { baseGeo, wallGeo, gussetGeo, boltHeadGeo, boltGeo, washerGeo, mats } = useMemo(() => {
         // 바닥판 (XZ 평면, 두께 Y) — 볼트 구멍 2개
@@ -367,8 +336,6 @@ function CyclingModel({ id, ...props }: ModelProps & { id: Id }) {
     switch (id) {
         case 'gears':
             return <GearPair {...props} />;
-        case 'vase':
-            return <SpiralVase {...props} />;
         case 'bracket':
             return <Bracket {...props} />;
         case 'gyroid':
@@ -487,10 +454,78 @@ function SceneContent({
     );
 }
 
+/* ─────────────────────────── 실사 사진 변형 ─────────────────────────── */
+
+/**
+ * 배경을 투명 처리한 실사 사진 — 3D 대신 CSS로 역동적으로 움직인다.
+ * 레이어마다 애니메이션 하나씩: 등장(튀어나오며 줌인) · 줌인/줌아웃 · 원근 기울기 · 천천히 회전.
+ */
+function PhotoShowcase({
+    id,
+    fading,
+    reducedMotion,
+}: {
+    id: Id;
+    fading: boolean;
+    reducedMotion: boolean;
+}) {
+    const photo = PHOTO_VARIANTS[id];
+    if (!photo) return null;
+    const anim = (name: string, ms: number, extra = '') =>
+        reducedMotion ? undefined : `${name} ${ms}ms ${extra}`;
+
+    return (
+        <div
+            key={id}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity ease-out"
+            style={{ opacity: fading ? 0 : 1, transitionDuration: `${FADE_MS}ms`, perspective: '900px' }}
+            aria-hidden
+        >
+            <div style={{ animation: anim('hero-photo-in', 1300, 'cubic-bezier(0.34, 1.56, 0.64, 1) both') }}>
+                <div style={{ animation: anim('hero-photo-zoom', 5200, 'ease-in-out 1300ms infinite alternate both') }}>
+                    <div
+                        style={{
+                            animation: anim('hero-photo-tilt', 4300, 'ease-in-out infinite alternate'),
+                            transformStyle: 'preserve-3d',
+                        }}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- 투명 WebP를 CSS 변형으로 직접 움직임 */}
+                        <img
+                            src={photo.src}
+                            alt={photo.alt}
+                            draggable={false}
+                            className="w-auto select-none"
+                            style={{
+                                height: 'clamp(220px, 46vw, 430px)',
+                                animation: anim('hero-photo-spin', 32000, 'linear infinite'),
+                                filter: 'drop-shadow(0 26px 28px rgba(2, 6, 23, 0.6)) drop-shadow(0 0 22px rgba(45, 212, 191, 0.18))',
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const PHOTO_KEYFRAMES = `
+@keyframes hero-photo-in { from { opacity: 0; transform: scale(0.5) rotate(-28deg) translateY(30px) } to { opacity: 1; transform: none } }
+@keyframes hero-photo-zoom { from { transform: scale(0.9) } to { transform: scale(1.1) } }
+@keyframes hero-photo-tilt { from { transform: rotateY(-16deg) rotateX(7deg) } to { transform: rotateY(16deg) rotateX(-5deg) } }
+@keyframes hero-photo-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`;
+
 export default function LandingHeroScene() {
     const [mounted, setMounted] = useState(false);
     const [env, setEnv] = useState({ lowPower: false, reducedMotion: false });
-    const { index, targetOpacity, label, id } = useVariantCycle(mounted);
+    const { index, fading, targetOpacity, label, id } = useVariantCycle(mounted);
+
+    // 사진 변형은 순서가 오기 전에 미리 받아 두어 등장할 때 빈 화면이 없게 함
+    useEffect(() => {
+        if (!mounted) return;
+        for (const v of Object.values(PHOTO_VARIANTS)) {
+            if (v) new window.Image().src = v.src;
+        }
+    }, [mounted]);
 
     useEffect(() => {
         let raf = 0;
@@ -534,6 +569,8 @@ export default function LandingHeroScene() {
                 </Suspense>
             </Canvas>
 
+            <PhotoShowcase id={id} fading={fading} reducedMotion={env.reducedMotion} />
+
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none z-[1]">
                 <span
                     key={label}
@@ -564,7 +601,7 @@ export default function LandingHeroScene() {
                 </div>
             </div>
 
-            <style>{`@keyframes hero-scene-progress { from { width: 0% } to { width: 100% } }`}</style>
+            <style>{`@keyframes hero-scene-progress { from { width: 0% } to { width: 100% } }${PHOTO_KEYFRAMES}`}</style>
         </div>
     );
 }
