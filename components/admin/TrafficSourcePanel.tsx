@@ -168,7 +168,8 @@ export default function TrafficSourcePanel({ sources, token, dayCount = 30 }: Pr
                                 </span>
                             </CardTitle>
                             <p className="text-xs text-white/40 mt-1 break-keep">
-                                사이트에 들어온 전체 방문 세션의 유입 채널입니다. 클릭하면 medium·campaign·referrer·경로를 확인할 수 있습니다
+                                사이트에 들어온 전체 방문 세션의 유입 채널입니다. 클릭하면 medium·campaign·referrer·경로를 확인할 수 있습니다.
+                                ChatGPT는 주로 utm_source로 집계되며, UTM이 빠진 기간에는 직접 방문으로 섞일 수 있습니다.
                             </p>
                         </div>
                         <Link

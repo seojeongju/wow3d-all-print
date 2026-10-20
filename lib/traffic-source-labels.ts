@@ -23,9 +23,11 @@ const SOURCE_LABELS: Record<string, { label: string; hint?: string }> = {
     fb: { label: 'Facebook', hint: 'URL에 utm_source=fb' },
     'chatgpt.com': {
         label: 'ChatGPT',
-        hint: 'ChatGPT 답변·링크에서 utm_source=chatgpt.com',
+        hint: '주로 utm_source=chatgpt.com. ChatGPT가 UTM을 빼면 직접 방문으로 잡힐 수 있음(2026-10 사례)',
     },
     chatgpt: { label: 'ChatGPT', hint: 'ChatGPT 유입' },
+    perplexity: { label: 'Perplexity', hint: 'Perplexity 추천·검색 유입' },
+    claude: { label: 'Claude', hint: 'Claude(Anthropic) 추천 유입' },
 };
 
 const MEDIUM_LABELS: Record<string, string> = {

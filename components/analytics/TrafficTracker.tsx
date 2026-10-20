@@ -22,7 +22,20 @@ function normalizePath(pathname: string): string {
 
 function classifyFromReferrer(referrer: string): { source: string; medium: string } {
     try {
-        const host = new URL(referrer).hostname;
+        const host = new URL(referrer).hostname.toLowerCase();
+        // ChatGPT는 보통 utm_source=chatgpt.com 을 붙이지만, UTM이 빠진 구간·noreferrer가
+        // 아닐 때는 referrer로만 남을 수 있어 명시 분류한다.
+        if (
+            host.includes('chatgpt.com') ||
+            host.includes('chat.openai.com') ||
+            host.includes('openai.com')
+        ) {
+            return { source: 'chatgpt.com', medium: 'referral' };
+        }
+        if (host.includes('perplexity')) return { source: 'perplexity', medium: 'referral' };
+        if (host.includes('claude.ai') || host.includes('anthropic.com')) {
+            return { source: 'claude', medium: 'referral' };
+        }
         if (host.includes('naver')) return { source: 'naver', medium: 'organic' };
         if (host.includes('google')) return { source: 'google', medium: 'organic' };
         if (host.includes('daum') || host.includes('kakao')) return { source: 'kakao', medium: 'organic' };

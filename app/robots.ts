@@ -35,6 +35,17 @@ const ALLOW_PATHS = [
   "/api/news/media/",
 ];
 
+/** AI·답변엔진 크롤러 — * 규칙과 동일하게 공개 페이지만 허용(차단하지 않음) */
+const AI_CRAWLER_AGENTS = [
+  "GPTBot",
+  "ChatGPT-User",
+  "OAI-SearchBot",
+  "ClaudeBot",
+  "anthropic-ai",
+  "PerplexityBot",
+  "Google-Extended",
+] as const;
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -49,6 +60,11 @@ export default function robots(): MetadataRoute.Robots {
         allow: ALLOW_PATHS,
         disallow: DISALLOW_PATHS,
       },
+      ...AI_CRAWLER_AGENTS.map((userAgent) => ({
+        userAgent,
+        allow: ALLOW_PATHS,
+        disallow: DISALLOW_PATHS,
+      })),
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
