@@ -4433,11 +4433,27 @@
       "lineSize": "Line size",
       "fontLabel": "Font",
       "fontAllLabel": "Font for all lines",
+      "fontMixed": "Different on each line",
+      "fontGroupKo": "Korean",
+      "fontGroupEn": "Latin",
+      "fontLicense": "Google Fonts · SIL Open Font License",
       "fonts": {
         "gowun-dodum": "Gowun Dodum",
         "jua": "Jua",
         "do-hyeon": "Do Hyeon",
-        "black-han": "Black Han Sans"
+        "black-han": "Black Han Sans",
+        "nanum-gothic": "Nanum Gothic",
+        "gothic-a1": "Gothic A1",
+        "poor-story": "Poor Story",
+        "sunflower": "Sunflower",
+        "gaegu": "Gaegu",
+        "single-day": "Single Day",
+        "lilita-one": "Lilita One",
+        "pacifico": "Pacifico",
+        "bangers": "Bangers",
+        "bebas-neue": "Bebas Neue",
+        "righteous": "Righteous",
+        "boogaloo": "Boogaloo"
       },
       "alignLabel": "Align",
       "align": {

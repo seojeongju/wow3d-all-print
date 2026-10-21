@@ -23,7 +23,7 @@ const SAMPLES: Array<[string, string]> = [
     ['김와우', '010-1234-5678'],
     ['콩이', '보호자 연락처'],
     ['WOW3D', 'Maker Lab'],
-    ['뷁똠햏', '쀍쀏'],
+    ['하준뷁', '3학년 쀏'],
     ['이서윤', 'Seoyun Lee'],
     ['A-3', '공구함'],
     ['팀장 박지훈', '개발팀'],
@@ -85,8 +85,11 @@ async function main() {
     const warnings = new Map<string, number>()
     const missingByFont = new Map<string, Set<string>>()
     const started = Date.now()
+    const matrixFonts = NAME_TAG_FONTS.filter((font) =>
+        ['gowun-dodum', 'jua', 'do-hyeon', 'black-han'].includes(font.id)
+    )
     for (const presetId of Object.keys(NAME_TAG_PRESETS) as NameTagPresetId[]) {
-        for (const font of NAME_TAG_FONTS) {
+        for (const font of matrixFonts) {
             for (const [first, second] of SAMPLES) {
                 for (const [variantName, variant] of variants) {
                     const base = applyNameTagPreset(DEFAULT_NAME_TAG_DESIGN, presetId)
@@ -125,6 +128,24 @@ async function main() {
                 }
             }
         }
+    }
+
+    // 추가한 폰트는 대표 문구 하나로 형상만 확인한다. 영문 폰트의 한글 빠짐은 허용한다.
+    for (const font of NAME_TAG_FONTS) {
+        const sample = font.group === 'en' ? 'WOW3D' : '하준'
+        const design = normalizeNameTagDesign({
+            ...applyNameTagPreset(DEFAULT_NAME_TAG_DESIGN, 'bag'),
+            lines: [{ text: sample, fontId: font.id, size: 1 }],
+        })
+        const label = `smoke/${font.id}/${sample}`
+        const result = buildNameTag(wasm, design, fonts)
+        assert.ok(result, `${label}: 결과 없음`)
+        assert.equal(result.stats.status, 'NoError', `${label}: 매니폴드 오류`)
+        assert.equal(result.stats.bodies, 1, `${label}: 덩어리 ${result.stats.bodies}개`)
+        assertClosedMesh(result.solid, label)
+        const blocking = result.issues.filter((issue) => issue.level === 'error' && issue.code !== 'missing-glyph')
+        assert.equal(blocking.length, 0, `${label}: ${blocking.map((issue) => issue.code).join(',')}`)
+        cases++
     }
 
     // 폰트에 없는 글자는 오류로 잡아야 한다

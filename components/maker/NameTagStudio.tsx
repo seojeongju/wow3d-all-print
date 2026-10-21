@@ -10,6 +10,7 @@ import {
     AlignLeft,
     AlignRight,
     Box,
+    ChevronDown,
     Download,
     Info,
     Loader2,
@@ -20,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary'
 import { useFileStore } from '@/store/useFileStore'
-import { NAME_TAG_FONTS, type NameTagFontId } from '@/lib/name-tag-fonts'
+import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, type NameTagFontId } from '@/lib/name-tag-fonts'
 import {
     applyNameTagPreset,
     DEFAULT_NAME_TAG_DESIGN,
@@ -47,11 +48,13 @@ const NameTagPreview = dynamic(() => import('@/components/maker/NameTagPreview')
     ssr: false,
 })
 
-const FONT_FACE_CSS = NAME_TAG_FONTS.map(
-    (font) => `@font-face{font-family:'${font.cssFamily}';src:url('${font.file}') format('truetype');font-display:swap;}`
-).join('')
-
 const DRAFT_KEY = 'wow3d:name-tag:v1'
+
+function fontFaceCss(ids: ReadonlySet<NameTagFontId>): string {
+    return NAME_TAG_FONTS.filter((font) => ids.has(font.id))
+        .map((font) => `@font-face{font-family:'${font.cssFamily}';src:url('${font.file}') format('truetype');font-display:swap;}`)
+        .join('')
+}
 
 const PLATE_COLORS = ['#f4f4f5', '#18181b', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a1a1aa']
 const TEXT_COLORS = ['#0f172a', '#f4f4f5', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a1a1aa']
@@ -84,17 +87,21 @@ function Choice({
     children,
     className,
     label,
+    onPreview,
 }: {
     active: boolean
     onClick: () => void
     children: React.ReactNode
     className?: string
     label?: string
+    onPreview?: () => void
 }) {
     return (
         <button
             type="button"
             onClick={onClick}
+            onPointerEnter={onPreview}
+            onFocus={onPreview}
             aria-pressed={active}
             aria-label={label}
             className={cn(
@@ -144,6 +151,50 @@ function Slider({
     )
 }
 
+function FontChoices({
+    activeId,
+    groupLabel,
+    fontLabel,
+    activeFontIds,
+    onPreview,
+    onPick,
+}: {
+    activeId: NameTagFontId | null
+    groupLabel: (group: 'ko' | 'en') => string
+    fontLabel: (fontId: NameTagFontId) => string
+    activeFontIds: ReadonlySet<NameTagFontId>
+    onPreview: (fontId: NameTagFontId) => void
+    onPick: (fontId: NameTagFontId) => void
+}) {
+    return (
+        <div className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-white/10 bg-black/40 p-2">
+            {NAME_TAG_FONT_GROUPS.map((group) => (
+                <div key={group} className="space-y-1.5">
+                    <p className="text-[10px] font-bold text-white/35">{groupLabel(group)}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {NAME_TAG_FONTS.filter((font) => font.group === group).map((font) => (
+                            <Choice
+                                key={font.id}
+                                active={font.id === activeId}
+                                onClick={() => onPick(font.id)}
+                                onPreview={() => onPreview(font.id)}
+                                className="text-left"
+                            >
+                                <span
+                                    className="block truncate text-[15px] font-normal"
+                                    style={activeFontIds.has(font.id) ? { fontFamily: `'${font.cssFamily}', sans-serif` } : undefined}
+                                >
+                                    {fontLabel(font.id)}
+                                </span>
+                            </Choice>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export function NameTagStudio({ onOpenDraw }: Props) {
     const t = useTranslations('Maker.nameTag')
     const tm = useTranslations('Maker')
@@ -151,6 +202,8 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const setFile = useFileStore((s) => s.setFile)
     const [design, setDesign] = useState<NameTagDesign>(DEFAULT_NAME_TAG_DESIGN)
     const [loaded, setLoaded] = useState(false)
+    const [seenFonts, setSeenFonts] = useState<NameTagFontId[]>([DEFAULT_NAME_TAG_DESIGN.lines[0].fontId])
+    const [openFontMenu, setOpenFontMenu] = useState<number | 'all' | null>(null)
     const [showThin, setShowThin] = useState(true)
     const [busy, setBusy] = useState<'quote' | 'stl' | null>(null)
     const { result, building, error, buildMs, requestStl } = useNameTagBuilder(design)
@@ -180,6 +233,16 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const update = useCallback((patch: (d: NameTagDesign) => NameTagDesign) => {
         setDesign((current) => normalizeNameTagDesign(patch(current)))
     }, [])
+
+    const noteFont = useCallback((fontId: NameTagFontId) => {
+        setSeenFonts((current) => (current.includes(fontId) ? current : [...current, fontId]))
+    }, [])
+
+    const activeFontIds = useMemo(() => {
+        const ids = new Set<NameTagFontId>(seenFonts)
+        for (const line of design.lines) ids.add(line.fontId)
+        return ids
+    }, [design.lines, seenFonts])
 
     const setLine = (index: number, patch: Partial<NameTagDesign['lines'][number]>) =>
         update((d) => ({ ...d, lines: d.lines.map((line, i) => (i === index ? { ...line, ...patch } : line)) }))
@@ -276,7 +339,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
 
     return (
         <>
-            <style>{FONT_FACE_CSS}</style>
+            <style>{fontFaceCss(activeFontIds)}</style>
             <div className="flex w-full max-w-6xl flex-col overflow-hidden border border-white/10 bg-[#0d0d0d]/90 shadow-2xl md:h-[860px] md:flex-row md:rounded-[2rem]">
                 <section className="relative order-1 h-[46vh] min-h-[300px] w-full shrink-0 bg-gradient-to-b from-[#0a0a0f] to-[#12121a] md:order-2 md:h-auto md:flex-1">
                     <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 text-[12px] font-bold text-white/70">
@@ -427,18 +490,21 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         ) : null}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <select
-                                            value={line.fontId}
-                                            onChange={(e) => setLine(index, { fontId: e.target.value as NameTagFontId })}
+                                        <button
+                                            type="button"
+                                            aria-expanded={openFontMenu === index}
                                             aria-label={t('fontLabel')}
-                                            className="h-8 rounded-lg border border-white/10 bg-black/40 px-2 text-[12px] font-bold text-white outline-none"
+                                            onClick={() => setOpenFontMenu((current) => (current === index ? null : index))}
+                                            className="flex h-8 w-[7.5rem] shrink-0 items-center justify-between gap-1 rounded-lg border border-white/10 bg-black/40 px-2 text-left text-[13px] text-white"
                                         >
-                                            {NAME_TAG_FONTS.map((font) => (
-                                                <option key={font.id} value={font.id}>
-                                                    {t(`fonts.${font.id}`)}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            <span
+                                                className="truncate"
+                                                style={{ fontFamily: `'${NAME_TAG_FONTS.find((font) => font.id === line.fontId)?.cssFamily}', sans-serif` }}
+                                            >
+                                                {t(`fonts.${line.fontId}`)}
+                                            </span>
+                                            <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 text-white/50', openFontMenu === index && 'rotate-180')} />
+                                        </button>
                                         <input
                                             type="range"
                                             min={NAME_TAG_LIMITS.lineSize[0]}
@@ -453,26 +519,74 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             {result?.lines.find((l) => l.index === index)?.heightMm.toFixed(1) ?? '-'}mm
                                         </span>
                                     </div>
+                                    {openFontMenu === index ? (
+                                        <FontChoices
+                                            activeId={line.fontId}
+                                            groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
+                                            fontLabel={(fontId) => t(`fonts.${fontId}`)}
+                                            activeFontIds={activeFontIds}
+                                            onPreview={noteFont}
+                                            onPick={(fontId) => {
+                                                noteFont(fontId)
+                                                setLine(index, { fontId })
+                                                setOpenFontMenu(null)
+                                            }}
+                                        />
+                                    ) : null}
                                 </div>
                             ))}
                         </div>
                     </Section>
 
                     <Section title={t('fontAllLabel')}>
-                        <div className="grid grid-cols-2 gap-2">
-                            {NAME_TAG_FONTS.map((font) => (
-                                <Choice
-                                    key={font.id}
-                                    active={design.lines.every((line) => line.fontId === font.id)}
-                                    onClick={() => setAllFonts(font.id)}
-                                    className="text-left"
+                        {(() => {
+                            const shared = design.lines.every((line) => line.fontId === design.lines[0]?.fontId)
+                                ? design.lines[0]?.fontId
+                                : null
+                            const sharedFont = shared ? NAME_TAG_FONTS.find((font) => font.id === shared) : null
+                            return (
+                                <button
+                                    type="button"
+                                    aria-expanded={openFontMenu === 'all'}
+                                    onClick={() => setOpenFontMenu((current) => (current === 'all' ? null : 'all'))}
+                                    className="flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/30 px-3 text-left"
                                 >
-                                    <span className="block truncate text-[15px] font-normal" style={{ fontFamily: `'${font.cssFamily}', sans-serif` }}>
-                                        {t(`fonts.${font.id}`)}
+                                    <span
+                                        className="truncate text-[15px] text-white"
+                                        style={sharedFont ? { fontFamily: `'${sharedFont.cssFamily}', sans-serif` } : undefined}
+                                    >
+                                        {shared ? t(`fonts.${shared}`) : t('fontMixed')}
                                     </span>
-                                </Choice>
-                            ))}
-                        </div>
+                                    <ChevronDown className={cn('h-4 w-4 shrink-0 text-white/50', openFontMenu === 'all' && 'rotate-180')} />
+                                </button>
+                            )
+                        })()}
+                        {openFontMenu === 'all' ? (
+                            <FontChoices
+                                activeId={
+                                    design.lines.every((line) => line.fontId === design.lines[0]?.fontId)
+                                        ? design.lines[0]?.fontId ?? null
+                                        : null
+                                }
+                                groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
+                                fontLabel={(fontId) => t(`fonts.${fontId}`)}
+                                activeFontIds={activeFontIds}
+                                onPreview={noteFont}
+                                onPick={(fontId) => {
+                                    noteFont(fontId)
+                                    setAllFonts(fontId)
+                                    setOpenFontMenu(null)
+                                }}
+                            />
+                        ) : null}
+                        <a
+                            href="/fonts/OFL.txt"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-block text-[11px] font-medium text-white/40 underline-offset-2 hover:text-white/70 hover:underline"
+                        >
+                            {t('fontLicense')}
+                        </a>
                     </Section>
 
                     <Section title={t('alignLabel')}>

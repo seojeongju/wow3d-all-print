@@ -4434,11 +4434,27 @@
       "lineSize": "줄 크기",
       "fontLabel": "폰트",
       "fontAllLabel": "모든 줄 폰트",
+      "fontMixed": "줄마다 다른 폰트",
+      "fontGroupKo": "한글",
+      "fontGroupEn": "영문",
+      "fontLicense": "Google Fonts · SIL Open Font License",
       "fonts": {
         "gowun-dodum": "고운돋움",
         "jua": "주아",
         "do-hyeon": "도현",
-        "black-han": "블랙한산스"
+        "black-han": "블랙한산스",
+        "nanum-gothic": "나눔고딕",
+        "gothic-a1": "고딕 A1",
+        "poor-story": "푸어스토리",
+        "sunflower": "해바라기",
+        "gaegu": "개구",
+        "single-day": "싱글데이",
+        "lilita-one": "Lilita One",
+        "pacifico": "Pacifico",
+        "bangers": "Bangers",
+        "bebas-neue": "Bebas Neue",
+        "righteous": "Righteous",
+        "boogaloo": "Boogaloo"
       },
       "alignLabel": "정렬",
       "align": {
