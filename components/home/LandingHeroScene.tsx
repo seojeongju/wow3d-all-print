@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { GEAR_TRAIN, GEAR_TRAIN_SIZE } from './hero-gear-train';
 import { MOTOR_AXIS, MOTOR_GROUPS, MOTOR_SIZE } from './hero-motor-parts';
 
 /**
  * 홈 히어로 업로드 영역 배경 — 출력물 실사 이미지 4종 순환 (배경 투명 WebP + CSS 애니메이션, WebGL 없음).
- * - 정밀 기어 세트(회전) · 투명 레진 매듭(회전) · 모터 분해·조립(3D프린팅 질감 레이어) · SLA 레진 흉상(흔들림)
+ * - 맞물림 기어열(3D프린팅 질감, 잇수비대로 연동 회전) · 투명 레진 매듭(회전) · 모터 분해·조립(3D프린팅 질감 레이어) · SLA 레진 흉상(흔들림)
  * - 연출: 튀어나오며 줌인 등장 → 줌인/줌아웃 · 원근 기울기 반복, 전환은 페이드
  * - "동작 줄이기" 설정이면 움직이지 않는다
  */
@@ -18,13 +19,12 @@ type Id = 'gears' | 'glass' | 'motor' | 'bust';
 
 /** motion — spin: 천천히 360° 회전(대칭형 조형) · sway: 좌우로 살짝 흔들림(위아래가 있는 조형) */
 const PHOTO_VARIANTS: Partial<Record<Id, { src: string; alt: string; motion: 'spin' | 'sway' }>> = {
-    gears: { src: '/images/hero/gear-cluster.webp', alt: '맞물린 정밀 기어 세트', motion: 'spin' },
     glass: { src: '/images/hero/glass-knot.webp', alt: '투명 레진 매듭 조형물', motion: 'spin' },
     bust: { src: '/images/hero/resin-bust.webp', alt: 'SLA 레진 흉상·건축 조형물', motion: 'sway' },
 };
 
 const VARIANTS: { id: Id; label: string }[] = [
-    { id: 'gears', label: '정밀 기어 · FDM PLA·PETG' },
+    { id: 'gears', label: '맞물림 기어열 · FDM PLA·PETG' },
     { id: 'glass', label: '매듭 조형 · 투명 레진' },
     { id: 'motor', label: '모터 분해·조립 · FDM PLA·PETG' },
     { id: 'bust', label: '흉상 조형 · SLA 레진' },
@@ -118,6 +118,45 @@ function PhotoShowcase({ id, fading, reducedMotion }: { id: Id; fading: boolean;
     );
 }
 
+/**
+ * 맞물려 도는 기어열 — 정면 렌더링한 기어 4개를 각자 중심으로 회전.
+ * 속도는 잇수에 반비례(한 바퀴 시간 ∝ 잇수), 맞물린 기어끼리 반대 방향, 시작 각도로 이와 이홈을 맞춤 (hero-gear-train.ts).
+ */
+function GearTrainShowcase({ fading, reducedMotion }: { fading: boolean; reducedMotion: boolean }) {
+    const anim = makeAnim(reducedMotion);
+    const { width: W, height: H } = GEAR_TRAIN_SIZE;
+    return (
+        <FlatShowcase fading={fading} anim={anim} tilt="hero-motor-tilt">
+            <div
+                className="relative select-none"
+                style={{
+                    width: 'clamp(270px, 48vw, 520px)',
+                    aspectRatio: `${W} / ${H}`,
+                    filter: 'drop-shadow(0 22px 24px rgba(2, 6, 23, 0.55))',
+                }}
+            >
+                {GEAR_TRAIN.map((g) => {
+                    const style = {
+                        position: 'absolute',
+                        left: `${((g.cx - g.half) / W) * 100}%`,
+                        top: `${((g.cy - g.half) / H) * 100}%`,
+                        width: `${((2 * g.half) / W) * 100}%`,
+                        height: `${((2 * g.half) / H) * 100}%`,
+                        transform: `rotate(${g.theta0}deg)`,
+                        '--a0': `${g.theta0}deg`,
+                        '--a1': `${g.theta0 + g.dir * 360}deg`,
+                        animation: anim('hero-gear-spin', g.periodS * 1000, 'linear infinite'),
+                    } as CSSProperties;
+                    return (
+                        // eslint-disable-next-line @next/next/no-img-element -- 기어 스프라이트를 CSS 회전으로 직접 구동
+                        <img key={g.z} src={g.src} alt="" draggable={false} style={style} />
+                    );
+                })}
+            </div>
+        </FlatShowcase>
+    );
+}
+
 /** 조립 시 축 방향으로 모이는 비율 · 볼트가 자기 부품 중심으로 더 다가가는 비율 · 분해→조립→분해 한 주기 */
 const MOTOR_GATHER = 0.55;
 const MOTOR_BOLT_GATHER = 0.85;
@@ -183,7 +222,8 @@ const PHOTO_KEYFRAMES = `
 @keyframes hero-photo-sway { from { transform: rotate(-5deg) translateY(4px) } to { transform: rotate(5deg) translateY(-4px) } }
 @keyframes hero-motor-tilt { from { transform: rotateY(-9deg) rotateX(5deg) rotate(-2deg) } to { transform: rotateY(9deg) rotateX(-3deg) rotate(2deg) } }
 @keyframes hero-motor-assemble { 0%, 12% { transform: translate(0, 0) } 42%, 62% { transform: translate(var(--tx), var(--ty)) } 90%, 100% { transform: translate(0, 0) } }
-@keyframes hero-scene-progress { from { width: 0% } to { width: 100% } }`;
+@keyframes hero-scene-progress { from { width: 0% } to { width: 100% } }
+@keyframes hero-gear-spin { from { transform: rotate(var(--a0)) } to { transform: rotate(var(--a1)) } }`;
 
 export default function LandingHeroScene() {
     const [mounted, setMounted] = useState(false);
@@ -202,6 +242,7 @@ export default function LandingHeroScene() {
             if (v) new window.Image().src = v.src;
         }
         for (const g of MOTOR_GROUPS) for (const L of g.layers) new window.Image().src = L.src;
+        for (const g of GEAR_TRAIN) new window.Image().src = g.src;
     }, [mounted]);
 
     if (!mounted) return null;
@@ -209,6 +250,7 @@ export default function LandingHeroScene() {
     return (
         <div className="absolute inset-0">
             <PhotoShowcase id={id} fading={fading} reducedMotion={reducedMotion} />
+            {id === 'gears' ? <GearTrainShowcase fading={fading} reducedMotion={reducedMotion} /> : null}
             {id === 'motor' ? <MotorShowcase fading={fading} reducedMotion={reducedMotion} /> : null}
 
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none z-[1]">
