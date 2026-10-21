@@ -40,6 +40,7 @@ import {
     normalizeNameTagDesign,
     PLATE_SHAPES,
     RELIEF_MODES,
+    type HolePosition,
     type NameTagDesign,
     type NameTagPresetId,
     type TextAlign,
@@ -407,6 +408,22 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const hasText = nameTagHasText(design)
     const isCircle = design.baseId == null && design.plate.shape === 'circle'
 
+    const maxTextW = useMemo(() => {
+        const baseW = design.plate.widthMm
+        const baseH = isCircle ? baseW : design.plate.heightMm
+        const baseMargin = Math.max(1.5, Math.min(baseW, baseH) * 0.08) + (design.border ? 1.8 : 0)
+        const holeDed = design.hole.position === 'left' ? design.hole.diameterMm + 2 : 0
+        return Math.max(10, Math.round(baseW - baseMargin * 2 - holeDed))
+    }, [design.plate.widthMm, design.plate.heightMm, isCircle, design.border, design.hole.position, design.hole.diameterMm])
+
+    const maxTextH = useMemo(() => {
+        const baseW = design.plate.widthMm
+        const baseH = isCircle ? baseW : design.plate.heightMm
+        const baseMargin = Math.max(1.5, Math.min(baseW, baseH) * 0.08) + (design.border ? 1.8 : 0)
+        const holeDed = design.hole.position === 'top' ? design.hole.diameterMm + 2 : 0
+        return Math.max(5, Math.round(baseH - baseMargin * 2 - holeDed))
+    }, [design.plate.widthMm, design.plate.heightMm, isCircle, design.border, design.hole.position, design.hole.diameterMm])
+
     const issueText = (issue: NameTagIssue): string => {
         switch (issue.code) {
             case 'missing-glyph':
@@ -488,6 +505,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     }
 
     const [w, h, z] = result?.stats.sizeMm ?? [0, 0, 0]
+    const pickingHole = hasText && design.hole.position === 'custom'
 
     return (
         <>
@@ -498,7 +516,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                     {/* 상단 3D 상태 라벨 */}
                     <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-xl bg-black/60 px-3 py-1.5 text-[12px] font-bold text-white/80 border border-white/10 backdrop-blur-md">
                         {building ? <Loader2 className="h-4 w-4 animate-spin text-teal-400" /> : <Box className="h-4 w-4 text-teal-400" />}
-                        {building ? t('building') : hasText ? t('previewHint') : t('previewEmpty')}
+                        {building ? t('building') : hasText ? t(pickingHole ? 'previewHintPick' : 'previewHint') : t('previewEmpty')}
                     </div>
 
                     {/* 우측 상단 실시간 치수 뱃지 */}
@@ -525,7 +543,8 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             plateColor={design.colors.plate}
                             textColor={design.colors.text}
                             showThin={showThin}
-                            onPlaceHole={hasText ? placeHole : undefined}
+                            onPlaceHole={pickingHole ? placeHole : undefined}
+                            plateTopZ={design.plate.thicknessMm}
                             view={viewRequest}
                         />
                     </Maker3DErrorBoundary>
@@ -833,6 +852,48 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                     onChange={(letterSpacing) => update((d) => ({ ...d, letterSpacing }))}
                                 />
                             </Section>
+
+                            {/* 글자 영역 사이즈 독립 조절 섹션 (베이스 크기는 유지) */}
+                            <Section
+                                title={t('textAreaLabel')}
+                                aside={
+                                    (design.textArea.widthMm != null || design.textArea.heightMm != null) ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => update((d) => ({ ...d, textArea: { widthMm: null, heightMm: null } }))}
+                                            className="text-[11px] font-bold text-teal-400 hover:text-teal-300"
+                                        >
+                                            {t('textAreaAuto')}
+                                        </button>
+                                    ) : null
+                                }
+                            >
+                                <p className="text-[11px] font-medium leading-relaxed text-white/50 break-keep">
+                                    {t('textAreaHint')}
+                                </p>
+                                <div className="space-y-2 pt-1">
+                                    <Slider
+                                        label={t('textAreaWidth')}
+                                        value={design.textArea.widthMm ?? Math.round(maxTextW)}
+                                        display={`${(design.textArea.widthMm ?? Math.round(maxTextW)).toFixed(0)}mm`}
+                                        min={10}
+                                        max={Math.max(10, Math.round(maxTextW))}
+                                        step={1}
+                                        unit="mm"
+                                        onChange={(widthMm) => update((d) => ({ ...d, textArea: { ...d.textArea, widthMm } }))}
+                                    />
+                                    <Slider
+                                        label={t('textAreaHeight')}
+                                        value={design.textArea.heightMm ?? Math.round(maxTextH)}
+                                        display={`${(design.textArea.heightMm ?? Math.round(maxTextH)).toFixed(0)}mm`}
+                                        min={5}
+                                        max={Math.max(5, Math.round(maxTextH))}
+                                        step={1}
+                                        unit="mm"
+                                        onChange={(heightMm) => update((d) => ({ ...d, textArea: { ...d.textArea, heightMm } }))}
+                                    />
+                                </div>
+                            </Section>
                         </>
                     )}
 
@@ -890,7 +951,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
 
                                 <div className="space-y-2 pt-1">
                                     <Slider
-                                        label={isCircle ? t('diameter') : design.plate.shape === 'outline' ? t('textAreaWidth') : t('width')}
+                                        label={isCircle ? t('baseDiameter') : t('baseWidth')}
                                         value={design.plate.widthMm}
                                         display={`${design.plate.widthMm.toFixed(0)}mm`}
                                         min={NAME_TAG_LIMITS.widthMm[0]}
@@ -912,7 +973,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                     />
                                     {!isCircle ? (
                                         <Slider
-                                            label={design.plate.shape === 'outline' ? t('textAreaHeight') : t('height')}
+                                            label={t('baseHeight')}
                                             value={design.plate.heightMm}
                                             display={`${design.plate.heightMm.toFixed(0)}mm`}
                                             min={NAME_TAG_LIMITS.heightMm[0]}
@@ -981,8 +1042,34 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         )
                                     })}
                                 </div>
-                                <p className="text-[11px] font-medium leading-relaxed text-white/45">{t('holePick')}</p>
+                                <button
+                                    type="button"
+                                    aria-pressed={design.hole.position === 'custom'}
+                                    onClick={() =>
+                                        update((d) => ({
+                                            ...d,
+                                            hole: {
+                                                ...d.hole,
+                                                position: 'custom' satisfies HolePosition,
+                                                xMm: d.hole.position === 'custom' ? d.hole.xMm : null,
+                                                yMm: d.hole.position === 'custom' ? d.hole.yMm : null,
+                                            },
+                                        }))
+                                    }
+                                    className={cn(
+                                        'flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-bold transition-all',
+                                        design.hole.position === 'custom'
+                                            ? 'border-teal-400 bg-teal-400/15 text-teal-300 shadow-[0_0_12px_rgba(45,212,191,0.25)] ring-1 ring-teal-400'
+                                            : 'border-white/10 bg-black/30 text-white/80 hover:border-white/25 hover:bg-white/[0.04]'
+                                    )}
+                                >
+                                    <HoleInfographicIcon position="custom" active={design.hole.position === 'custom'} />
+                                    {t('holes.custom')}
+                                </button>
                                 {design.hole.position === 'custom' ? (
+                                    <p className="text-[11px] font-medium leading-relaxed text-white/45">{t('holePick')}</p>
+                                ) : null}
+                                {design.hole.position === 'custom' && design.hole.xMm != null ? (
                                     <p className="text-[12px] font-bold text-teal-300">{t('holeCustom')}</p>
                                 ) : null}
                                 {design.hole.position !== 'none' ? (

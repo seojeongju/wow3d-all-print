@@ -43,6 +43,11 @@ export type NameTagDesign = {
         heightMm: number
         thicknessMm: number
     }
+    /** 글자 영역 크기 (null이면 베이스 허용 최대 영역 자동 사용) */
+    textArea: {
+        widthMm: number | null
+        heightMm: number | null
+    }
     hole: {
         position: HolePosition
         diameterMm: number
@@ -65,6 +70,8 @@ export type NameTagDesign = {
 export const NAME_TAG_LIMITS = {
     widthMm: [25, 150],
     heightMm: [12, 100],
+    textWidthMm: [10, 140],
+    textHeightMm: [5, 90],
     thicknessMm: [1, 3],
     holeMm: [2.5, 8],
     depthMm: [0.4, 2],
@@ -79,6 +86,7 @@ export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     letterSpacing: 0,
     baseId: null,
     plate: { shape: 'rounded', widthMm: 60, heightMm: 24, thicknessMm: 2.4 },
+    textArea: { widthMm: null, heightMm: null },
     hole: { position: 'left', diameterMm: 4, xMm: null, yMm: null },
     relief: { mode: 'emboss', depthMm: 1 },
     border: false,
@@ -106,7 +114,8 @@ function holeOf(raw: Record<string, unknown>, fallback: NameTagDesign['hole']): 
     const xMm = coordMm(raw.xMm)
     const yMm = coordMm(raw.yMm)
     const diameterMm = clamp(raw.diameterMm, NAME_TAG_LIMITS.holeMm, fallback.diameterMm)
-    if (raw.position === 'custom' && xMm != null && yMm != null) {
+    // 좌표가 없어도 직접 설정 메뉴는 유지한다. 클릭 전에는 구멍을 뚫지 않는다.
+    if (raw.position === 'custom') {
         return { position: 'custom', diameterMm, xMm, yMm }
     }
     return {
@@ -139,6 +148,16 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
     const hole = obj(input.hole)
     const relief = obj(input.relief)
     const colors = obj(input.colors)
+    const textArea = obj(input.textArea)
+    const textWidthMm =
+        typeof textArea.widthMm === 'number' && Number.isFinite(textArea.widthMm)
+            ? clamp(textArea.widthMm, NAME_TAG_LIMITS.textWidthMm, textArea.widthMm)
+            : null
+    const textHeightMm =
+        typeof textArea.heightMm === 'number' && Number.isFinite(textArea.heightMm)
+            ? clamp(textArea.heightMm, NAME_TAG_LIMITS.textHeightMm, textArea.heightMm)
+            : null
+
     return {
         version: NAME_TAG_DESIGN_VERSION,
         lines: lines.length > 0 ? lines : d.lines,
@@ -150,6 +169,10 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
             widthMm: sized?.widthMm ?? widthMm,
             heightMm: sized?.heightMm ?? clamp(plate.heightMm, NAME_TAG_LIMITS.heightMm, d.plate.heightMm),
             thicknessMm: clamp(plate.thicknessMm, NAME_TAG_LIMITS.thicknessMm, d.plate.thicknessMm),
+        },
+        textArea: {
+            widthMm: textWidthMm,
+            heightMm: textHeightMm,
         },
         hole: holeOf(hole, d.hole),
         relief: {

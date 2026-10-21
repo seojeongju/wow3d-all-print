@@ -74,6 +74,14 @@ export function HoleInfographicIcon({ position, className, active }: Props) {
                 </g>
             )}
 
+            {position === 'custom' && (
+                <g>
+                    <line x1="22" y1="8" x2="22" y2="20" stroke={holeColor} strokeWidth="1.6" strokeLinecap="round" />
+                    <line x1="16" y1="14" x2="28" y2="14" stroke={holeColor} strokeWidth="1.6" strokeLinecap="round" />
+                    <circle cx="22" cy="14" r="2.2" fill={holeFill} stroke={holeColor} strokeWidth="1.4" />
+                </g>
+            )}
+
             {position === 'none' && (
                 <g>
                     {/* 구멍 없음: 빗금 또는 클린 라인 표시 */}

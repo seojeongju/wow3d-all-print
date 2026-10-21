@@ -193,38 +193,47 @@ function avoidHole(
 }
 
 /**
- * 고리 구멍을 판 실루엣 안쪽에 둔다.
- * 왼쪽·위는 경계 상자 중심이 아니라 실제 외곽에서 고르고, custom은 클릭 좌표를 그 안으로 당긴다.
+ * 클릭 좌표가 판 밖이면 경계까지만 들인다. 안쪽 여백까지 끌어당기지 않는다.
+ */
+function customCenter(
+    wasm: ManifoldToplevel,
+    plate: CrossSection,
+    desired: [number, number],
+    track: Tracker
+): [number, number] | null {
+    if (insideSection(wasm, plate, desired[0], desired[1], track)) return desired
+    const bounds = plate.bounds()
+    const ax = (bounds.min[0] + bounds.max[0]) / 2
+    const ay = (bounds.min[1] + bounds.max[1]) / 2
+    if (!insideSection(wasm, plate, ax, ay, track)) return edgePoint(plate, 'left')
+    let lo = 0
+    let hi = 1
+    for (let i = 0; i < 18; i++) {
+        const mid = (lo + hi) / 2
+        const x = desired[0] * (1 - mid) + ax * mid
+        const y = desired[1] * (1 - mid) + ay * mid
+        if (insideSection(wasm, plate, x, y, track)) hi = mid
+        else lo = mid
+    }
+    return [desired[0] * (1 - hi) + ax * hi, desired[1] * (1 - hi) + ay * hi]
+}
+
+/**
+ * 고리 구멍을 판에 뚫는다.
+ * 왼쪽·위는 실루엣 안쪽 여유에서 고르고, 클릭 위치는 누른 좌표 그대로 둔다.
  */
 function attachHole(wasm: ManifoldToplevel, design: NameTagDesign, frame: PlateFrame, track: Tracker): PlateFrame {
     if (design.hole.position === 'none') return frame
     const radius = design.hole.diameterMm / 2
     const clearance = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, radius * 0.9)
-    const inset = track(frame.plate.offset(-(radius + clearance)))
-    if (inset.isEmpty()) return { ...frame, hole: null }
 
     let center: [number, number] | null = null
-    if (design.hole.position === 'custom' && design.hole.xMm != null && design.hole.yMm != null) {
-        const desired: [number, number] = [design.hole.xMm, design.hole.yMm]
-        if (insideSection(wasm, inset, desired[0], desired[1], track)) {
-            center = desired
-        } else {
-            const bounds = inset.bounds()
-            const ax = (bounds.min[0] + bounds.max[0]) / 2
-            const ay = (bounds.min[1] + bounds.max[1]) / 2
-            let x = desired[0]
-            let y = desired[1]
-            for (let i = 0; i < 16; i++) {
-                x = x * 0.7 + ax * 0.3
-                y = y * 0.7 + ay * 0.3
-                if (insideSection(wasm, inset, x, y, track)) {
-                    center = [x, y]
-                    break
-                }
-            }
-            if (!center) center = insideSection(wasm, inset, ax, ay, track) ? [ax, ay] : edgePoint(inset, 'left')
-        }
+    if (design.hole.position === 'custom') {
+        if (design.hole.xMm == null || design.hole.yMm == null) return frame
+        center = customCenter(wasm, frame.plate, [design.hole.xMm, design.hole.yMm], track)
     } else {
+        const inset = track(frame.plate.offset(-(radius + clearance)))
+        if (inset.isEmpty()) return { ...frame, hole: null }
         center = edgePoint(inset, design.hole.position === 'top' ? 'top' : 'left')
     }
     if (!center) return { ...frame, hole: null }
@@ -368,11 +377,32 @@ export function buildNameTag(
         if (missing.length > 0) issues.push({ code: 'missing-glyph', level: 'error', chars: missing })
 
         const frame = plateFrame(wasm, design, track)
+
+        // 베이스 크기와 독립적으로 글자 영역(textBox) 계산
+        let textBox = frame.box
+        const maxAvailW = Math.max(1, frame.box.x1 - frame.box.x0)
+        const maxAvailH = Math.max(1, frame.box.y1 - frame.box.y0)
+        const targetW =
+            design.textArea?.widthMm != null ? Math.min(design.textArea.widthMm, maxAvailW) : maxAvailW
+        const targetH =
+            design.textArea?.heightMm != null ? Math.min(design.textArea.heightMm, maxAvailH) : maxAvailH
+
+        if (targetW < maxAvailW || targetH < maxAvailH) {
+            const cx = (frame.box.x0 + frame.box.x1) / 2
+            const cy = (frame.box.y0 + frame.box.y1) / 2
+            textBox = {
+                x0: cx - targetW / 2,
+                x1: cx + targetW / 2,
+                y0: cy - targetH / 2,
+                y1: cy + targetH / 2,
+            }
+        }
+
         const rangeFor: RangeFor =
             design.plate.shape === 'outline' && !design.baseId
-                ? () => [frame.box.x0, frame.box.x1]
-                : plateRange(wasm, track(frame.plate.offset(-frame.margin, 'Round')), frame.box, track)
-        const lines = layoutLines(design, fonts, frame.box, rangeFor)
+                ? () => [textBox.x0, textBox.x1]
+                : plateRange(wasm, track(frame.plate.offset(-frame.margin, 'Round')), textBox, track)
+        const lines = layoutLines(design, fonts, textBox, rangeFor)
         if (lines.length === 0) return null
 
         const textPolys = lines.flatMap((line) => line.polygons)
