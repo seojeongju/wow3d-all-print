@@ -263,7 +263,9 @@
       "prevItem": "이전 작품",
       "nextItem": "다음 작품",
       "imageCount": "{count}장",
-      "noImage": "이미지 없음"
+      "noImage": "이미지 없음",
+      "imageAlt": "{title} — {detail} 3D프린팅 출력물",
+      "imageAltPlain": "{title} — 3D프린팅 출력물"
     },
     "servicesSection": {
       "title": "서비스 안내",
@@ -380,7 +382,12 @@
     ],
     "metaTitle": "3D프린팅출력 · 3D프린터출력 전문 | (주)와우쓰리디 WOW3D",
     "metaDescription": "3D프린팅출력·3D프린터출력 전문 와우쓰리디. STL·OBJ·3MF·PLY 즉시 자동견적, STEP·STP 자동 변환. 시제품제작부터 소량생산까지.",
-    "ogImageAlt": "와우쓰리디 WOW3D 3D프린팅출력·3D프린터출력 시제품·산업용 부품"
+    "ogImageAlt": "와우쓰리디 WOW3D 3D프린팅출력·3D프린터출력 시제품·산업용 부품",
+    "keyAnswers": {
+      "eyebrow": "Quick Answers",
+      "title": "3D프린팅, 가장 많이 묻는 3가지",
+      "more": "자세히 보기"
+    }
   },
   "Services": {
     "eyebrow": "WOW3D PRO Services",
@@ -2415,7 +2422,8 @@
       }
     ],
     "ctaMaterials": "전체 소재 보기",
-    "ctaQuote": "자동견적 시작"
+    "ctaQuote": "자동견적 시작",
+    "tableCaption": "PLA·ABS·PETG 필라멘트 특성 비교표"
   },
   "ResinCompareGuide": {
     "metaTitle": "Standard vs Tough vs Clear vs Flexible 레진 비교",
@@ -2608,7 +2616,8 @@
       }
     ],
     "ctaMaterials": "전체 소재 보기",
-    "ctaQuote": "자동견적 시작"
+    "ctaQuote": "자동견적 시작",
+    "tableCaption": "Standard·Tough·Clear·Flexible 레진 특성 비교표"
   },
   "BestMaterialsGuides": {
     "breadcrumbMaterials": "소재",
@@ -3501,6 +3510,7 @@
     "suitableHeading": "이런 분들께 적합합니다",
     "faqHeading": "자주 묻는 질문",
     "relatedGuidesHeading": "관련 가이드",
+    "relatedUseCasesHeading": "관련 활용 사례",
     "ctaHeading": "지금 바로 시작하세요",
     "ctaBody": "파일이 있으면 자동견적, 없으면 모델링·문의로 이어집니다.",
     "photoShowcaseHeading": "변환·출력 흐름 예시",

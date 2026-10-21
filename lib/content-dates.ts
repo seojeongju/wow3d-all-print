@@ -13,7 +13,7 @@ export type ContentDates = {
 }
 
 const CONTENT_DATES: Record<string, ContentDates> = {
-    '/': { published: '2026-01-23', modified: '2026-10-05' },
+    '/': { published: '2026-01-23', modified: '2026-10-21' },
     '/quote': { published: '2026-01-23', modified: '2026-10-18' },
     '/price-calculator': { published: '2026-10-12', modified: '2026-10-12' },
     '/stl-checker': { published: '2026-10-12', modified: '2026-10-12' },
@@ -75,12 +75,12 @@ const CONTENT_DATES: Record<string, ContentDates> = {
     '/guides/best-materials-for-heat-resistant-and-impact-resistant-parts': { published: '2026-07-28', modified: '2026-10-18' },
     '/guides/best-materials-for-miniatures-and-figurines': { published: '2026-07-28', modified: '2026-10-18' },
     '/guides/how-to-reduce-3d-printing-cost': { published: '2026-07-29', modified: '2026-10-18' },
-    '/guides/choosing-infill-density': { published: '2026-07-29', modified: '2026-10-18' },
-    '/guides/fixing-stl-file-errors': { published: '2026-07-29', modified: '2026-10-18' },
-    '/guides/minimum-wall-thickness': { published: '2026-07-29', modified: '2026-10-18' },
-    '/guides/why-support-costs': { published: '2026-07-29', modified: '2026-10-18' },
-    '/guides/3d-printing-tolerances': { published: '2026-07-29', modified: '2026-10-18' },
-    '/guides/splitting-large-3d-prints': { published: '2026-07-29', modified: '2026-10-18' },
+    '/guides/choosing-infill-density': { published: '2026-07-29', modified: '2026-10-21' },
+    '/guides/fixing-stl-file-errors': { published: '2026-07-29', modified: '2026-10-21' },
+    '/guides/minimum-wall-thickness': { published: '2026-07-29', modified: '2026-10-21' },
+    '/guides/why-support-costs': { published: '2026-07-29', modified: '2026-10-21' },
+    '/guides/3d-printing-tolerances': { published: '2026-07-29', modified: '2026-10-21' },
+    '/guides/splitting-large-3d-prints': { published: '2026-07-29', modified: '2026-10-21' },
     '/guides/graduation-project-checklist': { published: '2026-07-29', modified: '2026-10-18' },
     '/guides/capstone-design-prototype-guide': { published: '2026-09-30', modified: '2026-10-18' },
 }

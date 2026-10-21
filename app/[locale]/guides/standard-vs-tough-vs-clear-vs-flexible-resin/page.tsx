@@ -152,6 +152,7 @@ export default async function ResinGuidePage({ params }: Props) {
                     <MaterialCompareExplorer
                         materialKeys={RESIN_KEYS}
                         itemLabel={t('colItem')}
+                        caption={t('tableCaption')}
                         columnLabels={columnLabels}
                         tableRows={tableRows}
                         cards={cards}

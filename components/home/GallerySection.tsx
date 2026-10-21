@@ -6,7 +6,7 @@ import { Box, Layers, Droplets, Zap, X, ZoomIn, ArrowRight, Grid3X3, ChevronLeft
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { resolveGalleryImageUrl } from '@/lib/gallery-image-url';
+import { galleryThumbSrcSet, resolveGalleryImageUrl, resolveGalleryThumbUrl } from '@/lib/gallery-image-url';
 import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────
@@ -50,15 +50,21 @@ export function resolveImageUrl(url: string): string {
 // ─────────────────────────────────────────────────────
 // 이미지 + 로드 실패 시 1회 재시도 (간헐적 미표시 완화)
 // ─────────────────────────────────────────────────────
+/** 이미지 대체 텍스트 — 제목에 출력 방식·소재를 붙여 검색엔진이 어떤 출력물인지 알 수 있게 */
+function galleryImageAlt(item: GalleryItem, t: (key: string, values?: Record<string, string>) => string): string {
+    const detail = [item.print_method?.toUpperCase(), item.material].filter(Boolean).join(' ');
+    return detail ? t('imageAlt', { title: item.title, detail }) : t('imageAltPlain', { title: item.title });
+}
+
 function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
     const t = useTranslations('Home.gallery');
     const placeholder = placeholderDataUri(t('noImage'));
-    const [src, setSrc] = useState(resolveImageUrl(imageUrl));
+    const [src, setSrc] = useState(resolveGalleryThumbUrl(imageUrl, 960));
     const [retried, setRetried] = useState(false);
 
     // prop 변화 시 상태 동기화 추가 (버그 수정 핵심)
     useEffect(() => {
-        setSrc(resolveImageUrl(imageUrl));
+        setSrc(resolveGalleryThumbUrl(imageUrl, 960));
         setRetried(false);
     }, [imageUrl]);
 
@@ -77,7 +83,7 @@ function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) 
 
     // image_url이 바뀌면 초기화
     useEffect(() => {
-        const next = resolveImageUrl(imageUrl);
+        const next = resolveGalleryThumbUrl(imageUrl, 960);
         setSrc(next);
         setRetried(false);
     }, [imageUrl]);
@@ -86,6 +92,8 @@ function GalleryCardImage({ imageUrl, alt }: { imageUrl: string; alt: string }) 
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
             src={src}
+            srcSet={retried ? undefined : galleryThumbSrcSet(imageUrl)}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             alt={alt}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             loading="lazy"
@@ -128,7 +136,7 @@ export function GalleryCard({
             <div className="relative bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-full flex flex-col">
                 {/* 이미지 영역 */}
                 <div className="relative aspect-square overflow-hidden bg-slate-800">
-                    <GalleryCardImage imageUrl={item.image_url} alt={item.title} />
+                    <GalleryCardImage imageUrl={item.image_url} alt={galleryImageAlt(item, t)} />
 
                     {item.source_image_url && (
                         <div className="pointer-events-none absolute top-3 left-3 px-2 py-1 rounded-lg bg-indigo-500/90 text-[9px] font-black uppercase tracking-wider text-white">
@@ -323,7 +331,7 @@ export function DetailViewModal({
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             key={item.source_image_url}
-                                            src={resolveImageUrl(item.source_image_url)}
+                                            src={resolveGalleryThumbUrl(item.source_image_url, 1600)}
                                             alt={`${item.title} ${t('originalPhoto')}`}
                                             className="flex-1 w-full object-contain p-3 min-h-0"
                                         />
@@ -336,8 +344,8 @@ export function DetailViewModal({
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             key={activePhoto}
-                                            src={resolveImageUrl(activePhoto)}
-                                            alt={item.title}
+                                            src={resolveGalleryThumbUrl(activePhoto, 1600)}
+                                            alt={galleryImageAlt(item, t)}
                                             className="flex-1 w-full object-contain p-3 min-h-0"
                                         />
                                     </div>
@@ -358,7 +366,7 @@ export function DetailViewModal({
                                             >
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img
-                                                    src={resolveImageUrl(url)}
+                                                    src={resolveGalleryThumbUrl(url, 480)}
                                                     alt=""
                                                     className="w-full h-full object-cover"
                                                 />
@@ -373,8 +381,8 @@ export function DetailViewModal({
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         key={activePhoto}
-                                        src={resolveImageUrl(activePhoto)}
-                                        alt={item.title}
+                                        src={resolveGalleryThumbUrl(activePhoto, 1600)}
+                                        alt={galleryImageAlt(item, t)}
                                         className="w-full h-full object-contain"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
@@ -395,7 +403,7 @@ export function DetailViewModal({
                                             >
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img
-                                                    src={resolveImageUrl(url)}
+                                                    src={resolveGalleryThumbUrl(url, 480)}
                                                     alt=""
                                                     className="w-full h-full object-cover"
                                                 />

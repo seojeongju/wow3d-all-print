@@ -28,6 +28,8 @@ type Props = {
     /** 비교표 열 순서이자 주소 해시(#키)로 쓰는 소재 키 */
     materialKeys: readonly string[]
     itemLabel: string
+    /** 표 제목 (화면에는 숨기고 검색엔진·스크린리더용 caption으로 출력) */
+    caption: string
     columnLabels: Record<string, string>
     tableRows: CompareTableRow[]
     cards: CompareCard[]
@@ -48,6 +50,7 @@ type Props = {
 export default function MaterialCompareExplorer({
     materialKeys,
     itemLabel,
+    caption,
     columnLabels,
     tableRows,
     cards,
@@ -107,12 +110,14 @@ export default function MaterialCompareExplorer({
                 </p>
                 <div className="overflow-x-auto rounded-[2rem] border border-white/10 bg-white/[0.03]">
                     <table className={cn('w-full text-sm', tableClassName)}>
+                        <caption className="sr-only">{caption}</caption>
                         <thead className="bg-white/[0.04]">
                             <tr>
-                                <th className="p-4 text-left">{itemLabel}</th>
+                                <th scope="col" className="p-4 text-left">{itemLabel}</th>
                                 {materialKeys.map((key) => (
                                     <th
                                         key={key}
+                                        scope="col"
                                         className={cn('p-2 text-left transition-colors', active === key && 'bg-teal-400/10')}
                                     >
                                         <button
@@ -136,7 +141,7 @@ export default function MaterialCompareExplorer({
                         <tbody className="text-white/75">
                             {tableRows.map((row) => (
                                 <tr key={row.label} className="border-t border-white/10">
-                                    <td className="p-4 font-bold text-white">{row.label}</td>
+                                    <th scope="row" className="p-4 text-left font-bold text-white">{row.label}</th>
                                     {materialKeys.map((key) => (
                                         <td
                                             key={key}

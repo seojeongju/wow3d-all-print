@@ -68,11 +68,11 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
                 body: '모델 내부를 얼마나 채울지 정하는 비율입니다. 높을수록 재료와 시간이 늘고 강도가 올라가며, 낮을수록 가볍고 경제적입니다.',
             },
             {
-                title: '용도별 권장 범위',
+                title: '용도별로 인필은 몇 %가 적당한가요?',
                 body: '외형 목업 10~20%, 일반 시제품 20~40%, 기능·하중 부품 40~80%를 출발점으로 두고 테스트하세요.',
             },
             {
-                title: '가격과의 관계',
+                title: '인필을 올리면 가격은 어떻게 달라지나요?',
                 body: '인필이 올라가면 재료비와 출력 시간이 함께 증가합니다. 자동견적에서 값을 바꿔 차이를 바로 확인할 수 있습니다.',
             },
         ],
@@ -100,11 +100,11 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
         eyebrow: 'STL Repair',
         sections: [
             {
-                title: '자주 발생하는 오류',
+                title: 'STL 파일에서 자주 생기는 오류는 무엇인가요?',
                 body: '열린 구멍(non-manifold), 뒤집힌 노멀, 겹친 면, 내부 간섭, 단위 불일치(mm vs inch)가 대표적입니다.',
             },
             {
-                title: '업로드 전 점검',
+                title: '업로드 전에 무엇을 점검해야 하나요?',
                 body: '슬라이서나 메쉬 검사 도구(브라우저에서 바로 쓰는 와우쓰리디 무료 STL 점검기 등)로 오류를 확인하고, 가능하면 닫힌 솔리드(watertight)로 만드세요.',
             },
             {
@@ -140,11 +140,11 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
         eyebrow: 'Wall Thickness',
         sections: [
             {
-                title: '왜 벽 두께가 중요한가',
+                title: '벽 두께는 왜 중요한가요?',
                 body: '너무 얇으면 출력 중 무너지거나 후처리·배송 중 파손됩니다. 공정·소재마다 권장 최소값이 다릅니다.',
             },
             {
-                title: '실무 출발점',
+                title: '최소 벽 두께는 몇 mm부터 잡나요?',
                 body: 'FDM은 보통 1.0~1.5mm 이상, SLA/DLP 소형은 0.6~1.0mm 전후를 출발점으로 두고 형상에 맞게 조정하세요.',
             },
             {
@@ -188,11 +188,11 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
                 body: '오버행·브리지 등 공중에 떠 있는 형상을 받치는 임시 구조입니다. 출력 후 제거·마감이 필요합니다.',
             },
             {
-                title: '비용이 늘어나는 요인',
+                title: '서포트 비용은 왜 늘어나나요?',
                 body: '서포트 재료, 추가 출력 시간, 제거 인력·후처리가 견적에 반영될 수 있습니다.',
             },
             {
-                title: '비용을 줄이는 방법',
+                title: '서포트 비용은 어떻게 줄이나요?',
                 body: '모델 방향을 바꿔 오버행을 줄이거나, 분할 출력·필렛 설계로 서포트 의존도를 낮출 수 있습니다.',
             },
         ],
@@ -220,11 +220,11 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
         eyebrow: 'Tolerance',
         sections: [
             {
-                title: '공차가 필요한 이유',
+                title: '3D프린팅 부품에 공차가 왜 필요한가요?',
                 body: '출력물에는 수축·팽창·레이어 오차·후처리 편차가 있습니다. CAD 치수 그대로 끼우면 빡세거나 헐거울 수 있습니다.',
             },
             {
-                title: '실무 여유',
+                title: '조립 공차는 얼마나 주면 되나요?',
                 body: 'FDM 조립은 면당 0.2~0.4mm, SLA는 0.1~0.25mm 정도의 여유를 두고 테스트하는 경우가 많습니다. 소재·크기별로 시편이 안전합니다.',
             },
             {
@@ -256,7 +256,7 @@ export const NEW_SEO_GUIDES: GuideLandingConfig[] = [
         eyebrow: 'Large Prints',
         sections: [
             {
-                title: '언제 분할이 필요한가',
+                title: '언제 분할 출력이 필요한가요?',
                 body: '장비 최대 출력 크기를 초과하거나, 방향·서포트·재료 낭비를 줄이고 싶을 때 분할이 유리합니다.',
             },
             {

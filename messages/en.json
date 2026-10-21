@@ -263,7 +263,9 @@
       "prevItem": "Previous item",
       "nextItem": "Next item",
       "imageCount": "{count} photos",
-      "noImage": "No image"
+      "noImage": "No image",
+      "imageAlt": "{title} — {detail} 3D print",
+      "imageAltPlain": "{title} — 3D print"
     },
     "servicesSection": {
       "title": "Our services",
@@ -380,7 +382,12 @@
     ],
     "metaTitle": "3D Printing · On-demand Output & Prototypes | WOW3D",
     "metaDescription": "WOW3D 3D printing & prototypes. Instant quotes for STL·OBJ·3MF·PLY; STEP·STP auto-convert. From prototypes to small-batch production.",
-    "ogImageAlt": "WOW3D 3D printing and prototype manufacturing"
+    "ogImageAlt": "WOW3D 3D printing and prototype manufacturing",
+    "keyAnswers": {
+      "eyebrow": "Quick Answers",
+      "title": "3D printing: the three questions we hear most",
+      "more": "Learn more"
+    }
   },
   "Services": {
     "eyebrow": "WOW3D PRO Services",
@@ -2414,7 +2421,8 @@
       }
     ],
     "ctaMaterials": "Browse all materials",
-    "ctaQuote": "Start auto quote"
+    "ctaQuote": "Start auto quote",
+    "tableCaption": "PLA vs ABS vs PETG filament comparison table"
   },
   "ResinCompareGuide": {
     "metaTitle": "Standard vs Tough vs Clear vs Flexible resin comparison",
@@ -2607,7 +2615,8 @@
       }
     ],
     "ctaMaterials": "Browse all materials",
-    "ctaQuote": "Start auto quote"
+    "ctaQuote": "Start auto quote",
+    "tableCaption": "Standard vs Tough vs Clear vs Flexible resin comparison table"
   },
   "BestMaterialsGuides": {
     "breadcrumbMaterials": "Materials",
@@ -3500,6 +3509,7 @@
     "suitableHeading": "Ideal for",
     "faqHeading": "Frequently asked questions",
     "relatedGuidesHeading": "Related guides",
+    "relatedUseCasesHeading": "Related use cases",
     "ctaHeading": "Get started now",
     "ctaBody": "Have a file? Auto-quote. Need modeling? Continue via inquiry.",
     "photoShowcaseHeading": "Conversion & print flow examples",

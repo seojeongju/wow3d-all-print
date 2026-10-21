@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { QnAItem } from "@/lib/qna";
+import type { ReactNode } from "react";
 import { ogImageAlt, OG_IMAGE_PATH } from "@/lib/site-url";
 
 const MakerWorkspace = dynamic(
@@ -29,9 +30,11 @@ const GallerySection = dynamic(
 
 type HomePageClientProps = {
   homeFaqItems: QnAItem[];
+  /** 서버에서 렌더링한 핵심 답변 섹션 (AEO) */
+  keyAnswers?: ReactNode;
 };
 
-export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
+export default function HomePageClient({ homeFaqItems, keyAnswers }: HomePageClientProps) {
   const locale = useLocale();
   const tFeatured = useTranslations('Home.featured');
   const tNoFile = useTranslations('Home.noFile');
@@ -46,6 +49,9 @@ export default function HomePageClient({ homeFaqItems }: HomePageClientProps) {
       {/* ─── 전환(히어로) → 사례(신뢰) ─── */}
       <Hero />
       <Marquee />
+
+      {/* 결론 먼저: 비용·납기·파일 핵심 답변 */}
+      {keyAnswers}
 
       {/* 네이버 썸네일용 대표 이미지 — 히어로 밖 배치(헤더 겹침 방지) */}
       <section className="relative border-y border-white/5 bg-slate-950/80" aria-label={tFeatured('aria')}>

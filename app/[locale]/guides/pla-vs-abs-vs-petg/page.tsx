@@ -148,6 +148,7 @@ export default async function PlaAbsPetgGuidePage({ params }: Props) {
                     <MaterialCompareExplorer
                         materialKeys={MATERIAL_KEYS}
                         itemLabel={t('colItem')}
+                        caption={t('tableCaption')}
                         columnLabels={columnLabels}
                         tableRows={tableRows}
                         cards={cards}

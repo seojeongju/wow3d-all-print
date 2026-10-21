@@ -57,11 +57,11 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
                 body: 'It is how densely the inside of a part is filled. Higher means more material, time, and strength; lower means lighter and cheaper.',
             },
             {
-                title: 'Suggested ranges',
+                title: 'What infill percentage should I use?',
                 body: 'Start around 10–20% for visual mockups, 20–40% for general prototypes, and 40–80% for loaded functional parts — then test.',
             },
             {
-                title: 'Link to price',
+                title: 'How does infill affect price?',
                 body: 'Higher infill raises material and machine time together. Change the slider in auto-quote to see the difference instantly.',
             },
         ],
@@ -89,11 +89,11 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
         eyebrow: 'STL Repair',
         sections: [
             {
-                title: 'Common errors',
+                title: 'What are the most common STL errors?',
                 body: 'Typical issues: non-manifold holes, flipped normals, overlapping faces, self-intersections, and unit mismatches (mm vs inch).',
             },
             {
-                title: 'Check before upload',
+                title: 'What should I check before uploading?',
                 body: 'Use a slicer or mesh inspector, such as the free WOW3D STL checker that runs in your browser, and aim for a closed, watertight solid when possible.',
             },
             {
@@ -129,11 +129,11 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
         eyebrow: 'Wall Thickness',
         sections: [
             {
-                title: 'Why wall thickness matters',
+                title: 'Why does wall thickness matter?',
                 body: 'Walls that are too thin can fail during printing, finishing, or shipping. Recommended minimums differ by process and material.',
             },
             {
-                title: 'Starting points',
+                title: 'What minimum wall thickness should I start with?',
                 body: 'Often start at 1.0–1.5mm+ for FDM and about 0.6–1.0mm for small SLA/DLP features, then tune to geometry.',
             },
             {
@@ -177,11 +177,11 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
                 body: 'Temporary structures that hold overhangs and bridges in mid-air. They must be removed and finished after printing.',
             },
             {
-                title: 'What drives cost',
+                title: 'Why do supports increase cost?',
                 body: 'Support material, extra print time, and removal/finishing labor can all affect the quote.',
             },
             {
-                title: 'How to reduce it',
+                title: 'How can I reduce support cost?',
                 body: 'Reorient the part, split the model, or add fillets so fewer overhangs need supports.',
             },
         ],
@@ -209,11 +209,11 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
         eyebrow: 'Tolerance',
         sections: [
             {
-                title: 'Why tolerances matter',
+                title: 'Why do 3D printed parts need tolerances?',
                 body: 'Parts shrink/expand, have layer error, and shift in finishing. CAD-exact fits can be too tight or too loose.',
             },
             {
-                title: 'Practical clearances',
+                title: 'How much clearance should I leave for assembly?',
                 body: 'Many teams test ~0.2–0.4mm per side on FDM and ~0.1–0.25mm on SLA. Always validate with coupons for material and size.',
             },
             {
@@ -245,7 +245,7 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
         eyebrow: 'Large Prints',
         sections: [
             {
-                title: 'When to split',
+                title: 'When should a print be split?',
                 body: 'When the part exceeds max build size, or when orientation/supports/material waste improve with segments.',
             },
             {

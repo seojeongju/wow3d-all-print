@@ -1026,3 +1026,28 @@ export function buildUseCaseQuoteHref(config: UseCaseConfig, locale: string): st
     })
     return `/quote?${params.toString()}`
 }
+
+/**
+ * 서비스 → 관련 활용 사례 (주제 클러스터 내부 링크: 서비스 ↔ 활용 사례 ↔ 가이드 ↔ 견적).
+ * 서비스 페이지 하단 "관련 활용 사례"에 쓰인다. 슬러그는 USE_CASES에 있는 값만.
+ */
+const SERVICE_USE_CASES: Record<string, string[]> = {
+    printing: ['figures-miniatures', 'electronics-enclosures', 'replacement-parts'],
+    prototype: ['electronics-enclosures', 'jigs-fixtures', 'architectural-models'],
+    fdm: ['jigs-fixtures', 'replacement-parts', 'electronics-enclosures'],
+    sla: ['figures-miniatures', 'trophies-awards', 'architectural-models'],
+    graduation: ['architectural-models', 'cosplay-props', 'figures-miniatures'],
+    capstone: ['electronics-enclosures', 'jigs-fixtures', 'replacement-parts'],
+    'small-batch': ['logos-signage', 'trophies-awards', 'jigs-fixtures'],
+    modeling: ['replacement-parts', 'cosplay-props', 'logos-signage'],
+    'photo-to-3d': ['figures-miniatures', 'cosplay-props', 'trophies-awards'],
+}
+
+export function getServiceUseCases(serviceSlug: string, locale: string): { href: string; name: string; desc: string }[] {
+    return (SERVICE_USE_CASES[serviceSlug] ?? []).flatMap((slug) => {
+        const config = getUseCaseBySlug(slug)
+        if (!config) return []
+        const c = getUseCaseContent(config, locale)
+        return [{ href: config.path, name: c.name, desc: c.cardDesc }]
+    })
+}

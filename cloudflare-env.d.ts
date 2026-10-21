@@ -7,6 +7,10 @@ interface CloudflareEnv {
 	DB: D1Database;
 	WORKER_SELF_REFERENCE: Fetcher;
 	ASSETS: Fetcher;
+	/** Cloudflare Images 바인딩 — 갤러리 사진 축소 WebP 썸네일 생성 (wrangler.toml [images]) */
+	IMAGES?: {
+		input(stream: ReadableStream<Uint8Array>): CloudflareImageTransformer;
+	};
 	/** Workers AI (FAQ 초안 등) */
 	AI?: {
 		run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
@@ -29,4 +33,10 @@ interface CloudflareEnv {
 	/** 카카오맵 JavaScript 키 (인터랙티브 지도, 공개용) */
 	KAKAO_MAP_JS_KEY?: string;
 	NEXT_PUBLIC_KAKAO_MAP_APP_KEY?: string;
+}
+
+/** Images 바인딩 변환 체인 (필요한 메서드만) */
+interface CloudflareImageTransformer {
+	transform(options: { width?: number; height?: number; fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' }): CloudflareImageTransformer;
+	output(options: { format: 'image/webp' | 'image/avif' | 'image/jpeg' | 'image/png'; quality?: number }): Promise<{ response(): Response }>;
 }

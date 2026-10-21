@@ -246,10 +246,8 @@ export default function Hero() {
     return (
         <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 sm:pt-32 lg:pt-[6.5rem] pb-16 sm:pb-20 lg:pb-8">
             <div className="absolute inset-0 bg-gradient-to-br from-[#0b1220] via-[#111827] to-[#0f172a]" />
-            <div
-                className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-screen"
-                style={{ backgroundAttachment: 'fixed' }}
-            />
+            {/* 배경 질감 — fixed 배경은 스크롤마다 다시 그려 느려지므로 사용하지 않음 */}
+            <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-screen" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(20,184,166,0.14),transparent_48%),radial-gradient(circle_at_82%_68%,rgba(79,70,229,0.12),transparent_50%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:28px_28px]" />
             <div className="absolute left-[-8%] top-[12%] h-[420px] w-[420px] rounded-full bg-teal-500/15 blur-[120px]" />

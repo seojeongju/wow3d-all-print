@@ -185,3 +185,25 @@ export function getKeyAnswer(path: string, locale: string): string | null {
 export function getGuideKeyAnswer(slug: string, locale: string): string | null {
     return getKeyAnswer(`/guides/${slug}`, locale)
 }
+
+/**
+ * 홈 상단 "핵심 답변" 질문 3개 — 화면 표시와 홈 FAQPage 스키마에 같은 문장을 쓴다.
+ * 답변은 해당 가이드·서비스 핵심 답변을 그대로 참조하므로 원문을 고치면 함께 바뀐다.
+ */
+export const HOME_KEY_QUESTIONS: { href: string; question: GuideKeyAnswer; answer: GuideKeyAnswer }[] = [
+    {
+        href: '/guides/3d-printing-quote-guide',
+        question: { ko: '3D프린팅 출력 비용은 어떻게 산정되나요?', en: 'How is the cost of a 3D print calculated?' },
+        answer: PAGE_KEY_ANSWERS['/guides/3d-printing-quote-guide'],
+    },
+    {
+        href: '/guides/3d-printing-turnaround-time',
+        question: { ko: '3D프린팅 주문하면 며칠 만에 받을 수 있나요?', en: 'How long does a 3D printing order take?' },
+        answer: PAGE_KEY_ANSWERS['/guides/3d-printing-turnaround-time'],
+    },
+    {
+        href: '/services/printing',
+        question: { ko: '어떤 파일로 바로 견적을 받을 수 있나요?', en: 'Which files can I upload for an instant quote?' },
+        answer: PAGE_KEY_ANSWERS['/services/printing'],
+    },
+]

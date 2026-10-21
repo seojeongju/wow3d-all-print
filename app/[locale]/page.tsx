@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { buildFaqPageSchema, buildWebPageSchema } from '@/lib/aeo-schema';
-import { getPublishedQnas, localizeQnas, pickVisibleFaqItems } from '@/lib/qna';
+import { getPublishedQnas, localizeQnas, pickVisibleFaqItems, type QnAItem } from '@/lib/qna';
 import HomePageClient from '@/components/home/HomePageClient';
+import HomeKeyAnswers from '@/components/home/HomeKeyAnswers';
+import { HOME_KEY_QUESTIONS } from '@/lib/guide-key-answers';
 import ScopedIntlProvider from '@/components/i18n/ScopedIntlProvider';
 import { absoluteUrl, buildOgImages } from '@/lib/site-url';
 import { getPathname } from '@/i18n/navigation';
@@ -62,7 +64,14 @@ export default async function HomePage({ params }: Props) {
   const qnas = await getPublishedQnas();
   const homeFaqItems = localizeQnas(pickVisibleFaqItems(qnas, 6), locale);
   const homePath = getPathname({ locale, href: '/' });
-  const homeFaqSchema = homeFaqItems.length > 0 ? buildFaqPageSchema(homeFaqItems, homePath) : null;
+  // 화면의 핵심 답변 3개 + 홈 FAQ를 한 FAQPage로 (화면 문구와 동일)
+  const keyQnas: QnAItem[] = HOME_KEY_QUESTIONS.map((q, i) => ({
+    id: -(i + 1),
+    question: locale === 'en' ? q.question.en : q.question.ko,
+    answer: locale === 'en' ? q.answer.en : q.answer.ko,
+    category: 'key-answer',
+  }));
+  const homeFaqSchema = buildFaqPageSchema([...keyQnas, ...homeFaqItems], homePath);
   const t = await getTranslations({ locale, namespace: 'Home' });
   const webPageSchema = buildWebPageSchema({
     name: t('metaTitle'),
@@ -76,13 +85,11 @@ export default async function HomePage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            homeFaqSchema ? [webPageSchema, homeFaqSchema] : webPageSchema
-          ),
+          __html: JSON.stringify([webPageSchema, homeFaqSchema]),
         }}
       />
       <ScopedIntlProvider scope="home" locale={locale}>
-        <HomePageClient homeFaqItems={homeFaqItems} />
+        <HomePageClient homeFaqItems={homeFaqItems} keyAnswers={<HomeKeyAnswers locale={locale} />} />
       </ScopedIntlProvider>
     </>
   );

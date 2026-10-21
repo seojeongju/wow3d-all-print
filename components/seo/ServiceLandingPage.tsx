@@ -15,6 +15,7 @@ import type { QnAItem } from '@/lib/qna'
 import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import KeyAnswerBox from '@/components/seo/KeyAnswerBox'
+import { getServiceUseCases } from '@/lib/use-case-pages'
 import { pickServiceWorkPhotos } from '@/lib/seo-work-photos'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
@@ -40,6 +41,7 @@ type Props = {
 
 export default async function ServiceLandingPage({ config, locale }: Props) {
     const t = await getTranslations({ locale, namespace: 'ServiceChrome' })
+    const relatedUseCases = getServiceUseCases(config.slug, locale)
     const showcaseItems =
         config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems(locale) : null
     const info = getServiceInfographic(config.slug, locale)
@@ -204,6 +206,24 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                                         className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors font-bold"
                                     >
                                         {g.title}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {relatedUseCases.length > 0 && (
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-black mb-6">{t('relatedUseCasesHeading')}</h2>
+                            <div className="grid md:grid-cols-3 gap-4">
+                                {relatedUseCases.map((u) => (
+                                    <Link
+                                        key={u.href}
+                                        href={u.href as '/'}
+                                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 hover:bg-white/[0.05] transition-colors"
+                                    >
+                                        <span className="block font-bold">{u.name}</span>
+                                        <span className="mt-1.5 block text-sm text-white/60 leading-relaxed break-keep">{u.desc}</span>
                                     </Link>
                                 ))}
                             </div>

@@ -162,11 +162,12 @@ export default async function CompareGuidePage({ params }: Props) {
                         <p className="mb-5 text-sm text-white/55 break-keep">{t('tableNote')}</p>
                         <div className="overflow-x-auto rounded-[2rem] border border-white/10 bg-white/[0.03]">
                             <table className="w-full min-w-[900px] text-sm">
+                                <caption className="sr-only">{t('tableTitle')}</caption>
                                 <thead className="bg-white/[0.04]">
                                     <tr>
-                                        <th className="p-4 text-left font-black">{t('colItem')}</th>
+                                        <th scope="col" className="p-4 text-left font-black">{t('colItem')}</th>
                                         {COLUMN_HEADERS.map((col) => (
-                                            <th key={col.key} className={`p-4 text-left font-black ${col.accent}`}>
+                                            <th key={col.key} scope="col" className={`p-4 text-left font-black ${col.accent}`}>
                                                 {col.label}
                                             </th>
                                         ))}
@@ -175,7 +176,7 @@ export default async function CompareGuidePage({ params }: Props) {
                                 <tbody className="text-white/75">
                                     {compareRows.map((row) => (
                                         <tr key={row.label} className="border-t border-white/10">
-                                            <td className="p-4 font-bold text-white">{row.label}</td>
+                                            <th scope="row" className="p-4 text-left font-bold text-white">{row.label}</th>
                                             {COLUMN_HEADERS.map((col) => (
                                                 <td key={col.key} className="p-4">
                                                     {row[col.key]}
