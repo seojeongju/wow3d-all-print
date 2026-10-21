@@ -82,6 +82,26 @@ async function main() {
     ]
 
     let cases = 0
+    for (const [baseId, sample] of [
+        ['kids:kids_05', '하준'],
+        ['pet:01', '콩이'],
+    ] as const) {
+        const templated = normalizeNameTagDesign({
+            ...DEFAULT_NAME_TAG_DESIGN,
+            baseId,
+            lines: [{ text: sample, fontId: 'gowun-dodum', size: 1 }],
+        })
+        const label = `template/${baseId}`
+        const templatedResult = buildNameTag(wasm, templated, fonts)
+        assert.ok(templatedResult, `${label}: 결과 없음`)
+        assert.equal(templatedResult.stats.status, 'NoError', `${label}: 매니폴드 오류`)
+        assert.equal(templatedResult.stats.bodies, 1, `${label}: 덩어리 ${templatedResult.stats.bodies}개`)
+        assertClosedMesh(templatedResult.solid, label)
+        const blocking = templatedResult.issues.filter((issue) => issue.level === 'error')
+        assert.equal(blocking.length, 0, `${label}: ${JSON.stringify(blocking)}`)
+        cases++
+    }
+
     const warnings = new Map<string, number>()
     const missingByFont = new Map<string, Set<string>>()
     const started = Date.now()

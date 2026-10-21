@@ -4463,6 +4463,11 @@
         "right": "오른쪽"
       },
       "letterSpacing": "자간",
+      "baseLabel": "베이스",
+      "baseBasic": "기본 도형",
+      "baseKids": "어린이 이름표",
+      "basePets": "반려동물",
+      "baseHint": "고른 그림의 외곽이 판이 됩니다. 그림 색은 한 덩어리로 합쳐지고, 이름은 그 위에 새깁니다.",
       "plateLabel": "판",
       "shapes": {
         "rounded": "둥근 사각",

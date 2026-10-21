@@ -4462,6 +4462,11 @@
         "right": "Right"
       },
       "letterSpacing": "Letter spacing",
+      "baseLabel": "Base",
+      "baseBasic": "Basic shapes",
+      "baseKids": "Kids name tag",
+      "basePets": "Pet tag",
+      "baseHint": "The outline of the picture becomes the plate. Its colors are merged into one piece, and the name is added on top.",
       "plateLabel": "Plate",
       "shapes": {
         "rounded": "Rounded",

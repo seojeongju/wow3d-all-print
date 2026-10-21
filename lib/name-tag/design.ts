@@ -3,6 +3,7 @@
  * 미리보기·STL·견적 전달·공유가 모두 이 JSON 하나를 입력으로 쓴다.
  */
 import { isNameTagFontId, type NameTagFontId } from '@/lib/name-tag-fonts'
+import { getNameTagTemplate, isNameTagTemplateId, templatePlateSize } from '@/lib/name-tag/templates'
 
 export const NAME_TAG_DESIGN_VERSION = 1
 
@@ -34,6 +35,8 @@ export type NameTagDesign = {
     align: TextAlign
     /** 자간 (em 비율, -0.05 ~ 0.3) */
     letterSpacing: number
+    /** SVG 템플릿 판. 없으면 기본 도형 */
+    baseId: string | null
     plate: {
         shape: PlateShape
         widthMm: number
@@ -71,6 +74,7 @@ export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     lines: [{ text: '', fontId: 'gowun-dodum', size: 1 }],
     align: 'center',
     letterSpacing: 0,
+    baseId: null,
     plate: { shape: 'rounded', widthMm: 60, heightMm: 24, thicknessMm: 2.4 },
     hole: { position: 'left', diameterMm: 4 },
     relief: { mode: 'emboss', depthMm: 1 },
@@ -107,6 +111,9 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
         }
     })
     const plate = obj(input.plate)
+    const base = isNameTagTemplateId(input.baseId) ? getNameTagTemplate(input.baseId) : null
+    const widthMm = clamp(plate.widthMm, NAME_TAG_LIMITS.widthMm, d.plate.widthMm)
+    const sized = base ? templatePlateSize(base, widthMm) : null
     const hole = obj(input.hole)
     const relief = obj(input.relief)
     const colors = obj(input.colors)
@@ -115,10 +122,11 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
         lines: lines.length > 0 ? lines : d.lines,
         align: pick(input.align, TEXT_ALIGNS, d.align),
         letterSpacing: clamp(input.letterSpacing, NAME_TAG_LIMITS.letterSpacing, 0),
+        baseId: base?.id ?? null,
         plate: {
             shape: pick(plate.shape, PLATE_SHAPES, d.plate.shape),
-            widthMm: clamp(plate.widthMm, NAME_TAG_LIMITS.widthMm, d.plate.widthMm),
-            heightMm: clamp(plate.heightMm, NAME_TAG_LIMITS.heightMm, d.plate.heightMm),
+            widthMm: sized?.widthMm ?? widthMm,
+            heightMm: sized?.heightMm ?? clamp(plate.heightMm, NAME_TAG_LIMITS.heightMm, d.plate.heightMm),
             thicknessMm: clamp(plate.thicknessMm, NAME_TAG_LIMITS.thicknessMm, d.plate.thicknessMm),
         },
         hole: {
@@ -213,5 +221,5 @@ export function applyNameTagPreset(design: NameTagDesign, presetId: NameTagPrese
         text: design.lines[i]?.text ?? '',
         fontId: design.lines[i]?.fontId ?? line.fontId,
     }))
-    return normalizeNameTagDesign({ ...design, ...preset, lines })
+    return normalizeNameTagDesign({ ...design, ...preset, lines, baseId: null })
 }

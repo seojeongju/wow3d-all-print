@@ -19,9 +19,11 @@ import {
     X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { NameTagBasePicker } from '@/components/maker/NameTagBasePicker'
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary'
 import { useFileStore } from '@/store/useFileStore'
 import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, type NameTagFontId } from '@/lib/name-tag-fonts'
+import { getNameTagTemplate, templatePlateSize } from '@/lib/name-tag/templates'
 import {
     applyNameTagPreset,
     DEFAULT_NAME_TAG_DESIGN,
@@ -253,7 +255,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const issues = result?.issues ?? []
     const blocking = issues.some((issue) => issue.level === 'error')
     const hasText = nameTagHasText(design)
-    const isCircle = design.plate.shape === 'circle'
+    const isCircle = design.baseId == null && design.plate.shape === 'circle'
 
     const issueText = (issue: NameTagIssue): string => {
         switch (issue.code) {
@@ -616,13 +618,30 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                         />
                     </Section>
 
+                    <NameTagBasePicker
+                        baseId={design.baseId}
+                        onSelect={(baseId) =>
+                            update((d) => {
+                                if (!baseId) return { ...d, baseId: null }
+                                const template = getNameTagTemplate(baseId)
+                                if (!template) return d
+                                return {
+                                    ...d,
+                                    baseId,
+                                    plate: { ...d.plate, ...templatePlateSize(template, d.plate.widthMm) },
+                                    hole: { ...d.hole, position: 'none' },
+                                }
+                            })
+                        }
+                    />
+
                     <Section title={t('plateLabel')}>
                         <div className="grid grid-cols-5 gap-1.5">
                             {PLATE_SHAPES.map((shape) => (
                                 <Choice
                                     key={shape}
-                                    active={design.plate.shape === shape}
-                                    onClick={() => update((d) => ({ ...d, plate: { ...d.plate, shape } }))}
+                                    active={design.baseId == null && design.plate.shape === shape}
+                                    onClick={() => update((d) => ({ ...d, baseId: null, plate: { ...d.plate, shape } }))}
                                     className="px-1 text-[11px]"
                                 >
                                     {t(`shapes.${shape}`)}
@@ -636,7 +655,18 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             min={NAME_TAG_LIMITS.widthMm[0]}
                             max={NAME_TAG_LIMITS.widthMm[1]}
                             step={1}
-                            onChange={(widthMm) => update((d) => ({ ...d, plate: { ...d.plate, widthMm } }))}
+                            onChange={(widthMm) =>
+                                update((d) => {
+                                    const template = getNameTagTemplate(d.baseId)
+                                    return {
+                                        ...d,
+                                        plate: {
+                                            ...d.plate,
+                                            ...(template ? templatePlateSize(template, widthMm) : { widthMm }),
+                                        },
+                                    }
+                                })
+                            }
                         />
                         {!isCircle ? (
                             <Slider
@@ -646,7 +676,17 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 min={NAME_TAG_LIMITS.heightMm[0]}
                                 max={NAME_TAG_LIMITS.heightMm[1]}
                                 step={1}
-                                onChange={(heightMm) => update((d) => ({ ...d, plate: { ...d.plate, heightMm } }))}
+                                onChange={(heightMm) =>
+                                    update((d) => {
+                                        const template = getNameTagTemplate(d.baseId)
+                                        if (!template) return { ...d, plate: { ...d.plate, heightMm } }
+                                        const aspect = template.view[1] / template.view[0]
+                                        return {
+                                            ...d,
+                                            plate: { ...d.plate, ...templatePlateSize(template, heightMm / aspect) },
+                                        }
+                                    })
+                                }
                             />
                         ) : null}
                         <Slider

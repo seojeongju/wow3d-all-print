@@ -1,0 +1,262 @@
+[
+  {
+    "id": "01",
+    "name": "01_곰돌이",
+    "filename": "01_곰돌이.svg",
+    "width": 850,
+    "height": 530,
+    "name_center": [
+      434,
+      344
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "02",
+    "name": "02_토끼",
+    "filename": "02_토끼.svg",
+    "width": 850,
+    "height": 522,
+    "name_center": [
+      434,
+      339
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "03",
+    "name": "03_공룡",
+    "filename": "03_공룡.svg",
+    "width": 850,
+    "height": 532,
+    "name_center": [
+      434,
+      346
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "04",
+    "name": "04_우주",
+    "filename": "04_우주.svg",
+    "width": 850,
+    "height": 489,
+    "name_center": [
+      434,
+      318
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "05",
+    "name": "05_무지개",
+    "filename": "05_무지개.svg",
+    "width": 850,
+    "height": 531,
+    "name_center": [
+      434,
+      345
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "06",
+    "name": "06_유니콘",
+    "filename": "06_유니콘.svg",
+    "width": 850,
+    "height": 521,
+    "name_center": [
+      434,
+      339
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "07",
+    "name": "07_왕관",
+    "filename": "07_왕관.svg",
+    "width": 850,
+    "height": 527,
+    "name_center": [
+      434,
+      343
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "08",
+    "name": "08_꽃요정",
+    "filename": "08_꽃요정.svg",
+    "width": 850,
+    "height": 513,
+    "name_center": [
+      434,
+      333
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "09",
+    "name": "09_고래",
+    "filename": "09_고래.svg",
+    "width": 850,
+    "height": 535,
+    "name_center": [
+      434,
+      348
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "10",
+    "name": "10_바다거북",
+    "filename": "10_바다거북.svg",
+    "width": 850,
+    "height": 491,
+    "name_center": [
+      434,
+      319
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "11",
+    "name": "11_호랑이",
+    "filename": "11_호랑이.svg",
+    "width": 850,
+    "height": 530,
+    "name_center": [
+      434,
+      344
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "12",
+    "name": "12_사자",
+    "filename": "12_사자.svg",
+    "width": 850,
+    "height": 510,
+    "name_center": [
+      434,
+      332
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "13",
+    "name": "13_강아지",
+    "filename": "13_강아지.svg",
+    "width": 850,
+    "height": 517,
+    "name_center": [
+      434,
+      336
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "14",
+    "name": "14_고양이",
+    "filename": "14_고양이.svg",
+    "width": 850,
+    "height": 498,
+    "name_center": [
+      434,
+      324
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "15",
+    "name": "15_딸기",
+    "filename": "15_딸기.svg",
+    "width": 850,
+    "height": 546,
+    "name_center": [
+      434,
+      355
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "16",
+    "name": "16_귤",
+    "filename": "16_귤.svg",
+    "width": 850,
+    "height": 490,
+    "name_center": [
+      434,
+      318
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "17",
+    "name": "17_자동차",
+    "filename": "17_자동차.svg",
+    "width": 850,
+    "height": 528,
+    "name_center": [
+      434,
+      343
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "18",
+    "name": "18_굴착기",
+    "filename": "18_굴착기.svg",
+    "width": 850,
+    "height": 496,
+    "name_center": [
+      434,
+      322
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "19",
+    "name": "19_로봇",
+    "filename": "19_로봇.svg",
+    "width": 850,
+    "height": 531,
+    "name_center": [
+      434,
+      345
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  },
+  {
+    "id": "20",
+    "name": "20_스포츠",
+    "filename": "20_스포츠.svg",
+    "width": 850,
+    "height": 497,
+    "name_center": [
+      434,
+      323
+    ],
+    "name_width_ratio": 0.61,
+    "source_type": "approximate_vector_trace"
+  }
+]

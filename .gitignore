@@ -68,3 +68,5 @@ _temp_migration/
 /public/vendor/manifold/
 # 이름표 폰트 원본 (scripts/fetch-name-tag-fonts.py 임시 파일)
 /tmp-font-src/
+# 이름표 템플릿 외곽 미리보기 (scripts/build-name-tag-plates.mjs)
+/tmp-plate-preview/

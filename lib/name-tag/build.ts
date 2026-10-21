@@ -8,6 +8,7 @@ import type { Font } from 'opentype.js'
 import type { NameTagFontId } from '@/lib/name-tag-fonts'
 import type { NameTagDesign } from '@/lib/name-tag/design'
 import { missingGlyphs, referenceBox, textOutline, type Polygon } from '@/lib/name-tag/outline'
+import { getNameTagTemplate } from '@/lib/name-tag/templates'
 
 /**
  * 출력 검사 기준값 (초안).
@@ -91,7 +92,31 @@ function roundedRect(wasm: ManifoldToplevel, w: number, h: number, r: number, tr
     return track(core.offset(radius, 'Round'))
 }
 
+function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracker): PlateFrame | null {
+    const template = getNameTagTemplate(design.baseId)
+    if (!template) return null
+    const [viewW, viewH] = template.view
+    const scale = design.plate.widthMm / viewW
+    const toMm = (x: number, y: number): [number, number] => [(x - viewW / 2) * scale, (viewH / 2 - y) * scale]
+    const rings = template.rings.map((ring) => ring.map(([x, y]) => toMm(x, y)))
+    const plate = track(new wasm.CrossSection(rings, 'NonZero'))
+    const [nx, ny, nw, nh] = template.nameBox
+    const padX = nw * 0.08
+    const padY = nh * 0.12
+    const topLeft = toMm(nx + padX, ny + padY)
+    const bottomRight = toMm(nx + nw - padX, ny + nh - padY)
+    const box = {
+        x0: Math.min(topLeft[0], bottomRight[0]),
+        y0: Math.min(topLeft[1], bottomRight[1]),
+        x1: Math.max(topLeft[0], bottomRight[0]),
+        y1: Math.max(topLeft[1], bottomRight[1]),
+    }
+    return { plate, hole: null, box, margin: 1.2 }
+}
+
 function plateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracker): PlateFrame {
+    const fromTemplate = templateFrame(wasm, design, track)
+    if (fromTemplate) return placeHole(wasm, design, fromTemplate, track)
     const { shape } = design.plate
     const d = design.hole.diameterMm
     const edge = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, d * 0.45)
@@ -123,6 +148,26 @@ function plateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracke
         box = { ...box, y1: Math.min(box.y1, cy - d / 2 - edge * 0.8) }
     }
     return { plate, hole, box, margin }
+}
+
+/** 템플릿 판의 경계 안쪽에 고리 구멍을 둔다. */
+function placeHole(wasm: ManifoldToplevel, design: NameTagDesign, frame: PlateFrame, track: Tracker): PlateFrame {
+    if (design.hole.position === 'none') return frame
+    const d = design.hole.diameterMm
+    const edge = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, d * 0.45)
+    const bounds = frame.plate.bounds()
+    let { box } = frame
+    let hole: CrossSection
+    if (design.hole.position === 'left') {
+        const cx = bounds.min[0] + edge + d / 2
+        hole = track(track(wasm.CrossSection.circle(d / 2, 48)).translate(cx, (bounds.min[1] + bounds.max[1]) / 2))
+        box = { ...box, x0: Math.max(box.x0, cx + d / 2 + edge) }
+    } else {
+        const cy = bounds.max[1] - edge - d / 2
+        hole = track(track(wasm.CrossSection.circle(d / 2, 48)).translate((bounds.min[0] + bounds.max[0]) / 2, cy))
+        box = { ...box, y1: Math.min(box.y1, cy - d / 2 - edge * 0.8) }
+    }
+    return { ...frame, hole, box }
 }
 
 type PlacedLine = { polygons: Polygon[]; heightMm: number; shrunk: boolean; index: number }
@@ -248,7 +293,7 @@ export function buildNameTag(
 
         const frame = plateFrame(wasm, design, track)
         const rangeFor: RangeFor =
-            design.plate.shape === 'outline'
+            design.plate.shape === 'outline' && !design.baseId
                 ? () => [frame.box.x0, frame.box.x1]
                 : plateRange(wasm, track(frame.plate.offset(-frame.margin, 'Round')), frame.box, track)
         const lines = layoutLines(design, fonts, frame.box, rangeFor)
@@ -260,7 +305,7 @@ export function buildNameTag(
 
         const T = design.plate.thicknessMm
         let plate = frame.plate
-        if (design.plate.shape === 'outline') {
+        if (design.plate.shape === 'outline' && !design.baseId) {
             const margin = Math.max(2, Math.min(...lines.map((l) => l.heightMm)) * 0.18) + (design.border ? 1.8 : 0)
             const closing = 3
             plate = track(track(rawText.offset(margin + closing, 'Round', 2, 48)).offset(-closing, 'Round', 2, 48))
