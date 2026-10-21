@@ -61,6 +61,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|\\.well-known|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|stl|obj|3mf|ttf|otf|woff|woff2)$).*)',
+        '/((?!_next/static|_next/image|\\.well-known|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|stl|obj|3mf|ttf|otf|woff|woff2|mjs|wasm)$).*)',
     ],
 }

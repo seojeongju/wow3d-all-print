@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/gen-client-i18n-namespaces.mjs",
+    "predev": "node scripts/gen-client-i18n-namespaces.mjs && node scripts/copy-manifold-wasm.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/gen-client-i18n-namespaces.mjs",
+    "prebuild": "node scripts/gen-client-i18n-namespaces.mjs && node scripts/copy-manifold-wasm.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -20,6 +20,7 @@
     "test:order-prices": "npx --yes tsx scripts/test-order-quote-prices.ts",
     "test:batch-price": "npx --yes tsx scripts/test-quote-batch-price.ts",
     "test:search": "npx --yes tsx scripts/test-site-search.ts",
+    "test:name-tag": "npx --yes tsx scripts/test-name-tag-geometry.ts",
     "calibrate:quotes": "npx --yes tsx scripts/calibrate-quotes.ts",
     "calibrate:extract": "npx --yes tsx scripts/extract-stl-metrics.ts",
     "calibrate:suggest": "npx --yes tsx scripts/suggest-calibration.ts"
@@ -60,6 +61,7 @@
     "imagetracerjs": "^1.2.6",
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
+    "manifold-3d": "^3.5.4",
     "next": "15.1.6",
     "next-intl": "^4.14.2",
     "occt-import-js": "^0.0.23",

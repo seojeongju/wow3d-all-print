@@ -31,6 +31,18 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  webpack(config, { isServer, webpack }) {
+    if (!isServer) {
+      // manifold-3d는 Node 실행 분기에서만 node: 모듈을 쓴다. 브라우저 번들에서는 제외한다
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^node:/,
+          contextRegExp: /manifold-3d/,
+        })
+      )
+    }
+    return config
+  },
   env: {
     NEXT_PUBLIC_APP_URL:
       process.env.NEXT_PUBLIC_APP_URL ||

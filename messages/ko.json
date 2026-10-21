@@ -4410,83 +4410,101 @@
   },
   "Maker": {
     "metaTitle": "이름표 만들기",
-    "nameTagKicker": "Name tag",
-    "nameTagTitle": "이름표 만들기",
-    "nameTagLead": "이름과 문구를 넣고 폰트·크기를 고르면 바로 3D로 확인한 뒤 견적으로 넘길 수 있습니다.",
-    "nameTagNameLabel": "이름",
-    "nameTagNamePlaceholder": "예: 하준, WOW3D",
-    "nameTagTextLabel": "텍스트",
-    "nameTagTextPlaceholder": "예: 010-1234-5678, 3학년 2반",
-    "nameTagFontLabel": "폰트",
-    "nameTagSizeLabel": "판 크기",
-    "nameTagLetterLabel": "글자 크기",
-    "nameTagMissingGlyph": "이 폰트에 없는 글자",
-    "nameTagFontFail": "폰트를 불러오지 못했습니다",
-    "nameTagFonts": {
-      "gowun-dodum": "고운돋움",
-      "jua": "주아",
-      "do-hyeon": "도현",
-      "black-han": "블랙한산스"
-    },
-    "nameTagSizes": {
-      "s": "작게",
-      "m": "보통",
-      "l": "크게"
-    },
-    "nameTagTemplateLabel": "모양",
-    "nameTagTracing": "글자를 붙이는 중",
-    "nameTagPreviewHint": "드래그로 돌려 보세요",
-    "nameTagOpenDraw": "로고를 직접 그리기",
-    "nameTagBack": "이름표로 돌아가기",
-    "nameTagWishLabel": "원하는 느낌",
-    "nameTagWishPlaceholder": "예: 가방에 달 별, 귀여운 하트",
-    "nameTagSuggest": "모양 추천",
-    "nameTagSuggestHint": "준비된 판과 아이콘 중에서만 고릅니다. 새 3D를 만들지 않습니다.",
-    "nameTagSuggestNeedWishTitle": "느낌을 적어 주세요",
-    "nameTagSuggestNeedWish": "별, 하트, 발바닥처럼 원하는 느낌을 한 줄로 적어 주세요.",
-    "nameTagSuggestOkTitle": "모양을 골랐습니다",
-    "nameTagSuggestFailTitle": "추천을 받지 못했습니다",
-    "nameTagSuggestFail": "잠시 후 다시 시도하거나 아래 모양을 직접 골라 주세요.",
-    "nameTagIcons": {
-      "star": "별",
-      "heart": "하트",
-      "flower": "꽃",
-      "paw": "발바닥",
-      "bone": "뼈",
-      "ball": "공",
-      "fish": "물고기",
-      "moon": "달"
-    },
-    "audience": {
-      "child": "아이",
-      "dog": "강아지",
-      "cat": "고양이"
-    },
-    "nameTagRecipes": {
-      "child-bag": {
-        "name": "가방 이름표",
-        "desc": "56×22mm · 줄 구멍"
+    "nameTag": {
+      "kicker": "Name tag",
+      "title": "이름표 만들기",
+      "lead": "문구를 넣고 판 모양·구멍·글자 표현을 고르면, 출력할 수 있는 형상인지 바로 검사해 3D로 보여 줍니다.",
+      "presetLabel": "용도로 시작하기",
+      "presets": {
+        "bag": "가방 이름표",
+        "pet": "반려동물 인식표",
+        "label": "소품 라벨",
+        "desk": "책상 명패",
+        "badge": "행사 명찰"
       },
-      "child-rect": {
-        "name": "네모 이름표",
-        "desc": "60×24mm · 하트"
+      "linesLabel": "문구",
+      "addLine": "줄 추가",
+      "removeLine": "줄 삭제",
+      "lineAria": "{n}번째 줄",
+      "linePlaceholder0": "예: 하준, 김와우",
+      "linePlaceholder1": "예: 3학년 2반, 010-1234-5678",
+      "linePlaceholder2": "예: 개발팀",
+      "lineSize": "줄 크기",
+      "fontLabel": "폰트",
+      "fontAllLabel": "모든 줄 폰트",
+      "fonts": {
+        "gowun-dodum": "고운돋움",
+        "jua": "주아",
+        "do-hyeon": "도현",
+        "black-han": "블랙한산스"
       },
-      "dog-bone": {
-        "name": "뼈다귀 인식표",
-        "desc": "42×22mm · 발바닥"
+      "alignLabel": "정렬",
+      "align": {
+        "left": "왼쪽",
+        "center": "가운데",
+        "right": "오른쪽"
       },
-      "dog-oval": {
-        "name": "타원 인식표",
-        "desc": "38×24mm · 뼈 아이콘"
+      "letterSpacing": "자간",
+      "plateLabel": "판",
+      "shapes": {
+        "rounded": "둥근 사각",
+        "capsule": "캡슐",
+        "rect": "사각",
+        "circle": "원",
+        "outline": "글자 외곽"
       },
-      "cat-oval": {
-        "name": "작은 타원",
-        "desc": "32×18mm · 물고기"
+      "width": "가로",
+      "height": "세로",
+      "diameter": "지름",
+      "textAreaWidth": "글자 영역 가로",
+      "textAreaHeight": "글자 영역 세로",
+      "thickness": "판 두께",
+      "holeLabel": "고리 구멍",
+      "holes": {
+        "left": "왼쪽",
+        "top": "위",
+        "none": "없음"
       },
-      "cat-round": {
-        "name": "둥근 인식표",
-        "desc": "Ø28mm · 하트"
-      }
+      "holeSize": "구멍 지름",
+      "reliefLabel": "글자 표현",
+      "relief": {
+        "emboss": "양각",
+        "engrave": "음각"
+      },
+      "border": "테두리",
+      "embossHeight": "글자 높이",
+      "engraveDepth": "파는 깊이",
+      "colorLabel": "색 (미리보기)",
+      "colors": {
+        "plate": "판",
+        "text": "글자"
+      },
+      "colorNote": "출력 색은 견적 화면에서 소재에 맞춰 다시 고릅니다. 두 가지 색 출력은 상담 후 진행합니다.",
+      "building": "형상 계산 중",
+      "previewHint": "드래그로 돌려 보세요",
+      "previewEmpty": "왼쪽에 문구를 입력하면 3D로 보여 줍니다",
+      "volume": "부피 {cm3}cm³",
+      "engineError": "형상 엔진을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.",
+      "issues": {
+        "missingGlyph": "이 폰트에 없는 글자가 있습니다: {chars} — 다른 폰트를 골라 주세요.",
+        "thinStroke": "{mm}mm보다 가는 획이 있어 출력 시 끊길 수 있습니다 (빨간 부분).",
+        "smallText": "가장 작은 줄의 글자 높이가 {mm}mm입니다. {min}mm 이상을 권장합니다.",
+        "textClipped": "글자 일부가 판 밖으로 나가 잘렸습니다.",
+        "textShrunk": "{line}번째 줄을 판 폭에 맞게 줄였습니다.",
+        "geometry": "형상을 만들지 못했습니다. 문구나 판 설정을 바꿔 주세요."
+      },
+      "fixBoldFont": "굵은 폰트로",
+      "fixBiggerPlate": "판 키우기",
+      "showThin": "표시",
+      "hideThin": "숨기기",
+      "quoteNeedTextTitle": "문구가 없습니다",
+      "quoteNeedText": "이름표에 넣을 문구를 입력해 주세요.",
+      "quoteBlockedTitle": "견적으로 넘길 수 없습니다",
+      "quoteBlocked": "빨간 안내를 먼저 해결해 주세요.",
+      "quoteOk": "이름표 STL을 자동견적에 불러왔습니다.",
+      "reset": "처음부터",
+      "openDraw": "로고를 직접 그리기",
+      "back": "이름표로 돌아가기"
     },
     "headerSubtitle": "로고·스케치 2.5D",
     "tabDraw": "스케치(2D)",

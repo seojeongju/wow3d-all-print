@@ -63,3 +63,6 @@ _temp_migration/
 /scripts/amr-multi-quote-report.json
 /tmp-*.json
 
+
+# manifold-3d 브라우저 파일 (scripts/copy-manifold-wasm.mjs가 생성)
+/public/vendor/manifold/

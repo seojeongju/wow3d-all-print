@@ -4409,83 +4409,101 @@
   },
   "Maker": {
     "metaTitle": "Name tag maker",
-    "nameTagKicker": "Name tag",
-    "nameTagTitle": "Make a name tag",
-    "nameTagLead": "Type a name and a line of text, pick a font and size, then check the 3D preview and send it to a quote.",
-    "nameTagNameLabel": "Name",
-    "nameTagNamePlaceholder": "e.g. Haru, WOW3D",
-    "nameTagTextLabel": "Text",
-    "nameTagTextPlaceholder": "e.g. 010-1234-5678, class 3-2",
-    "nameTagFontLabel": "Font",
-    "nameTagSizeLabel": "Plate size",
-    "nameTagLetterLabel": "Letter size",
-    "nameTagMissingGlyph": "Missing in this font",
-    "nameTagFontFail": "Could not load the font",
-    "nameTagFonts": {
-      "gowun-dodum": "Gowun Dodum",
-      "jua": "Jua",
-      "do-hyeon": "Do Hyeon",
-      "black-han": "Black Han Sans"
-    },
-    "nameTagSizes": {
-      "s": "Small",
-      "m": "Medium",
-      "l": "Large"
-    },
-    "nameTagTemplateLabel": "Shape",
-    "nameTagTracing": "Adding the letters",
-    "nameTagPreviewHint": "Drag to rotate",
-    "nameTagOpenDraw": "Draw a logo instead",
-    "nameTagBack": "Back to name tags",
-    "nameTagWishLabel": "Mood",
-    "nameTagWishPlaceholder": "e.g. a star for a bag, a cute heart",
-    "nameTagSuggest": "Suggest a shape",
-    "nameTagSuggestHint": "Picks only from prepared plates and icons. It does not create a new 3D model.",
-    "nameTagSuggestNeedWishTitle": "Add a short mood",
-    "nameTagSuggestNeedWish": "Write a line such as star, heart, or paw print.",
-    "nameTagSuggestOkTitle": "Shape selected",
-    "nameTagSuggestFailTitle": "Could not suggest a shape",
-    "nameTagSuggestFail": "Try again in a moment, or pick a shape below.",
-    "nameTagIcons": {
-      "star": "Star",
-      "heart": "Heart",
-      "flower": "Flower",
-      "paw": "Paw",
-      "bone": "Bone",
-      "ball": "Ball",
-      "fish": "Fish",
-      "moon": "Moon"
-    },
-    "audience": {
-      "child": "Child",
-      "dog": "Dog",
-      "cat": "Cat"
-    },
-    "nameTagRecipes": {
-      "child-bag": {
-        "name": "Bag tag",
-        "desc": "56×22mm · strap hole"
+    "nameTag": {
+      "kicker": "Name tag",
+      "title": "Name tag maker",
+      "lead": "Type your text and pick a plate shape, hole and lettering style. We check printability as you go and show the result in 3D.",
+      "presetLabel": "Start from a use",
+      "presets": {
+        "bag": "Bag tag",
+        "pet": "Pet tag",
+        "label": "Item label",
+        "desk": "Desk plate",
+        "badge": "Event badge"
       },
-      "child-rect": {
-        "name": "Rectangle tag",
-        "desc": "60×24mm · heart"
+      "linesLabel": "Text",
+      "addLine": "Add line",
+      "removeLine": "Remove line",
+      "lineAria": "Line {n}",
+      "linePlaceholder0": "e.g. Hajun, WOW3D",
+      "linePlaceholder1": "e.g. Class 3-2, 010-1234-5678",
+      "linePlaceholder2": "e.g. Dev team",
+      "lineSize": "Line size",
+      "fontLabel": "Font",
+      "fontAllLabel": "Font for all lines",
+      "fonts": {
+        "gowun-dodum": "Gowun Dodum",
+        "jua": "Jua",
+        "do-hyeon": "Do Hyeon",
+        "black-han": "Black Han Sans"
       },
-      "dog-bone": {
-        "name": "Bone tag",
-        "desc": "42×22mm · paw"
+      "alignLabel": "Align",
+      "align": {
+        "left": "Left",
+        "center": "Center",
+        "right": "Right"
       },
-      "dog-oval": {
-        "name": "Oval tag",
-        "desc": "38×24mm · bone icon"
+      "letterSpacing": "Letter spacing",
+      "plateLabel": "Plate",
+      "shapes": {
+        "rounded": "Rounded",
+        "capsule": "Capsule",
+        "rect": "Square",
+        "circle": "Circle",
+        "outline": "Outline"
       },
-      "cat-oval": {
-        "name": "Small oval",
-        "desc": "32×18mm · fish"
+      "width": "Width",
+      "height": "Height",
+      "diameter": "Diameter",
+      "textAreaWidth": "Text area width",
+      "textAreaHeight": "Text area height",
+      "thickness": "Plate thickness",
+      "holeLabel": "Ring hole",
+      "holes": {
+        "left": "Left",
+        "top": "Top",
+        "none": "None"
       },
-      "cat-round": {
-        "name": "Round tag",
-        "desc": "Ø28mm · heart"
-      }
+      "holeSize": "Hole diameter",
+      "reliefLabel": "Lettering",
+      "relief": {
+        "emboss": "Raised",
+        "engrave": "Engraved"
+      },
+      "border": "Border",
+      "embossHeight": "Letter height",
+      "engraveDepth": "Engrave depth",
+      "colorLabel": "Color (preview)",
+      "colors": {
+        "plate": "Plate",
+        "text": "Text"
+      },
+      "colorNote": "Print colors are chosen again on the quote page for your material. Two-color prints are arranged after consultation.",
+      "building": "Building shape",
+      "previewHint": "Drag to rotate",
+      "previewEmpty": "Type some text on the left to see it in 3D",
+      "volume": "Volume {cm3}cm³",
+      "engineError": "Could not load the shape engine. Please refresh and try again.",
+      "issues": {
+        "missingGlyph": "This font is missing: {chars} — please choose another font.",
+        "thinStroke": "Some strokes are thinner than {mm}mm and may break when printed (shown in red).",
+        "smallText": "The smallest line is {mm}mm tall. We recommend at least {min}mm.",
+        "textClipped": "Part of the text runs off the plate and was cut.",
+        "textShrunk": "Line {line} was shrunk to fit the plate width.",
+        "geometry": "Could not build the shape. Please change the text or plate settings."
+      },
+      "fixBoldFont": "Bolder font",
+      "fixBiggerPlate": "Bigger plate",
+      "showThin": "Show",
+      "hideThin": "Hide",
+      "quoteNeedTextTitle": "No text yet",
+      "quoteNeedText": "Please type the text for your name tag.",
+      "quoteBlockedTitle": "Cannot send to quote",
+      "quoteBlocked": "Please resolve the red notices first.",
+      "quoteOk": "Your name tag STL was loaded into the instant quote.",
+      "reset": "Start over",
+      "openDraw": "Draw a logo instead",
+      "back": "Back to name tag"
     },
     "headerSubtitle": "Logo & sketch 2.5D",
     "tabDraw": "Sketch (2D)",
