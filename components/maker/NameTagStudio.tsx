@@ -13,9 +13,11 @@ import { useFileStore } from '@/store/useFileStore'
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export'
 import {
     getNameTagRecipe,
+    isIconForAudience,
     nameTagIconSvg,
     recipesForAudience,
     type NameTagAudience,
+    type NameTagIconId,
     type NameTagRecipeId,
 } from '@/lib/name-tag'
 import { renderNameSvg } from '@/lib/name-tag-text'
@@ -36,6 +38,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const [audience, setAudience] = useState<NameTagAudience>('child')
     const [recipeId, setRecipeId] = useState<NameTagRecipeId>('child-bag')
     const [name, setName] = useState('')
+    const [wish, setWish] = useState('')
+    const [iconOverride, setIconOverride] = useState<NameTagIconId | null>(null)
+    const [suggesting, setSuggesting] = useState(false)
     const [isQuoting, setIsQuoting] = useState(false)
     const [tracing, setTracing] = useState(false)
     const [textError, setTextError] = useState('')
@@ -60,13 +65,21 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                     if (!cancel) setTextError(error instanceof Error ? error.message : '이름 변환 실패')
                 }
                 if (cancel) return
+                const iconId = iconOverride && isIconForAudience(recipe.audience, iconOverride) ? iconOverride : recipe.icon
                 const iconScale = recipe.stack ? 0.42 : 0.55
                 const textScale = recipe.stack ? 0.7 : 0.85
-                const svgs = [
+                const svgs: Array<{
+                    id: string
+                    name: string
+                    svgContent: string
+                    scale: number
+                    offsetXMm: number
+                    offsetYMm: number
+                }> = [
                     {
                         id: 'name-tag-icon',
-                        name: recipe.icon,
-                        svgContent: nameTagIconSvg(recipe.icon),
+                        name: iconId,
+                        svgContent: nameTagIconSvg(iconId),
                         scale: iconScale,
                         offsetXMm: recipe.stack ? 0 : -recipe.widthMm * 0.22,
                         offsetYMm: recipe.stack ? recipe.heightMm * 0.16 : 0,
@@ -99,7 +112,45 @@ export function NameTagStudio({ onOpenDraw }: Props) {
             cancel = true
             window.clearTimeout(timer)
         }
-    }, [applyNameTagDesign, name, recipeId])
+    }, [applyNameTagDesign, iconOverride, name, recipeId])
+
+    const suggestShape = async () => {
+        const text = wish.trim()
+        if (!text) {
+            showToast.error(t('nameTagSuggestNeedWishTitle'), t('nameTagSuggestNeedWish'))
+            return
+        }
+        setSuggesting(true)
+        try {
+            const res = await fetch('/api/maker/name-tag-suggest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ audience, wish: text }),
+            })
+            const json = (await res.json()) as {
+                error?: string
+                data?: { recipeId?: NameTagRecipeId; icon?: NameTagIconId }
+            }
+            const recipeIdNext = json.data?.recipeId
+            const iconNext = json.data?.icon
+            if (!res.ok || !recipeIdNext || !iconNext || !isIconForAudience(audience, iconNext)) {
+                showToast.error(t('nameTagSuggestFailTitle'), json.error || t('nameTagSuggestFail'))
+                return
+            }
+            const allowed = recipesForAudience(audience).some((recipe) => recipe.id === recipeIdNext)
+            if (!allowed) {
+                showToast.error(t('nameTagSuggestFailTitle'), t('nameTagSuggestFail'))
+                return
+            }
+            setRecipeId(recipeIdNext)
+            setIconOverride(iconNext)
+            showToast.success(t('nameTagSuggestOkTitle'), t(`nameTagIcons.${iconNext}`))
+        } catch {
+            showToast.error(t('nameTagSuggestFailTitle'), t('nameTagSuggestFail'))
+        } finally {
+            setSuggesting(false)
+        }
+    }
 
     const requestQuote = async () => {
         const input = makerSceneInputFromState(useMakerStore.getState())
@@ -144,7 +195,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             <button
                                 key={id}
                                 type="button"
-                                onClick={() => setAudience(id)}
+                                onClick={() => {
+                                    setAudience(id)
+                                    setIconOverride(null)
+                                }}
                                 className={cn(
                                     'h-10 rounded-xl border text-[12px] font-black',
                                     audience === id
@@ -169,6 +223,30 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                         {textError ? <span className="block text-[11px] font-bold text-amber-300">{textError}</span> : null}
                     </label>
 
+                    <div className="space-y-1.5">
+                        <label className="block space-y-1.5">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagWishLabel')}</span>
+                            <input
+                                value={wish}
+                                maxLength={80}
+                                onChange={(e) => setWish(e.target.value)}
+                                placeholder={t('nameTagWishPlaceholder')}
+                                className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-bold text-white outline-none placeholder:text-white/30 focus:border-teal-400/50"
+                            />
+                        </label>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={suggesting}
+                            onClick={() => void suggestShape()}
+                            className="h-10 w-full rounded-xl border-white/15 bg-white/5 text-white hover:bg-white/10"
+                        >
+                            {suggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {t('nameTagSuggest')}
+                        </Button>
+                        <p className="text-[11px] font-medium leading-relaxed text-white/40 break-keep">{t('nameTagSuggestHint')}</p>
+                    </div>
+
                     <div className="space-y-2">
                         <p className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagTemplateLabel')}</p>
                         <div className="grid gap-2">
@@ -176,7 +254,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 <button
                                     key={recipe.id}
                                     type="button"
-                                    onClick={() => setRecipeId(recipe.id)}
+                                    onClick={() => {
+                                        setRecipeId(recipe.id)
+                                        setIconOverride(null)
+                                    }}
                                     className={cn(
                                         'rounded-xl border px-3 py-2.5 text-left',
                                         recipeId === recipe.id

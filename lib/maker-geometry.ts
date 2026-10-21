@@ -277,13 +277,15 @@ function contoursWithHoles(contours: THREE.Shape[]): THREE.Shape[] {
     })
     const consumed = new Set<THREE.Shape>()
     info.forEach((inner) => {
-        let parent: (typeof info)[number] | null = null
-        info.forEach((outer) => {
-            if (outer === inner || outer.area <= inner.area * 1.05) return
-            if (!pointInPolygon(inner.cx, inner.cy, outer.pts)) return
-            if (!parent || outer.area < parent.area) parent = outer
-        })
-        if (!parent) return
+        let parentIndex = -1
+        for (let index = 0; index < info.length; index++) {
+            const outer = info[index]
+            if (outer === inner || outer.area <= inner.area * 1.05) continue
+            if (!pointInPolygon(inner.cx, inner.cy, outer.pts)) continue
+            if (parentIndex < 0 || outer.area < info[parentIndex].area) parentIndex = index
+        }
+        if (parentIndex < 0) return
+        const parent = info[parentIndex]
         const outerPts = parent.pts
         const innerPts = inner.pts
         if (innerPts.length < 3) return
