@@ -102,6 +102,27 @@ async function main() {
         cases++
     }
 
+    for (const shape of ['rounded', 'outline'] as const) {
+        const widths: number[] = []
+        const heights: number[] = []
+        for (const letterSpacing of [0, 0.15, 0.3]) {
+            const spaced = normalizeNameTagDesign({
+                ...DEFAULT_NAME_TAG_DESIGN,
+                letterSpacing,
+                lines: [{ text: '하준', fontId: 'gowun-dodum', size: 1 }],
+                plate: { ...DEFAULT_NAME_TAG_DESIGN.plate, shape },
+            })
+            const spacedResult = buildNameTag(wasm, spaced, fonts)
+            assert.ok(spacedResult, `spacing/${shape}: 결과 없음`)
+            widths.push(spacedResult.stats.sizeMm[0])
+            heights.push(spacedResult.lines[0]?.heightMm ?? 0)
+            cases++
+        }
+        const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
+        assert.ok(spread(widths) < 0.05, `spacing/${shape}: 자간에 판 폭이 변함 ${widths.join(', ')}`)
+        assert.ok(spread(heights) < 0.05, `spacing/${shape}: 자간에 글자 높이가 변함 ${heights.join(', ')}`)
+    }
+
     const warnings = new Map<string, number>()
     const missingByFont = new Map<string, Set<string>>()
     const started = Date.now()

@@ -170,7 +170,14 @@ function placeHole(wasm: ManifoldToplevel, design: NameTagDesign, frame: PlateFr
     return { ...frame, hole, box }
 }
 
-type PlacedLine = { polygons: Polygon[]; heightMm: number; shrunk: boolean; index: number }
+type PlacedLine = {
+    polygons: Polygon[]
+    /** 자간 0 배치. 글자 외곽 판은 이 윤곽으로만 만들어 자간에 크기가 끌려가지 않는다 */
+    platePolygons: Polygon[]
+    heightMm: number
+    shrunk: boolean
+    index: number
+}
 
 /** 줄이 차지하는 높이 구간에서 쓸 수 있는 좌우 범위 */
 type RangeFor = (yBottom: number, yTop: number) => [number, number]
@@ -198,7 +205,17 @@ function plateRange(wasm: ManifoldToplevel, inner: CrossSection, box: PlateFrame
     }
 }
 
-/** 줄마다 높이를 나누고, 폭이 넘치면 그 줄만 줄인다. */
+function alignX(minX: number, maxX: number, rx0: number, rx1: number, align: NameTagDesign['align']): number {
+    if (align === 'left') return rx0 - minX
+    if (align === 'right') return rx1 - maxX
+    return (rx0 + rx1) / 2 - (minX + maxX) / 2
+}
+
+function shiftPolys(polygons: Polygon[], dx: number, dy: number): Polygon[] {
+    return polygons.map((poly) => poly.map(([x, y]) => [x + dx, y + dy] as [number, number]))
+}
+
+/** 줄마다 높이를 나눈다. 폭이 넘치면 자간을 뺀 글자 크기만 줄이고, 자간은 그 위에 더한다. */
 function layoutLines(
     design: NameTagDesign,
     fonts: Map<NameTagFontId, Font>,
@@ -231,29 +248,25 @@ function layoutLines(
         const [rx0, rx1] = rangeFor(slotTop - slotH, slotTop)
         const availW = Math.max(1, rx1 - rx0)
         let emMm = slotH / refH
-        let outline = textOutline(font, line.text, emMm, design.letterSpacing)
+        let fitted = textOutline(font, line.text, emMm, 0)
         let shrunk = false
-        if (outline) {
-            const inkW = outline.bounds.maxX - outline.bounds.minX
+        if (fitted) {
+            const inkW = fitted.bounds.maxX - fitted.bounds.minX
             if (inkW > availW) {
                 emMm *= availW / inkW
-                outline = textOutline(font, line.text, emMm, design.letterSpacing)
+                fitted = textOutline(font, line.text, emMm, 0)
                 shrunk = true
             }
         }
-        if (outline) {
-            const { minX, maxX } = outline.bounds
-            const inkW = maxX - minX
-            const dx =
-                design.align === 'left'
-                    ? rx0 - minX
-                    : design.align === 'right'
-                      ? rx1 - maxX
-                      : (rx0 + rx1) / 2 - (minX + inkW / 2)
+        const spaced = fitted ? textOutline(font, line.text, emMm, design.letterSpacing) ?? fitted : null
+        if (fitted && spaced) {
             const slotCenter = slotTop - slotH / 2
             const dy = slotCenter - ((ref.top + ref.bottom) / 2) * emMm
+            const plateDx = alignX(fitted.bounds.minX, fitted.bounds.maxX, rx0, rx1, design.align)
+            const textDx = alignX(spaced.bounds.minX, spaced.bounds.maxX, rx0, rx1, design.align)
             placed.push({
-                polygons: outline.polygons.map((poly) => poly.map(([x, y]) => [x + dx, y + dy] as [number, number])),
+                polygons: shiftPolys(spaced.polygons, textDx, dy),
+                platePolygons: shiftPolys(fitted.polygons, plateDx, dy),
                 heightMm: refH * emMm,
                 shrunk,
                 index: line.index,
@@ -308,7 +321,8 @@ export function buildNameTag(
         if (design.plate.shape === 'outline' && !design.baseId) {
             const margin = Math.max(2, Math.min(...lines.map((l) => l.heightMm)) * 0.18) + (design.border ? 1.8 : 0)
             const closing = 3
-            plate = track(track(rawText.offset(margin + closing, 'Round', 2, 48)).offset(-closing, 'Round', 2, 48))
+            const plateInk = track(new CrossSection(lines.flatMap((line) => line.platePolygons), 'NonZero'))
+            plate = track(track(plateInk.offset(margin + closing, 'Round', 2, 48)).offset(-closing, 'Round', 2, 48))
             const pieces = plate.decompose()
             pieces.forEach((piece) => track(piece))
             // 줄·단어 사이가 멀어 판이 여러 조각이면 감싸는 볼록 외곽으로 잇는다
