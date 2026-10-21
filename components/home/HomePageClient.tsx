@@ -9,6 +9,7 @@ import ServicesSection from "@/components/home/ServicesSection";
 import QuickProcessSteps from "@/components/home/QuickProcessSteps";
 import CTA from "@/components/home/CTA";
 import HomeFAQ from "@/components/home/HomeFAQ";
+import LazyMount from "@/components/home/LazyMount";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -128,7 +129,10 @@ export default function HomePageClient({ homeFaqItems, keyAnswers }: HomePageCli
               </div>
             </div>
             <div id="ai-3d-maker" className="flex justify-center scroll-mt-24">
+              {/* three.js를 쓰는 AI 3D 메이커는 스크롤로 가까워질 때 로드 (첫 로딩 JS 절감) */}
+            <LazyMount minHeight={900}>
               <MakerWorkspace />
+            </LazyMount>
             </div>
           </div>
         </section>
