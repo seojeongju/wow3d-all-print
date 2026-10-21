@@ -576,7 +576,7 @@ export default function Hero() {
                                 </svg>
                             )}
 
-                            {/* 3D 배경 — 보이되 텍스트와 충돌하지 않게 */}
+                            {/* 출력물 이미지 배경 — 보이되 텍스트와 충돌하지 않게 */}
                             <div className="pointer-events-none absolute inset-0" aria-hidden>
                                 <div className="absolute inset-0 opacity-80 sm:opacity-85">
                                     <DeferredHeroScene />
