@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { MeshData, NameTagBuildResult } from '@/lib/name-tag/build'
 
 function useGeometry(mesh: MeshData | null): THREE.BufferGeometry | null {
@@ -38,20 +38,67 @@ function Part({ mesh, color, emissive }: { mesh: MeshData | null; color: string;
     )
 }
 
-/** 결과 크기가 바뀌면 카메라 거리를 맞춘다 */
-function FitCamera({ size }: { size: [number, number, number] }) {
-    const { camera, controls } = useThree()
-    const key = `${Math.round(size[0])}x${Math.round(size[1])}`
+/** 판을 테이블 위에 두고 돌려 보는 카메라. 극점 근처와 뒤집힘은 막는다. */
+function TurntableControls({ size }: { size: [number, number, number] }) {
+    const camera = useThree((s) => s.camera)
+    const gl = useThree((s) => s.gl)
+    const invalidate = useThree((s) => s.invalidate)
+    const controlsRef = useRef<OrbitControls | null>(null)
+    const fittedKey = useRef('')
+    const [ready, setReady] = useState(0)
+
     useEffect(() => {
+        const controls = new OrbitControls(camera, gl.domElement)
+        controlsRef.current = controls
+        fittedKey.current = ''
+        controls.enableDamping = true
+        controls.dampingFactor = 0.4
+        controls.rotateSpeed = 0.65
+        controls.zoomSpeed = 0.7
+        controls.panSpeed = 0.45
+        controls.screenSpacePanning = true
+        controls.zoomToCursor = false
+        // 바로 위에서 돌리면 한 바퀴가 튀고, 아래로 넘기면 판이 뒤집힌다
+        controls.minPolarAngle = 0.18
+        controls.maxPolarAngle = Math.PI / 2 - 0.06
+        const onChange = () => invalidate()
+        controls.addEventListener('change', onChange)
+        setReady((n) => n + 1)
+        return () => {
+            controls.removeEventListener('change', onChange)
+            controls.dispose()
+            controlsRef.current = null
+        }
+    }, [camera, gl, invalidate])
+
+    useFrame(() => {
+        controlsRef.current?.update()
+    })
+
+    useEffect(() => {
+        const controls = controlsRef.current
+        if (!controls) return
+        const key = `${Math.round(size[0])}x${Math.round(size[1])}`
         const span = Math.max(size[0], size[1] * 1.6, 20)
-        const distance = span * 1.25
-        camera.position.set(0, -distance * 0.55, distance)
-        camera.lookAt(0, 0, size[2] / 2)
-        const orbit = controls as unknown as { target?: THREE.Vector3; update?: () => void } | null
-        orbit?.target?.set(0, 0, size[2] / 2)
-        orbit?.update?.()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key, camera, controls])
+        const distance = span * 1.28
+        controls.minDistance = Math.max(8, span * 0.42)
+        controls.maxDistance = span * 7
+        if (fittedKey.current === key) return
+        const targetZ = size[2] / 2
+        const first = fittedKey.current === ''
+        const previous = camera.position.clone().sub(controls.target)
+        controls.target.set(0, 0, targetZ)
+        if (first) {
+            camera.position.set(0, -distance * 0.92, targetZ + distance * 0.62)
+        } else {
+            camera.position.copy(controls.target).add(previous)
+        }
+        fittedKey.current = key
+        camera.lookAt(controls.target)
+        controls.update()
+        invalidate()
+    }, [camera, invalidate, ready, size])
+
     return null
 }
 
@@ -76,8 +123,7 @@ export function NameTagPreview({ result, plateColor, textColor, showThin }: Prop
             <hemisphereLight args={['#ffffff', '#3a3a46', 0.9]} />
             <directionalLight position={[-30, -40, 80]} intensity={1.6} />
             <directionalLight position={[40, 30, 30]} intensity={0.5} />
-            <OrbitControls makeDefault enableDamping={false} minDistance={10} maxDistance={600} />
-            <FitCamera size={size} />
+            <TurntableControls size={size} />
             {result ? (
                 <group>
                     <Part mesh={result.base} color={plateColor} />
