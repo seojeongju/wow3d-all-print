@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { useFileStore } from '@/store/useFileStore'
+import { registerModelRuntimeHooks } from '@/lib/model-runtime-hooks'
 import { analyzeGeometryBoundingBox, analyzeGeometryProgressive } from '@/lib/geometry'
 import { getParsedModelGeometry } from '@/lib/model-parse-cache'
 import { ModelParseCancelledError, ModelParseError, takeWorkerAnalysis } from '@/lib/model-parse-client'
@@ -183,3 +184,6 @@ export function ensureModelAnalysisForFile(file: File): Promise<void> {
 export function cancelModelAnalysisRun(): void {
     analysisGeneration++
 }
+
+// 파일 스토어가 three.js 없이 분석을 취소할 수 있도록 등록
+registerModelRuntimeHooks({ cancelAnalysisRun: cancelModelAnalysisRun })

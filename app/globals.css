@@ -625,3 +625,9 @@
     animation: none !important;
   }
 }
+
+/* 화면 밖 섹션 렌더링 지연 — 스크롤로 가까워지면 그린다. 높이 추정값으로 스크롤바 흔들림 방지 */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1200px;
+}

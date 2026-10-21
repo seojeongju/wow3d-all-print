@@ -250,8 +250,9 @@ export default function Hero() {
             <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-screen" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(20,184,166,0.14),transparent_48%),radial-gradient(circle_at_82%_68%,rgba(79,70,229,0.12),transparent_50%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:28px_28px]" />
-            <div className="absolute left-[-8%] top-[12%] h-[420px] w-[420px] rounded-full bg-teal-500/15 blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-6%] h-[480px] w-[480px] rounded-full bg-indigo-600/12 blur-[140px]" />
+            {/* 빛 번짐 — 큰 blur 필터 대신 같은 모양의 방사형 그라데이션 (렌더링 비용 절감) */}
+            <div className="pointer-events-none absolute left-[calc(-8%-120px)] top-[calc(12%-120px)] h-[660px] w-[660px] bg-[radial-gradient(circle,rgba(20,184,166,0.15)_0%,rgba(20,184,166,0.06)_35%,transparent_68%)]" />
+            <div className="pointer-events-none absolute bottom-[calc(-10%-140px)] right-[calc(-6%-140px)] h-[760px] w-[760px] bg-[radial-gradient(circle,rgba(79,70,229,0.12)_0%,rgba(79,70,229,0.05)_35%,transparent_68%)]" />
 
             <div className="container relative z-10 mx-auto grid items-stretch gap-10 px-4 lg:grid-cols-2 lg:gap-12 xl:gap-14">
                 {/* ── Left: 브랜드 · 가치 · 전환 CTA ── */}

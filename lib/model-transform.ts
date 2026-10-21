@@ -5,7 +5,7 @@ import {
     type GeometryAnalysis,
     type OrientationSupport,
     type UpAxisKey,
-} from '@/lib/geometry'
+} from '@/lib/geometry-core'
 import { fdmSupportExtrudeCm3 } from '@/lib/fdm-quote'
 import { estimateFdmPrintTimeP2S, FDM_REF_LAYER_MM } from '@/lib/print-time-estimate'
 import { rotatePointEulerXyz, type Vec3Tuple } from '@/lib/stl-bake'

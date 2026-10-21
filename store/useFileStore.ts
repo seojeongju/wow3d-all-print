@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { useMemo } from 'react'
 import type { GeometryAnalysis } from '@/lib/geometry'
-import { invalidateModelParseCache } from '@/lib/model-parse-cache'
-import { cancelModelAnalysisRun } from '@/lib/model-analysis-runner'
+// three.js 모듈을 직접 임포트하지 않음 — 모든 페이지 번들에 three.js가 끼지 않도록 (lib/model-runtime-hooks.ts)
+import { cancelModelAnalysisRunIfLoaded, invalidateModelParseCacheIfLoaded } from '@/lib/model-runtime-hooks'
 import { clearMeshyActiveJob } from '@/lib/meshy-active-job'
 import {
     AI_PHOTO_SCALE_PERCENT_MAX,
@@ -118,8 +118,8 @@ export const useFileStore = create<FileState>((set, get) => ({
     setFile: (file, source, opts) => {
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
-            if (!opts?.keepParseCache) invalidateModelParseCache(state.file)
-            cancelModelAnalysisRun()
+            if (!opts?.keepParseCache) invalidateModelParseCacheIfLoaded(state.file)
+            cancelModelAnalysisRunIfLoaded()
             return {
                 file,
                 fileUrl: URL.createObjectURL(file),
@@ -325,8 +325,8 @@ export const useFileStore = create<FileState>((set, get) => ({
     reset: () =>
         set((state) => {
             if (state.fileUrl) URL.revokeObjectURL(state.fileUrl)
-            invalidateModelParseCache(state.file)
-            cancelModelAnalysisRun()
+            invalidateModelParseCacheIfLoaded(state.file)
+            cancelModelAnalysisRunIfLoaded()
             clearMeshyActiveJob()
             return {
                 file: null,

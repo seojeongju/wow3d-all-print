@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three'
 import { parseModelFile } from '@/lib/model-parse-client'
+import { registerModelRuntimeHooks } from '@/lib/model-runtime-hooks'
 import { useAnalysisProgressStore } from '@/store/useAnalysisProgressStore'
 
 const geometryCache = new WeakMap<File, Promise<THREE.BufferGeometry | null>>()
@@ -15,6 +16,9 @@ export function invalidateModelParseCache(file: File | null | undefined): void {
     cancelers.delete(file)
     geometryCache.delete(file)
 }
+
+// 파일 스토어가 three.js 없이 캐시를 무효화할 수 있도록 등록
+registerModelRuntimeHooks({ invalidateParseCache: invalidateModelParseCache })
 
 export function getParsedModelGeometry(file: File): Promise<THREE.BufferGeometry | null> {
     let pending = geometryCache.get(file)
