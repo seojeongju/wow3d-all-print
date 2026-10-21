@@ -199,7 +199,7 @@
       "photoReal": "Product photos",
       "subtitleEnd": " → Quote AI (full 3D).",
       "makerTitle": "Make a name tag",
-      "makerDesc": "Add a name and icon for a child, dog, or cat and get a tag you can print.",
+      "makerDesc": "Type a name and a line of text, then pick the font and size for a tag you can print.",
       "makerCta": "Open the name tag maker",
       "aiLabel": "Quote AI",
       "photoTitle": "Photo → full 3D",
@@ -386,7 +386,29 @@
     "keyAnswers": {
       "eyebrow": "Quick Answers",
       "title": "3D printing: the three questions we hear most",
-      "more": "Learn more"
+      "more": "Learn more",
+      "show": "Show answer",
+      "hide": "Hide",
+      "cost": {
+        "material": "Material",
+        "materialHint": "Filament / resin used",
+        "machine": "Machine",
+        "machineHint": "Print time × hourly rate",
+        "option": "Options",
+        "optionHint": "Support / finishing"
+      },
+      "lead": {
+        "confirm": "Confirmed",
+        "make": "Printing",
+        "inspect": "Inspection",
+        "ship": "Shipping",
+        "avg": "Average",
+        "days": "3–7 days"
+      },
+      "files": {
+        "instant": "Instant quote",
+        "convert": "Auto-converted"
+      }
     }
   },
   "Services": {
@@ -4389,11 +4411,29 @@
     "metaTitle": "Name tag maker",
     "nameTagKicker": "Name tag",
     "nameTagTitle": "Make a name tag",
-    "nameTagLead": "Pick a bag tag or a pet tag, type a name, check the 3D preview, then send it to a quote.",
+    "nameTagLead": "Type a name and a line of text, pick a font and size, then check the 3D preview and send it to a quote.",
     "nameTagNameLabel": "Name",
-    "nameTagNamePlaceholder": "e.g. Haru, Kong",
+    "nameTagNamePlaceholder": "e.g. Haru, WOW3D",
+    "nameTagTextLabel": "Text",
+    "nameTagTextPlaceholder": "e.g. 010-1234-5678, class 3-2",
+    "nameTagFontLabel": "Font",
+    "nameTagSizeLabel": "Plate size",
+    "nameTagLetterLabel": "Letter size",
+    "nameTagMissingGlyph": "Missing in this font",
+    "nameTagFontFail": "Could not load the font",
+    "nameTagFonts": {
+      "gowun-dodum": "Gowun Dodum",
+      "jua": "Jua",
+      "do-hyeon": "Do Hyeon",
+      "black-han": "Black Han Sans"
+    },
+    "nameTagSizes": {
+      "s": "Small",
+      "m": "Medium",
+      "l": "Large"
+    },
     "nameTagTemplateLabel": "Shape",
-    "nameTagTracing": "Adding the name",
+    "nameTagTracing": "Adding the letters",
     "nameTagPreviewHint": "Drag to rotate",
     "nameTagOpenDraw": "Draw a logo instead",
     "nameTagBack": "Back to name tags",
@@ -4422,12 +4462,30 @@
       "cat": "Cat"
     },
     "nameTagRecipes": {
-      "child-bag": { "name": "Bag tag", "desc": "56×22mm · strap hole" },
-      "child-rect": { "name": "Rectangle tag", "desc": "60×24mm · heart" },
-      "dog-bone": { "name": "Bone tag", "desc": "42×22mm · paw" },
-      "dog-oval": { "name": "Oval tag", "desc": "38×24mm · bone icon" },
-      "cat-oval": { "name": "Small oval", "desc": "32×18mm · fish" },
-      "cat-round": { "name": "Round tag", "desc": "Ø28mm · heart" }
+      "child-bag": {
+        "name": "Bag tag",
+        "desc": "56×22mm · strap hole"
+      },
+      "child-rect": {
+        "name": "Rectangle tag",
+        "desc": "60×24mm · heart"
+      },
+      "dog-bone": {
+        "name": "Bone tag",
+        "desc": "42×22mm · paw"
+      },
+      "dog-oval": {
+        "name": "Oval tag",
+        "desc": "38×24mm · bone icon"
+      },
+      "cat-oval": {
+        "name": "Small oval",
+        "desc": "32×18mm · fish"
+      },
+      "cat-round": {
+        "name": "Round tag",
+        "desc": "Ø28mm · heart"
+      }
     },
     "headerSubtitle": "Logo & sketch 2.5D",
     "tabDraw": "Sketch (2D)",
@@ -4635,7 +4693,7 @@
     "error3dTitle": "Could not load 3D preview",
     "error3dDesc": "Your browser may not support 3D rendering, or a temporary error occurred. Return to Sketch (2D) and try again.",
     "backToSketch": "Back to Sketch (2D)",
-    "metaDescription": "Make a child, dog, or cat name tag, save an STL, or send it to a live quote."
+    "metaDescription": "Type a name and text, choose the font and size, then save an STL or send the tag to a live quote."
   },
   "Partnership": {
     "metaTitle": "3D Printer Partnership & Dealership",

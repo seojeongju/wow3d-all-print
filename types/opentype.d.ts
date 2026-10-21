@@ -2,6 +2,7 @@
 declare module 'opentype.js' {
     export type Font = {
         getPath: (text: string, x: number, y: number, fontSize: number) => GlyphPath
+        charToGlyph: (char: string) => { unicode?: number | null; name?: string }
     }
 
     export type GlyphPath = {

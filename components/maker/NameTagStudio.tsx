@@ -12,22 +12,31 @@ import { useMakerStore, makerSceneInputFromState } from '@/store/useMakerStore'
 import { useFileStore } from '@/store/useFileStore'
 import { buildMakerStlBlob, hasMakerExportContent } from '@/lib/maker-stl-export'
 import {
-    getNameTagRecipe,
-    isIconForAudience,
-    nameTagIconSvg,
-    recipesForAudience,
-    type NameTagAudience,
-    type NameTagIconId,
-    type NameTagRecipeId,
-} from '@/lib/name-tag'
+    NAME_TAG_FONTS,
+    NAME_TAG_PLATE_SIZES,
+    plateForSize,
+    type NameTagFontId,
+    type NameTagPlateSizeId,
+} from '@/lib/name-tag-fonts'
 import { renderNameSvg } from '@/lib/name-tag-text'
 import { showToast } from '@/lib/toast-helper'
 import { cn } from '@/lib/utils'
 
-const AUDIENCES: NameTagAudience[] = ['child', 'dog', 'cat']
+const FONT_FACE_CSS = NAME_TAG_FONTS.map(
+    (font) => `@font-face{font-family:'${font.cssFamily}';src:url('${font.file}') format('truetype');font-display:swap;}`
+).join('')
 
 type Props = {
     onOpenDraw: () => void
+}
+
+type LineSvg = {
+    id: string
+    name: string
+    svgContent: string
+    scale: number
+    offsetXMm: number
+    offsetYMm: number
 }
 
 export function NameTagStudio({ onOpenDraw }: Props) {
@@ -35,122 +44,75 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const router = useRouter()
     const setFile = useFileStore((s) => s.setFile)
     const applyNameTagDesign = useMakerStore((s) => s.applyNameTagDesign)
-    const [audience, setAudience] = useState<NameTagAudience>('child')
-    const [recipeId, setRecipeId] = useState<NameTagRecipeId>('child-bag')
     const [name, setName] = useState('')
-    const [wish, setWish] = useState('')
-    const [iconOverride, setIconOverride] = useState<NameTagIconId | null>(null)
-    const [suggesting, setSuggesting] = useState(false)
+    const [subtitle, setSubtitle] = useState('')
+    const [fontId, setFontId] = useState<NameTagFontId>('gowun-dodum')
+    const [plateSize, setPlateSize] = useState<NameTagPlateSizeId>('m')
+    const [letterSize, setLetterSize] = useState(100)
     const [isQuoting, setIsQuoting] = useState(false)
     const [tracing, setTracing] = useState(false)
     const [textError, setTextError] = useState('')
 
     useEffect(() => {
-        const list = recipesForAudience(audience)
-        if (!list.some((r) => r.id === recipeId)) setRecipeId(list[0].id)
-    }, [audience, recipeId])
-
-    useEffect(() => {
-        const recipe = getNameTagRecipe(recipeId)
+        const plate = plateForSize(plateSize, subtitle.trim().length > 0)
+        const letter = Math.min(1.05, Math.max(0.62, letterSize / 100))
+        const holeShift = plate.widthMm * 0.08
         let cancel = false
         const timer = window.setTimeout(() => {
             setTracing(true)
             void (async () => {
-                let textSvg: string | null = null
                 try {
-                    textSvg = await renderNameSvg(name)
-                    if (!cancel) setTextError('')
-                } catch (error) {
-                    textSvg = null
-                    if (!cancel) setTextError(error instanceof Error ? error.message : '이름 변환 실패')
-                }
-                if (cancel) return
-                const iconId = iconOverride && isIconForAudience(recipe.audience, iconOverride) ? iconOverride : recipe.icon
-                const iconScale = recipe.stack ? 0.42 : 0.55
-                const textScale = recipe.stack ? 0.7 : 0.85
-                const svgs: Array<{
-                    id: string
-                    name: string
-                    svgContent: string
-                    scale: number
-                    offsetXMm: number
-                    offsetYMm: number
-                }> = [
-                    {
-                        id: 'name-tag-icon',
-                        name: iconId,
-                        svgContent: nameTagIconSvg(iconId),
-                        scale: iconScale,
-                        offsetXMm: recipe.stack ? 0 : -recipe.widthMm * 0.22,
-                        offsetYMm: recipe.stack ? recipe.heightMm * 0.16 : 0,
-                    },
-                ]
-                if (textSvg) {
-                    svgs.push({
-                        id: 'name-tag-text',
-                        name: 'name',
-                        svgContent: textSvg,
-                        scale: textScale,
-                        offsetXMm: recipe.stack ? 0 : recipe.widthMm * 0.1,
-                        offsetYMm: recipe.stack ? -recipe.heightMm * 0.12 : 0,
+                    const [nameLine, subLine] = await Promise.all([
+                        renderNameSvg(name, fontId),
+                        renderNameSvg(subtitle, fontId),
+                    ])
+                    if (cancel) return
+                    const missing = [...(nameLine?.missing ?? []), ...(subLine?.missing ?? [])]
+                    setTextError(missing.length > 0 ? `${t('nameTagMissingGlyph')} ${[...new Set(missing)].join(' ')}` : '')
+                    const twoLines = Boolean(nameLine && subLine)
+                    const svgs: LineSvg[] = []
+                    if (nameLine) {
+                        svgs.push({
+                            id: 'name-tag-text',
+                            name: 'name',
+                            svgContent: nameLine.svg,
+                            scale: (twoLines ? 0.46 : 0.9) * letter,
+                            offsetXMm: holeShift,
+                            offsetYMm: twoLines ? plate.heightMm * 0.16 : 0,
+                        })
+                    }
+                    if (subLine) {
+                        svgs.push({
+                            id: 'name-tag-sub',
+                            name: 'text',
+                            svgContent: subLine.svg,
+                            scale: (nameLine ? 0.32 : 0.82) * letter,
+                            offsetXMm: holeShift,
+                            offsetYMm: nameLine ? -plate.heightMm * 0.2 : 0,
+                        })
+                    }
+                    applyNameTagDesign({
+                        widthMm: plate.widthMm,
+                        heightMm: plate.heightMm,
+                        cornerRadiusMm: plate.cornerRadiusMm,
+                        ringHoleMm: plate.ringHoleMm,
+                        circle: false,
+                        baseColor: '#f4f4f5',
+                        logoColor: '#0f172a',
+                        svgs,
                     })
+                } catch (error) {
+                    if (!cancel) setTextError(error instanceof Error ? error.message : t('nameTagFontFail'))
+                } finally {
+                    if (!cancel) setTracing(false)
                 }
-                applyNameTagDesign({
-                    widthMm: recipe.widthMm,
-                    heightMm: recipe.heightMm,
-                    cornerRadiusMm: recipe.cornerRadiusMm,
-                    ringHoleMm: recipe.ringHoleMm,
-                    circle: recipe.circle,
-                    baseColor: '#f4f4f5',
-                    logoColor: '#0f172a',
-                    svgs,
-                })
-                if (!cancel) setTracing(false)
             })()
         }, 280)
         return () => {
             cancel = true
             window.clearTimeout(timer)
         }
-    }, [applyNameTagDesign, iconOverride, name, recipeId])
-
-    const suggestShape = async () => {
-        const text = wish.trim()
-        if (!text) {
-            showToast.error(t('nameTagSuggestNeedWishTitle'), t('nameTagSuggestNeedWish'))
-            return
-        }
-        setSuggesting(true)
-        try {
-            const res = await fetch('/api/maker/name-tag-suggest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ audience, wish: text }),
-            })
-            const json = (await res.json()) as {
-                error?: string
-                data?: { recipeId?: NameTagRecipeId; icon?: NameTagIconId }
-            }
-            const recipeIdNext = json.data?.recipeId
-            const iconNext = json.data?.icon
-            if (!res.ok || !recipeIdNext || !iconNext || !isIconForAudience(audience, iconNext)) {
-                showToast.error(t('nameTagSuggestFailTitle'), json.error || t('nameTagSuggestFail'))
-                return
-            }
-            const allowed = recipesForAudience(audience).some((recipe) => recipe.id === recipeIdNext)
-            if (!allowed) {
-                showToast.error(t('nameTagSuggestFailTitle'), t('nameTagSuggestFail'))
-                return
-            }
-            setRecipeId(recipeIdNext)
-            setIconOverride(iconNext)
-            showToast.success(t('nameTagSuggestOkTitle'), t(`nameTagIcons.${iconNext}`))
-        } catch {
-            showToast.error(t('nameTagSuggestFailTitle'), t('nameTagSuggestFail'))
-        } finally {
-            setSuggesting(false)
-        }
-    }
+    }, [applyNameTagDesign, fontId, letterSize, name, plateSize, subtitle, t])
 
     const requestQuote = async () => {
         const input = makerSceneInputFromState(useMakerStore.getState())
@@ -177,100 +139,104 @@ export function NameTagStudio({ onOpenDraw }: Props) {
         }
     }
 
-    const recipes = recipesForAudience(audience)
-
     return (
         <>
+            <style>{FONT_FACE_CSS}</style>
             <Exporter />
             <div className="flex w-full max-w-6xl min-h-[100dvh] flex-col overflow-hidden border border-white/10 bg-[#0d0d0d]/90 shadow-2xl md:h-[820px] md:flex-row md:rounded-[2rem]">
-                <section className="flex w-full shrink-0 flex-col gap-5 overflow-y-auto border-white/10 p-5 md:w-[340px] md:border-r md:p-6">
+                <section className="flex w-full shrink-0 flex-col gap-5 overflow-y-auto border-white/10 p-5 md:w-[360px] md:border-r md:p-6">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-teal-400">{t('nameTagKicker')}</p>
                         <h1 className="mt-1 text-xl font-black text-white">{t('nameTagTitle')}</h1>
                         <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/70 break-keep">{t('nameTagLead')}</p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                        {AUDIENCES.map((id) => (
-                            <button
-                                key={id}
-                                type="button"
-                                onClick={() => {
-                                    setAudience(id)
-                                    setIconOverride(null)
-                                }}
-                                className={cn(
-                                    'h-10 rounded-xl border text-[12px] font-black',
-                                    audience === id
-                                        ? 'border-teal-400/60 bg-teal-400/15 text-teal-200'
-                                        : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10'
-                                )}
-                            >
-                                {t(`audience.${id}`)}
-                            </button>
-                        ))}
-                    </div>
-
                     <label className="block space-y-1.5">
                         <span className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagNameLabel')}</span>
                         <input
                             value={name}
-                            maxLength={12}
+                            maxLength={16}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('nameTagNamePlaceholder')}
+                            className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-bold text-white outline-none placeholder:text-white/30 focus:border-teal-400/50"
+                        />
+                    </label>
+
+                    <label className="block space-y-1.5">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagTextLabel')}</span>
+                        <input
+                            value={subtitle}
+                            maxLength={24}
+                            onChange={(e) => setSubtitle(e.target.value)}
+                            placeholder={t('nameTagTextPlaceholder')}
                             className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-bold text-white outline-none placeholder:text-white/30 focus:border-teal-400/50"
                         />
                         {textError ? <span className="block text-[11px] font-bold text-amber-300">{textError}</span> : null}
                     </label>
 
-                    <div className="space-y-1.5">
-                        <label className="block space-y-1.5">
-                            <span className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagWishLabel')}</span>
-                            <input
-                                value={wish}
-                                maxLength={80}
-                                onChange={(e) => setWish(e.target.value)}
-                                placeholder={t('nameTagWishPlaceholder')}
-                                className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-bold text-white outline-none placeholder:text-white/30 focus:border-teal-400/50"
-                            />
-                        </label>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            disabled={suggesting}
-                            onClick={() => void suggestShape()}
-                            className="h-10 w-full rounded-xl border-white/15 bg-white/5 text-white hover:bg-white/10"
-                        >
-                            {suggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {t('nameTagSuggest')}
-                        </Button>
-                        <p className="text-[11px] font-medium leading-relaxed text-white/40 break-keep">{t('nameTagSuggestHint')}</p>
-                    </div>
-
                     <div className="space-y-2">
-                        <p className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagTemplateLabel')}</p>
-                        <div className="grid gap-2">
-                            {recipes.map((recipe) => (
+                        <p className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagFontLabel')}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {NAME_TAG_FONTS.map((font) => (
                                 <button
-                                    key={recipe.id}
+                                    key={font.id}
                                     type="button"
-                                    onClick={() => {
-                                        setRecipeId(recipe.id)
-                                        setIconOverride(null)
-                                    }}
+                                    onClick={() => setFontId(font.id)}
                                     className={cn(
                                         'rounded-xl border px-3 py-2.5 text-left',
-                                        recipeId === recipe.id
+                                        fontId === font.id
                                             ? 'border-teal-400/60 bg-teal-400/10'
                                             : 'border-white/10 bg-black/20 hover:border-white/25'
                                     )}
                                 >
-                                    <span className="block text-[13px] font-black text-white">{t(`nameTagRecipes.${recipe.id}.name`)}</span>
-                                    <span className="mt-0.5 block text-[11px] font-medium text-white/60 break-keep">{t(`nameTagRecipes.${recipe.id}.desc`)}</span>
+                                    <span
+                                        className="block truncate text-[15px] text-white"
+                                        style={{ fontFamily: `'${font.cssFamily}', sans-serif` }}
+                                    >
+                                        {t(`nameTagFonts.${font.id}`)}
+                                    </span>
                                 </button>
                             ))}
                         </div>
                     </div>
+
+                    <div className="space-y-2">
+                        <p className="text-[11px] font-black uppercase tracking-wider text-white/45">{t('nameTagSizeLabel')}</p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {NAME_TAG_PLATE_SIZES.map((size) => (
+                                <button
+                                    key={size.id}
+                                    type="button"
+                                    onClick={() => setPlateSize(size.id)}
+                                    className={cn(
+                                        'rounded-xl border px-2 py-2 text-center',
+                                        plateSize === size.id
+                                            ? 'border-teal-400/60 bg-teal-400/10'
+                                            : 'border-white/10 bg-black/20 hover:border-white/25'
+                                    )}
+                                >
+                                    <span className="block text-[12px] font-black text-white">{t(`nameTagSizes.${size.id}`)}</span>
+                                    <span className="mt-0.5 block text-[10px] font-medium text-white/50">{size.widthMm}×{size.heightMm}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <label className="block space-y-2">
+                        <span className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-white/45">
+                            {t('nameTagLetterLabel')}
+                            <span className="text-teal-200">{letterSize}%</span>
+                        </span>
+                        <input
+                            type="range"
+                            min={70}
+                            max={120}
+                            step={5}
+                            value={letterSize}
+                            onChange={(e) => setLetterSize(Number(e.target.value))}
+                            className="w-full accent-teal-400"
+                        />
+                    </label>
 
                     <div className="mt-auto flex flex-col gap-2 pt-2">
                         <Button
@@ -307,7 +273,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                         {tracing ? t('nameTagTracing') : t('nameTagPreviewHint')}
                     </div>
                     <Maker3DErrorBoundary
-                        onRetry={() => setRecipeId(getNameTagRecipe(recipeId).id)}
+                        onRetry={() => setLetterSize((size) => size)}
                         title={t('error3dTitle')}
                         description={t('error3dDesc')}
                         backLabel={t('nameTagPreviewHint')}

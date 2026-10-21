@@ -199,7 +199,7 @@
       "photoReal": "제품 실사",
       "subtitleEnd": "는 자동견적 AI(입체 3D)입니다.",
       "makerTitle": "이름표 만들기",
-      "makerDesc": "아이·강아지·고양이 이름과 아이콘을 올려 바로 출력할 수 있는 이름표를 만듭니다.",
+      "makerDesc": "이름과 문구를 넣고 폰트·크기를 고르면 바로 출력할 이름표가 됩니다.",
       "makerCta": "이름표 만들러 가기",
       "aiLabel": "자동견적 AI",
       "photoTitle": "사진(이미지) → 입체 3D",
@@ -386,7 +386,29 @@
     "keyAnswers": {
       "eyebrow": "Quick Answers",
       "title": "3D프린팅, 가장 많이 묻는 3가지",
-      "more": "자세히 보기"
+      "more": "자세히 보기",
+      "show": "답변 보기",
+      "hide": "접기",
+      "cost": {
+        "material": "재료비",
+        "materialHint": "필라멘트·레진 사용량",
+        "machine": "장비비",
+        "machineHint": "출력 시간 × 시간당 비용",
+        "option": "옵션비",
+        "optionHint": "서포트·후가공"
+      },
+      "lead": {
+        "confirm": "주문 확정",
+        "make": "제작",
+        "inspect": "검수",
+        "ship": "발송",
+        "avg": "평균 수령",
+        "days": "3~7일"
+      },
+      "files": {
+        "instant": "즉시 자동견적",
+        "convert": "자동 변환 후 견적"
+      }
     }
   },
   "Services": {
@@ -4390,11 +4412,29 @@
     "metaTitle": "이름표 만들기",
     "nameTagKicker": "Name tag",
     "nameTagTitle": "이름표 만들기",
-    "nameTagLead": "아이 가방 이름표, 강아지·고양이 인식표를 고르고 이름을 넣으면 바로 3D로 확인한 뒤 견적으로 넘길 수 있습니다.",
+    "nameTagLead": "이름과 문구를 넣고 폰트·크기를 고르면 바로 3D로 확인한 뒤 견적으로 넘길 수 있습니다.",
     "nameTagNameLabel": "이름",
-    "nameTagNamePlaceholder": "예: 하준, 콩이",
+    "nameTagNamePlaceholder": "예: 하준, WOW3D",
+    "nameTagTextLabel": "텍스트",
+    "nameTagTextPlaceholder": "예: 010-1234-5678, 3학년 2반",
+    "nameTagFontLabel": "폰트",
+    "nameTagSizeLabel": "판 크기",
+    "nameTagLetterLabel": "글자 크기",
+    "nameTagMissingGlyph": "이 폰트에 없는 글자",
+    "nameTagFontFail": "폰트를 불러오지 못했습니다",
+    "nameTagFonts": {
+      "gowun-dodum": "고운돋움",
+      "jua": "주아",
+      "do-hyeon": "도현",
+      "black-han": "블랙한산스"
+    },
+    "nameTagSizes": {
+      "s": "작게",
+      "m": "보통",
+      "l": "크게"
+    },
     "nameTagTemplateLabel": "모양",
-    "nameTagTracing": "이름을 붙이는 중",
+    "nameTagTracing": "글자를 붙이는 중",
     "nameTagPreviewHint": "드래그로 돌려 보세요",
     "nameTagOpenDraw": "로고를 직접 그리기",
     "nameTagBack": "이름표로 돌아가기",
@@ -4423,12 +4463,30 @@
       "cat": "고양이"
     },
     "nameTagRecipes": {
-      "child-bag": { "name": "가방 이름표", "desc": "56×22mm · 줄 구멍" },
-      "child-rect": { "name": "네모 이름표", "desc": "60×24mm · 하트" },
-      "dog-bone": { "name": "뼈다귀 인식표", "desc": "42×22mm · 발바닥" },
-      "dog-oval": { "name": "타원 인식표", "desc": "38×24mm · 뼈 아이콘" },
-      "cat-oval": { "name": "작은 타원", "desc": "32×18mm · 물고기" },
-      "cat-round": { "name": "둥근 인식표", "desc": "Ø28mm · 하트" }
+      "child-bag": {
+        "name": "가방 이름표",
+        "desc": "56×22mm · 줄 구멍"
+      },
+      "child-rect": {
+        "name": "네모 이름표",
+        "desc": "60×24mm · 하트"
+      },
+      "dog-bone": {
+        "name": "뼈다귀 인식표",
+        "desc": "42×22mm · 발바닥"
+      },
+      "dog-oval": {
+        "name": "타원 인식표",
+        "desc": "38×24mm · 뼈 아이콘"
+      },
+      "cat-oval": {
+        "name": "작은 타원",
+        "desc": "32×18mm · 물고기"
+      },
+      "cat-round": {
+        "name": "둥근 인식표",
+        "desc": "Ø28mm · 하트"
+      }
     },
     "headerSubtitle": "로고·스케치 2.5D",
     "tabDraw": "스케치(2D)",
@@ -4636,7 +4694,7 @@
     "error3dTitle": "3D 미리보기를 불러올 수 없습니다",
     "error3dDesc": "브라우저가 3D 렌더링을 지원하지 않거나 일시적인 오류가 발생했을 수 있습니다. 스케치(2D) 탭으로 돌아가 다시 그려 주세요.",
     "backToSketch": "스케치(2D)로 돌아가기",
-    "metaDescription": "아이·강아지·고양이 이름표를 만들고 STL로 저장하거나 자동견적으로 넘깁니다."
+    "metaDescription": "이름과 문구를 넣고 폰트·크기를 골라 이름표를 만든 뒤 STL로 저장하거나 자동견적으로 넘깁니다."
   },
   "Partnership": {
     "metaTitle": "3D프린터 파트너십·대리점 제휴",
