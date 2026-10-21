@@ -765,6 +765,8 @@
   },
   "QuotePanel": {
     "volume": "부피",
+    "nameTagLabel": "이름표 문구",
+    "nameTagHint": "수량·소재·색은 이 화면에서 고릅니다. 문구는 견적을 저장하면 주문에도 남습니다.",
     "sizeShort": "사이즈",
     "printMethod": "출력 방식 선택",
     "inchSuspectTitle": "인치 단위로 만든 파일일 수 있어요",

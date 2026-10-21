@@ -764,6 +764,8 @@
   },
   "QuotePanel": {
     "volume": "Volume",
+    "nameTagLabel": "Name tag text",
+    "nameTagHint": "Choose quantity, material and color here. The text is kept with the quote and the order.",
     "sizeShort": "Size",
     "printMethod": "Print method",
     "inchSuspectTitle": "This file may be in inches",

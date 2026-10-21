@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { formatQuotePrintSettings } from '@/lib/quote-print-settings'
+import { nameTagStoredText } from '@/lib/name-tag/design'
 
 /**
  * GET /api/admin/quotes/[id]
@@ -113,6 +114,16 @@ export async function GET(
             return NextResponse.json({ error: '견적을 찾을 수 없습니다' }, { status: 404 })
         }
 
+        let nameTagText = ''
+        try {
+            const extra = await env.DB.prepare('SELECT name_tag_design FROM quotes WHERE id = ?')
+                .bind(quoteId)
+                .first<{ name_tag_design?: string | null }>()
+            nameTagText = nameTagStoredText(extra?.name_tag_design)
+        } catch {
+            /* name_tag_design 컬럼 없는 구 DB */
+        }
+
         let scalePercent: number | null = null
         try {
             const raw = row.model_transform
@@ -148,6 +159,7 @@ export async function GET(
                 userId: row.user_id != null ? Number(row.user_id) : null,
                 sessionId: (row.session_id as string) || null,
                 fileName: (row.file_name as string) || null,
+                nameTagText: nameTagText || null,
                 fileSize: row.file_size != null ? Number(row.file_size) : null,
                 fileUrl: (row.file_url as string) || null,
                 volumeCm3: row.volume_cm3 != null ? Number(row.volume_cm3) : null,

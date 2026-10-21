@@ -1,6 +1,8 @@
 'use client'
 
 import { useFileStore, useEffectiveAnalysis } from '@/store/useFileStore'
+import { nameTagTextSummary } from '@/lib/name-tag/design'
+import { useNameTagHandoff } from '@/lib/name-tag/handoff'
 import { useCartStore } from '@/store/useCartStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/button'
@@ -188,6 +190,11 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         [locale, showFeedback, t]
     )
     const file = useFileStore((s) => s.file)
+    const nameTagDesign = useNameTagHandoff((s) => s.design)
+    const nameTagForFile =
+        file?.name.startsWith('wow3d-nametag-') && nameTagDesign && nameTagTextSummary(nameTagDesign)
+            ? nameTagDesign
+            : null
     const fileSource = useFileStore((s) => s.fileSource)
     const savedQuoteId = useFileStore((s) => s.savedQuoteId)
     const savedFileR2Url = useFileStore((s) => s.savedFileR2Url)
@@ -836,6 +843,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 guideSource: guideSource || undefined,
                 guideTopic: guideTopic || undefined,
                 modelTransform: { ...modelTransform, unitInch: useFileStore.getState().unitInch },
+                ...(nameTagForFile ? { nameTagDesign: nameTagForFile } : {}),
             }
 
             const headers: HeadersInit = { 'Content-Type': 'application/json' }
@@ -1106,6 +1114,13 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
 
     return (
         <div className={`space-y-4 ${embedded ? 'pb-6' : 'pb-4'}`}>
+            {nameTagForFile ? (
+                <div className="rounded-xl border border-teal-400/30 bg-teal-400/10 px-3 py-2.5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-teal-300">{t('nameTagLabel')}</p>
+                    <p className="mt-1 text-sm font-bold text-white break-keep">{nameTagTextSummary(nameTagForFile)}</p>
+                    <p className="mt-1 text-[11px] font-medium leading-relaxed text-white/60 break-keep">{t('nameTagHint')}</p>
+                </div>
+            ) : null}
             <InchUnitNotice />
 
             {/* 모델 지표 — 한 줄 요약 */}

@@ -141,6 +141,24 @@ export function nameTagHasText(design: NameTagDesign): boolean {
     return design.lines.some((line) => line.text.trim().length > 0)
 }
 
+/** 견적·주문 화면에 보여 줄 문구. 줄은 " / "로 잇는다. */
+export function nameTagTextSummary(design: NameTagDesign): string {
+    return design.lines
+        .map((line) => line.text.trim())
+        .filter(Boolean)
+        .join(' / ')
+}
+
+/** DB에 저장된 디자인 JSON에서 문구만 꺼낸다. 깨진 값이면 빈 문자열. */
+export function nameTagStoredText(raw: unknown): string {
+    if (typeof raw !== 'string' || !raw.trim()) return ''
+    try {
+        return nameTagTextSummary(normalizeNameTagDesign(JSON.parse(raw)))
+    } catch {
+        return ''
+    }
+}
+
 export type NameTagPresetId = 'bag' | 'pet' | 'label' | 'desk' | 'badge'
 
 /** 용도별 시작점. 문구는 비워 두고 판·구멍·줄 구성만 정한다. */

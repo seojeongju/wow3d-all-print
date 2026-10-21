@@ -38,6 +38,7 @@ import {
     type TextAlign,
 } from '@/lib/name-tag/design'
 import { PRINT_RULES_DRAFT, type NameTagIssue } from '@/lib/name-tag/build'
+import { useNameTagHandoff } from '@/lib/name-tag/handoff'
 import { useNameTagBuilder } from '@/lib/name-tag/use-name-tag-builder'
 import { showToast } from '@/lib/toast-helper'
 import { cn } from '@/lib/utils'
@@ -237,6 +238,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                 return
             }
             setFile(file)
+            useNameTagHandoff.getState().setDesign(design)
             showToast.success(tm('toastQuoteOkTitle'), t('quoteOk'))
             router.push('/quote?entry=file&handoff=1')
         } catch (e) {

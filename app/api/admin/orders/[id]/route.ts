@@ -99,6 +99,27 @@ export async function GET(
             items = (fallback.results || []) as Record<string, unknown>[];
         }
 
+        try {
+            const extra = await env.DB.prepare(
+                `SELECT oi.id AS id, q.name_tag_design AS name_tag_design
+                 FROM order_items oi
+                 LEFT JOIN quotes q ON oi.quote_id = q.id
+                 WHERE oi.order_id = ?`
+            )
+                .bind(numId)
+                .all()
+            const byId = new Map<number, string | null>()
+            for (const row of (extra.results || []) as Array<{ id?: number; name_tag_design?: string | null }>) {
+                byId.set(Number(row.id), row.name_tag_design ?? null)
+            }
+            items = items.map((item) => ({
+                ...item,
+                name_tag_design: byId.get(Number(item.id)) ?? null,
+            }))
+        } catch {
+            /* name_tag_design 컬럼 없는 구 DB */
+        }
+
         const shipment = await env.DB.prepare(
             'SELECT * FROM shipments WHERE order_id = ? ORDER BY id DESC LIMIT 1'
         ).bind(numId).first();

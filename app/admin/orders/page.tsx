@@ -9,6 +9,7 @@ import {
     scalePercentFromModelTransform,
 } from '@/lib/quote-print-settings';
 import { resolveOrdererPhone, stripOrdererInfoFromNote } from '@/lib/orderer-contact';
+import { nameTagStoredText } from '@/lib/name-tag/design';
 import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -105,6 +106,7 @@ type AdminOrderItem = Record<string, unknown> & {
     id?: number;
     quote_id?: number;
     file_name?: string;
+    name_tag_design?: string | null;
     file_url?: string | null;
     print_method?: string;
     quantity?: number;
@@ -1112,6 +1114,11 @@ function OrderListInner() {
                                                     <tr key={it.id} className="border-b border-white/5 align-top">
                                                         <td className="p-3 text-white/90 pl-4">
                                                             <div className="font-medium text-white">{it.file_name || '-'}</div>
+                                                            {nameTagStoredText(it.name_tag_design) ? (
+                                                                <div className="mt-1 text-[12px] font-bold text-teal-200">
+                                                                    이름표 문구: {nameTagStoredText(it.name_tag_design)}
+                                                                </div>
+                                                            ) : null}
                                                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                                                 <span className="inline-flex items-center rounded-md bg-teal-400/15 border border-teal-400/25 px-2 py-0.5 text-[10px] font-black tracking-wide text-teal-300">
                                                                     {method}

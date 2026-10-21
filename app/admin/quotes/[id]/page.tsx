@@ -35,6 +35,7 @@ type StandaloneQuote = {
     id: number;
     userId: number | null;
     fileName: string | null;
+    nameTagText: string | null;
     volumeCm3: number | null;
     dimensionsX: number | null;
     dimensionsY: number | null;
@@ -411,6 +412,14 @@ export default function QuoteEditPage() {
                                     {standaloneQuote.fileName || '—'}
                                 </span>
                             </div>
+                            {standaloneQuote.nameTagText ? (
+                                <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                                    <span className="text-white/40">이름표 문구</span>
+                                    <span className="text-teal-200 font-bold text-right break-all">
+                                        {standaloneQuote.nameTagText}
+                                    </span>
+                                </div>
+                            ) : null}
                             <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
                                 <span className="text-white/40">회원</span>
                                 <span className="text-white text-right">

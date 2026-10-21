@@ -2,6 +2,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/api-utils';
 import { FIRST_TOUCH_TRAFFIC_SQL, QUOTE_ATTRIBUTION_SESSION_SQL } from '@/lib/quote-attribution';
+import { nameTagStoredText } from '@/lib/name-tag/design';
 
 const FILTER_WHITELIST = ['all', 'ordered', 'incart', 'abandoned', 'draft'] as const;
 type FilterKey = (typeof FILTER_WHITELIST)[number];
@@ -149,6 +150,29 @@ export async function GET(req: NextRequest) {
         listBinds.push(limit, offset);
 
         const { results } = await env.DB.prepare(listSql).bind(...listBinds).all();
+        const items = (results || []) as Array<Record<string, unknown>>
+        try {
+            const ids = items.map((item) => Number(item.id)).filter((id) => id > 0)
+            if (ids.length > 0) {
+                const placeholders = ids.map(() => '?').join(',')
+                const extra = await env.DB.prepare(
+                    `SELECT id, name_tag_design FROM quotes WHERE id IN (${placeholders})`
+                )
+                    .bind(...ids)
+                    .all()
+                const textById = new Map<number, string>()
+                for (const row of (extra.results || []) as Array<{ id?: number; name_tag_design?: string | null }>) {
+                    const text = nameTagStoredText(row.name_tag_design)
+                    if (text) textById.set(Number(row.id), text)
+                }
+                for (const item of items) {
+                    const text = textById.get(Number(item.id))
+                    if (text) item.name_tag_text = text
+                }
+            }
+        } catch {
+            /* name_tag_design 컬럼 없는 구 DB */
+        }
 
         return NextResponse.json({
             success: true,

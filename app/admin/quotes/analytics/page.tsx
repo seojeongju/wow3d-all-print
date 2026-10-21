@@ -35,6 +35,7 @@ type QuoteAnalytics = {
     user_id: number | null;
     session_id: string | null;
     file_name: string;
+    name_tag_text?: string | null;
     file_size: number;
     file_url: string | null;
     volume_cm3: number;
@@ -343,6 +344,11 @@ export default function QuoteAnalyticsPage() {
                         <p className="font-bold text-white truncate max-w-[240px]" title={item.file_name}>
                             {item.file_name}
                         </p>
+                        {item.name_tag_text ? (
+                            <p className="text-[11px] font-bold text-teal-200 truncate max-w-[240px]" title={item.name_tag_text}>
+                                이름표 문구: {item.name_tag_text}
+                            </p>
+                        ) : null}
                         <p className="text-[10px] text-white/30 uppercase font-bold tracking-tight">
                             {item.print_method?.toUpperCase()} · {(item.file_size / (1024 * 1024)).toFixed(2)}MB
                         </p>

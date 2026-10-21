@@ -9,6 +9,7 @@ import { P2S_MAX_SLOW_WALL_TO_SURFACE_RATIO } from '@/lib/print-time-estimate';
 import { resolveServerFdmQuote } from '@/lib/server-fdm-quote';
 import { resolveServerResinQuote } from '@/lib/server-resin-quote';
 import { normalizeLayFlat } from '@/lib/stl-bake';
+import { nameTagHasText, normalizeNameTagDesign } from '@/lib/name-tag/design';
 import {
     coercePrintColorForMaterial,
     isPrintColorAllowed,
@@ -431,6 +432,19 @@ export async function POST(request: NextRequest) {
                         .run()
                 } catch {
                     /* model_transform 컬럼 없는 구 DB */
+                }
+            }
+
+            // 이름표 디자인 (schema_quotes_name_tag_design 미적용 DB면 무시)
+            if (quoteId > 0 && body.nameTagDesign) {
+                try {
+                    const design = normalizeNameTagDesign(body.nameTagDesign)
+                    const payload = nameTagHasText(design) ? JSON.stringify(design) : null
+                    await env.DB.prepare('UPDATE quotes SET name_tag_design = ? WHERE id = ?')
+                        .bind(payload, quoteId)
+                        .run()
+                } catch {
+                    /* name_tag_design 컬럼 없는 구 DB */
                 }
             }
 
