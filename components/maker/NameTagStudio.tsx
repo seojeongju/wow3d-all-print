@@ -20,7 +20,7 @@ import {
     Sparkles,
     Check,
     RotateCcw,
-    SlidersHorizontal,
+    Home,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NameTagBasePicker } from '@/components/maker/NameTagBasePicker'
@@ -57,10 +57,14 @@ import { ReliefInfographicIcon } from '@/components/maker/infographics/ReliefInf
 import { PresetInfographicCard } from '@/components/maker/infographics/PresetInfographicCard'
 import { SpecSummaryInfographic } from '@/components/maker/infographics/SpecSummaryInfographic'
 import { MakerStepBar, type MakerStepId } from '@/components/maker/infographics/MakerStepBar'
+import type { PreviewViewId, PreviewViewRequest } from '@/components/maker/NameTagPreview'
 
 const NameTagPreview = dynamic(() => import('@/components/maker/NameTagPreview').then((m) => m.NameTagPreview), {
     ssr: false,
 })
+
+// NameTagPreview는 three.js와 함께 지연 로드되므로 목록 값은 여기 둔다(타입만 가져옴)
+const VIEW_BUTTONS: PreviewViewId[] = ['home', 'front', 'back', 'left', 'right', 'top', 'bottom']
 
 const DRAFT_KEY = 'wow3d:name-tag:v1'
 
@@ -153,6 +157,75 @@ function Choice({
     )
 }
 
+function NumberField({
+    value,
+    min,
+    max,
+    step,
+    unit,
+    label,
+    onCommit,
+}: {
+    value: number
+    min: number
+    max: number
+    step: number
+    unit: string
+    label: string
+    onCommit: (v: number) => void
+}) {
+    const decimals = step < 1 ? Math.max(0, Math.ceil(-Math.log10(step))) : 0
+    const format = useCallback((v: number) => v.toFixed(decimals), [decimals])
+    const [draft, setDraft] = useState(() => format(value))
+    const [editing, setEditing] = useState(false)
+
+    // 슬라이더·프리셋으로 값이 바뀌면 입력 중이 아닐 때만 따라간다
+    useEffect(() => {
+        if (!editing) setDraft(format(value))
+    }, [value, editing, format])
+
+    const commit = () => {
+        setEditing(false)
+        const parsed = Number(draft.replace(',', '.'))
+        if (!Number.isFinite(parsed) || draft.trim() === '') {
+            setDraft(format(value))
+            return
+        }
+        const clamped = Math.min(max, Math.max(min, Math.round(parsed / step) * step))
+        const next = Number(clamped.toFixed(decimals))
+        setDraft(format(next))
+        if (next !== value) onCommit(next)
+    }
+
+    return (
+        <span className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 px-1.5 focus-within:border-teal-400/70">
+            <input
+                type="text"
+                inputMode="decimal"
+                value={draft}
+                aria-label={`${label} (${unit})`}
+                title={`${format(min)}–${format(max)} ${unit}`}
+                onFocus={(e) => {
+                    setEditing(true)
+                    e.currentTarget.select()
+                }}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur()
+                    if (e.key === 'Escape') {
+                        setDraft(format(value))
+                        setEditing(false)
+                        e.currentTarget.blur()
+                    }
+                }}
+                className="h-7 w-14 bg-transparent text-right font-mono text-[12px] font-black text-teal-300 outline-none"
+            />
+            <span className="text-[10px] font-bold text-white/40">{unit}</span>
+        </span>
+    )
+}
+
 function Slider({
     label,
     value,
@@ -161,6 +234,8 @@ function Slider({
     max,
     step,
     onChange,
+    unit,
+    inputStep,
 }: {
     label: string
     value: number
@@ -169,23 +244,52 @@ function Slider({
     max: number
     step: number
     onChange: (v: number) => void
+    /** 지정하면 값을 직접 입력할 수 있는 칸을 보여 준다 */
+    unit?: string
+    /** 직접 입력 단위(기본은 슬라이더 step) */
+    inputStep?: number
 }) {
     return (
-        <label className="block space-y-1.5 rounded-xl border border-white/6 bg-black/20 p-2.5">
-            <span className="flex items-center justify-between text-[11px] font-bold text-white/65">
+        <div className="space-y-1.5 rounded-xl border border-white/6 bg-black/20 p-2.5">
+            <div className="flex items-center justify-between text-[11px] font-bold text-white/65">
                 <span>{label}</span>
-                <span className="font-mono font-black text-teal-300">{display}</span>
-            </span>
+                {unit ? (
+                    <NumberField
+                        value={value}
+                        min={min}
+                        max={max}
+                        step={inputStep ?? step}
+                        unit={unit}
+                        label={label}
+                        onCommit={onChange}
+                    />
+                ) : (
+                    <span className="font-mono font-black text-teal-300">{display}</span>
+                )}
+            </div>
             <input
                 type="range"
                 min={min}
                 max={max}
                 step={step}
                 value={value}
+                aria-label={label}
                 onChange={(e) => onChange(Number(e.target.value))}
                 className="w-full accent-teal-400 cursor-pointer"
             />
-        </label>
+            {unit ? (
+                <div className="flex justify-between text-[10px] font-medium text-white/30">
+                    <span>
+                        {min}
+                        {unit}
+                    </span>
+                    <span>
+                        {max}
+                        {unit}
+                    </span>
+                </div>
+            ) : null}
+        </div>
     )
 }
 
@@ -247,6 +351,8 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const [busy, setBusy] = useState<'quote' | 'stl' | null>(null)
     const [activeStep, setActiveStep] = useState<MakerStepId>('all')
     const [activePreset, setActivePreset] = useState<NameTagPresetId | null>('bag')
+    const [viewRequest, setViewRequest] = useState<PreviewViewRequest | null>(null)
+    const requestView = (id: PreviewViewId) => setViewRequest((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1 }))
 
     const { result, building, error, buildMs, requestStl } = useNameTagBuilder(design)
 
@@ -275,6 +381,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const update = useCallback((patch: (d: NameTagDesign) => NameTagDesign) => {
         setDesign((current) => normalizeNameTagDesign(patch(current)))
     }, [])
+
+    const placeHole = useCallback((xMm: number, yMm: number) => {
+        update((d) => ({ ...d, hole: { ...d.hole, position: 'custom', xMm, yMm } }))
+    }, [update])
 
     const noteFont = useCallback((fontId: NameTagFontId) => {
         setSeenFonts((current) => (current.includes(fontId) ? current : [...current, fontId]))
@@ -415,8 +525,40 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             plateColor={design.colors.plate}
                             textColor={design.colors.text}
                             showThin={showThin}
+                            onPlaceHole={hasText ? placeHole : undefined}
+                            view={viewRequest}
                         />
                     </Maker3DErrorBoundary>
+
+                    {/* 보기 전환 툴바 */}
+                    <div
+                        role="toolbar"
+                        aria-label={t('views.label')}
+                        className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-xl border border-white/10 bg-black/60 p-1 backdrop-blur-md md:right-4"
+                    >
+                        {VIEW_BUTTONS.map((id) => {
+                            const active = viewRequest?.id === id
+                            return (
+                                <button
+                                    key={id}
+                                    id={`name-tag-view-${id}`}
+                                    type="button"
+                                    onClick={() => requestView(id)}
+                                    aria-pressed={active}
+                                    title={t(`views.${id}`)}
+                                    className={cn(
+                                        'flex h-7 min-w-[3rem] items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-bold transition-colors',
+                                        active
+                                            ? 'bg-teal-400 text-slate-950'
+                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                    )}
+                                >
+                                    {id === 'home' ? <Home className="h-3.5 w-3.5" /> : null}
+                                    {t(`views.${id}`)}
+                                </button>
+                            )
+                        })}
+                    </div>
 
                     {/* 3D 뷰포트 하단 알림 바 */}
                     {hasText && (issues.length > 0 || error) ? (
@@ -481,7 +623,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                 </section>
 
                 {/* 왼쪽 고도화된 인포그래픽 메뉴 패널 */}
-                <section className="order-2 flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-white/10 p-4 md:order-1 md:w-[410px] md:border-r md:p-5 custom-scrollbar">
+                <section className="order-2 flex w-full shrink-0 flex-col gap-4 overflow-y-auto border-white/10 p-4 md:order-1 md:w-[410px] md:border-r md:p-5 custom-scrollbar [&>*]:shrink-0">
                     {/* 상단 타이틀 & 키커 */}
                     <div className="relative space-y-1">
                         <div className="flex items-center justify-between">
@@ -754,6 +896,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         min={NAME_TAG_LIMITS.widthMm[0]}
                                         max={NAME_TAG_LIMITS.widthMm[1]}
                                         step={1}
+                                        unit="mm"
                                         onChange={(widthMm) =>
                                             update((d) => {
                                                 const template = getNameTagTemplate(d.baseId)
@@ -775,6 +918,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             min={NAME_TAG_LIMITS.heightMm[0]}
                                             max={NAME_TAG_LIMITS.heightMm[1]}
                                             step={1}
+                                            unit="mm"
                                             onChange={(heightMm) =>
                                                 update((d) => {
                                                     const template = getNameTagTemplate(d.baseId)
@@ -794,7 +938,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         display={`${design.plate.thicknessMm.toFixed(1)}mm`}
                                         min={NAME_TAG_LIMITS.thicknessMm[0]}
                                         max={NAME_TAG_LIMITS.thicknessMm[1]}
-                                        step={0.2}
+                                        step={0.1}
+                                        unit="mm"
+                                        inputStep={0.1}
                                         onChange={(thicknessMm) => update((d) => ({ ...d, plate: { ...d.plate, thicknessMm } }))}
                                     />
                                 </div>
@@ -814,7 +960,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             <button
                                                 key={position}
                                                 type="button"
-                                                onClick={() => update((d) => ({ ...d, hole: { ...d.hole, position } }))}
+                                                onClick={() => update((d) => ({ ...d, hole: { ...d.hole, position, xMm: null, yMm: null } }))}
                                                 className={cn(
                                                     'group relative flex flex-col items-center justify-center rounded-xl border p-2 transition-all text-center',
                                                     isActive
@@ -835,6 +981,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         )
                                     })}
                                 </div>
+                                <p className="text-[11px] font-medium leading-relaxed text-white/45">{t('holePick')}</p>
+                                {design.hole.position === 'custom' ? (
+                                    <p className="text-[12px] font-bold text-teal-300">{t('holeCustom')}</p>
+                                ) : null}
                                 {design.hole.position !== 'none' ? (
                                     <Slider
                                         label={t('holeSize')}

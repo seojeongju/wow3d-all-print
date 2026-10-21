@@ -116,10 +116,8 @@ function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tra
 
 function plateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracker): PlateFrame {
     const fromTemplate = templateFrame(wasm, design, track)
-    if (fromTemplate) return placeHole(wasm, design, fromTemplate, track)
+    if (fromTemplate) return attachHole(wasm, design, fromTemplate, track)
     const { shape } = design.plate
-    const d = design.hole.diameterMm
-    const edge = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, d * 0.45)
     const isCircle = shape === 'circle'
     const w = design.plate.widthMm
     const h = isCircle ? w : design.plate.heightMm
@@ -132,42 +130,107 @@ function plateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracke
     else if (shape === 'rect') plate = roundedRect(wasm, w, h, 0.8, track)
     else plate = roundedRect(wasm, w, h, Math.min(w, h) * 0.22, track)
 
-    let hole: CrossSection | null = null
-    let box = isCircle
+    const box = isCircle
         ? { x0: -w / 2 + margin, y0: -h * 0.34, x1: w / 2 - margin, y1: h * 0.34 }
         : { x0: -w / 2 + margin, y0: -h / 2 + margin, x1: w / 2 - margin, y1: h / 2 - margin }
 
     if (shape === 'outline') return { plate, hole: null, box, margin }
-    if (design.hole.position === 'left') {
-        const cx = isCircle ? -w / 2 + edge + d / 2 : -w / 2 + edge + d / 2 + (shape === 'capsule' ? h * 0.12 : 0)
-        hole = track(track(wasm.CrossSection.circle(d / 2, 48)).translate(cx, 0))
-        box = { ...box, x0: Math.max(box.x0, cx + d / 2 + edge) }
-    } else if (design.hole.position === 'top') {
-        const cy = h / 2 - edge - d / 2
-        hole = track(track(wasm.CrossSection.circle(d / 2, 48)).translate(0, cy))
-        box = { ...box, y1: Math.min(box.y1, cy - d / 2 - edge * 0.8) }
-    }
-    return { plate, hole, box, margin }
+    return attachHole(wasm, design, { plate, hole: null, box, margin }, track)
 }
 
-/** 템플릿 판의 경계 안쪽에 고리 구멍을 둔다. */
-function placeHole(wasm: ManifoldToplevel, design: NameTagDesign, frame: PlateFrame, track: Tracker): PlateFrame {
-    if (design.hole.position === 'none') return frame
-    const d = design.hole.diameterMm
-    const edge = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, d * 0.45)
-    const bounds = frame.plate.bounds()
-    let { box } = frame
-    let hole: CrossSection
-    if (design.hole.position === 'left') {
-        const cx = bounds.min[0] + edge + d / 2
-        hole = track(track(wasm.CrossSection.circle(d / 2, 48)).translate(cx, (bounds.min[1] + bounds.max[1]) / 2))
-        box = { ...box, x0: Math.max(box.x0, cx + d / 2 + edge) }
-    } else {
-        const cy = bounds.max[1] - edge - d / 2
-        hole = track(track(wasm.CrossSection.circle(d / 2, 48)).translate((bounds.min[0] + bounds.max[0]) / 2, cy))
-        box = { ...box, y1: Math.min(box.y1, cy - d / 2 - edge * 0.8) }
+/** 구멍 중심이 판 안쪽(가장자리 여유 포함)에 있는지 본다. */
+function insideSection(wasm: ManifoldToplevel, section: CrossSection, x: number, y: number, track: Tracker): boolean {
+    const dot = track(track(wasm.CrossSection.circle(0.08, 6)).translate(x, y))
+    return track(section.intersect(dot)).area() > 1e-4
+}
+
+/** 여유를 둔 안쪽 경계에서 왼쪽·위쪽에 가장 가까운 점을 고른다. */
+function edgePoint(section: CrossSection, which: 'left' | 'top'): [number, number] | null {
+    const bounds = section.bounds()
+    const midX = (bounds.min[0] + bounds.max[0]) / 2
+    const midY = (bounds.min[1] + bounds.max[1]) / 2
+    let best: [number, number] | null = null
+    let bestScore = Infinity
+    for (const poly of section.toPolygons()) {
+        for (const [x, y] of poly) {
+            const score = which === 'left' ? (x - bounds.min[0]) * 10 + Math.abs(y - midY) : (bounds.max[1] - y) * 10 + Math.abs(x - midX)
+            if (score < bestScore) {
+                bestScore = score
+                best = [x, y]
+            }
+        }
     }
-    return { ...frame, hole, box }
+    return best
+}
+
+/** 글자 칸이 구멍과 겹치면, 칸을 가장 적게 줄이는 쪽으로 밀어 낸다. */
+function avoidHole(
+    box: PlateFrame['box'],
+    cx: number,
+    cy: number,
+    reach: number
+): PlateFrame['box'] {
+    if (cx + reach <= box.x0 || cx - reach >= box.x1 || cy + reach <= box.y0 || cy - reach >= box.y1) return box
+    const options = [
+        { ...box, x0: Math.max(box.x0, cx + reach) },
+        { ...box, x1: Math.min(box.x1, cx - reach) },
+        { ...box, y0: Math.max(box.y0, cy + reach) },
+        { ...box, y1: Math.min(box.y1, cy - reach) },
+    ]
+    let best = box
+    let bestArea = -1
+    for (const candidate of options) {
+        const width = candidate.x1 - candidate.x0
+        const height = candidate.y1 - candidate.y0
+        if (width < 4 || height < 3) continue
+        const area = width * height
+        if (area > bestArea) {
+            bestArea = area
+            best = candidate
+        }
+    }
+    return best
+}
+
+/**
+ * 고리 구멍을 판 실루엣 안쪽에 둔다.
+ * 왼쪽·위는 경계 상자 중심이 아니라 실제 외곽에서 고르고, custom은 클릭 좌표를 그 안으로 당긴다.
+ */
+function attachHole(wasm: ManifoldToplevel, design: NameTagDesign, frame: PlateFrame, track: Tracker): PlateFrame {
+    if (design.hole.position === 'none') return frame
+    const radius = design.hole.diameterMm / 2
+    const clearance = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, radius * 0.9)
+    const inset = track(frame.plate.offset(-(radius + clearance)))
+    if (inset.isEmpty()) return { ...frame, hole: null }
+
+    let center: [number, number] | null = null
+    if (design.hole.position === 'custom' && design.hole.xMm != null && design.hole.yMm != null) {
+        const desired: [number, number] = [design.hole.xMm, design.hole.yMm]
+        if (insideSection(wasm, inset, desired[0], desired[1], track)) {
+            center = desired
+        } else {
+            const bounds = inset.bounds()
+            const ax = (bounds.min[0] + bounds.max[0]) / 2
+            const ay = (bounds.min[1] + bounds.max[1]) / 2
+            let x = desired[0]
+            let y = desired[1]
+            for (let i = 0; i < 16; i++) {
+                x = x * 0.7 + ax * 0.3
+                y = y * 0.7 + ay * 0.3
+                if (insideSection(wasm, inset, x, y, track)) {
+                    center = [x, y]
+                    break
+                }
+            }
+            if (!center) center = insideSection(wasm, inset, ax, ay, track) ? [ax, ay] : edgePoint(inset, 'left')
+        }
+    } else {
+        center = edgePoint(inset, design.hole.position === 'top' ? 'top' : 'left')
+    }
+    if (!center) return { ...frame, hole: null }
+
+    const hole = track(track(wasm.CrossSection.circle(radius, 48)).translate(center[0], center[1]))
+    return { ...frame, hole, box: avoidHole(frame.box, center[0], center[1], radius + clearance) }
 }
 
 type PlacedLine = {
@@ -327,7 +390,10 @@ export function buildNameTag(
             pieces.forEach((piece) => track(piece))
             // 줄·단어 사이가 멀어 판이 여러 조각이면 감싸는 볼록 외곽으로 잇는다
             if (pieces.length > 1) plate = track(plate.hull())
-            if (design.hole.position !== 'none') {
+            if (design.hole.position === 'custom') {
+                const fitted = attachHole(wasm, design, { ...frame, plate, hole: null }, track)
+                frame.hole = fitted.hole
+            } else if (design.hole.position !== 'none') {
                 const d = design.hole.diameterMm
                 const edge = Math.max(PRINT_RULES_DRAFT.holeEdgeMm, d * 0.45)
                 const b = plate.bounds()

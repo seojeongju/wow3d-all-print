@@ -4462,12 +4462,12 @@
         "right": "Right"
       },
       "letterSpacing": "Letter spacing",
-      "baseLabel": "Base",
+      "baseLabel": "Illustration base",
       "baseBasic": "Basic shapes",
       "baseKids": "Kids name tag",
       "basePets": "Pet tag",
       "baseHint": "The outline of the picture becomes the plate. Its colors are merged into one piece, and the name is added on top.",
-      "plateLabel": "Plate",
+      "plateLabel": "Name tag base",
       "shapes": {
         "rounded": "Rounded",
         "capsule": "Capsule",
@@ -4480,7 +4480,7 @@
       "diameter": "Diameter",
       "textAreaWidth": "Text area width",
       "textAreaHeight": "Text area height",
-      "thickness": "Plate thickness",
+      "thickness": "Base thickness",
       "holeLabel": "Ring hole",
       "holes": {
         "left": "Left",
@@ -4488,6 +4488,8 @@
         "none": "None"
       },
       "holeSize": "Hole diameter",
+      "holePick": "Click the preview to place the hole. Drag to rotate the plate.",
+      "holeCustom": "Clicked spot",
       "reliefLabel": "Lettering",
       "relief": {
         "emboss": "Raised",
@@ -4503,7 +4505,7 @@
       },
       "colorNote": "Print colors are chosen again on the quote page for your material. Two-color prints are arranged after consultation.",
       "building": "Building shape",
-      "previewHint": "Drag to rotate",
+      "previewHint": "Drag to rotate. Click to place the hole.",
       "previewEmpty": "Type some text on the left to see it in 3D",
       "volume": "Volume {cm3}cm³",
       "engineError": "Could not load the shape engine. Please refresh and try again.",
@@ -4525,6 +4527,16 @@
       "quoteBlocked": "Please resolve the red notices first.",
       "quoteOk": "Your name tag STL was loaded into the instant quote.",
       "reset": "Start over",
+      "views": {
+        "label": "Change view",
+        "home": "Home",
+        "front": "Front",
+        "back": "Back",
+        "left": "Left",
+        "right": "Right",
+        "top": "Top",
+        "bottom": "Bottom"
+      },
       "openDraw": "Draw a logo instead",
       "back": "Back to name tag"
     },

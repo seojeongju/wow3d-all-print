@@ -11,7 +11,7 @@ export const PLATE_SHAPES = ['rounded', 'capsule', 'rect', 'circle', 'outline'] 
 export type PlateShape = (typeof PLATE_SHAPES)[number]
 
 export const HOLE_POSITIONS = ['left', 'top', 'none'] as const
-export type HolePosition = (typeof HOLE_POSITIONS)[number]
+export type HolePosition = (typeof HOLE_POSITIONS)[number] | 'custom'
 
 export const RELIEF_MODES = ['emboss', 'engrave'] as const
 export type ReliefMode = (typeof RELIEF_MODES)[number]
@@ -46,6 +46,9 @@ export type NameTagDesign = {
     hole: {
         position: HolePosition
         diameterMm: number
+        /** custom일 때 판 중심 기준 mm. x는 오른쪽, y는 위 */
+        xMm: number | null
+        yMm: number | null
     }
     relief: {
         mode: ReliefMode
@@ -62,7 +65,7 @@ export type NameTagDesign = {
 export const NAME_TAG_LIMITS = {
     widthMm: [25, 150],
     heightMm: [12, 100],
-    thicknessMm: [1.6, 5],
+    thicknessMm: [1, 3],
     holeMm: [2.5, 8],
     depthMm: [0.4, 2],
     lineSize: [0.4, 1.6],
@@ -76,7 +79,7 @@ export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     letterSpacing: 0,
     baseId: null,
     plate: { shape: 'rounded', widthMm: 60, heightMm: 24, thicknessMm: 2.4 },
-    hole: { position: 'left', diameterMm: 4 },
+    hole: { position: 'left', diameterMm: 4, xMm: null, yMm: null },
     relief: { mode: 'emboss', depthMm: 1 },
     border: false,
     colors: { plate: '#f4f4f5', text: '#0f172a' },
@@ -93,6 +96,25 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 
 function color(value: unknown, fallback: string): string {
     return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback
+}
+
+function coordMm(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? Math.min(200, Math.max(-200, value)) : null
+}
+
+function holeOf(raw: Record<string, unknown>, fallback: NameTagDesign['hole']): NameTagDesign['hole'] {
+    const xMm = coordMm(raw.xMm)
+    const yMm = coordMm(raw.yMm)
+    const diameterMm = clamp(raw.diameterMm, NAME_TAG_LIMITS.holeMm, fallback.diameterMm)
+    if (raw.position === 'custom' && xMm != null && yMm != null) {
+        return { position: 'custom', diameterMm, xMm, yMm }
+    }
+    return {
+        position: pick(raw.position, HOLE_POSITIONS, fallback.position === 'custom' ? 'left' : fallback.position),
+        diameterMm,
+        xMm: null,
+        yMm: null,
+    }
 }
 
 /** 외부 입력(공유 링크·저장본·견적 전달)을 허용 범위 안의 디자인으로 바꾼다. */
@@ -129,10 +151,7 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
             heightMm: sized?.heightMm ?? clamp(plate.heightMm, NAME_TAG_LIMITS.heightMm, d.plate.heightMm),
             thicknessMm: clamp(plate.thicknessMm, NAME_TAG_LIMITS.thicknessMm, d.plate.thicknessMm),
         },
-        hole: {
-            position: pick(hole.position, HOLE_POSITIONS, d.hole.position),
-            diameterMm: clamp(hole.diameterMm, NAME_TAG_LIMITS.holeMm, d.hole.diameterMm),
-        },
+        hole: holeOf(hole, d.hole),
         relief: {
             mode: pick(relief.mode, RELIEF_MODES, d.relief.mode),
             depthMm: clamp(relief.depthMm, NAME_TAG_LIMITS.depthMm, d.relief.depthMm),
@@ -177,7 +196,7 @@ export const NAME_TAG_PRESETS: Record<NameTagPresetId, (fontId: NameTagFontId) =
             { text: '', fontId, size: 0.6 },
         ],
         plate: { shape: 'capsule', widthMm: 60, heightMm: 30, thicknessMm: 2.4 },
-        hole: { position: 'left', diameterMm: 4 },
+        hole: { position: 'left', diameterMm: 4, xMm: null, yMm: null },
     }),
     pet: (fontId) => ({
         lines: [
@@ -185,12 +204,12 @@ export const NAME_TAG_PRESETS: Record<NameTagPresetId, (fontId: NameTagFontId) =
             { text: '', fontId, size: 0.55 },
         ],
         plate: { shape: 'circle', widthMm: 32, heightMm: 32, thicknessMm: 2.4 },
-        hole: { position: 'top', diameterMm: 3.5 },
+        hole: { position: 'top', diameterMm: 3.5, xMm: null, yMm: null },
     }),
     label: (fontId) => ({
         lines: [{ text: '', fontId, size: 1 }],
         plate: { shape: 'rect', widthMm: 50, heightMm: 16, thicknessMm: 1.8 },
-        hole: { position: 'none', diameterMm: 4 },
+        hole: { position: 'none', diameterMm: 4, xMm: null, yMm: null },
     }),
     desk: (fontId) => ({
         lines: [
@@ -198,7 +217,7 @@ export const NAME_TAG_PRESETS: Record<NameTagPresetId, (fontId: NameTagFontId) =
             { text: '', fontId, size: 0.5 },
         ],
         plate: { shape: 'rounded', widthMm: 120, heightMm: 40, thicknessMm: 3 },
-        hole: { position: 'none', diameterMm: 4 },
+        hole: { position: 'none', diameterMm: 4, xMm: null, yMm: null },
         border: true,
     }),
     badge: (fontId) => ({
@@ -207,7 +226,7 @@ export const NAME_TAG_PRESETS: Record<NameTagPresetId, (fontId: NameTagFontId) =
             { text: '', fontId, size: 1 },
         ],
         plate: { shape: 'rounded', widthMm: 70, heightMm: 30, thicknessMm: 2.4 },
-        hole: { position: 'top', diameterMm: 4 },
+        hole: { position: 'top', diameterMm: 4, xMm: null, yMm: null },
         border: true,
     }),
 }

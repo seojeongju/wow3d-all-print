@@ -38,14 +38,54 @@ function Part({ mesh, color, emissive }: { mesh: MeshData | null; color: string;
     )
 }
 
+export const PREVIEW_VIEWS = ['home', 'front', 'back', 'left', 'right', 'top', 'bottom'] as const
+export type PreviewViewId = (typeof PREVIEW_VIEWS)[number]
+/** nonce가 바뀌면 같은 보기를 다시 눌러도 다시 맞춘다 */
+export type PreviewViewRequest = { id: PreviewViewId; nonce: number }
+
+const DEFAULT_MIN_POLAR = 0.18
+const DEFAULT_MAX_POLAR = Math.PI / 2 - 0.06
+const VIEW_ANIM_MS = 380
+
+/** 보기별 카메라 방향(타깃 기준, Z가 위). 극점은 살짝 비켜 화면 위쪽이 +Y가 되게 한다. */
+function viewDirection(id: PreviewViewId): THREE.Vector3 {
+    switch (id) {
+        case 'home':
+            return new THREE.Vector3(0, -0.92, 0.62)
+        case 'front':
+            return new THREE.Vector3(0, -1, 0)
+        case 'back':
+            return new THREE.Vector3(0, 1, 0)
+        case 'left':
+            return new THREE.Vector3(-1, 0, 0)
+        case 'right':
+            return new THREE.Vector3(1, 0, 0)
+        case 'top':
+            return new THREE.Vector3(0, -0.002, 1)
+        case 'bottom':
+            return new THREE.Vector3(0, -0.002, -1)
+    }
+}
+
+function fitDistance(size: [number, number, number]): number {
+    return Math.max(size[0], size[1] * 1.6, 20) * 1.28
+}
+
 /** 판을 테이블 위에 두고 돌려 보는 카메라. 극점 근처와 뒤집힘은 막는다. */
-function TurntableControls({ size }: { size: [number, number, number] }) {
+function TurntableControls({ size, view }: { size: [number, number, number]; view?: PreviewViewRequest | null }) {
     const camera = useThree((s) => s.camera)
     const gl = useThree((s) => s.gl)
     const invalidate = useThree((s) => s.invalidate)
     const controlsRef = useRef<OrbitControls | null>(null)
     const fittedKey = useRef('')
     const [ready, setReady] = useState(0)
+    const anim = useRef<{
+        start: number
+        fromDir: THREE.Vector3
+        rot: THREE.Quaternion
+        fromDist: number
+        toDist: number
+    } | null>(null)
 
     useEffect(() => {
         const controls = new OrbitControls(camera, gl.domElement)
@@ -59,28 +99,69 @@ function TurntableControls({ size }: { size: [number, number, number] }) {
         controls.screenSpacePanning = true
         controls.zoomToCursor = false
         // 바로 위에서 돌리면 한 바퀴가 튀고, 아래로 넘기면 판이 뒤집힌다
-        controls.minPolarAngle = 0.18
-        controls.maxPolarAngle = Math.PI / 2 - 0.06
+        controls.minPolarAngle = DEFAULT_MIN_POLAR
+        controls.maxPolarAngle = DEFAULT_MAX_POLAR
+        // 사용자가 직접 돌리기 시작하면 보기 전환 애니메이션은 멈춘다
+        const onStart = () => {
+            anim.current = null
+        }
+        controls.addEventListener('start', onStart)
         const onChange = () => invalidate()
         controls.addEventListener('change', onChange)
         setReady((n) => n + 1)
         return () => {
             controls.removeEventListener('change', onChange)
+            controls.removeEventListener('start', onStart)
             controls.dispose()
             controlsRef.current = null
         }
     }, [camera, gl, invalidate])
 
     useFrame(() => {
-        controlsRef.current?.update()
+        const controls = controlsRef.current
+        const a = anim.current
+        if (controls && a) {
+            const raw = Math.min(1, (performance.now() - a.start) / VIEW_ANIM_MS)
+            const t = 1 - Math.pow(1 - raw, 3)
+            const dir = a.fromDir.clone().applyQuaternion(new THREE.Quaternion().slerp(a.rot, t))
+            const dist = a.fromDist + (a.toDist - a.fromDist) * t
+            camera.position.copy(controls.target).addScaledVector(dir, dist)
+            camera.lookAt(controls.target)
+            if (raw >= 1) anim.current = null
+            invalidate()
+        }
+        controls?.update()
     })
+
+    useEffect(() => {
+        const controls = controlsRef.current
+        if (!controls || !view) return
+        const isHome = view.id === 'home'
+        // 옆·위·아래 보기는 기본 회전 범위를 벗어나므로 범위를 풀고, 홈에서 되돌린다
+        controls.minPolarAngle = isHome ? DEFAULT_MIN_POLAR : 0
+        controls.maxPolarAngle = isHome ? DEFAULT_MAX_POLAR : Math.PI
+        const offset = camera.position.clone().sub(controls.target)
+        const fromDist = Math.max(offset.length(), 1)
+        const fromDir = offset.normalize()
+        const toDir = viewDirection(view.id).normalize()
+        anim.current = {
+            start: performance.now(),
+            fromDir,
+            rot: new THREE.Quaternion().setFromUnitVectors(fromDir, toDir),
+            fromDist,
+            toDist: fitDistance(size),
+        }
+        invalidate()
+        // size는 거리 계산에만 쓰며, 크기가 바뀌었다고 보기를 다시 적용하지는 않는다
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [view, ready, camera, invalidate])
 
     useEffect(() => {
         const controls = controlsRef.current
         if (!controls) return
         const key = `${Math.round(size[0])}x${Math.round(size[1])}`
         const span = Math.max(size[0], size[1] * 1.6, 20)
-        const distance = span * 1.28
+        const distance = fitDistance(size)
         controls.minDistance = Math.max(8, span * 0.42)
         controls.maxDistance = span * 7
         if (fittedKey.current === key) return
@@ -107,9 +188,58 @@ type Props = {
     plateColor: string
     textColor: string
     showThin: boolean
+    /** 판을 클릭하면 그 좌표(mm)에 구멍을 둔다 */
+    onPlaceHole?: (xMm: number, yMm: number) => void
+    /** 보기 버튼(홈·정면·좌·우·상·하·후면) 요청 */
+    view?: PreviewViewRequest | null
 }
 
-export function NameTagPreview({ result, plateColor, textColor, showThin }: Props) {
+/** 드래그가 아닌 클릭만 구멍 위치로 받는다. */
+function HolePicker({ onPlace }: { onPlace?: (xMm: number, yMm: number) => void }) {
+    const camera = useThree((s) => s.camera)
+    const gl = useThree((s) => s.gl)
+    const scene = useThree((s) => s.scene)
+    const down = useRef({ x: 0, y: 0, active: false })
+
+    useEffect(() => {
+        const el = gl.domElement
+        if (!onPlace) {
+            el.style.cursor = ''
+            return
+        }
+        el.style.cursor = 'crosshair'
+        const onDown = (event: PointerEvent) => {
+            if (event.button !== 0) return
+            down.current = { x: event.clientX, y: event.clientY, active: true }
+        }
+        const onUp = (event: PointerEvent) => {
+            if (!down.current.active || event.button !== 0) return
+            down.current.active = false
+            if (Math.hypot(event.clientX - down.current.x, event.clientY - down.current.y) > 5) return
+            const rect = el.getBoundingClientRect()
+            const ndc = new THREE.Vector2(
+                ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                -((event.clientY - rect.top) / rect.height) * 2 + 1
+            )
+            const ray = new THREE.Raycaster()
+            ray.setFromCamera(ndc, camera)
+            const hit = ray.intersectObjects(scene.children, true).find((item) => item.object instanceof THREE.Mesh)
+            if (!hit) return
+            onPlace(Math.round(hit.point.x * 10) / 10, Math.round(hit.point.y * 10) / 10)
+        }
+        el.addEventListener('pointerdown', onDown)
+        el.addEventListener('pointerup', onUp)
+        return () => {
+            el.style.cursor = ''
+            el.removeEventListener('pointerdown', onDown)
+            el.removeEventListener('pointerup', onUp)
+        }
+    }, [camera, gl, onPlace, scene])
+
+    return null
+}
+
+export function NameTagPreview({ result, plateColor, textColor, showThin, onPlaceHole, view }: Props) {
     const size = result?.stats.sizeMm ?? [60, 24, 3]
     return (
         <Canvas
@@ -123,7 +253,8 @@ export function NameTagPreview({ result, plateColor, textColor, showThin }: Prop
             <hemisphereLight args={['#ffffff', '#3a3a46', 0.9]} />
             <directionalLight position={[-30, -40, 80]} intensity={1.6} />
             <directionalLight position={[40, 30, 30]} intensity={0.5} />
-            <TurntableControls size={size} />
+            <TurntableControls size={size} view={view} />
+            <HolePicker onPlace={onPlaceHole} />
             {result ? (
                 <group>
                     <Part mesh={result.base} color={plateColor} />

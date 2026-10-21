@@ -28,7 +28,7 @@ type Props = {
 
 export function MakerStepBar({ activeStep, onSelectStep }: Props) {
     return (
-        <div className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-md custom-scrollbar">
+        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-md">
             {STEPS.map((step) => {
                 const Icon = step.icon
                 const isActive = activeStep === step.id
@@ -36,18 +36,19 @@ export function MakerStepBar({ activeStep, onSelectStep }: Props) {
                 return (
                     <button
                         key={step.id}
+                        id={`maker-step-${step.id}`}
                         type="button"
                         onClick={() => onSelectStep(step.id)}
+                        aria-pressed={isActive}
                         className={cn(
-                            'group flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-bold transition-all',
+                            'group flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-bold leading-tight transition-all',
                             isActive
                                 ? 'bg-teal-400 text-slate-950 shadow-[0_0_12px_rgba(45,212,191,0.35)] font-black'
                                 : 'text-white/60 hover:bg-white/10 hover:text-white'
                         )}
                     >
-                        <Icon className={cn('h-3.5 w-3.5', isActive ? 'text-slate-950' : 'text-white/50 group-hover:text-white')} />
-                        <span className="hidden sm:inline">{step.label}</span>
-                        <span className="sm:hidden">{step.shortLabel}</span>
+                        <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-slate-950' : 'text-white/50 group-hover:text-white')} />
+                        <span className="w-full truncate text-center">{step.label}</span>
                     </button>
                 )
             })}
