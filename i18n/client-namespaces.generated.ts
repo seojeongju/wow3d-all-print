@@ -12,7 +12,7 @@ export const CLIENT_NAMESPACES = {
     "gallery": ["Common","Gallery","Home","LocaleSwitcher","Nav","Search"],
     "guides": ["Common","Footer","GuideChrome","GuidesHub","LocaleSwitcher","Makerspace","Nav","Search"],
     "hardware": ["Common","Footer","Hardware","LocaleSwitcher","Makerspace","Nav","Search"],
-    "maker": ["Maker"],
+    "maker": ["Common","LocaleSwitcher","Maker","Nav","Search"],
     "makerspace": ["Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
     "materials": ["Common","Footer","LocaleSwitcher","Makerspace","Materials","MaterialsSafety","Nav","Search"],
     "my-account": ["Common","LocaleSwitcher","MyAccount","Nav","Search"],
