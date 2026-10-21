@@ -63,6 +63,7 @@
     "next": "15.1.6",
     "next-intl": "^4.14.2",
     "occt-import-js": "^0.0.23",
+    "opentype.js": "^2.0.0",
     "pdf-lib": "^1.17.1",
     "postal-mime": "^2.7.5",
     "radix-ui": "^1.4.3",

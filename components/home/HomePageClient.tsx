@@ -9,7 +9,6 @@ import ServicesSection from "@/components/home/ServicesSection";
 import QuickProcessSteps from "@/components/home/QuickProcessSteps";
 import CTA from "@/components/home/CTA";
 import HomeFAQ from "@/components/home/HomeFAQ";
-import LazyMount from "@/components/home/LazyMount";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,6 @@ import dynamic from "next/dynamic";
 import type { QnAItem } from "@/lib/qna";
 import type { ReactNode } from "react";
 import { ogImageAlt, OG_IMAGE_PATH } from "@/lib/site-url";
-
-const MakerWorkspace = dynamic(
-  () => import("@/components/maker/MakerWorkspace").then((mod) => mod.MakerWorkspace),
-  { ssr: false }
-);
 
 const GallerySection = dynamic(
   () => import("@/components/home/GallerySection"),
@@ -110,7 +104,7 @@ export default function HomePageClient({ homeFaqItems, keyAnswers }: HomePageCli
                     {tNoFile('makerDesc')}
                   </p>
                   <Button asChild variant="outline" className="w-full border-teal-500/40 hover:bg-teal-500/10">
-                    <a href="#ai-3d-maker">{tNoFile('makerCta')}</a>
+                    <Link href="/maker">{tNoFile('makerCta')}</Link>
                   </Button>
                 </div>
                 <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-5">
@@ -127,12 +121,6 @@ export default function HomePageClient({ homeFaqItems, keyAnswers }: HomePageCli
                   </Link>
                 </div>
               </div>
-            </div>
-            <div id="ai-3d-maker" className="flex justify-center scroll-mt-24">
-              {/* three.js를 쓰는 AI 3D 메이커는 스크롤로 가까워질 때 로드 (첫 로딩 JS 절감) */}
-            <LazyMount minHeight={900}>
-              <MakerWorkspace />
-            </LazyMount>
             </div>
           </div>
         </section>

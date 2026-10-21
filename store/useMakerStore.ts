@@ -50,6 +50,10 @@ interface MakerState {
   bevelMm: number;
   rimHeightMm: number;
   baseSizeMm: number;
+  /** 0이면 정사각. 이름표 가로·세로 mm */
+  plateWidthMm: number;
+  plateHeightMm: number;
+  ringHoleMm: number;
   cornerRadiusMm: number;
   mxStem: boolean;
   backMount: BackMountType;
@@ -84,6 +88,10 @@ interface MakerState {
   applyTemplate: (id: MakerTemplateId) => void;
   /** 배지·키캡 템플릿 선택 해제 (판형 없음으로 복귀) */
   clearTemplate: () => void;
+  /** 이름표 판·글자·아이콘을 한 번에 반영 */
+  applyNameTagDesign: (design: NameTagDesign) => void;
+  /** 직접 그리기로 돌아갈 때 이름표 판 비율·구멍을 해제 */
+  clearNameTagPlate: () => void;
   setShowGrid: (show: boolean) => void;
 
   addImportedSvg: (svg: Omit<ImportedSvg, 'scale' | 'offsetXMm' | 'offsetYMm' | 'rotationDeg'> & Partial<ImportedSvgTransform>) => void;
@@ -96,6 +104,24 @@ interface MakerState {
 
   updateCanvasSize: (width: number, height: number) => void;
 }
+
+export type NameTagDesign = {
+  widthMm: number;
+  heightMm: number;
+  cornerRadiusMm: number;
+  ringHoleMm: number;
+  circle: boolean;
+  baseColor: string;
+  logoColor: string;
+  svgs: Array<{
+    id: string;
+    name: string;
+    svgContent: string;
+    scale: number;
+    offsetXMm: number;
+    offsetYMm: number;
+  }>;
+};
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
@@ -110,6 +136,9 @@ export function makerSceneInputFromState(s: {
   bevelMm: number;
   rimHeightMm: number;
   baseSizeMm: number;
+  plateWidthMm?: number;
+  plateHeightMm?: number;
+  ringHoleMm?: number;
   cornerRadiusMm: number;
   mxStem: boolean;
   backMount: BackMountType;
@@ -127,6 +156,9 @@ export function makerSceneInputFromState(s: {
     bevelMm: s.bevelMm,
     rimHeightMm: s.rimHeightMm,
     baseSizeMm: s.baseSizeMm,
+    plateWidthMm: s.plateWidthMm ?? 0,
+    plateHeightMm: s.plateHeightMm ?? 0,
+    ringHoleMm: s.ringHoleMm ?? 0,
     cornerRadiusMm: s.cornerRadiusMm,
     canvasSize: s.canvasSize,
     mxStem: s.mxStem,
@@ -154,6 +186,9 @@ export const useMakerStore = create<MakerState>((set, get) => ({
   bevelMm: 0,
   rimHeightMm: 0,
   baseSizeMm: 40,
+  plateWidthMm: 0,
+  plateHeightMm: 0,
+  ringHoleMm: 0,
   cornerRadiusMm: 4,
   mxStem: false,
   backMount: 'none',
@@ -215,6 +250,9 @@ export const useMakerStore = create<MakerState>((set, get) => ({
     bevelMm: 0,
     rimHeightMm: 0,
     baseSizeMm: 40,
+    plateWidthMm: 0,
+    plateHeightMm: 0,
+    ringHoleMm: 0,
     cornerRadiusMm: 4,
     mxStem: false,
     backMount: 'none',
@@ -289,6 +327,9 @@ export const useMakerStore = create<MakerState>((set, get) => ({
       activeTemplateId: t.id,
       basePlateType: t.basePlateType,
       baseSizeMm: t.baseSizeMm,
+      plateWidthMm: 0,
+      plateHeightMm: 0,
+      ringHoleMm: 0,
       baseHeight: t.baseHeight,
       extrusionHeight: t.extrusionHeight,
       rimHeightMm: t.rimHeightMm,
@@ -309,11 +350,44 @@ export const useMakerStore = create<MakerState>((set, get) => ({
     bevelMm: 0,
     rimHeightMm: 0,
     baseSizeMm: 40,
+    plateWidthMm: 0,
+    plateHeightMm: 0,
+    ringHoleMm: 0,
     cornerRadiusMm: 4,
     mxStem: false,
     backMount: 'none',
     // 로고/스케치 돌출 높이만 기본값으로 — 스케치 내용은 유지
     extrusionHeight: 5,
+  }),
+  applyNameTagDesign: (design) => set({
+    paths: [],
+    currentPath: [],
+    isDrawing: false,
+    activeTemplateId: null,
+    basePlateType: design.circle ? 'circle' : 'rounded',
+    baseSizeMm: Math.max(design.widthMm, design.heightMm),
+    plateWidthMm: design.widthMm,
+    plateHeightMm: design.heightMm,
+    cornerRadiusMm: design.cornerRadiusMm,
+    ringHoleMm: design.ringHoleMm,
+    baseHeight: 2.4,
+    extrusionHeight: 1,
+    bevelMm: 0.25,
+    rimHeightMm: 0,
+    mxStem: false,
+    backMount: 'none',
+    baseColor: design.baseColor,
+    logoColor: design.logoColor,
+    rimColor: '#d4d4d8',
+    importedSvgs: design.svgs.map((svg) => ({
+      ...svg,
+      rotationDeg: 0,
+    })),
+  }),
+  clearNameTagPlate: () => set({
+    plateWidthMm: 0,
+    plateHeightMm: 0,
+    ringHoleMm: 0,
   }),
   setShowGrid: (show) => set({ showGrid: show }),
   updateCanvasSize: (width, height) => set({ canvasSize: { width, height } })

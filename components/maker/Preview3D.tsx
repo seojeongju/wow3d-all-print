@@ -73,6 +73,9 @@ function MakerPreviewMeshes() {
     const bevelMm = useMakerStore((s) => s.bevelMm);
     const rimHeightMm = useMakerStore((s) => s.rimHeightMm);
     const baseSizeMm = useMakerStore((s) => s.baseSizeMm);
+    const plateWidthMm = useMakerStore((s) => s.plateWidthMm);
+    const plateHeightMm = useMakerStore((s) => s.plateHeightMm);
+    const ringHoleMm = useMakerStore((s) => s.ringHoleMm);
     const cornerRadiusMm = useMakerStore((s) => s.cornerRadiusMm);
     const mxStem = useMakerStore((s) => s.mxStem);
     const backMount = useMakerStore((s) => s.backMount);
@@ -91,6 +94,9 @@ function MakerPreviewMeshes() {
             bevelMm,
             rimHeightMm,
             baseSizeMm,
+            plateWidthMm,
+            plateHeightMm,
+            ringHoleMm,
             cornerRadiusMm,
             mxStem,
             backMount,
@@ -109,6 +115,9 @@ function MakerPreviewMeshes() {
         bevelMm,
         rimHeightMm,
         baseSizeMm,
+        plateWidthMm,
+        plateHeightMm,
+        ringHoleMm,
         cornerRadiusMm,
         mxStem,
         backMount,

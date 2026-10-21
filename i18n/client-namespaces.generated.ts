@@ -1,7 +1,7 @@
 // 자동 생성 파일 — 직접 수정하지 말 것 (scripts/gen-client-i18n-namespaces.mjs)
 export const CLIENT_NAMESPACES = {
     "root": ["Common","GuideRobot","Search"],
-    "home": ["Common","Footer","Home","LocaleSwitcher","Maker","Makerspace","Nav","Search"],
+    "home": ["Common","Footer","Home","LocaleSwitcher","Makerspace","Nav","Search"],
     "auth": ["Auth"],
     "cart": ["Cart","Common","Footer","LocaleSwitcher","Makerspace","Nav","Search"],
     "checkout": ["Checkout"],

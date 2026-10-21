@@ -96,7 +96,7 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
 
             <p className="text-[11px] font-bold leading-relaxed text-white/35 break-keep">
                 {t('makerHintBefore')}
-                <Link href="/#ai-3d-maker" className="text-teal-400 hover:underline">
+                <Link href="/maker" className="text-teal-400 hover:underline">
                     AI 3D Maker
                 </Link>
                 {t('makerHintAfter')}

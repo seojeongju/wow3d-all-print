@@ -438,7 +438,7 @@ export default function Hero() {
                             <span className="hero-underline pb-0.5">{t('linkMaterials')}</span>
                         </Link>
                         <Link
-                            href="/#ai-3d-maker"
+                            href="/maker"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
                             className="group flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:text-[13px]"
                         >

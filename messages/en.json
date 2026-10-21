@@ -155,7 +155,7 @@
       "trustProcess": "FDM · SLA · DLP",
       "linkMethods": "Print methods",
       "linkMaterials": "Materials",
-      "linkMaker": "Logo Maker",
+      "linkMaker": "Name tag",
       "sampleLoading": "Loading…",
       "sampleCta": "Try sample quote",
       "uploadModeAria": "Choose upload type",
@@ -198,9 +198,9 @@
       "subtitleMid": " → Maker (2.5D). ",
       "photoReal": "Product photos",
       "subtitleEnd": " → Quote AI (full 3D).",
-      "makerTitle": "Logo · sketch → 2.5D",
-      "makerDesc": "Place logos on round/square badges or 1U keycaps with layer and bevel extrusion.",
-      "makerCta": "Use Maker below",
+      "makerTitle": "Make a name tag",
+      "makerDesc": "Add a name and icon for a child, dog, or cat and get a tag you can print.",
+      "makerCta": "Open the name tag maker",
       "aiLabel": "Quote AI",
       "photoTitle": "Photo → full 3D",
       "photoDesc": "Build a mesh from product/figurine photos, then get an instant quote.",
@@ -4386,7 +4386,30 @@
     }
   },
   "Maker": {
-    "metaTitle": "AI 3D Maker — Logo & Sketch 2.5D",
+    "metaTitle": "Name tag maker",
+    "nameTagKicker": "Name tag",
+    "nameTagTitle": "Make a name tag",
+    "nameTagLead": "Pick a bag tag or a pet tag, type a name, check the 3D preview, then send it to a quote.",
+    "nameTagNameLabel": "Name",
+    "nameTagNamePlaceholder": "e.g. Haru, Kong",
+    "nameTagTemplateLabel": "Shape",
+    "nameTagTracing": "Adding the name",
+    "nameTagPreviewHint": "Drag to rotate",
+    "nameTagOpenDraw": "Draw a logo instead",
+    "nameTagBack": "Back to name tags",
+    "audience": {
+      "child": "Child",
+      "dog": "Dog",
+      "cat": "Cat"
+    },
+    "nameTagRecipes": {
+      "child-bag": { "name": "Bag tag", "desc": "56×22mm · strap hole" },
+      "child-rect": { "name": "Rectangle tag", "desc": "60×24mm · heart" },
+      "dog-bone": { "name": "Bone tag", "desc": "42×22mm · paw" },
+      "dog-oval": { "name": "Oval tag", "desc": "38×24mm · bone icon" },
+      "cat-oval": { "name": "Small oval", "desc": "32×18mm · fish" },
+      "cat-round": { "name": "Round tag", "desc": "Ø28mm · heart" }
+    },
     "headerSubtitle": "Logo & sketch 2.5D",
     "tabDraw": "Sketch (2D)",
     "tab3d": "Result (3D)",
@@ -4593,7 +4616,7 @@
     "error3dTitle": "Could not load 3D preview",
     "error3dDesc": "Your browser may not support 3D rendering, or a temporary error occurred. Return to Sketch (2D) and try again.",
     "backToSketch": "Back to Sketch (2D)",
-    "metaDescription": "Build 2.5D models from logos and sketches, export STL, or send to live quote."
+    "metaDescription": "Make a child, dog, or cat name tag, save an STL, or send it to a live quote."
   },
   "Partnership": {
     "metaTitle": "3D Printer Partnership & Dealership",

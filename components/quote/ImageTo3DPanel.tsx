@@ -716,7 +716,7 @@ export default function ImageTo3DPanel({ onBack, onModelReady, initialPhoto }: P
                 </p>
                 <p className="text-[12px] text-white/40 font-bold leading-relaxed break-keep">
                     {t('makerHintBefore')}{' '}
-                    <Link href="/#ai-3d-maker" className="text-teal-400 hover:underline">
+                    <Link href="/maker" className="text-teal-400 hover:underline">
                         AI 3D Maker(2.5D)
                     </Link>
                     {t('makerHintAfter')}

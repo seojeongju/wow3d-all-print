@@ -54,6 +54,11 @@ export type MakerSceneInput = {
     baseColor: string
     logoColor: string
     rimColor: string
+    /** 0이면 정사각(baseSizeMm). 이름표처럼 가로·세로가 다를 때 mm */
+    plateWidthMm?: number
+    plateHeightMm?: number
+    /** 줄·고리 구멍 지름(mm). 0이면 없음 */
+    ringHoleMm?: number
 }
 
 export function mmToScene(mm: number): number {
@@ -139,11 +144,12 @@ function transformShape(
     shape: THREE.Shape,
     centerX: number,
     centerY: number,
-    scale: number
+    scale: number,
+    divisions = 24
 ): THREE.Shape {
     const map = (p: THREE.Vector2) =>
         new THREE.Vector2((p.x - centerX) * scale, -(p.y - centerY) * scale)
-    const pts = getPathPoints(shape, 24).map(map)
+    const pts = getPathPoints(shape, divisions).map(map)
     const next = new THREE.Shape()
     if (pts.length === 0) return next
     next.moveTo(pts[0].x, pts[0].y)
@@ -162,34 +168,151 @@ function transformShape(
     return next
 }
 
-export function parseSvgToSceneShapes(svgContent: string, targetSizeScene: number): THREE.Shape[] {
-    try {
-        const loader = new SVGLoader()
-        const data = loader.parse(svgContent)
-        let allShapes = flattenSvgShapes(data).slice(0, MAX_SHAPES_PER_SVG)
-        if (allShapes.length === 0) return []
+function fitShapesToTarget(
+    allShapes: THREE.Shape[],
+    targetSizeScene: number,
+    divisions: number
+): THREE.Shape[] {
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    allShapes.forEach((shape) => {
+        getPathPoints(shape, 8).forEach((p) => {
+            minX = Math.min(minX, p.x)
+            minY = Math.min(minY, p.y)
+            maxX = Math.max(maxX, p.x)
+            maxY = Math.max(maxY, p.y)
+        })
+    })
+    const w = Math.max(1, maxX - minX)
+    const h = Math.max(1, maxY - minY)
+    const scale = Math.min(targetSizeScene / w, targetSizeScene / h)
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+    return allShapes.map((s) => transformShape(s, centerX, centerY, scale, divisions))
+}
 
-        // 통짜 큰 사각형이 글자 path를 덮지 않도록 제거
-        allShapes = dropCoveringPlateShapes(allShapes)
+/** 폰트 윤곽(절대좌표 M/L/C/Q/Z)을 SVGLoader 없이 Shape로 바꿉니다. */
+function shapesFromGlyphSvg(svgContent: string): THREE.Shape[] {
+    const numberRe = /[+-]?(?:\d+\.\d+|\d+|\.\d+)/g
+    const contours: THREE.Shape[] = []
+    const pathRe = /d="([^"]+)"/g
+    let pathMatch: RegExpExecArray | null
+    while ((pathMatch = pathRe.exec(svgContent))) {
+        const d = pathMatch[1]
+        const cmdRe = /([MLCQZ])([^MLCQZ]*)/g
+        let shape: THREE.Shape | null = null
+        let cmd: RegExpExecArray | null
+        while ((cmd = cmdRe.exec(d))) {
+            const op = cmd[1]
+            const nums = (cmd[2].match(numberRe) ?? []).map(Number)
+            if (op === 'Z') continue
+            let i = 0
+            if (op === 'M') {
+                while (i + 1 < nums.length) {
+                    const x = nums[i]
+                    const y = nums[i + 1]
+                    i += 2
+                    if (shape && i > 2) {
+                        shape.lineTo(x, y)
+                    } else {
+                        shape = new THREE.Shape()
+                        shape.moveTo(x, y)
+                        contours.push(shape)
+                    }
+                }
+            } else if (!shape) {
+                continue
+            } else if (op === 'L') {
+                while (i + 1 < nums.length) {
+                    shape.lineTo(nums[i], nums[i + 1])
+                    i += 2
+                }
+            } else if (op === 'Q') {
+                while (i + 3 < nums.length) {
+                    shape.quadraticCurveTo(nums[i], nums[i + 1], nums[i + 2], nums[i + 3])
+                    i += 4
+                }
+            } else if (op === 'C') {
+                while (i + 5 < nums.length) {
+                    shape.bezierCurveTo(nums[i], nums[i + 1], nums[i + 2], nums[i + 3], nums[i + 4], nums[i + 5])
+                    i += 6
+                }
+            }
+        }
+    }
+    return contoursWithHoles(contours.filter((shape) => getPathPoints(shape, 4).length >= 3))
+}
 
+function pointInPolygon(x: number, y: number, pts: THREE.Vector2[]): boolean {
+    let inside = false
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const yi = pts[i].y
+        const yj = pts[j].y
+        const xi = pts[i].x
+        const xj = pts[j].x
+        const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + 0.0000001) + xi
+        if (intersect) inside = !inside
+    }
+    return inside
+}
+
+/** 글자 구멍(ㅇ, ㅁ)은 바깥 윤곽 안으로 넣습니다. */
+function contoursWithHoles(contours: THREE.Shape[]): THREE.Shape[] {
+    const info = contours.map((shape) => {
+        const pts = getPathPoints(shape, 6)
         let minX = Infinity
         let minY = Infinity
         let maxX = -Infinity
         let maxY = -Infinity
-        allShapes.forEach((shape) => {
-            getPathPoints(shape, 12).forEach((p) => {
-                minX = Math.min(minX, p.x)
-                minY = Math.min(minY, p.y)
-                maxX = Math.max(maxX, p.x)
-                maxY = Math.max(maxY, p.y)
-            })
+        pts.forEach((p) => {
+            minX = Math.min(minX, p.x)
+            minY = Math.min(minY, p.y)
+            maxX = Math.max(maxX, p.x)
+            maxY = Math.max(maxY, p.y)
         })
-        const w = Math.max(1, maxX - minX)
-        const h = Math.max(1, maxY - minY)
-        const scale = Math.min(targetSizeScene / w, targetSizeScene / h)
-        const centerX = (minX + maxX) / 2
-        const centerY = (minY + maxY) / 2
-        return allShapes.map((s) => transformShape(s, centerX, centerY, scale))
+        const area = Math.max(0, maxX - minX) * Math.max(0, maxY - minY)
+        return { shape, pts, area, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 }
+    })
+    const consumed = new Set<THREE.Shape>()
+    info.forEach((inner) => {
+        let parent: (typeof info)[number] | null = null
+        info.forEach((outer) => {
+            if (outer === inner || outer.area <= inner.area * 1.05) return
+            if (!pointInPolygon(inner.cx, inner.cy, outer.pts)) return
+            if (!parent || outer.area < parent.area) parent = outer
+        })
+        if (!parent) return
+        const outerPts = parent.pts
+        const innerPts = inner.pts
+        if (innerPts.length < 3) return
+        const outerCw = THREE.ShapeUtils.isClockWise(outerPts)
+        const innerCw = THREE.ShapeUtils.isClockWise(innerPts)
+        const seq = outerCw === innerCw ? [...innerPts].reverse() : innerPts
+        const hole = new THREE.Path()
+        hole.moveTo(seq[0].x, seq[0].y)
+        for (let i = 1; i < seq.length; i++) hole.lineTo(seq[i].x, seq[i].y)
+        parent.shape.holes.push(hole)
+        consumed.add(inner.shape)
+    })
+    const outers = info.filter((item) => !consumed.has(item.shape)).map((item) => item.shape)
+    return outers.length > 0 ? outers : contours
+}
+
+export function parseSvgToSceneShapes(svgContent: string, targetSizeScene: number): THREE.Shape[] {
+    try {
+        if (svgContent.includes('data-glyph="1"')) {
+            const glyphShapes = shapesFromGlyphSvg(svgContent).slice(0, MAX_SHAPES_PER_SVG)
+            if (glyphShapes.length > 0) return fitShapesToTarget(glyphShapes, targetSizeScene, 8)
+        }
+
+        const loader = new SVGLoader()
+        const data = loader.parse(svgContent)
+        let allShapes = flattenSvgShapes(data).slice(0, MAX_SHAPES_PER_SVG)
+        if (allShapes.length === 0) return []
+        allShapes = dropCoveringPlateShapes(allShapes)
+        return fitShapesToTarget(allShapes, targetSizeScene, 24)
     } catch {
         return []
     }
@@ -270,6 +393,18 @@ export function circleShape(radius: number): THREE.Shape {
     const r = Math.max(0.001, radius)
     const curve = new THREE.EllipseCurve(0, 0, r, r, 0, Math.PI * 2, false, 0)
     return new THREE.Shape(curve.getPoints(48))
+}
+
+/** 판을 관통하는 원형 구멍. 외곽과 반대 방향으로 감아 솔리드에서 빼기 */
+export function punchCircleHole(shape: THREE.Shape, cx: number, cy: number, radius: number): void {
+    const r = Math.max(0.001, radius)
+    const curve = new THREE.EllipseCurve(cx, cy, r, r, 0, Math.PI * 2, false, 0)
+    const pts = curve.getPoints(28)
+    if (pts.length < 3) return
+    const hole = new THREE.Path()
+    hole.moveTo(pts[pts.length - 1].x, pts[pts.length - 1].y)
+    for (let i = pts.length - 2; i >= 0; i--) hole.lineTo(pts[i].x, pts[i].y)
+    shape.holes.push(hole)
 }
 
 function addHoleFromShape(outer: THREE.Shape, inner: THREE.Shape): void {
@@ -487,12 +622,19 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
     const group = new THREE.Group()
     const preview = mode === 'preview'
     const hasBase = input.basePlateType !== 'none'
-    const size = mmToScene(Math.max(8, input.baseSizeMm))
+    const widthMm = input.plateWidthMm && input.plateWidthMm > 0 ? input.plateWidthMm : Math.max(8, input.baseSizeMm)
+    const heightMm = input.plateHeightMm && input.plateHeightMm > 0 ? input.plateHeightMm : widthMm
+    const widthScene = mmToScene(widthMm)
+    const heightScene = mmToScene(heightMm)
+    const size = Math.max(widthScene, heightScene)
     const corner = mmToScene(Math.max(0.4, input.cornerRadiusMm))
     const topZ = plateTopZ(input.baseHeight, hasBase)
-    const rimInset = size * 0.07
-    // 림 안쪽의 85%에 맞춤 — 원형 배지에서 가장자리 잘림·마스크감 완화
-    const logoFitBase = hasBase ? Math.max(0.05, size - rimInset * 2) * 0.85 : mmToScene(40)
+    const rimInset = Math.min(widthScene, heightScene) * 0.07
+    const holeReserve = input.ringHoleMm && input.ringHoleMm >= 2 ? mmToScene(input.ringHoleMm + 3) : 0
+    const innerW = Math.max(0.05, widthScene - holeReserve)
+    const innerH = Math.max(0.05, heightScene - rimInset * 2)
+    // 짧은 변에 맞춰 로고·글자가 판 안에 들어가게 함
+    const logoFitBase = hasBase ? Math.min(innerW, innerH) * 0.9 : mmToScene(40)
 
     if (hasBase) {
         const baseHex = input.baseColor || '#f4f4f5'
@@ -504,11 +646,20 @@ export function buildMakerSceneGroup(input: MakerSceneInput, mode: 'preview' | '
         })
         let baseShape: THREE.Shape
         if (input.basePlateType === 'circle') {
-            baseShape = circleShape(size / 2)
+            baseShape = circleShape(Math.min(widthScene, heightScene) / 2)
         } else if (input.basePlateType === 'rounded') {
-            baseShape = roundedRectShape(size, size, corner)
+            baseShape = roundedRectShape(widthScene, heightScene, corner)
         } else {
-            baseShape = roundedRectShape(size, size, mmToScene(0.4))
+            baseShape = roundedRectShape(widthScene, heightScene, mmToScene(0.4))
+        }
+        if (input.ringHoleMm && input.ringHoleMm >= 2) {
+            const holeR = mmToScene(input.ringHoleMm / 2)
+            const margin = mmToScene(2.2)
+            if (input.basePlateType === 'circle') {
+                punchCircleHole(baseShape, 0, heightScene / 2 - margin - holeR, holeR)
+            } else {
+                punchCircleHole(baseShape, -widthScene / 2 + margin + holeR, 0, holeR)
+            }
         }
         addExtruded(group, baseShape, input.baseHeight, input.bevelMm, baseMat, 0, preview)
 

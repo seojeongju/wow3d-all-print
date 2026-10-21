@@ -155,7 +155,7 @@
       "trustProcess": "FDM · SLA · DLP",
       "linkMethods": "출력방식",
       "linkMaterials": "소재",
-      "linkMaker": "로고 Maker",
+      "linkMaker": "이름표",
       "sampleLoading": "불러오는 중…",
       "sampleCta": "샘플견적체험",
       "uploadModeAria": "업로드 방식 선택",
@@ -198,9 +198,9 @@
       "subtitleMid": "는 Maker(2.5D), ",
       "photoReal": "제품 실사",
       "subtitleEnd": "는 자동견적 AI(입체 3D)입니다.",
-      "makerTitle": "로고 · 스케치 → 2.5D",
-      "makerDesc": "원형·사각 배지, 키캡 1U 템플릿에 로고를 올려 레이어·bevel로 돌출합니다.",
-      "makerCta": "아래에서 Maker 사용",
+      "makerTitle": "이름표 만들기",
+      "makerDesc": "아이·강아지·고양이 이름과 아이콘을 올려 바로 출력할 수 있는 이름표를 만듭니다.",
+      "makerCta": "이름표 만들러 가기",
       "aiLabel": "자동견적 AI",
       "photoTitle": "사진(이미지) → 입체 3D",
       "photoDesc": "제품·피규어 실사 사진(이미지)으로 입체 메시를 만든 뒤 바로 자동견적합니다.",
@@ -4387,7 +4387,30 @@
     }
   },
   "Maker": {
-    "metaTitle": "AI 3D Maker — 로고·스케치 2.5D",
+    "metaTitle": "이름표 만들기",
+    "nameTagKicker": "Name tag",
+    "nameTagTitle": "이름표 만들기",
+    "nameTagLead": "아이 가방 이름표, 강아지·고양이 인식표를 고르고 이름을 넣으면 바로 3D로 확인한 뒤 견적으로 넘길 수 있습니다.",
+    "nameTagNameLabel": "이름",
+    "nameTagNamePlaceholder": "예: 하준, 콩이",
+    "nameTagTemplateLabel": "모양",
+    "nameTagTracing": "이름을 붙이는 중",
+    "nameTagPreviewHint": "드래그로 돌려 보세요",
+    "nameTagOpenDraw": "로고를 직접 그리기",
+    "nameTagBack": "이름표로 돌아가기",
+    "audience": {
+      "child": "아이",
+      "dog": "강아지",
+      "cat": "고양이"
+    },
+    "nameTagRecipes": {
+      "child-bag": { "name": "가방 이름표", "desc": "56×22mm · 줄 구멍" },
+      "child-rect": { "name": "네모 이름표", "desc": "60×24mm · 하트" },
+      "dog-bone": { "name": "뼈다귀 인식표", "desc": "42×22mm · 발바닥" },
+      "dog-oval": { "name": "타원 인식표", "desc": "38×24mm · 뼈 아이콘" },
+      "cat-oval": { "name": "작은 타원", "desc": "32×18mm · 물고기" },
+      "cat-round": { "name": "둥근 인식표", "desc": "Ø28mm · 하트" }
+    },
     "headerSubtitle": "로고·스케치 2.5D",
     "tabDraw": "스케치(2D)",
     "tab3d": "결과물(3D)",
@@ -4594,7 +4617,7 @@
     "error3dTitle": "3D 미리보기를 불러올 수 없습니다",
     "error3dDesc": "브라우저가 3D 렌더링을 지원하지 않거나 일시적인 오류가 발생했을 수 있습니다. 스케치(2D) 탭으로 돌아가 다시 그려 주세요.",
     "backToSketch": "스케치(2D)로 돌아가기",
-    "metaDescription": "로고·스케치로 2.5D 모델을 만들고 STL을 저장하거나 자동견적으로 연동합니다."
+    "metaDescription": "아이·강아지·고양이 이름표를 만들고 STL로 저장하거나 자동견적으로 넘깁니다."
   },
   "Partnership": {
     "metaTitle": "3D프린터 파트너십·대리점 제휴",
