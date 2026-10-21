@@ -3,7 +3,10 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { NameTagStudio } from '@/components/maker/NameTagStudio'
+const NameTagStudio = dynamic(
+    () => import('@/components/maker/NameTagStudio').then((mod) => mod.NameTagStudio),
+    { ssr: false }
+)
 
 const MakerWorkspace = dynamic(
     () => import('@/components/maker/MakerWorkspace').then((mod) => mod.MakerWorkspace),
