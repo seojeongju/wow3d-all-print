@@ -385,6 +385,7 @@ export function NameTagPreview({ result, plateColor, textColor, showThin, onPlac
             {result ? (
                 <group>
                     <Part mesh={result.base} color={plateColor} />
+                    <Part mesh={result.rim} color={plateColor} />
                     <Part mesh={result.raised} color={textColor} />
                     <Part mesh={result.engraveFill} color={textColor} />
                     {showThin ? <Part mesh={result.thin} color="#ef4444" emissive="#7f1d1d" pickHole={false} /> : null}

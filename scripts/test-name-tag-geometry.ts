@@ -90,7 +90,7 @@ async function main() {
         const templated = normalizeNameTagDesign({
             ...DEFAULT_NAME_TAG_DESIGN,
             baseId,
-            lines: [{ text: sample, fontId: 'gowun-dodum', size: 1 }],
+            lines: [{ text: sample, fontId: 'nanum-gothic', size: 1 }],
         })
         const label = `template/${baseId}`
         const templatedResult = buildNameTag(wasm, templated, fonts)
@@ -110,7 +110,7 @@ async function main() {
             const spaced = normalizeNameTagDesign({
                 ...DEFAULT_NAME_TAG_DESIGN,
                 letterSpacing,
-                lines: [{ text: '하준', fontId: 'gowun-dodum', size: 1 }],
+                lines: [{ text: '하준', fontId: 'nanum-gothic', size: 1 }],
                 plate: { ...DEFAULT_NAME_TAG_DESIGN.plate, shape },
             })
             const spacedResult = buildNameTag(wasm, spaced, fonts)
@@ -128,7 +128,7 @@ async function main() {
     const missingByFont = new Map<string, Set<string>>()
     const started = Date.now()
     const matrixFonts = NAME_TAG_FONTS.filter((font) =>
-        ['gowun-dodum', 'jua', 'do-hyeon', 'black-han'].includes(font.id)
+        ['nanum-gothic', 'jua', 'do-hyeon', 'black-han'].includes(font.id)
     )
     for (const presetId of Object.keys(NAME_TAG_PRESETS) as NameTagPresetId[]) {
         for (const font of matrixFonts) {
@@ -220,9 +220,9 @@ async function main() {
             ...DEFAULT_NAME_TAG_DESIGN,
             plate: { shape: 'rect', widthMm: 25, heightMm: 12, thicknessMm: 2 },
             lines: [
-                { text: '김와우', fontId: 'gowun-dodum', size: 1 },
-                { text: '3학년 2반', fontId: 'gowun-dodum', size: 1 },
-                { text: '010-1234-5678', fontId: 'gowun-dodum', size: 1 },
+                { text: '김와우', fontId: 'nanum-gothic', size: 1 },
+                { text: '3학년 2반', fontId: 'nanum-gothic', size: 1 },
+                { text: '010-1234-5678', fontId: 'nanum-gothic', size: 1 },
             ],
         }),
         fonts

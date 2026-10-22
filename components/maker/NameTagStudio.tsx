@@ -389,6 +389,7 @@ function FontChoices({
             {/* 추천 폰트 탭 */}
             {tab === 'preset' ? (
                 <div className="space-y-3">
+                    <p className="text-[11px] leading-relaxed text-white/45">{t('fontPresetHint')}</p>
                     {NAME_TAG_FONT_GROUPS.map((group) => (
                         <div key={group} className="space-y-1.5">
                             <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">

@@ -118,7 +118,7 @@ ctx.onmessage = async (event: MessageEvent<NameTagWorkerRequest>) => {
         const response: NameTagWorkerResponse = { id, type: 'build', result, ms: performance.now() - started }
         const transfer: Transferable[] = []
         if (result) {
-            for (const mesh of [result.base, result.raised, result.engraveFill, result.thin, result.solid]) {
+            for (const mesh of [result.base, result.raised, result.rim, result.engraveFill, result.thin, result.solid]) {
                 if (mesh) transfer.push(mesh.positions.buffer, mesh.indices.buffer)
             }
         }

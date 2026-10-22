@@ -135,7 +135,8 @@ export function missingGlyphs(font: Font, text: string): string[] {
     for (const char of text) {
         if (char.trim() === '') continue
         const glyph = font.charToGlyph(char)
-        if (!glyph || glyph.name === '.notdef' || glyph.unicode == null) missing.push(char)
+        // 한글 폰트는 글자 이름이 전부 .notdef인 경우가 있어, 없는 글자는 0번 글리프로만 본다.
+        if (!glyph || glyph.index === 0 || glyph.unicode == null) missing.push(char)
     }
     return [...new Set(missing)]
 }

@@ -80,7 +80,7 @@ export const NAME_TAG_LIMITS = {
 
 export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     version: NAME_TAG_DESIGN_VERSION,
-    lines: [{ text: '', fontId: 'gowun-dodum', size: 1 }],
+    lines: [{ text: '', fontId: 'nanum-gothic', size: 1 }],
     align: 'center',
     letterSpacing: 0,
     baseId: null,

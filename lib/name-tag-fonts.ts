@@ -1,18 +1,18 @@
 /** 이름표에 쓰는 구글 폰트. 파일은 SIL OFL이고, 고른 폰트만 내려받는다. */
 
+/**
+ * 이름 칸·글자 크기 1에서 0.8mm 획 검사를 통과한 굵은 글꼴만 둔다.
+ * 보통 굵기·필기체는 빼 두었고, 직접 올린 글꼴과 아주 작은 글자는 가는 획 안내로 남긴다.
+ */
 export const NAME_TAG_FONTS = [
-    { id: 'gowun-dodum', file: '/fonts/GowunDodum-Regular.ttf', cssFamily: 'Wow Name Dodum', group: 'ko' },
+    { id: 'nanum-gothic', file: '/fonts/NanumGothic-Bold.ttf', cssFamily: 'Wow Name Nanum', group: 'ko' },
+    { id: 'gothic-a1', file: '/fonts/GothicA1-Bold.ttf', cssFamily: 'Wow Name GothicA1', group: 'ko' },
     { id: 'jua', file: '/fonts/Jua-Regular.ttf', cssFamily: 'Wow Name Jua', group: 'ko' },
     { id: 'do-hyeon', file: '/fonts/DoHyeon-Regular.ttf', cssFamily: 'Wow Name DoHyeon', group: 'ko' },
     { id: 'black-han', file: '/fonts/BlackHanSans-Regular.ttf', cssFamily: 'Wow Name BlackHan', group: 'ko' },
-    { id: 'nanum-gothic', file: '/fonts/NanumGothic-Bold.ttf', cssFamily: 'Wow Name Nanum', group: 'ko' },
-    { id: 'gothic-a1', file: '/fonts/GothicA1-Bold.ttf', cssFamily: 'Wow Name GothicA1', group: 'ko' },
-    { id: 'poor-story', file: '/fonts/PoorStory-Regular.ttf', cssFamily: 'Wow Name PoorStory', group: 'ko' },
     { id: 'sunflower', file: '/fonts/Sunflower-Bold.ttf', cssFamily: 'Wow Name Sunflower', group: 'ko' },
     { id: 'gaegu', file: '/fonts/Gaegu-Bold.ttf', cssFamily: 'Wow Name Gaegu', group: 'ko' },
-    { id: 'single-day', file: '/fonts/SingleDay-Regular.ttf', cssFamily: 'Wow Name SingleDay', group: 'ko' },
     { id: 'lilita-one', file: '/fonts/LilitaOne-Regular.ttf', cssFamily: 'Wow Name Lilita', group: 'en' },
-    { id: 'pacifico', file: '/fonts/Pacifico-Regular.ttf', cssFamily: 'Wow Name Pacifico', group: 'en' },
     { id: 'bangers', file: '/fonts/Bangers-Regular.ttf', cssFamily: 'Wow Name Bangers', group: 'en' },
     { id: 'bebas-neue', file: '/fonts/BebasNeue-Regular.ttf', cssFamily: 'Wow Name Bebas', group: 'en' },
     { id: 'righteous', file: '/fonts/Righteous-Regular.ttf', cssFamily: 'Wow Name Righteous', group: 'en' },

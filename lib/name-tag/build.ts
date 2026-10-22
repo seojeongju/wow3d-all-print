@@ -43,8 +43,10 @@ export type NameTagIssue =
 export type NameTagBuildResult = {
     /** 판(음각이면 파낸 판) */
     base: MeshData
-    /** 양각 글자·테두리. 없으면 null */
+    /** 양각 글자. 없으면 null */
     raised: MeshData | null
+    /** 테두리. 판 색으로 그린다. 없으면 null */
+    rim: MeshData | null
     /** 음각 바닥 색 표시용 얇은 면. 출력 파일에는 넣지 않는다 */
     engraveFill: MeshData | null
     /** 가는 획 표시용 */
@@ -556,12 +558,12 @@ export function buildNameTag(
         if (textPolys.length === 0) {
             const plateWithHole = frame.hole ? track(frame.plate.subtract(frame.hole)) : frame.plate
             const baseSolid = track(plateWithHole.extrude(design.plate.thicknessMm))
-            let raised: Manifold | null = null
+            let rimMesh: Manifold | null = null
             if (design.border) {
                 const rim = track(plateWithHole.subtract(track(plateWithHole.offset(-PRINT_RULES_DRAFT.borderWidthMm, 'Round'))))
-                raised = track(track(rim.extrude(design.relief.depthMm)).translate(0, 0, design.plate.thicknessMm))
+                rimMesh = track(track(rim.extrude(design.relief.depthMm)).translate(0, 0, design.plate.thicknessMm))
             }
-            const solid = raised ? track(Manifold.union(baseSolid, raised)) : baseSolid
+            const solid = rimMesh ? track(Manifold.union(baseSolid, rimMesh)) : baseSolid
             const status = solid.status()
             if (status !== 'NoError') issues.push({ code: 'not-manifold', level: 'error', status })
             const bodies = track(solid).decompose()
@@ -570,7 +572,8 @@ export function buildNameTag(
             const box = solid.boundingBox()
             return {
                 base: toMeshData(baseSolid),
-                raised: raised ? toMeshData(raised) : null,
+                raised: null,
+                rim: rimMesh ? toMeshData(rimMesh) : null,
                 engraveFill: null,
                 thin: null,
                 solid: toMeshData(solid),
@@ -663,18 +666,18 @@ export function buildNameTag(
 
         let base: Manifold
         let raised: Manifold | null = null
+        let rimMesh: Manifold | null = null
         let engraveFill: Manifold | null = null
         let thinTop = T
+        if (rim) rimMesh = track(track(rim.extrude(design.relief.depthMm)).translate(0, 0, T))
         if (design.relief.mode === 'engrave') {
             const depth = Math.min(design.relief.depthMm, T - PRINT_RULES_DRAFT.minFloorMm)
             const pocket = track(track(text.extrude(depth + 1)).translate(0, 0, T - depth))
             base = track(baseSolid.subtract(pocket))
             engraveFill = track(track(text.extrude(0.05)).translate(0, 0, T - depth))
-            if (rim) raised = track(track(rim.extrude(design.relief.depthMm)).translate(0, 0, T))
         } else {
             base = baseSolid
-            const top = rim ? track(CrossSection.union(text, rim)) : text
-            raised = track(track(top.extrude(design.relief.depthMm)).translate(0, 0, T))
+            raised = track(track(text.extrude(design.relief.depthMm)).translate(0, 0, T))
             thinTop = T + design.relief.depthMm
         }
         const thin =
@@ -682,7 +685,9 @@ export function buildNameTag(
                 ? track(track(thinCs.extrude(0.06)).translate(0, 0, thinTop + 0.01))
                 : null
 
-        const solid = raised ? track(Manifold.union(base, raised)) : base
+        let solid = base
+        if (raised) solid = track(Manifold.union(solid, raised))
+        if (rimMesh) solid = track(Manifold.union(solid, rimMesh))
         const status = solid.status()
         if (status !== 'NoError') issues.push({ code: 'not-manifold', level: 'error', status })
         const bodies = track(solid).decompose()
@@ -693,6 +698,7 @@ export function buildNameTag(
         return {
             base: toMeshData(base),
             raised: raised ? toMeshData(raised) : null,
+            rim: rimMesh ? toMeshData(rimMesh) : null,
             engraveFill: engraveFill ? toMeshData(engraveFill) : null,
             thin: thin ? toMeshData(thin) : null,
             solid: toMeshData(solid),
