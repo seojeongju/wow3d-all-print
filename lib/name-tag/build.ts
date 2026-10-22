@@ -110,6 +110,18 @@ function ringCentroid(ring: [number, number][]): { area: number; center: [number
     return { area, center: [cx / (3 * twice), cy / (3 * twice)] }
 }
 
+function plateCoversPoint(
+    wasm: ManifoldToplevel,
+    plate: CrossSection,
+    x: number,
+    y: number,
+    track: Tracker
+): boolean {
+    const probe = track(track(wasm.CrossSection.square([0.45, 0.45], true)).translate(x, y))
+    const hit = track(plate.intersect(probe))
+    return hit.area() > 0.02
+}
+
 function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracker): PlateFrame | null {
     const template = getNameTagTemplate(design.baseId)
     if (!template) return null
@@ -129,7 +141,7 @@ function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tra
         x1: Math.max(topLeft[0], bottomRight[0]),
         y1: Math.max(topLeft[1], bottomRight[1]),
     }
-    // 이름 칸은 그림 아래쪽에 그려져 있다. 베이스를 바꾸면 그 칸을 실루엣 가운데로 옮긴다.
+    // 베이스를 바꾸면 글자 칸을 실루엣 가운데로 옮긴다. 가운데가 구멍이면 이름 칸 중심을 쓴다.
     let centroid: [number, number] | null = null
     let bestArea = 0
     for (const ring of rings) {
@@ -138,17 +150,23 @@ function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tra
         bestArea = Math.abs(found.area)
         centroid = found.center
     }
-    if (centroid) {
-        const width = box.x1 - box.x0
-        const height = box.y1 - box.y0
-        const bounds = plate.bounds()
-        const margin = 1.2
-        const halfW = width / 2
-        const halfH = height / 2
-        const cx = Math.min(bounds.max[0] - margin - halfW, Math.max(bounds.min[0] + margin + halfW, centroid[0]))
-        const cy = Math.min(bounds.max[1] - margin - halfH, Math.max(bounds.min[1] + margin + halfH, centroid[1]))
-        box = { x0: cx - halfW, y0: cy - halfH, x1: cx + halfW, y1: cy + halfH }
-    }
+    const nameCenter = toMm(nx + nw / 2, ny + nh / 2)
+    // 반려동물 판은 이름 칸을 실루엣의 빈 자리에 맞춰 두었다. 무게중심은 구멍 위로 갈 수 있다.
+    const anchor =
+        template.set === 'pet'
+            ? nameCenter
+            : centroid && plateCoversPoint(wasm, plate, centroid[0], centroid[1], track)
+              ? centroid
+              : nameCenter
+    const width = box.x1 - box.x0
+    const height = box.y1 - box.y0
+    const bounds = plate.bounds()
+    const margin = 1.2
+    const halfW = width / 2
+    const halfH = height / 2
+    const cx = Math.min(bounds.max[0] - margin - halfW, Math.max(bounds.min[0] + margin + halfW, anchor[0]))
+    const cy = Math.min(bounds.max[1] - margin - halfH, Math.max(bounds.min[1] + margin + halfH, anchor[1]))
+    box = { x0: cx - halfW, y0: cy - halfH, x1: cx + halfW, y1: cy + halfH }
     return { plate, hole: null, box, margin: 1.2 }
 }
 

@@ -1,6 +1,6 @@
 /**
  * 어린이 이름표 SVG의 색 영역을 하나의 판 외곽으로 합친다.
- * 반려동물 뼈 베이스는 scripts/build-pet-bone-bases.mjs 가 만든다.
+ * 반려동물 베이스는 scripts/build-pet-png-bases.mjs 가 만든다.
  * 결과: lib/name-tag/template-plates.json
  * 실행: node scripts/build-name-tag-plates.mjs [파일명 일부...]
  */
