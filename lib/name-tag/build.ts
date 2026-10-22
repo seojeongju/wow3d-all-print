@@ -354,14 +354,69 @@ function drawableText(font: Font, text: string): string {
         .trim()
 }
 
-/** 줄마다 높이를 나눈다. 폭이 넘치면 자간을 뺀 글자 크기만 줄이고, 자간은 그 위에 더한다. */
+type PlateLimit = { minX: number; maxX: number; minY: number; maxY: number }
+
+function inkBounds(polygons: Polygon[]): { minX: number; maxX: number; minY: number; maxY: number } | null {
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    for (const poly of polygons) {
+        for (const [x, y] of poly) {
+            if (x < minX) minX = x
+            if (x > maxX) maxX = x
+            if (y < minY) minY = y
+            if (y > maxY) maxY = y
+        }
+    }
+    if (!Number.isFinite(minX)) return null
+    return { minX, maxX, minY, maxY }
+}
+
+function shiftPlaced(lines: PlacedLine[], dx: number, dy: number): PlacedLine[] {
+    if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return lines
+    return lines.map((line) => ({
+        ...line,
+        polygons: shiftPolys(line.polygons, dx, dy),
+        platePolygons: shiftPolys(line.platePolygons, dx, dy),
+    }))
+}
+
+/** 요청한 이동이 판 밖으로 나가면, 글자가 판 안에 남는 만큼만 옮긴다. */
+function clampTextOffset(lines: PlacedLine[], dx: number, dy: number, limit: PlateLimit): [number, number] {
+    const bounds = inkBounds(lines.flatMap((line) => line.polygons))
+    if (!bounds) return [0, 0]
+    const width = bounds.maxX - bounds.minX
+    const height = bounds.maxY - bounds.minY
+    const limitW = limit.maxX - limit.minX
+    const limitH = limit.maxY - limit.minY
+    let x = dx
+    let y = dy
+    if (width >= limitW - 0.05) {
+        x = (limit.minX + limit.maxX) / 2 - (bounds.minX + bounds.maxX) / 2
+    } else {
+        if (bounds.minX + x < limit.minX) x = limit.minX - bounds.minX
+        if (bounds.maxX + x > limit.maxX) x = limit.maxX - bounds.maxX
+    }
+    if (height >= limitH - 0.05) {
+        y = (limit.minY + limit.maxY) / 2 - (bounds.minY + bounds.maxY) / 2
+    } else {
+        if (bounds.minY + y < limit.minY) y = limit.minY - bounds.minY
+        if (bounds.maxY + y > limit.maxY) y = limit.maxY - bounds.maxY
+    }
+    return [x, y]
+}
+
+/**
+ * 글자 크기 1은 이름 칸에 맞는 크기이고, 슬라이더 값은 그 배율이다.
+ * 칸보다 커져도 판 안쪽까지는 키우고, 그 다음에 위치를 옮긴다.
+ */
 function layoutLines(
     design: NameTagDesign,
     fonts: Map<NameTagFontId, Font>,
     box: PlateFrame['box'],
     rangeFor: RangeFor,
-    widthScale = 1,
-    maxHeightMm = Number.POSITIVE_INFINITY
+    plateLimit: PlateLimit
 ): PlacedLine[] {
     const active = design.lines
         .map((line, index) => {
@@ -375,63 +430,83 @@ function layoutLines(
     const availH = Math.max(1, box.y1 - box.y0)
     const gapRatio = 0.22
     const count = active.length
-    // 크기 1이면 줄을 균등히 채운다. 1보다 작으면 칸을 남기고, 여러 줄이 넘치면 비율을 유지한 채 줄인다.
     const unit = availH / (count + gapRatio * (count - 1))
-    let gap = gapRatio * unit
-    let slots = active.map((line) => unit * line.size)
-    if (count === 1) slots = [Math.min(slots[0], maxHeightMm)]
-    let used = slots.reduce((sum, height) => sum + height, 0) + gap * (count - 1)
-    if (count > 1 && used > availH) {
-        const fit = availH / used
-        slots = slots.map((height) => height * fit)
-        gap *= fit
-        used = availH
-    }
-    const slack = availH - used
+    const [boxX0, boxX1] = rangeFor(box.y0, box.y1)
+    const availW = Math.max(1, boxX1 - boxX0)
 
-    const placed: PlacedLine[] = []
-    let slotTop = box.y1 - slack / 2
-    for (let i = 0; i < active.length; i++) {
-        const line = active[i]
+    const measured: Array<{
+        line: (typeof active)[number]
+        font: Font
+        em: number
+        refH: number
+        refMid: number
+    }> = []
+    for (const line of active) {
         const font = fonts.get(line.fontId)
-        const slotH = slots[i]
-        if (!font) {
-            slotTop -= slotH + gap
-            continue
-        }
+        if (!font) continue
         const ref = referenceBox(font)
         const refH = Math.max(0.1, ref.top - ref.bottom)
-        const [rx0, rx1] = rangeFor(slotTop - slotH, slotTop)
-        const availW = Math.max(1, rx1 - rx0)
-        let emMm = (slotH / refH) * widthScale
-        if (refH * emMm > maxHeightMm) emMm = maxHeightMm / refH
-        let fitted = textOutline(font, line.text, emMm, 0)
-        let shrunk = false
+        let em = unit / refH
+        const fitted = textOutline(font, line.text, em, 0)
         if (fitted) {
             const inkW = fitted.bounds.maxX - fitted.bounds.minX
-            if (inkW > availW) {
-                emMm *= availW / inkW
-                fitted = textOutline(font, line.text, emMm, 0)
-                shrunk = true
-            }
+            if (inkW > availW && inkW > 0) em *= availW / inkW
         }
-        const spaced = fitted ? textOutline(font, line.text, emMm, design.letterSpacing) ?? fitted : null
+        em *= line.size
+        measured.push({ line, font, em, refH, refMid: (ref.top + ref.bottom) / 2 })
+    }
+    if (measured.length === 0) return []
+
+    const sizeScale = measured.reduce((sum, item) => sum + item.line.size, 0) / measured.length
+    let gap = gapRatio * unit * sizeScale
+    let blockH = measured.reduce((sum, item) => sum + item.refH * item.em, 0) + gap * (measured.length - 1)
+    let blockW = 0
+    for (const item of measured) {
+        const outline = textOutline(item.font, item.line.text, item.em, 0)
+        const inkW = outline ? outline.bounds.maxX - outline.bounds.minX : 0
+        if (inkW > blockW) blockW = inkW
+    }
+    const plateW = Math.max(1, plateLimit.maxX - plateLimit.minX)
+    const plateH = Math.max(1, plateLimit.maxY - plateLimit.minY)
+    let fit = 1
+    if (blockW > plateW) fit = Math.min(fit, plateW / blockW)
+    if (blockH > plateH) fit = Math.min(fit, plateH / blockH)
+    if (fit < 1) {
+        for (const item of measured) item.em *= fit
+        gap *= fit
+        blockH *= fit
+    }
+
+    const placed: PlacedLine[] = []
+    const slack = availH - blockH
+    let slotTop = box.y1 - slack / 2
+    for (const item of measured) {
+        const slotH = item.refH * item.em
+        let [rx0, rx1] = rangeFor(slotTop - slotH, slotTop)
+        if (rx1 - rx0 < 1) {
+            rx0 = boxX0
+            rx1 = boxX1
+        }
+        const fitted = textOutline(item.font, item.line.text, item.em, 0)
+        const spaced = fitted ? textOutline(item.font, item.line.text, item.em, design.letterSpacing) ?? fitted : null
         if (fitted && spaced) {
             const slotCenter = slotTop - slotH / 2
-            const dy = slotCenter - ((ref.top + ref.bottom) / 2) * emMm
+            const dy = slotCenter - item.refMid * item.em
             const plateDx = alignX(fitted.bounds.minX, fitted.bounds.maxX, rx0, rx1, design.align)
             const textDx = alignX(spaced.bounds.minX, spaced.bounds.maxX, rx0, rx1, design.align)
             placed.push({
                 polygons: shiftPolys(spaced.polygons, textDx, dy),
                 platePolygons: shiftPolys(fitted.polygons, plateDx, dy),
-                heightMm: refH * emMm,
-                shrunk,
-                index: line.index,
+                heightMm: item.refH * item.em,
+                shrunk: fit < 0.995,
+                index: item.line.index,
             })
         }
         slotTop -= slotH + gap
     }
-    return placed
+
+    const [dx, dy] = clampTextOffset(placed, design.textArea.xMm, design.textArea.yMm, plateLimit)
+    return shiftPlaced(placed, dx, dy)
 }
 
 export function collectMissingGlyphs(design: NameTagDesign, fonts: Map<NameTagFontId, Font>): string[] {
@@ -462,60 +537,21 @@ export function buildNameTag(
         if (missing.length > 0) issues.push({ code: 'missing-glyph', level: 'error', chars: missing })
 
         const frame = plateFrame(wasm, design, track)
-
-        // 베이스 크기와 독립적으로 글자 영역(textBox) 계산
-        let textBox = frame.box
-        const maxAvailW = Math.max(1, frame.box.x1 - frame.box.x0)
-        const maxAvailH = Math.max(1, frame.box.y1 - frame.box.y0)
+        const textBox = frame.box
         const plateBounds = frame.plate.bounds()
         const inset = Math.max(frame.margin, 1.2)
-        const limitW = Math.max(1, plateBounds.max[0] - plateBounds.min[0] - inset * 2)
-        const limitH = Math.max(1, plateBounds.max[1] - plateBounds.min[1] - inset * 2)
-        const targetW =
-            design.textArea?.widthMm != null
-                ? Math.min(Math.max(1, design.textArea.widthMm), limitW)
-                : maxAvailW
-        const targetH =
-            design.textArea?.heightMm != null
-                ? Math.min(Math.max(1, design.textArea.heightMm), limitH)
-                : maxAvailH
-        const widthScale = maxAvailW > 0 ? targetW / maxAvailW : 1
-
-        if (Math.abs(targetW - maxAvailW) > 0.05 || Math.abs(targetH - maxAvailH) > 0.05) {
-            const cx = (frame.box.x0 + frame.box.x1) / 2
-            const cy = (frame.box.y0 + frame.box.y1) / 2
-            let x0 = cx - targetW / 2
-            let x1 = cx + targetW / 2
-            let y0 = cy - targetH / 2
-            let y1 = cy + targetH / 2
-            const minX = plateBounds.min[0] + inset
-            const maxX = plateBounds.max[0] - inset
-            const minY = plateBounds.min[1] + inset
-            const maxY = plateBounds.max[1] - inset
-            if (x0 < minX) {
-                x1 += minX - x0
-                x0 = minX
-            }
-            if (x1 > maxX) {
-                x0 -= x1 - maxX
-                x1 = maxX
-            }
-            if (y0 < minY) {
-                y1 += minY - y0
-                y0 = minY
-            }
-            if (y1 > maxY) {
-                y0 -= y1 - maxY
-                y1 = maxY
-            }
-            textBox = { x0, x1, y0, y1 }
+        const plateLimit: PlateLimit = {
+            minX: plateBounds.min[0] + inset,
+            maxX: plateBounds.max[0] - inset,
+            minY: plateBounds.min[1] + inset,
+            maxY: plateBounds.max[1] - inset,
         }
 
         const rangeFor: RangeFor =
             design.plate.shape === 'outline' && !design.baseId
                 ? () => [textBox.x0, textBox.x1]
                 : plateRange(wasm, track(frame.plate.offset(-frame.margin, 'Round')), textBox, track)
-        const lines = layoutLines(design, fonts, textBox, rangeFor, widthScale, limitH)
+        const lines = layoutLines(design, fonts, textBox, rangeFor, plateLimit)
         const textPolys = lines.flatMap((line) => line.polygons)
         if (textPolys.length === 0) {
             const plateWithHole = frame.hole ? track(frame.plate.subtract(frame.hole)) : frame.plate

@@ -37,7 +37,6 @@ import {
 } from '@/lib/name-tag/custom-fonts'
 import { SystemFontPickerModal } from '@/components/maker/SystemFontPickerModal'
 import { ViewCube } from '@/components/maker/ViewCube'
-import { textLimitsMm } from '@/lib/name-tag/text-frame'
 import { getNameTagTemplate, templatePlateSize } from '@/lib/name-tag/templates'
 import {
     applyNameTagPreset,
@@ -654,12 +653,13 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const blocking = issues.some((issue) => issue.level === 'error')
     const hasText = nameTagHasText(design)
     const isCircle = design.baseId == null && design.plate.shape === 'circle'
-    const textLimits = textLimitsMm(design)
-    const textMaxW = Math.max(10, Math.round(textLimits.maxWidthMm))
-    const textMaxH = Math.max(5, Math.round(textLimits.maxHeightMm))
-    const textWidth = Math.min(textMaxW, Math.max(10, Math.round(design.textArea.widthMm ?? textLimits.widthMm)))
-    const textHeight = Math.min(textMaxH, Math.max(5, Math.round(design.textArea.heightMm ?? textLimits.heightMm)))
-    const lineSizeMax = textLimits.maxHeightMm > textLimits.heightMm + 1 ? NAME_TAG_LIMITS.lineSize[1] : 1
+    const offsetLimitX = Math.max(4, Math.round(design.plate.widthMm * 0.45))
+    const offsetLimitY = Math.max(3, Math.round((isCircle ? design.plate.widthMm : design.plate.heightMm) * 0.4))
+    const formatShift = (mm: number, negative: string, positive: string) => {
+        const n = Math.round(mm)
+        if (n === 0) return '0'
+        return n < 0 ? `${negative} ${Math.abs(n)}mm` : `${positive} ${n}mm`
+    }
 
     const issueText = (issue: NameTagIssue): string => {
         switch (issue.code) {
@@ -906,7 +906,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 update((d) => {
                                     const centered = {
                                         align: 'center' as const,
-                                        textArea: { widthMm: null, heightMm: null },
+                                        textArea: { xMm: 0, yMm: 0 },
                                     }
                                     if (!baseId) return { ...d, ...centered, baseId: null }
                                     const template = getNameTagTemplate(baseId)
@@ -990,9 +990,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 <input
                                                     type="range"
                                                     min={NAME_TAG_LIMITS.lineSize[0]}
-                                                    max={design.lines.length > 1 ? NAME_TAG_LIMITS.lineSize[1] : lineSizeMax}
+                                                    max={NAME_TAG_LIMITS.lineSize[1]}
                                                     step={0.05}
-                                                    value={Math.min(line.size, design.lines.length > 1 ? NAME_TAG_LIMITS.lineSize[1] : lineSizeMax)}
+                                                    value={line.size}
                                                     onChange={(e) => setLine(index, { size: Number(e.target.value) })}
                                                     aria-label={t('lineSize')}
                                                     className="min-w-0 flex-1 accent-teal-400 cursor-pointer"
@@ -1096,17 +1096,16 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 />
                             </Section>
 
-                            {/* 글자 영역 사이즈 독립 조절 섹션 (베이스 크기는 유지) */}
                             <Section
                                 title={t('textAreaLabel')}
                                 aside={
-                                    (design.textArea.widthMm != null || design.textArea.heightMm != null) ? (
+                                    design.textArea.xMm !== 0 || design.textArea.yMm !== 0 ? (
                                         <button
                                             type="button"
-                                            onClick={() => update((d) => ({ ...d, textArea: { widthMm: null, heightMm: null } }))}
+                                            onClick={() => update((d) => ({ ...d, textArea: { xMm: 0, yMm: 0 } }))}
                                             className="text-[11px] font-bold text-teal-400 hover:text-teal-300"
                                         >
-                                            {t('textAreaAuto')}
+                                            {t('textAreaCenter')}
                                         </button>
                                     ) : null
                                 }
@@ -1116,24 +1115,22 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 </p>
                                 <div className="space-y-2 pt-1">
                                     <Slider
-                                        label={t('textAreaWidth')}
-                                        value={textWidth}
-                                        display={`${textWidth.toFixed(0)}mm`}
-                                        min={10}
-                                        max={textMaxW}
+                                        label={t('textAreaX')}
+                                        value={design.textArea.xMm}
+                                        display={formatShift(design.textArea.xMm, t('textShiftLeft'), t('textShiftRight'))}
+                                        min={-offsetLimitX}
+                                        max={offsetLimitX}
                                         step={1}
-                                        unit="mm"
-                                        onChange={(widthMm) => update((d) => ({ ...d, textArea: { ...d.textArea, widthMm } }))}
+                                        onChange={(xMm) => update((d) => ({ ...d, textArea: { ...d.textArea, xMm } }))}
                                     />
                                     <Slider
-                                        label={t('textAreaHeight')}
-                                        value={textHeight}
-                                        display={`${textHeight.toFixed(0)}mm`}
-                                        min={5}
-                                        max={textMaxH}
+                                        label={t('textAreaY')}
+                                        value={design.textArea.yMm}
+                                        display={formatShift(design.textArea.yMm, t('textShiftDown'), t('textShiftUp'))}
+                                        min={-offsetLimitY}
+                                        max={offsetLimitY}
                                         step={1}
-                                        unit="mm"
-                                        onChange={(heightMm) => update((d) => ({ ...d, textArea: { ...d.textArea, heightMm } }))}
+                                        onChange={(yMm) => update((d) => ({ ...d, textArea: { ...d.textArea, yMm } }))}
                                     />
                                 </div>
                             </Section>

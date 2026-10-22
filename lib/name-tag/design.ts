@@ -43,10 +43,10 @@ export type NameTagDesign = {
         heightMm: number
         thicknessMm: number
     }
-    /** 글자 영역 크기 (null이면 베이스 허용 최대 영역 자동 사용) */
+    /** 이름 칸 중심에서 글자를 옮긴 거리. x는 오른쪽, y는 위 */
     textArea: {
-        widthMm: number | null
-        heightMm: number | null
+        xMm: number
+        yMm: number
     }
     hole: {
         position: HolePosition
@@ -70,8 +70,7 @@ export type NameTagDesign = {
 export const NAME_TAG_LIMITS = {
     widthMm: [25, 150],
     heightMm: [12, 100],
-    textWidthMm: [10, 140],
-    textHeightMm: [5, 90],
+    textOffsetMm: [-80, 80],
     thicknessMm: [1, 3],
     holeMm: [2.5, 8],
     depthMm: [0.4, 2],
@@ -86,7 +85,7 @@ export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     letterSpacing: 0,
     baseId: null,
     plate: { shape: 'rounded', widthMm: 60, heightMm: 24, thicknessMm: 2.4 },
-    textArea: { widthMm: null, heightMm: null },
+    textArea: { xMm: 0, yMm: 0 },
     hole: { position: 'left', diameterMm: 4, xMm: null, yMm: null },
     relief: { mode: 'emboss', depthMm: 1 },
     border: false,
@@ -149,14 +148,6 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
     const relief = obj(input.relief)
     const colors = obj(input.colors)
     const textArea = obj(input.textArea)
-    const textWidthMm =
-        typeof textArea.widthMm === 'number' && Number.isFinite(textArea.widthMm)
-            ? clamp(textArea.widthMm, NAME_TAG_LIMITS.textWidthMm, textArea.widthMm)
-            : null
-    const textHeightMm =
-        typeof textArea.heightMm === 'number' && Number.isFinite(textArea.heightMm)
-            ? clamp(textArea.heightMm, NAME_TAG_LIMITS.textHeightMm, textArea.heightMm)
-            : null
 
     return {
         version: NAME_TAG_DESIGN_VERSION,
@@ -171,8 +162,8 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
             thicknessMm: clamp(plate.thicknessMm, NAME_TAG_LIMITS.thicknessMm, d.plate.thicknessMm),
         },
         textArea: {
-            widthMm: textWidthMm,
-            heightMm: textHeightMm,
+            xMm: clamp(textArea.xMm, NAME_TAG_LIMITS.textOffsetMm, 0),
+            yMm: clamp(textArea.yMm, NAME_TAG_LIMITS.textOffsetMm, 0),
         },
         hole: holeOf(hole, d.hole),
         relief: {
