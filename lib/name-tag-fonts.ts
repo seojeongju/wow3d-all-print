@@ -45,6 +45,10 @@ export function isNameTagFontId(value: unknown): value is NameTagFontId {
     return isNameTagPresetFontId(value) || isCustomFontId(value)
 }
 
+export function textHasHangul(text: string): boolean {
+    return /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(text)
+}
+
 export function getNameTagFont(id: NameTagFontId) {
     return NAME_TAG_FONTS.find((font) => font.id === id) ?? NAME_TAG_FONTS[0]
 }

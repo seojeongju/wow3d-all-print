@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button'
 import { NameTagBasePicker } from '@/components/maker/NameTagBasePicker'
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary'
 import { useFileStore } from '@/store/useFileStore'
-import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, isCustomFontId, type NameTagFontId } from '@/lib/name-tag-fonts'
+import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, isCustomFontId, textHasHangul, type NameTagFontId } from '@/lib/name-tag-fonts'
 import {
     useCustomFonts,
     registerCustomFontFromFile,
@@ -130,6 +130,7 @@ function Choice({
     className,
     label,
     onPreview,
+    disabled = false,
 }: {
     active: boolean
     onClick: () => void
@@ -137,20 +138,24 @@ function Choice({
     className?: string
     label?: string
     onPreview?: () => void
+    disabled?: boolean
 }) {
     return (
         <button
             type="button"
             onClick={onClick}
-            onPointerEnter={onPreview}
-            onFocus={onPreview}
+            onPointerEnter={disabled ? undefined : onPreview}
+            onFocus={disabled ? undefined : onPreview}
             aria-pressed={active}
+            aria-disabled={disabled}
             aria-label={label}
             className={cn(
                 'group relative flex flex-col items-center justify-center rounded-xl border p-2 text-center text-[12px] font-bold text-white transition-all',
-                active
-                    ? 'border-teal-400/80 bg-teal-400/15 text-teal-200 shadow-[0_0_12px_rgba(45,212,191,0.2)] ring-1 ring-teal-400/60'
-                    : 'border-white/10 bg-black/30 hover:border-white/25 hover:bg-white/[0.04]',
+                disabled
+                    ? 'cursor-not-allowed border-white/5 bg-black/20 text-white/30'
+                    : active
+                      ? 'border-teal-400/80 bg-teal-400/15 text-teal-200 shadow-[0_0_12px_rgba(45,212,191,0.2)] ring-1 ring-teal-400/60'
+                      : 'border-white/10 bg-black/30 hover:border-white/25 hover:bg-white/[0.04]',
                 className
             )}
         >
@@ -308,6 +313,7 @@ function FontChoices({
     onPreview,
     onPick,
     onOpenSystemModal,
+    blockLatin = false,
 }: {
     activeId: NameTagFontId | null
     groupLabel: (group: 'ko' | 'en') => string
@@ -316,6 +322,8 @@ function FontChoices({
     onPreview: (fontId: NameTagFontId) => void
     onPick: (fontId: NameTagFontId) => void
     onOpenSystemModal: () => void
+    /** 한글이 있으면 영문 전용 폰트는 고르지 않는다 */
+    blockLatin?: boolean
 }) {
     const t = useTranslations('Maker.nameTag')
     const [tab, setTab] = useState<'preset' | 'local'>('preset')
@@ -391,7 +399,14 @@ function FontChoices({
                                     <Choice
                                         key={font.id}
                                         active={font.id === activeId}
-                                        onClick={() => onPick(font.id)}
+                                        disabled={blockLatin && group === 'en'}
+                                        onClick={() => {
+                                            if (blockLatin && group === 'en') {
+                                                showToast.error(t('fontLatinBlockedTitle'), t('fontLatinBlocked'))
+                                                return
+                                            }
+                                            onPick(font.id)
+                                        }}
                                         onPreview={() => onPreview(font.id)}
                                         className="h-10 text-left px-2.5 py-1"
                                     >
@@ -522,7 +537,8 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const [activeStep, setActiveStep] = useState<MakerStepId>('all')
     const [activePreset, setActivePreset] = useState<NameTagPresetId | null>('bag')
     const [viewRequest, setViewRequest] = useState<PreviewViewRequest | null>(null)
-    const requestView = (id: PreviewViewId) => setViewRequest((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1 }))
+    const requestView = (id: PreviewViewId, direction?: [number, number, number]) =>
+        setViewRequest((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1, direction }))
     const [systemModalOpen, setSystemModalOpen] = useState(false)
 
     const getFontFamily = useCallback((fontId: NameTagFontId) => {
@@ -716,6 +732,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
             showToast.error(t('quoteNeedTextTitle'), t('quoteNeedText'))
             return
         }
+        if (blocking) {
+            showToast.error(t('quoteBlockedTitle'), t('quoteBlocked'))
+            return
+        }
         setBusy('stl')
         try {
             const file = await makeStlFile()
@@ -751,7 +771,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
 
                     {/* 우측 상단 실시간 치수 뱃지 */}
                     {result ? (
-                        <div className="pointer-events-none absolute right-4 top-4 z-10 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-right text-[11px] font-bold leading-relaxed text-white/80 backdrop-blur-md">
+                        <div className="pointer-events-none absolute left-4 top-14 z-10 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-left text-[11px] font-bold leading-relaxed text-white/80 backdrop-blur-md">
                             <div className="font-mono text-teal-300">
                                 {w.toFixed(1)} × {h.toFixed(1)} × {z.toFixed(1)} mm
                             </div>
@@ -780,7 +800,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                     </Maker3DErrorBoundary>
 
                     {/* 3D 뷰 큐브 (ViewCube) */}
-                    <ViewCube activeView={viewRequest?.id} onSelectView={requestView} />
+                    <ViewCube onSelectView={requestView} />
 
                     {/* 3D 뷰포트 하단 알림 바 */}
                     {hasText && (issues.length > 0 || error) ? (
@@ -886,6 +906,32 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                         </div>
                     )}
 
+                    {/* 베이스 선택. 문구를 넣기 전에 판 모양을 고른다 */}
+                    {(activeStep === 'all' || activeStep === 'shape') && (
+                        <NameTagBasePicker
+                            baseId={design.baseId}
+                            onSelect={(baseId) => {
+                                setPlacingHole(false)
+                                update((d) => {
+                                    const centered = {
+                                        align: 'center' as const,
+                                        textArea: { widthMm: null, heightMm: null },
+                                    }
+                                    if (!baseId) return { ...d, ...centered, baseId: null }
+                                    const template = getNameTagTemplate(baseId)
+                                    if (!template) return d
+                                    return {
+                                        ...d,
+                                        ...centered,
+                                        baseId,
+                                        plate: { ...d.plate, ...templatePlateSize(template, d.plate.widthMm) },
+                                        hole: { ...d.hole, position: 'none' },
+                                    }
+                                })
+                            }}
+                        />
+                    )}
+
                     {/* [Step 1] 문구 & 폰트 스타일 섹션 */}
                     {(activeStep === 'all' || activeStep === 'text') && (
                         <>
@@ -977,6 +1023,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                         setLine(index, { fontId })
                                                         setOpenFontMenu(null)
                                                     }}
+                                                    blockLatin={textHasHangul(line.text)}
                                                 />
                                             ) : null}
                                         </div>
@@ -1024,6 +1071,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             setAllFonts(fontId)
                                             setOpenFontMenu(null)
                                         }}
+                                        blockLatin={design.lines.some((line) => textHasHangul(line.text))}
                                     />
                                 ) : null}
                             </Section>
@@ -1104,30 +1152,6 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                     {/* [Step 2] 형태 & 사이즈 섹션 */}
                     {(activeStep === 'all' || activeStep === 'shape') && (
                         <>
-                            {/* 고도화된 동물/어린이 베이스 픽커 */}
-                            <NameTagBasePicker
-                                baseId={design.baseId}
-                                onSelect={(baseId) => {
-                                    setPlacingHole(false)
-                                    update((d) => {
-                                        const centered = {
-                                            align: 'center' as const,
-                                            textArea: { widthMm: null, heightMm: null },
-                                        }
-                                        if (!baseId) return { ...d, ...centered, baseId: null }
-                                        const template = getNameTagTemplate(baseId)
-                                        if (!template) return d
-                                        return {
-                                            ...d,
-                                            ...centered,
-                                            baseId,
-                                            plate: { ...d.plate, ...templatePlateSize(template, d.plate.widthMm) },
-                                            hole: { ...d.hole, position: 'none' },
-                                        }
-                                    })
-                                }}
-                            />
-
                             {/* 인포그래픽 기반 플레이트 형태 셀렉터 */}
                             <Section stepBadge="STEP 2" title={t('plateLabel')}>
                                 <div className="grid grid-cols-5 gap-1.5">
@@ -1449,7 +1473,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             <Button
                                 type="button"
                                 variant="outline"
-                                disabled={busy !== null || !hasText}
+                                disabled={busy !== null || !hasText || blocking}
                                 onClick={() => void downloadStl()}
                                 className="h-10 flex-1 rounded-xl border-white/15 bg-white/5 font-bold text-white hover:border-white/30 hover:bg-white/10"
                             >

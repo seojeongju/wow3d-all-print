@@ -4446,6 +4446,8 @@
       "removeCustomFont": "Remove font",
       "fontGroupKo": "Korean",
       "fontGroupEn": "Latin",
+      "fontLatinBlockedTitle": "Latin-only font",
+      "fontLatinBlocked": "This text includes Korean characters, so a Latin-only font cannot be used. Choose a Korean font.",
       "fontLicense": "Google Fonts · SIL Open Font License",
       "fonts": {
         "gowun-dodum": "Gowun Dodum",

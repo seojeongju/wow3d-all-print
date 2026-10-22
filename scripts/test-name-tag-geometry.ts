@@ -197,6 +197,21 @@ async function main() {
         fonts
     )
     assert.ok(emoji?.issues.some((i) => i.code === 'missing-glyph'), '없는 글자 미검출')
+    assert.ok(emoji && emoji.lines.length > 0, '없는 글자가 섞여도 나머지 글자는 남는다')
+
+    const latinHangul = buildNameTag(
+        wasm,
+        normalizeNameTagDesign({
+            ...DEFAULT_NAME_TAG_DESIGN,
+            lines: [{ text: '하준', fontId: 'lilita-one', size: 1 }],
+        }),
+        fonts
+    )
+    assert.ok(latinHangul, '영문 폰트에 한글만 있어도 판은 남는다')
+    assert.ok(latinHangul?.issues.some((i) => i.code === 'missing-glyph'), '한글 빠짐 미검출')
+    assert.equal(latinHangul?.lines.length, 0)
+    assert.equal(latinHangul?.stats.bodies, 1)
+    cases++
 
     // 작은 판 + 세 줄은 작은 글자·가는 획 경고가 나와야 한다
     const tiny = buildNameTag(

@@ -343,6 +343,17 @@ function shiftPolys(polygons: Polygon[], dx: number, dy: number): Polygon[] {
     return polygons.map((poly) => poly.map(([x, y]) => [x + dx, y + dy] as [number, number]))
 }
 
+/** 폰트에 없는 글자는 빼고, 남는 글자만 윤곽으로 쓴다. */
+function drawableText(font: Font, text: string): string {
+    const missing = new Set(missingGlyphs(font, text))
+    if (missing.size === 0) return text
+    return [...text]
+        .filter((char) => char.trim() === '' || !missing.has(char))
+        .join('')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
 /** 줄마다 높이를 나눈다. 폭이 넘치면 자간을 뺀 글자 크기만 줄이고, 자간은 그 위에 더한다. */
 function layoutLines(
     design: NameTagDesign,
@@ -351,7 +362,11 @@ function layoutLines(
     rangeFor: RangeFor
 ): PlacedLine[] {
     const active = design.lines
-        .map((line, index) => ({ ...line, text: line.text.replace(/\s+/g, ' ').trim(), index }))
+        .map((line, index) => {
+            const text = line.text.replace(/\s+/g, ' ').trim()
+            const font = fonts.get(line.fontId)
+            return { ...line, text: font ? drawableText(font, text) : text, index }
+        })
         .filter((line) => line.text.length > 0)
     if (active.length === 0) return []
 
@@ -415,7 +430,7 @@ export function collectMissingGlyphs(design: NameTagDesign, fonts: Map<NameTagFo
     return [...missing]
 }
 
-/** 글자가 없으면 null. 만든 WASM 객체는 모두 해제한다. */
+/** 그릴 글자가 없어도 판은 돌려준다. 만든 WASM 객체는 모두 해제한다. */
 export function buildNameTag(
     wasm: ManifoldToplevel,
     design: NameTagDesign,
@@ -459,11 +474,41 @@ export function buildNameTag(
                 ? () => [textBox.x0, textBox.x1]
                 : plateRange(wasm, track(frame.plate.offset(-frame.margin, 'Round')), textBox, track)
         const lines = layoutLines(design, fonts, textBox, rangeFor)
-        if (lines.length === 0) return null
-
         const textPolys = lines.flatMap((line) => line.polygons)
+        if (textPolys.length === 0) {
+            const plateWithHole = frame.hole ? track(frame.plate.subtract(frame.hole)) : frame.plate
+            const baseSolid = track(plateWithHole.extrude(design.plate.thicknessMm))
+            let raised: Manifold | null = null
+            if (design.border) {
+                const rim = track(plateWithHole.subtract(track(plateWithHole.offset(-PRINT_RULES_DRAFT.borderWidthMm, 'Round'))))
+                raised = track(track(rim.extrude(design.relief.depthMm)).translate(0, 0, design.plate.thicknessMm))
+            }
+            const solid = raised ? track(Manifold.union(baseSolid, raised)) : baseSolid
+            const status = solid.status()
+            if (status !== 'NoError') issues.push({ code: 'not-manifold', level: 'error', status })
+            const bodies = track(solid).decompose()
+            bodies.forEach((body) => track(body))
+            if (bodies.length > 1) issues.push({ code: 'multi-body', level: 'error', bodies: bodies.length })
+            const box = solid.boundingBox()
+            return {
+                base: toMeshData(baseSolid),
+                raised: raised ? toMeshData(raised) : null,
+                engraveFill: null,
+                thin: null,
+                solid: toMeshData(solid),
+                stats: {
+                    volumeMm3: solid.volume(),
+                    sizeMm: [box.max[0] - box.min[0], box.max[1] - box.min[1], box.max[2] - box.min[2]] as [number, number, number],
+                    triangles: solid.numTri(),
+                    bodies: bodies.length,
+                    status,
+                },
+                lines: [],
+                issues,
+            }
+        }
+
         const rawText = track(new CrossSection(textPolys, 'NonZero'))
-        if (rawText.isEmpty()) return null
 
         const T = design.plate.thicknessMm
         let plate = frame.plate

@@ -51,8 +51,19 @@ function Part({
 
 export const PREVIEW_VIEWS = ['home', 'front', 'back', 'left', 'right', 'top', 'bottom'] as const
 export type PreviewViewId = (typeof PREVIEW_VIEWS)[number]
-/** nonce가 바뀌면 같은 보기를 다시 눌러도 다시 맞춘다 */
-export type PreviewViewRequest = { id: PreviewViewId; nonce: number }
+/** nonce가 바뀌면 같은 보기를 다시 눌러도 다시 맞춘다. direction은 모서리·꼭짓점 보기 */
+export type PreviewViewRequest = { id: PreviewViewId; nonce: number; direction?: [number, number, number] }
+
+/** 뷰 큐브가 카메라와 같이 돌도록 오른쪽·위·뒤(관찰자 쪽) 축을 알린다 */
+function publishViewCubeCamera(camera: THREE.Camera) {
+    camera.updateMatrixWorld()
+    const e = camera.matrixWorld.elements
+    window.dispatchEvent(
+        new CustomEvent('wow3d-camera-change', {
+            detail: [e[0], e[1], e[2], e[4], e[5], e[6], e[8], e[9], e[10]],
+        })
+    )
+}
 
 const DEFAULT_MIN_POLAR = 0.18
 const DEFAULT_MAX_POLAR = Math.PI / 2 - 0.06
@@ -194,24 +205,11 @@ function TurntableControls({ size, view }: { size: [number, number, number]; vie
         controls.addEventListener('start', onStart)
         const onChange = () => {
             invalidate()
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(
-                    new CustomEvent('wow3d-camera-change', {
-                        detail: Array.from(camera.matrixWorldInverse.elements),
-                    })
-                )
-            }
+            publishViewCubeCamera(camera)
         }
         controls.addEventListener('change', onChange)
         setReady((n) => n + 1)
-        // 초기 시점 동기화
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-                new CustomEvent('wow3d-camera-change', {
-                    detail: Array.from(camera.matrixWorldInverse.elements),
-                })
-            )
-        }
+        publishViewCubeCamera(camera)
         return () => {
             controls.removeEventListener('change', onChange)
             controls.removeEventListener('start', onStart)
@@ -234,26 +232,22 @@ function TurntableControls({ size, view }: { size: [number, number, number]; vie
             invalidate()
         }
         controls?.update()
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-                new CustomEvent('wow3d-camera-change', {
-                    detail: Array.from(camera.matrixWorldInverse.elements),
-                })
-            )
-        }
+        if (a || controls?.enabled) publishViewCubeCamera(camera)
     })
 
     useEffect(() => {
         const controls = controlsRef.current
         if (!controls || !view) return
-        const isHome = view.id === 'home'
+        const isHome = view.id === 'home' && !view.direction
         // 옆·위·아래 보기는 기본 회전 범위를 벗어나므로 범위를 풀고, 홈에서 되돌린다
         controls.minPolarAngle = isHome ? DEFAULT_MIN_POLAR : 0
         controls.maxPolarAngle = isHome ? DEFAULT_MAX_POLAR : Math.PI
         const offset = camera.position.clone().sub(controls.target)
         const fromDist = Math.max(offset.length(), 1)
         const fromDir = offset.normalize()
-        const toDir = viewDirection(view.id)
+        const toDir = view.direction
+            ? new THREE.Vector3(view.direction[0], view.direction[1], view.direction[2]).normalize()
+            : viewDirection(view.id)
         const toDist = getFitDistance(toDir)
         anim.current = {
             start: performance.now(),

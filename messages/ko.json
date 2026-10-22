@@ -4447,6 +4447,8 @@
       "removeCustomFont": "글꼴 삭제",
       "fontGroupKo": "한글",
       "fontGroupEn": "영문",
+      "fontLatinBlockedTitle": "영문 전용 폰트",
+      "fontLatinBlocked": "이 문구에는 한글이 있어 영문 전용 폰트를 쓸 수 없습니다. 한글 폰트를 골라 주세요.",
       "fontLicense": "Google Fonts · SIL Open Font License",
       "fonts": {
         "gowun-dodum": "고운돋움",
