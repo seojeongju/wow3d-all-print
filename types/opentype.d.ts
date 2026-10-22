@@ -23,7 +23,7 @@ declare module 'opentype.js' {
             fontSize: number,
             options?: { kerning?: boolean; letterSpacing?: number }
         ) => GlyphPath
-        charToGlyph: (char: string) => { unicode?: number | null; name?: string }
+        charToGlyph: (char: string) => { index: number; unicode?: number | null; name?: string }
         names?: {
             fontFamily?: Record<string, string>
             fullName?: Record<string, string>
