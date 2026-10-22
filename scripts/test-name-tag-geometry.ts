@@ -84,7 +84,7 @@ async function main() {
 
     let cases = 0
     for (const [baseId, sample] of [
-        ['kids:kids_05', '하준'],
+        [NAME_TAG_TEMPLATES.kids[0]?.id ?? 'kids:E01', '하준'],
         ...NAME_TAG_TEMPLATES.pet.map((template) => [template.id, '콩이'] as const),
     ]) {
         const templated = normalizeNameTagDesign({

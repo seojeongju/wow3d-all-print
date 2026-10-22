@@ -1,162 +1,218 @@
 [
   {
-    "id": "kids_01",
-    "name": "곰돌이",
-    "file": "01_곰돌이.svg",
-    "viewBox": "0 0 800 493",
-    "layerForName": "editable-name-layer",
-    "pathCount": 213
+    "id": "E01",
+    "name": "E01",
+    "filename": "E01.svg",
+    "width": 362,
+    "height": 242,
+    "source": "E01.png"
   },
   {
-    "id": "kids_02",
-    "name": "토끼",
-    "file": "02_토끼.svg",
-    "viewBox": "0 0 800 480",
-    "layerForName": "editable-name-layer",
-    "pathCount": 339
+    "id": "E02",
+    "name": "E02",
+    "filename": "E02.svg",
+    "width": 362,
+    "height": 238,
+    "source": "E02.png"
   },
   {
-    "id": "kids_03",
-    "name": "강아지",
-    "file": "03_강아지.svg",
-    "viewBox": "0 0 800 495",
-    "layerForName": "editable-name-layer",
-    "pathCount": 200
+    "id": "E03",
+    "name": "E03",
+    "filename": "E03.svg",
+    "width": 362,
+    "height": 236,
+    "source": "E03.png"
   },
   {
-    "id": "kids_04",
-    "name": "고양이",
-    "file": "04_고양이.svg",
-    "viewBox": "0 0 800 466",
-    "layerForName": "editable-name-layer",
-    "pathCount": 367
+    "id": "E04",
+    "name": "E04",
+    "filename": "E04.svg",
+    "width": 362,
+    "height": 238,
+    "source": "E04.png"
   },
   {
-    "id": "kids_05",
-    "name": "공룡",
-    "file": "05_공룡.svg",
-    "viewBox": "0 0 800 506",
-    "layerForName": "editable-name-layer",
-    "pathCount": 116
+    "id": "E05",
+    "name": "E05",
+    "filename": "E05.svg",
+    "width": 362,
+    "height": 242,
+    "source": "E05.png"
   },
   {
-    "id": "kids_06",
-    "name": "우주로켓",
-    "file": "06_우주로켓.svg",
-    "viewBox": "0 0 800 466",
-    "layerForName": "editable-name-layer",
-    "pathCount": 226
+    "id": "E06",
+    "name": "E06",
+    "filename": "E06.svg",
+    "width": 362,
+    "height": 238,
+    "source": "E06.png"
   },
   {
-    "id": "kids_07",
-    "name": "고래",
-    "file": "07_고래.svg",
-    "viewBox": "0 0 800 495",
-    "layerForName": "editable-name-layer",
-    "pathCount": 358
+    "id": "E07",
+    "name": "E07",
+    "filename": "E07.svg",
+    "width": 362,
+    "height": 228,
+    "source": "E07.png"
   },
   {
-    "id": "kids_08",
-    "name": "바다거북",
-    "file": "08_바다거북.svg",
-    "viewBox": "0 0 800 444",
-    "layerForName": "editable-name-layer",
-    "pathCount": 312
+    "id": "E08",
+    "name": "E08",
+    "filename": "E08.svg",
+    "width": 362,
+    "height": 256,
+    "source": "E08.png"
   },
   {
-    "id": "kids_09",
-    "name": "무지개구름",
-    "file": "09_무지개구름.svg",
-    "viewBox": "0 0 800 497",
-    "layerForName": "editable-name-layer",
-    "pathCount": 160
+    "id": "E09",
+    "name": "E09",
+    "filename": "E09.svg",
+    "width": 362,
+    "height": 232,
+    "source": "E09.png"
   },
   {
-    "id": "kids_10",
-    "name": "유니콘",
-    "file": "10_유니콘.svg",
-    "viewBox": "0 0 800 482",
-    "layerForName": "editable-name-layer",
-    "pathCount": 398
+    "id": "E10",
+    "name": "E10",
+    "filename": "E10.svg",
+    "width": 362,
+    "height": 264,
+    "source": "E10.png"
   },
   {
-    "id": "kids_11",
-    "name": "딸기",
-    "file": "11_딸기.svg",
-    "viewBox": "0 0 800 503",
-    "layerForName": "editable-name-layer",
-    "pathCount": 415
+    "id": "E11",
+    "name": "E11",
+    "filename": "E11.svg",
+    "width": 362,
+    "height": 269,
+    "source": "E11.png"
   },
   {
-    "id": "kids_12",
-    "name": "오렌지",
-    "file": "12_오렌지.svg",
-    "viewBox": "0 0 800 474",
-    "layerForName": "editable-name-layer",
-    "pathCount": 151
+    "id": "E12",
+    "name": "E12",
+    "filename": "E12.svg",
+    "width": 362,
+    "height": 265,
+    "source": "E12.png"
   },
   {
-    "id": "kids_13",
-    "name": "호랑이",
-    "file": "13_호랑이.svg",
-    "viewBox": "0 0 800 491",
-    "layerForName": "editable-name-layer",
-    "pathCount": 163
+    "id": "E13",
+    "name": "E13",
+    "filename": "E13.svg",
+    "width": 362,
+    "height": 244,
+    "source": "E13.png"
   },
   {
-    "id": "kids_14",
-    "name": "사자",
-    "file": "14_사자.svg",
-    "viewBox": "0 0 800 465",
-    "layerForName": "editable-name-layer",
-    "pathCount": 199
+    "id": "E14",
+    "name": "E14",
+    "filename": "E14.svg",
+    "width": 362,
+    "height": 246,
+    "source": "E14.png"
   },
   {
-    "id": "kids_15",
-    "name": "자동차",
-    "file": "15_자동차.svg",
-    "viewBox": "0 0 800 486",
-    "layerForName": "editable-name-layer",
-    "pathCount": 356
+    "id": "E15",
+    "name": "E15",
+    "filename": "E15.svg",
+    "width": 362,
+    "height": 269,
+    "source": "E15.png"
   },
   {
-    "id": "kids_16",
-    "name": "굴착기",
-    "file": "16_굴착기.svg",
-    "viewBox": "0 0 800 454",
-    "layerForName": "editable-name-layer",
-    "pathCount": 520
+    "id": "E16",
+    "name": "E16",
+    "filename": "E16.svg",
+    "width": 362,
+    "height": 265,
+    "source": "E16.png"
   },
   {
-    "id": "kids_17",
-    "name": "로봇",
-    "file": "17_로봇.svg",
-    "viewBox": "0 0 800 505",
-    "layerForName": "editable-name-layer",
-    "pathCount": 1650
+    "id": "E17",
+    "name": "E17",
+    "filename": "E17.svg",
+    "width": 362,
+    "height": 265,
+    "source": "E17.png"
   },
   {
-    "id": "kids_18",
-    "name": "스포츠",
-    "file": "18_스포츠.svg",
-    "viewBox": "0 0 800 436",
-    "layerForName": "editable-name-layer",
-    "pathCount": 457
+    "id": "E18",
+    "name": "E18",
+    "filename": "E18.svg",
+    "width": 362,
+    "height": 262,
+    "source": "E18.png"
   },
   {
-    "id": "kids_19",
-    "name": "공주",
-    "file": "19_공주.svg",
-    "viewBox": "0 0 800 500",
-    "layerForName": "editable-name-layer",
-    "pathCount": 315
+    "id": "E19",
+    "name": "E19",
+    "filename": "E19.svg",
+    "width": 362,
+    "height": 238,
+    "source": "E19.png"
   },
   {
-    "id": "kids_20",
-    "name": "꽃요정",
-    "file": "20_꽃요정.svg",
-    "viewBox": "0 0 800 456",
-    "layerForName": "editable-name-layer",
-    "pathCount": 559
+    "id": "E20",
+    "name": "E20",
+    "filename": "E20.svg",
+    "width": 362,
+    "height": 234,
+    "source": "E20.png"
+  },
+  {
+    "id": "E21",
+    "name": "E21",
+    "filename": "E21.svg",
+    "width": 362,
+    "height": 254,
+    "source": "E21.png"
+  },
+  {
+    "id": "E22",
+    "name": "E22",
+    "filename": "E22.svg",
+    "width": 362,
+    "height": 249,
+    "source": "E22.png"
+  },
+  {
+    "id": "E23",
+    "name": "E23",
+    "filename": "E23.svg",
+    "width": 362,
+    "height": 240,
+    "source": "E23.png"
+  },
+  {
+    "id": "E24",
+    "name": "E24",
+    "filename": "E24.svg",
+    "width": 362,
+    "height": 249,
+    "source": "E24.png"
+  },
+  {
+    "id": "E25",
+    "name": "E25",
+    "filename": "E25.svg",
+    "width": 362,
+    "height": 254,
+    "source": "E25.png"
+  },
+  {
+    "id": "E26",
+    "name": "E26",
+    "filename": "E26.svg",
+    "width": 362,
+    "height": 242,
+    "source": "E26.png"
+  },
+  {
+    "id": "E27",
+    "name": "E27",
+    "filename": "E27.svg",
+    "width": 362,
+    "height": 238,
+    "source": "E27.png"
   }
 ]

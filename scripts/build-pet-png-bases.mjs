@@ -1,6 +1,6 @@
 /**
  * public/반려동물베이스 의 PNG 실루엣을 반려동물 이름표 베이스로 만든다.
- * 검은 픽셀이 판이고, 안쪽 투명 영역은 구멍이다.
+ * 검은 픽셀의 바깥 실루엣만 판으로 쓴다. 안쪽 구멍은 메우고, 고리 구멍은 메이커에서 만든다.
  * 실행: node scripts/build-pet-png-bases.mjs
  * 결과: public/반려동물 템플릿/*.svg, templates.json, lib/name-tag/template-plates.json 의 pet
  */
@@ -149,40 +149,6 @@ function assertOneBody(name, cs) {
     }
 }
 
-/** 이름 칸으로 쓸 가장 넓은 직사각형. */
-function largestSolidRect(mask, width, height) {
-    const heights = new Array(width).fill(0)
-    let best = { area: 0, x: 0, y: 0, w: 1, h: 1 }
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) heights[x] = mask[y * width + x] ? heights[x] + 1 : 0
-        const stack = [-1]
-        for (let x = 0; x <= width; x++) {
-            const h = x === width ? 0 : heights[x]
-            while (stack.length > 1 && heights[stack[stack.length - 1]] > h) {
-                const heightHere = heights[stack.pop()]
-                const left = stack[stack.length - 1]
-                const w = x - left - 1
-                const area = heightHere * w
-                if (area > best.area) {
-                    best = { area, x: left + 1, y: y - heightHere + 1, w, h: heightHere }
-                }
-            }
-            stack.push(x)
-        }
-    }
-    return best
-}
-
-function nameBox(rect, viewW, viewH, minX, minY) {
-    const cx = rect.x + rect.w / 2 - minX
-    const cy = rect.y + rect.h / 2 - minY
-    const w = Math.round(Math.max(viewW * 0.22, Math.min(rect.w * 0.78, viewW * 0.72)))
-    const h = Math.round(Math.max(viewH * 0.14, Math.min(rect.h * 0.7, viewH * 0.4)))
-    const x = Math.round(Math.min(viewW - w, Math.max(0, cx - w / 2)))
-    const y = Math.round(Math.min(viewH - h, Math.max(0, cy - h / 2)))
-    return [x, y, w, h]
-}
-
 async function tracePng(CrossSection, file) {
     const { data, info } = await sharp(join(SOURCE, file))
         .resize(TRACE, TRACE, { fit: 'fill', kernel: 'nearest' })
@@ -191,7 +157,6 @@ async function tracePng(CrossSection, file) {
         .toBuffer({ resolveWithObject: true })
     const width = info.width
     const height = info.height
-    const mask = new Uint8Array(width * height)
     const runs = []
     for (let y = 0; y < height; y++) {
         let x = 0
@@ -203,7 +168,6 @@ async function tracePng(CrossSection, file) {
             }
             let end = x + 1
             while (end < width && data[(y * width + end) * 4 + 3] >= 128) end += 1
-            for (let i = x; i < end; i++) mask[y * width + i] = 1
             runs.push(CrossSection.square([end - x, 1], false).translate(x, y))
             x = end
         }
@@ -212,7 +176,31 @@ async function tracePng(CrossSection, file) {
     let plate = unionTree(CrossSection, runs)
     plate = smooth(plate)
     const rings = normalizeRings(plate.toPolygons().map((ring) => simplifyClosed(ring, 0.45)))
-    return { plate, rings, mask, width, height, rect: largestSolidRect(mask, width, height) }
+    return { plate, rings }
+}
+
+function ringCentroid(ring) {
+    let twice = 0
+    let cx = 0
+    let cy = 0
+    for (let i = 0; i < ring.length; i++) {
+        const [x1, y1] = ring[i]
+        const [x2, y2] = ring[(i + 1) % ring.length]
+        const cross = x1 * y2 - x2 * y1
+        twice += cross
+        cx += (x1 + x2) * cross
+        cy += (y1 + y2) * cross
+    }
+    return [cx / (3 * twice), cy / (3 * twice)]
+}
+
+function solidNameBox(outer, viewW, viewH) {
+    const [cx, cy] = ringCentroid(outer)
+    const w = Math.round(viewW * 0.5)
+    const h = Math.round(viewH * 0.32)
+    const x = Math.round(Math.min(viewW - w, Math.max(0, cx - w / 2)))
+    const y = Math.round(Math.min(viewH - h, Math.max(0, cy - h / 2)))
+    return [x, y, w, h]
 }
 
 function svgDoc(rings, viewW, viewH) {
@@ -244,6 +232,7 @@ async function main() {
         const traced = await tracePng(CrossSection, files[index])
         assertOneBody(name, traced.plate)
         traced.plate.delete()
+        traced.rings = traced.rings.slice(0, 1)
         let minX = Infinity
         let minY = Infinity
         let maxX = -Infinity
@@ -272,7 +261,7 @@ async function main() {
             name,
             file: `/반려동물 템플릿/${filename}`,
             view: [viewW, viewH],
-            nameBox: nameBox(traced.rect, viewW, viewH, minX, minY),
+            nameBox: solidNameBox(rings[0], viewW, viewH),
             rings,
         })
         meta.push({ id, name, filename, width: viewW, height: viewH, source: files[index] })
@@ -290,7 +279,7 @@ async function main() {
             '01 하트 발바닥, 02 뼈 발바닥, 03 발바닥 뼈, 04 위 고리,',
             '05 발바닥, 06 마름모, 07 원형, 08 별.',
             '',
-            '검은 실루엣이 출력 판이고, 실루엣 안의 투명 영역은 구멍이다.',
+            '출력 판은 바깥 실루엣만 남긴 한 덩어리다. 고리 구멍은 판에 넣지 않고 메이커의 홀 기능으로 만든다.',
             '판 좌표는 node scripts/build-pet-png-bases.mjs 로 다시 만든다.',
             '',
         ].join('\n'),
