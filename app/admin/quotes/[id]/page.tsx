@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { formatKoreanDate } from '@/lib/date-utils';
-import { formatQuotePrintSizeMm } from '@/lib/quote-print-settings';
+import { formatQuotePrintSizeMm, formatQuotePrintSettings } from '@/lib/quote-print-settings';
 import {
     DEFAULT_SHIPPING_SETTINGS,
     formatFreeShippingHint,
@@ -100,10 +100,16 @@ export default function QuoteEditPage() {
             const autoShares = allocateByWeights(autoTotal, rawLineAmounts);
             const autoItemsMapped = items.map((it: any, i: number) => {
                 const quantity = Number(it.quantity) || 1;
+                const method = String(it.print_method || '').toUpperCase();
+                const settings = formatQuotePrintSettings(it);
+                const specText = settings
+                    ? (method ? `${method} / ${settings}` : settings)
+                    : `${method} ${it.material_name ? '/ ' + it.material_name : ''}`.trim();
                 return {
+                    ...it,
                     id: it.id || Math.random(),
                     name: it.file_name,
-                    spec: `${it.print_method || ''} ${it.material_name ? '/ ' + it.material_name : ''}`.trim(),
+                    spec: it.spec || specText,
                     quantity,
                     unit_price: floorQuoteAmount((autoShares[i] ?? 0) / quantity),
                 };
@@ -343,10 +349,12 @@ export default function QuoteEditPage() {
                 }),
             },
             items: normalizedItems.map(it => ({
+                ...it,
                 id: it.id,
                 file_name: it.name,
-                print_method: it.spec,
-                material_name: '',
+                print_method: it.print_method || it.spec,
+                spec: it.spec,
+                material_name: it.material_name || '',
                 quantity: it.quantity,
                 unit_price: it.unit_price,
                 subtotal: lineAmount(it),

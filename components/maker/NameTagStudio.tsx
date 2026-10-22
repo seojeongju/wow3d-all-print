@@ -37,6 +37,7 @@ import {
 } from '@/lib/name-tag/custom-fonts'
 import { SystemFontPickerModal } from '@/components/maker/SystemFontPickerModal'
 import { ViewCube } from '@/components/maker/ViewCube'
+import { textLimitsMm } from '@/lib/name-tag/text-frame'
 import { getNameTagTemplate, templatePlateSize } from '@/lib/name-tag/templates'
 import {
     applyNameTagPreset,
@@ -653,22 +654,12 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const blocking = issues.some((issue) => issue.level === 'error')
     const hasText = nameTagHasText(design)
     const isCircle = design.baseId == null && design.plate.shape === 'circle'
-
-    const maxTextW = useMemo(() => {
-        const baseW = design.plate.widthMm
-        const baseH = isCircle ? baseW : design.plate.heightMm
-        const baseMargin = Math.max(1.5, Math.min(baseW, baseH) * 0.08) + (design.border ? 1.8 : 0)
-        const holeDed = design.hole.position === 'left' ? design.hole.diameterMm + 2 : 0
-        return Math.max(10, Math.round(baseW - baseMargin * 2 - holeDed))
-    }, [design.plate.widthMm, design.plate.heightMm, isCircle, design.border, design.hole.position, design.hole.diameterMm])
-
-    const maxTextH = useMemo(() => {
-        const baseW = design.plate.widthMm
-        const baseH = isCircle ? baseW : design.plate.heightMm
-        const baseMargin = Math.max(1.5, Math.min(baseW, baseH) * 0.08) + (design.border ? 1.8 : 0)
-        const holeDed = design.hole.position === 'top' ? design.hole.diameterMm + 2 : 0
-        return Math.max(5, Math.round(baseH - baseMargin * 2 - holeDed))
-    }, [design.plate.widthMm, design.plate.heightMm, isCircle, design.border, design.hole.position, design.hole.diameterMm])
+    const textLimits = textLimitsMm(design)
+    const textMaxW = Math.max(10, Math.round(textLimits.maxWidthMm))
+    const textMaxH = Math.max(5, Math.round(textLimits.maxHeightMm))
+    const textWidth = Math.min(textMaxW, Math.max(10, Math.round(design.textArea.widthMm ?? textLimits.widthMm)))
+    const textHeight = Math.min(textMaxH, Math.max(5, Math.round(design.textArea.heightMm ?? textLimits.heightMm)))
+    const lineSizeMax = textLimits.maxHeightMm > textLimits.heightMm + 1 ? NAME_TAG_LIMITS.lineSize[1] : 1
 
     const issueText = (issue: NameTagIssue): string => {
         switch (issue.code) {
@@ -999,9 +990,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 <input
                                                     type="range"
                                                     min={NAME_TAG_LIMITS.lineSize[0]}
-                                                    max={NAME_TAG_LIMITS.lineSize[1]}
+                                                    max={design.lines.length > 1 ? NAME_TAG_LIMITS.lineSize[1] : lineSizeMax}
                                                     step={0.05}
-                                                    value={line.size}
+                                                    value={Math.min(line.size, design.lines.length > 1 ? NAME_TAG_LIMITS.lineSize[1] : lineSizeMax)}
                                                     onChange={(e) => setLine(index, { size: Number(e.target.value) })}
                                                     aria-label={t('lineSize')}
                                                     className="min-w-0 flex-1 accent-teal-400 cursor-pointer"
@@ -1126,20 +1117,20 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 <div className="space-y-2 pt-1">
                                     <Slider
                                         label={t('textAreaWidth')}
-                                        value={design.textArea.widthMm ?? Math.round(maxTextW)}
-                                        display={`${(design.textArea.widthMm ?? Math.round(maxTextW)).toFixed(0)}mm`}
+                                        value={textWidth}
+                                        display={`${textWidth.toFixed(0)}mm`}
                                         min={10}
-                                        max={Math.max(10, Math.round(maxTextW))}
+                                        max={textMaxW}
                                         step={1}
                                         unit="mm"
                                         onChange={(widthMm) => update((d) => ({ ...d, textArea: { ...d.textArea, widthMm } }))}
                                     />
                                     <Slider
                                         label={t('textAreaHeight')}
-                                        value={design.textArea.heightMm ?? Math.round(maxTextH)}
-                                        display={`${(design.textArea.heightMm ?? Math.round(maxTextH)).toFixed(0)}mm`}
+                                        value={textHeight}
+                                        display={`${textHeight.toFixed(0)}mm`}
                                         min={5}
-                                        max={Math.max(5, Math.round(maxTextH))}
+                                        max={textMaxH}
                                         step={1}
                                         unit="mm"
                                         onChange={(heightMm) => update((d) => ({ ...d, textArea: { ...d.textArea, heightMm } }))}

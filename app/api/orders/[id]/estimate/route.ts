@@ -71,14 +71,39 @@ export async function GET(
             );
         }
 
-        const { results: items } = await env.DB.prepare(`
-            SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
-                   q.file_name, q.print_method,
-                   COALESCE(q.fdm_material_name, q.fdm_material, q.resin_type_name, q.resin_type) as material_name
-            FROM order_items oi
-            LEFT JOIN quotes q ON oi.quote_id = q.id
-            WHERE oi.order_id = ?
-        `).bind(numId).all();
+        let items: Record<string, unknown>[] = [];
+        try {
+            const res = await env.DB.prepare(`
+                SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
+                       q.file_name, q.file_url, q.print_method,
+                       COALESCE(q.fdm_material_name, q.fdm_material, q.resin_type_name, q.resin_type) as material_name,
+                       COALESCE(q.fdm_material_name, q.fdm_material) as fdm_material,
+                       q.fdm_material_name,
+                       q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+                       COALESCE(q.resin_type_name, q.resin_type) as resin_type,
+                       q.resin_type_name,
+                       q.layer_thickness, q.post_processing,
+                       q.print_color, q.print_color_note,
+                       q.dimensions_x, q.dimensions_y, q.dimensions_z, q.model_transform
+                FROM order_items oi
+                LEFT JOIN quotes q ON oi.quote_id = q.id
+                WHERE oi.order_id = ?
+            `).bind(numId).all();
+            items = (res.results || []) as Record<string, unknown>[];
+        } catch {
+            const fallback = await env.DB.prepare(`
+                SELECT oi.id, oi.quote_id, oi.quantity, oi.unit_price, oi.subtotal, 
+                       q.file_name, q.print_method,
+                       COALESCE(q.fdm_material_name, q.fdm_material, q.resin_type_name, q.resin_type) as material_name,
+                       q.fdm_material, q.fdm_infill, q.fdm_layer_height, q.fdm_support,
+                       q.resin_type, q.layer_thickness, q.post_processing,
+                       q.dimensions_x, q.dimensions_y, q.dimensions_z
+                FROM order_items oi
+                LEFT JOIN quotes q ON oi.quote_id = q.id
+                WHERE oi.order_id = ?
+            `).bind(numId).all();
+            items = (fallback.results || []) as Record<string, unknown>[];
+        }
 
         const storeId = order.store_id ?? 1;
         const company = await env.DB.prepare(

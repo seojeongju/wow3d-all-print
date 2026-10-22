@@ -15,6 +15,7 @@ import {
   resolveShippingFee,
   type ShippingSettings,
 } from '@/lib/shipping-settings'
+import { parseEstimateItemSpecs } from '@/lib/quote-print-settings'
 
 function getPersistedUserToken(): string | null {
   if (typeof window === 'undefined') return null
@@ -233,9 +234,11 @@ export default function EstimatePrintPage() {
             const unitPrice = Math.round(Number(it.unit_price) || 0)
             const qty = Math.max(1, Number(it.quantity) || 1)
             return {
+              ...it,
               id: it.id ?? idx,
               file_name: it.name ?? it.file_name ?? t('itemFallback', { n: idx + 1 }),
-              print_method: it.spec ?? it.print_method ?? '',
+              print_method: it.print_method ?? it.spec ?? '',
+              spec: it.spec,
               material_name: it.material_name ?? '',
               quantity: qty,
               unit_price: unitPrice,
@@ -566,12 +569,38 @@ export default function EstimatePrintPage() {
                 return (
                   <tr key={item.id ?? idx} className="text-center">
                     <td className="border border-black px-2 py-1">{idx + 1}</td>
-                    <td className="border border-black px-2 py-1 text-left">
-                      <div className="font-bold">{item.file_name}</div>
-                      <div className="text-xs text-slate-500">
-                        {item.print_method ? String(item.print_method).toUpperCase() : ''}
-                        {item.material_name ? ` / ${item.material_name}` : ''}
-                      </div>
+                    <td className="border border-black px-2 py-1.5 text-left">
+                      <div className="font-bold text-slate-900 leading-tight">{item.file_name}</div>
+                      {(() => {
+                        const { methodText, conditionText, sizeText } = parseEstimateItemSpecs(item, locale)
+                        if (!methodText && !conditionText && !sizeText) return null
+                        return (
+                          <div className="text-[11px] text-slate-600 mt-0.5 space-y-0.5 leading-snug">
+                            <div className="flex flex-wrap items-center gap-x-2">
+                              {methodText && (
+                                <span>
+                                  <span className="font-semibold text-slate-800">{t('printMethodLabel')}:</span>{' '}
+                                  <span className="font-bold text-slate-900">{methodText}</span>
+                                </span>
+                              )}
+                              {conditionText && (
+                                <>
+                                  {methodText && <span className="text-slate-300">|</span>}
+                                  <span>
+                                    <span className="font-semibold text-slate-800">{t('printConditionLabel')}:</span>{' '}
+                                    <span className="text-slate-700">{conditionText}</span>
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            {sizeText && (
+                              <div className="text-[10px] text-slate-500">
+                                <span className="font-medium text-slate-600">{t('printSizeLabel')}:</span> {sizeText}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td className="border border-black px-2 py-1">{item.quantity}</td>
                     <td className="border border-black px-2 py-1 text-right">
