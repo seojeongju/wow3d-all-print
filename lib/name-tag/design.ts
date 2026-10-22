@@ -64,6 +64,8 @@ export type NameTagDesign = {
     colors: {
         plate: string
         text: string
+        /** 테두리. 판·글자와 따로 고른다 */
+        border: string
     }
 }
 
@@ -89,7 +91,7 @@ export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     hole: { position: 'left', diameterMm: 4, xMm: null, yMm: null },
     relief: { mode: 'emboss', depthMm: 1 },
     border: false,
-    colors: { plate: '#f4f4f5', text: '#0f172a' },
+    colors: { plate: '#f4f4f5', text: '#0f172a', border: '#18181b' },
 }
 
 function clamp(value: unknown, [min, max]: readonly [number, number], fallback: number): number {
@@ -174,6 +176,8 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
         colors: {
             plate: color(colors.plate, d.colors.plate),
             text: color(colors.text, d.colors.text),
+            // 예전 저장본에는 테두리 색이 없다. 그때는 판 색을 그대로 쓴다.
+            border: color(colors.border, color(colors.plate, d.colors.border)),
         },
     }
 }

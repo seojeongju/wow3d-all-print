@@ -4523,7 +4523,8 @@
       "colorLabel": "Color (preview)",
       "colors": {
         "plate": "Plate",
-        "text": "Text"
+        "text": "Text",
+        "border": "Border"
       },
       "colorNote": "Print colors are chosen again on the quote page for your material. Two-color prints are arranged after consultation.",
       "building": "Building shape",

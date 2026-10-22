@@ -294,6 +294,7 @@ type Props = {
     result: NameTagBuildResult | null
     plateColor: string
     textColor: string
+    borderColor: string
     showThin: boolean
     /** 판을 클릭하면 그 좌표(mm)에 구멍을 둔다 */
     onPlaceHole?: (xMm: number, yMm: number) => void
@@ -366,7 +367,7 @@ function HolePicker({ onPlace, plateTopZ = 0 }: { onPlace?: (xMm: number, yMm: n
     return null
 }
 
-export function NameTagPreview({ result, plateColor, textColor, showThin, onPlaceHole, plateTopZ, view }: Props) {
+export function NameTagPreview({ result, plateColor, textColor, borderColor, showThin, onPlaceHole, plateTopZ, view }: Props) {
     const size = result?.stats.sizeMm ?? [60, 24, 3]
     return (
         <Canvas
@@ -385,7 +386,7 @@ export function NameTagPreview({ result, plateColor, textColor, showThin, onPlac
             {result ? (
                 <group>
                     <Part mesh={result.base} color={plateColor} />
-                    <Part mesh={result.rim} color={plateColor} />
+                    <Part mesh={result.rim} color={borderColor} />
                     <Part mesh={result.raised} color={textColor} />
                     <Part mesh={result.engraveFill} color={textColor} />
                     {showThin ? <Part mesh={result.thin} color="#ef4444" emissive="#7f1d1d" pickHole={false} /> : null}

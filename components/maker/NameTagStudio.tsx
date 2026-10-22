@@ -83,6 +83,7 @@ function fontFaceCss(ids: ReadonlySet<NameTagFontId>): string {
 
 const PLATE_COLORS = ['#f4f4f5', '#18181b', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a1a1aa']
 const TEXT_COLORS = ['#0f172a', '#f4f4f5', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#a1a1aa']
+const BORDER_COLORS = PLATE_COLORS
 
 const ALIGN_ICONS: Record<TextAlign, typeof AlignLeft> = {
     left: AlignLeft,
@@ -784,6 +785,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             result={hasText ? result : null}
                             plateColor={design.colors.plate}
                             textColor={design.colors.text}
+                            borderColor={design.colors.border}
                             showThin={showThin}
                             onPlaceHole={pickingHole ? placeHole : undefined}
                             plateTopZ={design.plate.thicknessMm}
@@ -1401,10 +1403,11 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                     [
                                         ['plate', PLATE_COLORS],
                                         ['text', TEXT_COLORS],
+                                        ['border', BORDER_COLORS],
                                     ] as const
                                 ).map(([part, palette]) => (
                                     <div key={part} className="flex items-center gap-2.5">
-                                        <span className="w-10 shrink-0 text-[11px] font-bold text-white/60">{t(`colors.${part}`)}</span>
+                                        <span className="w-12 shrink-0 text-[11px] font-bold text-white/60">{t(`colors.${part}`)}</span>
                                         <div className="flex flex-wrap gap-1.5">
                                             {palette.map((c) => (
                                                 <button
