@@ -3,7 +3,7 @@
     "id": "E01",
     "name": "E01",
     "filename": "E01.svg",
-    "width": 362,
+    "width": 360,
     "height": 242,
     "source": "E01.png"
   },
@@ -19,7 +19,7 @@
     "id": "E03",
     "name": "E03",
     "filename": "E03.svg",
-    "width": 362,
+    "width": 361,
     "height": 236,
     "source": "E03.png"
   },
@@ -36,14 +36,14 @@
     "name": "E05",
     "filename": "E05.svg",
     "width": 362,
-    "height": 242,
+    "height": 240,
     "source": "E05.png"
   },
   {
     "id": "E06",
     "name": "E06",
     "filename": "E06.svg",
-    "width": 362,
+    "width": 361,
     "height": 238,
     "source": "E06.png"
   },
@@ -51,8 +51,8 @@
     "id": "E07",
     "name": "E07",
     "filename": "E07.svg",
-    "width": 362,
-    "height": 228,
+    "width": 361,
+    "height": 225,
     "source": "E07.png"
   },
   {
@@ -68,7 +68,7 @@
     "name": "E09",
     "filename": "E09.svg",
     "width": 362,
-    "height": 232,
+    "height": 230,
     "source": "E09.png"
   },
   {
@@ -83,7 +83,7 @@
     "id": "E11",
     "name": "E11",
     "filename": "E11.svg",
-    "width": 362,
+    "width": 361,
     "height": 269,
     "source": "E11.png"
   },
@@ -99,16 +99,16 @@
     "id": "E13",
     "name": "E13",
     "filename": "E13.svg",
-    "width": 362,
-    "height": 244,
+    "width": 360,
+    "height": 241,
     "source": "E13.png"
   },
   {
     "id": "E14",
     "name": "E14",
     "filename": "E14.svg",
-    "width": 362,
-    "height": 246,
+    "width": 361,
+    "height": 245,
     "source": "E14.png"
   },
   {
@@ -116,7 +116,7 @@
     "name": "E15",
     "filename": "E15.svg",
     "width": 362,
-    "height": 269,
+    "height": 268,
     "source": "E15.png"
   },
   {
@@ -124,7 +124,7 @@
     "name": "E16",
     "filename": "E16.svg",
     "width": 362,
-    "height": 265,
+    "height": 264,
     "source": "E16.png"
   },
   {
@@ -132,7 +132,7 @@
     "name": "E17",
     "filename": "E17.svg",
     "width": 362,
-    "height": 265,
+    "height": 264,
     "source": "E17.png"
   },
   {
@@ -147,24 +147,24 @@
     "id": "E19",
     "name": "E19",
     "filename": "E19.svg",
-    "width": 362,
-    "height": 238,
+    "width": 361,
+    "height": 235,
     "source": "E19.png"
   },
   {
     "id": "E20",
     "name": "E20",
     "filename": "E20.svg",
-    "width": 362,
-    "height": 234,
+    "width": 361,
+    "height": 233,
     "source": "E20.png"
   },
   {
     "id": "E21",
     "name": "E21",
     "filename": "E21.svg",
-    "width": 362,
-    "height": 254,
+    "width": 360,
+    "height": 253,
     "source": "E21.png"
   },
   {
@@ -179,7 +179,7 @@
     "id": "E23",
     "name": "E23",
     "filename": "E23.svg",
-    "width": 362,
+    "width": 359,
     "height": 240,
     "source": "E23.png"
   },
@@ -195,8 +195,8 @@
     "id": "E25",
     "name": "E25",
     "filename": "E25.svg",
-    "width": 362,
-    "height": 254,
+    "width": 361,
+    "height": 253,
     "source": "E25.png"
   },
   {
@@ -211,8 +211,8 @@
     "id": "E27",
     "name": "E27",
     "filename": "E27.svg",
-    "width": 362,
-    "height": 238,
+    "width": 361,
+    "height": 237,
     "source": "E27.png"
   }
 ]

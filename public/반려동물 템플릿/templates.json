@@ -4,23 +4,23 @@
     "name": "하트 발바닥",
     "filename": "01_하트발바닥.svg",
     "width": 374,
-    "height": 324,
+    "height": 323,
     "source": "1 (1).png"
   },
   {
     "id": "02",
     "name": "뼈 발바닥",
     "filename": "02_뼈발바닥.svg",
-    "width": 408,
-    "height": 244,
+    "width": 407,
+    "height": 243,
     "source": "1 (2).png"
   },
   {
     "id": "03",
     "name": "발바닥 뼈",
     "filename": "03_발바닥뼈.svg",
-    "width": 406,
-    "height": 290,
+    "width": 405,
+    "height": 289,
     "source": "1 (3).png"
   },
   {
@@ -28,7 +28,7 @@
     "name": "위 고리",
     "filename": "04_위고리.svg",
     "width": 372,
-    "height": 220,
+    "height": 219,
     "source": "1 (4).png"
   },
   {
@@ -36,15 +36,15 @@
     "name": "발바닥",
     "filename": "05_발바닥.svg",
     "width": 383,
-    "height": 366,
+    "height": 365,
     "source": "1 (5).png"
   },
   {
     "id": "06",
     "name": "마름모",
     "filename": "06_마름모.svg",
-    "width": 326,
-    "height": 323,
+    "width": 325,
+    "height": 322,
     "source": "1 (6).png"
   },
   {
@@ -59,8 +59,8 @@
     "id": "08",
     "name": "별",
     "filename": "08_별.svg",
-    "width": 338,
-    "height": 318,
+    "width": 337,
+    "height": 317,
     "source": "1 (8).png"
   }
 ]

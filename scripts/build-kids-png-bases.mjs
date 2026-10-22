@@ -1,12 +1,13 @@
 /**
  * public/어린이 베이스 의 PNG 실루엣을 어린이 이름표 베이스로 만든다.
- * 검은 픽셀의 바깥 실루엣만 판으로 쓴다. 안쪽 구멍은 메우고, 고리 구멍은 메이커에서 만든다.
+ * 검은 픽셀의 바깥 실루엣만 판으로 쓴다. 픽셀 계단은 곡선으로 다듬고, 고리 구멍은 메이커에서 만든다.
  * 실행: node scripts/build-kids-png-bases.mjs
  * 결과: public/어린이 이름표 템플릿/*.svg, templates.json, lib/name-tag/template-plates.json 의 kids
  */
 import { mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import sharp from 'sharp'
+import { smoothOutline } from './smooth-plate-outline.mjs'
 
 const ROOT = process.cwd()
 const SOURCE = join(ROOT, 'public', '어린이 베이스')
@@ -30,51 +31,15 @@ function ringArea(ring) {
     return area / 2
 }
 
-function distToSeg(p, a, b) {
-    const dx = b[0] - a[0]
-    const dy = b[1] - a[1]
-    const len = dx * dx + dy * dy
-    if (len < 1e-8) return Math.hypot(p[0] - a[0], p[1] - a[1])
-    let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len
-    t = Math.max(0, Math.min(1, t))
-    return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy))
-}
-
-function rdp(points, epsilon) {
-    if (points.length < 3) return points.slice()
-    let maxDist = 0
-    let index = 0
-    const start = points[0]
-    const end = points[points.length - 1]
-    for (let i = 1; i < points.length - 1; i++) {
-        const dist = distToSeg(points[i], start, end)
-        if (dist > maxDist) {
-            maxDist = dist
-            index = i
-        }
-    }
-    if (maxDist <= epsilon) return [start, end]
-    const left = rdp(points.slice(0, index + 1), epsilon)
-    const right = rdp(points.slice(index), epsilon)
-    return left.slice(0, -1).concat(right)
-}
-
-function simplifyClosed(ring, epsilon) {
-    if (ring.length < 8) return ring
-    const simplified = rdp(ring.concat([ring[0]]), epsilon)
-    if (simplified.length > 1) simplified.pop()
-    return simplified.length >= 3 ? simplified : ring
-}
-
 function cleanRing(ring) {
     const pts = ring.map((p) => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10])
     const out = []
     for (const p of pts) {
         const prev = out[out.length - 1]
-        if (prev && Math.hypot(prev[0] - p[0], prev[1] - p[1]) < 0.35) continue
+        if (prev && Math.hypot(prev[0] - p[0], prev[1] - p[1]) < 0.12) continue
         out.push(p)
     }
-    if (out.length > 2 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) < 0.35) {
+    if (out.length > 2 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) < 0.12) {
         out.pop()
     }
     return out
@@ -113,14 +78,6 @@ function unionTree(CrossSection, parts) {
     return level[0]
 }
 
-function smooth(cs) {
-    const grown = cs.offset(0.85, 'Round', 2, 6)
-    cs.delete()
-    const back = grown.offset(-0.85, 'Round', 2, 6)
-    grown.delete()
-    return back
-}
-
 function assertOneBody(name, cs) {
     const bodies = cs.decompose()
     const areas = bodies.map((body) => body.area())
@@ -156,9 +113,12 @@ async function tracePng(CrossSection, file) {
         }
     }
     if (runs.length === 0) throw new Error(`${file}: 실루엣 없음`)
-    let plate = unionTree(CrossSection, runs)
-    plate = smooth(plate)
-    const rings = normalizeRings(plate.toPolygons().map((ring) => simplifyClosed(ring, 0.45)))
+    const plate = unionTree(CrossSection, runs)
+    const traced = normalizeRings(plate.toPolygons())
+    if (traced.length === 0) throw new Error(`${file}: 외곽 없음`)
+    const settled = new CrossSection([smoothOutline(traced[0])], 'NonZero')
+    const rings = normalizeRings(settled.toPolygons()).slice(0, 1)
+    settled.delete()
     return { plate, rings }
 }
 

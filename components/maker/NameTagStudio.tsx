@@ -20,7 +20,6 @@ import {
     Sparkles,
     Check,
     RotateCcw,
-    Home,
     Monitor,
     Upload,
 } from 'lucide-react'
@@ -37,6 +36,7 @@ import {
     type CustomFontItem,
 } from '@/lib/name-tag/custom-fonts'
 import { SystemFontPickerModal } from '@/components/maker/SystemFontPickerModal'
+import { ViewCube } from '@/components/maker/ViewCube'
 import { getNameTagTemplate, templatePlateSize } from '@/lib/name-tag/templates'
 import {
     applyNameTagPreset,
@@ -72,9 +72,6 @@ import type { PreviewViewId, PreviewViewRequest } from '@/components/maker/NameT
 const NameTagPreview = dynamic(() => import('@/components/maker/NameTagPreview').then((m) => m.NameTagPreview), {
     ssr: false,
 })
-
-// NameTagPreview는 three.js와 함께 지연 로드되므로 목록 값은 여기 둔다(타입만 가져옴)
-const VIEW_BUTTONS: PreviewViewId[] = ['home', 'front', 'back', 'left', 'right', 'top', 'bottom']
 
 const DRAFT_KEY = 'wow3d:name-tag:v1'
 
@@ -782,35 +779,8 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                         />
                     </Maker3DErrorBoundary>
 
-                    {/* 보기 전환 툴바 */}
-                    <div
-                        role="toolbar"
-                        aria-label={t('views.label')}
-                        className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-xl border border-white/10 bg-black/60 p-1 backdrop-blur-md md:right-4"
-                    >
-                        {VIEW_BUTTONS.map((id) => {
-                            const active = viewRequest?.id === id
-                            return (
-                                <button
-                                    key={id}
-                                    id={`name-tag-view-${id}`}
-                                    type="button"
-                                    onClick={() => requestView(id)}
-                                    aria-pressed={active}
-                                    title={t(`views.${id}`)}
-                                    className={cn(
-                                        'flex h-7 min-w-[3rem] items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-bold transition-colors',
-                                        active
-                                            ? 'bg-teal-400 text-slate-950'
-                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                    )}
-                                >
-                                    {id === 'home' ? <Home className="h-3.5 w-3.5" /> : null}
-                                    {t(`views.${id}`)}
-                                </button>
-                            )
-                        })}
-                    </div>
+                    {/* 3D 뷰 큐브 (ViewCube) */}
+                    <ViewCube activeView={viewRequest?.id} onSelectView={requestView} />
 
                     {/* 3D 뷰포트 하단 알림 바 */}
                     {hasText && (issues.length > 0 || error) ? (

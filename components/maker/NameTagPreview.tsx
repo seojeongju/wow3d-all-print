@@ -192,9 +192,26 @@ function TurntableControls({ size, view }: { size: [number, number, number]; vie
             anim.current = null
         }
         controls.addEventListener('start', onStart)
-        const onChange = () => invalidate()
+        const onChange = () => {
+            invalidate()
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(
+                    new CustomEvent('wow3d-camera-change', {
+                        detail: Array.from(camera.matrixWorldInverse.elements),
+                    })
+                )
+            }
+        }
         controls.addEventListener('change', onChange)
         setReady((n) => n + 1)
+        // 초기 시점 동기화
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('wow3d-camera-change', {
+                    detail: Array.from(camera.matrixWorldInverse.elements),
+                })
+            )
+        }
         return () => {
             controls.removeEventListener('change', onChange)
             controls.removeEventListener('start', onStart)
@@ -217,6 +234,13 @@ function TurntableControls({ size, view }: { size: [number, number, number]; vie
             invalidate()
         }
         controls?.update()
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+                new CustomEvent('wow3d-camera-change', {
+                    detail: Array.from(camera.matrixWorldInverse.elements),
+                })
+            )
+        }
     })
 
     useEffect(() => {
