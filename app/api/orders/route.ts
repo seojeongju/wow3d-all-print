@@ -187,9 +187,6 @@ export async function POST(request: NextRequest) {
         if (!body.cartItems || body.cartItems.length === 0) {
             return errorResponse('주문할 상품이 없습니다', 400);
         }
-        if (auth.isGuest && !(body.guestEmail && String(body.guestEmail).trim())) {
-            return errorResponse('비회원 주문 시 연락용 이메일을 입력해주세요', 400);
-        }
 
         if (!env?.DB) {
             return errorResponse('데이터베이스를 사용할 수 없습니다', 503);
@@ -204,21 +201,18 @@ export async function POST(request: NextRequest) {
             return errorResponse('유효한 주문 항목이 없습니다. 장바구니를 다시 확인해 주세요.', 400);
         }
 
-        const isGuest = auth.isGuest
-        const clientSessionId = request.headers.get('X-Session-ID')?.trim() || null
-        const sessionIdForCart = isGuest ? auth.sessionId : clientSessionId || null
+        const userId = auth.userId
+        const sessionIdForCart = request.headers.get('X-Session-ID')?.trim() || null
 
-        // 회원 주문: JWT userId가 users에 실제 존재하는지 확인 (삭제된 계정의 잔존 토큰 → FK 실패 방지)
-        if (!isGuest) {
-            const userRow = await env.DB.prepare('SELECT id FROM users WHERE id = ?')
-                .bind(auth.userId)
-                .first<{ id: number }>()
-            if (!userRow?.id) {
-                return errorResponse(
-                    '로그인 정보가 유효하지 않습니다. 다시 로그인한 뒤 주문해 주세요.',
-                    401
-                )
-            }
+        // JWT userId가 users에 실제 존재하는지 확인 (삭제된 계정의 잔존 토큰 → FK 실패 방지)
+        const userRow = await env.DB.prepare('SELECT id FROM users WHERE id = ?')
+            .bind(userId)
+            .first<{ id: number }>()
+        if (!userRow?.id) {
+            return errorResponse(
+                '로그인 정보가 유효하지 않습니다. 다시 로그인한 뒤 주문해 주세요.',
+                401
+            )
         }
 
         const orderItems = validCartItems.map((item) => ({
@@ -229,8 +223,8 @@ export async function POST(request: NextRequest) {
 
         // 로컬(브라우저) 장바구니와 DB cart 불일치 보정 — 화면엔 있는데 주문만 실패하는 경우 방지
         const ensured = await ensureCartRowsForOrder(env.DB, orderItems, {
-            isGuest,
-            userId: isGuest ? undefined : auth.userId,
+            isGuest: false,
+            userId,
             sessionId: sessionIdForCart,
         })
         if (!ensured.ok) {
@@ -238,8 +232,8 @@ export async function POST(request: NextRequest) {
         }
 
         const resolved = await resolveOrderLinesFromDb(env.DB, orderItems, {
-            isGuest,
-            userId: isGuest ? undefined : auth.userId,
+            isGuest: false,
+            userId,
             sessionId: sessionIdForCart,
         })
         if (!resolved.ok) {
@@ -253,9 +247,9 @@ export async function POST(request: NextRequest) {
         const totalAmount = normalizeAmountBeforeSave(resolved.totalAmount);
         const viewToken = crypto.randomUUID();
         const insertArgs = [
-            isGuest ? null : auth.userId,
-            isGuest ? auth.sessionId : null,
-            isGuest ? String(body.guestEmail).trim() : null,
+            userId,
+            null,
+            null,
             orderNumber,
             body.recipientName,
             body.recipientPhone,
@@ -342,21 +336,16 @@ export async function POST(request: NextRequest) {
         const quoteIds = [...new Set(resolved.lines.map((l) => l.quoteId))];
         if (quoteIds.length > 0) {
             const placeholders = quoteIds.map(() => '?').join(',');
-            if (isGuest) {
-                statements.push(
-                    env.DB.prepare(`DELETE FROM cart WHERE session_id = ? AND quote_id IN (${placeholders})`)
-                        .bind(auth.sessionId, ...quoteIds)
-                );
-            } else if (sessionIdForCart) {
+            if (sessionIdForCart) {
                 statements.push(
                     env.DB.prepare(
                         `DELETE FROM cart WHERE quote_id IN (${placeholders}) AND (user_id = ? OR session_id = ?)`
-                    ).bind(...quoteIds, auth.userId, sessionIdForCart)
+                    ).bind(...quoteIds, userId, sessionIdForCart)
                 );
             } else {
                 statements.push(
                     env.DB.prepare(`DELETE FROM cart WHERE user_id = ? AND quote_id IN (${placeholders})`)
-                        .bind(auth.userId, ...quoteIds)
+                        .bind(userId, ...quoteIds)
                 );
             }
         }
@@ -450,7 +439,7 @@ export async function POST(request: NextRequest) {
                 subject: `[신규주문] ${body.recipientName}님의 주문 (${orderNumber})`,
                 text: textBody,
                 html: htmlBody,
-                reply_to: isGuest ? body.guestEmail : undefined
+                reply_to: undefined
             }, env);
         } catch (err) {
             console.warn('관리자 알림 메일 발송 실패:', err);
@@ -458,18 +447,17 @@ export async function POST(request: NextRequest) {
 
         // 전환 퍼널: 주문 완료는 서버에서 기록 (order-complete 페이지 미도달·세션 키 불일치 보완)
         try {
-            const funnelSessionId = isGuest ? auth.sessionId : sessionIdForCart;
             await recordConversionEventServer({
                 db: env.DB,
                 eventName: CHECKOUT_CONVERSION_EVENTS.ORDER_COMPLETE,
                 eventCategory: CONVERSION_EVENT_CATEGORY.CHECKOUT,
-                sessionId: funnelSessionId,
-                userId: isGuest ? null : auth.userId,
+                sessionId: sessionIdForCart,
+                userId,
                 path: '/order-complete',
                 metadata: {
                     orderId,
                     orderNumber,
-                    guest: isGuest,
+                    guest: false,
                     source: 'server',
                 },
             });
@@ -478,7 +466,7 @@ export async function POST(request: NextRequest) {
         }
 
         return successResponse(
-            { orderId, orderNumber, totalAmount, isGuest },
+            { orderId, orderNumber, totalAmount, isGuest: false },
             '주문이 완료되었습니다'
         );
     } catch (error: any) {
