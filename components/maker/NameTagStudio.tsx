@@ -21,12 +21,22 @@ import {
     Check,
     RotateCcw,
     Home,
+    Monitor,
+    Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NameTagBasePicker } from '@/components/maker/NameTagBasePicker'
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary'
 import { useFileStore } from '@/store/useFileStore'
-import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, type NameTagFontId } from '@/lib/name-tag-fonts'
+import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, isCustomFontId, type NameTagFontId } from '@/lib/name-tag-fonts'
+import {
+    useCustomFonts,
+    registerCustomFontFromFile,
+    removeCustomFont,
+    getCustomFont,
+    type CustomFontItem,
+} from '@/lib/name-tag/custom-fonts'
+import { SystemFontPickerModal } from '@/components/maker/SystemFontPickerModal'
 import { getNameTagTemplate, templatePlateSize } from '@/lib/name-tag/templates'
 import {
     applyNameTagPreset,
@@ -300,6 +310,7 @@ function FontChoices({
     activeFontIds,
     onPreview,
     onPick,
+    onOpenSystemModal,
 }: {
     activeId: NameTagFontId | null
     groupLabel: (group: 'ko' | 'en') => string
@@ -307,32 +318,194 @@ function FontChoices({
     activeFontIds: ReadonlySet<NameTagFontId>
     onPreview: (fontId: NameTagFontId) => void
     onPick: (fontId: NameTagFontId) => void
+    onOpenSystemModal: () => void
 }) {
+    const t = useTranslations('Maker.nameTag')
+    const [tab, setTab] = useState<'preset' | 'local'>('preset')
+    const customFonts = useCustomFonts()
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [uploading, setUploading] = useState(false)
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploading(true)
+        try {
+            const registered = await registerCustomFontFromFile(file)
+            showToast.success('글꼴 등록 완료', `"${registered.name}" 글꼴을 불러왔습니다.`)
+            onPick(registered.id)
+        } catch (err) {
+            console.error('[FontChoices] 폰트 업로드 실패:', err)
+            showToast.error(
+                '글꼴 등록 실패',
+                err instanceof Error ? err.message : '유효한 TTF/OTF 폰트 파일이 아닙니다.'
+            )
+        } finally {
+            setUploading(false)
+            if (e.target) e.target.value = ''
+        }
+    }
+
     return (
-        <div className="max-h-64 space-y-3 overflow-y-auto rounded-xl border border-white/10 bg-black/60 p-2.5 custom-scrollbar shadow-xl backdrop-blur-md">
-            {NAME_TAG_FONT_GROUPS.map((group) => (
-                <div key={group} className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">{groupLabel(group)}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                        {NAME_TAG_FONTS.filter((font) => font.group === group).map((font) => (
-                            <Choice
-                                key={font.id}
-                                active={font.id === activeId}
-                                onClick={() => onPick(font.id)}
-                                onPreview={() => onPreview(font.id)}
-                                className="h-10 text-left px-2.5 py-1"
-                            >
-                                <span
-                                    className="block w-full truncate text-[14px] font-normal"
-                                    style={activeFontIds.has(font.id) ? { fontFamily: `'${font.cssFamily}', sans-serif` } : undefined}
-                                >
-                                    {fontLabel(font.id)}
-                                </span>
-                            </Choice>
-                        ))}
+        <div className="max-h-72 space-y-2.5 overflow-y-auto rounded-xl border border-white/10 bg-black/75 p-2.5 custom-scrollbar shadow-xl backdrop-blur-md">
+            {/* 탭 헤더 */}
+            <div className="flex items-center gap-1 p-0.5 bg-white/[0.04] rounded-lg border border-white/8">
+                <button
+                    type="button"
+                    onClick={() => setTab('preset')}
+                    className={cn(
+                        'flex-1 py-1 text-[11px] font-bold rounded-md transition-all',
+                        tab === 'preset'
+                            ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                            : 'text-white/60 hover:text-white'
+                    )}
+                >
+                    {t('fontTabPreset')}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setTab('local')}
+                    className={cn(
+                        'flex-1 py-1 text-[11px] font-bold rounded-md transition-all flex items-center justify-center gap-1.5',
+                        tab === 'local'
+                            ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                            : 'text-white/60 hover:text-white'
+                    )}
+                >
+                    <span>{t('fontTabLocal')}</span>
+                    {customFonts.length > 0 && (
+                        <span className="h-3.5 px-1 rounded-full bg-teal-400 text-black text-[9px] font-black leading-none flex items-center justify-center">
+                            {customFonts.length}
+                        </span>
+                    )}
+                </button>
+            </div>
+
+            {/* 추천 폰트 탭 */}
+            {tab === 'preset' ? (
+                <div className="space-y-3">
+                    {NAME_TAG_FONT_GROUPS.map((group) => (
+                        <div key={group} className="space-y-1.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                                {groupLabel(group)}
+                            </p>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                {NAME_TAG_FONTS.filter((font) => font.group === group).map((font) => (
+                                    <Choice
+                                        key={font.id}
+                                        active={font.id === activeId}
+                                        onClick={() => onPick(font.id)}
+                                        onPreview={() => onPreview(font.id)}
+                                        className="h-10 text-left px-2.5 py-1"
+                                    >
+                                        <span
+                                            className="block w-full truncate text-[14px] font-normal"
+                                            style={
+                                                activeFontIds.has(font.id)
+                                                    ? { fontFamily: `'${font.cssFamily}', sans-serif` }
+                                                    : undefined
+                                            }
+                                        >
+                                            {fontLabel(font.id)}
+                                        </span>
+                                    </Choice>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                /* 내 PC 글꼴 탭 */
+                <div className="space-y-2.5">
+                    <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                            type="button"
+                            onClick={onOpenSystemModal}
+                            className="flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 text-[11px] font-bold transition-colors"
+                        >
+                            <Monitor className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{t('loadSystemFonts')}</span>
+                        </button>
+                        <button
+                            type="button"
+                            disabled={uploading}
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-white text-[11px] font-bold transition-colors"
+                        >
+                            {uploading ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+                            ) : (
+                                <Upload className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            <span className="truncate">{t('uploadFontFile')}</span>
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".ttf,.otf"
+                            className="hidden"
+                            onChange={handleFileUpload}
+                        />
+                    </div>
+
+                    {customFonts.length === 0 ? (
+                        <div className="py-6 px-3 text-center rounded-lg border border-dashed border-white/10 bg-black/30 text-white/40 text-[11px] leading-relaxed">
+                            {t('customFontsEmpty')}
+                        </div>
+                    ) : (
+                        <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar pr-0.5">
+                            {customFonts.map((cf) => {
+                                const isSelected = activeId === cf.id
+                                return (
+                                    <div
+                                        key={cf.id}
+                                        className={cn(
+                                            'group flex items-center justify-between p-1.5 rounded-lg border transition-colors',
+                                            isSelected
+                                                ? 'bg-teal-500/20 border-teal-500/50 text-teal-200'
+                                                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.06] text-white'
+                                        )}
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() => onPick(cf.id)}
+                                            className="flex-1 min-w-0 text-left pr-2"
+                                        >
+                                            <span
+                                                className="block truncate text-[13px] font-medium"
+                                                style={{ fontFamily: `'${cf.cssFamily}', sans-serif` }}
+                                            >
+                                                {cf.name}
+                                            </span>
+                                            <span className="block text-[10px] text-white/40">
+                                                {cf.source === 'local' ? 'PC 설치 글꼴' : '파일 등록'}
+                                            </span>
+                                        </button>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            {isSelected && <Check className="h-3.5 w-3.5 text-teal-300" />}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    removeCustomFont(cf.id)
+                                                }}
+                                                className="p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/15 transition-colors"
+                                                title={t('removeCustomFont')}
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+
+                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300/80 leading-normal">
+                        {t('customFontNotice')}
                     </div>
                 </div>
-            ))}
+            )}
         </div>
     )
 }
@@ -353,6 +526,39 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const [activePreset, setActivePreset] = useState<NameTagPresetId | null>('bag')
     const [viewRequest, setViewRequest] = useState<PreviewViewRequest | null>(null)
     const requestView = (id: PreviewViewId) => setViewRequest((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1 }))
+    const [systemModalOpen, setSystemModalOpen] = useState(false)
+
+    const getFontFamily = useCallback((fontId: NameTagFontId) => {
+        if (isCustomFontId(fontId)) {
+            const cf = getCustomFont(fontId)
+            return cf ? `'${cf.cssFamily}', sans-serif` : 'sans-serif'
+        }
+        const preset = NAME_TAG_FONTS.find((f) => f.id === fontId)
+        return preset ? `'${preset.cssFamily}', sans-serif` : 'sans-serif'
+    }, [])
+
+    const getFontLabel = useCallback(
+        (fontId: NameTagFontId) => {
+            if (isCustomFontId(fontId)) {
+                return getCustomFont(fontId)?.name ?? '내 글꼴'
+            }
+            return t(`fonts.${fontId}` as Parameters<typeof t>[0])
+        },
+        [t]
+    )
+
+    const handleSelectSystemFont = (font: CustomFontItem) => {
+        noteFont(font.id)
+        if (typeof openFontMenu === 'number') {
+            setLine(openFontMenu, { fontId: font.id })
+        } else if (openFontMenu === 'all') {
+            update((d) => ({
+                ...d,
+                lines: d.lines.map((l) => ({ ...l, fontId: font.id })),
+            }))
+        }
+        setOpenFontMenu(null)
+    }
 
     const { result, building, error, buildMs, requestStl } = useNameTagBuilder(design)
 
@@ -744,7 +950,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                     onChange={(e) => setLine(index, { text: e.target.value })}
                                                     placeholder={t(`linePlaceholder${Math.min(index, 2)}`)}
                                                     aria-label={t('lineAria', { n: index + 1 })}
-                                                    style={{ fontFamily: `'${NAME_TAG_FONTS.find((f) => f.id === line.fontId)?.cssFamily}', sans-serif` }}
+                                                    style={{ fontFamily: getFontFamily(line.fontId) }}
                                                     className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[15px] font-medium text-white outline-none placeholder:font-sans placeholder:text-[13px] placeholder:text-white/30 focus:border-teal-400/80 focus:bg-white/[0.07] transition-all"
                                                 />
                                                 {design.lines.length > 1 ? (
@@ -768,9 +974,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 >
                                                     <span
                                                         className="truncate"
-                                                        style={{ fontFamily: `'${NAME_TAG_FONTS.find((font) => font.id === line.fontId)?.cssFamily}', sans-serif` }}
+                                                        style={{ fontFamily: getFontFamily(line.fontId) }}
                                                     >
-                                                        {t(`fonts.${line.fontId}`)}
+                                                        {getFontLabel(line.fontId)}
                                                     </span>
                                                     <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 text-white/50', openFontMenu === index && 'rotate-180 text-teal-300')} />
                                                 </button>
@@ -792,9 +998,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 <FontChoices
                                                     activeId={line.fontId}
                                                     groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
-                                                    fontLabel={(fontId) => t(`fonts.${fontId}`)}
+                                                    fontLabel={getFontLabel}
                                                     activeFontIds={activeFontIds}
                                                     onPreview={noteFont}
+                                                    onOpenSystemModal={() => setSystemModalOpen(true)}
                                                     onPick={(fontId) => {
                                                         noteFont(fontId)
                                                         setLine(index, { fontId })
@@ -813,7 +1020,6 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                     const shared = design.lines.every((line) => line.fontId === design.lines[0]?.fontId)
                                         ? design.lines[0]?.fontId
                                         : null
-                                    const sharedFont = shared ? NAME_TAG_FONTS.find((font) => font.id === shared) : null
                                     return (
                                         <button
                                             type="button"
@@ -823,9 +1029,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         >
                                             <span
                                                 className="truncate text-[14px] text-white font-medium"
-                                                style={sharedFont ? { fontFamily: `'${sharedFont.cssFamily}', sans-serif` } : undefined}
+                                                style={shared ? { fontFamily: getFontFamily(shared) } : undefined}
                                             >
-                                                {shared ? t(`fonts.${shared}`) : t('fontMixed')}
+                                                {shared ? getFontLabel(shared) : t('fontMixed')}
                                             </span>
                                             <ChevronDown className={cn('h-4 w-4 shrink-0 text-white/50', openFontMenu === 'all' && 'rotate-180 text-teal-300')} />
                                         </button>
@@ -839,9 +1045,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 : null
                                         }
                                         groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
-                                        fontLabel={(fontId) => t(`fonts.${fontId}`)}
+                                        fontLabel={getFontLabel}
                                         activeFontIds={activeFontIds}
                                         onPreview={noteFont}
+                                        onOpenSystemModal={() => setSystemModalOpen(true)}
                                         onPick={(fontId) => {
                                             noteFont(fontId)
                                             setAllFonts(fontId)
@@ -1302,6 +1509,12 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                     </div>
                 </section>
             </div>
+
+            <SystemFontPickerModal
+                open={systemModalOpen}
+                onClose={() => setSystemModalOpen(false)}
+                onSelectFont={handleSelectSystemFont}
+            />
         </>
     )
 }

@@ -19,7 +19,8 @@ export const NAME_TAG_FONTS = [
     { id: 'boogaloo', file: '/fonts/Boogaloo-Regular.ttf', cssFamily: 'Wow Name Boogaloo', group: 'en' },
 ] as const
 
-export type NameTagFontId = (typeof NAME_TAG_FONTS)[number]['id']
+export type PresetNameTagFontId = (typeof NAME_TAG_FONTS)[number]['id']
+export type NameTagFontId = PresetNameTagFontId | (string & {})
 export type NameTagFontGroup = (typeof NAME_TAG_FONTS)[number]['group']
 
 export const NAME_TAG_FONT_GROUPS = ['ko', 'en'] as const
@@ -32,8 +33,16 @@ export const NAME_TAG_PLATE_SIZES = [
 
 export type NameTagPlateSizeId = (typeof NAME_TAG_PLATE_SIZES)[number]['id']
 
-export function isNameTagFontId(value: unknown): value is NameTagFontId {
+export function isCustomFontId(value: unknown): value is string {
+    return typeof value === 'string' && value.startsWith('custom:')
+}
+
+export function isNameTagPresetFontId(value: unknown): value is PresetNameTagFontId {
     return NAME_TAG_FONTS.some((font) => font.id === value)
+}
+
+export function isNameTagFontId(value: unknown): value is NameTagFontId {
+    return isNameTagPresetFontId(value) || isCustomFontId(value)
 }
 
 export function getNameTagFont(id: NameTagFontId) {

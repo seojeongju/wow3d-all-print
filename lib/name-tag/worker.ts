@@ -4,17 +4,33 @@
  */
 import Module, { type ManifoldToplevel } from 'manifold-3d'
 import { parse, type Font } from 'opentype.js'
-import { getNameTagFont, type NameTagFontId } from '@/lib/name-tag-fonts'
+import { getNameTagFont, isCustomFontId, type NameTagFontId } from '@/lib/name-tag-fonts'
 import { normalizeNameTagDesign } from '@/lib/name-tag/design'
 import { buildNameTag, meshToStl, type NameTagBuildResult } from '@/lib/name-tag/build'
 
-export type NameTagWorkerRequest =
-    | { id: number; type: 'build'; design: unknown }
-    | { id: number; type: 'stl'; design: unknown }
+export type NameTagWorkerPayload =
+    | {
+          type: 'build'
+          design: unknown
+          customFonts?: Array<{ id: string; buffer: ArrayBuffer }>
+      }
+    | {
+          type: 'stl'
+          design: unknown
+          customFonts?: Array<{ id: string; buffer: ArrayBuffer }>
+      }
+    | {
+          type: 'register-custom-font'
+          fontId: string
+          buffer: ArrayBuffer
+      }
+
+export type NameTagWorkerRequest = { id: number } & NameTagWorkerPayload
 
 export type NameTagWorkerResponse =
     | { id: number; type: 'build'; result: NameTagBuildResult | null; ms: number }
     | { id: number; type: 'stl'; stl: ArrayBuffer | null }
+    | { id: number; type: 'registered'; fontId: string }
     | { id: number; type: 'error'; message: string }
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope
@@ -29,7 +45,15 @@ function loadWasm(): Promise<ManifoldToplevel> {
 }
 
 const fontCache = new Map<NameTagFontId, Promise<Font>>()
+const customFontCache = new Map<string, Font>()
+
 function loadFont(fontId: NameTagFontId): Promise<Font> {
+    if (isCustomFontId(fontId)) {
+        const cachedCustom = customFontCache.get(fontId)
+        if (cachedCustom) return Promise.resolve(cachedCustom)
+        return Promise.reject(new Error(`Custom font not found in worker: ${fontId}`))
+    }
+
     const cached = fontCache.get(fontId)
     if (cached) return cached
     const pending = fetch(getNameTagFont(fontId).file)
@@ -46,9 +70,40 @@ function loadFont(fontId: NameTagFontId): Promise<Font> {
 }
 
 ctx.onmessage = async (event: MessageEvent<NameTagWorkerRequest>) => {
-    const { id, type } = event.data
+    const data = event.data
+    const { id, type } = data
+
+    if (type === 'register-custom-font') {
+        try {
+            const parsed = parse(data.buffer)
+            customFontCache.set(data.fontId, parsed)
+            const response: NameTagWorkerResponse = { id, type: 'registered', fontId: data.fontId }
+            ctx.postMessage(response)
+        } catch (error) {
+            const response: NameTagWorkerResponse = {
+                id,
+                type: 'error',
+                message: error instanceof Error ? error.message : String(error),
+            }
+            ctx.postMessage(response)
+        }
+        return
+    }
+
     try {
-        const design = normalizeNameTagDesign(event.data.design)
+        if ('customFonts' in data && Array.isArray(data.customFonts)) {
+            for (const cf of data.customFonts) {
+                if (!customFontCache.has(cf.id)) {
+                    try {
+                        customFontCache.set(cf.id, parse(cf.buffer))
+                    } catch (e) {
+                        console.error('[worker] failed to parse custom font buffer:', cf.id, e)
+                    }
+                }
+            }
+        }
+
+        const design = normalizeNameTagDesign(data.design)
         const fontIds = [...new Set(design.lines.filter((l) => l.text.trim()).map((l) => l.fontId))]
         const [wasm, fontList] = await Promise.all([loadWasm(), Promise.all(fontIds.map(loadFont))])
         const fonts = new Map(fontIds.map((fontId, i) => [fontId, fontList[i]]))

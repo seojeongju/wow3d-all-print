@@ -24,6 +24,12 @@ declare module 'opentype.js' {
             options?: { kerning?: boolean; letterSpacing?: number }
         ) => GlyphPath
         charToGlyph: (char: string) => { unicode?: number | null; name?: string }
+        names?: {
+            fontFamily?: Record<string, string>
+            fullName?: Record<string, string>
+            postScriptName?: Record<string, string>
+            [key: string]: unknown
+        }
     }
 
     export function parse(buffer: ArrayBuffer | Uint8Array): Font

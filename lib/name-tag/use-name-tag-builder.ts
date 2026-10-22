@@ -1,11 +1,27 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isCustomFontId } from '@/lib/name-tag-fonts'
+import { getCustomFontBuffer } from '@/lib/name-tag/custom-fonts'
 import type { NameTagBuildResult } from '@/lib/name-tag/build'
 import type { NameTagDesign } from '@/lib/name-tag/design'
-import type { NameTagWorkerRequest, NameTagWorkerResponse } from '@/lib/name-tag/worker'
+import type { NameTagWorkerPayload, NameTagWorkerRequest, NameTagWorkerResponse } from '@/lib/name-tag/worker'
 
 type Pending = (response: NameTagWorkerResponse) => void
+
+function collectCustomFonts(design: NameTagDesign): Array<{ id: string; buffer: ArrayBuffer }> {
+    const customFonts: Array<{ id: string; buffer: ArrayBuffer }> = []
+    for (const line of design.lines) {
+        if (line.text.trim() && isCustomFontId(line.fontId)) {
+            const buf = getCustomFontBuffer(line.fontId)
+            if (buf) {
+                // 버퍼 복사하여 detached 방지
+                customFonts.push({ id: line.fontId, buffer: buf.slice(0) })
+            }
+        }
+    }
+    return customFonts
+}
 
 /** 디자인이 바뀌면 Worker에서 형상을 다시 만든다. 늦게 도착한 이전 결과는 버린다. */
 export function useNameTagBuilder(design: NameTagDesign, debounceMs = 160) {
@@ -39,7 +55,7 @@ export function useNameTagBuilder(design: NameTagDesign, debounceMs = 160) {
         }
     }, [])
 
-    const send = useCallback((request: Omit<NameTagWorkerRequest, 'id'>, handler: Pending) => {
+    const send = useCallback((request: NameTagWorkerPayload, handler: Pending) => {
         const worker = workerRef.current
         if (!worker) return
         const id = ++seqRef.current
@@ -48,10 +64,12 @@ export function useNameTagBuilder(design: NameTagDesign, debounceMs = 160) {
         return id
     }, [])
 
+
     useEffect(() => {
         const timer = window.setTimeout(() => {
             setBuilding(true)
-            const id = send({ type: 'build', design }, (response) => {
+            const customFonts = collectCustomFonts(design)
+            const id = send({ type: 'build', design, customFonts }, (response) => {
                 if (response.id !== latestBuildRef.current) return
                 setBuilding(false)
                 if (response.type === 'error') {
@@ -72,7 +90,8 @@ export function useNameTagBuilder(design: NameTagDesign, debounceMs = 160) {
     const requestStl = useCallback(
         (target: NameTagDesign) =>
             new Promise<ArrayBuffer | null>((resolve, reject) => {
-                const id = send({ type: 'stl', design: target }, (response) => {
+                const customFonts = collectCustomFonts(target)
+                const id = send({ type: 'stl', design: target, customFonts }, (response) => {
                     if (response.type === 'stl') resolve(response.stl)
                     else if (response.type === 'error') reject(new Error(response.message))
                     else resolve(null)
