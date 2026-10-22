@@ -1,9 +1,10 @@
 /**
- * 이름표 SVG 템플릿의 색 영역을 하나의 판 외곽으로 합친다.
+ * 어린이 이름표 SVG의 색 영역을 하나의 판 외곽으로 합친다.
+ * 반려동물 뼈 베이스는 scripts/build-pet-bone-bases.mjs 가 만든다.
  * 결과: lib/name-tag/template-plates.json
  * 실행: node scripts/build-name-tag-plates.mjs [파일명 일부...]
  */
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = process.cwd()
@@ -14,13 +15,6 @@ const SETS = [
         meta: 'templates.json',
         fileKey: 'file',
         nameOf: (row) => row.name,
-    },
-    {
-        id: 'pet',
-        dir: '반려동물 템플릿',
-        meta: 'templates.json',
-        fileKey: 'filename',
-        nameOf: (row) => String(row.name).replace(/^\d+_/, ''),
     },
 ]
 
@@ -319,6 +313,8 @@ async function main() {
 
     if (filter.length === 0) {
         const out = join(ROOT, 'lib', 'name-tag', 'template-plates.json')
+        const prev = JSON.parse(readFileSync(out, 'utf8'))
+        plates.pet = prev.pet ?? []
         writeFileSync(out, JSON.stringify(plates))
         console.log(`wrote ${out}`)
     }

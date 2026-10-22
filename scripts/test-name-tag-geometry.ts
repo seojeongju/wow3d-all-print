@@ -17,6 +17,7 @@ import {
     type NameTagPresetId,
 } from '../lib/name-tag/design'
 import { buildNameTag, meshToStl, type MeshData } from '../lib/name-tag/build'
+import { NAME_TAG_TEMPLATES } from '../lib/name-tag/templates'
 
 const SAMPLES: Array<[string, string]> = [
     ['하준', '3학년 2반'],
@@ -84,8 +85,8 @@ async function main() {
     let cases = 0
     for (const [baseId, sample] of [
         ['kids:kids_05', '하준'],
-        ['pet:01', '콩이'],
-    ] as const) {
+        ...NAME_TAG_TEMPLATES.pet.map((template) => [template.id, '콩이'] as const),
+    ]) {
         const templated = normalizeNameTagDesign({
             ...DEFAULT_NAME_TAG_DESIGN,
             baseId,

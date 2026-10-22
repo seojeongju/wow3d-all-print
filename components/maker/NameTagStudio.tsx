@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
@@ -40,7 +40,6 @@ import {
     normalizeNameTagDesign,
     PLATE_SHAPES,
     RELIEF_MODES,
-    type HolePosition,
     type NameTagDesign,
     type NameTagPresetId,
     type TextAlign,
@@ -383,9 +382,37 @@ export function NameTagStudio({ onOpenDraw }: Props) {
         setDesign((current) => normalizeNameTagDesign(patch(current)))
     }, [])
 
+    const [placingHole, setPlacingHole] = useState(false)
+    const holeBeforePlace = useRef<NameTagDesign['hole'] | null>(null)
     const placeHole = useCallback((xMm: number, yMm: number) => {
         update((d) => ({ ...d, hole: { ...d.hole, position: 'custom', xMm, yMm } }))
     }, [update])
+    const togglePlaceHole = () => {
+        if (placingHole) {
+            setPlacingHole(false)
+            if (design.hole.xMm == null || design.hole.yMm == null) {
+                const previous = holeBeforePlace.current
+                update((d) => ({
+                    ...d,
+                    hole: previous
+                        ? { ...previous, diameterMm: d.hole.diameterMm }
+                        : { ...d.hole, position: 'left', xMm: null, yMm: null },
+                }))
+            }
+            return
+        }
+        holeBeforePlace.current = design.hole
+        setPlacingHole(true)
+        update((d) => ({
+            ...d,
+            hole: {
+                ...d.hole,
+                position: 'custom',
+                xMm: d.hole.position === 'custom' ? d.hole.xMm : null,
+                yMm: d.hole.position === 'custom' ? d.hole.yMm : null,
+            },
+        }))
+    }
 
     const noteFont = useCallback((fontId: NameTagFontId) => {
         setSeenFonts((current) => (current.includes(fontId) ? current : [...current, fontId]))
@@ -505,7 +532,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     }
 
     const [w, h, z] = result?.stats.sizeMm ?? [0, 0, 0]
-    const pickingHole = hasText && design.hole.position === 'custom'
+    const pickingHole = hasText && placingHole
 
     return (
         <>
@@ -903,19 +930,25 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                             {/* 고도화된 동물/어린이 베이스 픽커 */}
                             <NameTagBasePicker
                                 baseId={design.baseId}
-                                onSelect={(baseId) =>
+                                onSelect={(baseId) => {
+                                    setPlacingHole(false)
                                     update((d) => {
-                                        if (!baseId) return { ...d, baseId: null }
+                                        const centered = {
+                                            align: 'center' as const,
+                                            textArea: { widthMm: null, heightMm: null },
+                                        }
+                                        if (!baseId) return { ...d, ...centered, baseId: null }
                                         const template = getNameTagTemplate(baseId)
                                         if (!template) return d
                                         return {
                                             ...d,
+                                            ...centered,
                                             baseId,
                                             plate: { ...d.plate, ...templatePlateSize(template, d.plate.widthMm) },
                                             hole: { ...d.hole, position: 'none' },
                                         }
                                     })
-                                }
+                                }}
                             />
 
                             {/* 인포그래픽 기반 플레이트 형태 셀렉터 */}
@@ -1021,7 +1054,10 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             <button
                                                 key={position}
                                                 type="button"
-                                                onClick={() => update((d) => ({ ...d, hole: { ...d.hole, position, xMm: null, yMm: null } }))}
+                                                onClick={() => {
+                                                    setPlacingHole(false)
+                                                    update((d) => ({ ...d, hole: { ...d.hole, position, xMm: null, yMm: null } }))
+                                                }}
                                                 className={cn(
                                                     'group relative flex flex-col items-center justify-center rounded-xl border p-2 transition-all text-center',
                                                     isActive
@@ -1044,32 +1080,42 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 </div>
                                 <button
                                     type="button"
-                                    aria-pressed={design.hole.position === 'custom'}
-                                    onClick={() =>
-                                        update((d) => ({
-                                            ...d,
-                                            hole: {
-                                                ...d.hole,
-                                                position: 'custom' satisfies HolePosition,
-                                                xMm: d.hole.position === 'custom' ? d.hole.xMm : null,
-                                                yMm: d.hole.position === 'custom' ? d.hole.yMm : null,
-                                            },
-                                        }))
-                                    }
+                                    role="switch"
+                                    aria-checked={placingHole}
+                                    onClick={togglePlaceHole}
                                     className={cn(
-                                        'flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-bold transition-all',
-                                        design.hole.position === 'custom'
-                                            ? 'border-teal-400 bg-teal-400/15 text-teal-300 shadow-[0_0_12px_rgba(45,212,191,0.25)] ring-1 ring-teal-400'
-                                            : 'border-white/10 bg-black/30 text-white/80 hover:border-white/25 hover:bg-white/[0.04]'
+                                        'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-all',
+                                        placingHole
+                                            ? 'border-teal-400 bg-teal-400/15 shadow-[0_0_12px_rgba(45,212,191,0.25)] ring-1 ring-teal-400'
+                                            : 'border-white/10 bg-black/30 hover:border-white/25 hover:bg-white/[0.04]'
                                     )}
                                 >
-                                    <HoleInfographicIcon position="custom" active={design.hole.position === 'custom'} />
-                                    {t('holes.custom')}
+                                    <span className="flex min-w-0 items-center gap-2">
+                                        <HoleInfographicIcon position="custom" active={placingHole} />
+                                        <span className={cn('text-[13px] font-bold', placingHole ? 'text-teal-300' : 'text-white/80')}>
+                                            {t('holes.custom')}
+                                        </span>
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            'relative h-6 w-11 shrink-0 rounded-full transition-colors',
+                                            placingHole ? 'bg-teal-400' : 'bg-white/15'
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all',
+                                                placingHole ? 'left-5' : 'left-0.5'
+                                            )}
+                                        />
+                                    </span>
                                 </button>
-                                {design.hole.position === 'custom' ? (
-                                    <p className="text-[11px] font-medium leading-relaxed text-white/45">{t('holePick')}</p>
+                                {placingHole ? (
+                                    <p className="text-[11px] font-medium leading-relaxed text-white/45">
+                                        {design.hole.xMm != null ? t('holePickDone') : t('holePick')}
+                                    </p>
                                 ) : null}
-                                {design.hole.position === 'custom' && design.hole.xMm != null ? (
+                                {!placingHole && design.hole.position === 'custom' && design.hole.xMm != null ? (
                                     <p className="text-[12px] font-bold text-teal-300">{t('holeCustom')}</p>
                                 ) : null}
                                 {design.hole.position !== 'none' ? (

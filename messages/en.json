@@ -4495,7 +4495,8 @@
         "custom": "Place on preview"
       },
       "holeSize": "Hole diameter",
-      "holePick": "Click the preview to place the hole. Drag to rotate the plate.",
+      "holePick": "Turn the switch on, then click the preview to place the hole. Drag to rotate the plate.",
+      "holePickDone": "Position set. Turn the switch off to finish.",
       "holeCustom": "Clicked spot",
       "reliefLabel": "Lettering",
       "relief": {

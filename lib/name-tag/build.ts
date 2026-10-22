@@ -92,6 +92,24 @@ function roundedRect(wasm: ManifoldToplevel, w: number, h: number, r: number, tr
     return track(core.offset(radius, 'Round'))
 }
 
+/** 고리의 부호 있는 면적과 무게중심. 귀처럼 얇은 부분은 가운데를 조금만 끌어올린다. */
+function ringCentroid(ring: [number, number][]): { area: number; center: [number, number] } | null {
+    let twice = 0
+    let cx = 0
+    let cy = 0
+    for (let i = 0; i < ring.length; i++) {
+        const [x1, y1] = ring[i]
+        const [x2, y2] = ring[(i + 1) % ring.length]
+        const cross = x1 * y2 - x2 * y1
+        twice += cross
+        cx += (x1 + x2) * cross
+        cy += (y1 + y2) * cross
+    }
+    const area = twice / 2
+    if (Math.abs(area) < 1e-4) return null
+    return { area, center: [cx / (3 * twice), cy / (3 * twice)] }
+}
+
 function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tracker): PlateFrame | null {
     const template = getNameTagTemplate(design.baseId)
     if (!template) return null
@@ -105,11 +123,31 @@ function templateFrame(wasm: ManifoldToplevel, design: NameTagDesign, track: Tra
     const padY = nh * 0.12
     const topLeft = toMm(nx + padX, ny + padY)
     const bottomRight = toMm(nx + nw - padX, ny + nh - padY)
-    const box = {
+    let box = {
         x0: Math.min(topLeft[0], bottomRight[0]),
         y0: Math.min(topLeft[1], bottomRight[1]),
         x1: Math.max(topLeft[0], bottomRight[0]),
         y1: Math.max(topLeft[1], bottomRight[1]),
+    }
+    // 이름 칸은 그림 아래쪽에 그려져 있다. 베이스를 바꾸면 그 칸을 실루엣 가운데로 옮긴다.
+    let centroid: [number, number] | null = null
+    let bestArea = 0
+    for (const ring of rings) {
+        const found = ringCentroid(ring)
+        if (!found || Math.abs(found.area) <= bestArea) continue
+        bestArea = Math.abs(found.area)
+        centroid = found.center
+    }
+    if (centroid) {
+        const width = box.x1 - box.x0
+        const height = box.y1 - box.y0
+        const bounds = plate.bounds()
+        const margin = 1.2
+        const halfW = width / 2
+        const halfH = height / 2
+        const cx = Math.min(bounds.max[0] - margin - halfW, Math.max(bounds.min[0] + margin + halfW, centroid[0]))
+        const cy = Math.min(bounds.max[1] - margin - halfH, Math.max(bounds.min[1] + margin + halfH, centroid[1]))
+        box = { x0: cx - halfW, y0: cy - halfH, x1: cx + halfW, y1: cy + halfH }
     }
     return { plate, hole: null, box, margin: 1.2 }
 }
