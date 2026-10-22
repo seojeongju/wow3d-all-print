@@ -3198,6 +3198,7 @@
     "selectItemsHint": "Select items in your cart to order.",
     "checkoutCta": "Order & pay",
     "loginAndOrder": "Sign in to order",
+    "orderNeedsAccount": "An account is required to place an order. You can sign up on the login page.",
     "guestOrder": "Guest checkout",
     "guestCheckout": "Order as guest",
     "guideTitle": "※ Guide",

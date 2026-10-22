@@ -166,9 +166,8 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/orders - 주문 생성 (회원·비회원 공용)
- * - 회원: Authorization + X-User-ID, user_id로 저장
- * - 비회원: X-Session-ID, guest_email 필수, user_id=null, session_id 저장
+ * POST /api/orders - 주문 생성 (회원 전용)
+ * 견적은 비회원도 볼 수 있지만, 주문은 로그인한 계정으로만 받는다.
  */
 export async function POST(request: NextRequest) {
     try {
@@ -176,6 +175,9 @@ export async function POST(request: NextRequest) {
 
         const auth = await requireAuthOrGuest(request);
         if (auth instanceof Response) return auth;
+        if (auth.isGuest) {
+            return errorResponse('주문은 회원만 할 수 있습니다. 로그인 후 다시 시도해 주세요.', 401);
+        }
 
         const body = await request.json();
 

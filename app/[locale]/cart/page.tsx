@@ -962,21 +962,9 @@ function CartPageContent() {
                                                 <LogIn className="w-6 h-6" /> {t('loginAndOrder')}
                                             </Button>
                                         </Link>
-                                        <div className="flex justify-center pt-1">
-                                            <Link
-                                                href={selectedLineCount > 0 ? `/checkout?ids=${checkoutIds}` : '#'}
-                                                className={selectedLineCount === 0 ? 'pointer-events-none' : undefined}
-                                            >
-                                                <button
-                                                    type="button"
-                                                    disabled={selectedLineCount === 0}
-                                                    className="inline-flex h-5 items-center gap-1 text-[10px] font-bold text-white/35 underline-offset-2 transition-colors hover:text-white/55 hover:underline disabled:opacity-20 disabled:no-underline"
-                                                >
-                                                    {t('guestCheckout')}
-                                                    <ChevronRight className="h-3 w-3" />
-                                                </button>
-                                            </Link>
-                                        </div>
+                                        <p className="text-center text-[11px] font-bold leading-relaxed text-white/40 break-keep">
+                                            {t('orderNeedsAccount')}
+                                        </p>
                                     </div>
                                 )}
                             </div>

@@ -96,9 +96,26 @@ function CheckoutContent() {
     const [batchMinPriceMode, setBatchMinPriceMode] = useState<BatchMinPriceMode>('hybrid')
     const [bedMaxByMethod, setBedMaxByMethod] = useState<BedMaxByMethod | undefined>(undefined)
 
+    const [authReady, setAuthReady] = useState(false)
     useEffect(() => {
-        if (items.length === 0 || orderItems.length === 0) router.push('/cart')
-    }, [items.length, orderItems.length, router])
+        if (useAuthStore.persist.hasHydrated()) {
+            setAuthReady(true)
+            return
+        }
+        return useAuthStore.persist.onFinishHydration(() => setAuthReady(true))
+    }, [])
+
+    useEffect(() => {
+        if (!authReady) return
+        if (items.length === 0 || orderItems.length === 0) {
+            router.push('/cart')
+            return
+        }
+        if (!isAuthenticated) {
+            const returnPath = `/checkout${idsParam ? `?ids=${idsParam}` : ''}`
+            router.replace(`/auth?return=${encodeURIComponent(returnPath)}`)
+        }
+    }, [authReady, isAuthenticated, items.length, orderItems.length, idsParam, router])
 
     useEffect(() => {
         if (orderItems.length === 0) return
@@ -223,7 +240,13 @@ function CheckoutContent() {
             return;
         }
 
-        if (!formData.ordererName || !formData.ordererPhone || (!isAuthenticated && !formData.ordererEmail)) {
+        if (!isAuthenticated) {
+            const returnPath = `/checkout${idsParam ? `?ids=${idsParam}` : ''}`
+            router.replace(`/auth?return=${encodeURIComponent(returnPath)}`)
+            return
+        }
+
+        if (!formData.ordererName || !formData.ordererPhone) {
             showToast.error(t('toastOrdererRequiredTitle'), t('toastOrdererRequiredDesc'));
             return;
         }
@@ -310,8 +333,6 @@ function CheckoutContent() {
                     }
                 }),
             }
-            if (!isAuthenticated && formData.ordererEmail?.trim()) body.guestEmail = formData.ordererEmail.trim()
-
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers,
@@ -351,7 +372,13 @@ function CheckoutContent() {
         }
     }
 
-    if (items.length === 0 || orderItems.length === 0) return null
+    if (!authReady || !isAuthenticated || items.length === 0 || orderItems.length === 0) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#050505] text-white/50">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
 
     const checkoutStandaloneSum = Math.round(
         orderItems.reduce((s, item) => s + cartItemLineTotal(item), 0)
