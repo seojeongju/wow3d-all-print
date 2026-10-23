@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { formatKoreanPattern } from '@/lib/date-utils';
 import { Box, ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     estimateBaseVolumeCm3,
@@ -16,6 +18,10 @@ import {
     isNonDefaultEstimateTransform,
     parseEstimateTransform,
 } from '@/lib/quote-estimate-transform';
+
+const AdminQuoteModelPreview = dynamic(() => import('@/components/admin/AdminQuoteModelPreview'), {
+    ssr: false,
+});
 
 type EstimateLog = {
     id: number;
@@ -40,6 +46,8 @@ type EstimateLog = {
     guide_source: string | null;
     created_at: string;
     updated_at: string;
+    /** 확인 기록에 남긴 원본, 없으면 저장된 견적의 file_url */
+    file_url?: string | null;
     user_name: string | null;
     user_email: string | null;
     user_phone: string | null;
@@ -146,6 +154,7 @@ export default function QuoteEstimateLogsPanel() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [viewer, setViewer] = useState<EstimateLog | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -235,7 +244,7 @@ export default function QuoteEstimateLogsPanel() {
                             <Eye className="w-5 h-5 text-amber-300" /> 견적 확인 기록
                         </h2>
                         <p className="text-sm text-white/45 mt-1">
-                            견적 저장 버튼을 누르지 않아도, 손님이 파일을 올려 확인한 금액과 조건을 모두 보여줍니다. 원본 파일은 보관하지 않습니다.
+                            견적 저장 버튼을 누르지 않아도, 손님이 파일을 올려 확인한 금액과 조건을 모두 보여줍니다. 이미지를 누르면, 파일이 남아 있는 모델은 3D로 돌려볼 수 있습니다.
                         </p>
                     </div>
                     <div className="relative w-full md:w-72">
@@ -290,13 +299,23 @@ export default function QuoteEstimateLogsPanel() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         {items.map((item) => (
                             <div key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden flex">
-                                <div className="w-28 shrink-0 bg-[#0b1220] flex items-center justify-center">
+                                <button
+                                    type="button"
+                                    className="group relative w-28 self-stretch shrink-0 bg-[#0b1220] flex items-center justify-center cursor-pointer"
+                                    onClick={() => setViewer(item)}
+                                    title={item.file_url ? '3D 모델 보기' : '미리보기'}
+                                >
                                     {item.thumbnail_data ? (
                                         <img src={item.thumbnail_data} alt={item.file_name} className="w-full h-full object-cover" />
                                     ) : (
                                         <Box className="w-8 h-8 text-white/15" />
                                     )}
-                                </div>
+                                    {item.file_url ? (
+                                        <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white/90 group-hover:bg-primary group-hover:text-primary-foreground">
+                                            3D
+                                        </span>
+                                    ) : null}
+                                </button>
                                 <div className="flex-1 min-w-0 p-3 space-y-1.5">
                                     <div className="flex items-start justify-between gap-2">
                                         <p className="font-bold text-white text-sm truncate" title={item.file_name}>
@@ -367,6 +386,36 @@ export default function QuoteEstimateLogsPanel() {
                     </div>
                 )}
             </CardContent>
+            <Dialog open={viewer != null} onOpenChange={(open) => { if (!open) setViewer(null); }}>
+                <DialogContent className="bg-[#0b1220] border-white/10 text-white sm:max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-white pr-8 truncate">{viewer?.file_name || '모델'}</DialogTitle>
+                        <DialogDescription className="text-white/45">
+                            {viewer?.file_url
+                                ? '견적 때 적용한 크기와 방향으로 봅니다. 드래그로 회전할 수 있습니다.'
+                                : '이 기록에는 썸네일만 남아 있어 3D로 열 수 없습니다.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {viewer?.file_url ? (
+                        <AdminQuoteModelPreview
+                            fileUrl={viewer.file_url}
+                            fileName={viewer.file_name}
+                            modelTransform={viewer.model_transform}
+                            token={token}
+                        />
+                    ) : viewer?.thumbnail_data ? (
+                        <img
+                            src={viewer.thumbnail_data}
+                            alt={viewer.file_name}
+                            className="mx-auto max-h-[min(60vh,420px)] w-full rounded-lg bg-black/40 object-contain"
+                        />
+                    ) : (
+                        <div className="flex h-48 items-center justify-center text-sm text-white/40">
+                            미리보기 이미지가 없습니다.
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

@@ -38,10 +38,13 @@ const THUMBNAIL_MAX_WIDTH = 240;
 const THUMBNAIL_QUALITY = 0.72;
 /** 뷰어가 숨겨졌을 때 파일을 다시 읽어 그리는 경로의 크기 상한 */
 const OFFSCREEN_MAX_FILE_BYTES = 30 * 1024 * 1024;
+/** 관리자 3D 뷰용으로 남기는 원본 크기 상한 (견적 화면은 막지 않음) */
+const STORED_MODEL_MAX_BYTES = 50 * 1024 * 1024;
 
-function authHeaders(): HeadersInit | null {
+function authHeaders(json = true): HeadersInit | null {
     const { token, user, sessionId } = useAuthStore.getState();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {};
+    if (json) headers['Content-Type'] = 'application/json';
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
         if (user?.id) headers['X-User-ID'] = String(user.id);
@@ -95,6 +98,21 @@ async function captureThumbnail(file: File): Promise<string | null> {
     return img ? toJpegThumbnail(img, img.naturalWidth, img.naturalHeight) : null;
 }
 
+/** 확인만 한 모델도 관리자가 3D로 열 수 있도록 원본을 한 번 남긴다 */
+async function uploadEstimateFile(id: number, file: File): Promise<void> {
+    if (file.size <= 0 || file.size > STORED_MODEL_MAX_BYTES) return;
+    const headers = authHeaders(false);
+    if (!headers) return;
+    const body = new FormData();
+    body.append('id', String(id));
+    body.append('file', file);
+    try {
+        await fetch('/api/quote-estimates/file', { method: 'POST', headers, body });
+    } catch {
+        /* 견적 화면은 파일 보관 실패와 무관하게 진행 */
+    }
+}
+
 async function postEstimate(payload: Record<string, unknown>): Promise<number | null> {
     const headers = authHeaders();
     if (!headers) return null;
@@ -124,6 +142,7 @@ export function useQuoteEstimateLog(file: File | null, snapshot: QuoteEstimateSn
     const logIdRef = useRef<number | null>(null);
     const lastSentRef = useRef('');
     const thumbnailSentRef = useRef(false);
+    const fileStoredForIdRef = useRef<number | null>(null);
     const pendingQuoteIdRef = useRef<number | null>(null);
     const fileKeyRef = useRef(fileKey);
 
@@ -132,6 +151,7 @@ export function useQuoteEstimateLog(file: File | null, snapshot: QuoteEstimateSn
         logIdRef.current = null;
         lastSentRef.current = '';
         thumbnailSentRef.current = false;
+        fileStoredForIdRef.current = null;
         pendingQuoteIdRef.current = null;
     }, [fileKey]);
 
@@ -150,6 +170,12 @@ export function useQuoteEstimateLog(file: File | null, snapshot: QuoteEstimateSn
             if (!id || keyAtSchedule !== fileKeyRef.current) return;
             logIdRef.current = id;
             pendingQuoteIdRef.current = null;
+
+            const currentFile = fileRef.current;
+            if (currentFile && fileStoredForIdRef.current !== id) {
+                fileStoredForIdRef.current = id;
+                void uploadEstimateFile(id, currentFile);
+            }
 
             if (thumbnailSentRef.current) return;
             thumbnailSentRef.current = true;

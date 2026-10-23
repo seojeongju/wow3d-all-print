@@ -1,5 +1,6 @@
 -- 견적 확인 기록: 손님이 파일을 올려 자동견적 금액을 확인한 시점의 정보 (저장·장바구니 여부와 무관)
--- 원본 파일은 보관하지 않고, 수치 정보와 뷰어 미리보기 캡처(작은 JPEG data URL)만 남긴다.
+-- 수치와 뷰어 썸네일(JPEG data URL)을 남긴다.
+-- 원본 파일 키는 schema_quote_estimate_logs_file_key.sql (file_key)로 추가한다.
 CREATE TABLE IF NOT EXISTS quote_estimate_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,

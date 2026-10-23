@@ -69,24 +69,40 @@ export async function GET(req: NextRequest) {
             .first<{ cnt?: number }>();
         const total = Number(countRow?.cnt ?? 0);
 
-        const { results } = await env.DB.prepare(
-            `SELECT
-                e.id, e.user_id, e.session_id, e.file_name, e.file_size,
-                e.dimensions_x, e.dimensions_y, e.dimensions_z, e.volume_cm3,
-                e.print_method, e.material_name, e.layer_height, e.fdm_infill,
-                e.total_price, e.estimated_time_hours, e.change_count,
-                e.model_transform, e.thumbnail_data, e.quote_id, e.guide_source, e.created_at, e.updated_at,
-                u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
-                (SELECT o.order_number FROM order_items oi JOIN orders o ON oi.order_id = o.id
-                 WHERE oi.quote_id = e.quote_id LIMIT 1) AS order_number
-             FROM quote_estimate_logs e
-             LEFT JOIN users u ON e.user_id = u.id
-             ${where}
-             ORDER BY e.updated_at DESC
-             LIMIT ? OFFSET ?`
-        )
-            .bind(...binds, limit, offset)
-            .all();
+        const fileSql = (includeFileKey: boolean) =>
+            includeFileKey
+                ? `COALESCE(NULLIF(e.file_key, ''), (SELECT q.file_url FROM quotes q WHERE q.id = e.quote_id))`
+                : `(SELECT q.file_url FROM quotes q WHERE q.id = e.quote_id)`;
+
+        const loadItems = (includeFileKey: boolean) =>
+            env.DB.prepare(
+                `SELECT
+                    e.id, e.user_id, e.session_id, e.file_name, e.file_size,
+                    e.dimensions_x, e.dimensions_y, e.dimensions_z, e.volume_cm3,
+                    e.print_method, e.material_name, e.layer_height, e.fdm_infill,
+                    e.total_price, e.estimated_time_hours, e.change_count,
+                    e.model_transform, e.thumbnail_data, e.quote_id, e.guide_source, e.created_at, e.updated_at,
+                    ${fileSql(includeFileKey)} AS file_url,
+                    u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
+                    (SELECT o.order_number FROM order_items oi JOIN orders o ON oi.order_id = o.id
+                     WHERE oi.quote_id = e.quote_id LIMIT 1) AS order_number
+                 FROM quote_estimate_logs e
+                 LEFT JOIN users u ON e.user_id = u.id
+                 ${where}
+                 ORDER BY e.updated_at DESC
+                 LIMIT ? OFFSET ?`
+            )
+                .bind(...binds, limit, offset)
+                .all();
+
+        let results: Record<string, unknown>[] | undefined;
+        try {
+            results = (await loadItems(true)).results;
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (!msg.includes('no such column') || !msg.includes('file_key')) throw e;
+            results = (await loadItems(false)).results;
+        }
 
         return successResponse({
             items: results || [],
