@@ -387,9 +387,14 @@ export default function QuoteEstimateLogsPanel() {
                 )}
             </CardContent>
             <Dialog open={viewer != null} onOpenChange={(open) => { if (!open) setViewer(null); }}>
-                <DialogContent className="bg-[#0b1220] border-white/10 text-white sm:max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-white pr-8 truncate">{viewer?.file_name || '모델'}</DialogTitle>
+                <DialogContent className="bg-[#0b1220] border-white/10 text-white w-[min(48rem,calc(100%-2rem))] max-w-[min(48rem,calc(100%-2rem))] overflow-hidden sm:max-w-[min(48rem,calc(100%-2rem))]">
+                    <DialogHeader className="min-w-0 pr-8">
+                        <DialogTitle
+                            className="min-w-0 text-white text-base font-semibold leading-snug break-all"
+                            title={viewer?.file_name || undefined}
+                        >
+                            {viewer?.file_name || '모델'}
+                        </DialogTitle>
                         <DialogDescription className="text-white/45">
                             {viewer?.file_url
                                 ? '견적 때 적용한 크기와 방향으로 봅니다. 드래그로 회전할 수 있습니다.'

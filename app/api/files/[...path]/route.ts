@@ -29,7 +29,15 @@ async function hasInquiryAttachmentAccess(
     return parseInquiryFileUrls(inquiry.file_url).includes(r2Key);
 }
 
-/** meshy/{jobId}/… — 작업 소유자만 프리뷰용 접근, ?download=1 은 제작 중 이후만 */
+async function isAdminUser(db: CloudflareEnv['DB'], userId: number): Promise<boolean> {
+    const row = await db
+        .prepare('SELECT role FROM users WHERE id = ?')
+        .bind(userId)
+        .first<{ role?: string | null }>();
+    return row?.role === 'admin' || row?.role === 'super_admin';
+}
+
+/** meshy/{jobId}/… — 작업 소유자만 프리뷰용 접근, ?download=1 은 제작 중 이후만. 관리자는 모두 볼 수 있다. */
 async function assertMeshyR2Access(
     request: NextRequest,
     r2Key: string,
@@ -40,6 +48,7 @@ async function assertMeshyR2Access(
 
     const auth = await requireAuthOrGuest(request);
     if (auth instanceof Response) return auth;
+    if (!auth.isGuest && (await isAdminUser(db, auth.userId))) return null;
 
     const job = await db
         .prepare(`SELECT user_id, session_id FROM meshy_jobs WHERE id = ?`)
