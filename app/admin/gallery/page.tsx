@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Image as ImageIcon, Loader2, Trash2, Edit2, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import { formatKoreanDateTime } from '@/lib/date-utils';
 import ContentTranslationPanel from '@/components/admin/ContentTranslationPanel';
 import {
     Dialog,
@@ -428,6 +429,7 @@ export default function AdminGalleryPage() {
                                         <th className="p-4 font-medium text-white/70">제목</th>
                                         <th className="p-4 font-medium text-white/70">소재 / 방식</th>
                                         <th className="p-4 font-medium text-white/70">태그</th>
+                                        <th className="p-4 font-medium text-white/70 whitespace-nowrap">업로드</th>
                                         <th className="p-4 font-medium text-white/70 w-24 text-center">노출 여부</th>
                                         <th className="p-4 font-medium text-white/70 w-32 text-right">관리</th>
                                     </tr>
@@ -479,6 +481,9 @@ export default function AdminGalleryPage() {
                                                         return tags.map((t: string) => `#${t}`).join(' ');
                                                     } catch { return item.tags; }
                                                 })()}
+                                            </td>
+                                            <td className="p-4 text-white/70 text-xs whitespace-nowrap">
+                                                {formatKoreanDateTime(item.created_at)}
                                             </td>
                                             <td className="p-4 text-center">
                                                 <button
