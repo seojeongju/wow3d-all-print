@@ -792,11 +792,6 @@ function CheckoutContent() {
                     <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-[13px] leading-relaxed text-white/75">
                         <p>{t('paymentConfirmPoint1')}</p>
                         <p>{t('paymentConfirmPoint2')}</p>
-                        <p>
-                            {t.rich('paymentNoticeBody', {
-                                b: (chunks) => <b className="font-bold text-white">{chunks}</b>,
-                            })}
-                        </p>
                         <p className="font-semibold text-white/90">{t('paymentConfirmPoint3')}</p>
                         {hasMeshyAiModel && (
                             <p className="rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-100/95">

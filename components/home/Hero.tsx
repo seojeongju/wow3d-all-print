@@ -230,7 +230,7 @@ export default function Hero() {
     ];
 
     return (
-        <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20 lg:h-[100dvh] lg:min-h-0 lg:max-h-[100dvh] lg:items-stretch lg:overflow-hidden lg:pt-[4.75rem] lg:pb-3 xl:pt-20 xl:pb-4">
+        <section className="relative flex min-h-[100dvh] items-start justify-center overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20 lg:h-[100dvh] lg:min-h-0 lg:max-h-[100dvh] lg:items-stretch lg:overflow-hidden lg:pt-[5.5rem] lg:pb-3 xl:pt-24 xl:pb-4">
             <div className="absolute inset-0 bg-gradient-to-br from-[#0b1220] via-[#111827] to-[#0f172a]" />
             {/* 배경 질감 — fixed 배경은 스크롤마다 다시 그려 느려지므로 사용하지 않음 */}
             <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-[0.05] mix-blend-screen" />
@@ -248,25 +248,26 @@ export default function Hero() {
                     transition={{ duration: 0.65, ease: 'easeOut' }}
                     className="flex h-full min-h-0 flex-col text-left lg:overflow-hidden"
                 >
-                    <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-teal-400/25 bg-teal-400/10 px-3.5 py-1.5 lg:mb-1.5 lg:px-3 lg:py-1">
-                        <Sparkles className="h-3.5 w-3.5 text-teal-300" aria-hidden />
+                    {/* shrink-0: 100dvh+overflow에서 배지·제목이 찌그러져 잘리지 않게 */}
+                    <div className="mb-5 inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-teal-400/25 bg-teal-400/10 px-3.5 py-1.5 lg:mb-1.5 lg:px-3 lg:py-1">
+                        <Sparkles className="h-3.5 w-3.5 shrink-0 text-teal-300" aria-hidden />
                         <span className="text-[11px] font-bold tracking-wide text-teal-100 sm:text-xs lg:text-[10px]">
                             {t('badgePhoto')}
                         </span>
                     </div>
 
-                    <p className="mb-3 text-2xl font-black tracking-tight text-white sm:text-3xl lg:mb-1 lg:text-[1.35rem] xl:text-[1.55rem]">
+                    <p className="mb-3 shrink-0 text-2xl font-black tracking-tight text-white sm:text-3xl lg:mb-1 lg:text-[1.35rem] xl:text-[1.55rem]">
                         WOW3D<span className="ml-1 font-light text-teal-400">PRO</span>
                     </p>
 
-                    <h1 className="mb-4 text-[1.7rem] font-black leading-[1.18] tracking-tight text-white sm:text-[2.35rem] md:text-[2.55rem] lg:mb-1.5 lg:text-[1.85rem] xl:mb-2 xl:text-[2.2rem] break-keep [@media(max-height:860px)_and_(min-width:1024px)]:text-[1.65rem]">
+                    <h1 className="mb-4 shrink-0 text-[1.7rem] font-black leading-[1.18] tracking-tight text-white sm:text-[2.35rem] md:text-[2.55rem] lg:mb-1.5 lg:text-[1.85rem] xl:mb-2 xl:text-[2.2rem] break-keep [@media(max-height:860px)_and_(min-width:1024px)]:text-[1.65rem]">
                         {t('titleLine1')}{' '}
                         <span className="text-white/90">{t('titleLine2')}</span>
                         <br />
                         <span className="text-teal-300">{t('titleAccent')}</span>
                     </h1>
 
-                    <p className="mb-5 max-w-xl text-[15px] font-medium leading-relaxed text-white/72 break-keep sm:text-base lg:mb-2 lg:max-w-none lg:text-[13px] lg:leading-snug xl:mb-3 xl:text-[14px]">
+                    <p className="mb-5 max-w-xl shrink-0 text-[15px] font-medium leading-relaxed text-white/72 break-keep sm:text-base lg:mb-2 lg:max-w-none lg:text-[13px] lg:leading-snug xl:mb-3 xl:text-[14px]">
                         <span className="font-semibold text-white">{t('subtitleLead')}</span>
                         <br className="hidden sm:block lg:hidden xl:block" />
                         <span className="mt-1 inline-block sm:mt-1.5 lg:mt-0.5">
@@ -278,7 +279,7 @@ export default function Hero() {
                     </p>
 
                     {/* 전환 여정 3단계 — 짧은 화면에서는 숨겨 핵심 CTA 공간 확보 */}
-                    <ol className="mb-7 flex flex-wrap items-center gap-2 sm:gap-3 lg:mb-2 xl:mb-3 [@media(max-height:860px)_and_(min-width:1024px)]:hidden" aria-label={t('subtitleLead')}>
+                    <ol className="mb-7 flex shrink-0 flex-wrap items-center gap-2 sm:gap-3 lg:mb-2 xl:mb-3 [@media(max-height:860px)_and_(min-width:1024px)]:hidden" aria-label={t('subtitleLead')}>
                         {steps.map((step, idx) => (
                             <li key={step.n} className="flex items-center gap-2 sm:gap-3">
                                 <span className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-3 py-2 lg:gap-1.5 lg:px-2.5 lg:py-1">
@@ -296,12 +297,12 @@ export default function Hero() {
                         ))}
                     </ol>
 
-                    <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white/40 lg:mb-1 lg:text-[10px]">
+                    <p className="mb-3 shrink-0 text-[11px] font-bold uppercase tracking-[0.18em] text-white/40 lg:mb-1 lg:text-[10px]">
                         {t('choosePath')}
                     </p>
 
-                    {/* Primary fork — 남는 세로 공간을 채워 아래 공백을 줄인다 */}
-                    <div className="hero-fork mb-3 grid min-h-0 gap-3 sm:grid-cols-2 lg:mb-2.5 lg:flex-1 lg:gap-2.5 xl:mb-3">
+                    {/* Primary fork — 남는 세로만 흡수·축소 (배지·제목은 shrink-0) */}
+                    <div className="hero-fork mb-3 grid min-h-0 gap-3 sm:grid-cols-2 lg:mb-2.5 lg:min-h-0 lg:flex-1 lg:gap-2.5 xl:mb-3">
                         <Link
                             href="/quote?entry=file"
                             onClick={() => {
@@ -370,7 +371,7 @@ export default function Hero() {
                     </div>
 
                     {/* 보조 경로 5카드 1줄 — 주 CTA보다 낮은 비중, 좁은 폭에서도 한 줄 유지 */}
-                    <div className="mb-6 grid grid-cols-5 gap-1.5 sm:gap-2 lg:mb-2 lg:gap-1.5">
+                    <div className="mb-6 grid shrink-0 grid-cols-5 gap-1.5 sm:gap-2 lg:mb-2 lg:gap-1.5">
                         {HERO_SIDE_LINKS.map(({ key, href, icon: Icon, iconMotion }) => (
                             <Link
                                 key={key}
@@ -402,7 +403,7 @@ export default function Hero() {
                     </p>
 
                     {/* 신뢰 시그널 + 보조 탐색 — 붙여 배치해 사이 공백을 없앤다 */}
-                    <div className="mt-auto space-y-2 lg:mt-0 lg:space-y-1.5">
+                    <div className="mt-auto shrink-0 space-y-2 lg:mt-0 lg:space-y-1.5">
                         <HeroLiveStats />
                         <div className="flex flex-wrap gap-1.5 lg:gap-1">
                             <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75 lg:px-2 lg:py-1 lg:text-[10px]">
