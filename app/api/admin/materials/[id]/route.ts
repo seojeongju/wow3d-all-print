@@ -21,7 +21,24 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
     const body = (await req.json()) as Record<string, unknown>
     const name = typeof body.name === 'string' ? body.name : (existing.name as string)
-    const type = typeof body.type === 'string' && /^(FDM|SLA|DLP)$/i.test(body.type) ? body.type.toUpperCase() : (existing.type as string)
+    let type =
+      typeof body.type === 'string' && /^[A-Za-z][A-Za-z0-9_-]{1,15}$/.test(body.type.trim())
+        ? body.type.trim().toUpperCase()
+        : (existing.type as string)
+    if (type !== existing.type && !['FDM', 'SLA', 'DLP'].includes(type)) {
+      const storeId = (existing.store_id as string) || 'default'
+      const exists = await env.DB.prepare(
+        'SELECT 1 AS ok FROM printer_equipment WHERE store_id = ? AND UPPER(type) = ? LIMIT 1'
+      )
+        .bind(storeId, type)
+        .first<{ ok?: number }>()
+      if (!exists) {
+        return NextResponse.json(
+          { error: `출력방식 "${type}" 장비가 없습니다. 먼저 장비 설정에서 추가하세요.` },
+          { status: 400 }
+        )
+      }
+    }
     const pricePerGram = typeof body.pricePerGram === 'number' ? body.pricePerGram : (existing.price_per_gram as number)
     const pricePerMl = body.pricePerMl !== undefined ? (body.pricePerMl != null && body.pricePerMl !== '' ? Number(body.pricePerMl) : null) : (existing.price_per_ml as number | null)
     const density = typeof body.density === 'number' ? body.density : (existing.density as number)

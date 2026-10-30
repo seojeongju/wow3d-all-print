@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse, requireAuthOrGuest } from '@/lib/api-utils';
 import { parseEstimateTransform } from '@/lib/quote-estimate-transform';
 
-const PRINT_METHODS = new Set(['fdm', 'sla', 'dlp']);
+import { isValidPrintMethodCode } from '@/lib/print-method';
 const THUMBNAIL_PREFIXES = ['data:image/jpeg;base64,', 'data:image/webp;base64,'];
 const THUMBNAIL_MAX_LENGTH = 60_000;
 const MAX_PRICE_KRW = 100_000_000;
@@ -83,9 +83,11 @@ export async function POST(request: NextRequest) {
             if (!owned) quoteId = null;
         }
 
-        const printMethod = text(body.printMethod, 8);
+        const printMethodRaw = text(body.printMethod, 16);
+        const printMethod =
+            printMethodRaw && isValidPrintMethodCode(printMethodRaw) ? printMethodRaw.toLowerCase() : null;
         const fileName = text(body.fileName, 200);
-        const hasEstimate = Boolean(fileName && printMethod && PRINT_METHODS.has(printMethod));
+        const hasEstimate = Boolean(fileName && printMethod);
 
         // 썸네일·견적 연결만 갱신
         if (id && !hasEstimate) {

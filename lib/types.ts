@@ -36,7 +36,8 @@ export interface QuoteData {
     partSpacingMm?: number;
 
     // 출력 방식
-    printMethod: 'fdm' | 'sla' | 'dlp';
+    /** 출력방식 코드 (fdm/sla/dlp 또는 관리자가 추가한 장비 type) */
+    printMethod: string;
 
     // FDM 옵션
     /** 관리자 소재 테이블의 FDM 소재명 (PLA·ABS·PETG·TPU·PC 등) */

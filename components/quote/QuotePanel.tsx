@@ -58,15 +58,42 @@ import {
     type PrintColor,
 } from '@/lib/print-color'
 
-type PrintSpecs = {
-    fdm?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; fdm_layer_hours_factor?: number; fdm_labor_cost_krw?: number; fdm_support_per_cm2_krw?: number }
-    sla?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; sla_layer_exposure_sec?: number; sla_labor_cost_krw?: number; sla_consumables_krw?: number; sla_post_process_krw?: number; sla_support_per_cm2_krw?: number }
-    dlp?: { max: { x: number; y: number; z: number }; layerHeights?: number[]; hourlyRate?: number; layerCosts?: Record<string, number>; dlp_layer_exposure_sec?: number; dlp_labor_cost_krw?: number; dlp_consumables_krw?: number; dlp_post_process_krw?: number; dlp_support_per_cm2_krw?: number }
+type PrintSpecEntry = {
+    label?: string
+    quoteFamily?: 'fdm' | 'sla' | 'dlp'
+    max: { x: number; y: number; z: number }
+    layerHeights?: number[]
+    hourlyRate?: number
+    layerCosts?: Record<string, number>
+    minPriceKr?: number
+    fdm_layer_hours_factor?: number
+    fdm_labor_cost_krw?: number
+    fdm_support_per_cm2_krw?: number
+    sla_layer_exposure_sec?: number
+    sla_labor_cost_krw?: number
+    sla_consumables_krw?: number
+    sla_post_process_krw?: number
+    sla_support_per_cm2_krw?: number
+    dlp_layer_exposure_sec?: number
+    dlp_labor_cost_krw?: number
+    dlp_consumables_krw?: number
+    dlp_post_process_krw?: number
+    dlp_support_per_cm2_krw?: number
 }
+
+type PrintSpecs = Record<string, PrintSpecEntry>
 
 type ApiMaterial = { id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }
 
-type PrintMethod = 'fdm' | 'sla' | 'dlp'
+/** 출력방식 type 코드(소문자). 견적 공식은 quoteFamily로 결정 */
+type PrintMethod = string
+
+function resolveQuoteFamily(method: string, specs: PrintSpecs | null): 'fdm' | 'sla' | 'dlp' {
+    const entry = specs?.[method]
+    const f = entry?.quoteFamily || method
+    if (f === 'sla' || f === 'dlp') return f
+    return 'fdm'
+}
 
 type QuotePanelProps = {
     embedded?: boolean
@@ -227,6 +254,12 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     const printColorNoteMissing = printColor === 'other' && !printColorNote.trim()
     const printColorNoteRef = useRef<HTMLInputElement>(null)
     const [printSpecs, setPrintSpecs] = useState<PrintSpecs | null>(null)
+    const quoteFamily = useMemo(
+        () => resolveQuoteFamily(printMethod, printSpecs),
+        [printMethod, printSpecs]
+    )
+    const isFdmQuote = quoteFamily === 'fdm'
+    const isDlpQuote = quoteFamily === 'dlp'
     const [materials, setMaterials] = useState<ApiMaterial[]>([])
     /** 자동견적 금액 100원 단위 반올림/반내림 (원단위 | 100원 반올림 | 100원 반내림) */
     const [priceRoundMode] = useState<PriceRoundMode>(QUOTE_PRICE_ROUND_MODE)
@@ -253,7 +286,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
 
         if (initialQuote.print_method) setPrintMethod(initialQuote.print_method as PrintMethod)
 
-        if (initialQuote.print_method === 'fdm') {
+        if ((initialQuote.print_method === 'fdm' || resolveQuoteFamily(String(initialQuote.print_method), printSpecs) === 'fdm')) {
             if (initialQuote.fdm_material) setFdmMaterial(initialQuote.fdm_material)
             if (initialQuote.fdm_infill) setInfill(initialQuote.fdm_infill)
             if (initialQuote.fdm_layer_height) setLayerHeight(initialQuote.fdm_layer_height)
@@ -274,18 +307,24 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         }
     }, [initialQuote, setSavedQuoteId, setSavedFileR2Url])
 
+    useEffect(() => {
+        if (!printSpecs) return
+        const keys = Object.keys(printSpecs)
+        if (keys.length === 0) return
+        if (!printSpecs[printMethod]) setPrintMethod(keys[0])
+    }, [printSpecs, printMethod])
+
     // 사진→3D: 출력 방식·장비 최대 치수를 autofit에 반영 (방식 전환 시 중간 크기로 재맞춤)
     useEffect(() => {
-        const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
-        const max = printSpecs?.[key]?.max
+        const max = printSpecs?.[printMethod]?.max
         setPrintContextForFit(
-            printMethod,
+            quoteFamily,
             max ? { x: max.x, y: max.y, z: max.z } : null
         )
         if (fileSource.kind === 'meshy-photo') {
             maybeAutoFitMeshyScale()
         }
-    }, [printMethod, printSpecs, setPrintContextForFit, fileSource.kind])
+    }, [printMethod, quoteFamily, printSpecs, setPrintContextForFit, fileSource.kind])
 
     // 소재·출력스펙 갱신 (관리자 설정/삭제 후 실시간 반영: visibility + 45초 폴링, cache: no-store)
     const refreshMaterials = useCallback(() => {
@@ -314,8 +353,16 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(pollTimer) }
     }, [refreshMaterials, refreshPrintSpecs])
 
-    const fdmMaterials = materials.filter((m) => m.type === 'FDM')
-    const resinMaterials = materials.filter((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA'))
+    const methodMaterials = useMemo(() => {
+        const typeU = printMethod.toUpperCase()
+        const familyU = quoteFamily.toUpperCase()
+        return materials.filter((m) => {
+            const t = String(m.type || '').toUpperCase()
+            return t === typeU || t === familyU
+        })
+    }, [materials, printMethod, quoteFamily])
+    const fdmMaterials = isFdmQuote ? methodMaterials : []
+    const resinMaterials = !isFdmQuote ? methodMaterials : []
     useEffect(() => {
         if (fdmMaterials.length && (fdmMaterial === '' || !fdmMaterials.some((m) => m.name === fdmMaterial))) setFdmMaterial(fdmMaterials[0].name)
     }, [fdmMaterials, fdmMaterial])
@@ -323,22 +370,22 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         if (resinMaterials.length && (resinType === '' || !resinMaterials.some((m) => m.name === resinType))) setResinType(resinMaterials[0].name)
     }, [resinMaterials, resinType, printMethod])
 
-    const activeMaterialName = printMethod === 'fdm' ? fdmMaterial : resinType
-    const isPlaColorUi = printMethod === 'fdm' && isPlaMaterial(fdmMaterial)
+    const activeMaterialName = isFdmQuote ? fdmMaterial : resinType
+    const isPlaColorUi = isFdmQuote && isPlaMaterial(fdmMaterial)
     const allowedPrintColors = useMemo(
-        () => getAllowedPrintColors(printMethod, activeMaterialName),
-        [printMethod, activeMaterialName]
+        () => getAllowedPrintColors(quoteFamily, activeMaterialName),
+        [quoteFamily, activeMaterialName]
     )
 
     // 소재·출력 방식 변경 시 허용되지 않는 색상은 자동 보정
     useEffect(() => {
         if (!activeMaterialName) return
-        const next = coercePrintColorForMaterial(printColor, printMethod, activeMaterialName)
+        const next = coercePrintColorForMaterial(printColor, quoteFamily, activeMaterialName)
         if (next !== printColor) {
             setPrintColor(next)
             if (next !== 'other') setPrintColorNote('')
         }
-    }, [printMethod, activeMaterialName, printColor])
+    }, [quoteFamily, activeMaterialName, printColor])
 
     const MAT_COLORS: Record<string, string> = { 
         PLA: 'text-teal-400', 
@@ -375,7 +422,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     // 회전(90° 단위)해서도 장비에 안 들어가면 초과 — 금액은 표시하되 장바구니·주문 차단
     const overflow = useMemo(() => {
         if (!printSpecs || !analysis) return null
-        const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+        const key = isFdmQuote ? 'fdm' : !isFdmQuote && !isDlpQuote ? 'sla' : 'dlp'
         const spec = printSpecs[key]?.max
         if (!spec) return null
         const dims = { x: bx, y: by, z: bz }
@@ -386,14 +433,14 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
     // 견적 상세: 관리자 산출 기준(printSpecs)·소재(materials) 연동
     const quoteDetail = useMemo(() => {
         if (!analysis) return defaultQuoteDetail
-        const key = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
+        const key = isFdmQuote ? 'fdm' : !isFdmQuote && !isDlpQuote ? 'sla' : 'dlp'
         const spec = printSpecs?.[key]
-        const layer = printMethod === 'fdm' ? layerHeight : slaLayerHeight
+        const layer = isFdmQuote ? layerHeight : slaLayerHeight
         const rateKRW = (spec?.layerCosts && spec.layerCosts[String(layer)] != null)
             ? spec.layerCosts[String(layer)]
-            : (spec?.hourlyRate ?? (printMethod === 'fdm' ? 5000 : printMethod === 'dlp' ? 9000 : 8000))
+            : (spec?.hourlyRate ?? (isFdmQuote ? 5000 : isDlpQuote ? 9000 : 8000))
 
-        if (printMethod === 'fdm') {
+        if (isFdmQuote) {
             const fdmSpec = printSpecs?.fdm
             const mat = materials.find((m) => m.type === 'FDM' && m.name === fdmMaterial)
             const density = mat?.density ?? 1.24
@@ -447,10 +494,10 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             }
         }
 
-        const mat = materials.find((m) => m.type === (printMethod === 'dlp' ? 'DLP' : 'SLA') && m.name === resinType)
+        const mat = materials.find((m) => m.type === (isDlpQuote ? 'DLP' : 'SLA') && m.name === resinType)
         const pricePerMlKr = mat && mat.price_per_ml != null ? Number(mat.price_per_ml) : 0
         const q = calculateResinQuote({
-            method: printMethod === 'dlp' ? 'dlp' : 'sla',
+            method: isDlpQuote ? 'dlp' : 'sla',
             volumeCm3,
             surfaceAreaCm2,
             heightMm,
@@ -458,19 +505,19 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             pricePerMlKr,
             postProcessing,
             hourlyRateKr: rateKRW,
-            layerExposureSec: printMethod === 'dlp'
+            layerExposureSec: isDlpQuote
                 ? printSpecs?.dlp?.dlp_layer_exposure_sec
                 : printSpecs?.sla?.sla_layer_exposure_sec,
-            laborCostKrw: printMethod === 'dlp'
+            laborCostKrw: isDlpQuote
                 ? printSpecs?.dlp?.dlp_labor_cost_krw
                 : printSpecs?.sla?.sla_labor_cost_krw,
-            consumablesKrw: printMethod === 'dlp'
+            consumablesKrw: isDlpQuote
                 ? printSpecs?.dlp?.dlp_consumables_krw
                 : printSpecs?.sla?.sla_consumables_krw,
-            postProcessKrw: printMethod === 'dlp'
+            postProcessKrw: isDlpQuote
                 ? printSpecs?.dlp?.dlp_post_process_krw
                 : printSpecs?.sla?.sla_post_process_krw,
-            supportPerCm2Krw: printMethod === 'dlp'
+            supportPerCm2Krw: isDlpQuote
                 ? printSpecs?.dlp?.dlp_support_per_cm2_krw
                 : printSpecs?.sla?.sla_support_per_cm2_krw,
             applyVat: false,
@@ -491,10 +538,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
         }
-    }, [analysis, printMethod, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, supportColumnMmRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, curvedWallAreaRaw, contourLoopsRaw, partCount, partHeightSumMm, partSpacingMm, surfaceAreaCm2, volumeCm3])
+    }, [analysis, printMethod, quoteFamily, isFdmQuote, isDlpQuote, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, supportColumnMmRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, curvedWallAreaRaw, contourLoopsRaw, partCount, partHeightSumMm, partSpacingMm, surfaceAreaCm2, volumeCm3])
 
-    const specKey = printMethod === 'fdm' ? 'fdm' : printMethod === 'sla' ? 'sla' : 'dlp'
-    const minPriceKr = (printSpecs?.[specKey] as { minPriceKr?: number } | undefined)?.minPriceKr
+    const minPriceKr = printSpecs?.[printMethod]?.minPriceKr
     
     // 기본 금액(공급가)과 산출 금액 중 큰 것을 선택한 후 부가세 적용
     const baseAmount = minPriceKr != null && minPriceKr > 0 ? Math.max(quoteDetail.total, minPriceKr) : quoteDetail.total
@@ -515,9 +561,9 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             volumeCm3: Math.round(volumeCm3 * 100) / 100,
             surfaceAreaCm2: Math.round(surfaceAreaCm2 * 100) / 100,
             printMethod,
-            materialName: printMethod === 'fdm' ? fdmMaterial : resinType,
-            layerHeight: printMethod === 'fdm' ? layerHeight : slaLayerHeight,
-            fdmInfill: printMethod === 'fdm' ? infill : null,
+            materialName: isFdmQuote ? fdmMaterial : resinType,
+            layerHeight: isFdmQuote ? layerHeight : slaLayerHeight,
+            fdmInfill: isFdmQuote ? infill : null,
             totalPrice,
             estimatedTimeHours: Math.round(estimatedTimeHours * 100) / 100,
             guideSource: guideSource || undefined,
@@ -576,7 +622,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
             dimensionsY: analysis!.boundingBox.y,
             dimensionsZ: analysis!.boundingBox.z,
             printMethod,
-            ...(printMethod === 'fdm'
+            ...(isFdmQuote
                 ? {
                       fdmMaterial: fdmMaterial.toUpperCase() as Quote['fdmMaterial'],
                       fdmInfill: infill,
@@ -823,7 +869,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     ? { partCount, partHeightSumMm, partSpacingMm }
                     : {}),
                 printMethod,
-                ...(printMethod === 'fdm' ? {
+                ...(isFdmQuote ? {
                     fdmMaterial: (fdmMaterial || '').toUpperCase() as QuoteData['fdmMaterial'],
                     fdmInfill: infill,
                     fdmLayerHeight: layerHeight,
@@ -1031,7 +1077,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 dimensionsY: analysis.boundingBox.y,
                 dimensionsZ: analysis.boundingBox.z,
                 printMethod,
-                ...(printMethod === 'fdm'
+                ...(isFdmQuote
                     ? {
                           fdmMaterial: fdmMaterial.toUpperCase() as Quote['fdmMaterial'],
                           fdmInfill: infill,
@@ -1141,12 +1187,19 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     <Printer className="w-3.5 h-3.5 text-teal-400" />
                     <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('printMethod')}</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                    {[
-                        { id: 'fdm', icon: Printer, label: 'FDM' },
-                        { id: 'dlp', icon: Zap, label: 'DLP' },
-                        { id: 'sla', icon: Droplets, label: 'SLA' },
-                    ].map((method) => (
+                <div className={`grid gap-2 ${(printSpecs ? Object.keys(printSpecs).length : 3) > 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-3'}`}>
+                    {(printSpecs
+                        ? Object.entries(printSpecs).map(([id, spec]) => {
+                            const family = spec.quoteFamily || id
+                            const icon = family === 'dlp' ? Zap : family === 'sla' ? Droplets : Printer
+                            return { id, icon, label: spec.label || id.toUpperCase() }
+                        })
+                        : [
+                            { id: 'fdm', icon: Printer, label: 'FDM' },
+                            { id: 'dlp', icon: Zap, label: 'DLP' },
+                            { id: 'sla', icon: Droplets, label: 'SLA' },
+                        ]
+                    ).map((method) => (
                         <button
                             key={method.id}
                             onClick={() => setPrintMethod(method.id as PrintMethod)}
@@ -1200,15 +1253,15 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
-                            {(printMethod === 'fdm' ? fdmMaterials : resinMaterials).length === 0 ? (
+                            {(isFdmQuote ? fdmMaterials : resinMaterials).length === 0 ? (
                                 <p className="col-span-2 text-[13px] text-white/40 py-3 font-bold italic">{t('noMaterials')}</p>
                             ) : (
-                                (printMethod === 'fdm' ? fdmMaterials : resinMaterials).map((m) => {
-                                    const selected = (printMethod === 'fdm' ? fdmMaterial : resinType) === m.name
+                                (isFdmQuote ? fdmMaterials : resinMaterials).map((m) => {
+                                    const selected = (isFdmQuote ? fdmMaterial : resinType) === m.name
                                     return (
                                         <button
                                             key={m.id}
-                                            onClick={() => printMethod === 'fdm' ? setFdmMaterial(m.name) : setResinType(m.name)}
+                                            onClick={() => isFdmQuote ? setFdmMaterial(m.name) : setResinType(m.name)}
                                             className={`flex items-center gap-2 min-h-11 px-3 py-2 rounded-xl border text-left transition-all ${selected
                                                 ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'
                                                 : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
@@ -1298,7 +1351,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                     </div>
 
                     {/* Sliders & Switches */}
-                    {printMethod === 'fdm' ? (
+                    {isFdmQuote ? (
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
@@ -1401,12 +1454,12 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                 <div className="text-slate-400">{t('method')}</div>
                                 <div className="font-medium text-slate-100">{printMethod.toUpperCase()}</div>
                                 <div className="text-slate-400">{t('material')}</div>
-                                <div className="font-medium text-slate-100">{printMethod === 'fdm' ? fdmMaterial : resinType}</div>
+                                <div className="font-medium text-slate-100">{isFdmQuote ? fdmMaterial : resinType}</div>
                                 <div className="text-slate-400">{t('colorLabel')}</div>
                                 <div className="font-medium text-slate-100 break-keep">{formatPrintColor(printColor, printColorNote, locale, activeMaterialName)}</div>
                                 <div className="text-slate-400">{t('layerThickness')}</div>
-                                <div className="font-medium text-slate-100">{(printMethod === 'fdm' ? layerHeight : slaLayerHeight)} mm</div>
-                                {printMethod === 'fdm' && (
+                                <div className="font-medium text-slate-100">{(isFdmQuote ? layerHeight : slaLayerHeight)} mm</div>
+                                {isFdmQuote && (
                                     <>
                                         <div className="text-slate-400">{t('infill')}</div>
                                         <div className="font-medium text-slate-100">{infill}%</div>

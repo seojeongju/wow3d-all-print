@@ -11,7 +11,7 @@ export type QuoteEstimateSnapshot = {
     dimensionsZ: number;
     volumeCm3: number;
     surfaceAreaCm2: number;
-    printMethod: 'fdm' | 'sla' | 'dlp';
+    printMethod: string;
     materialName: string;
     layerHeight: number;
     fdmInfill: number | null;

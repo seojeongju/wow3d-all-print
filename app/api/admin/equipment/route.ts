@@ -2,27 +2,40 @@ import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/api-utils'
 import { DLP_DEFAULT_SUPPORT_PER_CM2_KRW, SLA_DEFAULT_SUPPORT_PER_CM2_KRW } from '@/lib/resin-quote'
+import {
+  isCoreEquipmentType,
+  normalizeEquipmentTypeCode,
+  normalizeQuoteFamily,
+  type QuoteFamily,
+} from '@/lib/print-method'
 
 /**
- * GET /api/admin/equipment - 장비 설정 목록 (FDM, SLA, DLP)
+ * GET /api/admin/equipment - 장비(출력방식) 목록
  */
 export async function GET(req: NextRequest) {
   try {
     const { env } = getCloudflareContext()
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 })
 
-    const auth = await requireAdminAuth(req, env.DB);
-    if (auth instanceof Response) return auth;
-    const { storeId } = auth;
+    const auth = await requireAdminAuth(req, env.DB)
+    if (auth instanceof Response) return auth
+    const { storeId } = auth
 
-    const { results } = await env.DB.prepare('SELECT * FROM printer_equipment WHERE store_id = ? ORDER BY type').bind(storeId).all()
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM printer_equipment WHERE store_id = ? ORDER BY type'
+    )
+      .bind(storeId)
+      .all()
     return NextResponse.json({ success: true, data: results || [] })
   } catch (e) {
     console.error('GET /api/admin/equipment', e)
     const msg = String(e instanceof Error ? e.message : e).toLowerCase()
     if (msg.includes('no such table') && msg.includes('printer_equipment')) {
       return NextResponse.json(
-        { error: 'printer_equipment 테이블이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment.sql' },
+        {
+          error:
+            'printer_equipment 테이블이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment.sql',
+        },
         { status: 503 }
       )
     }
@@ -30,25 +43,26 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 견적 산출 기준: 타입별 INSERT용 값 (해당 타입만 채움, 나머지 null)
-function calcParamValues(type: string, body: Record<string, unknown>) {
+function calcParamValues(family: QuoteFamily, body: Record<string, unknown>) {
   const minPrice = body.min_price_krw != null ? Number(body.min_price_krw) : null
   const minPriceKr = minPrice !== null && Number.isFinite(minPrice) && minPrice >= 0 ? minPrice : null
   return {
     min_price_krw: minPriceKr,
-    fdm_layer_hours_factor: type === 'FDM' ? (Number(body.fdm_layer_hours_factor) || 0.02) : null,
-    fdm_labor_cost_krw: type === 'FDM' ? (Number(body.fdm_labor_cost_krw) ?? 6500) : null,
-    fdm_support_per_cm2_krw: type === 'FDM' ? (Number(body.fdm_support_per_cm2_krw) ?? 26) : null,
-    sla_layer_exposure_sec: type === 'SLA' ? (Number(body.sla_layer_exposure_sec) || 8) : null,
-    sla_labor_cost_krw: type === 'SLA' ? (Number(body.sla_labor_cost_krw) ?? 9100) : null,
-    sla_consumables_krw: type === 'SLA' ? (Number(body.sla_consumables_krw) ?? 3900) : null,
-    sla_post_process_krw: type === 'SLA' ? (Number(body.sla_post_process_krw) ?? 10400) : null,
-    sla_support_per_cm2_krw: type === 'SLA' ? nonNegative(body.sla_support_per_cm2_krw, SLA_DEFAULT_SUPPORT_PER_CM2_KRW) : null,
-    dlp_layer_exposure_sec: type === 'DLP' ? (Number(body.dlp_layer_exposure_sec) || 3) : null,
-    dlp_labor_cost_krw: type === 'DLP' ? (Number(body.dlp_labor_cost_krw) ?? 9100) : null,
-    dlp_consumables_krw: type === 'DLP' ? (Number(body.dlp_consumables_krw) ?? 3900) : null,
-    dlp_post_process_krw: type === 'DLP' ? (Number(body.dlp_post_process_krw) ?? 10400) : null,
-    dlp_support_per_cm2_krw: type === 'DLP' ? nonNegative(body.dlp_support_per_cm2_krw, DLP_DEFAULT_SUPPORT_PER_CM2_KRW) : null,
+    fdm_layer_hours_factor: family === 'FDM' ? Number(body.fdm_layer_hours_factor) || 0.02 : null,
+    fdm_labor_cost_krw: family === 'FDM' ? (Number(body.fdm_labor_cost_krw) ?? 6500) : null,
+    fdm_support_per_cm2_krw: family === 'FDM' ? (Number(body.fdm_support_per_cm2_krw) ?? 26) : null,
+    sla_layer_exposure_sec: family === 'SLA' ? Number(body.sla_layer_exposure_sec) || 8 : null,
+    sla_labor_cost_krw: family === 'SLA' ? (Number(body.sla_labor_cost_krw) ?? 9100) : null,
+    sla_consumables_krw: family === 'SLA' ? (Number(body.sla_consumables_krw) ?? 3900) : null,
+    sla_post_process_krw: family === 'SLA' ? (Number(body.sla_post_process_krw) ?? 10400) : null,
+    sla_support_per_cm2_krw:
+      family === 'SLA' ? nonNegative(body.sla_support_per_cm2_krw, SLA_DEFAULT_SUPPORT_PER_CM2_KRW) : null,
+    dlp_layer_exposure_sec: family === 'DLP' ? Number(body.dlp_layer_exposure_sec) || 3 : null,
+    dlp_labor_cost_krw: family === 'DLP' ? (Number(body.dlp_labor_cost_krw) ?? 9100) : null,
+    dlp_consumables_krw: family === 'DLP' ? (Number(body.dlp_consumables_krw) ?? 3900) : null,
+    dlp_post_process_krw: family === 'DLP' ? (Number(body.dlp_post_process_krw) ?? 10400) : null,
+    dlp_support_per_cm2_krw:
+      family === 'DLP' ? nonNegative(body.dlp_support_per_cm2_krw, DLP_DEFAULT_SUPPORT_PER_CM2_KRW) : null,
   }
 }
 
@@ -61,43 +75,48 @@ function nonNegative(v: unknown, fallback: number): number {
   return v != null && v !== '' && Number.isFinite(n) && n >= 0 ? n : fallback
 }
 
-const CALC_COLS = 'min_price_krw, fdm_layer_hours_factor, fdm_labor_cost_krw, fdm_support_per_cm2_krw, sla_layer_exposure_sec, sla_labor_cost_krw, sla_consumables_krw, sla_post_process_krw, sla_support_per_cm2_krw, dlp_layer_exposure_sec, dlp_labor_cost_krw, dlp_consumables_krw, dlp_post_process_krw, dlp_support_per_cm2_krw'
+const CALC_COLS =
+  'min_price_krw, fdm_layer_hours_factor, fdm_labor_cost_krw, fdm_support_per_cm2_krw, sla_layer_exposure_sec, sla_labor_cost_krw, sla_consumables_krw, sla_post_process_krw, sla_support_per_cm2_krw, dlp_layer_exposure_sec, dlp_labor_cost_krw, dlp_consumables_krw, dlp_post_process_krw, dlp_support_per_cm2_krw'
 
-const CALC_SET_BY_TYPE: Record<string, string> = {
+const CALC_SET_BY_FAMILY: Record<QuoteFamily, string> = {
   FDM: ', min_price_krw = excluded.min_price_krw, fdm_layer_hours_factor = excluded.fdm_layer_hours_factor, fdm_labor_cost_krw = excluded.fdm_labor_cost_krw, fdm_support_per_cm2_krw = excluded.fdm_support_per_cm2_krw',
   SLA: ', min_price_krw = excluded.min_price_krw, sla_layer_exposure_sec = excluded.sla_layer_exposure_sec, sla_labor_cost_krw = excluded.sla_labor_cost_krw, sla_consumables_krw = excluded.sla_consumables_krw, sla_post_process_krw = excluded.sla_post_process_krw, sla_support_per_cm2_krw = excluded.sla_support_per_cm2_krw',
   DLP: ', min_price_krw = excluded.min_price_krw, dlp_layer_exposure_sec = excluded.dlp_layer_exposure_sec, dlp_labor_cost_krw = excluded.dlp_labor_cost_krw, dlp_consumables_krw = excluded.dlp_consumables_krw, dlp_post_process_krw = excluded.dlp_post_process_krw, dlp_support_per_cm2_krw = excluded.dlp_support_per_cm2_krw',
 }
 
 /**
- * POST /api/admin/equipment - 장비 설정 업데이트 (type 기준 upsert)
- * Body: { type, name?, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json?, layer_costs_json?, is_active?,
- *         fdm_layer_hours_factor?, fdm_labor_cost_krw?, fdm_support_per_cm2_krw?,
- *         sla_layer_exposure_sec?, sla_labor_cost_krw?, sla_consumables_krw?, sla_post_process_krw?, sla_support_per_cm2_krw?,
- *         dlp_layer_exposure_sec?, dlp_labor_cost_krw?, dlp_consumables_krw?, dlp_post_process_krw?, dlp_support_per_cm2_krw? }
+ * POST /api/admin/equipment - 장비 추가·수정 (store_id+type upsert)
+ * Body: { type, quote_family?, name?, max_*, hourly_rate, layer_*, is_active?, 산출 기준… }
  */
 export async function POST(req: NextRequest) {
   try {
     const { env } = getCloudflareContext()
     if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 })
 
-    const auth = await requireAdminAuth(req, env.DB);
-    if (auth instanceof Response) return auth;
-    const { storeId } = auth;
+    const auth = await requireAdminAuth(req, env.DB)
+    if (auth instanceof Response) return auth
+    const { storeId } = auth
 
     const body = (await req.json()) as Record<string, unknown>
-    const type = body.type as string
-    if (!type || !['FDM', 'SLA', 'DLP'].includes(type)) {
-      return NextResponse.json({ error: 'type must be FDM, SLA, or DLP' }, { status: 400 })
+    const type = normalizeEquipmentTypeCode(body.type)
+    if (!type) {
+      return NextResponse.json(
+        { error: 'type은 영문으로 시작하는 2~16자 코드여야 합니다 (예: FDM, LCD, MJF)' },
+        { status: 400 }
+      )
     }
+    const quoteFamily = normalizeQuoteFamily(body.quote_family, type)
     const max_x_mm = Number(body.max_x_mm)
     const max_y_mm = Number(body.max_y_mm)
     const max_z_mm = Number(body.max_z_mm)
     const hourly_rate = Number(body.hourly_rate)
     if ([max_x_mm, max_y_mm, max_z_mm, hourly_rate].some((n) => !Number.isFinite(n) || n < 0)) {
-      return NextResponse.json({ error: 'max_x_mm, max_y_mm, max_z_mm, hourly_rate must be non-negative numbers' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'max_x_mm, max_y_mm, max_z_mm, hourly_rate must be non-negative numbers' },
+        { status: 400 }
+      )
     }
-    const name = typeof body.name === 'string' ? body.name : null
+    const name = typeof body.name === 'string' ? body.name.trim() || null : null
     const layer_heights_json =
       typeof body.layer_heights_json === 'string'
         ? body.layer_heights_json
@@ -106,14 +125,15 @@ export async function POST(req: NextRequest) {
           : null
     const is_active = body.is_active === false || body.is_active === 0 ? 0 : 1
 
-    // layer_costs_json: 레이어별 시간당 비용(원). {"0.1":6000,"0.2":5000} — 견적 시 해당 레이어 선택 시 적용
     let layer_costs_json: string | null = null
     if (body.layer_costs_json != null) {
       if (typeof body.layer_costs_json === 'string') {
         try {
           const o = JSON.parse(body.layer_costs_json)
           if (o && typeof o === 'object' && !Array.isArray(o)) layer_costs_json = body.layer_costs_json
-        } catch { /* invalid */ }
+        } catch {
+          /* invalid */
+        }
       } else if (typeof body.layer_costs_json === 'object' && !Array.isArray(body.layer_costs_json)) {
         const o = body.layer_costs_json as Record<string, unknown>
         const out: Record<string, number> = {}
@@ -125,72 +145,267 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const calc = calcParamValues(type, body)
-    const calcSet = CALC_SET_BY_TYPE[type] || ''
+    const calc = calcParamValues(quoteFamily, body)
+    const calcSet = CALC_SET_BY_FAMILY[quoteFamily] || ''
     const hasLayerCosts = layer_costs_json != null
-    const calcArr = [calc.min_price_krw, calc.fdm_layer_hours_factor, calc.fdm_labor_cost_krw, calc.fdm_support_per_cm2_krw, calc.sla_layer_exposure_sec, calc.sla_labor_cost_krw, calc.sla_consumables_krw, calc.sla_post_process_krw, calc.sla_support_per_cm2_krw, calc.dlp_layer_exposure_sec, calc.dlp_labor_cost_krw, calc.dlp_consumables_krw, calc.dlp_post_process_krw, calc.dlp_support_per_cm2_krw]
+    const calcArr = [
+      calc.min_price_krw,
+      calc.fdm_layer_hours_factor,
+      calc.fdm_labor_cost_krw,
+      calc.fdm_support_per_cm2_krw,
+      calc.sla_layer_exposure_sec,
+      calc.sla_labor_cost_krw,
+      calc.sla_consumables_krw,
+      calc.sla_post_process_krw,
+      calc.sla_support_per_cm2_krw,
+      calc.dlp_layer_exposure_sec,
+      calc.dlp_labor_cost_krw,
+      calc.dlp_consumables_krw,
+      calc.dlp_post_process_krw,
+      calc.dlp_support_per_cm2_krw,
+    ]
     const calcPlaceholders = calcArr.map(() => '?').join(', ')
-    // 값이 실제로 바뀐 경우에만 갱신 → updated_at = 마지막 단가·사양 변경 시각 (장바구니 '단가 변경' 판정 기준)
     const changedWhere = changedColumnsWhere([
-      'name', 'max_x_mm', 'max_y_mm', 'max_z_mm', 'hourly_rate', 'layer_heights_json', 'is_active',
+      'name',
+      'quote_family',
+      'max_x_mm',
+      'max_y_mm',
+      'max_z_mm',
+      'hourly_rate',
+      'layer_heights_json',
+      'is_active',
       ...(hasLayerCosts ? ['layer_costs_json'] : []),
       ...[...calcSet.matchAll(/(\w+) = excluded\./g)].map((m) => m[1]),
     ])
 
-    const sql = hasLayerCosts
-      ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
-         ON CONFLICT(store_id, type) DO UPDATE SET
-           name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
-           hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
-           is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP${changedWhere}`
-      : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
-         ON CONFLICT(store_id, type) DO UPDATE SET
-           name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
-           hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
-           is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP${changedWhere}`
+    const runWithFamily = async () => {
+      const sql = hasLayerCosts
+        ? `INSERT INTO printer_equipment (type, name, quote_family, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
+           ON CONFLICT(store_id, type) DO UPDATE SET
+             name = excluded.name, quote_family = excluded.quote_family, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
+             hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
+             is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP${changedWhere}`
+        : `INSERT INTO printer_equipment (type, name, quote_family, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${calcPlaceholders}, CURRENT_TIMESTAMP, ?)
+           ON CONFLICT(store_id, type) DO UPDATE SET
+             name = excluded.name, quote_family = excluded.quote_family, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
+             hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
+             is_active = excluded.is_active${calcSet}, updated_at = CURRENT_TIMESTAMP${changedWhere}`
 
-    if (hasLayerCosts) {
-      await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ...calcArr, storeId).run()
-    } else {
-      await env.DB.prepare(sql).bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ...calcArr, storeId).run()
+      if (hasLayerCosts) {
+        await env.DB.prepare(sql)
+          .bind(
+            type,
+            name,
+            quoteFamily,
+            max_x_mm,
+            max_y_mm,
+            max_z_mm,
+            hourly_rate,
+            layer_heights_json,
+            layer_costs_json,
+            is_active,
+            ...calcArr,
+            storeId
+          )
+          .run()
+      } else {
+        await env.DB.prepare(sql)
+          .bind(
+            type,
+            name,
+            quoteFamily,
+            max_x_mm,
+            max_y_mm,
+            max_z_mm,
+            hourly_rate,
+            layer_heights_json,
+            is_active,
+            ...calcArr,
+            storeId
+          )
+          .run()
+      }
     }
 
-    return NextResponse.json({ success: true })
+    const runLegacy = async () => {
+      // quote_family 컬럼 없는 구 DB — FDM/SLA/DLP만
+      if (!isCoreEquipmentType(type)) {
+        throw new Error('no such column: quote_family')
+      }
+      const legacyType = type as QuoteFamily
+      const calcLegacy = calcParamValues(legacyType, body)
+      const calcSetLegacy = CALC_SET_BY_FAMILY[legacyType]
+      const calcArrLegacy = [
+        calcLegacy.min_price_krw,
+        calcLegacy.fdm_layer_hours_factor,
+        calcLegacy.fdm_labor_cost_krw,
+        calcLegacy.fdm_support_per_cm2_krw,
+        calcLegacy.sla_layer_exposure_sec,
+        calcLegacy.sla_labor_cost_krw,
+        calcLegacy.sla_consumables_krw,
+        calcLegacy.sla_post_process_krw,
+        calcLegacy.sla_support_per_cm2_krw,
+        calcLegacy.dlp_layer_exposure_sec,
+        calcLegacy.dlp_labor_cost_krw,
+        calcLegacy.dlp_consumables_krw,
+        calcLegacy.dlp_post_process_krw,
+        calcLegacy.dlp_support_per_cm2_krw,
+      ]
+      const placeholders = calcArrLegacy.map(() => '?').join(', ')
+      const whereLegacy = changedColumnsWhere([
+        'name',
+        'max_x_mm',
+        'max_y_mm',
+        'max_z_mm',
+        'hourly_rate',
+        'layer_heights_json',
+        'is_active',
+        ...(hasLayerCosts ? ['layer_costs_json'] : []),
+        ...[...calcSetLegacy.matchAll(/(\w+) = excluded\./g)].map((m) => m[1]),
+      ])
+      const sql = hasLayerCosts
+        ? `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, layer_costs_json, is_active, ${CALC_COLS}, updated_at, store_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ${placeholders}, CURRENT_TIMESTAMP, ?)
+           ON CONFLICT(store_id, type) DO UPDATE SET
+             name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
+             hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json, layer_costs_json = excluded.layer_costs_json,
+             is_active = excluded.is_active${calcSetLegacy}, updated_at = CURRENT_TIMESTAMP${whereLegacy}`
+        : `INSERT INTO printer_equipment (type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ${CALC_COLS}, updated_at, store_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${placeholders}, CURRENT_TIMESTAMP, ?)
+           ON CONFLICT(store_id, type) DO UPDATE SET
+             name = excluded.name, max_x_mm = excluded.max_x_mm, max_y_mm = excluded.max_y_mm, max_z_mm = excluded.max_z_mm,
+             hourly_rate = excluded.hourly_rate, layer_heights_json = excluded.layer_heights_json,
+             is_active = excluded.is_active${calcSetLegacy}, updated_at = CURRENT_TIMESTAMP${whereLegacy}`
+      if (hasLayerCosts) {
+        await env.DB.prepare(sql)
+          .bind(
+            type,
+            name,
+            max_x_mm,
+            max_y_mm,
+            max_z_mm,
+            hourly_rate,
+            layer_heights_json,
+            layer_costs_json,
+            is_active,
+            ...calcArrLegacy,
+            storeId
+          )
+          .run()
+      } else {
+        await env.DB.prepare(sql)
+          .bind(type, name, max_x_mm, max_y_mm, max_z_mm, hourly_rate, layer_heights_json, is_active, ...calcArrLegacy, storeId)
+          .run()
+      }
+    }
+
+    try {
+      await runWithFamily()
+    } catch (e) {
+      const msg = String(e instanceof Error ? e.message : e).toLowerCase()
+      if (msg.includes('no such column') && msg.includes('quote_family')) {
+        await runLegacy()
+      } else {
+        throw e
+      }
+    }
+
+    return NextResponse.json({ success: true, data: { type, quote_family: quoteFamily } })
   } catch (e) {
     console.error('POST /api/admin/equipment', e)
     const msg = String(e instanceof Error ? e.message : e).toLowerCase()
     if (msg.includes('no such table') && msg.includes('printer_equipment')) {
       return NextResponse.json(
-        { error: 'printer_equipment 테이블이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment.sql' },
+        {
+          error:
+            'printer_equipment 테이블이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment.sql',
+        },
+        { status: 503 }
+      )
+    }
+    if (msg.includes('no such column') && msg.includes('quote_family')) {
+      return NextResponse.json(
+        {
+          error:
+            '장비 추가용 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_quote_family.sql',
+        },
         { status: 503 }
       )
     }
     if (msg.includes('no such column') && msg.includes('layer_costs_json')) {
       return NextResponse.json(
-        { error: 'layer_costs_json 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment_layer_costs.sql' },
+        {
+          error:
+            'layer_costs_json 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment_layer_costs.sql',
+        },
         { status: 503 }
       )
     }
     if (msg.includes('no such column') && msg.includes('min_price_krw')) {
       return NextResponse.json(
-        { error: '기본금액(최소견적) 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_min_price.sql' },
+        {
+          error:
+            '기본금액(최소견적) 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_min_price.sql',
+        },
         { status: 503 }
       )
     }
     if (msg.includes('no such column') && msg.includes('support_per_cm2_krw')) {
       return NextResponse.json(
-        { error: '레진 서포트 단가 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_resin_support.sql' },
+        {
+          error:
+            '레진 서포트 단가 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./migrations/schema_equipment_resin_support.sql',
+        },
         { status: 503 }
       )
     }
-    if (msg.includes('no such column') && (msg.includes('fdm_layer_hours_factor') || msg.includes('sla_layer_exposure_sec') || msg.includes('dlp_layer_exposure_sec'))) {
+    if (
+      msg.includes('no such column') &&
+      (msg.includes('fdm_layer_hours_factor') ||
+        msg.includes('sla_layer_exposure_sec') ||
+        msg.includes('dlp_layer_exposure_sec'))
+    ) {
       return NextResponse.json(
-        { error: '견적 산출 기준 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment_calc_params.sql' },
+        {
+          error:
+            '견적 산출 기준 컬럼이 없습니다. 터미널에서: npx wrangler d1 execute wow3d-production --remote --file=./schema_equipment_calc_params.sql',
+        },
         { status: 503 }
       )
     }
     return NextResponse.json({ error: 'Failed to update equipment' }, { status: 500 })
+  }
+}
+
+/**
+ * DELETE /api/admin/equipment?type=LCD — 커스텀 출력방식만 삭제 (FDM/SLA/DLP는 비활성만)
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const { env } = getCloudflareContext()
+    if (!env?.DB) return NextResponse.json({ error: 'DB not available' }, { status: 503 })
+
+    const auth = await requireAdminAuth(req, env.DB)
+    if (auth instanceof Response) return auth
+    const { storeId } = auth
+
+    const type = normalizeEquipmentTypeCode(req.nextUrl.searchParams.get('type'))
+    if (!type) return NextResponse.json({ error: 'type이 필요합니다' }, { status: 400 })
+    if (isCoreEquipmentType(type)) {
+      return NextResponse.json(
+        { error: 'FDM·SLA·DLP는 삭제할 수 없습니다. 사용자 노출을 끄려면 비활성으로 저장하세요.' },
+        { status: 400 }
+      )
+    }
+
+    await env.DB.prepare('DELETE FROM printer_equipment WHERE store_id = ? AND type = ?')
+      .bind(storeId, type)
+      .run()
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    console.error('DELETE /api/admin/equipment', e)
+    return NextResponse.json({ error: '장비 삭제 실패' }, { status: 500 })
   }
 }

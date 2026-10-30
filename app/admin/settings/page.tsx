@@ -17,10 +17,18 @@ import { DLP_DEFAULT_SUPPORT_PER_CM2_KRW, SLA_DEFAULT_SUPPORT_PER_CM2_KRW } from
 import PricingPresets from '@/components/admin/PricingPresets'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getAdminAuthHeaders } from '@/lib/admin-auth-headers'
+import {
+  CORE_QUOTE_FAMILIES,
+  isCoreEquipmentType,
+  normalizeEquipmentTypeCode,
+  normalizeQuoteFamily,
+  type QuoteFamily,
+} from '@/lib/print-method'
 
 type EquipmentRow = {
   type: string
   name: string | null
+  quote_family?: string | null
   max_x_mm: number
   max_y_mm: number
   max_z_mm: number
@@ -46,6 +54,7 @@ type EquipmentRow = {
 
 type EquipForm = {
   name: string
+  quote_family: QuoteFamily
   max_x_mm: number
   max_y_mm: number
   max_z_mm: number
@@ -81,6 +90,12 @@ export default function AdminSettings() {
   const [equipment, setEquipment] = useState<EquipmentRow[]>([])
   const [storeConfigs, setStoreConfigs] = useState<{ setting_key: string, setting_value: string }[]>([])
   const [isAddingMaterial, setIsAddingMaterial] = useState(false)
+  const [isAddingEquipment, setIsAddingEquipment] = useState(false)
+  const [newEquipment, setNewEquipment] = useState<{ type: string; name: string; quote_family: QuoteFamily }>({
+    type: '',
+    name: '',
+    quote_family: 'FDM',
+  })
   const [newMaterial, setNewMaterial] = useState<Partial<Material>>({
     name: '',
     type: 'FDM',
@@ -102,6 +117,32 @@ export default function AdminSettings() {
 
   const [savingEquip, setSavingEquip] = useState<string | null>(null)
   const [equipForms, setEquipForms] = useState<Record<string, EquipForm>>({})
+
+  const equipmentTypes = useMemo(() => {
+    const set = new Set<string>(['FDM', 'SLA', 'DLP'])
+    for (const e of equipment) {
+      const t = String(e.type || '').trim().toUpperCase()
+      if (t) set.add(t)
+    }
+    for (const t of Object.keys(equipForms)) {
+      const u = String(t || '').trim().toUpperCase()
+      if (u) set.add(u)
+    }
+    return Array.from(set).sort((a, b) => {
+      const order = { FDM: 0, SLA: 1, DLP: 2 } as Record<string, number>
+      const ao = order[a] ?? 99
+      const bo = order[b] ?? 99
+      if (ao !== bo) return ao - bo
+      return a.localeCompare(b)
+    })
+  }, [equipment, equipForms])
+
+  const materialUsesResinPrice = useCallback((type: string) => {
+    const u = String(type || 'FDM').trim().toUpperCase()
+    const row = equipment.find((x) => String(x.type).toUpperCase() === u)
+    const family = normalizeQuoteFamily(row?.quote_family ?? equipForms[u]?.quote_family, u)
+    return family === 'SLA' || family === 'DLP'
+  }, [equipment, equipForms])
 
   // 탭 변경 핸들러
   const handleTabChange = (value: string) => {
@@ -166,60 +207,76 @@ export default function AdminSettings() {
   }, [fetchData])
 
   useEffect(() => {
-    const next: Record<string, EquipForm> = {}
-    for (const t of ['FDM', 'SLA', 'DLP']) {
-      const e = equipment.find((x) => x.type === t) as EquipmentRow | undefined
-      const d = EQUIPMENT_DEFAULTS[t]
-      const baseRate = e?.hourly_rate ?? (d?.hourly_rate as number) ?? 5000
-      const arr = (() => {
+    const types = new Set<string>(['FDM', 'SLA', 'DLP'])
+    for (const e of equipment) {
+      const t = String(e.type || '').trim().toUpperCase()
+      if (t) types.add(t)
+    }
+    setEquipForms((prev) => {
+      const next: Record<string, EquipForm> = {}
+      for (const t of Array.from(types)) {
+        const e = equipment.find((x) => String(x.type).toUpperCase() === t)
+        const family = normalizeQuoteFamily(e?.quote_family ?? prev[t]?.quote_family, t)
+        const d = EQUIPMENT_DEFAULTS[family] || EQUIPMENT_DEFAULTS.FDM
+        const baseRate = e?.hourly_rate ?? prev[t]?.hourly_rate ?? (d?.hourly_rate as number) ?? 5000
+        const defaultHeights = family === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1]
+        const arr = (() => {
+          try {
+            const j = e?.layer_heights_json || d?.layer_heights_json || JSON.stringify(defaultHeights)
+            const v = typeof j === 'string' && j.startsWith('[') ? JSON.parse(j) : []
+            return Array.isArray(v) && v.length ? v : defaultHeights
+          } catch {
+            return defaultHeights
+          }
+        })()
+        let parsed: Record<string, number> = {}
         try {
-          const j = e?.layer_heights_json || d?.layer_heights_json || (t === 'FDM' ? '[0.1,0.2,0.3]' : '[0.025,0.05,0.1]')
-          const v = typeof j === 'string' && j.startsWith('[') ? JSON.parse(j) : []
-          return Array.isArray(v) ? v : (t === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
-        } catch { return t === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1] }
-      })()
-      let parsed: Record<string, number> = {}
-      try {
-        if (e?.layer_costs_json && typeof e.layer_costs_json === 'string') {
-          const o = JSON.parse(e.layer_costs_json)
-          if (o && typeof o === 'object' && !Array.isArray(o)) {
-            for (const [k, v] of Object.entries(o)) {
-              const n = Number(v)
-              if (Number.isFinite(n) && n >= 0) parsed[String(k)] = n
+          if (e?.layer_costs_json && typeof e.layer_costs_json === 'string') {
+            const o = JSON.parse(e.layer_costs_json)
+            if (o && typeof o === 'object' && !Array.isArray(o)) {
+              for (const [k, v] of Object.entries(o)) {
+                const n = Number(v)
+                if (Number.isFinite(n) && n >= 0) parsed[String(k)] = n
+              }
             }
           }
+        } catch { /* */ }
+        if (!Object.keys(parsed).length && prev[t]?.layer_costs) parsed = { ...prev[t].layer_costs }
+        const layer_costs: Record<string, number> = {}
+        for (const th of arr) {
+          const k = String(th)
+          layer_costs[k] = (parsed[k] != null && Number.isFinite(parsed[k])) ? parsed[k] : baseRate
         }
-      } catch { /* */ }
-      const layer_costs: Record<string, number> = {}
-      for (const th of arr) {
-        const k = String(th)
-        layer_costs[k] = (parsed[k] != null && Number.isFinite(parsed[k])) ? parsed[k] : baseRate
+        next[t] = {
+          name: e?.name ?? prev[t]?.name ?? '',
+          quote_family: family,
+          max_x_mm: e?.max_x_mm ?? prev[t]?.max_x_mm ?? (d?.max_x_mm as number) ?? 220,
+          max_y_mm: e?.max_y_mm ?? prev[t]?.max_y_mm ?? (d?.max_y_mm as number) ?? 220,
+          max_z_mm: e?.max_z_mm ?? prev[t]?.max_z_mm ?? (d?.max_z_mm as number) ?? 250,
+          hourly_rate: baseRate,
+          layer_heights_json: arr.join(', '),
+          layer_costs,
+          min_price_krw: e?.min_price_krw ?? prev[t]?.min_price_krw ?? undefined,
+          fdm_layer_hours_factor: e?.fdm_layer_hours_factor ?? prev[t]?.fdm_layer_hours_factor ?? 0.02,
+          fdm_labor_cost_krw: e?.fdm_labor_cost_krw ?? prev[t]?.fdm_labor_cost_krw ?? 6500,
+          fdm_support_per_cm2_krw: e?.fdm_support_per_cm2_krw ?? prev[t]?.fdm_support_per_cm2_krw ?? 26,
+          sla_layer_exposure_sec: e?.sla_layer_exposure_sec ?? prev[t]?.sla_layer_exposure_sec ?? 8,
+          sla_labor_cost_krw: e?.sla_labor_cost_krw ?? prev[t]?.sla_labor_cost_krw ?? 9100,
+          sla_consumables_krw: e?.sla_consumables_krw ?? prev[t]?.sla_consumables_krw ?? 3900,
+          sla_post_process_krw: e?.sla_post_process_krw ?? prev[t]?.sla_post_process_krw ?? 10400,
+          sla_support_per_cm2_krw: e?.sla_support_per_cm2_krw ?? prev[t]?.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
+          dlp_layer_exposure_sec: e?.dlp_layer_exposure_sec ?? prev[t]?.dlp_layer_exposure_sec ?? 3,
+          dlp_labor_cost_krw: e?.dlp_labor_cost_krw ?? prev[t]?.dlp_labor_cost_krw ?? 9100,
+          dlp_consumables_krw: e?.dlp_consumables_krw ?? prev[t]?.dlp_consumables_krw ?? 3900,
+          dlp_post_process_krw: e?.dlp_post_process_krw ?? prev[t]?.dlp_post_process_krw ?? 10400,
+          dlp_support_per_cm2_krw: e?.dlp_support_per_cm2_krw ?? prev[t]?.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
+        }
       }
-      next[t] = {
-        name: e?.name ?? '',
-        max_x_mm: e?.max_x_mm ?? (d?.max_x_mm as number) ?? 220,
-        max_y_mm: e?.max_y_mm ?? (d?.max_y_mm as number) ?? 220,
-        max_z_mm: e?.max_z_mm ?? (d?.max_z_mm as number) ?? 250,
-        hourly_rate: baseRate,
-        layer_heights_json: arr.join(', '),
-        layer_costs,
-        min_price_krw: e?.min_price_krw ?? undefined,
-        fdm_layer_hours_factor: e?.fdm_layer_hours_factor ?? 0.02,
-        fdm_labor_cost_krw: e?.fdm_labor_cost_krw ?? 6500,
-        fdm_support_per_cm2_krw: e?.fdm_support_per_cm2_krw ?? 26,
-        sla_layer_exposure_sec: e?.sla_layer_exposure_sec ?? 8,
-        sla_labor_cost_krw: e?.sla_labor_cost_krw ?? 9100,
-        sla_consumables_krw: e?.sla_consumables_krw ?? 3900,
-        sla_post_process_krw: e?.sla_post_process_krw ?? 10400,
-        sla_support_per_cm2_krw: e?.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
-        dlp_layer_exposure_sec: e?.dlp_layer_exposure_sec ?? 3,
-        dlp_labor_cost_krw: e?.dlp_labor_cost_krw ?? 9100,
-        dlp_consumables_krw: e?.dlp_consumables_krw ?? 3900,
-        dlp_post_process_krw: e?.dlp_post_process_krw ?? 10400,
-        dlp_support_per_cm2_krw: e?.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
+      for (const [t, form] of Object.entries(prev)) {
+        if (!next[t]) next[t] = form
       }
-    }
-    setEquipForms(next)
+      return next
+    })
   }, [equipment])
 
   const handleSaveStoreConfigs = async () => {
@@ -248,13 +305,14 @@ export default function AdminSettings() {
     });
   }
 
-  const getDefaultForm = (t: string): EquipForm => {
-    const d = EQUIPMENT_DEFAULTS[t]
-    const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (t === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
-    return { name: '', max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, min_price_krw: undefined, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, sla_support_per_cm2_krw: SLA_DEFAULT_SUPPORT_PER_CM2_KRW, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400, dlp_support_per_cm2_krw: DLP_DEFAULT_SUPPORT_PER_CM2_KRW }
+  const getDefaultForm = (t: string, familyHint?: QuoteFamily): EquipForm => {
+    const family = normalizeQuoteFamily(familyHint, t)
+    const d = EQUIPMENT_DEFAULTS[family] || EQUIPMENT_DEFAULTS.FDM
+    const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (family === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
+    return { name: '', quote_family: family, max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, min_price_krw: undefined, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, sla_support_per_cm2_krw: SLA_DEFAULT_SUPPORT_PER_CM2_KRW, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400, dlp_support_per_cm2_krw: DLP_DEFAULT_SUPPORT_PER_CM2_KRW }
   }
 
-  const setEquipLayerCost = (t: string, thickness: string, value: number) => {
+    const setEquipLayerCost = (t: string, thickness: string, value: number) => {
     setEquipForms((prev) => {
       const cur = prev[t] || getDefaultForm(t)
       const lc = { ...(cur.layer_costs || {}), [String(thickness)]: value }
@@ -275,7 +333,8 @@ export default function AdminSettings() {
         .split(',')
         .map((n) => parseFloat(n.trim()))
         .filter(Number.isFinite)
-      const arr = layerArr.length ? layerArr : (type === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
+      const family = normalizeQuoteFamily(form.quote_family, type)
+      const arr = layerArr.length ? layerArr : (family === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
       const layer_costs: Record<string, number> = {}
       for (const th of arr) {
         const k = String(th)
@@ -283,6 +342,8 @@ export default function AdminSettings() {
           ? form.layer_costs[k]
           : form.hourly_rate
       }
+      const row = equipment.find((x) => String(x.type).toUpperCase() === type)
+      const isActive = row ? (row.is_active ? 1 : 0) : 1
       const res = await fetch('/api/admin/equipment', {
         method: 'POST',
         headers: {
@@ -291,6 +352,7 @@ export default function AdminSettings() {
         },
         body: JSON.stringify({
           type,
+          quote_family: family,
           name: form.name?.trim() || null,
           max_x_mm: form.max_x_mm,
           max_y_mm: form.max_y_mm,
@@ -298,7 +360,7 @@ export default function AdminSettings() {
           hourly_rate: form.hourly_rate,
           layer_heights_json: JSON.stringify(arr),
           layer_costs_json: layer_costs,
-          is_active: 1,
+          is_active: isActive,
           min_price_krw: form.min_price_krw != null && form.min_price_krw > 0 ? form.min_price_krw : null,
           fdm_layer_hours_factor: form.fdm_layer_hours_factor ?? 0.02,
           fdm_labor_cost_krw: form.fdm_labor_cost_krw ?? 6500,
@@ -337,6 +399,131 @@ export default function AdminSettings() {
       const cur = prev[t] || getDefaultForm(t)
       return { ...prev, [t]: { ...cur, [k]: v } }
     })
+  }
+
+  const handleAddEquipment = async () => {
+    const type = normalizeEquipmentTypeCode(newEquipment.type)
+    if (!type) {
+      showToast.error('추가 실패', new Error('장비 코드는 영문·숫자·_- 만 사용 (2~16자, 예: LCD, MJF)'))
+      return
+    }
+    if (equipForms[type] || equipment.some((e) => String(e.type).toUpperCase() === type)) {
+      showToast.error('추가 실패', new Error(`이미 있는 장비 코드입니다: ${type}`))
+      return
+    }
+    const family = normalizeQuoteFamily(newEquipment.quote_family, type)
+    const form = {
+      ...getDefaultForm(type, family),
+      name: newEquipment.name.trim(),
+      quote_family: family,
+    }
+    setEquipForms((prev) => ({ ...prev, [type]: form }))
+    setIsAddingEquipment(false)
+    setNewEquipment({ type: '', name: '', quote_family: 'FDM' })
+    showToast.success(`${type} 장비를 목록에 추가했습니다. 사양을 입력한 뒤 저장하세요.`)
+  }
+
+  const handleToggleEquipmentActive = async (type: string, nextActive: boolean) => {
+    const form = equipForms[type] || getDefaultForm(type)
+    if (!useAuthStore.getState().token?.trim()) {
+      showToast.error('저장 실패', new Error('인증 정보가 없습니다. 다시 로그인해 주세요.'))
+      return
+    }
+    setSavingEquip(type)
+    try {
+      const layerArr = String(form.layer_heights_json || '')
+        .split(',')
+        .map((n) => parseFloat(n.trim()))
+        .filter(Number.isFinite)
+      const family = normalizeQuoteFamily(form.quote_family, type)
+      const arr = layerArr.length ? layerArr : (family === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
+      const layer_costs: Record<string, number> = {}
+      for (const th of arr) {
+        const k = String(th)
+        layer_costs[k] = (form.layer_costs && form.layer_costs[k] != null && Number.isFinite(form.layer_costs[k]))
+          ? form.layer_costs[k]
+          : form.hourly_rate
+      }
+      const res = await fetch('/api/admin/equipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+        body: JSON.stringify({
+          type,
+          quote_family: family,
+          name: form.name?.trim() || null,
+          max_x_mm: form.max_x_mm,
+          max_y_mm: form.max_y_mm,
+          max_z_mm: form.max_z_mm,
+          hourly_rate: form.hourly_rate,
+          layer_heights_json: JSON.stringify(arr),
+          layer_costs_json: layer_costs,
+          is_active: nextActive ? 1 : 0,
+          min_price_krw: form.min_price_krw != null && form.min_price_krw > 0 ? form.min_price_krw : null,
+          fdm_layer_hours_factor: form.fdm_layer_hours_factor ?? 0.02,
+          fdm_labor_cost_krw: form.fdm_labor_cost_krw ?? 6500,
+          fdm_support_per_cm2_krw: form.fdm_support_per_cm2_krw ?? 26,
+          sla_layer_exposure_sec: form.sla_layer_exposure_sec ?? 8,
+          sla_labor_cost_krw: form.sla_labor_cost_krw ?? 9100,
+          sla_consumables_krw: form.sla_consumables_krw ?? 3900,
+          sla_post_process_krw: form.sla_post_process_krw ?? 10400,
+          sla_support_per_cm2_krw: form.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
+          dlp_layer_exposure_sec: form.dlp_layer_exposure_sec ?? 3,
+          dlp_labor_cost_krw: form.dlp_labor_cost_krw ?? 9100,
+          dlp_consumables_krw: form.dlp_consumables_krw ?? 3900,
+          dlp_post_process_krw: form.dlp_post_process_krw ?? 10400,
+          dlp_support_per_cm2_krw: form.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
+        }),
+      })
+      if (!res.ok) {
+        let errMsg = '저장 실패'
+        try { const j = await res.json(); if (j && typeof j.error === 'string') errMsg = j.error } catch { /* */ }
+        throw new Error(errMsg)
+      }
+      showToast.success(nextActive ? `${type} 사용자 견적에 노출` : `${type} 사용자 견적에서 숨김`)
+      fetchData()
+    } catch (e) {
+      showToast.error('노출 설정 실패', e)
+    } finally {
+      setSavingEquip(null)
+    }
+  }
+
+  const handleDeleteEquipment = async (type: string) => {
+    if (isCoreEquipmentType(type)) {
+      showToast.error('삭제 불가', new Error('FDM/SLA/DLP 기본 장비는 삭제할 수 없습니다. 노출 끄기를 사용하세요.'))
+      return
+    }
+    if (!confirm(`${type} 장비를 삭제할까요? 연결된 소재·견적 기록이 있을 수 있습니다.`)) return
+    const inDb = equipment.some((e) => String(e.type).toUpperCase() === type)
+    if (!inDb) {
+      setEquipForms((prev) => {
+        const next = { ...prev }
+        delete next[type]
+        return next
+      })
+      showToast.success(`${type} 목록에서 제거`)
+      return
+    }
+    try {
+      const res = await fetch(`/api/admin/equipment?type=${encodeURIComponent(type)}`, {
+        method: 'DELETE',
+        headers: getAdminAuthHeaders(),
+      })
+      if (!res.ok) {
+        let errMsg = '삭제 실패'
+        try { const j = await res.json(); if (j && typeof j.error === 'string') errMsg = j.error } catch { /* */ }
+        throw new Error(errMsg)
+      }
+      setEquipForms((prev) => {
+        const next = { ...prev }
+        delete next[type]
+        return next
+      })
+      showToast.success(`${type} 장비 삭제 완료`)
+      fetchData()
+    } catch (e) {
+      showToast.error('삭제 실패', e)
+    }
   }
 
   const handleDeleteMaterial = async (id: number) => {
@@ -396,7 +583,7 @@ export default function AdminSettings() {
         colors: newMaterial.colors || ['#FFFFFF'],
         description: (newMaterial as any).description || undefined,
       }
-      if (type === 'SLA' || type === 'DLP') {
+      if (materialUsesResinPrice(type)) {
         body.pricePerMl = newMaterial.pricePerMl != null ? Number(newMaterial.pricePerMl) : null
       }
       const res = await fetch('/api/admin/materials', {
@@ -437,7 +624,7 @@ export default function AdminSettings() {
         colors: editForm.colors || ['#FFFFFF'],
         description: (editForm as any).description ?? undefined,
       }
-      if (type === 'SLA' || type === 'DLP') {
+      if (materialUsesResinPrice(type)) {
         patchBody.pricePerMl = editForm.pricePerMl != null ? Number(editForm.pricePerMl) : null
       }
       const res = await fetch(`/api/admin/materials/${editingMaterial.id}`, {
@@ -613,20 +800,103 @@ export default function AdminSettings() {
           </Card>
         </TabsContent>
 
-        {/* 장비 설정: FDM, SLA, DLP */}
+        {/* 장비 설정: 출력방식 추가·노출 */}
         <TabsContent value="equipment" className="space-y-6">
-          {(['FDM', 'SLA', 'DLP'] as const).map((t) => {
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm text-white/70">출력방식을 추가하면 사용자 견적 화면에 노출됩니다. 견적 공식은 FDM/SLA/DLP 중 하나를 선택합니다.</p>
+            </div>
+            <Dialog open={isAddingEquipment} onOpenChange={setIsAddingEquipment}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" /> 장비 추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>새 출력방식(장비) 추가</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">코드</Label>
+                    <Input
+                      className="col-span-3 bg-white/5 border-white/10"
+                      value={newEquipment.type}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, type: e.target.value.toUpperCase() })}
+                      placeholder="예: LCD, MJF"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">표시 이름</Label>
+                    <Input
+                      className="col-span-3 bg-white/5 border-white/10"
+                      value={newEquipment.name}
+                      onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })}
+                      placeholder="예: LCD 레진"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">견적 공식</Label>
+                    <Select
+                      value={newEquipment.quote_family}
+                      onValueChange={(v) => setNewEquipment({ ...newEquipment, quote_family: v as QuoteFamily })}
+                    >
+                      <SelectTrigger className="col-span-3 bg-white/5 border-white/10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CORE_QUOTE_FAMILIES.map((f) => (
+                          <SelectItem key={f} value={f}>{f}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-white/40 col-span-4">코드는 저장 후 변경할 수 없습니다. 견적 공식에 맞는 산출 기준이 적용됩니다.</p>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleAddEquipment}>목록에 추가</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          {equipmentTypes.map((t) => {
             const f = equipForms[t] || getDefaultForm(t)
+            const family = normalizeQuoteFamily(f.quote_family, t)
+            const row = equipment.find((x) => String(x.type).toUpperCase() === t)
+            const isActive = row ? !!row.is_active : true
             return (
               <Card key={t} className="bg-white/[0.03] border-white/10">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-sm ${typeBadge(t)}`}>{t}</span>
-                    {f.name && <span className="text-white/60 font-normal">{f.name}</span>}
-                  </CardTitle>
-                  <CardDescription className="text-white/50">
-                    최대 출력 크기(mm), 시간당 비용, 적용 레이어 두께를 설정합니다.
-                  </CardDescription>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-white flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded text-sm ${typeBadge(t)}`}>{t}</span>
+                        {f.name && <span className="text-white/60 font-normal">{f.name}</span>}
+                        <span className="text-[10px] font-medium text-white/40 border border-white/10 rounded px-1.5 py-0.5">공식 {family}</span>
+                        {!isActive && <span className="text-[10px] font-medium text-amber-400/90 border border-amber-400/30 rounded px-1.5 py-0.5">숨김</span>}
+                      </CardTitle>
+                      <CardDescription className="text-white/50 mt-1">
+                        최대 출력 크기(mm), 시간당 비용, 적용 레이어 두께를 설정합니다.
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="rounded border-white/20"
+                          checked={isActive}
+                          disabled={savingEquip === t || !row}
+                          onChange={(e) => handleToggleEquipmentActive(t, e.target.checked)}
+                        />
+                        사용자 노출
+                      </label>
+                      {!isCoreEquipmentType(t) && (
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteEquipment(t)} title="장비 삭제">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -698,7 +968,7 @@ export default function AdminSettings() {
                   <div>
                     <Label className="text-[10px] text-white/50 uppercase">견적 산출 기준 — 출력 시간·인건비·지지/소모품/후가공 (상세보기·견적 금액 연동)</Label>
                     <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {t === 'FDM' && (
+                      {family === 'FDM' && (
                         <>
                           <div>
                             <Label className="text-[10px] text-white/40">레이어당 소요 시간 (h)</Label>
@@ -714,7 +984,7 @@ export default function AdminSettings() {
                           </div>
                         </>
                       )}
-                      {t === 'SLA' && (
+                      {family === 'SLA' && (
                         <>
                           <div>
                             <Label className="text-[10px] text-white/40">레이어당 노출 시간 (초)</Label>
@@ -738,7 +1008,7 @@ export default function AdminSettings() {
                           </div>
                         </>
                       )}
-                      {t === 'DLP' && (
+                      {family === 'DLP' && (
                         <>
                           <div>
                             <Label className="text-[10px] text-white/40">레이어당 노출 시간 (초)</Label>
@@ -784,7 +1054,7 @@ export default function AdminSettings() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>소재 목록</CardTitle>
-                <CardDescription>FDM / SLA / DLP 견적에 사용되는 소재</CardDescription>
+                <CardDescription>등록된 출력방식(장비)에 연결되는 소재. 추가하면 사용자 견적에 노출됩니다.</CardDescription>
               </div>
               <Dialog open={isAddingMaterial} onOpenChange={setIsAddingMaterial}>
                 <DialogTrigger asChild>
@@ -808,13 +1078,13 @@ export default function AdminSettings() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="FDM">FDM</SelectItem>
-                          <SelectItem value="SLA">SLA</SelectItem>
-                          <SelectItem value="DLP">DLP</SelectItem>
+                          {equipmentTypes.map((t) => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    {newMaterial.type === 'FDM' ? (
+                    {!materialUsesResinPrice(newMaterial.type || 'FDM') ? (
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">g당 가격 (원)</Label>
                         <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} placeholder="FDM 필라멘트 가격" />
@@ -861,7 +1131,7 @@ export default function AdminSettings() {
                           <span className={`px-2 py-1 rounded text-xs font-bold border ${typeBadge(m.type || '')}`}>{m.type}</span>
                         </td>
                         <td className="p-4 text-white/90">
-                          {m.type === 'FDM'
+                          {!materialUsesResinPrice(m.type || 'FDM')
                             ? `${m.pricePerGram}원/g`
                             : (m.pricePerMl != null && m.pricePerMl > 0
                               ? `${m.pricePerMl}원/mL`
@@ -920,13 +1190,13 @@ export default function AdminSettings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="FDM">FDM</SelectItem>
-                        <SelectItem value="SLA">SLA</SelectItem>
-                        <SelectItem value="DLP">DLP</SelectItem>
+                        {equipmentTypes.map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  {editForm.type === 'FDM' ? (
+                  {!materialUsesResinPrice(editForm.type || 'FDM') ? (
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">g당 가격 (원)</Label>
                       <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerGram ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerGram: parseFloat(e.target.value) || 0 })} placeholder="FDM 필라멘트 가격" />

@@ -36,8 +36,23 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json() as any;
         const { name, type, pricePerGram, pricePerMl, density, colors, description } = body;
-        const allowedTypes = ['FDM', 'SLA', 'DLP'];
-        const safeType = allowedTypes.includes(String(type || '').toUpperCase()) ? String(type).toUpperCase() : 'FDM';
+        // 장비(출력방식) type과 맞춘다. 없으면 FDM/SLA/DLP·등록된 장비 코드만 허용
+        const rawType = String(type || 'FDM').trim().toUpperCase();
+        let safeType = rawType;
+        if (!/^[A-Z][A-Z0-9_-]{1,15}$/.test(rawType)) safeType = 'FDM';
+        else if (!['FDM', 'SLA', 'DLP'].includes(rawType)) {
+            const exists = await env.DB.prepare(
+                'SELECT 1 AS ok FROM printer_equipment WHERE store_id = ? AND UPPER(type) = ? LIMIT 1'
+            )
+                .bind(storeId, rawType)
+                .first<{ ok?: number }>();
+            if (!exists) {
+                return NextResponse.json(
+                    { error: `출력방식 "${rawType}" 장비가 없습니다. 먼저 장비 설정에서 추가하세요.` },
+                    { status: 400 }
+                );
+            }
+        }
         const pricePerMlVal = (pricePerMl != null && pricePerMl !== '') ? Number(pricePerMl) : null;
 
         const result = await env.DB.prepare(
