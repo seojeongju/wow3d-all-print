@@ -430,7 +430,10 @@ function layoutLines(
     if (active.length === 0) return []
 
     const availH = Math.max(1, box.y1 - box.y0)
-    const gapRatio = 0.22
+    const gapRatio =
+        typeof design.lineGap === 'number' && Number.isFinite(design.lineGap)
+            ? Math.min(0.55, Math.max(0.05, design.lineGap))
+            : 0.22
     const count = active.length
     const unit = availH / (count + gapRatio * (count - 1))
     const [boxX0, boxX1] = rangeFor(box.y0, box.y1)
@@ -489,13 +492,18 @@ function layoutLines(
             rx0 = boxX0
             rx1 = boxX1
         }
+        const lineAlign = item.line.align ?? design.align
+        const lineSpacing =
+            item.line.letterSpacing != null && Number.isFinite(item.line.letterSpacing)
+                ? Number(item.line.letterSpacing)
+                : design.letterSpacing
         const fitted = textOutline(item.font, item.line.text, item.em, 0)
-        const spaced = fitted ? textOutline(item.font, item.line.text, item.em, design.letterSpacing) ?? fitted : null
+        const spaced = fitted ? textOutline(item.font, item.line.text, item.em, lineSpacing) ?? fitted : null
         if (fitted && spaced) {
             const slotCenter = slotTop - slotH / 2
             const dy = slotCenter - item.refMid * item.em
-            const plateDx = alignX(fitted.bounds.minX, fitted.bounds.maxX, rx0, rx1, design.align)
-            const textDx = alignX(spaced.bounds.minX, spaced.bounds.maxX, rx0, rx1, design.align)
+            const plateDx = alignX(fitted.bounds.minX, fitted.bounds.maxX, rx0, rx1, lineAlign)
+            const textDx = alignX(spaced.bounds.minX, spaced.bounds.maxX, rx0, rx1, lineAlign)
             placed.push({
                 polygons: shiftPolys(spaced.polygons, textDx, dy),
                 platePolygons: shiftPolys(fitted.polygons, plateDx, dy),

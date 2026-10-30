@@ -27,14 +27,26 @@ export type NameTagLine = {
     fontId: NameTagFontId
     /** 줄 높이 비율. 1이 기본, 다른 줄과의 상대 크기 */
     size: number
+    /** 줄별 정렬. 없으면 전역 align을 쓴다 */
+    align?: TextAlign
+    /**
+     * 줄별 자간 (em).
+     * null/undefined면 전역 letterSpacing을 쓴다.
+     */
+    letterSpacing?: number | null
 }
 
 export type NameTagDesign = {
     version: typeof NAME_TAG_DESIGN_VERSION
     lines: NameTagLine[]
     align: TextAlign
-    /** 자간 (em 비율, -0.05 ~ 0.3) */
+    /** 자간 (em 비율, -0.05 ~ 0.3) — 줄별 값이 없을 때 기본 */
     letterSpacing: number
+    /**
+     * 줄 간격 비율 (이름 칸 높이 기준 슬롯 대비).
+     * 0에 가까울수록 줄이 붙고, 클수록 벌어진다.
+     */
+    lineGap: number
     /** SVG 템플릿 판. 없으면 기본 도형 */
     baseId: string | null
     plate: {
@@ -78,6 +90,7 @@ export const NAME_TAG_LIMITS = {
     depthMm: [0.4, 2],
     lineSize: [0.4, 1.6],
     letterSpacing: [-0.05, 0.3],
+    lineGap: [0.05, 0.55],
 } as const
 
 export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
@@ -85,6 +98,7 @@ export const DEFAULT_NAME_TAG_DESIGN: NameTagDesign = {
     lines: [{ text: '', fontId: 'nanum-gothic', size: 1 }],
     align: 'center',
     letterSpacing: 0,
+    lineGap: 0.22,
     baseId: null,
     plate: { shape: 'rounded', widthMm: 60, heightMm: 24, thicknessMm: 2.4 },
     textArea: { xMm: 0, yMm: 0 },
@@ -136,11 +150,21 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
     const rawLines: unknown[] = Array.isArray(input.lines) ? input.lines.slice(0, MAX_LINES) : []
     const lines = rawLines.map((line) => {
         const l = (line && typeof line === 'object' ? line : {}) as Record<string, unknown>
+        const lineAlign =
+            l.align === undefined || l.align === null || l.align === ''
+                ? undefined
+                : pick(l.align, TEXT_ALIGNS, d.align)
+        const lineSpacing =
+            l.letterSpacing === undefined || l.letterSpacing === null
+                ? null
+                : clamp(l.letterSpacing, NAME_TAG_LIMITS.letterSpacing, 0)
         return {
             text: typeof l.text === 'string' ? l.text.slice(0, MAX_LINE_CHARS) : '',
             fontId: isNameTagFontId(l.fontId) ? l.fontId : d.lines[0].fontId,
             size: clamp(l.size, NAME_TAG_LIMITS.lineSize, 1),
-        }
+            ...(lineAlign ? { align: lineAlign } : {}),
+            letterSpacing: lineSpacing,
+        } satisfies NameTagLine
     })
     const plate = obj(input.plate)
     const base = isNameTagTemplateId(input.baseId) ? getNameTagTemplate(input.baseId) : null
@@ -156,6 +180,7 @@ export function normalizeNameTagDesign(raw: unknown): NameTagDesign {
         lines: lines.length > 0 ? lines : d.lines,
         align: pick(input.align, TEXT_ALIGNS, d.align),
         letterSpacing: clamp(input.letterSpacing, NAME_TAG_LIMITS.letterSpacing, 0),
+        lineGap: clamp(input.lineGap, NAME_TAG_LIMITS.lineGap, d.lineGap),
         baseId: base?.id ?? null,
         plate: {
             shape: pick(plate.shape, PLATE_SHAPES, d.plate.shape),

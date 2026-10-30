@@ -9,6 +9,8 @@ import {
     AlignCenter,
     AlignLeft,
     AlignRight,
+    ArrowDown,
+    ArrowUp,
     Box,
     ChevronDown,
     Download,
@@ -651,6 +653,25 @@ export function NameTagStudio({ onOpenDraw }: Props) {
     const setAllFonts = (fontId: NameTagFontId) =>
         update((d) => ({ ...d, lines: d.lines.map((line) => ({ ...line, fontId })) }))
 
+    const moveLine = (index: number, direction: -1 | 1) => {
+        update((d) => {
+            const next = [...d.lines]
+            const target = index + direction
+            if (target < 0 || target >= next.length) return d
+            const tmp = next[index]
+            next[index] = next[target]
+            next[target] = tmp
+            return { ...d, lines: next }
+        })
+    }
+
+    const lineLetterSpacing = (line: NameTagDesign['lines'][number]) =>
+        line.letterSpacing != null && Number.isFinite(line.letterSpacing)
+            ? Number(line.letterSpacing)
+            : design.letterSpacing
+
+    const lineAlignOf = (line: NameTagDesign['lines'][number]): TextAlign => line.align ?? design.align
+
     const issues = result?.issues ?? []
     const blocking = issues.some((issue) => issue.level === 'error')
     const hasText = nameTagHasText(design)
@@ -937,10 +958,21 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                update((d) => ({
-                                                    ...d,
-                                                    lines: [...d.lines, { text: '', fontId: d.lines[d.lines.length - 1].fontId, size: 0.6 }],
-                                                }))
+                                                update((d) => {
+                                                    const last = d.lines[d.lines.length - 1]
+                                                    return {
+                                                        ...d,
+                                                        lines: [
+                                                            ...d.lines,
+                                                            {
+                                                                text: '',
+                                                                fontId: last.fontId,
+                                                                size: d.lines.length === 0 ? 1 : 0.7,
+                                                                letterSpacing: null,
+                                                            },
+                                                        ],
+                                                    }
+                                                })
                                             }
                                             className="flex items-center gap-1 rounded-lg bg-teal-400/10 px-2 py-0.5 text-[11px] font-bold text-teal-300 hover:bg-teal-400/20 hover:text-teal-200 transition-colors"
                                         >
@@ -950,83 +982,180 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                     ) : null
                                 }
                             >
-                                <div className="space-y-2.5">
-                                    {design.lines.map((line, index) => (
-                                        <div key={index} className="space-y-2 rounded-xl border border-white/8 bg-black/40 p-2.5">
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    value={line.text}
-                                                    maxLength={MAX_LINE_CHARS}
-                                                    onChange={(e) => setLine(index, { text: e.target.value })}
-                                                    placeholder={t(`linePlaceholder${Math.min(index, 2)}`)}
-                                                    aria-label={t('lineAria', { n: index + 1 })}
-                                                    style={{ fontFamily: getFontFamily(line.fontId) }}
-                                                    className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[15px] font-medium text-white outline-none placeholder:font-sans placeholder:text-[13px] placeholder:text-white/30 focus:border-teal-400/80 focus:bg-white/[0.07] transition-all"
-                                                />
-                                                {design.lines.length > 1 ? (
+                                <p className="text-[11px] font-medium leading-relaxed text-white/45 break-keep">
+                                    {t('linesHint')}
+                                </p>
+                                <div className="space-y-3">
+                                    {design.lines.map((line, index) => {
+                                        const spacing = lineLetterSpacing(line)
+                                        const align = lineAlignOf(line)
+                                        const customSpacing = line.letterSpacing != null && Number.isFinite(line.letterSpacing)
+                                        const heightMm = result?.lines.find((l) => l.index === index)?.heightMm
+                                        return (
+                                            <div
+                                                key={index}
+                                                className="space-y-2.5 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-black/30 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-400/15 text-[11px] font-black text-teal-300">
+                                                        {index + 1}
+                                                    </span>
+                                                    <input
+                                                        value={line.text}
+                                                        maxLength={MAX_LINE_CHARS}
+                                                        onChange={(e) => setLine(index, { text: e.target.value })}
+                                                        placeholder={t(`linePlaceholder${Math.min(index, 2)}`)}
+                                                        aria-label={t('lineAria', { n: index + 1 })}
+                                                        style={{
+                                                            fontFamily: getFontFamily(line.fontId),
+                                                            letterSpacing: `${spacing}em`,
+                                                        }}
+                                                        className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[16px] font-medium text-white outline-none placeholder:font-sans placeholder:text-[13px] placeholder:tracking-normal placeholder:text-white/30 focus:border-teal-400/80 focus:bg-white/[0.07] transition-all"
+                                                    />
+                                                    <div className="flex shrink-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-black/40">
+                                                        <button
+                                                            type="button"
+                                                            disabled={index === 0}
+                                                            onClick={() => moveLine(index, -1)}
+                                                            aria-label={t('moveLineUp')}
+                                                            className="p-1 text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-30"
+                                                        >
+                                                            <ArrowUp className="h-3.5 w-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={index === design.lines.length - 1}
+                                                            onClick={() => moveLine(index, 1)}
+                                                            aria-label={t('moveLineDown')}
+                                                            className="p-1 text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-30"
+                                                        >
+                                                            <ArrowDown className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    {design.lines.length > 1 ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => update((d) => ({ ...d, lines: d.lines.filter((_, i) => i !== index) }))}
+                                                            aria-label={t('removeLine')}
+                                                            className="rounded-lg p-2 text-white/40 hover:bg-red-500/15 hover:text-red-300 transition-colors"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
                                                     <button
                                                         type="button"
-                                                        onClick={() => update((d) => ({ ...d, lines: d.lines.filter((_, i) => i !== index) }))}
-                                                        aria-label={t('removeLine')}
-                                                        className="rounded-lg p-2 text-white/40 hover:bg-red-500/15 hover:text-red-300 transition-colors"
+                                                        aria-expanded={openFontMenu === index}
+                                                        aria-label={t('fontLabel')}
+                                                        onClick={() => setOpenFontMenu((current) => (current === index ? null : index))}
+                                                        className="flex h-9 min-w-[7.5rem] max-w-[40%] shrink-0 items-center justify-between gap-1 rounded-xl border border-white/10 bg-black/60 px-2.5 text-left text-[12px] font-bold text-white hover:border-teal-400/40"
                                                     >
-                                                        <X className="h-4 w-4" />
+                                                        <span className="truncate" style={{ fontFamily: getFontFamily(line.fontId) }}>
+                                                            {getFontLabel(line.fontId)}
+                                                        </span>
+                                                        <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 text-white/50', openFontMenu === index && 'rotate-180 text-teal-300')} />
                                                     </button>
+                                                    <div className="min-w-0 flex-1 space-y-1">
+                                                        <div className="flex items-center justify-between gap-2 px-0.5">
+                                                            <span className="text-[10px] font-bold uppercase tracking-wide text-white/40">{t('lineSize')}</span>
+                                                            <span className="font-mono text-[11px] font-bold text-teal-300/90">
+                                                                {heightMm != null ? `${heightMm.toFixed(1)}mm` : '—'}
+                                                                <span className="ml-1 text-white/35">×{line.size.toFixed(2)}</span>
+                                                            </span>
+                                                        </div>
+                                                        <input
+                                                            type="range"
+                                                            min={NAME_TAG_LIMITS.lineSize[0]}
+                                                            max={NAME_TAG_LIMITS.lineSize[1]}
+                                                            step={0.05}
+                                                            value={line.size}
+                                                            onChange={(e) => setLine(index, { size: Number(e.target.value) })}
+                                                            aria-label={t('lineSize')}
+                                                            className="w-full accent-teal-400 cursor-pointer"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-1.5">
+                                                    {(['left', 'center', 'right'] as const).map((a) => {
+                                                        const Icon = ALIGN_ICONS[a]
+                                                        const isActive = align === a
+                                                        return (
+                                                            <Choice
+                                                                key={a}
+                                                                label={t(`align.${a}`)}
+                                                                active={isActive}
+                                                                onClick={() => setLine(index, { align: a })}
+                                                                className="h-9"
+                                                            >
+                                                                <Icon className="h-3.5 w-3.5" />
+                                                            </Choice>
+                                                        )
+                                                    })}
+                                                </div>
+
+                                                <div className="rounded-xl border border-white/8 bg-black/25 px-2.5 py-2 space-y-1.5">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wide text-white/40">
+                                                            {t('lineLetterSpacing')}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setLine(index, {
+                                                                    letterSpacing: customSpacing ? null : design.letterSpacing,
+                                                                })
+                                                            }
+                                                            className={cn(
+                                                                'rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-colors',
+                                                                customSpacing
+                                                                    ? 'bg-teal-400/15 text-teal-300'
+                                                                    : 'bg-white/5 text-white/45 hover:text-white/70'
+                                                            )}
+                                                        >
+                                                            {customSpacing ? t('lineSpacingCustom') : t('lineSpacingInherit')}
+                                                        </button>
+                                                    </div>
+                                                    <Slider
+                                                        label={t('letterSpacing')}
+                                                        value={spacing}
+                                                        display={`${Math.round(spacing * 100)}%`}
+                                                        min={NAME_TAG_LIMITS.letterSpacing[0]}
+                                                        max={NAME_TAG_LIMITS.letterSpacing[1]}
+                                                        step={0.01}
+                                                        onChange={(letterSpacing) => setLine(index, { letterSpacing })}
+                                                    />
+                                                </div>
+
+                                                {openFontMenu === index ? (
+                                                    <FontChoices
+                                                        activeId={line.fontId}
+                                                        groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
+                                                        fontLabel={getFontLabel}
+                                                        activeFontIds={activeFontIds}
+                                                        onPreview={noteFont}
+                                                        onOpenSystemModal={() => setSystemModalOpen(true)}
+                                                        onPick={(fontId) => {
+                                                            noteFont(fontId)
+                                                            setLine(index, { fontId })
+                                                            setOpenFontMenu(null)
+                                                        }}
+                                                        blockLatin={textHasHangul(line.text)}
+                                                    />
                                                 ) : null}
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    aria-expanded={openFontMenu === index}
-                                                    aria-label={t('fontLabel')}
-                                                    onClick={() => setOpenFontMenu((current) => (current === index ? null : index))}
-                                                    className="flex h-8 w-28 shrink-0 items-center justify-between gap-1 rounded-lg border border-white/10 bg-black/60 px-2 text-left text-[12px] font-bold text-white hover:border-teal-400/40"
-                                                >
-                                                    <span
-                                                        className="truncate"
-                                                        style={{ fontFamily: getFontFamily(line.fontId) }}
-                                                    >
-                                                        {getFontLabel(line.fontId)}
-                                                    </span>
-                                                    <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 text-white/50', openFontMenu === index && 'rotate-180 text-teal-300')} />
-                                                </button>
-                                                <input
-                                                    type="range"
-                                                    min={NAME_TAG_LIMITS.lineSize[0]}
-                                                    max={NAME_TAG_LIMITS.lineSize[1]}
-                                                    step={0.05}
-                                                    value={line.size}
-                                                    onChange={(e) => setLine(index, { size: Number(e.target.value) })}
-                                                    aria-label={t('lineSize')}
-                                                    className="min-w-0 flex-1 accent-teal-400 cursor-pointer"
-                                                />
-                                                <span className="w-14 text-right font-mono text-[11px] font-bold text-teal-300/80">
-                                                    {result?.lines.find((l) => l.index === index)?.heightMm.toFixed(1) ?? '-'}mm
-                                                </span>
-                                            </div>
-                                            {openFontMenu === index ? (
-                                                <FontChoices
-                                                    activeId={line.fontId}
-                                                    groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
-                                                    fontLabel={getFontLabel}
-                                                    activeFontIds={activeFontIds}
-                                                    onPreview={noteFont}
-                                                    onOpenSystemModal={() => setSystemModalOpen(true)}
-                                                    onPick={(fontId) => {
-                                                        noteFont(fontId)
-                                                        setLine(index, { fontId })
-                                                        setOpenFontMenu(null)
-                                                    }}
-                                                    blockLatin={textHasHangul(line.text)}
-                                                />
-                                            ) : null}
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </Section>
 
-                            {/* 일괄 폰트 적용 & 정렬/자간 */}
-                            <Section title={t('fontAllLabel')}>
+                            {/* 일괄 적용 · 전역 타이포 */}
+                            <Section title={t('typographyGlobalLabel')}>
+                                <p className="text-[11px] font-medium leading-relaxed text-white/45 break-keep">
+                                    {t('typographyGlobalHint')}
+                                </p>
                                 {(() => {
                                     const shared = design.lines.every((line) => line.fontId === design.lines[0]?.fontId)
                                         ? design.lines[0]?.fontId
@@ -1038,12 +1167,15 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             onClick={() => setOpenFontMenu((current) => (current === 'all' ? null : 'all'))}
                                             className="flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/40 px-3 text-left hover:border-white/25 transition-colors"
                                         >
-                                            <span
-                                                className="truncate text-[14px] text-white font-medium"
-                                                style={shared ? { fontFamily: getFontFamily(shared) } : undefined}
-                                            >
-                                                {shared ? getFontLabel(shared) : t('fontMixed')}
-                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] font-bold uppercase tracking-wide text-white/40">{t('fontAllLabel')}</p>
+                                                <p
+                                                    className="truncate text-[14px] text-white font-medium"
+                                                    style={shared ? { fontFamily: getFontFamily(shared) } : undefined}
+                                                >
+                                                    {shared ? getFontLabel(shared) : t('fontMixed')}
+                                                </p>
+                                            </div>
                                             <ChevronDown className={cn('h-4 w-4 shrink-0 text-white/50', openFontMenu === 'all' && 'rotate-180 text-teal-300')} />
                                         </button>
                                     )
@@ -1068,26 +1200,28 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         blockLatin={design.lines.some((line) => textHasHangul(line.text))}
                                     />
                                 ) : null}
-                            </Section>
 
-                            <Section title={t('alignLabel')}>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {(['left', 'center', 'right'] as const).map((align) => {
-                                        const Icon = ALIGN_ICONS[align]
-                                        const isActive = design.align === align
-                                        return (
-                                            <Choice
-                                                key={align}
-                                                label={t(`align.${align}`)}
-                                                active={isActive}
-                                                onClick={() => update((d) => ({ ...d, align }))}
-                                                className="h-10"
-                                            >
-                                                <Icon className="h-4 w-4" />
-                                            </Choice>
-                                        )
-                                    })}
+                                <div className="space-y-1.5 pt-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-wide text-white/40">{t('alignDefaultLabel')}</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['left', 'center', 'right'] as const).map((align) => {
+                                            const Icon = ALIGN_ICONS[align]
+                                            const isActive = design.align === align
+                                            return (
+                                                <Choice
+                                                    key={align}
+                                                    label={t(`align.${align}`)}
+                                                    active={isActive}
+                                                    onClick={() => update((d) => ({ ...d, align }))}
+                                                    className="h-10"
+                                                >
+                                                    <Icon className="h-4 w-4" />
+                                                </Choice>
+                                            )
+                                        })}
+                                    </div>
                                 </div>
+
                                 <Slider
                                     label={t('letterSpacing')}
                                     value={design.letterSpacing}
@@ -1097,6 +1231,18 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                     step={0.01}
                                     onChange={(letterSpacing) => update((d) => ({ ...d, letterSpacing }))}
                                 />
+                                <p className="text-[10px] text-white/40 -mt-1 break-keep">{t('letterSpacingHint')}</p>
+
+                                <Slider
+                                    label={t('lineGap')}
+                                    value={design.lineGap}
+                                    display={`${Math.round(design.lineGap * 100)}%`}
+                                    min={NAME_TAG_LIMITS.lineGap[0]}
+                                    max={NAME_TAG_LIMITS.lineGap[1]}
+                                    step={0.01}
+                                    onChange={(lineGap) => update((d) => ({ ...d, lineGap }))}
+                                />
+                                <p className="text-[10px] text-white/40 -mt-1 break-keep">{t('lineGapHint')}</p>
                             </Section>
 
                             <Section
