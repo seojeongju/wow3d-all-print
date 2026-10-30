@@ -16,7 +16,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail, Search } from 'lucide-react'
+import { ArrowLeft, Loader2, Package, CreditCard, ChevronRight, MapPin, Phone, User, MessageSquare, ShieldCheck, Mail, Search, Info, CircleAlert } from 'lucide-react'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
 import { Link, useRouter } from '@/i18n/navigation'
 import { showToast } from '@/lib/toast-helper'
 import { isTokenExpired, validateAuthToken, isAuthTokenError } from '@/lib/auth-session'
@@ -75,6 +83,7 @@ function CheckoutContent() {
     )
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [paymentNoticeOpen, setPaymentNoticeOpen] = useState(false)
     const [isAddressScriptLoaded, setIsAddressScriptLoaded] = useState(false)
     const [detailAddress, setDetailAddress] = useState('')
     const [isSameAsOrderer, setIsSameAsOrderer] = useState(true)
@@ -232,28 +241,45 @@ function CheckoutContent() {
         router.push(`/auth?return=${encodeURIComponent(checkoutReturnPath)}`)
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
+    /** 필수값·약관만 검사. 통과하면 결제 안내 모달을 연다. */
+    const validateBeforeConfirm = (): boolean => {
         if (!agreedToTerms || !agreedToPrivacy) {
-            showToast.error(t('toastTermsTitle'), t('toastTermsDesc'));
-            return;
+            showToast.error(t('toastTermsTitle'), t('toastTermsDesc'))
+            return false
         }
 
         if (!isAuthenticated) {
             const returnPath = `/checkout${idsParam ? `?ids=${idsParam}` : ''}`
             router.replace(`/auth?return=${encodeURIComponent(returnPath)}`)
-            return
+            return false
         }
 
         if (!formData.ordererName || !formData.ordererPhone) {
-            showToast.error(t('toastOrdererRequiredTitle'), t('toastOrdererRequiredDesc'));
-            return;
+            showToast.error(t('toastOrdererRequiredTitle'), t('toastOrdererRequiredDesc'))
+            return false
         }
 
         if (!formData.recipientName || !formData.recipientPhone || !formData.shippingAddress) {
-            showToast.error(t('toastShippingRequiredTitle'), t('toastShippingRequiredDesc'));
-            return;
+            showToast.error(t('toastShippingRequiredTitle'), t('toastShippingRequiredDesc'))
+            return false
+        }
+
+        return true
+    }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (isSubmitting) return
+        if (!validateBeforeConfirm()) return
+        setPaymentNoticeOpen(true)
+    }
+
+    /** 결제 안내를 확인한 뒤 실제 주문을 접수한다. */
+    const submitOrder = async () => {
+        if (isSubmitting) return
+        if (!validateBeforeConfirm()) {
+            setPaymentNoticeOpen(false)
+            return
         }
 
         setIsSubmitting(true)
@@ -366,7 +392,8 @@ function CheckoutContent() {
             router.push(`/order-complete?${q.toString()}`)
 
         } catch (error) {
-            showToast.error(t('toastOrderFailTitle'), error);
+            showToast.error(t('toastOrderFailTitle'), error)
+            setPaymentNoticeOpen(false)
         } finally {
             setIsSubmitting(false)
         }
@@ -675,11 +702,21 @@ function CheckoutContent() {
                                         </div>
                                     </div>
 
-                                    <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary/90 leading-relaxed font-medium space-y-1.5">
-                                        <span className="font-bold block">{t('paymentNoticeTitle')}</span>
-                                        <p>
-                                            {t.rich('paymentNoticeBody', { b: (chunks) => <b>{chunks}</b> })}
-                                        </p>
+                                    <div className="rounded-xl border border-amber-400/35 bg-amber-500/10 p-3.5 text-[11px] leading-relaxed font-medium text-amber-50/95 space-y-2 shadow-[0_0_24px_rgba(245,158,11,0.08)]">
+                                        <div className="flex items-start gap-2">
+                                            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" aria-hidden />
+                                            <div className="min-w-0 space-y-1.5">
+                                                <span className="font-black tracking-wide text-amber-200 block">
+                                                    {t('paymentNoticeTitle')}
+                                                </span>
+                                                <p className="font-bold text-white">
+                                                    {t('paymentConfirmDialogLead')}
+                                                </p>
+                                                <p className="text-amber-50/85">
+                                                    {t.rich('paymentNoticeBody', { b: (chunks) => <b className="text-white">{chunks}</b> })}
+                                                </p>
+                                            </div>
+                                        </div>
                                         {hasMeshyAiModel && (
                                             <p className="text-amber-100/95 bg-amber-500/15 border border-amber-400/25 rounded-lg px-2.5 py-2">
                                                 {locale === 'en' ? MESHY_AI_DISCLAIMER_CHECKOUT_EN : MESHY_AI_DISCLAIMER_CHECKOUT}
@@ -705,6 +742,7 @@ function CheckoutContent() {
 
                                     <div className="pt-2">
                                         <Button
+                                            type="button"
                                             size="lg"
                                             className="w-full h-18 rounded-2xl bg-white text-black hover:bg-white/90 shadow-2xl shadow-white/5 gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 group"
                                             onClick={handleSubmit}
@@ -732,6 +770,66 @@ function CheckoutContent() {
                     </div>
                 </div>
             </div>
+
+            <Dialog open={paymentNoticeOpen} onOpenChange={(open) => !isSubmitting && setPaymentNoticeOpen(open)}>
+                <DialogContent
+                    showCloseButton={!isSubmitting}
+                    className="border-amber-400/25 bg-[#0c0c0c] text-white sm:max-w-lg"
+                    overlayClassName="bg-black/70 backdrop-blur-[2px]"
+                >
+                    <DialogHeader className="gap-3 text-left">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/15 text-amber-300">
+                            <Info className="h-6 w-6" aria-hidden />
+                        </div>
+                        <DialogTitle className="text-xl font-black tracking-tight text-white">
+                            {t('paymentConfirmDialogTitle')}
+                        </DialogTitle>
+                        <DialogDescription className="text-base font-bold leading-snug text-amber-200">
+                            {t('paymentConfirmDialogLead')}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-[13px] leading-relaxed text-white/75">
+                        <p>{t('paymentConfirmPoint1')}</p>
+                        <p>{t('paymentConfirmPoint2')}</p>
+                        <p>
+                            {t.rich('paymentNoticeBody', {
+                                b: (chunks) => <b className="font-bold text-white">{chunks}</b>,
+                            })}
+                        </p>
+                        <p className="font-semibold text-white/90">{t('paymentConfirmPoint3')}</p>
+                        {hasMeshyAiModel && (
+                            <p className="rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-100/95">
+                                {locale === 'en' ? MESHY_AI_DISCLAIMER_CHECKOUT_EN : MESHY_AI_DISCLAIMER_CHECKOUT}
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter className="gap-2 sm:gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={isSubmitting}
+                            onClick={() => setPaymentNoticeOpen(false)}
+                            className="h-11 rounded-xl border-white/15 bg-transparent text-white/70 hover:bg-white/10 hover:text-white"
+                        >
+                            {t('paymentConfirmCancel')}
+                        </Button>
+                        <Button
+                            type="button"
+                            disabled={isSubmitting}
+                            onClick={() => void submitOrder()}
+                            className="h-11 rounded-xl bg-white font-black text-black hover:bg-white/90"
+                        >
+                            {isSubmitting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                t('paymentConfirmContinue')
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
