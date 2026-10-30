@@ -296,8 +296,8 @@ export default function Hero() {
                         {t('choosePath')}
                     </p>
 
-                    {/* Primary fork — 카드가 곧 CTA (중복 버튼 제거) */}
-                    <div className="hero-fork mb-3 grid gap-3 sm:grid-cols-2 lg:mb-2 lg:gap-2 xl:mb-2.5">
+                    {/* Primary fork — 남는 세로 공간을 채워 아래 공백을 줄인다 */}
+                    <div className="hero-fork mb-3 grid min-h-0 gap-3 sm:grid-cols-2 lg:mb-2.5 lg:flex-1 lg:gap-2.5 xl:mb-3">
                         <Link
                             href="/quote?entry=file"
                             onClick={() => {
@@ -308,19 +308,19 @@ export default function Hero() {
                             }}
                             onPointerMove={handleHeroTiltMove}
                             onPointerLeave={handleHeroTiltLeave}
-                            className="hero-tilt hero-glow-teal group relative flex flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 shadow-[0_10px_30px_rgba(20,184,166,0.12)] hover:border-teal-300/55 hover:from-teal-400/25 hover:shadow-[0_20px_48px_rgba(20,184,166,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60 lg:rounded-xl lg:p-3"
+                            className="hero-tilt hero-glow-teal group relative flex min-h-0 flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 shadow-[0_10px_30px_rgba(20,184,166,0.12)] hover:border-teal-300/55 hover:from-teal-400/25 hover:shadow-[0_20px_48px_rgba(20,184,166,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60 lg:h-full lg:rounded-xl lg:p-4 xl:p-5"
                         >
                             <span className="hero-spotlight" aria-hidden />
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-teal-300/40 bg-teal-400/20 text-teal-200 transition-[translate,rotate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:-rotate-6 group-hover:scale-110 group-hover:shadow-[0_0_24px_rgba(45,212,191,0.45)] motion-reduce:transform-none lg:mb-2 lg:h-8 lg:w-8 lg:rounded-lg">
-                                <FileBox className="h-6 w-6 lg:h-4 lg:w-4" />
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-teal-300/40 bg-teal-400/20 text-teal-200 transition-[translate,rotate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:-rotate-6 group-hover:scale-110 group-hover:shadow-[0_0_24px_rgba(45,212,191,0.45)] motion-reduce:transform-none lg:mb-3 lg:h-10 lg:w-10">
+                                <FileBox className="h-6 w-6 lg:h-5 lg:w-5" />
                             </div>
-                            <p className="text-lg font-black text-white lg:text-[15px]">{t('hasFile')}</p>
-                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep lg:mt-1 lg:text-[12px] lg:leading-snug">
+                            <p className="text-lg font-black text-white lg:text-base xl:text-lg">{t('hasFile')}</p>
+                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep lg:mt-1.5 lg:text-[13px] lg:leading-snug">
                                 {t('hasFileDesc')}
                             </p>
-                            <span className="hero-shine mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-teal-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-teal-300 lg:mt-2 lg:h-8 lg:rounded-lg lg:text-[12px]">
+                            <span className="hero-shine mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-teal-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-teal-300 lg:mt-auto lg:h-10 lg:text-[13px]">
                                 {t('getQuote')}
-                                <ArrowRight className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
+                                <ArrowRight className="h-4 w-4" />
                             </span>
                         </Link>
 
@@ -334,20 +334,20 @@ export default function Hero() {
                             }}
                             onPointerMove={handleHeroTiltMove}
                             onPointerLeave={handleHeroTiltLeave}
-                            className="hero-tilt hero-glow-indigo group relative flex flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 shadow-[0_10px_30px_rgba(99,102,241,0.12)] hover:border-indigo-300/55 hover:from-indigo-500/25 hover:shadow-[0_20px_48px_rgba(99,102,241,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 lg:rounded-xl lg:p-3"
+                            className="hero-tilt hero-glow-indigo group relative flex min-h-0 flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 shadow-[0_10px_30px_rgba(99,102,241,0.12)] hover:border-indigo-300/55 hover:from-indigo-500/25 hover:shadow-[0_20px_48px_rgba(99,102,241,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 lg:h-full lg:rounded-xl lg:p-4 xl:p-5"
                         >
                             <span className="hero-spotlight" aria-hidden />
-                            <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-300/40 bg-indigo-500/20 text-indigo-200 transition-[translate,rotate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:rotate-6 group-hover:scale-110 group-hover:shadow-[0_0_24px_rgba(129,140,248,0.5)] motion-reduce:transform-none lg:mb-2 lg:h-8 lg:w-8 lg:rounded-lg">
-                                <ImageIcon className="h-6 w-6 lg:h-4 lg:w-4" />
-                                <Sparkles className="hero-twinkle absolute -right-2 -top-2 h-4 w-4 text-indigo-100 lg:h-3 lg:w-3" aria-hidden />
+                            <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-300/40 bg-indigo-500/20 text-indigo-200 transition-[translate,rotate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:rotate-6 group-hover:scale-110 group-hover:shadow-[0_0_24px_rgba(129,140,248,0.5)] motion-reduce:transform-none lg:mb-3 lg:h-10 lg:w-10">
+                                <ImageIcon className="h-6 w-6 lg:h-5 lg:w-5" />
+                                <Sparkles className="hero-twinkle absolute -right-2 -top-2 h-4 w-4 text-indigo-100" aria-hidden />
                             </div>
-                            <p className="text-lg font-black text-white lg:text-[15px]">{t('hasPhoto')}</p>
-                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep lg:mt-1 lg:text-[12px] lg:leading-snug">
+                            <p className="text-lg font-black text-white lg:text-base xl:text-lg">{t('hasPhoto')}</p>
+                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep lg:mt-1.5 lg:text-[13px] lg:leading-snug">
                                 {t('hasPhotoDesc')}
                             </p>
-                            <span className="hero-shine mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300 lg:mt-2 lg:h-8 lg:rounded-lg lg:text-[12px]">
+                            <span className="hero-shine mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300 lg:mt-auto lg:h-10 lg:text-[13px]">
                                 {t('make3d')}
-                                <ArrowRight className="h-4 w-4 lg:h-3.5 lg:w-3.5" />
+                                <ArrowRight className="h-4 w-4" />
                             </span>
                         </Link>
                     </div>
@@ -384,8 +384,8 @@ export default function Hero() {
                         {t('dropZoneHint')}
                     </p>
 
-                    {/* 신뢰 시그널 — 빈 아바타 대신 명확한 근거 */}
-                    <div className="mb-6 space-y-3 lg:mb-2 lg:space-y-1.5">
+                    {/* 신뢰 시그널 + 보조 탐색 — 붙여 배치해 사이 공백을 없앤다 */}
+                    <div className="mt-auto space-y-2 lg:mt-0 lg:space-y-1.5">
                         <HeroLiveStats />
                         <div className="flex flex-wrap gap-1.5 lg:gap-1">
                             <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[11px] font-semibold text-white/75 lg:px-2 lg:py-1 lg:text-[10px]">
@@ -401,24 +401,22 @@ export default function Hero() {
                                 {t('trustProcess')}
                             </span>
                         </div>
-                    </div>
-
-                    {/* 보조 탐색 — 출력방식·소재만 유지 */}
-                    <div className="mt-auto grid grid-cols-2 gap-2 lg:gap-1.5">
-                        <Link
-                            href="/print-methods"
-                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
-                            className="group flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:text-[13px] lg:h-8 lg:rounded-lg lg:text-[12px]"
-                        >
-                            <span className="hero-underline pb-0.5">{t('linkMethods')}</span>
-                        </Link>
-                        <Link
-                            href="/materials"
-                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
-                            className="group flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:text-[13px] lg:h-8 lg:rounded-lg lg:text-[12px]"
-                        >
-                            <span className="hero-underline pb-0.5">{t('linkMaterials')}</span>
-                        </Link>
+                        <div className="grid grid-cols-2 gap-2 lg:gap-1.5">
+                            <Link
+                                href="/print-methods"
+                                onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
+                                className="group flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:text-[13px] lg:h-8 lg:rounded-lg lg:text-[12px]"
+                            >
+                                <span className="hero-underline pb-0.5">{t('linkMethods')}</span>
+                            </Link>
+                            <Link
+                                href="/materials"
+                                onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'materials' })}
+                                className="group flex h-11 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:text-[13px] lg:h-8 lg:rounded-lg lg:text-[12px]"
+                            >
+                                <span className="hero-underline pb-0.5">{t('linkMaterials')}</span>
+                            </Link>
+                        </div>
                     </div>
                 </motion.div>
 
