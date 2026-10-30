@@ -140,6 +140,14 @@
         "checker": {
           "title": "Is my file OK?",
           "cta": "Free STL check"
+        },
+        "nameTag": {
+          "title": "Want custom lettering?",
+          "cta": "Name Tag Studio"
+        },
+        "aiMaker": {
+          "title": "Have a logo or sketch?",
+          "cta": "AI 3D Maker"
         }
       },
       "tabFileQuote": "Quote from 3D file",
@@ -155,7 +163,7 @@
       "trustProcess": "FDM · SLA · DLP",
       "linkMethods": "Print methods",
       "linkMaterials": "Materials",
-      "linkMaker": "Name tag",
+      "linkMaker": "Name Tag",
       "sampleLoading": "Loading…",
       "sampleCta": "Try sample quote",
       "uploadModeAria": "Choose upload type",
@@ -198,9 +206,9 @@
       "subtitleMid": " → Maker (2.5D). ",
       "photoReal": "Product photos",
       "subtitleEnd": " → Quote AI (full 3D).",
-      "makerTitle": "Make a name tag",
-      "makerDesc": "Type a name and a line of text, then pick the font and size for a tag you can print.",
-      "makerCta": "Open the name tag maker",
+      "makerTitle": "Name Tag Studio",
+      "makerDesc": "Type a name, pick fonts and shapes, and get a 3D name tag ready to print.",
+      "makerCta": "Open Name Tag Studio",
       "aiLabel": "Quote AI",
       "photoTitle": "Photo → full 3D",
       "photoDesc": "Build a mesh from product/figurine photos, then get an instant quote.",
@@ -765,7 +773,7 @@
   "QuotePanel": {
     "volume": "Volume",
     "nameTagLabel": "Name tag text",
-    "nameTagHint": "Choose quantity, material and color here. The text is kept with the quote and the order.",
+    "nameTagHint": "Choose quantity, material, and color here. The text is kept with the quote and the order.",
     "sizeShort": "Size",
     "printMethod": "Print method",
     "inchSuspectTitle": "This file may be in inches",
@@ -4411,11 +4419,11 @@
     }
   },
   "Maker": {
-    "metaTitle": "Name tag maker",
+    "metaTitle": "Name Tag Studio",
     "nameTag": {
-      "kicker": "Name tag",
-      "title": "Name tag maker",
-      "lead": "Type your text and pick a plate shape, hole and lettering style. We check printability as you go and show the result in 3D.",
+      "kicker": "Name Tag Studio",
+      "title": "Name Tag Studio",
+      "lead": "Type your text and pick a plate shape, hole, and lettering style. We check printability as you go and show the result in 3D.",
       "presetLabel": "Start from a use",
       "presets": {
         "bag": "Bag tag",
@@ -4575,7 +4583,7 @@
       "quoteNeedText": "Please type the text for your name tag.",
       "quoteBlockedTitle": "Cannot send to quote",
       "quoteBlocked": "Please resolve the red notices first.",
-      "quoteOk": "Your name tag STL was loaded into the instant quote.",
+      "quoteOk": "Your Name Tag Studio STL was loaded into the instant quote.",
       "reset": "Start over",
       "views": {
         "label": "Change view",
@@ -4588,7 +4596,7 @@
         "bottom": "Bottom"
       },
       "openDraw": "Draw a logo instead",
-      "back": "Back to name tag"
+      "back": "Back to Name Tag Studio"
     },
     "headerSubtitle": "Logo & sketch 2.5D",
     "tabDraw": "Sketch (2D)",
@@ -4796,7 +4804,7 @@
     "error3dTitle": "Could not load 3D preview",
     "error3dDesc": "Your browser may not support 3D rendering, or a temporary error occurred. Return to Sketch (2D) and try again.",
     "backToSketch": "Back to Sketch (2D)",
-    "metaDescription": "Type a name and text, choose the font and size, then save an STL or send the tag to a live quote."
+    "metaDescription": "In Name Tag Studio, pick text, fonts, and shapes, then save an STL or send it to a live quote."
   },
   "Partnership": {
     "metaTitle": "3D Printer Partnership & Dealership",

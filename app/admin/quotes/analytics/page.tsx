@@ -346,7 +346,7 @@ export default function QuoteAnalyticsPage() {
                         </p>
                         {item.name_tag_text ? (
                             <p className="text-[11px] font-bold text-teal-200 truncate max-w-[240px]" title={item.name_tag_text}>
-                                이름표 문구: {item.name_tag_text}
+                                네임택 문구: {item.name_tag_text}
                             </p>
                         ) : null}
                         <p className="text-[10px] text-white/30 uppercase font-bold tracking-tight">

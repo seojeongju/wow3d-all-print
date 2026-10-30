@@ -15,6 +15,8 @@ import {
     Lightbulb,
     Calculator,
     ScanSearch,
+    Tags,
+    PenTool,
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -62,11 +64,13 @@ function DeferredHeroScene() {
 
 type UploadMode = 'file' | 'photo';
 
-/** 파일·사진이 없거나 출력 가능 여부가 불안한 방문자의 출구 (key = 문구 키·전환 이벤트 link 값) */
+/** 주 CTA 외 보조 경로 — 한 줄 5카드 (key = 문구 키·전환 이벤트 link 값) */
 const HERO_SIDE_LINKS = [
     { key: 'expert', href: '/expert', icon: Lightbulb, iconMotion: 'hero-icon-flash' },
     { key: 'calculator', href: '/price-calculator', icon: Calculator, iconMotion: 'hero-icon-pop' },
     { key: 'checker', href: '/stl-checker', icon: ScanSearch, iconMotion: '' },
+    { key: 'nameTag', href: '/maker', icon: Tags, iconMotion: 'hero-icon-pop' },
+    { key: 'aiMaker', href: '/maker?mode=draw', icon: PenTool, iconMotion: 'hero-icon-flash' },
 ] as const;
 
 export default function Hero() {
@@ -81,7 +85,6 @@ export default function Hero() {
         if (file && SAMPLE_NAMES.includes(file.name)) reset();
     };
     const { toast } = useToast();
-    const [isLoadingSample, setIsLoadingSample] = useState(false);
     const [uploadMode, setUploadMode] = useState<UploadMode>('file');
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -214,27 +217,6 @@ export default function Hero() {
         if (!picked) return;
         if (uploadMode === 'file') validateAndUploadModel(picked);
         else validateAndUploadPhoto(picked);
-    };
-
-    const handleTrySample = async () => {
-        trackHero(HERO_CONVERSION_EVENTS.SAMPLE_TRY);
-        setIsLoadingSample(true);
-        try {
-            const res = await fetch('/test_cube.stl');
-            if (!res.ok) throw new Error(t('errSampleLoad'));
-            const blob = await res.blob();
-            const sampleFile = new File([blob], 'sample_cube.stl', { type: 'model/stl' });
-            setFile(sampleFile);
-            router.push('/experience');
-        } catch (e) {
-            toast({
-                title: t('errTitle'),
-                description: e instanceof Error ? e.message : t('errSampleFail'),
-                variant: 'destructive',
-            });
-        } finally {
-            setIsLoadingSample(false);
-        }
     };
 
     const steps = [
@@ -370,28 +352,28 @@ export default function Hero() {
                         </Link>
                     </div>
 
-                    {/* 바로 견적이 어려운 방문자용 보조 메뉴 — 주 CTA보다 낮은 비중, 모바일은 목적지 이름만 */}
-                    <div className="mb-6 grid grid-cols-3 gap-2 lg:mb-4 sm:gap-2.5">
+                    {/* 보조 경로 5카드 1줄 — 주 CTA보다 낮은 비중, 좁은 폭에서도 한 줄 유지 */}
+                    <div className="mb-6 grid grid-cols-5 gap-1.5 lg:mb-4 sm:gap-2">
                         {HERO_SIDE_LINKS.map(({ key, href, icon: Icon, iconMotion }) => (
                             <Link
                                 key={key}
                                 href={href}
                                 onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: key })}
-                                className="group flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-teal-400/40 hover:bg-teal-400/[0.08] hover:shadow-[0_10px_24px_rgba(20,184,166,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 motion-reduce:hover:translate-y-0 sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5"
+                                className="group flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-1 py-2.5 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-teal-400/40 hover:bg-teal-400/[0.08] hover:shadow-[0_10px_24px_rgba(20,184,166,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/50 motion-reduce:hover:translate-y-0 sm:items-start sm:gap-2 sm:px-2.5 sm:py-2.5 sm:text-left"
                             >
-                                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/12 bg-white/[0.05] text-teal-300/90 transition-colors duration-300 group-hover:border-teal-300/70 group-hover:bg-teal-400 group-hover:text-slate-950">
-                                    <Icon className={cn('h-4 w-4', iconMotion)} aria-hidden />
+                                <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/12 bg-white/[0.05] text-teal-300/90 transition-colors duration-300 group-hover:border-teal-300/70 group-hover:bg-teal-400 group-hover:text-slate-950 sm:h-8 sm:w-8">
+                                    <Icon className={cn('h-3.5 w-3.5 sm:h-4 sm:w-4', iconMotion)} aria-hidden />
                                     {key === 'checker' && (
                                         <span className="hero-scan-line pointer-events-none absolute inset-x-1 top-1/2 h-0.5 rounded-full bg-slate-950/70" aria-hidden />
                                     )}
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="hidden text-[13px] font-bold leading-snug text-white/90 break-keep sm:block">
+                                <div className="min-w-0 w-full">
+                                    <p className="hidden text-[11px] font-bold leading-snug text-white/55 break-keep xl:block">
                                         {t(`sideLinks.${key}.title`)}
                                     </p>
-                                    <p className="inline-flex items-center gap-0.5 text-[12px] font-bold leading-snug text-white/90 break-keep sm:mt-0.5 sm:text-xs sm:font-semibold sm:text-teal-300/90 sm:group-hover:text-teal-200">
-                                        {t(`sideLinks.${key}.cta`)}
-                                        <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-1 sm:block" aria-hidden />
+                                    <p className="inline-flex max-w-full items-center justify-center gap-0.5 text-[10px] font-bold leading-snug text-white/90 break-keep sm:justify-start sm:text-[11px] sm:text-teal-300/90 sm:group-hover:text-teal-200 xl:mt-0.5">
+                                        <span className="truncate">{t(`sideLinks.${key}.cta`)}</span>
+                                        <ChevronRight className="hidden h-3 w-3 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 sm:block" aria-hidden />
                                     </p>
                                 </div>
                             </Link>
@@ -421,8 +403,8 @@ export default function Hero() {
                         </div>
                     </div>
 
-                    {/* 보조 탐색 — 시각적 비중 낮춤 */}
-                    <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {/* 보조 탐색 — 출력방식·소재만 유지 */}
+                    <div className="mt-auto grid grid-cols-2 gap-2">
                         <Link
                             href="/print-methods"
                             onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'print-methods' })}
@@ -437,21 +419,6 @@ export default function Hero() {
                         >
                             <span className="hero-underline pb-0.5">{t('linkMaterials')}</span>
                         </Link>
-                        <Link
-                            href="/maker"
-                            onClick={() => trackHero(HERO_CONVERSION_EVENTS.TERTIARY, { link: 'maker' })}
-                            className="group flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:text-[13px]"
-                        >
-                            <span className="hero-underline pb-0.5">{t('linkMaker')}</span>
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={handleTrySample}
-                            disabled={isLoadingSample}
-                            className="group flex h-11 lg:h-10 items-center justify-center rounded-xl border border-white/10 bg-transparent px-2 text-center text-[12px] font-semibold text-white/55 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:text-[13px]"
-                        >
-                            <span className="hero-underline pb-0.5">{isLoadingSample ? t('sampleLoading') : t('sampleCta')}</span>
-                        </button>
                     </div>
                 </motion.div>
 

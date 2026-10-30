@@ -735,7 +735,7 @@ export function meshToStl(mesh: MeshData): ArrayBuffer {
     const triCount = mesh.indices.length / 3
     const buffer = new ArrayBuffer(84 + triCount * 50)
     const view = new DataView(buffer)
-    const header = 'WOW3D name tag'
+    const header = 'WOW3D Name Tag Studio'
     for (let i = 0; i < header.length; i++) view.setUint8(i, header.charCodeAt(i))
     view.setUint32(80, triCount, true)
     const p = mesh.positions

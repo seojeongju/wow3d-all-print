@@ -888,7 +888,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 <Sparkles className="h-3 w-3" />
                                 {t('kicker')}
                             </span>
-                            <span className="text-[10px] font-bold text-white/40">3D Maker Studio</span>
+                            <span className="text-[10px] font-bold text-white/40">WOW3D</span>
                         </div>
                         <h1 className="text-xl font-black tracking-tight text-white">{t('title')}</h1>
                         <p className="text-[12px] font-medium leading-relaxed text-white/60 break-keep">{t('lead')}</p>

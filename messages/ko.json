@@ -140,6 +140,14 @@
         "checker": {
           "title": "내 파일 괜찮을까?",
           "cta": "무료 STL 점검"
+        },
+        "nameTag": {
+          "title": "문구로 만들고 싶어요",
+          "cta": "네임택 스튜디오"
+        },
+        "aiMaker": {
+          "title": "로고·스케치가 있어요",
+          "cta": "AI 3D Maker"
         }
       },
       "tabFileQuote": "3D 파일로 견적",
@@ -155,7 +163,7 @@
       "trustProcess": "FDM · SLA · DLP",
       "linkMethods": "출력방식",
       "linkMaterials": "소재",
-      "linkMaker": "이름표",
+      "linkMaker": "네임택",
       "sampleLoading": "불러오는 중…",
       "sampleCta": "샘플견적체험",
       "uploadModeAria": "업로드 방식 선택",
@@ -198,9 +206,9 @@
       "subtitleMid": "는 Maker(2.5D), ",
       "photoReal": "제품 실사",
       "subtitleEnd": "는 자동견적 AI(입체 3D)입니다.",
-      "makerTitle": "이름표 만들기",
-      "makerDesc": "이름과 문구를 넣고 폰트·크기를 고르면 바로 출력할 이름표가 됩니다.",
-      "makerCta": "이름표 만들러 가기",
+      "makerTitle": "네임택 스튜디오",
+      "makerDesc": "이름과 문구를 넣고 폰트·형태를 고르면 바로 출력할 3D 네임택이 됩니다.",
+      "makerCta": "네임택 스튜디오 열기",
       "aiLabel": "자동견적 AI",
       "photoTitle": "사진(이미지) → 입체 3D",
       "photoDesc": "제품·피규어 실사 사진(이미지)으로 입체 메시를 만든 뒤 바로 자동견적합니다.",
@@ -765,7 +773,7 @@
   },
   "QuotePanel": {
     "volume": "부피",
-    "nameTagLabel": "이름표 문구",
+    "nameTagLabel": "네임택 문구",
     "nameTagHint": "수량·소재·색은 이 화면에서 고릅니다. 문구는 견적을 저장하면 주문에도 남습니다.",
     "sizeShort": "사이즈",
     "printMethod": "출력 방식 선택",
@@ -4412,14 +4420,14 @@
     }
   },
   "Maker": {
-    "metaTitle": "이름표 만들기",
+    "metaTitle": "네임택 스튜디오",
     "nameTag": {
-      "kicker": "Name tag",
-      "title": "이름표 만들기",
+      "kicker": "Name Tag Studio",
+      "title": "네임택 스튜디오",
       "lead": "문구를 넣고 판 모양·구멍·글자 표현을 고르면, 출력할 수 있는 형상인지 바로 검사해 3D로 보여 줍니다.",
       "presetLabel": "용도로 시작하기",
       "presets": {
-        "bag": "가방 이름표",
+        "bag": "가방 네임택",
         "pet": "반려동물 인식표",
         "label": "소품 라벨",
         "desk": "책상 명패",
@@ -4501,7 +4509,7 @@
       "letterSpacing": "자간",
       "baseLabel": "일러스트 베이스",
       "baseBasic": "기본 도형",
-      "baseKids": "어린이 이름표",
+      "baseKids": "어린이 네임택",
       "basePets": "반려동물",
       "baseHint": "고른 그림의 외곽이 판이 됩니다. 그림 색은 한 덩어리로 합쳐지고, 이름은 그 위에 새깁니다.",
       "plateLabel": "네임택 베이스",
@@ -4573,10 +4581,10 @@
       "showThin": "표시",
       "hideThin": "숨기기",
       "quoteNeedTextTitle": "문구가 없습니다",
-      "quoteNeedText": "이름표에 넣을 문구를 입력해 주세요.",
+      "quoteNeedText": "네임택에 넣을 문구를 입력해 주세요.",
       "quoteBlockedTitle": "견적으로 넘길 수 없습니다",
       "quoteBlocked": "빨간 안내를 먼저 해결해 주세요.",
-      "quoteOk": "이름표 STL을 자동견적에 불러왔습니다.",
+      "quoteOk": "네임택 STL을 자동견적에 불러왔습니다.",
       "reset": "처음부터",
       "views": {
         "label": "보기 전환",
@@ -4589,7 +4597,7 @@
         "bottom": "하단"
       },
       "openDraw": "로고를 직접 그리기",
-      "back": "이름표로 돌아가기"
+      "back": "네임택 스튜디오로 돌아가기"
     },
     "headerSubtitle": "로고·스케치 2.5D",
     "tabDraw": "스케치(2D)",
@@ -4797,7 +4805,7 @@
     "error3dTitle": "3D 미리보기를 불러올 수 없습니다",
     "error3dDesc": "브라우저가 3D 렌더링을 지원하지 않거나 일시적인 오류가 발생했을 수 있습니다. 스케치(2D) 탭으로 돌아가 다시 그려 주세요.",
     "backToSketch": "스케치(2D)로 돌아가기",
-    "metaDescription": "이름과 문구를 넣고 폰트·크기를 골라 이름표를 만든 뒤 STL로 저장하거나 자동견적으로 넘깁니다."
+    "metaDescription": "네임택 스튜디오에서 문구·폰트·형태를 고른 뒤 STL로 저장하거나 자동견적으로 넘깁니다."
   },
   "Partnership": {
     "metaTitle": "3D프린터 파트너십·대리점 제휴",

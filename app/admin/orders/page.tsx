@@ -1116,7 +1116,7 @@ function OrderListInner() {
                                                             <div className="font-medium text-white">{it.file_name || '-'}</div>
                                                             {nameTagStoredText(it.name_tag_design) ? (
                                                                 <div className="mt-1 text-[12px] font-bold text-teal-200">
-                                                                    이름표 문구: {nameTagStoredText(it.name_tag_design)}
+                                                                    네임택 문구: {nameTagStoredText(it.name_tag_design)}
                                                                 </div>
                                                             ) : null}
                                                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">

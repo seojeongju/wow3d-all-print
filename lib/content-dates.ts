@@ -13,7 +13,8 @@ export type ContentDates = {
 }
 
 const CONTENT_DATES: Record<string, ContentDates> = {
-    '/': { published: '2026-01-23', modified: '2026-10-21' },
+    '/': { published: '2026-01-23', modified: '2026-10-30' },
+    '/maker': { published: '2026-09-07', modified: '2026-10-30' },
     '/quote': { published: '2026-01-23', modified: '2026-10-18' },
     '/price-calculator': { published: '2026-10-12', modified: '2026-10-12' },
     '/stl-checker': { published: '2026-10-12', modified: '2026-10-12' },

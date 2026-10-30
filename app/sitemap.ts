@@ -55,6 +55,7 @@ const PUBLIC_PAGES: PublicPage[] = [
   { path: "/partnership", priority: 0.75, changeFrequency: "monthly" },
   { path: "/partnership/smart-store", priority: 0.78, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/maker", priority: 0.9, changeFrequency: "weekly" },
   { path: "/makerspace", priority: 0.88, changeFrequency: "monthly" },
   { path: "/qna", priority: 0.88, changeFrequency: "weekly" },
   { path: "/gallery", priority: 0.85, changeFrequency: "weekly" },

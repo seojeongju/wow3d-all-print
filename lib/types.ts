@@ -70,7 +70,7 @@ export interface QuoteData {
     guideSource?: string;
     guideTopic?: string;
 
-    /** 이름표 만들기에서 넘긴 디자인 JSON. 견적·주문에 문구를 남긴다. */
+    /** 네임택 스튜디오에서 넘긴 디자인 JSON. 견적·주문에 문구를 남긴다. */
     nameTagDesign?: unknown
     /** 뷰어에서 적용한 스케일·평면 배치·90° 회전 — 관리자 STL 다운로드 시 베이크 */
     modelTransform?: {

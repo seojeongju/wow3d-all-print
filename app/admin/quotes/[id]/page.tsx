@@ -422,7 +422,7 @@ export default function QuoteEditPage() {
                             </div>
                             {standaloneQuote.nameTagText ? (
                                 <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
-                                    <span className="text-white/40">이름표 문구</span>
+                                    <span className="text-white/40">네임택 문구</span>
                                     <span className="text-teal-200 font-bold text-right break-all">
                                         {standaloneQuote.nameTagText}
                                     </span>
