@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { errorResponse, successResponse, requireAdminAuth } from '@/lib/api-utils';
+import { adminUserDisplayPhoneSql, adminUserPhoneSearchSql } from '@/lib/admin-user-phone';
 import { estimateCountSql, isMemberStage, memberStageSql } from '@/lib/member-stage';
 
 function likePattern(raw: string): string {
@@ -34,27 +35,29 @@ export async function GET(req: NextRequest) {
         const roleParam = (req.nextUrl.searchParams.get('role') || 'all').trim();
         const roleFilter = ROLE_FILTER_SET.has(roleParam) ? roleParam : '';
 
-        let where = 'WHERE store_id = ?';
+        let where = 'WHERE users.store_id = ?';
         const binds: (string | number)[] = [storeId];
 
         if (pattern) {
             where += ` AND (
-                LOWER(COALESCE(email, '')) LIKE LOWER(?)
-                OR LOWER(COALESCE(name, '')) LIKE LOWER(?)
-                OR COALESCE(phone, '') LIKE ?
+                LOWER(COALESCE(users.email, '')) LIKE LOWER(?)
+                OR LOWER(COALESCE(users.name, '')) LIKE LOWER(?)
+                OR ${adminUserPhoneSearchSql()}
             )`;
-            binds.push(pattern, pattern, pattern);
+            binds.push(pattern, pattern, pattern, pattern);
         }
         if (roleFilter) {
-            where += ' AND role = ?';
+            where += ' AND users.role = ?';
             binds.push(roleFilter);
         }
 
         const stageParam = req.nextUrl.searchParams.get('stage');
         const stageFilter = isMemberStage(stageParam) ? stageParam : null;
-        const inner = `SELECT id, email, name, phone, role, created_at,
-                ${memberStageSql()} AS member_stage,
-                ${estimateCountSql()} AS estimate_count
+        const inner = `SELECT users.id, users.email, users.name,
+                ${adminUserDisplayPhoneSql('users.id')} AS phone,
+                users.role, users.created_at,
+                ${memberStageSql('users.id')} AS member_stage,
+                ${estimateCountSql('users.id')} AS estimate_count
              FROM users ${where}`;
         const stageWhere = stageFilter ? 'WHERE member_stage = ?' : '';
         const stageBinds = stageFilter ? [stageFilter] : [];

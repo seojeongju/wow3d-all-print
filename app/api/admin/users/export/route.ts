@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { requireAdminAuth } from '@/lib/api-utils'
+import { adminUserDisplayPhoneSql, adminUserPhoneSearchSql } from '@/lib/admin-user-phone'
 import { buildAdminUsersXlsx, type AdminUserExportRow } from '@/lib/admin-users-xlsx'
 import { kstTodayISO } from '@/lib/date-utils'
 
@@ -31,26 +32,28 @@ export async function GET(req: NextRequest) {
         const roleParam = (req.nextUrl.searchParams.get('role') || 'all').trim()
         const roleFilter = ROLE_FILTER_SET.has(roleParam) ? roleParam : ''
 
-        let where = 'WHERE store_id = ?'
+        let where = 'WHERE users.store_id = ?'
         const binds: (string | number)[] = [auth.storeId]
 
         if (pattern) {
             where += ` AND (
-                LOWER(COALESCE(email, '')) LIKE LOWER(?)
-                OR LOWER(COALESCE(name, '')) LIKE LOWER(?)
-                OR COALESCE(phone, '') LIKE ?
+                LOWER(COALESCE(users.email, '')) LIKE LOWER(?)
+                OR LOWER(COALESCE(users.name, '')) LIKE LOWER(?)
+                OR ${adminUserPhoneSearchSql()}
             )`
-            binds.push(pattern, pattern, pattern)
+            binds.push(pattern, pattern, pattern, pattern)
         }
         if (roleFilter) {
-            where += ' AND role = ?'
+            where += ' AND users.role = ?'
             binds.push(roleFilter)
         }
 
         const { results } = await env.DB.prepare(
-            `SELECT id, email, name, phone, role, created_at
+            `SELECT users.id, users.email, users.name,
+                    ${adminUserDisplayPhoneSql('users.id')} AS phone,
+                    users.role, users.created_at
              FROM users ${where}
-             ORDER BY created_at DESC
+             ORDER BY users.created_at DESC
              LIMIT ?`
         )
             .bind(...binds, EXPORT_MAX)

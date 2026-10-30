@@ -377,6 +377,25 @@ export async function POST(request: NextRequest) {
             console.warn('shipments 초기화 실패(주문은 정상 접수됨):', shipmentError);
         }
 
+        // 가입 시 연락처가 비어 있으면 주문 주문자·수령인 연락처로 회원 프로필을 채운다
+        const profilePhone =
+            ordererPhone || String(body.recipientPhone ?? '').trim() || null
+        if (profilePhone) {
+            try {
+                await env.DB
+                    .prepare(
+                        `UPDATE users
+                         SET phone = ?, updated_at = CURRENT_TIMESTAMP
+                         WHERE id = ?
+                           AND (phone IS NULL OR TRIM(phone) = '')`,
+                    )
+                    .bind(profilePhone, userId)
+                    .run()
+            } catch (phoneSyncError) {
+                console.warn('회원 연락처 동기화 실패(주문은 정상 접수됨):', phoneSyncError)
+            }
+        }
+
         // 8. 관리자에게 알림 메일을 전송 (Cloudflare 환경 안정성을 위해 await 적용)
         try {
             const adminEmail = (env as any).ADMIN_EMAIL || 'wow3d16@naver.com';
