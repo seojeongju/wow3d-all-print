@@ -10,6 +10,7 @@ import {
     DEFAULT_BATCH_MIN_PRICE_MODE,
     type CartBatchLineInput,
 } from '../lib/quote-batch-price'
+import { resolveEffectiveMinPriceKrw } from '../lib/min-price'
 
 const bedFdm = { fdm: { x: 220, y: 220, z: 250 } }
 
@@ -183,6 +184,35 @@ const noMinBatch = priceCartLinesByMaterialGroup(
 )
 assert.ok(noMinBatch.grandTotalKrw < 22000, 'min 없으면 과소 가능(서버 폴백 필요)')
 
+// 같은 FDM이라도 소재별 기본금액이 다르면 그룹마다 다른 최소 적용
+const plaMin = line('pla1', {
+    quantity: 1,
+    material: 'PLA',
+    variableCostKrw: 1000,
+    setupCostKrw: 6500,
+    minPriceKrw: 20000,
+    printSizeMm: { x: 30, y: 30, z: 10 },
+})
+const absMin = line('abs1', {
+    quantity: 1,
+    material: 'ABS',
+    variableCostKrw: 1000,
+    setupCostKrw: 6500,
+    minPriceKrw: 30000,
+    printSizeMm: { x: 30, y: 30, z: 10 },
+})
+const materialDiffMins = priceCartLinesByMaterialGroup([plaMin, absMin], {
+    applyVat: true,
+    minPriceMode: 'once_per_material',
+    bedMaxByMethod: bedFdm,
+})
+assert.equal(materialDiffMins.groups.length, 2, 'PLA·ABS는 별도 그룹')
+assert.equal(materialDiffMins.grandTotalKrw, 55000, '소재별 최소 2만+3만 + VAT')
+
+assert.equal(resolveEffectiveMinPriceKrw(25000, 20000), 25000, '소재 우선')
+assert.equal(resolveEffectiveMinPriceKrw(null, 20000), 20000, '장비 폴백')
+assert.equal(resolveEffectiveMinPriceKrw(undefined, null), undefined, '둘 다 없으면 undefined')
+
 console.log('test-quote-batch-price: OK')
 console.log({
     aloneSum,
@@ -193,4 +223,5 @@ console.log({
     amrHybrid: amrHybrid.grandTotalKrw,
     realBatch: realBatch.grandTotalKrw,
     noMinBatch: noMinBatch.grandTotalKrw,
+    materialDiffMins: materialDiffMins.grandTotalKrw,
 })

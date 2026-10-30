@@ -103,6 +103,7 @@ export default function AdminSettings() {
     pricePerMl: undefined,
     density: 1.24,
     colors: ['#FFFFFF'],
+    minPriceKrw: null,
   })
 
   const searchParams = useSearchParams()
@@ -180,6 +181,7 @@ export default function AdminSettings() {
             colors: JSON.parse(m.colors || '[]'),
             isActive: m.is_active,
             description: m.description,
+            minPriceKrw: m.min_price_krw != null && Number(m.min_price_krw) > 0 ? Number(m.min_price_krw) : null,
           }))
         )
       }
@@ -582,6 +584,7 @@ export default function AdminSettings() {
         density: newMaterial.density ?? 1.24,
         colors: newMaterial.colors || ['#FFFFFF'],
         description: (newMaterial as any).description || undefined,
+        minPriceKrw: newMaterial.minPriceKrw != null && newMaterial.minPriceKrw > 0 ? newMaterial.minPriceKrw : null,
       }
       if (materialUsesResinPrice(type)) {
         body.pricePerMl = newMaterial.pricePerMl != null ? Number(newMaterial.pricePerMl) : null
@@ -602,7 +605,7 @@ export default function AdminSettings() {
       setIsAddingMaterial(false)
       fetchData()
       showToast.success('소재 추가 완료')
-      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'] })
+      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'], minPriceKrw: null })
     } catch (e) {
       showToast.error('추가 실패', e)
     }
@@ -610,7 +613,7 @@ export default function AdminSettings() {
 
   const openEdit = (m: Material) => {
     setEditingMaterial(m)
-    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, pricePerMl: m.pricePerMl ?? undefined, density: m.density, colors: m.colors || [], description: (m as any).description })
+    setEditForm({ name: m.name, type: m.type, pricePerGram: m.pricePerGram, pricePerMl: m.pricePerMl ?? undefined, density: m.density, colors: m.colors || [], description: (m as any).description, minPriceKrw: m.minPriceKrw ?? null })
   }
   const handleSaveMaterialEdit = async () => {
     if (!editingMaterial) return
@@ -623,6 +626,7 @@ export default function AdminSettings() {
         density: editForm.density,
         colors: editForm.colors || ['#FFFFFF'],
         description: (editForm as any).description ?? undefined,
+        minPriceKrw: editForm.minPriceKrw != null && editForm.minPriceKrw > 0 ? editForm.minPriceKrw : null,
       }
       if (materialUsesResinPrice(type)) {
         patchBody.pricePerMl = editForm.pricePerMl != null ? Number(editForm.pricePerMl) : null
@@ -923,9 +927,9 @@ export default function AdminSettings() {
                       <Input type="number" className="mt-1 bg-white/5 border-white/10 text-white" value={f.hourly_rate} onChange={(e) => setEquip(t, 'hourly_rate', parseFloat(e.target.value) || 0)} />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-white/50 uppercase">기본금액 · 최소 견적 (원)</Label>
+                      <Label className="text-[10px] text-white/50 uppercase">기본금액 · 최소 견적 (원) — 폴백</Label>
                       <Input type="number" min="0" placeholder="미설정 시 산출금액 그대로" className="mt-1 bg-white/5 border-white/10 text-white" value={f.min_price_krw ?? ''} onChange={(e) => setEquip(t, 'min_price_krw', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)} />
-                      <p className="text-[10px] text-white/40 mt-0.5">자동견적이 이 금액 미만이면 기본금액으로 책정됩니다.</p>
+                      <p className="text-[10px] text-white/40 mt-0.5">소재에 기본금액이 없을 때만 사용합니다. 소재별 금액은 소재 관리에서 설정하세요.</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1100,6 +1104,25 @@ export default function AdminSettings() {
                       <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.density ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, density: parseFloat(e.target.value) || 1.24 })} />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">기본금액</Label>
+                      <div className="col-span-3 space-y-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          className="bg-white/5 border-white/10"
+                          value={newMaterial.minPriceKrw ?? ''}
+                          onChange={(e) =>
+                            setNewMaterial({
+                              ...newMaterial,
+                              minPriceKrw: e.target.value === '' ? null : parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          placeholder="비우면 장비 기본금액 사용"
+                        />
+                        <p className="text-[10px] text-white/40">이 소재 그룹의 최소 견적(공급가). FDM·SLA·DLP 모두 설정 가능.</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">설명 (선택)</Label>
                       <Input className="col-span-3 bg-white/5 border-white/10" value={(newMaterial as any).description || ''} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} placeholder="소재 설명" />
                     </div>
@@ -1118,6 +1141,7 @@ export default function AdminSettings() {
                       <th className="p-4 font-medium text-white/70">이름</th>
                       <th className="p-4 font-medium text-white/70">타입</th>
                       <th className="p-4 font-medium text-white/70">가격</th>
+                      <th className="p-4 font-medium text-white/70">기본금액</th>
                       <th className="p-4 font-medium text-white/70">밀도</th>
                       <th className="p-4 font-medium text-white/70">설명</th>
                       <th className="p-4 font-medium text-right text-white/70">관리</th>
@@ -1137,6 +1161,11 @@ export default function AdminSettings() {
                               ? `${m.pricePerMl}원/mL`
                               : <span className="text-amber-400 text-xs">미설정</span>)
                           }
+                        </td>
+                        <td className="p-4 text-white/90">
+                          {m.minPriceKrw != null && m.minPriceKrw > 0
+                            ? `${m.minPriceKrw.toLocaleString()}원`
+                            : <span className="text-white/40 text-xs">장비 폴백</span>}
                         </td>
                         <td className="p-4 text-white/90">{m.density}</td>
                         <td className="p-4 text-white/50 max-w-[160px] truncate" title={(m as any).description}>{(m as any).description || '-'}</td>
@@ -1210,6 +1239,25 @@ export default function AdminSettings() {
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">밀도</Label>
                     <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.density ?? ''} onChange={(e) => setEditForm({ ...editForm, density: parseFloat(e.target.value) || 1.24 })} />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">기본금액</Label>
+                    <div className="col-span-3 space-y-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        className="bg-white/5 border-white/10"
+                        value={editForm.minPriceKrw ?? ''}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            minPriceKrw: e.target.value === '' ? null : parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder="비우면 장비 기본금액 사용"
+                      />
+                      <p className="text-[10px] text-white/40">이 소재로 묶인 견적 그룹의 최소 공급가입니다.</p>
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">설명</Label>

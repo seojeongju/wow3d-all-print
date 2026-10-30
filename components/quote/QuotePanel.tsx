@@ -83,7 +83,15 @@ type PrintSpecEntry = {
 
 type PrintSpecs = Record<string, PrintSpecEntry>
 
-type ApiMaterial = { id: number; name: string; type: string; price_per_gram: number; price_per_ml?: number | null; density: number }
+type ApiMaterial = {
+    id: number
+    name: string
+    type: string
+    price_per_gram: number
+    price_per_ml?: number | null
+    density: number
+    min_price_krw?: number | null
+}
 
 /** 출력방식 type 코드(소문자). 견적 공식은 quoteFamily로 결정 */
 type PrintMethod = string
@@ -540,9 +548,21 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
         }
     }, [analysis, printMethod, quoteFamily, isFdmQuote, isDlpQuote, fdmMaterial, infill, layerHeight, supportEnabled, resinType, slaLayerHeight, postProcessing, printSpecs, materials, heightMm, overhangAreaRaw, supportVolumeRaw, supportColumnMmRaw, lateralAreaRaw, topAreaRaw, bottomAreaRaw, bedAreaRaw, slowWallAreaRaw, curvedWallAreaRaw, contourLoopsRaw, partCount, partHeightSumMm, partSpacingMm, surfaceAreaCm2, volumeCm3])
 
-    const minPriceKr = printSpecs?.[printMethod]?.minPriceKr
-    
-    // 기본 금액(공급가)과 산출 금액 중 큰 것을 선택한 후 부가세 적용
+    // 소재 기본금액 우선, 없으면 장비(출력방식) 폴백
+    const activeMaterialRow = methodMaterials.find((m) => m.name === activeMaterialName)
+    const equipmentMinKr = printSpecs?.[printMethod]?.minPriceKr
+    const materialMinKr =
+        activeMaterialRow?.min_price_krw != null && Number(activeMaterialRow.min_price_krw) > 0
+            ? Number(activeMaterialRow.min_price_krw)
+            : undefined
+    const minPriceKr =
+        materialMinKr != null && materialMinKr > 0
+            ? materialMinKr
+            : equipmentMinKr != null && equipmentMinKr > 0
+              ? equipmentMinKr
+              : undefined
+
+    // 기본금액(공급가)과 산출 금액 중 큰 것을 선택한 후 부가세 적용
     const baseAmount = minPriceKr != null && minPriceKr > 0 ? Math.max(quoteDetail.total, minPriceKr) : quoteDetail.total
     const totalPrice = roundTo100(baseAmount * 1.1, priceRoundMode)
     const supplyAmount = Math.round(Math.round(totalPrice) / 1.1)

@@ -12,6 +12,7 @@ import {
     FDM_DEFAULT_SUPPORT_PER_CM2_KRW,
     FDM_INFILL_DEFAULT,
 } from '@/lib/fdm-quote'
+import { resolveEffectiveMinPriceKrw } from '@/lib/min-price'
 
 type D1Like = {
     prepare: (sql: string) => {
@@ -89,16 +90,35 @@ function parseLayerCosts(json: string | null | undefined): Record<string, number
 async function loadFdmMaterial(
     db: D1Like,
     name: string | null
-): Promise<{ density: number; pricePerGram: number; name: string } | null> {
-    const rows = await db
-        .prepare(
-            `SELECT name, density, price_per_gram FROM materials
-             WHERE type = 'FDM' AND (is_active = 1 OR is_active IS NULL)
-             ORDER BY sort_order ASC, name ASC`
-        )
-        .all<{ name: string; density: number | null; price_per_gram: number | null }>()
+): Promise<{ density: number; pricePerGram: number; name: string; minPriceKrw?: number } | null> {
+    let list: Array<{
+        name: string
+        density: number | null
+        price_per_gram: number | null
+        min_price_krw?: number | null
+    }> = []
+    try {
+        const rows = await db
+            .prepare(
+                `SELECT name, density, price_per_gram, min_price_krw FROM materials
+                 WHERE type = 'FDM' AND (is_active = 1 OR is_active IS NULL)
+                 ORDER BY sort_order ASC, name ASC`
+            )
+            .all<{ name: string; density: number | null; price_per_gram: number | null; min_price_krw: number | null }>()
+        list = rows.results || []
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        if (!(msg.includes('no such column') && msg.includes('min_price_krw'))) throw e
+        const rows = await db
+            .prepare(
+                `SELECT name, density, price_per_gram FROM materials
+                 WHERE type = 'FDM' AND (is_active = 1 OR is_active IS NULL)
+                 ORDER BY sort_order ASC, name ASC`
+            )
+            .all<{ name: string; density: number | null; price_per_gram: number | null }>()
+        list = rows.results || []
+    }
 
-    const list = rows.results || []
     if (!list.length) return null
 
     const want = (name || '').trim().toUpperCase()
@@ -107,10 +127,14 @@ async function loadFdmMaterial(
         list.find((m) => want && m.name.trim().toUpperCase().includes(want)) ||
         list[0]
 
+    const minPrice =
+        hit.min_price_krw != null && Number(hit.min_price_krw) > 0 ? Number(hit.min_price_krw) : undefined
+
     return {
         name: hit.name,
         density: Number(hit.density) > 0 ? Number(hit.density) : FDM_DEFAULT_DENSITY,
         pricePerGram: Number(hit.price_per_gram) || 0,
+        ...(minPrice != null ? { minPriceKrw: minPrice } : {}),
     }
 }
 
@@ -175,6 +199,7 @@ export async function resolveServerFdmQuote(
         if (!material || material.pricePerGram <= 0) return clientFallback
 
         const equipment = await loadFdmEquipment(db)
+        const minPriceKr = resolveEffectiveMinPriceKrw(material.minPriceKrw, equipment.minPriceKr)
         const layer = input.layerHeightMm != null && Number.isFinite(input.layerHeightMm)
             ? Number(input.layerHeightMm)
             : 0.2
@@ -211,7 +236,7 @@ export async function resolveServerFdmQuote(
             fdmSupportPerCm2Krw: equipment.fdmSupportPerCm2Krw,
             fdmLayerHoursFactor: equipment.fdmLayerHoursFactor,
             applyVat: true,
-            minPriceKr: equipment.minPriceKr,
+            minPriceKr,
         })
 
         const deltaKr = Math.round(q.total - clientFallback.totalPrice)
@@ -229,7 +254,7 @@ export async function resolveServerFdmQuote(
             source: 'server',
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
-            minPriceKrw: equipment.minPriceKr ?? null,
+            minPriceKrw: minPriceKr ?? null,
             deltaKr,
         }
     } catch (e) {

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json() as any;
-        const { name, type, pricePerGram, pricePerMl, density, colors, description } = body;
+        const { name, type, pricePerGram, pricePerMl, density, colors, description, minPriceKrw } = body;
         // 장비(출력방식) type과 맞춘다. 없으면 FDM/SLA/DLP·등록된 장비 코드만 허용
         const rawType = String(type || 'FDM').trim().toUpperCase();
         let safeType = rawType;
@@ -54,13 +54,26 @@ export async function POST(req: NextRequest) {
             }
         }
         const pricePerMlVal = (pricePerMl != null && pricePerMl !== '') ? Number(pricePerMl) : null;
+        const minPriceVal =
+            minPriceKrw != null && minPriceKrw !== '' && Number.isFinite(Number(minPriceKrw)) && Number(minPriceKrw) > 0
+                ? Number(minPriceKrw)
+                : null;
 
-        const result = await env.DB.prepare(
-            `INSERT INTO materials (name, type, price_per_gram, price_per_ml, density, colors, description, is_active, store_id) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`
-        ).bind(name, safeType, pricePerGram, pricePerMlVal, density, JSON.stringify(colors || ['#FFFFFF']), description || null, storeId).run();
-
-        return NextResponse.json({ success: true, id: result.meta.last_row_id });
+        try {
+            const result = await env.DB.prepare(
+                `INSERT INTO materials (name, type, price_per_gram, price_per_ml, density, colors, description, min_price_krw, is_active, store_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`
+            ).bind(name, safeType, pricePerGram, pricePerMlVal, density, JSON.stringify(colors || ['#FFFFFF']), description || null, minPriceVal, storeId).run();
+            return NextResponse.json({ success: true, id: result.meta.last_row_id });
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (!(msg.includes('no such column') && msg.includes('min_price_krw'))) throw e;
+            const result = await env.DB.prepare(
+                `INSERT INTO materials (name, type, price_per_gram, price_per_ml, density, colors, description, is_active, store_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`
+            ).bind(name, safeType, pricePerGram, pricePerMlVal, density, JSON.stringify(colors || ['#FFFFFF']), description || null, storeId).run();
+            return NextResponse.json({ success: true, id: result.meta.last_row_id });
+        }
     } catch (error) {
         console.error('POST /api/admin/materials', error);
         const { body, status } = materialsErrorResponse(error, 'Failed to create material');

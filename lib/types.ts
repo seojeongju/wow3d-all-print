@@ -180,6 +180,8 @@ export interface Material {
     colors: string[]; // Parsed from JSON
     isActive: boolean;
     description?: string;
+    /** 소재 그룹 기본(최소) 견적금액. 없으면 장비 폴백 */
+    minPriceKrw?: number | null;
 }
 
 export interface PrintSetting {

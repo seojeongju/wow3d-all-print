@@ -20,6 +20,7 @@ import {
     quoteValidityErrorMessage,
     type PricingStamps,
 } from '@/lib/quote-validity'
+import { positiveMinPriceKrw, resolveEffectiveMinPriceKrw } from '@/lib/min-price'
 
 type D1Like = {
     prepare: (sql: string) => {
@@ -87,10 +88,8 @@ async function loadBatchMinPriceMode(db: D1Like): Promise<BatchMinPriceMode> {
 }
 
 /** 견적에 min_price_krw가 비었을 때 장비 기본(최소) 금액으로 보완 */
-async function loadEquipmentMinByMethod(
-    db: D1Like
-): Promise<Partial<Record<'fdm' | 'sla' | 'dlp', number>>> {
-    const out: Partial<Record<'fdm' | 'sla' | 'dlp', number>> = {}
+async function loadEquipmentMinByMethod(db: D1Like): Promise<Record<string, number>> {
+    const out: Record<string, number> = {}
     try {
         const { results } = await db
             .prepare(
@@ -103,13 +102,46 @@ async function loadEquipmentMinByMethod(
             const key = String(r.type || '')
                 .trim()
                 .toLowerCase()
-            if (key !== 'fdm' && key !== 'sla' && key !== 'dlp') continue
+            if (!key) continue
             const n = Number(r.min_price_krw)
             if (!(n > 0)) continue
             out[key] = Math.max(out[key] ?? 0, n)
         }
     } catch (e) {
         console.warn('[order-prices] 장비 최소금액 조회 실패 — 견적 컬럼만 사용', e)
+    }
+    return out
+}
+
+/** 소재별 최소금액 맵 — 키: "TYPE:NAME"(대문자). 스냅샷 없는 옛 견적 폴백용 */
+async function loadMaterialMinByTypeName(db: D1Like): Promise<Record<string, number>> {
+    const out: Record<string, number> = {}
+    try {
+        const { results } = await db
+            .prepare(
+                `SELECT type, name, min_price_krw FROM materials
+                 WHERE (is_active = 1 OR is_active IS NULL)
+                   AND min_price_krw IS NOT NULL AND min_price_krw > ?`
+            )
+            .bind(0)
+            .all<{ type: string; name: string; min_price_krw: number }>()
+        for (const r of results || []) {
+            const type = String(r.type || '')
+                .trim()
+                .toUpperCase()
+            const name = String(r.name || '')
+                .trim()
+                .toUpperCase()
+            if (!type || !name) continue
+            const n = Number(r.min_price_krw)
+            if (!(n > 0)) continue
+            out[`${type}:${name}`] = n
+        }
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        if (!(msg.includes('no such column') && msg.includes('min_price_krw'))) {
+            console.warn('[order-prices] 소재 최소금액 조회 실패', e)
+        }
     }
     return out
 }
@@ -200,6 +232,7 @@ export async function resolveOrderLinesFromDb(
     const stamps: PricingStamps = await loadPricingStamps(db as unknown as Parameters<typeof loadPricingStamps>[0])
     const buildMax = await loadBuildMaxByMethod(db as unknown as Parameters<typeof loadBuildMaxByMethod>[0])
     const equipmentMinByMethod = await loadEquipmentMinByMethod(db)
+    const materialMinByKey = await loadMaterialMinByTypeName(db)
 
     const batchInputs: {
         key: number
@@ -258,15 +291,17 @@ export async function resolveOrderLinesFromDb(
         const methodKey = String(row.print_method || '')
             .trim()
             .toLowerCase()
-        const quoteMin =
-            row.min_price_krw != null && Number(row.min_price_krw) > 0
-                ? Number(row.min_price_krw)
-                : null
-        const equipmentMin =
-            methodKey === 'fdm' || methodKey === 'sla' || methodKey === 'dlp'
-                ? equipmentMinByMethod[methodKey]
+        // 이미 저장된 견적 스냅샷이 있으면 그대로 사용(갱신하지 않음)
+        const quoteMin = positiveMinPriceKrw(row.min_price_krw)
+        const materialName = quoteMaterialKey(row).trim().toUpperCase()
+        const materialType = methodKey.toUpperCase()
+        const materialMin =
+            materialName && materialType
+                ? materialMinByKey[`${materialType}:${materialName}`]
                 : undefined
-        const minPriceKrw = quoteMin ?? (equipmentMin != null && equipmentMin > 0 ? equipmentMin : null)
+        const equipmentMin = equipmentMinByMethod[methodKey]
+        const minPriceKrw =
+            quoteMin ?? resolveEffectiveMinPriceKrw(materialMin, equipmentMin) ?? null
 
         batchInputs.push({
             key: quoteId,

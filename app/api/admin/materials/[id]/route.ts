@@ -4,7 +4,7 @@ import { materialsErrorResponse } from '@/lib/materials-api'
 
 /**
  * PATCH /api/admin/materials/[id] - 소재 수정
- * Body: { name?, type?, pricePerGram?, density?, colors?, is_active?, description? }
+ * Body: { name?, type?, pricePerGram?, density?, colors?, is_active?, description?, minPriceKrw? }
  */
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -52,17 +52,38 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         : (existing.colors as string)
     const is_active = body.is_active !== undefined ? (body.is_active ? 1 : 0) : (existing.is_active as number)
     const description = body.description !== undefined ? (body.description as string | null) : (existing.description as string | null)
+    const minPriceKrw =
+      body.minPriceKrw !== undefined
+        ? body.minPriceKrw != null && body.minPriceKrw !== '' && Number(body.minPriceKrw) > 0
+          ? Number(body.minPriceKrw)
+          : null
+        : existing.min_price_krw != null && Number(existing.min_price_krw) > 0
+          ? Number(existing.min_price_krw)
+          : null
 
     // updated_at = 단가 변경 시각 (장바구니 '단가 변경' 판정 기준) — 색상·설명만 바꾸면 유지
+    const prevMin =
+      existing.min_price_krw != null && Number(existing.min_price_krw) > 0 ? Number(existing.min_price_krw) : null
     const priceChanged =
       Number(existing.price_per_gram ?? 0) !== Number(pricePerGram ?? 0) ||
       (existing.price_per_ml == null ? null : Number(existing.price_per_ml)) !== (pricePerMl == null ? null : Number(pricePerMl)) ||
-      Number(existing.density ?? 0) !== Number(density ?? 0)
-    await env.DB.prepare(
-      `UPDATE materials SET name=?, type=?, price_per_gram=?, price_per_ml=?, density=?, colors=?, is_active=?, description=?${priceChanged ? ', updated_at=CURRENT_TIMESTAMP' : ''} WHERE id=?`
-    )
-      .bind(name, type, pricePerGram, pricePerMl, density, colors, is_active, description, numId)
-      .run()
+      Number(existing.density ?? 0) !== Number(density ?? 0) ||
+      prevMin !== minPriceKrw
+    try {
+      await env.DB.prepare(
+        `UPDATE materials SET name=?, type=?, price_per_gram=?, price_per_ml=?, density=?, colors=?, is_active=?, description=?, min_price_krw=?${priceChanged ? ', updated_at=CURRENT_TIMESTAMP' : ''} WHERE id=?`
+      )
+        .bind(name, type, pricePerGram, pricePerMl, density, colors, is_active, description, minPriceKrw, numId)
+        .run()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (!(msg.includes('no such column') && msg.includes('min_price_krw'))) throw e
+      await env.DB.prepare(
+        `UPDATE materials SET name=?, type=?, price_per_gram=?, price_per_ml=?, density=?, colors=?, is_active=?, description=?${priceChanged ? ', updated_at=CURRENT_TIMESTAMP' : ''} WHERE id=?`
+      )
+        .bind(name, type, pricePerGram, pricePerMl, density, colors, is_active, description, numId)
+        .run()
+    }
 
     return NextResponse.json({ success: true })
   } catch (e) {

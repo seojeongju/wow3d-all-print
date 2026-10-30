@@ -10,6 +10,7 @@ import {
     SLA_LAYER_DEFAULT,
     type ResinMethod,
 } from '@/lib/resin-quote'
+import { resolveEffectiveMinPriceKrw } from '@/lib/min-price'
 
 type D1Like = {
     prepare: (sql: string) => {
@@ -65,18 +66,33 @@ async function loadResinMaterial(
     db: D1Like,
     method: ResinMethod,
     name: string | null
-): Promise<{ pricePerMl: number; name: string } | null> {
+): Promise<{ pricePerMl: number; name: string; minPriceKrw?: number } | null> {
     const type = resinMethodToMaterialType(method)
-    const rows = await db
-        .prepare(
-            `SELECT name, price_per_ml FROM materials
-             WHERE type = ? AND (is_active = 1 OR is_active IS NULL)
-             ORDER BY sort_order ASC, name ASC`
-        )
-        .bind(type)
-        .all<{ name: string; price_per_ml: number | null }>()
+    let list: Array<{ name: string; price_per_ml: number | null; min_price_krw?: number | null }> = []
+    try {
+        const rows = await db
+            .prepare(
+                `SELECT name, price_per_ml, min_price_krw FROM materials
+                 WHERE type = ? AND (is_active = 1 OR is_active IS NULL)
+                 ORDER BY sort_order ASC, name ASC`
+            )
+            .bind(type)
+            .all<{ name: string; price_per_ml: number | null; min_price_krw: number | null }>()
+        list = rows.results || []
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        if (!(msg.includes('no such column') && msg.includes('min_price_krw'))) throw e
+        const rows = await db
+            .prepare(
+                `SELECT name, price_per_ml FROM materials
+                 WHERE type = ? AND (is_active = 1 OR is_active IS NULL)
+                 ORDER BY sort_order ASC, name ASC`
+            )
+            .bind(type)
+            .all<{ name: string; price_per_ml: number | null }>()
+        list = rows.results || []
+    }
 
-    const list = rows.results || []
     if (!list.length) return null
 
     const want = (name || '').trim().toLowerCase()
@@ -85,9 +101,13 @@ async function loadResinMaterial(
         list.find((m) => want && m.name.trim().toLowerCase().includes(want)) ||
         list[0]
 
+    const minPrice =
+        hit.min_price_krw != null && Number(hit.min_price_krw) > 0 ? Number(hit.min_price_krw) : undefined
+
     return {
         name: hit.name,
         pricePerMl: Number(hit.price_per_ml) || 0,
+        ...(minPrice != null ? { minPriceKrw: minPrice } : {}),
     }
 }
 
@@ -174,6 +194,7 @@ export async function resolveServerResinQuote(
         if (!material || material.pricePerMl <= 0) return clientFallback
 
         const equipment = await loadResinEquipment(db, input.method)
+        const minPriceKr = resolveEffectiveMinPriceKrw(material.minPriceKrw, equipment.minPriceKr)
         const layer = clampSlaLayerHeight(input.layerHeightMm, SLA_LAYER_DEFAULT)
         const hourlyRate =
             equipment.layerCosts?.[String(layer)] ??
@@ -195,7 +216,7 @@ export async function resolveServerResinQuote(
             postProcessKrw: equipment.postProcessKrw,
             supportPerCm2Krw: equipment.supportPerCm2Krw,
             applyVat: true,
-            minPriceKr: equipment.minPriceKr,
+            minPriceKr,
         })
 
         const deltaKr = Math.round(q.total - clientFallback.totalPrice)
@@ -212,7 +233,7 @@ export async function resolveServerResinQuote(
             source: 'server' as const,
             variableCostKrw: q.variableCostKrw,
             setupCostKrw: q.setupCostKrw,
-            minPriceKrw: equipment.minPriceKr ?? null,
+            minPriceKrw: minPriceKr ?? null,
             deltaKr,
         }
     } catch (e) {

@@ -13,6 +13,8 @@ export type PublicMaterial = {
     price_per_gram: number
     price_per_ml: number | null
     density: number
+    /** 소재별 기본(최소) 견적금액. 없으면 null → 장비 폴백 */
+    min_price_krw: number | null
 }
 
 export type PublicPrintSpec = {
@@ -99,11 +101,27 @@ export const PRINT_SPECS_ON_ERROR: PublicPrintSpecs = {
 
 /** 견적용 활성 소재 (관리자 "소재"와 동일 테이블) */
 export async function loadPublicMaterials(db: CloudflareEnv['DB']): Promise<PublicMaterial[]> {
-    const { results } = await db
-        .prepare(
-            'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type ASC, sort_order ASC, name ASC'
-        )
-        .all()
+    let results: unknown[] | undefined
+    try {
+        const q = await db
+            .prepare(
+                'SELECT id, name, type, price_per_gram, price_per_ml, density, min_price_krw FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type ASC, sort_order ASC, name ASC'
+            )
+            .all()
+        results = q.results
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        if (msg.includes('no such column') && msg.includes('min_price_krw')) {
+            const q = await db
+                .prepare(
+                    'SELECT id, name, type, price_per_gram, price_per_ml, density FROM materials WHERE (is_active = 1 OR is_active IS NULL) ORDER BY type ASC, sort_order ASC, name ASC'
+                )
+                .all()
+            results = q.results
+        } else {
+            throw e
+        }
+    }
     const rows = (results || []) as Array<{
         id: number
         name: string
@@ -111,15 +129,23 @@ export async function loadPublicMaterials(db: CloudflareEnv['DB']): Promise<Publ
         price_per_gram: number
         price_per_ml?: number | null
         density: number
+        min_price_krw?: number | null
     }>
-    return rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        type: r.type,
-        price_per_gram: Number(r.price_per_gram) || 0,
-        price_per_ml: r.price_per_ml != null && Number.isFinite(r.price_per_ml) ? Number(r.price_per_ml) : null,
-        density: Number(r.density) || 1.24,
-    }))
+    return rows.map((r) => {
+        const min =
+            r.min_price_krw != null && Number.isFinite(Number(r.min_price_krw)) && Number(r.min_price_krw) > 0
+                ? Number(r.min_price_krw)
+                : null
+        return {
+            id: r.id,
+            name: r.name,
+            type: r.type,
+            price_per_gram: Number(r.price_per_gram) || 0,
+            price_per_ml: r.price_per_ml != null && Number.isFinite(r.price_per_ml) ? Number(r.price_per_ml) : null,
+            density: Number(r.density) || 1.24,
+            min_price_krw: min,
+        }
+    })
 }
 
 type EquipmentRow = {
