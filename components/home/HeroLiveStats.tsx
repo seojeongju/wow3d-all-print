@@ -148,7 +148,7 @@ function StatCard({
     const fmtLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
 
     return (
-        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] px-3.5 py-3 lg:py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] lg:px-3 lg:py-2">
             <AnimatePresence>
                 {bump && !reduce ? (
                     <motion.span
@@ -163,13 +163,13 @@ function StatCard({
             </AnimatePresence>
 
             <div className="relative flex items-center gap-2">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-teal-400/20 bg-teal-400/10 text-teal-300">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-teal-400/20 bg-teal-400/10 text-teal-300 lg:h-6 lg:w-6">
                     {icon}
                 </span>
-                <span className="truncate text-[11px] font-semibold text-white/55">{label}</span>
+                <span className="truncate text-[11px] font-semibold text-white/55 lg:text-[10px]">{label}</span>
             </div>
 
-            <div className="relative mt-2 flex items-end gap-1 text-2xl font-extrabold leading-none text-white sm:text-[26px]">
+            <div className="relative mt-2 flex items-end gap-1 text-2xl font-extrabold leading-none text-white sm:text-[26px] lg:mt-1.5 lg:text-xl">
                 {value == null ? (
                     <span className="inline-block h-[1em] w-16 animate-pulse rounded-md bg-white/10" aria-hidden />
                 ) : (
@@ -265,14 +265,14 @@ export default function HeroLiveStats() {
 
     return (
         <div aria-live="polite">
-            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300/90">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300/90 lg:mb-1.5 lg:text-[10px]">
                 <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60 motion-reduce:animate-none" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                 </span>
                 {t('statsLive')}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 lg:gap-1.5">
                 <StatCard
                     icon={<Users className="h-3.5 w-3.5" aria-hidden />}
                     label={t('statsMembersLabel')}
