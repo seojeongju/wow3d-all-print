@@ -83,6 +83,57 @@ const EQUIPMENT_DEFAULTS: Record<string, Partial<EquipmentRow>> = {
   DLP: { max_x_mm: 120, max_y_mm: 68, max_z_mm: 200, hourly_rate: 9000, layer_heights_json: '[0.025,0.05,0.1]' },
 }
 
+function createDefaultMaterialForm(typeHint: string = 'FDM'): Partial<Material> {
+  const type = String(typeHint || 'FDM').trim().toUpperCase() || 'FDM'
+  const resin = type === 'SLA' || type === 'DLP'
+  return {
+    name: '',
+    type,
+    pricePerGram: resin ? 0 : 0.05,
+    pricePerMl: resin ? 0.3 : undefined,
+    density: resin ? 1.1 : 1.24,
+    colors: ['#FFFFFF'],
+    description: '',
+    minPriceKrw: null,
+  }
+}
+
+function createDefaultEquipForm(familyHint: QuoteFamily = 'FDM'): EquipForm {
+  const family = normalizeQuoteFamily(familyHint)
+  const d = EQUIPMENT_DEFAULTS[family] || EQUIPMENT_DEFAULTS.FDM
+  const arr =
+    (d?.layer_heights_json as string)
+      ?.replace(/[\[\]]/g, '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .join(', ') || (family === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
+  return {
+    name: '',
+    quote_family: family,
+    max_x_mm: (d?.max_x_mm as number) || 220,
+    max_y_mm: (d?.max_y_mm as number) || 220,
+    max_z_mm: (d?.max_z_mm as number) || 250,
+    hourly_rate: (d?.hourly_rate as number) || 5000,
+    layer_heights_json: arr,
+    layer_costs: {},
+    min_price_krw: undefined,
+    fdm_layer_hours_factor: 0.02,
+    fdm_labor_cost_krw: 6500,
+    fdm_support_per_cm2_krw: 26,
+    sla_layer_exposure_sec: 8,
+    sla_labor_cost_krw: 9100,
+    sla_consumables_krw: 3900,
+    sla_post_process_krw: 10400,
+    sla_support_per_cm2_krw: SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
+    dlp_layer_exposure_sec: 3,
+    dlp_labor_cost_krw: 9100,
+    dlp_consumables_krw: 3900,
+    dlp_post_process_krw: 10400,
+    dlp_support_per_cm2_krw: DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
+  }
+}
+
 export default function AdminSettings() {
   const [loading, setLoading] = useState(true)
   const [materials, setMaterials] = useState<Material[]>([])
@@ -90,21 +141,15 @@ export default function AdminSettings() {
   const [equipment, setEquipment] = useState<EquipmentRow[]>([])
   const [storeConfigs, setStoreConfigs] = useState<{ setting_key: string, setting_value: string }[]>([])
   const [isAddingMaterial, setIsAddingMaterial] = useState(false)
+  const [addingMaterial, setAddingMaterial] = useState(false)
+  const [savingMaterial, setSavingMaterial] = useState(false)
   const [isAddingEquipment, setIsAddingEquipment] = useState(false)
-  const [newEquipment, setNewEquipment] = useState<{ type: string; name: string; quote_family: QuoteFamily }>({
+  const [addingEquip, setAddingEquip] = useState(false)
+  const [newEquipment, setNewEquipment] = useState<{ type: string; form: EquipForm }>({
     type: '',
-    name: '',
-    quote_family: 'FDM',
+    form: createDefaultEquipForm('FDM'),
   })
-  const [newMaterial, setNewMaterial] = useState<Partial<Material>>({
-    name: '',
-    type: 'FDM',
-    pricePerGram: 0,
-    pricePerMl: undefined,
-    density: 1.24,
-    colors: ['#FFFFFF'],
-    minPriceKrw: null,
-  })
+  const [newMaterial, setNewMaterial] = useState<Partial<Material>>(() => createDefaultMaterialForm('FDM'))
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -144,6 +189,22 @@ export default function AdminSettings() {
     const family = normalizeQuoteFamily(row?.quote_family ?? equipForms[u]?.quote_family, u)
     return family === 'SLA' || family === 'DLP'
   }, [equipment, equipForms])
+
+  const applyMaterialTypeToForm = useCallback((prev: Partial<Material>, nextType: string): Partial<Material> => {
+    const type = String(nextType || 'FDM').trim().toUpperCase() || 'FDM'
+    const resin = materialUsesResinPrice(type)
+    const base = createDefaultMaterialForm(resin ? (type === 'DLP' ? 'DLP' : 'SLA') : 'FDM')
+    return {
+      ...prev,
+      type,
+      density: prev.density != null && prev.density > 0 ? prev.density : base.density,
+      pricePerGram: resin ? (prev.pricePerGram ?? 0) : (prev.pricePerGram != null && prev.pricePerGram > 0 ? prev.pricePerGram : base.pricePerGram),
+      pricePerMl: resin
+        ? (prev.pricePerMl != null ? prev.pricePerMl : base.pricePerMl)
+        : undefined,
+      colors: prev.colors?.length ? prev.colors : ['#FFFFFF'],
+    }
+  }, [materialUsesResinPrice])
 
   // 탭 변경 핸들러
   const handleTabChange = (value: string) => {
@@ -307,11 +368,8 @@ export default function AdminSettings() {
     });
   }
 
-  const getDefaultForm = (t: string, familyHint?: QuoteFamily): EquipForm => {
-    const family = normalizeQuoteFamily(familyHint, t)
-    const d = EQUIPMENT_DEFAULTS[family] || EQUIPMENT_DEFAULTS.FDM
-    const arr = (d?.layer_heights_json as string)?.replace(/[\[\]]/g, '').split(',').map((x) => x.trim()).filter(Boolean).join(', ') || (family === 'FDM' ? '0.1, 0.2, 0.3' : '0.025, 0.05, 0.1')
-    return { name: '', quote_family: family, max_x_mm: (d?.max_x_mm as number) || 220, max_y_mm: (d?.max_y_mm as number) || 220, max_z_mm: (d?.max_z_mm as number) || 250, hourly_rate: (d?.hourly_rate as number) || 5000, layer_heights_json: arr, layer_costs: {}, min_price_krw: undefined, fdm_layer_hours_factor: 0.02, fdm_labor_cost_krw: 6500, fdm_support_per_cm2_krw: 26, sla_layer_exposure_sec: 8, sla_labor_cost_krw: 9100, sla_consumables_krw: 3900, sla_post_process_krw: 10400, sla_support_per_cm2_krw: SLA_DEFAULT_SUPPORT_PER_CM2_KRW, dlp_layer_exposure_sec: 3, dlp_labor_cost_krw: 9100, dlp_consumables_krw: 3900, dlp_post_process_krw: 10400, dlp_support_per_cm2_krw: DLP_DEFAULT_SUPPORT_PER_CM2_KRW }
+  const getDefaultForm = (_t: string, familyHint?: QuoteFamily): EquipForm => {
+    return createDefaultEquipForm(normalizeQuoteFamily(familyHint, _t))
   }
 
     const setEquipLayerCost = (t: string, thickness: string, value: number) => {
@@ -403,6 +461,20 @@ export default function AdminSettings() {
     })
   }
 
+  const setNewEquipForm = (k: string, v: string | number) => {
+    setNewEquipment((prev) => ({
+      ...prev,
+      form: { ...prev.form, [k]: v },
+    }))
+  }
+
+  const setNewEquipLayerCost = (thickness: string, value: number) => {
+    setNewEquipment((prev) => {
+      const lc = { ...(prev.form.layer_costs || {}), [String(thickness)]: value }
+      return { ...prev, form: { ...prev.form, layer_costs: lc } }
+    })
+  }
+
   const handleAddEquipment = async () => {
     const type = normalizeEquipmentTypeCode(newEquipment.type)
     if (!type) {
@@ -413,16 +485,74 @@ export default function AdminSettings() {
       showToast.error('추가 실패', new Error(`이미 있는 장비 코드입니다: ${type}`))
       return
     }
-    const family = normalizeQuoteFamily(newEquipment.quote_family, type)
-    const form = {
-      ...getDefaultForm(type, family),
-      name: newEquipment.name.trim(),
-      quote_family: family,
+    if (!useAuthStore.getState().token?.trim()) {
+      showToast.error('추가 실패', new Error('인증 정보가 없습니다. 다시 로그인해 주세요.'))
+      return
     }
-    setEquipForms((prev) => ({ ...prev, [type]: form }))
-    setIsAddingEquipment(false)
-    setNewEquipment({ type: '', name: '', quote_family: 'FDM' })
-    showToast.success(`${type} 장비를 목록에 추가했습니다. 사양을 입력한 뒤 저장하세요.`)
+    const form = newEquipment.form
+    const family = normalizeQuoteFamily(form.quote_family, type)
+    const layerArr = String(form.layer_heights_json || '')
+      .split(',')
+      .map((n) => parseFloat(n.trim()))
+      .filter(Number.isFinite)
+    const arr = layerArr.length ? layerArr : (family === 'FDM' ? [0.1, 0.2, 0.3] : [0.025, 0.05, 0.1])
+    const layer_costs: Record<string, number> = {}
+    for (const th of arr) {
+      const k = String(th)
+      layer_costs[k] =
+        form.layer_costs && form.layer_costs[k] != null && Number.isFinite(form.layer_costs[k])
+          ? form.layer_costs[k]
+          : form.hourly_rate
+    }
+    setAddingEquip(true)
+    try {
+      const res = await fetch('/api/admin/equipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+        body: JSON.stringify({
+          type,
+          quote_family: family,
+          name: form.name?.trim() || null,
+          max_x_mm: form.max_x_mm,
+          max_y_mm: form.max_y_mm,
+          max_z_mm: form.max_z_mm,
+          hourly_rate: form.hourly_rate,
+          layer_heights_json: JSON.stringify(arr),
+          layer_costs_json: layer_costs,
+          is_active: 1,
+          min_price_krw: form.min_price_krw != null && form.min_price_krw > 0 ? form.min_price_krw : null,
+          fdm_layer_hours_factor: form.fdm_layer_hours_factor ?? 0.02,
+          fdm_labor_cost_krw: form.fdm_labor_cost_krw ?? 6500,
+          fdm_support_per_cm2_krw: form.fdm_support_per_cm2_krw ?? 26,
+          sla_layer_exposure_sec: form.sla_layer_exposure_sec ?? 8,
+          sla_labor_cost_krw: form.sla_labor_cost_krw ?? 9100,
+          sla_consumables_krw: form.sla_consumables_krw ?? 3900,
+          sla_post_process_krw: form.sla_post_process_krw ?? 10400,
+          sla_support_per_cm2_krw: form.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW,
+          dlp_layer_exposure_sec: form.dlp_layer_exposure_sec ?? 3,
+          dlp_labor_cost_krw: form.dlp_labor_cost_krw ?? 9100,
+          dlp_consumables_krw: form.dlp_consumables_krw ?? 3900,
+          dlp_post_process_krw: form.dlp_post_process_krw ?? 10400,
+          dlp_support_per_cm2_krw: form.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW,
+        }),
+      })
+      if (!res.ok) {
+        let errMsg = '추가 실패'
+        try {
+          const j = await res.json()
+          if (j && typeof j.error === 'string') errMsg = j.error
+        } catch { /* */ }
+        throw new Error(errMsg)
+      }
+      setIsAddingEquipment(false)
+      setNewEquipment({ type: '', form: createDefaultEquipForm('FDM') })
+      showToast.success(`${type} 장비를 추가·저장했습니다. 사용자 견적에 노출됩니다.`)
+      fetchData()
+    } catch (e) {
+      showToast.error('추가 실패', e)
+    } finally {
+      setAddingEquip(false)
+    }
   }
 
   const handleToggleEquipmentActive = async (type: string, nextActive: boolean) => {
@@ -575,15 +705,25 @@ export default function AdminSettings() {
 
 
   const handleAddMaterial = async () => {
+    const name = String(newMaterial.name || '').trim()
+    if (!name) {
+      showToast.error('추가 실패', new Error('소재 이름을 입력해 주세요.'))
+      return
+    }
+    const type = (newMaterial.type || 'FDM').toUpperCase()
+    if (!equipmentTypes.includes(type) && !['FDM', 'SLA', 'DLP'].includes(type)) {
+      showToast.error('추가 실패', new Error('출력방식을 먼저 선택해 주세요.'))
+      return
+    }
+    setAddingMaterial(true)
     try {
-      const type = (newMaterial.type || 'FDM').toUpperCase()
       const body: Record<string, unknown> = {
-        name: newMaterial.name,
+        name,
         type,
         pricePerGram: newMaterial.pricePerGram ?? 0,
         density: newMaterial.density ?? 1.24,
-        colors: newMaterial.colors || ['#FFFFFF'],
-        description: (newMaterial as any).description || undefined,
+        colors: (newMaterial.colors || []).filter(Boolean).length ? newMaterial.colors : ['#FFFFFF'],
+        description: (newMaterial as { description?: string }).description || undefined,
         minPriceKrw: newMaterial.minPriceKrw != null && newMaterial.minPriceKrw > 0 ? newMaterial.minPriceKrw : null,
       }
       if (materialUsesResinPrice(type)) {
@@ -603,11 +743,13 @@ export default function AdminSettings() {
         throw new Error(errMsg)
       }
       setIsAddingMaterial(false)
+      setNewMaterial(createDefaultMaterialForm('FDM'))
       fetchData()
-      showToast.success('소재 추가 완료')
-      setNewMaterial({ name: '', type: 'FDM', pricePerGram: 0, pricePerMl: undefined, density: 1.24, colors: ['#FFFFFF'], minPriceKrw: null })
+      showToast.success(`${name} 소재를 추가했습니다. 사용자 견적에 노출됩니다.`)
     } catch (e) {
       showToast.error('추가 실패', e)
+    } finally {
+      setAddingMaterial(false)
     }
   }
 
@@ -617,15 +759,21 @@ export default function AdminSettings() {
   }
   const handleSaveMaterialEdit = async () => {
     if (!editingMaterial) return
+    const name = String(editForm.name || '').trim()
+    if (!name) {
+      showToast.error('수정 실패', new Error('소재 이름을 입력해 주세요.'))
+      return
+    }
+    setSavingMaterial(true)
     try {
       const type = (editForm.type || 'FDM').toUpperCase()
       const patchBody: Record<string, unknown> = {
-        name: editForm.name,
+        name,
         type,
         pricePerGram: editForm.pricePerGram,
         density: editForm.density,
-        colors: editForm.colors || ['#FFFFFF'],
-        description: (editForm as any).description ?? undefined,
+        colors: (editForm.colors || []).filter(Boolean).length ? editForm.colors : ['#FFFFFF'],
+        description: (editForm as { description?: string }).description ?? undefined,
         minPriceKrw: editForm.minPriceKrw != null && editForm.minPriceKrw > 0 ? editForm.minPriceKrw : null,
       }
       if (materialUsesResinPrice(type)) {
@@ -649,6 +797,8 @@ export default function AdminSettings() {
       showToast.success('소재 수정 완료')
     } catch (e) {
       showToast.error('수정 실패', e)
+    } finally {
+      setSavingMaterial(false)
     }
   }
 
@@ -810,55 +960,227 @@ export default function AdminSettings() {
             <div>
               <p className="text-sm text-white/70">출력방식을 추가하면 사용자 견적 화면에 노출됩니다. 견적 공식은 FDM/SLA/DLP 중 하나를 선택합니다.</p>
             </div>
-            <Dialog open={isAddingEquipment} onOpenChange={setIsAddingEquipment}>
+            <Dialog
+              open={isAddingEquipment}
+              onOpenChange={(o) => {
+                setIsAddingEquipment(o)
+                if (o) setNewEquipment({ type: '', form: createDefaultEquipForm('FDM') })
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="w-4 h-4 mr-2" /> 장비 추가
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>새 출력방식(장비) 추가</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">코드</Label>
-                    <Input
-                      className="col-span-3 bg-white/5 border-white/10"
-                      value={newEquipment.type}
-                      onChange={(e) => setNewEquipment({ ...newEquipment, type: e.target.value.toUpperCase() })}
-                      placeholder="예: LCD, MJF"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">표시 이름</Label>
-                    <Input
-                      className="col-span-3 bg-white/5 border-white/10"
-                      value={newEquipment.name}
-                      onChange={(e) => setNewEquipment({ ...newEquipment, name: e.target.value })}
-                      placeholder="예: LCD 레진"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">견적 공식</Label>
-                    <Select
-                      value={newEquipment.quote_family}
-                      onValueChange={(v) => setNewEquipment({ ...newEquipment, quote_family: v as QuoteFamily })}
-                    >
-                      <SelectTrigger className="col-span-3 bg-white/5 border-white/10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CORE_QUOTE_FAMILIES.map((f) => (
-                          <SelectItem key={f} value={f}>{f}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-xs text-white/40 col-span-4">코드는 저장 후 변경할 수 없습니다. 견적 공식에 맞는 산출 기준이 적용됩니다.</p>
-                </div>
+                {(() => {
+                  const nf = newEquipment.form
+                  const nFamily = normalizeQuoteFamily(nf.quote_family)
+                  return (
+                    <div className="space-y-5 py-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">코드 *</Label>
+                          <Input
+                            className="mt-1 bg-white/5 border-white/10"
+                            value={newEquipment.type}
+                            onChange={(e) => setNewEquipment({ ...newEquipment, type: e.target.value.toUpperCase() })}
+                            placeholder="예: LCD, MJF"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">표시 이름</Label>
+                          <Input
+                            className="mt-1 bg-white/5 border-white/10"
+                            value={nf.name}
+                            onChange={(e) => setNewEquipForm('name', e.target.value)}
+                            placeholder="예: LCD 레진"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">견적 공식 *</Label>
+                          <Select
+                            value={nFamily}
+                            onValueChange={(v) => {
+                              const family = v as QuoteFamily
+                              const next = createDefaultEquipForm(family)
+                              next.name = nf.name
+                              setNewEquipment((prev) => ({ ...prev, form: next }))
+                            }}
+                          >
+                            <SelectTrigger className="mt-1 bg-white/5 border-white/10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CORE_QUOTE_FAMILIES.map((f) => (
+                                <SelectItem key={f} value={f}>{f}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <p className="text-xs text-white/40">코드는 저장 후 변경할 수 없습니다. 견적 공식을 바꾸면 아래 기본값이 해당 공식 기준으로 다시 채워집니다.</p>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">최대 X (mm)</Label>
+                          <Input type="number" className="mt-1 bg-white/5 border-white/10" value={nf.max_x_mm} onChange={(e) => setNewEquipForm('max_x_mm', parseFloat(e.target.value) || 0)} />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">최대 Y (mm)</Label>
+                          <Input type="number" className="mt-1 bg-white/5 border-white/10" value={nf.max_y_mm} onChange={(e) => setNewEquipForm('max_y_mm', parseFloat(e.target.value) || 0)} />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">최대 Z (mm)</Label>
+                          <Input type="number" className="mt-1 bg-white/5 border-white/10" value={nf.max_z_mm} onChange={(e) => setNewEquipForm('max_z_mm', parseFloat(e.target.value) || 0)} />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">기본 시간당 비용 (원)</Label>
+                          <Input type="number" className="mt-1 bg-white/5 border-white/10" value={nf.hourly_rate} onChange={(e) => setNewEquipForm('hourly_rate', parseFloat(e.target.value) || 0)} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">기본금액 · 최소 견적 (원) — 폴백</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="미설정 시 산출금액 그대로"
+                            className="mt-1 bg-white/5 border-white/10"
+                            value={nf.min_price_krw ?? ''}
+                            onChange={(e) => setNewEquipForm('min_price_krw', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                          />
+                          <p className="text-[10px] text-white/40 mt-0.5">소재에 기본금액이 없을 때 이 장비 폴백값을 씁니다.</p>
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">레이어 두께 (예: 0.1, 0.2, 0.3)</Label>
+                          <Input
+                            className="mt-1 bg-white/5 border-white/10"
+                            placeholder="0.1, 0.2, 0.3"
+                            value={nf.layer_heights_json}
+                            onChange={(e) => setNewEquipForm('layer_heights_json', e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] text-white/50 uppercase">레이어별 시간당 비용 (원)</Label>
+                        <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-white/10 bg-white/5">
+                                <th className="p-2 text-left text-white/70 font-medium">레이어 두께 (mm)</th>
+                                <th className="p-2 text-left text-white/70 font-medium">시간당 비용 (원)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {String(nf.layer_heights_json || '')
+                                .split(',')
+                                .map((x) => parseFloat(x.trim()))
+                                .filter(Number.isFinite)
+                                .map((th) => (
+                                  <tr key={th} className="border-b border-white/5">
+                                    <td className="p-2 text-white/90">{th} mm</td>
+                                    <td className="p-2">
+                                      <Input
+                                        type="number"
+                                        className="h-9 bg-white/5 border-white/10 w-32"
+                                        value={(nf.layer_costs && nf.layer_costs[String(th)] != null) ? nf.layer_costs[String(th)] : nf.hourly_rate}
+                                        onChange={(e) => setNewEquipLayerCost(String(th), parseFloat(e.target.value) || 0)}
+                                      />
+                                    </td>
+                                  </tr>
+                                ))}
+                              {String(nf.layer_heights_json || '').split(',').map((x) => parseFloat(x.trim())).filter(Number.isFinite).length === 0 && (
+                                <tr><td colSpan={2} className="p-3 text-white/40 text-xs">레이어 두께를 위에 입력하면 여기서 각각 비용을 설정할 수 있습니다.</td></tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] text-white/50 uppercase">견적 산출 기준 — {nFamily}</Label>
+                        <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {nFamily === 'FDM' && (
+                            <>
+                              <div>
+                                <Label className="text-[10px] text-white/40">레이어당 소요 시간 (h)</Label>
+                                <Input type="number" step="0.01" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.fdm_layer_hours_factor ?? 0.02} onChange={(e) => setNewEquipForm('fdm_layer_hours_factor', parseFloat(e.target.value) || 0.02)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">인건비 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.fdm_labor_cost_krw ?? 6500} onChange={(e) => setNewEquipForm('fdm_labor_cost_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">지지 구조 단가 (원/cm²)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.fdm_support_per_cm2_krw ?? 26} onChange={(e) => setNewEquipForm('fdm_support_per_cm2_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                            </>
+                          )}
+                          {nFamily === 'SLA' && (
+                            <>
+                              <div>
+                                <Label className="text-[10px] text-white/40">레이어당 노출 시간 (초)</Label>
+                                <Input type="number" step="0.1" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.sla_layer_exposure_sec ?? 8} onChange={(e) => setNewEquipForm('sla_layer_exposure_sec', parseFloat(e.target.value) || 8)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">인건비 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.sla_labor_cost_krw ?? 9100} onChange={(e) => setNewEquipForm('sla_labor_cost_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">소모품비 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.sla_consumables_krw ?? 3900} onChange={(e) => setNewEquipForm('sla_consumables_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">후가공 비용 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.sla_post_process_krw ?? 10400} onChange={(e) => setNewEquipForm('sla_post_process_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">서포트 단가 (원/cm²)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.sla_support_per_cm2_krw ?? SLA_DEFAULT_SUPPORT_PER_CM2_KRW} onChange={(e) => setNewEquipForm('sla_support_per_cm2_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                            </>
+                          )}
+                          {nFamily === 'DLP' && (
+                            <>
+                              <div>
+                                <Label className="text-[10px] text-white/40">레이어당 노출 시간 (초)</Label>
+                                <Input type="number" step="0.1" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.dlp_layer_exposure_sec ?? 3} onChange={(e) => setNewEquipForm('dlp_layer_exposure_sec', parseFloat(e.target.value) || 3)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">인건비 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.dlp_labor_cost_krw ?? 9100} onChange={(e) => setNewEquipForm('dlp_labor_cost_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">소모품비 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.dlp_consumables_krw ?? 3900} onChange={(e) => setNewEquipForm('dlp_consumables_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">후가공 비용 (원)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.dlp_post_process_krw ?? 10400} onChange={(e) => setNewEquipForm('dlp_post_process_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                              <div>
+                                <Label className="text-[10px] text-white/40">서포트 단가 (원/cm²)</Label>
+                                <Input type="number" min="0" className="mt-1 bg-white/5 border-white/10 h-9" value={nf.dlp_support_per_cm2_krw ?? DLP_DEFAULT_SUPPORT_PER_CM2_KRW} onChange={(e) => setNewEquipForm('dlp_support_per_cm2_krw', parseFloat(e.target.value) || 0)} />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
                 <DialogFooter>
-                  <Button onClick={handleAddEquipment}>목록에 추가</Button>
+                  <Button variant="outline" onClick={() => setIsAddingEquipment(false)} disabled={addingEquip}>취소</Button>
+                  <Button onClick={handleAddEquipment} disabled={addingEquip}>
+                    {addingEquip ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                    추가·저장
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -1060,75 +1382,195 @@ export default function AdminSettings() {
                 <CardTitle>소재 목록</CardTitle>
                 <CardDescription>등록된 출력방식(장비)에 연결되는 소재. 추가하면 사용자 견적에 노출됩니다.</CardDescription>
               </div>
-              <Dialog open={isAddingMaterial} onOpenChange={setIsAddingMaterial}>
+              <Dialog
+                open={isAddingMaterial}
+                onOpenChange={(o) => {
+                  setIsAddingMaterial(o)
+                  if (o) setNewMaterial(createDefaultMaterialForm(equipmentTypes[0] || 'FDM'))
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button size="sm">
                     <Plus className="w-4 h-4 mr-2" /> 소재 추가
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>새 소재 추가</DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">이름</Label>
-                      <Input className="col-span-3 bg-white/5 border-white/10" value={newMaterial.name} onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })} placeholder="예: PLA Plus" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">타입</Label>
-                      <Select value={newMaterial.type} onValueChange={(v) => setNewMaterial({ ...newMaterial, type: v })}>
-                        <SelectTrigger className="col-span-3 bg-white/5 border-white/10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {equipmentTypes.map((t) => (
-                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {!materialUsesResinPrice(newMaterial.type || 'FDM') ? (
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">g당 가격 (원)</Label>
-                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerGram ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerGram: parseFloat(e.target.value) || 0 })} placeholder="FDM 필라멘트 가격" />
+
+                  {(() => {
+                    const mf = newMaterial
+                    const type = String(mf.type || 'FDM').toUpperCase()
+                    const resin = materialUsesResinPrice(type)
+                    const colors = Array.isArray(mf.colors) && mf.colors.length ? mf.colors : ['#FFFFFF']
+                    return (
+                      <div className="space-y-5 py-2">
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">1. 출력방식 *</Label>
+                          <Select
+                            value={type}
+                            onValueChange={(v) => setNewMaterial((prev) => applyMaterialTypeToForm(prev, v))}
+                          >
+                            <SelectTrigger className="mt-1 bg-white/5 border-white/10">
+                              <SelectValue placeholder="출력방식 선택" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {equipmentTypes.map((t) => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[10px] text-white/40 mt-1">
+                            선택한 출력방식에 맞춰 단가 단위({resin ? '원/mL' : '원/g'})와 기본 밀도가 적용됩니다.
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-[10px] text-white/50 uppercase">2. 소재 이름 *</Label>
+                            <Input
+                              className="mt-1 bg-white/5 border-white/10"
+                              value={mf.name || ''}
+                              onChange={(e) => setNewMaterial({ ...mf, name: e.target.value })}
+                              placeholder="예: PLA Plus"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/50 uppercase">설명 (선택)</Label>
+                            <Input
+                              className="mt-1 bg-white/5 border-white/10"
+                              value={(mf as { description?: string }).description || ''}
+                              onChange={(e) => setNewMaterial({ ...mf, description: e.target.value })}
+                              placeholder="소재 특징·용도"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">3. 단가 · 밀도 · 기본금액</Label>
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {!resin ? (
+                              <div>
+                                <Label className="text-[10px] text-white/40">g당 가격 (원)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="mt-1 bg-white/5 border-white/10"
+                                  value={mf.pricePerGram ?? ''}
+                                  onChange={(e) => setNewMaterial({ ...mf, pricePerGram: parseFloat(e.target.value) || 0 })}
+                                  placeholder="필라멘트 단가"
+                                />
+                              </div>
+                            ) : (
+                              <div>
+                                <Label className="text-[10px] text-white/40">mL당 가격 (원)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="mt-1 bg-white/5 border-white/10"
+                                  value={mf.pricePerMl ?? ''}
+                                  onChange={(e) => setNewMaterial({ ...mf, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                                  placeholder="레진 단가"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <Label className="text-[10px] text-white/40">밀도 (g/cm³)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="mt-1 bg-white/5 border-white/10"
+                                value={mf.density ?? ''}
+                                onChange={(e) => setNewMaterial({ ...mf, density: parseFloat(e.target.value) || 1.24 })}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-[10px] text-white/40">기본 견적금액 (원)</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                className="mt-1 bg-white/5 border-white/10"
+                                value={mf.minPriceKrw ?? ''}
+                                onChange={(e) =>
+                                  setNewMaterial({
+                                    ...mf,
+                                    minPriceKrw: e.target.value === '' ? null : parseFloat(e.target.value) || 0,
+                                  })
+                                }
+                                placeholder="비우면 장비 폴백"
+                              />
+                              <p className="text-[10px] text-white/40 mt-0.5">이 소재 그룹의 최소 공급가</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <Label className="text-[10px] text-white/50 uppercase">4. 표시 색상</Label>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => setNewMaterial({ ...mf, colors: [...colors, '#FFFFFF'] })}
+                            >
+                              <Plus className="w-3.5 h-3.5 mr-1" /> 색상 추가
+                            </Button>
+                          </div>
+                          <div className="mt-2 space-y-2">
+                            {colors.map((c, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+                                  value={/^#[0-9A-Fa-f]{6}$/.test(c) ? c : '#FFFFFF'}
+                                  onChange={(e) => {
+                                    const next = [...colors]
+                                    next[idx] = e.target.value.toUpperCase()
+                                    setNewMaterial({ ...mf, colors: next })
+                                  }}
+                                />
+                                <Input
+                                  className="bg-white/5 border-white/10 font-mono uppercase"
+                                  value={c}
+                                  onChange={(e) => {
+                                    const next = [...colors]
+                                    next[idx] = e.target.value
+                                    setNewMaterial({ ...mf, colors: next })
+                                  }}
+                                  placeholder="#FFFFFF"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive shrink-0"
+                                  disabled={colors.length <= 1}
+                                  onClick={() => {
+                                    const next = colors.filter((_, i) => i !== idx)
+                                    setNewMaterial({ ...mf, colors: next.length ? next : ['#FFFFFF'] })
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-white/40 mt-1">관리·미리보기용 색상입니다. 견적 금액에는 영향이 없습니다.</p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">mL당 가격 (원)</Label>
-                        <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.pricePerMl ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP 레진 가격" />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">밀도</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={newMaterial.density ?? ''} onChange={(e) => setNewMaterial({ ...newMaterial, density: parseFloat(e.target.value) || 1.24 })} />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">기본금액</Label>
-                      <div className="col-span-3 space-y-1">
-                        <Input
-                          type="number"
-                          min="0"
-                          className="bg-white/5 border-white/10"
-                          value={newMaterial.minPriceKrw ?? ''}
-                          onChange={(e) =>
-                            setNewMaterial({
-                              ...newMaterial,
-                              minPriceKrw: e.target.value === '' ? null : parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          placeholder="비우면 장비 기본금액 사용"
-                        />
-                        <p className="text-[10px] text-white/40">이 소재 그룹의 최소 견적(공급가). FDM·SLA·DLP 모두 설정 가능.</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">설명 (선택)</Label>
-                      <Input className="col-span-3 bg-white/5 border-white/10" value={(newMaterial as any).description || ''} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} placeholder="소재 설명" />
-                    </div>
-                  </div>
+                    )
+                  })()}
                   <DialogFooter>
-                    <Button onClick={handleAddMaterial}>추가하기</Button>
+                    <Button variant="outline" onClick={() => setIsAddingMaterial(false)} disabled={addingMaterial}>취소</Button>
+                    <Button onClick={handleAddMaterial} disabled={addingMaterial}>
+                      {addingMaterial ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                      추가·저장
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -1202,72 +1644,182 @@ export default function AdminSettings() {
           </Card>
 
           <Dialog open={!!editingMaterial} onOpenChange={(o) => !o && setEditingMaterial(null)}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>소재 수정</DialogTitle>
               </DialogHeader>
-              {editingMaterial && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">이름</Label>
-                    <Input className="col-span-3 bg-white/5 border-white/10" value={editForm.name || ''} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">타입</Label>
-                    <Select value={editForm.type} onValueChange={(v) => setEditForm({ ...editForm, type: v })}>
-                      <SelectTrigger className="col-span-3 bg-white/5 border-white/10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {equipmentTypes.map((t) => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {!materialUsesResinPrice(editForm.type || 'FDM') ? (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">g당 가격 (원)</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerGram ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerGram: parseFloat(e.target.value) || 0 })} placeholder="FDM 필라멘트 가격" />
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">mL당 가격 (원)</Label>
-                      <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.pricePerMl ?? ''} onChange={(e) => setEditForm({ ...editForm, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })} placeholder="SLA/DLP 레진 가격" />
-                    </div>
-                  )}
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">밀도</Label>
-                    <Input type="number" className="col-span-3 bg-white/5 border-white/10" value={editForm.density ?? ''} onChange={(e) => setEditForm({ ...editForm, density: parseFloat(e.target.value) || 1.24 })} />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">기본금액</Label>
-                    <div className="col-span-3 space-y-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        className="bg-white/5 border-white/10"
-                        value={editForm.minPriceKrw ?? ''}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            minPriceKrw: e.target.value === '' ? null : parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        placeholder="비우면 장비 기본금액 사용"
-                      />
-                      <p className="text-[10px] text-white/40">이 소재로 묶인 견적 그룹의 최소 공급가입니다.</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">설명</Label>
-                    <Input className="col-span-3 bg-white/5 border-white/10" value={(editForm as any).description || ''} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="소재 설명" />
-                  </div>
-                </div>
-              )}
+              {editingMaterial && (() => {
+                    const mf = editForm
+                    const type = String(mf.type || 'FDM').toUpperCase()
+                    const resin = materialUsesResinPrice(type)
+                    const colors = Array.isArray(mf.colors) && mf.colors.length ? mf.colors : ['#FFFFFF']
+                    return (
+                      <div className="space-y-5 py-2">
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">1. 출력방식 *</Label>
+                          <Select
+                            value={type}
+                            onValueChange={(v) => setEditForm((prev) => applyMaterialTypeToForm(prev, v))}
+                          >
+                            <SelectTrigger className="mt-1 bg-white/5 border-white/10">
+                              <SelectValue placeholder="출력방식 선택" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {equipmentTypes.map((t) => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[10px] text-white/40 mt-1">
+                            선택한 출력방식에 맞춰 단가 단위({resin ? '원/mL' : '원/g'})와 기본 밀도가 적용됩니다.
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-[10px] text-white/50 uppercase">2. 소재 이름 *</Label>
+                            <Input
+                              className="mt-1 bg-white/5 border-white/10"
+                              value={mf.name || ''}
+                              onChange={(e) => setEditForm({ ...mf, name: e.target.value })}
+                              placeholder="예: PLA Plus"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-white/50 uppercase">설명 (선택)</Label>
+                            <Input
+                              className="mt-1 bg-white/5 border-white/10"
+                              value={(mf as { description?: string }).description || ''}
+                              onChange={(e) => setEditForm({ ...mf, description: e.target.value })}
+                              placeholder="소재 특징·용도"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-[10px] text-white/50 uppercase">3. 단가 · 밀도 · 기본금액</Label>
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {!resin ? (
+                              <div>
+                                <Label className="text-[10px] text-white/40">g당 가격 (원)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="mt-1 bg-white/5 border-white/10"
+                                  value={mf.pricePerGram ?? ''}
+                                  onChange={(e) => setEditForm({ ...mf, pricePerGram: parseFloat(e.target.value) || 0 })}
+                                  placeholder="필라멘트 단가"
+                                />
+                              </div>
+                            ) : (
+                              <div>
+                                <Label className="text-[10px] text-white/40">mL당 가격 (원)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="mt-1 bg-white/5 border-white/10"
+                                  value={mf.pricePerMl ?? ''}
+                                  onChange={(e) => setEditForm({ ...mf, pricePerMl: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                                  placeholder="레진 단가"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <Label className="text-[10px] text-white/40">밀도 (g/cm³)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="mt-1 bg-white/5 border-white/10"
+                                value={mf.density ?? ''}
+                                onChange={(e) => setEditForm({ ...mf, density: parseFloat(e.target.value) || 1.24 })}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-[10px] text-white/40">기본 견적금액 (원)</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                className="mt-1 bg-white/5 border-white/10"
+                                value={mf.minPriceKrw ?? ''}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...mf,
+                                    minPriceKrw: e.target.value === '' ? null : parseFloat(e.target.value) || 0,
+                                  })
+                                }
+                                placeholder="비우면 장비 폴백"
+                              />
+                              <p className="text-[10px] text-white/40 mt-0.5">이 소재 그룹의 최소 공급가</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <Label className="text-[10px] text-white/50 uppercase">4. 표시 색상</Label>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => setEditForm({ ...mf, colors: [...colors, '#FFFFFF'] })}
+                            >
+                              <Plus className="w-3.5 h-3.5 mr-1" /> 색상 추가
+                            </Button>
+                          </div>
+                          <div className="mt-2 space-y-2">
+                            {colors.map((c, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+                                  value={/^#[0-9A-Fa-f]{6}$/.test(c) ? c : '#FFFFFF'}
+                                  onChange={(e) => {
+                                    const next = [...colors]
+                                    next[idx] = e.target.value.toUpperCase()
+                                    setEditForm({ ...mf, colors: next })
+                                  }}
+                                />
+                                <Input
+                                  className="bg-white/5 border-white/10 font-mono uppercase"
+                                  value={c}
+                                  onChange={(e) => {
+                                    const next = [...colors]
+                                    next[idx] = e.target.value
+                                    setEditForm({ ...mf, colors: next })
+                                  }}
+                                  placeholder="#FFFFFF"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive shrink-0"
+                                  disabled={colors.length <= 1}
+                                  onClick={() => {
+                                    const next = colors.filter((_, i) => i !== idx)
+                                    setEditForm({ ...mf, colors: next.length ? next : ['#FFFFFF'] })
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-white/40 mt-1">관리·미리보기용 색상입니다. 견적 금액에는 영향이 없습니다.</p>
+                        </div>
+                      </div>
+                    )
+              })()}
               <DialogFooter>
-                <Button variant="outline" onClick={() => setEditingMaterial(null)}>취소</Button>
-                <Button onClick={handleSaveMaterialEdit}>저장</Button>
+                <Button variant="outline" onClick={() => setEditingMaterial(null)} disabled={savingMaterial}>취소</Button>
+                <Button onClick={handleSaveMaterialEdit} disabled={savingMaterial}>
+                  {savingMaterial ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  저장
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
