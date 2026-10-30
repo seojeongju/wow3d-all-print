@@ -124,9 +124,15 @@
       "choosePath": "Choose how to start",
       "hasFile": "I have a 3D file",
       "hasFileDesc": "STL·OBJ·STEP and more — instant quote",
+      "fileFlow1": "Upload",
+      "fileFlow2": "Auto-check",
+      "fileFlow3": "Quote",
       "getQuote": "Start quote",
       "hasPhoto": "I only have photos",
       "hasPhotoDesc": "AI builds 3D, then quote",
+      "photoFlow1": "Photo",
+      "photoFlow2": "AI 3D",
+      "photoFlow3": "Quote",
       "make3d": "Create 3D",
       "sideLinks": {
         "expert": {
@@ -448,11 +454,11 @@
     "bottomDesc": "Upload files and check pricing without signing up.",
     "bottomContact": "Contact",
     "metaTitle": "3D Printing Services | Prototypes · FDM · SLA",
-    "metaDescription": "Explore WOW3D PRO core services: print-on-demand, prototypes, FDM & SLA, photo→AI 3D, graduation projects, small batch, and 3D modeling.",
+    "metaDescription": "Explore WOW3D PRO core services: print-on-demand, prototypes, FDM & SLA, photo→AI 3D, Name Tag Studio, AI 3D Maker, graduation projects, small batch, and 3D modeling.",
     "ogTitle": "WOW3D PRO Core Services | 3D Printing",
     "ogDescription": "From upload to auto-quote, production, and shipping. Pick the service that fits your goal.",
     "collectionName": "WOW3D PRO Core Services",
-    "collectionDescription": "Print service, prototypes, FDM, SLA, photo→AI 3D, graduation projects, small batch, modeling, and more.",
+    "collectionDescription": "Print service, prototypes, FDM, SLA, photo→AI 3D, Name Tag Studio, AI 3D Maker, graduation projects, small batch, modeling, and more.",
     "breadcrumbHome": "Home",
     "breadcrumbServices": "Services"
   },
@@ -517,9 +523,15 @@
     "subtitle": "Upload a model for immediate analysis, or let AI build a 3D mesh from photos and continue to quoting.",
     "hasFile": "I have a 3D file",
     "hasFileDesc": "STL · OBJ · STEP and more — instant quote",
+    "fileFlow1": "Upload",
+    "fileFlow2": "Auto-check",
+    "fileFlow3": "Quote",
     "uploadCta": "Upload file",
     "hasPhoto": "I only have photos",
     "hasPhotoDesc": "JPG · PNG → AI 3D → quote",
+    "photoFlow1": "Photo",
+    "photoFlow2": "AI 3D",
+    "photoFlow3": "Quote",
     "make3dCta": "Create 3D",
     "makerHintBefore": "For logo / 2.5D badges, use ",
     "makerHintAfter": ".",
@@ -4426,7 +4438,7 @@
     }
   },
   "Maker": {
-    "metaTitle": "Name Tag Studio",
+    "metaTitle": "Name Tag Studio · AI 3D Maker",
     "nameTag": {
       "kicker": "Name Tag Studio",
       "title": "Name Tag Studio",
@@ -4811,7 +4823,45 @@
     "error3dTitle": "Could not load 3D preview",
     "error3dDesc": "Your browser may not support 3D rendering, or a temporary error occurred. Return to Sketch (2D) and try again.",
     "backToSketch": "Back to Sketch (2D)",
-    "metaDescription": "In Name Tag Studio, pick text, fonts, and shapes, then save an STL or send it to a live quote."
+    "metaDescription": "Design name tags with text, fonts, and plate shapes, or extrude logos and sketches in AI 3D Maker (2.5D), then save STL or send to a live quote. For photo-based solid meshes, use photo → AI 3D quote.",
+    "metaKeywords": [
+      "Name Tag Studio",
+      "AI 3D Maker",
+      "3D name tag",
+      "custom nameplate print",
+      "logo 2.5D",
+      "badge 3D printing",
+      "custom keycap",
+      "make STL"
+    ],
+    "breadcrumbHome": "Home",
+    "breadcrumbMaker": "Name Tag Studio · AI 3D Maker",
+    "faqs": [
+      {
+        "q": "What is Name Tag Studio?",
+        "a": "Name Tag Studio lets you pick text, fonts, plate shape, hole, and emboss/engrave, checks printability as you go, and shows the result in 3D. You can save the STL or send it to the live quote to order a print."
+      },
+      {
+        "q": "What is AI 3D Maker?",
+        "a": "AI 3D Maker turns logos, sketches, and SVGs into a silhouette and builds a 2.5D (planar extrusion) mesh. Combine badge or keycap templates and layers (base, logo, rim), then save STL or continue to a live quote."
+      },
+      {
+        "q": "Name Tag Studio vs AI 3D Maker?",
+        "a": "Name Tag Studio is for text-first tags and nameplates; AI 3D Maker (/maker?mode=draw) extrudes logo and sketch silhouettes in 2.5D. Both live on /maker and you can switch between them."
+      },
+      {
+        "q": "Can I make a solid figure from a photo here?",
+        "a": "For a solid mesh from a real product photo, use photo → AI 3D on the live quote. Maker is for 2.5D logo/sketch extrusion, not photo-based solid reconstruction."
+      },
+      {
+        "q": "Will thin strokes print?",
+        "a": "Name Tag Studio warns when strokes are thinner than 0.8 mm. Using a bolder font or larger text/plate size helps reduce breakage."
+      },
+      {
+        "q": "Can I order the model right away?",
+        "a": "Yes. Save the STL or use Request quote to load it into the live quote, pick material and options, then order. After confirmation, production, inspection and shipping typically take about 3–7 days."
+      }
+    ]
   },
   "Partnership": {
     "metaTitle": "3D Printer Partnership & Dealership",
@@ -5844,5 +5894,64 @@
     "breadcrumbCurrent": "3D printing price examples",
     "minAppliedBadge": "Minimum",
     "answerMinNote": "For small parts like this, the per-process minimum order amount applies, so ordering several pieces together can lower the price per piece."
+  },
+  "MakerSeo": {
+    "eyebrow": "Name tag · 2.5D Maker guide",
+    "h1": "Name Tag Studio · AI 3D Maker — printable STL from text and logos",
+    "answer": "On WOW3D /maker, Name Tag Studio builds tags from text, fonts and plate shapes, and AI 3D Maker extrudes logos and sketches in 2.5D into a printable STL. Thin strokes are checked; finished models go to STL download or live quote and order. For solid meshes from product photos, use photo → AI 3D quote.",
+    "factsTitle": "Tools at a glance",
+    "facts": [
+      {
+        "label": "Name Tag Studio",
+        "value": "Text, fonts, plate, hole, emboss/engrave — instant printability checks"
+      },
+      {
+        "label": "AI 3D Maker",
+        "value": "Logo, sketch, SVG silhouette 2.5D extrusion; badge and keycap templates"
+      },
+      {
+        "label": "Stroke & shape checks",
+        "value": "Warns under 0.8 mm strokes, clipping, and small text height"
+      },
+      {
+        "label": "Next step",
+        "value": "Save STL or hand off to live quote → material and order"
+      },
+      {
+        "label": "Vs photo solids",
+        "value": "Product photo → solid mesh uses photo → AI 3D on quote"
+      },
+      {
+        "label": "Lead time",
+        "value": "Typically received within about 3–7 days after order confirmation"
+      }
+    ],
+    "stepsTitle": "From design to order",
+    "steps": [
+      {
+        "name": "Pick a tool",
+        "text": "Use Name Tag Studio for text tags; AI 3D Maker (mode=draw) for logos and sketches."
+      },
+      {
+        "name": "Design & check",
+        "text": "Set plate, holes and layers; clear thin-stroke and clipping warnings."
+      },
+      {
+        "name": "STL & quote",
+        "text": "Save STL or load into the live quote and choose material and options."
+      },
+      {
+        "name": "Order & receive",
+        "text": "After payment, production, inspection and shipping typically take about 3–7 days."
+      }
+    ],
+    "faqTitle": "Name tag · AI 3D Maker FAQ",
+    "moreTitle": "Learn more",
+    "linkNameTagService": "Name Tag Studio service",
+    "linkAi3dMakerService": "AI 3D Maker service",
+    "linkNameTagGuide": "Name Tag Studio guide",
+    "linkAi3dMakerGuide": "AI 3D Maker 2.5D guide",
+    "linkPhotoTo3d": "Photo → AI 3D quote",
+    "linkQuote": "3D printing live quote"
   }
 }

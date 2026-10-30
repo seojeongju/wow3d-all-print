@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { absoluteUrl, SITE_URL } from '@/lib/site-url';
 import {
     getGuideDocs,
+    getMakerFaqs,
     getQuoteFaqs,
     getServiceDocs,
     getUseCaseDocs,
@@ -56,6 +57,13 @@ export async function GET() {
         '3D 파일(STL·OBJ·3MF·PLY 즉시, STEP·STP 자동 변환) 또는 제품 사진을 올리면 부피·표면적·출력 시간을 분석해 FDM·SLA·DLP 방식별 가격을 즉시 보여 줍니다. 메쉬 오류는 자동 리페어하고, 벽 두께가 FDM 1mm·SLA/DLP 0.6mm보다 얇으면 경고합니다. 주문 후 평균 3~7일 내 수령합니다.',
         '',
         ...faqBlock(getQuoteFaqs('ko')),
+        '## 네임택 스튜디오 · AI 3D Maker',
+        '',
+        `- URL: ${absoluteUrl('/maker')}`,
+        '',
+        '네임택 스튜디오로 문구·폰트·판 모양 이름표를 만들거나, AI 3D Maker(/maker?mode=draw)로 로고·스케치를 2.5D 돌출해 STL 저장·자동견적으로 이어갑니다. 획 0.8mm 미만은 경고하며, 제품 실사 입체는 사진→AI 3D 견적을 이용합니다. 주문 후 일반적으로 평균 3~7일 내 수령합니다.',
+        '',
+        ...faqBlock(getMakerFaqs('ko')),
         ...(siteFaqs.length > 0 ? ['## 자주 묻는 질문', '', `- URL: ${absoluteUrl('/qna')}`, '', ...faqBlock(siteFaqs)] : []),
         '## 서비스',
         '',

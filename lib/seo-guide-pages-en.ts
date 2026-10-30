@@ -362,4 +362,88 @@ export const NEW_SEO_GUIDES_EN: GuideLandingConfig[] = [
         ctaHref: '/services/capstone',
         ctaLabel: 'Capstone prototyping service',
     },
+    {
+        slug: 'name-tag-studio',
+        path: '/guides/name-tag-studio',
+        title: 'Name Tag Studio guide — text, fonts, plates to STL and quote',
+        h1: 'Name Tag Studio',
+        h1Accent: 'how-to guide',
+        description:
+            'How to pick text, fonts, plate shape and holes in Name Tag Studio, clear thin-stroke warnings, then save STL or continue to a live quote.',
+        eyebrow: 'Name Tag Guide',
+        sections: [
+            {
+                title: 'Open the tool',
+                body: 'Name Tag Studio is the default on /maker. Switch to AI 3D Maker when you need a logo or sketch extrusion.',
+            },
+            {
+                title: 'Text and fonts',
+                body: 'Set font, size, alignment and letter spacing per line. Bold recommended fonts print more reliably than thin scripts.',
+            },
+            {
+                title: 'Plate, hole, emboss/engrave',
+                body: 'Choose rounded rectangle, capsule, circle, letter outline and hole placement, plus emboss or engrave. Preview colours are for design only; pick print colour with the material at quote time.',
+            },
+            {
+                title: 'Printability checks',
+                body: 'Warnings appear for strokes under 0.8 mm or text outside the plate. Fix with a bolder font or larger plate before requesting a quote.',
+            },
+            {
+                title: 'STL and order',
+                body: 'Save STL or request a quote to load the model into the live quote, then pick material and options. After confirmation, typical receipt is about 3–7 days.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'Name Tag Studio or AI 3D Maker?',
+                a: 'Use Name Tag Studio for text-first tags and badges; use AI 3D Maker for logo and sketch silhouette extrusion.',
+            },
+            {
+                q: 'Can I print in two colours?',
+                a: 'Preview plate and text colours are for design review. Print colour is chosen with the material at quote time; two-colour prints need a consultation.',
+            },
+        ],
+        ctaHref: '/maker',
+        ctaLabel: 'Open Name Tag Studio',
+    },
+    {
+        slug: 'ai-3d-maker-2-5d',
+        path: '/guides/ai-3d-maker-2-5d',
+        title: 'AI 3D Maker 2.5D guide — logos, sketches, badges, keycaps',
+        h1: 'AI 3D Maker',
+        h1Accent: '2.5D guide',
+        description:
+            'Turn logos, sketches and SVGs into silhouette 2.5D, combine badge or keycap templates and layers, then save STL or continue to a live quote.',
+        eyebrow: 'AI 3D Maker Guide',
+        sections: [
+            {
+                title: 'When to use it',
+                body: 'Best for planar silhouettes with thickness—logos, badges, keycaps. For solid meshes from product photos, use photo → AI 3D quote.',
+            },
+            {
+                title: 'Prepare inputs',
+                body: 'White background with black lines (PNG/JPEG) or SVG looks sharpest. Colour photos and gradients can become a solid blob—try logo mode and background removal.',
+            },
+            {
+                title: 'Templates and layers',
+                body: 'Pick round or square badge or 1U keycap templates, then set base, logo extrusion, rim thickness (mm) and bevel. Magnet, pin and MX stem mounts are available.',
+            },
+            {
+                title: 'Preview and quote',
+                body: 'Check size and placement in the 3D result, then save STL or request a quote. After ordering, typical receipt is about 3–7 days.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'AI 3D Maker vs photo → AI 3D?',
+                a: 'Maker is for sketch/logo 2.5D extrusion. Photo → AI 3D builds a solid mesh from real photos and continues to quote and order.',
+            },
+            {
+                q: 'How do I set keycap size?',
+                a: 'The 1U keycap template uses an 18 mm Cherry MX 1U baseline; you can change the side length within the allowed range.',
+            },
+        ],
+        ctaHref: '/maker?mode=draw',
+        ctaLabel: 'Open AI 3D Maker',
+    },
 ]

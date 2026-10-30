@@ -38,7 +38,7 @@ const CONTENT_DATES: Record<string, ContentDates> = {
     '/terms': { published: '2026-01-26', modified: '2026-09-08' },
 
     // 서비스
-    '/services': { published: '2026-07-29', modified: '2026-10-15' },
+    '/services': { published: '2026-07-29', modified: '2026-10-30' },
     '/services/printing': { published: '2026-07-29', modified: '2026-10-18' },
     '/services/prototype': { published: '2026-07-29', modified: '2026-10-18' },
     '/services/fdm': { published: '2026-07-29', modified: '2026-10-18' },
@@ -48,6 +48,8 @@ const CONTENT_DATES: Record<string, ContentDates> = {
     '/services/small-batch': { published: '2026-07-29', modified: '2026-10-18' },
     '/services/modeling': { published: '2026-07-29', modified: '2026-10-18' },
     '/services/photo-to-3d': { published: '2026-08-18', modified: '2026-10-18' },
+    '/services/name-tag-studio': { published: '2026-10-30', modified: '2026-10-30' },
+    '/services/ai-3d-maker': { published: '2026-10-30', modified: '2026-10-30' },
 
     // 활용 사례
     '/use-cases': { published: '2026-10-12', modified: '2026-10-15' },
@@ -61,7 +63,7 @@ const CONTENT_DATES: Record<string, ContentDates> = {
     '/use-cases/trophies-awards': { published: '2026-10-12', modified: '2026-10-18' },
 
     // 가이드
-    '/guides': { published: '2026-07-28', modified: '2026-10-03' },
+    '/guides': { published: '2026-07-28', modified: '2026-10-30' },
     '/guides/photo-to-3d-printing-quote': { published: '2026-08-18', modified: '2026-10-18' },
     '/guides/3d-printing-quote-guide': { published: '2026-07-28', modified: '2026-10-18' },
     '/guides/3d-printing-price-examples': { published: '2026-10-18', modified: '2026-10-18' },
@@ -84,6 +86,8 @@ const CONTENT_DATES: Record<string, ContentDates> = {
     '/guides/splitting-large-3d-prints': { published: '2026-07-29', modified: '2026-10-21' },
     '/guides/graduation-project-checklist': { published: '2026-07-29', modified: '2026-10-18' },
     '/guides/capstone-design-prototype-guide': { published: '2026-09-30', modified: '2026-10-18' },
+    '/guides/name-tag-studio': { published: '2026-10-30', modified: '2026-10-30' },
+    '/guides/ai-3d-maker-2-5d': { published: '2026-10-30', modified: '2026-10-30' },
 }
 
 /** locale 접두어(/en)를 떼고 조회 — 한/영 페이지는 같은 콘텐츠 날짜를 공유 */

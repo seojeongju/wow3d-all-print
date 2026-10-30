@@ -412,6 +412,110 @@ export const SERVICE_LANDINGS: ServiceLandingConfig[] = [
             { href: '/guides/3d-printing-quote-guide', title: '견적 계산 방식' },
         ],
     },
+    {
+        slug: 'name-tag-studio',
+        path: '/services/name-tag-studio',
+        title: '네임택 스튜디오 · 3D 이름표 · 명찰·인식표 제작',
+        h1: '네임택 스튜디오',
+        h1Accent: '3D 이름표 제작',
+        description:
+            '문구·폰트·판 모양·구멍을 고르면 출력 가능 여부를 바로 검사하고 STL로 저장하거나 자동견적으로 넘기는 WOW3D 네임택 스튜디오입니다.',
+        keywords: [
+            '네임택 스튜디오',
+            '3D 이름표',
+            '네임택 3D 프린팅',
+            '명찰 제작',
+            '반려동물 인식표',
+            '커스텀 네임택',
+        ],
+        eyebrow: 'Name Tag Studio',
+        bullets: [
+            '문구·폰트·판 모양·구멍·양각/음각을 브라우저에서 바로 편집',
+            '가는 획(0.8mm 미만) 등 출력 위험 요소를 즉시 경고',
+            '완성 STL 저장 또는 자동견적·출력 주문 연계',
+        ],
+        faqs: [
+            {
+                q: '네임택 스튜디오로 무엇을 만들 수 있나요?',
+                a: '가방 네임택, 반려동물 인식표, 소품 라벨, 책상 명패, 행사 명찰 등 문구 중심의 판형 제품을 만들 수 있습니다.',
+            },
+            {
+                q: '폰트와 여러 줄 문구를 쓸 수 있나요?',
+                a: '가능합니다. 줄마다 폰트·크기·정렬·자간을 따로 맞출 수 있고, 추천 굵은 폰트와 PC 글꼴·폰트 파일도 사용할 수 있습니다.',
+            },
+            {
+                q: '가는 글자도 출력되나요?',
+                a: '획이 0.8mm보다 가늘면 경고가 표시됩니다. 굵은 폰트를 쓰거나 글자·판을 키우면 끊김을 줄일 수 있습니다.',
+            },
+            {
+                q: '로고를 넣고 싶으면요?',
+                a: '로고·스케치 실루엣은 같은 /maker의 AI 3D Maker(mode=draw)를 이용하세요. 실사 입체는 사진(이미지)→AI 3D 견적입니다.',
+            },
+            {
+                q: '주문 후 얼마나 걸리나요?',
+                a: '자동견적으로 소재·옵션을 고른 뒤 주문하면, 제작·검수·발송까지 일반적으로 평균 3~7일 내 수령합니다.',
+            },
+        ],
+        primaryCta: { label: '네임택 스튜디오 열기', href: '/maker' },
+        secondaryCta: { label: '이용 가이드', href: '/guides/name-tag-studio' },
+        relatedGuides: [
+            { href: '/guides/name-tag-studio', title: '네임택 스튜디오 가이드' },
+            { href: '/guides/ai-3d-maker-2-5d', title: 'AI 3D Maker 2.5D 가이드' },
+            { href: '/guides/3d-printing-quote-guide', title: '견적 계산 방식' },
+        ],
+    },
+    {
+        slug: 'ai-3d-maker',
+        path: '/services/ai-3d-maker',
+        title: 'AI 3D Maker · 로고 2.5D · 배지·키캡 STL',
+        h1: 'AI 3D Maker',
+        h1Accent: '로고·스케치 2.5D',
+        description:
+            '로고·스케치·SVG를 실루엣으로 읽어 2.5D로 돌출하고, 배지·키캡 템플릿과 레이어를 조합해 STL·자동견적으로 이어가는 WOW3D AI 3D Maker입니다.',
+        keywords: [
+            'AI 3D Maker',
+            '로고 2.5D',
+            '스케치 3D 프린팅',
+            '배지 제작',
+            '키캡 커스텀',
+            'SVG 3D',
+        ],
+        eyebrow: 'AI 3D Maker',
+        bullets: [
+            'PNG/JPEG·SVG 로고·스케치를 실루엣 2.5D로 변환',
+            '배지·키캡 템플릿과 베이스·로고·테두리 레이어',
+            'STL 저장 및 자동견적·출력 주문 연계',
+        ],
+        faqs: [
+            {
+                q: 'AI 3D Maker는 어떤 입력에 적합한가요?',
+                a: '글자·로고·아이콘처럼 고대비 실루엣, 또는 SVG가 가장 선명합니다. 컬러 사진·그라데이션은 통짜 덩어리로 나올 수 있어 흰 배경+검정 선 이미지를 권장합니다.',
+            },
+            {
+                q: '사진→AI 3D와 무엇이 다른가요?',
+                a: 'AI 3D Maker는 평면 실루엣을 돌출하는 2.5D용입니다. 제품 실사 사진으로 입체 메시를 만들려면 자동견적의 사진(이미지)→AI 3D를 이용하세요.',
+            },
+            {
+                q: '배지·키캡 템플릿이 있나요?',
+                a: '원형·사각 배지와 Cherry MX 1U 키캡형 템플릿을 고를 수 있고, 마그넷·옷핀·MX 스템 장착 옵션을 설정할 수 있습니다.',
+            },
+            {
+                q: '네임택 문구만 넣고 싶으면요?',
+                a: '문구 중심 이름표는 네임택 스튜디오(/maker)를 이용하세요. Maker draw 모드는 로고·스케치 돌출용입니다.',
+            },
+            {
+                q: '만든 뒤 바로 견적할 수 있나요?',
+                a: '가능합니다. 결과물(3D)을 확인한 뒤 STL 저장 또는 견적 의뢰로 자동견적에 불러와 소재·옵션을 고르고 주문할 수 있습니다.',
+            },
+        ],
+        primaryCta: { label: 'AI 3D Maker 열기', href: '/maker?mode=draw' },
+        secondaryCta: { label: '2.5D 가이드', href: '/guides/ai-3d-maker-2-5d' },
+        relatedGuides: [
+            { href: '/guides/ai-3d-maker-2-5d', title: 'AI 3D Maker 2.5D 가이드' },
+            { href: '/guides/name-tag-studio', title: '네임택 스튜디오 가이드' },
+            { href: '/guides/photo-to-3d-printing-quote', title: '사진(이미지)→3D 견적 가이드' },
+        ],
+    },
 ]
 
 import { SERVICE_LANDINGS_EN } from '@/lib/seo-service-pages-en'

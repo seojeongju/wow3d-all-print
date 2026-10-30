@@ -26,6 +26,8 @@ import {
     Wrench,
     Scale,
     Lightbulb,
+    Tag,
+    PenTool,
 } from 'lucide-react'
 import { NEW_SEO_GUIDES } from '@/lib/seo-guide-pages'
 
@@ -58,6 +60,8 @@ const iconBySlug: Record<string, { icon: LucideIcon; accent: string }> = {
     'splitting-large-3d-prints': { icon: Scissors, accent: 'text-indigo-400' },
     'graduation-project-checklist': { icon: GraduationCap, accent: 'text-emerald-400' },
     'capstone-design-prototype-guide': { icon: Lightbulb, accent: 'text-yellow-400' },
+    'name-tag-studio': { icon: Tag, accent: 'text-teal-400' },
+    'ai-3d-maker-2-5d': { icon: PenTool, accent: 'text-sky-400' },
 }
 
 export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
@@ -71,6 +75,8 @@ export const GUIDE_HUB_SECTIONS: GuideHubSection[] = [
         iconColor: 'text-teal-400',
         items: [
             { href: '/guides/photo-to-3d-printing-quote', title: '사진(이미지)으로 3D 프린팅 견적', desc: '3D 파일 없이 사진(이미지)→AI 3D→자동견적·주문 절차', icon: Camera, accent: 'text-indigo-400', readMin: 5 },
+            { href: '/guides/name-tag-studio', title: '네임택 스튜디오 이용 가이드', desc: '문구·폰트·판부터 획 검사·STL·자동견적까지', icon: Tag, accent: 'text-teal-400', readMin: 4 },
+            { href: '/guides/ai-3d-maker-2-5d', title: 'AI 3D Maker 2.5D 가이드', desc: '로고·스케치·배지·키캡 실루엣 돌출과 견적 연계', icon: PenTool, accent: 'text-sky-400', readMin: 4 },
             { href: '/guides/3d-printing-quote-guide', title: '3D프린팅 비용 계산 방법', desc: '견적 산출 기준과 가격·시간에 영향을 주는 요소', icon: Calculator, accent: 'text-teal-400', readMin: 4 },
             { href: '/guides/3d-printing-price-examples', title: '3D프린팅 가격 예시', desc: '부품·피규어·케이스 등 크기·방식별 예상 출력 비용표', icon: Scale, accent: 'text-lime-400', readMin: 3 },
             { href: '/guides/how-to-reduce-3d-printing-cost', title: '3D프린팅 가격을 줄이는 방법', desc: '레이어·인필·서포트·소재로 비용 절감', icon: TrendingDown, accent: 'text-emerald-400', readMin: 5 },

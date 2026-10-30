@@ -78,6 +78,14 @@ export const PAGE_KEY_ANSWERS: Record<string, GuideKeyAnswer> = {
         ko: '3D 파일이 없어도 JPG·PNG 제품 사진(최대 8MB)을 올리면 AI가 3D 모델(STL)을 만들고 바로 자동견적·출력 주문으로 이어집니다. 로그인 회원 기준 하루 1회(한국 시간)이며, 형상 확인·시제품 검증에는 적합하지만 조립 공차·정밀 치수가 중요한 부품은 STL 또는 STEP 업로드를 권장합니다.',
         en: 'With no 3D file, upload a JPG or PNG product photo (up to 8 MB) and AI creates a 3D model (STL) that flows straight into the instant quote and print order. It’s available once a day for signed-in members (Korea time); it suits shape checks and prototype validation, but parts that need assembly tolerances or precise dimensions should be uploaded as STL or STEP.',
     },
+    '/guides/name-tag-studio': {
+        ko: '네임택 스튜디오(/maker)에서 문구·폰트·판 모양·구멍을 고르면 가는 획(0.8mm 미만) 등을 검사한 뒤 STL 저장 또는 자동견적으로 이어집니다. 로고·스케치 돌출은 AI 3D Maker, 실사 입체는 사진→AI 3D 견적을 이용하세요.',
+        en: 'In Name Tag Studio (/maker), pick text, fonts, plate shape and holes; thin strokes under 0.8 mm are checked before you save STL or continue to a live quote. Use AI 3D Maker for logo/sketch extrusion and photo → AI 3D quote for solid meshes from product photos.',
+    },
+    '/guides/ai-3d-maker-2-5d': {
+        ko: 'AI 3D Maker(/maker?mode=draw)는 로고·스케치·SVG 실루엣을 2.5D로 돌출하고 배지·키캡 템플릿과 레이어를 조합한 뒤 STL·자동견적으로 이어집니다. 제품 실사 입체는 사진→AI 3D, 문구 네임택은 네임택 스튜디오를 이용하세요.',
+        en: 'AI 3D Maker (/maker?mode=draw) extrudes logo, sketch and SVG silhouettes in 2.5D, combines badge or keycap templates and layers, then continues to STL or a live quote. Use photo → AI 3D for solid product meshes and Name Tag Studio for text-first tags.',
+    },
     '/guides/best-materials-for-3d-printing-prototypes': {
         ko: '시제품 소재는 목적에 따라 고릅니다. 외관 확인용은 PLA 또는 Standard 레진, 조립성 테스트는 ABS 또는 Tough 레진, 범용 기능 시제품은 PETG, 투명 커버·창 구조는 Clear 레진이 적합합니다.',
         en: 'Pick prototype materials by purpose: PLA or Standard resin for visual checks, ABS or Tough resin for assembly tests, PETG for general functional prototypes, and Clear resin for transparent covers and windows.',
@@ -169,6 +177,18 @@ export const PAGE_KEY_ANSWERS: Record<string, GuideKeyAnswer> = {
     '/services/photo-to-3d': {
         ko: 'JPG·PNG 제품 사진만 올리면 AI가 입체 STL을 만들고 바로 3D 뷰어·자동견적·주문으로 이어집니다. 로그인 회원 하루 1회(한국 시간)이며 우·뒤·좌 추가 사진으로 정확도를 높일 수 있고, 조립 공차·정밀 치수가 중요한 부품은 STL·STEP 업로드를 권장합니다.',
         en: 'Upload a JPG or PNG product photo and AI builds a 3D STL that flows straight into the 3D viewer, instant quote and order. It’s available once a day for signed-in members (Korea time), extra right, back and left views improve accuracy, and parts that need assembly tolerances or precise dimensions should be uploaded as STL or STEP.',
+    },
+    '/services/name-tag-studio': {
+        ko: '네임택 스튜디오는 문구·폰트·판 모양·구멍을 고르면 출력 가능 여부를 바로 검사하고 STL 저장·자동견적으로 이어지는 도구입니다. 획 0.8mm 미만 경고를 해결한 뒤 주문하면 일반적으로 평균 3~7일 내 수령합니다.',
+        en: 'Name Tag Studio lets you pick text, fonts, plate shape and holes with instant printability checks, then save STL or continue to a live quote. After clearing sub-0.8 mm stroke warnings and ordering, typical receipt is about 3–7 days.',
+    },
+    '/services/ai-3d-maker': {
+        ko: 'AI 3D Maker는 로고·스케치·SVG를 실루엣 2.5D로 돌출하고 배지·키캡 템플릿과 레이어를 조합한 뒤 STL·자동견적으로 이어집니다. 실사 입체는 사진→AI 3D, 문구 네임택은 네임택 스튜디오를 이용하세요.',
+        en: 'AI 3D Maker extrudes logo, sketch and SVG silhouettes in 2.5D, combines badge or keycap templates and layers, then continues to STL or a live quote. Use photo → AI 3D for solid product meshes and Name Tag Studio for text-first tags.',
+    },
+    '/maker': {
+        ko: '와우쓰리디 /maker에서는 네임택 스튜디오로 문구 네임택을 만들거나 AI 3D Maker로 로고·스케치를 2.5D 돌출해 STL·자동견적으로 이어갑니다. 가는 획은 0.8mm 기준으로 검사하며, 실사 입체는 사진→AI 3D 견적을 이용합니다.',
+        en: 'On WOW3D /maker, Name Tag Studio builds text tags and AI 3D Maker extrudes logos and sketches in 2.5D into STL and a live quote. Thin strokes are checked against 0.8 mm; for solid meshes from product photos, use photo → AI 3D quote.',
     },
 }
 

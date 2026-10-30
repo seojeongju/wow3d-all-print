@@ -48,7 +48,7 @@ export type ServicesHubInfographic = {
 
 const KO: ServicesHubInfographic = {
     stats: [
-        { value: '9가지', label: '핵심 서비스', sub: '출력부터 모델링까지' },
+        { value: '11가지', label: '핵심 서비스', sub: '출력부터 모델링·네임택까지' },
         { value: '30종+', label: '출력 소재', sub: 'FDM · SLA · DLP' },
         { value: '3~7일', label: '평균 수령', sub: '주문 확정 후 기준' },
         { value: '무가입', label: '자동견적', sub: '파일 업로드만으로 가격 확인' },
@@ -67,10 +67,10 @@ const KO: ServicesHubInfographic = {
             },
             {
                 key: 'nofile',
-                title: '사진 · 스케치만 있어요',
-                body: 'AI로 만들거나 모델링을 맡기세요.',
-                examples: ['JPG', 'PNG', '도면', '스케치'],
-                services: ['photo-to-3d', 'modeling'],
+                title: '사진 · 스케치 · 문구만 있어요',
+                body: 'AI·네임택·모델링으로 시작하세요.',
+                examples: ['JPG', 'PNG', '로고', '문구'],
+                services: ['photo-to-3d', 'name-tag-studio', 'ai-3d-maker', 'modeling'],
             },
             {
                 key: 'purpose',
@@ -131,8 +131,8 @@ const KO: ServicesHubInfographic = {
         {
             key: 'nofile',
             title: '파일이 없을 때',
-            body: '사진이나 자료만으로 시작',
-            services: ['photo-to-3d', 'modeling'],
+            body: '사진·문구·로고만으로 시작',
+            services: ['photo-to-3d', 'name-tag-studio', 'ai-3d-maker', 'modeling'],
         },
     ],
     chips: {
@@ -144,13 +144,15 @@ const KO: ServicesHubInfographic = {
         graduation: ['1주 전 주문 권장'],
         capstone: ['결제 증빙 3종'],
         'photo-to-3d': ['JPG·PNG → STL'],
+        'name-tag-studio': ['문구·폰트', '획 0.8mm 검사'],
+        'ai-3d-maker': ['로고 2.5D', '배지·키캡'],
         modeling: ['STL·3MF 전달'],
     },
 }
 
 const EN: ServicesHubInfographic = {
     stats: [
-        { value: '9', label: 'Core services', sub: 'From printing to modeling' },
+        { value: '11', label: 'Core services', sub: 'Printing to modeling & name tags' },
         { value: '30+', label: 'Materials', sub: 'FDM · SLA · DLP' },
         { value: '3–7 days', label: 'Typical delivery', sub: 'After order confirmation' },
         { value: 'No sign-up', label: 'Auto-quote', sub: 'Upload a file to see the price' },
@@ -169,10 +171,10 @@ const EN: ServicesHubInfographic = {
             },
             {
                 key: 'nofile',
-                title: 'Only photos or sketches',
-                body: 'Generate with AI or request modeling.',
-                examples: ['JPG', 'PNG', 'Drawing', 'Sketch'],
-                services: ['photo-to-3d', 'modeling'],
+                title: 'Only photos, sketches, or text',
+                body: 'Start with AI, name tags, or modeling.',
+                examples: ['JPG', 'PNG', 'Logo', 'Text'],
+                services: ['photo-to-3d', 'name-tag-studio', 'ai-3d-maker', 'modeling'],
             },
             {
                 key: 'purpose',
@@ -233,8 +235,8 @@ const EN: ServicesHubInfographic = {
         {
             key: 'nofile',
             title: 'No file yet',
-            body: 'Start from a photo or references',
-            services: ['photo-to-3d', 'modeling'],
+            body: 'Start from a photo, text, or logo',
+            services: ['photo-to-3d', 'name-tag-studio', 'ai-3d-maker', 'modeling'],
         },
     ],
     chips: {
@@ -246,6 +248,8 @@ const EN: ServicesHubInfographic = {
         graduation: ['Order 1 week ahead'],
         capstone: ['3 payment documents'],
         'photo-to-3d': ['JPG·PNG → STL'],
+        'name-tag-studio': ['Text & fonts', '0.8 mm stroke check'],
+        'ai-3d-maker': ['Logo 2.5D', 'Badge · keycap'],
         modeling: ['Delivered as STL·3MF'],
     },
 }

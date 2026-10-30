@@ -140,6 +140,11 @@ export function getQuoteFaqs(locale: LlmsLocale): LlmsFaq[] {
     return asFaqs(pick(messagesOf(locale), ['Quote', 'faqs']))
 }
 
+/** /maker FAQ (화면 하단 MakerSeoSection과 동일) */
+export function getMakerFaqs(locale: LlmsLocale): LlmsFaq[] {
+    return asFaqs(pick(messagesOf(locale), ['Maker', 'faqs']))
+}
+
 /** llms.txt 목록 한 줄 */
 export function llmsLine(doc: LlmsDoc): string {
     const updated = doc.modified ? ` (updated ${doc.modified})` : ''

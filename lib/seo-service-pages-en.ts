@@ -421,4 +421,108 @@ export const SERVICE_LANDINGS_EN: ServiceLandingConfig[] = [
             { href: '/guides/3d-printing-quote-guide', title: 'How quotes are calculated' },
         ],
     },
+    {
+        slug: 'name-tag-studio',
+        path: '/services/name-tag-studio',
+        title: 'Name Tag Studio · 3D Name Tags · Badges & Pet Tags',
+        h1: 'Name Tag Studio',
+        h1Accent: '3D name tag design',
+        description:
+            'Pick text, fonts, plate shape and holes, get instant printability checks, then save STL or send to a live quote with WOW3D Name Tag Studio.',
+        keywords: [
+            'Name Tag Studio',
+            '3D name tag',
+            'nameplate 3D printing',
+            'custom badge',
+            'pet ID tag',
+            'custom name tag',
+        ],
+        eyebrow: 'Name Tag Studio',
+        bullets: [
+            'Edit text, fonts, plate, hole, and emboss/engrave in the browser',
+            'Instant warnings for thin strokes under 0.8 mm and other print risks',
+            'Save STL or continue to live quote and print order',
+        ],
+        faqs: [
+            {
+                q: 'What can I make in Name Tag Studio?',
+                a: 'Bag tags, pet ID tags, item labels, desk plates, event badges, and other text-first plate designs.',
+            },
+            {
+                q: 'Can I use fonts and multiple lines?',
+                a: 'Yes. Set font, size, alignment and letter spacing per line. Recommended bold fonts, system fonts and uploaded font files are supported.',
+            },
+            {
+                q: 'Will thin letters print?',
+                a: 'Strokes thinner than 0.8 mm trigger a warning. A bolder font or larger text/plate size helps reduce breakage.',
+            },
+            {
+                q: 'What if I want a logo?',
+                a: 'Use AI 3D Maker on the same /maker page (mode=draw) for logo/sketch silhouettes. Solid meshes from product photos use photo → AI 3D quote.',
+            },
+            {
+                q: 'How long after ordering?',
+                a: 'After you pick material and options in the live quote and confirm the order, production, inspection and shipping typically take about 3–7 days.',
+            },
+        ],
+        primaryCta: { label: 'Open Name Tag Studio', href: '/maker' },
+        secondaryCta: { label: 'How-to guide', href: '/guides/name-tag-studio' },
+        relatedGuides: [
+            { href: '/guides/name-tag-studio', title: 'Name Tag Studio guide' },
+            { href: '/guides/ai-3d-maker-2-5d', title: 'AI 3D Maker 2.5D guide' },
+            { href: '/guides/3d-printing-quote-guide', title: 'How quotes are calculated' },
+        ],
+    },
+    {
+        slug: 'ai-3d-maker',
+        path: '/services/ai-3d-maker',
+        title: 'AI 3D Maker · Logo 2.5D · Badge & Keycap STL',
+        h1: 'AI 3D Maker',
+        h1Accent: 'Logo & sketch 2.5D',
+        description:
+            'Turn logos, sketches and SVGs into silhouette 2.5D extrusions, combine badge or keycap templates and layers, then save STL or continue to a live quote on WOW3D AI 3D Maker.',
+        keywords: [
+            'AI 3D Maker',
+            'logo 2.5D',
+            'sketch 3D printing',
+            'custom badge',
+            'custom keycap',
+            'SVG to 3D',
+        ],
+        eyebrow: 'AI 3D Maker',
+        bullets: [
+            'Convert PNG/JPEG or SVG logos and sketches to silhouette 2.5D',
+            'Badge and keycap templates with base, logo and rim layers',
+            'STL download and live quote / print order handoff',
+        ],
+        faqs: [
+            {
+                q: 'What inputs work best for AI 3D Maker?',
+                a: 'High-contrast text, logos and icons, or SVG, look sharpest. Colour photos and gradients can become a solid blob—prefer white background with black lines.',
+            },
+            {
+                q: 'How is this different from photo → AI 3D?',
+                a: 'AI 3D Maker is for planar silhouette extrusion (2.5D). For a solid mesh from a product photo, use photo → AI 3D on the live quote.',
+            },
+            {
+                q: 'Are there badge or keycap templates?',
+                a: 'Yes—round and square badges and a Cherry MX 1U keycap style, with magnet, pin and MX stem mount options.',
+            },
+            {
+                q: 'I only need text on a name tag',
+                a: 'Use Name Tag Studio on /maker for text-first tags. Maker draw mode is for logo and sketch extrusion.',
+            },
+            {
+                q: 'Can I quote right after designing?',
+                a: 'Yes. After checking the 3D result, save STL or request a quote to load it into the live quote, pick material and options, then order.',
+            },
+        ],
+        primaryCta: { label: 'Open AI 3D Maker', href: '/maker?mode=draw' },
+        secondaryCta: { label: '2.5D guide', href: '/guides/ai-3d-maker-2-5d' },
+        relatedGuides: [
+            { href: '/guides/ai-3d-maker-2-5d', title: 'AI 3D Maker 2.5D guide' },
+            { href: '/guides/name-tag-studio', title: 'Name Tag Studio guide' },
+            { href: '/guides/photo-to-3d-printing-quote', title: 'Photo → 3D quote guide' },
+        ],
+    },
 ]

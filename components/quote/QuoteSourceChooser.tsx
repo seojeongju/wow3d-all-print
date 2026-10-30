@@ -1,9 +1,13 @@
 'use client'
 
-import { FileBox, ImageIcon, ArrowRight, Sparkles, Calculator } from 'lucide-react'
+import { ArrowRight, Calculator } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
+import {
+    QuotePathDiagram,
+    QuotePathFlowStrip,
+} from '@/components/quote/QuotePathForkInfographic'
 
 export type QuoteEntryMode = 'file' | 'photo'
 
@@ -35,18 +39,22 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                     type="button"
                     onClick={() => onSelect('file')}
                     className={cn(
-                        'group rounded-2xl border border-teal-400/25 bg-teal-400/10 p-5 text-left transition-all',
-                        'hover:-translate-y-0.5 hover:border-teal-400/40 hover:bg-teal-400/15 active:scale-[0.99]',
+                        'group flex flex-col rounded-2xl border border-teal-400/25 bg-gradient-to-b from-teal-400/14 to-teal-400/[0.05] p-5 text-left transition-all',
+                        'hover:-translate-y-0.5 hover:border-teal-400/40 hover:from-teal-400/18 active:scale-[0.99]',
                     )}
                 >
-                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-teal-400/30 bg-teal-400/15 text-teal-300">
-                        <FileBox className="h-5 w-5" />
-                    </div>
-                    <p className="text-lg font-black text-white">{t('hasFile')}</p>
+                    <QuotePathDiagram mode="file" tone="teal" />
+                    <p className="mt-3 text-lg font-black text-white">{t('hasFile')}</p>
                     <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
                         {t('hasFileDesc')}
                     </p>
-                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-teal-300 group-hover:gap-2">
+                    <div className="mt-3">
+                        <QuotePathFlowStrip
+                            tone="teal"
+                            steps={[t('fileFlow1'), t('fileFlow2'), t('fileFlow3')]}
+                        />
+                    </div>
+                    <span className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-teal-400 text-sm font-black text-slate-950 transition group-hover:bg-teal-300">
                         {t('uploadCta')} <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                 </button>
@@ -55,24 +63,22 @@ export default function QuoteSourceChooser({ onSelect }: Props) {
                     type="button"
                     onClick={() => onSelect('photo')}
                     className={cn(
-                        'group rounded-2xl border border-indigo-400/25 bg-indigo-500/10 p-5 text-left transition-all',
-                        'hover:-translate-y-0.5 hover:border-indigo-400/40 hover:bg-indigo-500/15 active:scale-[0.99]',
+                        'group flex flex-col rounded-2xl border border-indigo-400/25 bg-gradient-to-b from-indigo-500/14 to-indigo-500/[0.05] p-5 text-left transition-all',
+                        'hover:-translate-y-0.5 hover:border-indigo-400/40 hover:from-indigo-500/18 active:scale-[0.99]',
                     )}
                 >
-                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-indigo-400/30 bg-indigo-500/15 text-indigo-300">
-                        <ImageIcon className="h-5 w-5" />
-                    </div>
-                    <p className="flex items-center gap-2 text-lg font-black text-white">
-                        {t('hasPhoto')}
-                        <span className="inline-flex items-center gap-1 rounded-full border border-indigo-400/30 bg-indigo-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-indigo-200">
-                            <Sparkles className="h-3 w-3" />
-                            AI
-                        </span>
-                    </p>
+                    <QuotePathDiagram mode="photo" tone="indigo" />
+                    <p className="mt-3 text-lg font-black text-white">{t('hasPhoto')}</p>
                     <p className="mt-1 text-xs leading-relaxed text-white/55 break-keep">
                         {t('hasPhotoDesc')}
                     </p>
-                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-indigo-300 group-hover:gap-2">
+                    <div className="mt-3">
+                        <QuotePathFlowStrip
+                            tone="indigo"
+                            steps={[t('photoFlow1'), t('photoFlow2'), t('photoFlow3')]}
+                        />
+                    </div>
+                    <span className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-400 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300">
                         {t('make3dCta')} <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                 </button>

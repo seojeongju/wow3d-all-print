@@ -39,6 +39,10 @@ import { usePhotoHandoffStore } from '@/store/usePhotoHandoffStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import HeroLiveStats from './HeroLiveStats';
 import { handleHeroTiltLeave, handleHeroTiltMove } from './heroTilt';
+import {
+    QuotePathDiagram,
+    QuotePathFlowStrip,
+} from '@/components/quote/QuotePathForkInfographic';
 
 /** three.js(약 850KB)는 첫 JS 번들에서 분리 — 배경 장식이라 화면 표시 후 불러와도 된다 */
 const LandingHeroScene = dynamic(() => import('./LandingHeroScene'), { ssr: false });
@@ -308,16 +312,23 @@ export default function Hero() {
                             }}
                             onPointerMove={handleHeroTiltMove}
                             onPointerLeave={handleHeroTiltLeave}
-                            className="hero-tilt hero-glow-teal group relative flex min-h-0 flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 shadow-[0_10px_30px_rgba(20,184,166,0.12)] hover:border-teal-300/55 hover:from-teal-400/25 hover:shadow-[0_20px_48px_rgba(20,184,166,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60 lg:h-full lg:rounded-xl lg:p-4 xl:p-5"
+                            className="hero-tilt hero-glow-teal group relative flex min-h-0 flex-col rounded-2xl border border-teal-400/35 bg-gradient-to-b from-teal-400/18 to-teal-400/[0.06] p-5 shadow-[0_10px_30px_rgba(20,184,166,0.12)] hover:border-teal-300/55 hover:from-teal-400/25 hover:shadow-[0_20px_48px_rgba(20,184,166,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300/60 lg:h-full lg:rounded-xl lg:p-3.5 xl:p-5"
                         >
                             <span className="hero-spotlight" aria-hidden />
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-teal-300/40 bg-teal-400/20 text-teal-200 transition-[translate,rotate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:-rotate-6 group-hover:scale-110 group-hover:shadow-[0_0_24px_rgba(45,212,191,0.45)] motion-reduce:transform-none lg:mb-3 lg:h-10 lg:w-10">
-                                <FileBox className="h-6 w-6 lg:h-5 lg:w-5" />
-                            </div>
-                            <p className="text-lg font-black text-white lg:text-base xl:text-lg">{t('hasFile')}</p>
-                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep lg:mt-1.5 lg:text-[13px] lg:leading-snug">
+                            <QuotePathDiagram mode="file" tone="teal" compact />
+                            <p className="mt-3 text-lg font-black text-white lg:mt-2 lg:text-base xl:mt-3 xl:text-lg">
+                                {t('hasFile')}
+                            </p>
+                            <p className="mt-1 text-sm leading-relaxed text-white/65 break-keep lg:text-[13px] lg:leading-snug">
                                 {t('hasFileDesc')}
                             </p>
+                            <div className="mt-3 lg:mt-2 xl:mt-3">
+                                <QuotePathFlowStrip
+                                    tone="teal"
+                                    compact
+                                    steps={[t('fileFlow1'), t('fileFlow2'), t('fileFlow3')]}
+                                />
+                            </div>
                             <span className="hero-shine mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-teal-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-teal-300 lg:mt-auto lg:h-10 lg:text-[13px]">
                                 {t('getQuote')}
                                 <ArrowRight className="h-4 w-4" />
@@ -334,17 +345,23 @@ export default function Hero() {
                             }}
                             onPointerMove={handleHeroTiltMove}
                             onPointerLeave={handleHeroTiltLeave}
-                            className="hero-tilt hero-glow-indigo group relative flex min-h-0 flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 shadow-[0_10px_30px_rgba(99,102,241,0.12)] hover:border-indigo-300/55 hover:from-indigo-500/25 hover:shadow-[0_20px_48px_rgba(99,102,241,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 lg:h-full lg:rounded-xl lg:p-4 xl:p-5"
+                            className="hero-tilt hero-glow-indigo group relative flex min-h-0 flex-col rounded-2xl border border-indigo-400/35 bg-gradient-to-b from-indigo-500/18 to-indigo-500/[0.06] p-5 shadow-[0_10px_30px_rgba(99,102,241,0.12)] hover:border-indigo-300/55 hover:from-indigo-500/25 hover:shadow-[0_20px_48px_rgba(99,102,241,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 lg:h-full lg:rounded-xl lg:p-3.5 xl:p-5"
                         >
                             <span className="hero-spotlight" aria-hidden />
-                            <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-300/40 bg-indigo-500/20 text-indigo-200 transition-[translate,rotate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:rotate-6 group-hover:scale-110 group-hover:shadow-[0_0_24px_rgba(129,140,248,0.5)] motion-reduce:transform-none lg:mb-3 lg:h-10 lg:w-10">
-                                <ImageIcon className="h-6 w-6 lg:h-5 lg:w-5" />
-                                <Sparkles className="hero-twinkle absolute -right-2 -top-2 h-4 w-4 text-indigo-100" aria-hidden />
-                            </div>
-                            <p className="text-lg font-black text-white lg:text-base xl:text-lg">{t('hasPhoto')}</p>
-                            <p className="mt-1.5 flex-1 text-sm leading-relaxed text-white/65 break-keep lg:mt-1.5 lg:text-[13px] lg:leading-snug">
+                            <QuotePathDiagram mode="photo" tone="indigo" compact />
+                            <p className="mt-3 text-lg font-black text-white lg:mt-2 lg:text-base xl:mt-3 xl:text-lg">
+                                {t('hasPhoto')}
+                            </p>
+                            <p className="mt-1 text-sm leading-relaxed text-white/65 break-keep lg:text-[13px] lg:leading-snug">
                                 {t('hasPhotoDesc')}
                             </p>
+                            <div className="mt-3 lg:mt-2 xl:mt-3">
+                                <QuotePathFlowStrip
+                                    tone="indigo"
+                                    compact
+                                    steps={[t('photoFlow1'), t('photoFlow2'), t('photoFlow3')]}
+                                />
+                            </div>
                             <span className="hero-shine mt-4 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-400 px-4 text-sm font-black text-slate-950 transition group-hover:bg-indigo-300 lg:mt-auto lg:h-10 lg:text-[13px]">
                                 {t('make3d')}
                                 <ArrowRight className="h-4 w-4" />

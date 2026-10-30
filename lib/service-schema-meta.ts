@@ -96,6 +96,26 @@ export const SERVICE_SCHEMA_META: Record<string, ServiceSchemaMeta> = {
             en: ['JPG/PNG to STL', 'Multi-view extras', 'Quote and order flow'],
         },
     },
+    'name-tag-studio': {
+        serviceType: { ko: '네임택 스튜디오 · 3D 이름표 제작', en: 'Name Tag Studio · 3D name tag design' },
+        audience: { ko: '문구 중심 이름표·명찰·인식표가 필요한 고객', en: 'Customers needing text-first tags and nameplates' },
+        channelPath: '/maker',
+        relatedHowToPath: '/guides/name-tag-studio',
+        catalogItems: {
+            ko: ['문구·폰트·판 편집', '획 0.8mm 검사', 'STL·자동견적 연계'],
+            en: ['Text, font, plate editing', '0.8 mm stroke checks', 'STL and live quote handoff'],
+        },
+    },
+    'ai-3d-maker': {
+        serviceType: { ko: 'AI 3D Maker · 로고 2.5D 돌출', en: 'AI 3D Maker · logo 2.5D extrusion' },
+        audience: { ko: '로고·스케치·배지·키캡 2.5D가 필요한 고객', en: 'Customers needing logo, sketch, badge or keycap 2.5D' },
+        channelPath: '/maker?mode=draw',
+        relatedHowToPath: '/guides/ai-3d-maker-2-5d',
+        catalogItems: {
+            ko: ['로고·SVG 실루엣', '배지·키캡 템플릿', 'STL·자동견적 연계'],
+            en: ['Logo/SVG silhouette', 'Badge and keycap templates', 'STL and live quote handoff'],
+        },
+    },
 }
 
 export function getServiceSchemaMeta(slug: string): ServiceSchemaMeta | null {

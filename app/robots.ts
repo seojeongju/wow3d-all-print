@@ -3,7 +3,7 @@ import { SITE_URL } from "@/lib/site-url";
 
 /**
  * 비공개·거래 경로 (locale 접두어 없는 한국어 기준).
- * robots는 접두어 일치라 "/maker"로 쓰면 공개 페이지 "/makerspace"까지 막힌다 → "$"·"/"로 끝을 명시.
+ * robots는 접두어 일치이므로 공개 페이지와 겹치지 않게 경로를 적는다.
  */
 const PRIVATE_PATHS = [
   "/auth",
@@ -12,9 +12,6 @@ const PRIVATE_PATHS = [
   "/order-complete",
   "/my-account",
   "/quotes",
-  "/maker$",
-  "/maker/",
-  "/maker?",
   "/print/estimate/",
 ];
 

@@ -14,6 +14,7 @@ import {
     Package,
     PenTool,
     Printer,
+    Tag,
     Target,
     Upload,
     Zap,
@@ -70,6 +71,20 @@ const SERVICE_VISUALS: Record<string, ServiceVisual> = {
         icon: ImageIcon,
         accent: 'text-rose-300',
         ring: 'group-hover:border-rose-400/45 group-hover:bg-rose-400/[0.08]',
+    },
+    'name-tag-studio': {
+        title: { ko: '네임택 스튜디오', en: 'Name Tag Studio' },
+        blurb: { ko: '문구·폰트로 이름표 STL·견적', en: 'Text tags to STL and quote' },
+        icon: Tag,
+        accent: 'text-teal-300',
+        ring: 'group-hover:border-teal-400/45 group-hover:bg-teal-400/[0.08]',
+    },
+    'ai-3d-maker': {
+        title: { ko: 'AI 3D Maker', en: 'AI 3D Maker' },
+        blurb: { ko: '로고·스케치 2.5D · 배지·키캡', en: 'Logo 2.5D · badges & keycaps' },
+        icon: PenTool,
+        accent: 'text-sky-300',
+        ring: 'group-hover:border-sky-400/45 group-hover:bg-sky-400/[0.08]',
     },
     graduation: {
         title: { ko: '졸업작품', en: 'Graduation Projects' },
