@@ -31,12 +31,27 @@ DOWNLOADS = {
     "Sunflower-Bold.ttf": "sunflower/Sunflower-Bold.ttf",
     "Gaegu-Bold.ttf": "gaegu/Gaegu-Bold.ttf",
     "SingleDay-Regular.ttf": "singleday/SingleDay-Regular.ttf",
+    # 한글 디스플레이·굵은 글꼴 (이름표 획 검사 후보)
+    "GasoekOne-Regular.ttf": "gasoekone/GasoekOne-Regular.ttf",
+    "BagelFatOne-Regular.ttf": "bagelfatone/BagelFatOne-Regular.ttf",
+    "KirangHaerang-Regular.ttf": "kiranghaerang/KirangHaerang-Regular.ttf",
+    "YeonSung-Regular.ttf": "yeonsung/YeonSung-Regular.ttf",
+    "CuteFont-Regular.ttf": "cutefont/CuteFont-Regular.ttf",
+    "Dongle-Bold.ttf": "dongle/Dongle-Bold.ttf",
+    "BlackAndWhitePicture-Regular.ttf": "blackandwhitepicture/BlackAndWhitePicture-Regular.ttf",
+    "Gugi-Regular.ttf": "gugi/Gugi-Regular.ttf",
+    "Orbit-Regular.ttf": "orbit/Orbit-Regular.ttf",
+    "Dokdo-Regular.ttf": "dokdo/Dokdo-Regular.ttf",
+    # 영문 디스플레이
     "LilitaOne-Regular.ttf": "lilitaone/LilitaOne-Regular.ttf",
     "Pacifico-Regular.ttf": "pacifico/Pacifico-Regular.ttf",
     "Bangers-Regular.ttf": "bangers/Bangers-Regular.ttf",
     "BebasNeue-Regular.ttf": "bebasneue/BebasNeue-Regular.ttf",
     "Righteous-Regular.ttf": "righteous/Righteous-Regular.ttf",
     "Boogaloo-Regular.ttf": "boogaloo/Boogaloo-Regular.ttf",
+    "Anton-Regular.ttf": "anton/Anton-Regular.ttf",
+    "PassionOne-Bold.ttf": "passionone/PassionOne-Bold.ttf",
+    "RussoOne-Regular.ttf": "russoone/RussoOne-Regular.ttf",
 }
 
 LATIN_ONLY = {
@@ -46,6 +61,9 @@ LATIN_ONLY = {
     "BebasNeue-Regular.ttf",
     "Righteous-Regular.ttf",
     "Boogaloo-Regular.ttf",
+    "Anton-Regular.ttf",
+    "PassionOne-Bold.ttf",
+    "RussoOne-Regular.ttf",
 }
 
 
