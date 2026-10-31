@@ -8,19 +8,22 @@ import {
     WORK_PHOTO_WIDTH,
     type WorkPhoto,
 } from '@/lib/seo-work-photos'
+import RotatingWorkPhotoGrid from '@/components/seo/RotatingWorkPhotoGrid'
 
 type Props = {
     photos: WorkPhoto[]
     locale: string
     /** section: 페이지 폭 섹션(자체 컨테이너) / block: 이미 컨테이너 안에 끼워 넣을 때 */
     layout?: 'section' | 'block'
+    /** true면 4칸을 한 칸씩 다음 사진으로 교체 (갤러리 연동 페이지용) — 기본은 전체 사진을 고정 그리드로 */
+    rotate?: boolean
 }
 
 /**
  * 서버 렌더링되는 실제 출력 사진 그리드.
  * 검색 로봇(Yeti·Googlebot)은 JS를 실행하지 않아도 <img src>를 바로 읽을 수 있어야 썸네일 후보가 됨.
  */
-export default async function WorkPhotosSection({ photos, locale, layout = 'section' }: Props) {
+export default async function WorkPhotosSection({ photos, locale, layout = 'section', rotate = false }: Props) {
     if (photos.length === 0) return null
     const t = await getTranslations({ locale, namespace: 'WorkPhotos' })
     const headingId = `work-photos-${photos[0].slug}`
@@ -36,6 +39,10 @@ export default async function WorkPhotosSection({ photos, locale, layout = 'sect
                 {t('heading')}
             </h2>
             <p className="text-white/60 leading-relaxed break-keep mb-8 max-w-3xl">{t('description')}</p>
+            {rotate && photos.length > 4 ? (
+                // 갤러리 연동: 4칸을 한 칸씩 최신 출력 사진으로 교체 (첫 4장은 서버 HTML에 포함)
+                <RotatingWorkPhotoGrid photos={photos} />
+            ) : (
             <ul className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {photos.map((p, i) => (
                     <li key={p.slug}>
@@ -66,6 +73,7 @@ export default async function WorkPhotosSection({ photos, locale, layout = 'sect
                     </li>
                 ))}
             </ul>
+            )}
             <div className="mt-6">
                 <Link
                     href="/gallery"

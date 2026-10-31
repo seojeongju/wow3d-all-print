@@ -16,7 +16,7 @@ import PhotoTo3DBeforeAfter from '@/components/seo/PhotoTo3DBeforeAfter'
 import WorkPhotosSection from '@/components/seo/WorkPhotosSection'
 import KeyAnswerBox from '@/components/seo/KeyAnswerBox'
 import { getServiceUseCases } from '@/lib/use-case-pages'
-import { pickServiceWorkPhotos } from '@/lib/seo-work-photos'
+import { getServiceGalleryPhotos } from '@/lib/gallery-work-photos'
 import { getPhotoTo3DShowcaseItems } from '@/lib/photo-to-3d-showcase'
 import { buildPhotoTo3DShowcaseSchema } from '@/lib/seo-photo-to-3d'
 import {
@@ -42,6 +42,8 @@ type Props = {
 export default async function ServiceLandingPage({ config, locale }: Props) {
     const t = await getTranslations({ locale, namespace: 'ServiceChrome' })
     const relatedUseCases = getServiceUseCases(config.slug, locale)
+    // 출력 사례: 주제 규칙이 있는 서비스(캡스톤 등)는 최신 출력 갤러리에서 자동 선별, 없으면 고정 사진
+    const workPhotos = await getServiceGalleryPhotos(config.slug, locale)
     const showcaseItems =
         config.slug === 'photo-to-3d' ? await getPhotoTo3DShowcaseItems(locale) : null
     const info = getServiceInfographic(config.slug, locale)
@@ -166,7 +168,8 @@ export default async function ServiceLandingPage({ config, locale }: Props) {
                     )}
 
                     <WorkPhotosSection
-                        photos={pickServiceWorkPhotos(config.slug, locale)}
+                        photos={workPhotos}
+                        rotate
                         locale={locale}
                         layout="block"
                     />

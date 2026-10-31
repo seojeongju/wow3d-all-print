@@ -225,9 +225,10 @@ export function buildWorkPhotoSchema(photos: WorkPhoto[], locale: string) {
         url: p.absoluteSrc,
         name: p.title,
         caption: p.alt,
-        width: WORK_PHOTO_WIDTH,
-        height: WORK_PHOTO_HEIGHT,
-        encodingFormat: 'image/jpeg',
+        // 정적 출력 사진은 1200×900 JPEG, 갤러리 연동 사진은 축소 WebP(원본 비율이라 크기 생략)
+        ...(p.src.startsWith('/images/work/')
+            ? { width: WORK_PHOTO_WIDTH, height: WORK_PHOTO_HEIGHT, encodingFormat: 'image/jpeg' }
+            : { encodingFormat: 'image/webp' }),
         creator: { '@type': 'Organization', name: org, url: absoluteUrl('/') },
         creditText: org,
         copyrightNotice: `© ${org}`,
