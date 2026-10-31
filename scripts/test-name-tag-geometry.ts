@@ -128,7 +128,7 @@ async function main() {
     const missingByFont = new Map<string, Set<string>>()
     const started = Date.now()
     const matrixFonts = NAME_TAG_FONTS.filter((font) =>
-        ['nanum-gothic', 'jua', 'do-hyeon', 'black-han'].includes(font.id)
+        ['nanum-gothic', 'nanum-barun-gothic', 'nanum-square', 'nanum-square-round'].includes(font.id)
     )
     for (const presetId of Object.keys(NAME_TAG_PRESETS) as NameTagPresetId[]) {
         for (const font of matrixFonts) {
@@ -172,9 +172,9 @@ async function main() {
         }
     }
 
-    // 추가한 폰트는 대표 문구 하나로 형상만 확인한다. 영문 폰트의 한글 빠짐은 허용한다.
+    // 추가한 폰트는 대표 문구 하나로 형상만 확인한다.
     for (const font of NAME_TAG_FONTS) {
-        const sample = font.group === 'en' ? 'WOW3D' : '하준'
+        const sample = '하준'
         const design = normalizeNameTagDesign({
             ...applyNameTagPreset(DEFAULT_NAME_TAG_DESIGN, 'bag'),
             lines: [{ text: sample, fontId: font.id, size: 1 }],
@@ -193,24 +193,14 @@ async function main() {
     // 폰트에 없는 글자는 오류로 잡아야 한다
     const emoji = buildNameTag(
         wasm,
-        normalizeNameTagDesign({ ...DEFAULT_NAME_TAG_DESIGN, lines: [{ text: '하준🐶', fontId: 'jua', size: 1 }] }),
+        normalizeNameTagDesign({
+            ...DEFAULT_NAME_TAG_DESIGN,
+            lines: [{ text: '하준🐶', fontId: 'nanum-gothic', size: 1 }],
+        }),
         fonts
     )
     assert.ok(emoji?.issues.some((i) => i.code === 'missing-glyph'), '없는 글자 미검출')
     assert.ok(emoji && emoji.lines.length > 0, '없는 글자가 섞여도 나머지 글자는 남는다')
-
-    const latinHangul = buildNameTag(
-        wasm,
-        normalizeNameTagDesign({
-            ...DEFAULT_NAME_TAG_DESIGN,
-            lines: [{ text: '하준', fontId: 'lilita-one', size: 1 }],
-        }),
-        fonts
-    )
-    assert.ok(latinHangul, '영문 폰트에 한글만 있어도 판은 남는다')
-    assert.ok(latinHangul?.issues.some((i) => i.code === 'missing-glyph'), '한글 빠짐 미검출')
-    assert.equal(latinHangul?.lines.length, 0)
-    assert.equal(latinHangul?.stats.bodies, 1)
     cases++
 
     // 작은 판 + 세 줄은 작은 글자·가는 획 경고가 나와야 한다

@@ -29,7 +29,13 @@ import { Button } from '@/components/ui/button'
 import { NameTagBasePicker } from '@/components/maker/NameTagBasePicker'
 import { Maker3DErrorBoundary } from '@/components/maker/Maker3DErrorBoundary'
 import { useFileStore } from '@/store/useFileStore'
-import { NAME_TAG_FONT_GROUPS, NAME_TAG_FONTS, isCustomFontId, textHasHangul, type NameTagFontId } from '@/lib/name-tag-fonts'
+import {
+    NAME_TAG_FONT_GROUPS,
+    NAME_TAG_FONTS,
+    isCustomFontId,
+    type NameTagFontGroup,
+    type NameTagFontId,
+} from '@/lib/name-tag-fonts'
 import {
     useCustomFonts,
     registerCustomFontFromFile,
@@ -316,17 +322,14 @@ function FontChoices({
     onPreview,
     onPick,
     onOpenSystemModal,
-    blockLatin = false,
 }: {
     activeId: NameTagFontId | null
-    groupLabel: (group: 'ko' | 'en') => string
+    groupLabel: (group: NameTagFontGroup) => string
     fontLabel: (fontId: NameTagFontId) => string
     activeFontIds: ReadonlySet<NameTagFontId>
     onPreview: (fontId: NameTagFontId) => void
     onPick: (fontId: NameTagFontId) => void
     onOpenSystemModal: () => void
-    /** 한글이 있으면 영문 전용 폰트는 고르지 않는다 */
-    blockLatin?: boolean
 }) {
     const t = useTranslations('Maker.nameTag')
     const [tab, setTab] = useState<'preset' | 'local'>('preset')
@@ -403,14 +406,7 @@ function FontChoices({
                                     <Choice
                                         key={font.id}
                                         active={font.id === activeId}
-                                        disabled={blockLatin && group === 'en'}
-                                        onClick={() => {
-                                            if (blockLatin && group === 'en') {
-                                                showToast.error(t('fontLatinBlockedTitle'), t('fontLatinBlocked'))
-                                                return
-                                            }
-                                            onPick(font.id)
-                                        }}
+                                        onClick={() => onPick(font.id)}
                                         onPreview={() => onPreview(font.id)}
                                         className="h-10 text-left px-2.5 py-1"
                                     >
@@ -845,7 +841,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                         <span className="flex shrink-0 gap-1.5">
                                             <button
                                                 type="button"
-                                                onClick={() => setAllFonts('black-han')}
+                                                onClick={() => setAllFonts('nanum-gothic-extra')}
                                                 className="rounded-lg bg-teal-400 px-2 py-0.5 text-[11px] font-black text-slate-950 shadow hover:bg-teal-300"
                                             >
                                                 {t('fixBoldFont')}
@@ -1132,7 +1128,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 {openFontMenu === index ? (
                                                     <FontChoices
                                                         activeId={line.fontId}
-                                                        groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
+                                                        groupLabel={(group) =>
+                                                            t(group === 'gothic' ? 'fontGroupGothic' : 'fontGroupSquare')
+                                                        }
                                                         fontLabel={getFontLabel}
                                                         activeFontIds={activeFontIds}
                                                         onPreview={noteFont}
@@ -1142,7 +1140,6 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                             setLine(index, { fontId })
                                                             setOpenFontMenu(null)
                                                         }}
-                                                        blockLatin={textHasHangul(line.text)}
                                                     />
                                                 ) : null}
                                             </div>
@@ -1187,7 +1184,9 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 ? design.lines[0]?.fontId ?? null
                                                 : null
                                         }
-                                        groupLabel={(group) => t(group === 'ko' ? 'fontGroupKo' : 'fontGroupEn')}
+                                        groupLabel={(group) =>
+                                            t(group === 'gothic' ? 'fontGroupGothic' : 'fontGroupSquare')
+                                        }
                                         fontLabel={getFontLabel}
                                         activeFontIds={activeFontIds}
                                         onPreview={noteFont}
@@ -1197,7 +1196,6 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                             setAllFonts(fontId)
                                             setOpenFontMenu(null)
                                         }}
-                                        blockLatin={design.lines.some((line) => textHasHangul(line.text))}
                                     />
                                 ) : null}
 
@@ -1583,7 +1581,7 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                 issues={issues}
                                 hasText={hasText}
                                 isCircle={isCircle}
-                                onFixBoldFont={() => setAllFonts('black-han')}
+                                onFixBoldFont={() => setAllFonts('nanum-gothic-extra')}
                                 onFixBiggerPlate={() =>
                                     update((d) => ({
                                         ...d,
