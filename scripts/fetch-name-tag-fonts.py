@@ -1,6 +1,6 @@
-"""네이버 무료(나눔) 폰트를 받아 이름표용으로 자른다.
+"""이름표 프리셋 폰트를 받아 자른다.
 
-SIL OFL / 네이버 무료 폰트 라이선스. 굵은 웨이트만 받는다.
+나눔(고딕·스퀘어) + 굵은 필기체(Google Fonts OFL). 가는 펜·브러시는 제외.
 실행: python scripts/fetch-name-tag-fonts.py
 """
 from __future__ import annotations
@@ -17,10 +17,10 @@ GOOGLE = "https://github.com/google/fonts/raw/main/ofl/"
 
 # (저장 파일명, 절대 URL 또는 google 상대경로)
 DOWNLOADS: list[tuple[str, str]] = [
-    # 나눔고딕 · 명조 (google/fonts, 네이버 제작 · SIL OFL)
+    # 나눔고딕 (google/fonts, 네이버 제작 · SIL OFL)
     ("NanumGothic-Bold.ttf", GOOGLE + "nanumgothic/NanumGothic-Bold.ttf"),
     ("NanumGothic-ExtraBold.ttf", GOOGLE + "nanumgothic/NanumGothic-ExtraBold.ttf"),
-    # 나눔바른고딕 · 스퀘어 · 스퀘어라운드 (명조는 획이 가늘어 프리셋에서 제외)
+    # 나눔바른고딕 · 스퀘어 · 스퀘어라운드
     (
         "NanumBarunGothicBold.ttf",
         "https://cdn.jsdelivr.net/npm/@kfonts/nanum-barun-gothic@0.1.0/NanumBarunGothicBold.ttf",
@@ -41,21 +41,24 @@ DOWNLOADS: list[tuple[str, str]] = [
         "NanumSquareRoundEB.ttf",
         "https://cdn.jsdelivr.net/npm/@kfonts/nanum-square-round@0.1.0/NanumSquareRoundEB.ttf",
     ),
+    # 필기 — 손글씨·붓글씨 (획 검사 통과)
+    ("Gaegu-Bold.ttf", GOOGLE + "gaegu/Gaegu-Bold.ttf"),
+    ("SingleDay-Regular.ttf", GOOGLE + "singleday/SingleDay-Regular.ttf"),
+    ("PoorStory-Regular.ttf", GOOGLE + "poorstory/PoorStory-Regular.ttf"),
+    ("YeonSung-Regular.ttf", GOOGLE + "yeonsung/YeonSung-Regular.ttf"),
 ]
 
 # 이름표 프리셋에 쓰지 않는 옛 구글 폰트 — 받아 둔 뒤 삭제
 REMOVE_LEGACY = [
     "NanumMyeongjo-Bold.ttf",
     "NanumMyeongjo-ExtraBold.ttf",
+    "NanumPenScript-Regular.ttf",
+    "NanumBrushScript-Regular.ttf",
     "GothicA1-Bold.ttf",
-    "PoorStory-Regular.ttf",
     "Sunflower-Bold.ttf",
-    "Gaegu-Bold.ttf",
-    "SingleDay-Regular.ttf",
     "GasoekOne-Regular.ttf",
     "BagelFatOne-Regular.ttf",
     "KirangHaerang-Regular.ttf",
-    "YeonSung-Regular.ttf",
     "CuteFont-Regular.ttf",
     "Dongle-Bold.ttf",
     "BlackAndWhitePicture-Regular.ttf",
@@ -75,6 +78,11 @@ REMOVE_LEGACY = [
     "Anton-Regular.ttf",
     "PassionOne-Bold.ttf",
     "RussoOne-Regular.ttf",
+    "HiMelody-Regular.ttf",
+    "GamjaFlower-Regular.ttf",
+    "Stylish-Regular.ttf",
+    "Diphylleia-Regular.ttf",
+    "GrandifloraOne-Regular.ttf",
 ]
 
 
@@ -167,7 +175,7 @@ def main() -> None:
     body = license_body[idx:] if idx >= 0 else license_body
     ofl.write_text(
         header
-        + "\n\nNaver Nanum fonts and subset copies used for WOW3D Name Tag Studio.\n"
+        + "\n\nNaver Nanum + Google Fonts (handwriting) subset copies for WOW3D Name Tag Studio.\n"
         "This Font Software is licensed under the SIL Open Font License, Version 1.1,\n"
         "or the applicable Naver free font license terms.\n"
         "http://scripts.sil.org/OFL\n\n\n"

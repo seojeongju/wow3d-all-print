@@ -4486,12 +4486,13 @@
       "removeCustomFont": "Remove font",
       "fontGroupGothic": "Gothic",
       "fontGroupSquare": "Square",
+      "fontGroupHand": "Handwriting",
       "fontGroupKo": "Korean",
       "fontGroupEn": "Latin",
       "fontLatinBlockedTitle": "Latin-only font",
       "fontLatinBlocked": "This text includes Korean characters, so a Latin-only font cannot be used. Choose a Korean font.",
-      "fontLicense": "Naver Nanum fonts · SIL OFL / Naver free font terms",
-      "fontPresetHint": "Only bold Naver Nanum weights that print reliably are listed. Very small text or a font you upload yourself can still show a thin-stroke notice.",
+      "fontLicense": "Nanum · Google Fonts (SIL OFL) / Naver free font terms",
+      "fontPresetHint": "Only bold gothic, square, and handwriting fonts that print reliably are listed. Very small text or a font you upload yourself can still show a thin-stroke notice.",
       "fonts": {
         "nanum-gothic": "Nanum Gothic Bold",
         "nanum-gothic-extra": "Nanum Gothic ExtraBold",
@@ -4499,7 +4500,11 @@
         "nanum-square": "Nanum Square Bold",
         "nanum-square-extra": "Nanum Square ExtraBold",
         "nanum-square-round": "Nanum Square Round Bold",
-        "nanum-square-round-extra": "Nanum Square Round ExtraBold"
+        "nanum-square-round-extra": "Nanum Square Round ExtraBold",
+        "gaegu": "Gaegu Bold",
+        "single-day": "Single Day",
+        "poor-story": "Poor Story",
+        "yeon-sung": "Yeon Sung"
       },
       "alignLabel": "Align",
       "align": {

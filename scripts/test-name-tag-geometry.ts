@@ -128,7 +128,7 @@ async function main() {
     const missingByFont = new Map<string, Set<string>>()
     const started = Date.now()
     const matrixFonts = NAME_TAG_FONTS.filter((font) =>
-        ['nanum-gothic', 'nanum-barun-gothic', 'nanum-square', 'nanum-square-round'].includes(font.id)
+        ['nanum-gothic', 'nanum-square', 'gaegu', 'yeon-sung'].includes(font.id)
     )
     for (const presetId of Object.keys(NAME_TAG_PRESETS) as NameTagPresetId[]) {
         for (const font of matrixFonts) {

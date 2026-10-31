@@ -1,4 +1,4 @@
-/** 이름표 프리셋 — 네이버 나눔 무료 폰트(굵은 웨이트만). 0.8mm 획 검사 통과분. */
+/** 이름표 프리셋 — 획 검사(0.8mm) 통과한 굵은 글꼴. */
 
 /**
  * 이름 칸·글자 크기 1에서 가는 획 검사를 통과한 굵은 글꼴만 둔다.
@@ -39,13 +39,18 @@ export const NAME_TAG_FONTS = [
         cssFamily: 'Wow Name NanumSquareRoundExtra',
         group: 'square',
     },
+    // 필기 — 손글씨·붓글씨 (굵고 획 검사 통과분)
+    { id: 'gaegu', file: '/fonts/Gaegu-Bold.ttf', cssFamily: 'Wow Name Gaegu', group: 'hand' },
+    { id: 'single-day', file: '/fonts/SingleDay-Regular.ttf', cssFamily: 'Wow Name SingleDay', group: 'hand' },
+    { id: 'poor-story', file: '/fonts/PoorStory-Regular.ttf', cssFamily: 'Wow Name PoorStory', group: 'hand' },
+    { id: 'yeon-sung', file: '/fonts/YeonSung-Regular.ttf', cssFamily: 'Wow Name YeonSung', group: 'hand' },
 ] as const
 
 export type PresetNameTagFontId = (typeof NAME_TAG_FONTS)[number]['id']
 export type NameTagFontId = PresetNameTagFontId | (string & {})
 export type NameTagFontGroup = (typeof NAME_TAG_FONTS)[number]['group']
 
-export const NAME_TAG_FONT_GROUPS = ['gothic', 'square'] as const
+export const NAME_TAG_FONT_GROUPS = ['gothic', 'square', 'hand'] as const
 
 export const NAME_TAG_PLATE_SIZES = [
     { id: 's', widthMm: 42, heightMm: 18, holeMm: 3.2 },

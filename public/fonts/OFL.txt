@@ -1,10 +1,13 @@
 Copyright © 2011 NHN Corporation. All rights reserved. Font designed by Sandoll Communications Inc.
-Copyright © 2010 NHN Corporation. All rights reserved. Font designed by FONTRIX.
 Copyright ⓒ 2013 NHN Corporation. All rights reserved. Font designed by FONTRIX Inc.
 Copyright ⓒ 2016 NAVER Corporation. All rights reserved. Font designed by Sandoll Communications Inc.
 Copyright ⓒ 2017 NAVER Corporation. All rights reserved. Font designed by Sandoll Communications Inc.
+Copyright 2018 The Gaegu Project Authors
+Copyright 2015 DXKorea Inc. All rights reserved.
+Copyright (c) YoonDesign Inc. All Rights Reserved.
+Copyright 2018 The Yeon Sung Project Authors
 
-Naver Nanum fonts and subset copies used for WOW3D Name Tag Studio.
+Naver Nanum + Google Fonts (handwriting) subset copies for WOW3D Name Tag Studio.
 This Font Software is licensed under the SIL Open Font License, Version 1.1,
 or the applicable Naver free font license terms.
 http://scripts.sil.org/OFL

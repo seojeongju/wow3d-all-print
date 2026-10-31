@@ -1129,7 +1129,13 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                     <FontChoices
                                                         activeId={line.fontId}
                                                         groupLabel={(group) =>
-                                                            t(group === 'gothic' ? 'fontGroupGothic' : 'fontGroupSquare')
+                                                            t(
+                                                                group === 'gothic'
+                                                                    ? 'fontGroupGothic'
+                                                                    : group === 'square'
+                                                                      ? 'fontGroupSquare'
+                                                                      : 'fontGroupHand'
+                                                            )
                                                         }
                                                         fontLabel={getFontLabel}
                                                         activeFontIds={activeFontIds}
@@ -1185,7 +1191,13 @@ export function NameTagStudio({ onOpenDraw }: Props) {
                                                 : null
                                         }
                                         groupLabel={(group) =>
-                                            t(group === 'gothic' ? 'fontGroupGothic' : 'fontGroupSquare')
+                                            t(
+                                                group === 'gothic'
+                                                    ? 'fontGroupGothic'
+                                                    : group === 'square'
+                                                      ? 'fontGroupSquare'
+                                                      : 'fontGroupHand'
+                                            )
                                         }
                                         fontLabel={getFontLabel}
                                         activeFontIds={activeFontIds}
