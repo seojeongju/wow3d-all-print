@@ -230,12 +230,15 @@ function QuoteContent() {
     // 메인 등에서 「3D 파일 / 사진」 진입 시 같은 탭에 남은 이전 파일·안내를 비운다.
     // (남아 있으면 견적 패널이 우선 표시되어 사진 화면 대신 이전 견적이 뜸)
     // handoff=1: 직전 화면에서 방금 넘긴 파일·사진이므로 유지
+    // 이미 분석된 모델이 있는 파일 진입 복귀(가이드 뒤로가기 등)는 유지
     const isHandoff = searchParams.get('handoff') === '1';
     useEffect(() => {
         if (isHandoff || loadQuoteId || loadMeshyJobId) return;
         if (entryParam !== 'file' && entryParam !== 'photo') return;
+        const { file: existing, baseAnalysis: existingAnalysis } = useFileStore.getState();
+        if (entryParam === 'file' && existing && existingAnalysis) return;
         useUploadNoticeStore.getState().clear();
-        if (!useFileStore.getState().file) return;
+        if (!existing) return;
         const activeMeshyJob = readMeshyActiveJobId();
         useFileStore.getState().reset();
         if (activeMeshyJob) saveMeshyActiveJob(activeMeshyJob);

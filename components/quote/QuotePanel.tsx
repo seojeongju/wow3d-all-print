@@ -96,11 +96,19 @@ type ApiMaterial = {
 /** 출력방식 type 코드(소문자). 견적 공식은 quoteFamily로 결정 */
 type PrintMethod = string
 
+/** 견적 UI 표시 순서 — FDM → DLP → SLA */
+const PRINT_METHOD_UI_ORDER = ['fdm', 'dlp', 'sla'] as const
+
 function resolveQuoteFamily(method: string, specs: PrintSpecs | null): 'fdm' | 'sla' | 'dlp' {
     const entry = specs?.[method]
     const f = entry?.quoteFamily || method
     if (f === 'sla' || f === 'dlp') return f
     return 'fdm'
+}
+
+function printMethodOrderKey(family: string): number {
+    const i = PRINT_METHOD_UI_ORDER.indexOf(family as (typeof PRINT_METHOD_UI_ORDER)[number])
+    return i >= 0 ? i : PRINT_METHOD_UI_ORDER.length
 }
 
 type QuotePanelProps = {
@@ -1210,14 +1218,20 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 <div className={`grid gap-2 ${(printSpecs ? Object.keys(printSpecs).length : 3) > 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-3'}`}>
                     {(printSpecs
                         ? Object.entries(printSpecs).map(([id, spec]) => {
-                            const family = spec.quoteFamily || id
+                            const family = resolveQuoteFamily(id, printSpecs)
                             const icon = family === 'dlp' ? Zap : family === 'sla' ? Droplets : Printer
-                            return { id, icon, label: spec.label || id.toUpperCase() }
-                        })
+                            const label =
+                                family === 'fdm'
+                                    ? t('methodLabelFdm')
+                                    : family === 'dlp'
+                                      ? t('methodLabelDlp')
+                                      : t('methodLabelSla')
+                            return { id, icon, label, family }
+                        }).sort((a, b) => printMethodOrderKey(a.family) - printMethodOrderKey(b.family))
                         : [
-                            { id: 'fdm', icon: Printer, label: 'FDM' },
-                            { id: 'dlp', icon: Zap, label: 'DLP' },
-                            { id: 'sla', icon: Droplets, label: 'SLA' },
+                            { id: 'fdm', icon: Printer, label: t('methodLabelFdm'), family: 'fdm' as const },
+                            { id: 'dlp', icon: Zap, label: t('methodLabelDlp'), family: 'dlp' as const },
+                            { id: 'sla', icon: Droplets, label: t('methodLabelSla'), family: 'sla' as const },
                         ]
                     ).map((method) => (
                         <button

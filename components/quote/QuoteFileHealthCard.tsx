@@ -438,6 +438,8 @@ function ThinWallCard({
                 </button>
                 <Link
                     href="/guides/minimum-wall-thickness"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-[11px] sm:text-xs font-black text-amber-200/90 hover:text-amber-100"
                 >
                     {t('thinGuide')} →
