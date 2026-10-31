@@ -802,6 +802,11 @@
     "overflowConsult": "Ask about split printing",
     "overflowCartBlocked": "Models larger than the max build size can't be added to the cart. Scale it down or ask us about split printing.",
     "materialSettings": "Material",
+    "materialDetailButton": "Material details",
+    "materialDetailDesc": "Typical heat deflection, melt, and print temperatures for the selected material. For selection guidance only—not applied as a separate quote line.",
+    "materialDetailFullPage": "See more on the materials page",
+    "materialDetailPageLink": "Materials guide",
+    "materialDetailNeedSelect": "Select a material first",
     "noMaterials": "No materials available. Add them in Admin → Materials.",
     "colorLabel": "Color",
     "colorWhite": "White",
@@ -1191,13 +1196,13 @@
   },
   "Materials": {
     "metaTitle": "3D Printing Materials | PLA·ABS·PETG·PC·Resin",
-    "metaDescription": "WOW3D material guide. Compare FDM (PLA, ABS, PETG, PC, TPU) and SLA·DLP resins—properties, uses, and how to choose.",
+    "metaDescription": "WOW3D material guide. Compare FDM (PLA, ABS, PETG, PC, TPU) and SLA·DLP resins—heat deflection, melt temps, properties, and how to choose.",
     "metaOgTitle": "3D Printing Materials | WOW3D",
-    "metaOgDescription": "Compare PLA·ABS·PETG·PC·TPU and resins. Pick the right material for prototypes and functional parts.",
+    "metaOgDescription": "PLA·ABS·PETG·PC·TPU and resin specs: heat deflection, print temps, and use cases for prototypes and functional parts.",
     "hero": {
       "title": "Browse",
       "titleAccent": "materials",
-      "subtitle": "What differs among PLA, ABS, PETG, and PC? Which materials suit prototypes vs functional parts? How to choose resin vs filament—all in one place."
+      "subtitle": "Compare heat deflection and melt temperatures for PLA, ABS, PETG, and PC, plus resin traits—so you can pick materials by real specs."
     },
     "byMethod": {
       "title": "Key materials by process",
@@ -1360,7 +1365,20 @@
     "fdmHeading": "FDM materials (filament)",
     "resinHeading": "Resin materials (SLA · DLP)",
     "propertiesHeading": "Key properties",
-    "applicationsHeading": "Typical applications"
+    "applicationsHeading": "Typical applications",
+    "specsHeading": "Detailed specs",
+    "specDisclaimer": "Values are typical ranges for common filaments and resins; they vary by brand, color, machine, and print settings. Food/medical uses need a separate review.",
+    "specLabels": {
+      "heatDeflection": "Heat deflection (HDT)",
+      "meltRange": "Melt temperature range",
+      "nozzleTemp": "Typical nozzle temp",
+      "bedTemp": "Typical bed temp",
+      "strength": "Strength & durability",
+      "flexibility": "Flexibility",
+      "surface": "Surface & appearance",
+      "postProcess": "Post-processing",
+      "printNote": "Print & design notes"
+    }
   },
   "Makerspace": {
     "metaTitle": "Makerspace directions | Hongdae · Gumi · Jeonju",

@@ -7,9 +7,11 @@ import { Printer, Droplets, Zap, ArrowRight, Box, Layers, Shield } from 'lucide-
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
+import MaterialSpecsGrid from '@/components/materials/MaterialSpecsGrid';
+import { getMaterialSpec, materialAnchorId, type MaterialSpecId } from '@/lib/material-specs';
 
 type MaterialMeta = {
-    id: 'pla' | 'abs' | 'petg' | 'pc' | 'tpu' | 'standard' | 'tough' | 'clear' | 'flexible';
+    id: MaterialSpecId;
     name: string;
     methods: string[];
 };
@@ -192,19 +194,22 @@ export default function MaterialsPage() {
                         {t('fdmHeading')}
                     </motion.h2>
                     <div className="space-y-8">
-                        {fdmMaterials.map((m, i) => (
+                        {fdmMaterials.map((m, i) => {
+                            const detail = getMaterialSpec(m.id)
+                            return (
                             <motion.article
                                 key={m.id}
+                                id={materialAnchorId(m.id)}
                                 initial={{ opacity: 0, y: 24 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.05 }}
-                                className="p-8 md:p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all backdrop-blur-3xl relative group overflow-hidden"
+                                className="scroll-mt-28 p-8 md:p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all backdrop-blur-3xl relative group overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <Box className="w-32 h-32 text-white" />
                                 </div>
-                                <div className="flex flex-wrap items-center gap-5 mb-10">
+                                <div className="flex flex-wrap items-center gap-5 mb-8">
                                     <div className="w-16 h-16 rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl">
                                         <Box className="w-8 h-8 text-teal-400" />
                                     </div>
@@ -213,9 +218,15 @@ export default function MaterialsPage() {
                                         <p className="text-[13px] font-bold text-white/30 tracking-tight">{m.nameKo}</p>
                                     </div>
                                     <div className="ml-auto px-5 py-2 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[10px] font-black uppercase tracking-widest">
-                                        FDM Logic
+                                        FDM
                                     </div>
                                 </div>
+                                {detail ? (
+                                    <div className="mb-10 relative z-10 space-y-3">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80">{t('specsHeading')}</h4>
+                                        <MaterialSpecsGrid spec={detail} tone="teal" />
+                                    </div>
+                                ) : null}
                                 <div className="grid md:grid-cols-2 gap-12 relative z-10">
                                     <div className="space-y-4">
                                         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-teal-400/80 mb-2">{t('propertiesHeading')}</h4>
@@ -241,7 +252,8 @@ export default function MaterialsPage() {
                                     </div>
                                 </div>
                             </motion.article>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
             </section>
@@ -277,19 +289,22 @@ export default function MaterialsPage() {
                         {t('resinHeading')}
                     </motion.h2>
                     <div className="space-y-8">
-                        {resinMaterials.map((m, i) => (
+                        {resinMaterials.map((m, i) => {
+                            const detail = getMaterialSpec(m.id)
+                            return (
                             <motion.article
                                 key={m.id}
+                                id={materialAnchorId(m.id)}
                                 initial={{ opacity: 0, y: 24 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.05 }}
-                                className="p-8 md:p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all backdrop-blur-3xl relative group overflow-hidden"
+                                className="scroll-mt-28 p-8 md:p-10 rounded-[3rem] bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all backdrop-blur-3xl relative group overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <Droplets className="w-32 h-32 text-white" />
                                 </div>
-                                <div className="flex flex-wrap items-center gap-5 mb-10">
+                                <div className="flex flex-wrap items-center gap-5 mb-8">
                                     <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-center shadow-2xl">
                                         <Droplets className="w-8 h-8 text-indigo-400" />
                                     </div>
@@ -302,6 +317,12 @@ export default function MaterialsPage() {
                                         <span className="px-5 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-widest">DLP</span>
                                     </div>
                                 </div>
+                                {detail ? (
+                                    <div className="mb-10 relative z-10 space-y-3">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80">{t('specsHeading')}</h4>
+                                        <MaterialSpecsGrid spec={detail} tone="indigo" />
+                                    </div>
+                                ) : null}
                                 <div className="grid md:grid-cols-2 gap-12 relative z-10">
                                     <div className="space-y-4">
                                         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-2">{t('propertiesHeading')}</h4>
@@ -327,7 +348,8 @@ export default function MaterialsPage() {
                                     </div>
                                 </div>
                             </motion.article>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
             </section>

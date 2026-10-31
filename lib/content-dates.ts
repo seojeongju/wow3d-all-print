@@ -20,7 +20,7 @@ const CONTENT_DATES: Record<string, ContentDates> = {
     '/stl-checker': { published: '2026-10-12', modified: '2026-10-12' },
     '/custom': { published: '2026-07-31', modified: '2026-10-13' },
     '/print-methods': { published: '2026-01-24', modified: '2026-10-19' },
-    '/materials': { published: '2026-01-24', modified: '2026-10-03' },
+    '/materials': { published: '2026-01-24', modified: '2026-10-31' },
     '/materials/safety': { published: '2026-09-07', modified: '2026-10-02' },
     '/hardware/3d-printer': { published: '2026-09-07', modified: '2026-10-02' },
     '/experience': { published: '2026-01-23', modified: '2026-09-08' },

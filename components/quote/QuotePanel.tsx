@@ -41,6 +41,7 @@ import { toEstimateTransformPayload } from '@/lib/quote-estimate-transform'
 import { parseStoredModelTransform } from '@/lib/quote-reload'
 import { fitsBuildVolume, formatBuildDims } from '@/lib/build-volume'
 import InchUnitNotice from '@/components/quote/InchUnitNotice'
+import MaterialDetailDialog from '@/components/materials/MaterialDetailDialog'
 import QuoteEmailSave from '@/components/quote/QuoteEmailSave'
 import QuoteActionFeedback, { type QuoteFeedback, type QuoteFeedbackAction } from '@/components/quote/QuoteActionFeedback'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -1281,9 +1282,12 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                 >
                     {/* Dynamic Material Section — 2열 칩 */}
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 px-1">
-                            <Box className="w-3.5 h-3.5 text-teal-400" />
-                            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('materialSettings')}</span>
+                        <div className="flex items-center justify-between gap-2 px-1">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Box className="w-3.5 h-3.5 shrink-0 text-teal-400" />
+                                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-white/40">{t('materialSettings')}</span>
+                            </div>
+                            <MaterialDetailDialog materialName={isFdmQuote ? fdmMaterial : resinType} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
@@ -1295,6 +1299,7 @@ export default function QuotePanel({ embedded = false, initialQuote, reloadQuote
                                     return (
                                         <button
                                             key={m.id}
+                                            type="button"
                                             onClick={() => isFdmQuote ? setFdmMaterial(m.name) : setResinType(m.name)}
                                             className={`flex items-center gap-2 min-h-11 px-3 py-2 rounded-xl border text-left transition-all ${selected
                                                 ? 'bg-teal-400/10 border-teal-400/40 ring-1 ring-teal-400/20'

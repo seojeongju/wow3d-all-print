@@ -803,6 +803,11 @@
     "overflowConsult": "분할 출력 상담 문의하기",
     "overflowCartBlocked": "최대 출력 크기를 초과한 모델은 장바구니에 담을 수 없습니다. 크기를 줄이거나 분할 출력 상담을 문의해 주세요.",
     "materialSettings": "소재 설정",
+    "materialDetailButton": "소재 상세",
+    "materialDetailDesc": "선택한 소재의 열변형·용융·출력 온도 등 대표 스펙입니다. 자동견적 금액에는 바로 반영되지 않으며 선택 참고용입니다.",
+    "materialDetailFullPage": "소재 안내 페이지에서 더 보기",
+    "materialDetailPageLink": "소재 안내 보기",
+    "materialDetailNeedSelect": "소재를 먼저 선택해 주세요",
     "noMaterials": "소재가 없습니다. 관리자 설정 → 소재에서 추가하세요.",
     "colorLabel": "색상",
     "colorWhite": "화이트",
@@ -1192,13 +1197,13 @@
   },
   "Materials": {
     "metaTitle": "3D프린팅 소재 안내 | PLA·ABS·PETG·PC·레진",
-    "metaDescription": "와우쓰리디 WOW3D 3D프린팅 소재 가이드. FDM(PLA, ABS, PETG, PC, TPU)과 SLA·DLP 레진의 특징, 용도, 선택 기준을 확인하세요.",
+    "metaDescription": "와우쓰리디 WOW3D 3D프린팅 소재 가이드. FDM(PLA, ABS, PETG, PC, TPU)과 SLA·DLP 레진의 열변형·용융 온도 등 상세 스펙과 용도·선택 기준을 확인하세요.",
     "metaOgTitle": "3D프린팅 소재 안내 | WOW3D",
-    "metaOgDescription": "PLA·ABS·PETG·PC·TPU 및 레진 소재 비교. 시제품·기능 부품에 맞는 소재를 고르세요.",
+    "metaOgDescription": "PLA·ABS·PETG·PC·TPU 및 레진의 열변형·출력 온도 스펙과 용도 비교. 시제품·기능 부품에 맞는 소재를 고르세요.",
     "hero": {
       "title": "소재",
       "titleAccent": "살펴보기",
-      "subtitle": "PLA, ABS, PETG, PC 차이는 무엇인지, 어떤 소재가 시제품과 기능 부품에 적합한지, 레진과 필라멘트는 어떤 기준으로 고르면 되는지 한 번에 확인할 수 있습니다."
+      "subtitle": "PLA, ABS, PETG, PC의 열변형·용융 온도와 레진 특성까지, 시제품과 기능 부품에 맞는 소재를 스펙 기준으로 비교할 수 있습니다."
     },
     "byMethod": {
       "title": "출력방식별 핵심 소재",
@@ -1361,7 +1366,20 @@
     "fdmHeading": "FDM 소재 (필라멘트)",
     "resinHeading": "레진 소재 (SLA · DLP)",
     "propertiesHeading": "주요 특성",
-    "applicationsHeading": "추천 용도"
+    "applicationsHeading": "추천 용도",
+    "specsHeading": "상세 스펙",
+    "specDisclaimer": "수치는 일반 필라멘트·레진의 대표 범위이며, 제품·색상·장비·출력 조건에 따라 달라질 수 있습니다. 식품·의료 등 특수 용도는 별도 상담이 필요합니다.",
+    "specLabels": {
+      "heatDeflection": "열변형 온도(HDT)",
+      "meltRange": "용융 온도 범위",
+      "nozzleTemp": "권장 노즐 온도",
+      "bedTemp": "권장 베드 온도",
+      "strength": "강도·내구성",
+      "flexibility": "유연성",
+      "surface": "표면·외관",
+      "postProcess": "후가공",
+      "printNote": "출력·설계 참고"
+    }
   },
   "Makerspace": {
     "metaTitle": "메이커스페이스 찾아오는길 | 홍대·구미·전주 제작센터",
