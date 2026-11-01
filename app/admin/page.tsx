@@ -105,6 +105,22 @@ type Stats = {
     periodLabel?: string;
 };
 
+type OnlineStats = {
+    total: number;
+    members: number;
+    guests: number;
+    windowMinutes: number;
+};
+
+const ONLINE_POLL_MS = 30_000;
+
+const QUICK_LINKS = [
+    { label: '주문 확인', icon: ShoppingBag, href: '/admin/orders', color: 'text-blue-400' },
+    { label: '견적 작성', icon: FileText, href: '/admin/quotes', color: 'text-purple-400' },
+    { label: '전환 분석', icon: BarChart3, href: '/admin/quotes/analytics', color: 'text-teal-400' },
+    { label: '문의 답변', icon: MessageSquare, href: '/admin/inquiries', color: 'text-pink-400' },
+];
+
 const EMPTY_STATS: Stats = {
     totalSales: 0,
     salesChangePercent: null,
@@ -174,6 +190,7 @@ export default function AdminDashboard() {
     const [rangeLoading, setRangeLoading] = useState(false);
     const [loadFailed, setLoadFailed] = useState(false);
     const [granularity, setGranularity] = useState<StatsGranularity>('day');
+    const [online, setOnline] = useState<OnlineStats | null>(null);
     const hasLoadedOnceRef = useRef(false);
     const { token, user } = useAuthStore();
     const { toast } = useToast();
@@ -213,6 +230,32 @@ export default function AdminDashboard() {
         };
         load();
     }, [token, toast, granularity]);
+
+    // 현재 접속자 수 (회원 관리 화면과 같은 API, 30초마다 갱신)
+    useEffect(() => {
+        if (!isSuperAdmin) return;
+        let cancelled = false;
+        const fetchOnline = async () => {
+            try {
+                const res = await fetch('/api/admin/users/online', {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    cache: 'no-store',
+                });
+                const json = await res.json();
+                if (!cancelled && json?.success) setOnline(json.data as OnlineStats);
+            } catch (e) {
+                console.error('Failed to fetch online users', e);
+            }
+        };
+        void fetchOnline();
+        const timer = setInterval(() => {
+            if (document.visibilityState === 'visible') void fetchOnline();
+        }, ONLINE_POLL_MS);
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+        };
+    }, [token, isSuperAdmin]);
 
     if (loading) {
         return (
@@ -283,6 +326,22 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* 빠른 이동 */}
+            <nav aria-label="빠른 이동" className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
+                {QUICK_LINKS.map((act) => (
+                    <Link
+                        key={act.href}
+                        href={act.href}
+                        className="group flex min-w-0 items-center justify-center gap-2 rounded-xl border border-white/5 bg-[#0f0f0f] px-3 py-3 transition-colors hover:border-white/15 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                        <act.icon className={`h-4 w-4 shrink-0 ${act.color} transition-transform group-hover:scale-110`} />
+                        <span className="truncate text-xs font-bold text-white/60 group-hover:text-white">
+                            {act.label}
+                        </span>
+                    </Link>
+                ))}
+            </nav>
+
             {/* 핵심 KPI */}
             <section className="space-y-4">
                 <SectionHeading
@@ -315,15 +374,15 @@ export default function AdminDashboard() {
                         }}
                     />
                     <DashboardStatCard
-                        title="신규 주문"
+                        title="이번 달 주문건수"
                         icon={ShoppingBag}
                         iconColor="text-blue-400"
                         iconBg="bg-blue-500/10"
-                        value={s.newOrdersCount}
+                        value={`${s.newOrdersCount.toLocaleString('ko-KR')}건`}
                         primary={{
                             label: '전체 주문 보기',
                             href: '/admin/orders',
-                            ariaLabel: '이번 달 신규 주문 목록',
+                            ariaLabel: '이번 달 주문 목록',
                         }}
                         secondary={
                             s.pendingOrdersCount > 0
@@ -386,11 +445,37 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <DashboardStatCard
-                        title="활성 사용자"
+                        title="사용자 현황"
                         icon={Users}
                         iconColor="text-purple-400"
                         iconBg="bg-purple-500/10"
-                        value={s.totalUsers}
+                        value={
+                            <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+                                <div>
+                                    <div className="text-[10px] font-bold text-white/40">총 가입자</div>
+                                    <div>{s.totalUsers.toLocaleString('ko-KR')}명</div>
+                                </div>
+                                {isSuperAdmin && (
+                                    <div>
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/40">
+                                            <span className="relative flex h-1.5 w-1.5">
+                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                            </span>
+                                            현재 접속
+                                        </div>
+                                        <div className="text-emerald-300">
+                                            {online ? `${online.total.toLocaleString('ko-KR')}명` : '–'}
+                                            {online && (
+                                                <span className="ml-2 text-[10px] font-bold text-white/40">
+                                                    회원 {online.members.toLocaleString('ko-KR')} · 비회원 {online.guests.toLocaleString('ko-KR')}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        }
                         primary={{
                             label: isSuperAdmin ? '회원 관리' : '등록 회원 수',
                             href: isSuperAdmin ? '/admin/users' : undefined,
@@ -447,35 +532,6 @@ export default function AdminDashboard() {
                     />
 
                     <div className="min-w-0 space-y-5 lg:col-span-5">
-                        <Card className="border-white/5 bg-[#0f0f0f]">
-                            <CardHeader className="border-b border-white/5 pb-3">
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider text-white">
-                                    빠른 이동
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <div className="grid grid-cols-2 divide-x divide-y divide-white/5">
-                                    {[
-                                        { label: '주문 확인', icon: ShoppingBag, href: '/admin/orders', color: 'text-blue-400' },
-                                        { label: '견적 작성', icon: FileText, href: '/admin/quotes', color: 'text-purple-400' },
-                                        { label: '전환 분석', icon: BarChart3, href: '/admin/quotes/analytics', color: 'text-teal-400' },
-                                        { label: '문의 답변', icon: MessageSquare, href: '/admin/inquiries', color: 'text-pink-400' },
-                                    ].map((act) => (
-                                        <Link
-                                            key={act.href}
-                                            href={act.href}
-                                            className="group flex flex-col items-center justify-center py-5 transition-colors hover:bg-white/[0.02]"
-                                        >
-                                            <act.icon className={`mb-2 h-5 w-5 ${act.color} transition-transform group-hover:scale-110`} />
-                                            <span className="text-[11px] font-bold text-white/60 group-hover:text-white">
-                                                {act.label}
-                                            </span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-
                         <Card className="border-white/5 bg-[#0f0f0f]">
                             <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-3">
                                 <CardTitle className="text-sm font-bold uppercase tracking-wider text-white">
